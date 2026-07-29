@@ -19,9 +19,14 @@ and edit preset files (`.xml`) for their own copy.
   necessarily carries the plugin's file structure: ~87% of its bytes are
   parameter key names and format markers that are identical in every Morgan
   preset. The tone settings are this project's own.
-- **The parameter catalog** (`schema/morgan_schema.json`) is derived from
+- **The observed-value catalog** (`packs/<id>/observed.json`) is derived from
   whichever presets you supply, so it is git-ignored too — build your own with
   `python -m schema.build_schema`.
+- **The pack manifest** (`packs/<id>/manifest.json`) *is* committed. It contains
+  only parameter names, kinds, units, ranges and selector labels — the factual
+  description needed to read and write presets for a licensed copy. It carries
+  no Neural DSP code, audio, impulse responses, preset content, or values taken
+  from factory presets.
 
 ## Format documentation
 

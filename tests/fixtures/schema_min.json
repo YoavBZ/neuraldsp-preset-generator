@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "plugin": "Morgan Amps Suite",
-  "_comment": "Minimal hand-written schema fixture. Used by test_translate.py when the real schema/morgan_schema.json (generated, git-ignored) is absent, so the suite passes on a fresh clone. Covers every translatable kind and every metered unit. Values are representative encodings, not a dump of any preset library.",
+  "_comment": "Minimal hand-written schema fixture. Used by test_translate.py when the generated observed-value catalog (packs/<id>/observed.json, git-ignored) is absent, so the suite passes on a fresh clone. Covers every translatable kind and every metered unit. Values are representative encodings, not a dump of any preset library.",
   "source_presets": ["Example_Clean_PR12.xml"],
   "modules": {
     "": [

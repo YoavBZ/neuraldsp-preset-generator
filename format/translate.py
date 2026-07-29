@@ -8,7 +8,7 @@ stores. So the honest human unit for a bare knob is **percent of rotation**
 numbers in the UI (gate dB, EQ Hz, delay ms, tempo BPM, …) are stored in those
 real units and pass through unchanged.
 
-Each parameter's `kind` (from schema/morgan_schema.json) decides the mapping:
+Each parameter's `kind` (from packs/<id>/manifest.json) decides the mapping:
 
   kind        human value            stored string         example
   ----------  ---------------------  --------------------  ------------------

@@ -42,7 +42,10 @@ def is_value_token(tok: Token) -> bool:
 class Parameter:
     """A (module_path, key, value) tuple with index back into the token list."""
 
-    module_path: str          # e.g. "ampParameters.pr12Amp"
+    # The file flattens its module tree: each `subModels` marker replaces the
+    # current module rather than nesting under it, so a path is a single name
+    # ("pr12Amp", "cabParameters"), never dotted. Top-level keys use "".
+    module_path: str          # e.g. "pr12Amp"
     key: str                  # e.g. "pr12Volume"
     value: str                # current value as stored (string form)
     key_index: int            # index of key token in the token list

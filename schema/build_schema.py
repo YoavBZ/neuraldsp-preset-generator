@@ -1,17 +1,19 @@
 """
-Infer a parameter schema from the user's own preset samples.
+Summarise the values used across the user's own preset library.
 
-Reads every `.xml` in `samples/`, parses each, and produces
-`schema/morgan_schema.json`. The schema records, for every (module_path, key)
-seen:
-  - inferred type: bool, int, float, string, enum
-  - observed values across samples (min/max for numeric, set for enum/string)
-  - the source preset(s) the parameter was seen in
+Reads every `.xml` in `samples/`, parses each, and writes
+`packs/morgan/observed.json`: for every (module_path, key) seen, the values it
+actually holds across those presets, plus a heuristically inferred type.
 
-The schema is the LLM's contract: when generating or editing presets, the
-agent picks values that respect each parameter's observed range and type.
+This output is **advisory**. It answers "what does this knob tend to sit at in
+real presets?" — a taste anchor when choosing a value. It is NOT the contract:
+what a parameter *is* and what values are *legal* live in the hand-curated
+`packs/<id>/manifest.json`, which is committed and shared. This file is
+generated from the user's own presets, echoes every string in them (including
+absolute IR paths), and stays local.
 
-Run as a module:
+Running this is optional. The tools work without it.
+
     python -m schema.build_schema
 """
 
@@ -31,7 +33,7 @@ from format.parser import parse_file  # noqa: E402
 from format.structured import build   # noqa: E402
 
 SAMPLES_DIR = REPO_ROOT / "samples"
-OUTPUT_PATH = REPO_ROOT / "schema" / "morgan_schema.json"
+OUTPUT_PATH = REPO_ROOT / "packs" / "morgan" / "observed.json"
 
 
 # Native-unit (metered) parameters, matched by key suffix. These are shown
@@ -173,9 +175,16 @@ def main() -> None:
         sys.exit(1)
 
     schema = build_schema(samples)
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(schema, indent=2))
     print(f"Wrote {OUTPUT_PATH} ({len(schema['modules'])} modules, "
-          f"{sum(len(p) for p in schema['modules'].values())} parameters)")
+          f"{sum(len(p) for p in schema['modules'].values())} parameters "
+          f"from {len(samples)} preset(s))")
+    if len(samples) < 3:
+        print(
+            "Note: built from few presets, so the observed values are a narrow "
+            "sample. Add more of your own presets to samples/ for better anchors."
+        )
 
 
 if __name__ == "__main__":

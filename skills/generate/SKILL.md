@@ -1,0 +1,82 @@
+---
+name: generate
+description: Create a Neural DSP amp-sim preset for a specific guitar tone — from a song, an artist, a part, or a description of the sound. Researches how the tone was actually recorded, maps it to the plugin's amps and effects, and writes a loadable preset file.
+when_to_use: Use when someone wants a guitar tone or preset built for them and names a song, an artist, a genre, or a sound — "give me the clean tone from Hotel California", "make a Gilmour-ish lead patch", "I need a jangly rhythm sound for Morgan", "build me a preset for this riff". Also triggers on "amp sim", "patch", "tone", "Neural DSP", "Morgan Amps Suite".
+argument-hint: "[song or tone description] [rhythm|lead|clean]"
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch
+---
+
+# Generate a preset
+
+Turn a description of a tone into a loadable preset. Read
+[preset-spec.md](../../reference/preset-spec.md) before writing anything — it
+covers the value convention, the spec format, and the scripts.
+
+## 1. Understand the ask
+
+The user speaks in plain language, not flags. Extract:
+
+- **the tone** — song, artist, era, or a bare description ("jangly", "creamy lead")
+- **the role** — rhythm / lead / clean, if stated
+- **the plugin** — which pack. Detect it from a template they point at; if they
+  don't say and only one pack exists, use it and mention which.
+
+Ask at most **one** clarifying question, and only if the answer would change the
+amp choice. Otherwise pick sensible defaults and say what you assumed.
+
+## 2. Research the tone
+
+Use WebSearch and WebFetch to find how it was actually recorded. Good sources:
+Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
+well-cited forum threads, video lesson notes.
+
+Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or
+driven?), the **effects** (delay, reverb, modulation, drive pedals), and the
+part's **place in the mix**. Keep the source links — you'll cite them.
+
+If research turns up nothing solid, say so and design from the description
+instead. Don't invent a rig rundown.
+
+## 3. Map it to the plugin
+
+Read `packs/<id>/tone.md` for that plugin's amps, their character, and the
+"when the user says X" mappings. Read `packs/<id>/manifest.json` for what each
+parameter is, its unit, and its legal range.
+
+Choose the amp with the top-level `selectedAmp` parameter (module `""`), by
+name: `{"module": "", "key": "selectedAmp", "value": "PR12"}`. All amp modules
+exist in every preset, so **any template can produce any amp**.
+
+## 4. Pick a template
+
+- Default to `samples/Example_Clean_PR12.xml` — IR-free, portable, ships with
+  the repo.
+- One of the user's own presets is a fine template too, especially if it already
+  uses the amp you want. Run `show.py` on it first.
+- Either way, **set `selectedAmp` explicitly** unless you have confirmed the
+  template already has the value you want.
+
+## 5. Write the spec, preview, apply
+
+Build the spec JSON, then always `--dry-run` first and show the user the change
+list before writing. See [preset-spec.md](../../reference/preset-spec.md).
+
+Pass `--strip-irs` so the result is portable — see
+[cab-and-irs.md](../../reference/cab-and-irs.md).
+
+## 6. Install and report
+
+Write the preset into the user's preset folder and tell them how to load it —
+see [installing.md](../../reference/installing.md).
+
+Then report:
+- which **template** you cloned and which **amp** you selected
+- what **research** the tone is based on, with links
+- anything you set **outside a declared range**, and why
+- any **unconfirmed selector** the tool warned about
+
+## 7. Bank what you learned
+
+If the research turned up something reusable, append an entry to
+`packs/<id>/tone.md` under "Mapped tones" — amp, key settings, and the source
+link. That file is append-only and makes the next run better.

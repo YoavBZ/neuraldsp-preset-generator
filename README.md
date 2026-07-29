@@ -1,8 +1,8 @@
 # neuraldsp-preset-generator
 
-A Claude Code skill that generates and edits **Neural DSP Morgan Amps Suite**
-preset files (`.xml`, binary) — for personal interoperability with your own
-licensed copy of the plugin.
+A Claude Code plugin that generates and edits **Neural DSP** amp-sim preset
+files (`.xml`, binary) — for personal interoperability with your own licensed
+copy of the plugin.
 
 Describe a song and a guitar role and get a preset; or point at a preset,
 describe a change in plain English, and get a new one back.
@@ -13,64 +13,111 @@ describe a change in plain English, and get a new one back.
 > (`samples/Example_Clean_PR12.xml`); everything else you'd want as a template
 > comes from your own library.
 
-## Modes
+Format support so far targets **Morgan Amps Suite**. Other Neural DSP plugins
+are supported by adding a pack — see [Packs](#packs).
 
-- **Generate** — describe a song + guitar role; the skill researches the tone
-  and writes a new preset.
-- **Edit** — point at an existing preset, describe the change in plain English,
-  get a new preset back. The input is never overwritten.
+## Install
+
+```bash
+git clone https://github.com/YoavBZ/neuraldsp-preset-generator
+claude --plugin-dir ./neuraldsp-preset-generator
+```
+
+Then:
+
+```
+/neuraldsp-preset-generator:generate  Hotel California, clean rhythm
+/neuraldsp-preset-generator:edit      my-preset.xml  more reverb, tighter low end
+```
+
+You don't have to use the slash commands — just describing what you want
+("give me a jangly rhythm tone for Morgan") triggers the right skill.
+
+## The two skills
+
+- **`generate`** — describe a song, artist, or sound; the skill researches how
+  the tone was recorded, maps it to the plugin's amps and effects, writes a
+  preset, and puts it where the plugin will find it.
+- **`edit`** — point at an existing preset, describe the change in plain
+  English, get a new preset back. The input is never overwritten.
+
+Both preview their changes before writing:
+
+```
+4 change(s) against Example_Clean_PR12.xml:
+  name                  Example Clean PR12  ->  Hotel California Lead
+  selectedAmp           PR12  ->  SW50R
+  sw50rAmp/sw50rVolume  27.4%  ->  62%
+  delay/delayTime       420 ms  ->  480 ms
+```
 
 ## Layout
 
 ```
-format/   — NDSP binary parser + writer (lossless) + value translation
-schema/   — parameter catalog (kind/unit/ranges), generated from your presets
-.claude/  — the skill: SKILL.md + scripts/ (apply_spec, show)
-samples/  — presets. One generated example ships; add your own (git-ignored)
-tests/    — round-trip, mutation, translation, and cab tests
-knowledge/— notes on Morgan amps + tone references
-docs/     — Morgan config reference (verification-checked)
+.claude-plugin/  — plugin manifest
+skills/          — generate/ and edit/, the two entry points
+reference/       — shared detail, loaded on demand (spec format, cab/IRs, installing)
+scripts/         — show.py (inspect) and apply_spec.py (write)
+packs/           — one directory per Neural DSP plugin (see below)
+format/          — NDSP binary parser + writer (lossless) + value translation
+schema/          — builds the optional observed-value catalog from your presets
+samples/         — presets. One generated example ships; add your own (git-ignored)
+tests/           — round-trip, mutation, translation, cab, and pack-contract tests
+docs/            — Morgan config reference (musical, not yet fully reconciled)
 ```
 
-## Quick start
+## Packs
 
-```bash
-# 1. Build the parameter schema. Required before the skill will run —
-#    it's generated, not committed, because it echoes every string in
-#    your presets (including absolute IR paths).
-python -m schema.build_schema
+A **pack** is everything the tool knows about one Neural DSP plugin:
 
-# 2. Inspect a preset (stored + human values for every parameter):
-python .claude/skills/morgan-preset-gen/scripts/show.py samples/Example_Clean_PR12.xml
-
-# 3. Use the skill (from Claude Code in this repo):
-#    /morgan-preset-gen generate --song "Wish You Were Here" --role lead
+```
+packs/morgan/
+  manifest.json   committed — the contract: every parameter's kind, unit,
+                  declared range, selector members, UI name
+  tone.md         committed — musical knowledge for this plugin
+  observed.json   git-ignored, optional — what values YOUR presets use
+  templates/      git-ignored — your own presets
 ```
 
-Step 1 works on a bare clone using the bundled example, but a schema built from
-a single preset has near-empty `observed_min`/`observed_max` ranges, so you'll
-get "outside observed range" warnings. To get useful ranges, add a few of your
-own presets first and re-run it:
+The distinction that matters: **`manifest.json` says what is *legal*;
+`observed.json` says what is *typical*.** The first is a shared, hand-curated
+fact table with no plugin content in it. The second is generated from your
+library, echoes absolute IR paths, and stays local.
+
+Because the manifest ships, `show.py` and `apply_spec.py` work on a fresh clone
+with **no build step**.
+
+Presets identify their plugin in their first bytes (`morgan`), so the right pack
+is selected automatically for any preset you point at.
+
+### Adding a pack for another plugin
+
+You need one preset from that plugin as a template — the writer clones, it never
+synthesises. Drop it in `samples/`, run `python -m schema.build_schema` to see
+what parameters it has, and write a `packs/<id>/manifest.json` against it. The
+format layer is plugin-agnostic; only the manifest is per-plugin.
+
+## Value convention
+
+The plugin's knobs have no numbers — a knob is just a rotation. So:
+
+- **Bare knobs** are **percent of rotation, 0–100** (noon = 50); stored as `0.0–1.0`.
+- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose)
+  use their **native unit** (dB / Hz / ms / s / BPM / semitones).
+- **Switches** are `true`/`false`; **selectors** take a member name
+  (`"PR12"`, `"Ribbon 121"`) or an integer.
+
+Every parameter's `kind` and `unit` live in `packs/<id>/manifest.json`.
+
+## Optional: taste anchors from your own library
 
 ```bash
 cp ~/Library/Audio/Presets/Neural\ DSP/Morgan*/User/*.xml samples/
 python -m schema.build_schema
 ```
 
-## Value convention
-
-The plugin's knobs have no numbers — a knob is just a rotation. So:
-
-- **Bare knobs** are written as **percent of rotation, 0–100** (noon = 50);
-  stored in the file as `0.0–1.0`.
-- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo,
-  transpose) use their **native unit** (dB / Hz / ms / s / BPM / semitones).
-- **Switches** are `true` / `false`; **selectors** (e.g. `selectedAmp`:
-  `0`=AC20, `1`=PR12, `2`=SW50R) are integers.
-
-Each parameter's `kind` and `unit` live in `schema/morgan_schema.json`;
-`scripts/apply_spec.py` translates human values to the binary encoding, and
-`scripts/show.py` prints both stored and human values for any preset.
+This writes `packs/morgan/observed.json`, which `show.py` folds in as advisory
+"what does this knob usually sit at" context. Nothing requires it.
 
 ## How it works
 
@@ -80,19 +127,22 @@ its printable string values**, preserving every wrapper byte and recomputing the
 one length byte the plugin validates. That's why round-trip fidelity is tested
 byte-for-byte, and why a template is always required.
 
-All three amp modules (AC20 / PR12 / SW50R) exist in every preset file, so the
-top-level `selectedAmp` key can reach any amp from any template.
+All three Morgan amp modules (AC20 / PR12 / SW50R) exist in every preset file,
+so the top-level `selectedAmp` key can reach any amp from any template.
 
 ## Tests
 
 ```bash
+pip install -e ".[dev]"
 python -m pytest
 ```
 
 Passes on a bare clone against the bundled example preset. Tests needing several
 real presets — the IR-stripping encoding check in particular — skip with a note
-until you add your own. Add presets to `samples/` and they're picked up
-automatically.
+until you add your own.
+
+`claude plugin validate . --strict` checks the plugin manifest and skill
+frontmatter.
 
 ## License and scope
 
@@ -100,6 +150,3 @@ MIT — see [LICENSE](LICENSE). Read [NOTICE.md](NOTICE.md) for scope, what is
 deliberately excluded, and format credits.
 
 Not affiliated with, endorsed by, or supported by Neural DSP.
-
-<sub>Repo is `neuraldsp-preset-generator`; the Python package is
-`morgan-preset-gen`, since the format work so far targets Morgan Amps Suite.</sub>

@@ -3,9 +3,15 @@
 VERIFICATION STATUS — read before trusting this document
 ========================================================================
 Verified 2026-05-29 against the 3 real Morgan presets in samples/ and
-the parser-derived schema/morgan_schema.json (132 params). This file is
-a MUSICAL CONTROL REFERENCE, not the binary file format. NOT yet wired
-into the skill — kept here for tone-reasoning guidance only.
+the parser-derived parameter catalog (132 params). This file is a MUSICAL
+CONTROL REFERENCE, not the binary file format.
+
+PARTIALLY WIRED IN as of the pack refactor: section 21's validation ranges
+have been transcribed into packs/morgan/manifest.json and are now enforced
+at write time. Sections 6-19's tone recipes have NOT been reconciled - they
+still use this doc's 0-10 scale and its own parameter names, so do not feed
+them to the writer without translating. See `range_source` in the manifest
+for exactly which numbers came from here.
 
 ACCURATE (use as guidance):
   - PR12 amp controls map 1:1 (volume/treble/bass/reverb/dwell).
@@ -18,7 +24,7 @@ MUST TRANSLATE before writing to the binary:
     rotation (0–100), stored as 0.0–1.0. Reinterpret any 0–10 value here
     as x*10 percent (doc 3.6 -> 36% -> stored "0.36"). Metered controls
     (dB/Hz/ms/s/BPM/semitones) use native units. The authoritative
-    kind+unit for every parameter is in schema/morgan_schema.json, and
+    kind+unit for every parameter is in packs/morgan/manifest.json, and
     format/translate.py performs the human->binary mapping.
   - NAMES differ: doc hpfHz/lpfHz -> binary delayLowCut/delayHighCut;
     doc comp -> compressorCompression; od1/od2 -> drive1/drive2; etc.
@@ -32,7 +38,7 @@ KNOWN ERRORS / CONFLICTS in this doc vs the binary:
     (bass vs treble — a real conflict). Doc power/standby absent.
   - CAB: doc's slots[]/micId model does NOT match the binary, which uses
     dual left/right cabs. Mic selection = leftMicType/rightMicType integer
-    index into the 10-mic catalog (schema/mic_catalog.json). Custom IR =
+    index into the 10-mic catalog (manifest `enums.internalMic`). Custom IR =
     *ChosenIRFilePath string; "no custom IR" is that field set to an empty
     string (use apply_spec.py --strip-irs for portable factory-mic presets).
 
@@ -41,7 +47,7 @@ CONFIRMED (user-verified 2026-05-29):
     (Verified by loading presets with each value in the plugin. Those
      presets are not part of this repo.)
 
-Authoritative source for stored keys/scales: schema/morgan_schema.json.
+Authoritative source for stored keys/scales: packs/morgan/manifest.json.
 ========================================================================
 -->
 

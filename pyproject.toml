@@ -1,7 +1,7 @@
 [project]
-name = "morgan-preset-gen"
-version = "0.1.0"
-description = "Generate and edit Neural DSP Morgan Amps Suite preset files."
+name = "neuraldsp-preset-generator"
+version = "0.2.0"
+description = "Generate and edit Neural DSP amp-sim preset files."
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]

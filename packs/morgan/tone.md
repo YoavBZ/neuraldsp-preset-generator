@@ -45,11 +45,17 @@ The signal-chain modules visible in the schema (typical order):
 - `pedalParameters` — toggles for the pedal section
 - `eqParameters` (with `pr12EQ`, `sw50rEQ`, `ac20EQ`) — per-amp post-EQ
 - `cabParameters` — cab/mic selection
-- `tremolo`, `chorus`/`flanger`, `delay`, `reverb` — time-based FX
+- `tremolo`, `delay`, `reverb` — time-based FX
+
+Morgan Amps Suite has **no chorus, flanger, phaser or pitch effects**. The
+modules listed above are the complete set — anything else will be rejected by
+`apply_spec.py`, because the writer can only mutate parameters the template
+already contains. The authoritative list is `packs/morgan/manifest.json`.
 
 Values below are in the project convention: **knobs = percent of rotation
 (0–100)**, metered controls in their native unit (Hz / ms / s / dB). See
-SKILL.md "value convention" and each param's `kind` in `morgan_schema.json`.
+`reference/preset-spec.md` for the value convention, and each parameter's
+`kind` in `packs/morgan/manifest.json`.
 
 When the user says...
 
