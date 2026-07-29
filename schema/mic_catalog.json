@@ -1,0 +1,16 @@
+{
+  "description": "Morgan Amps Suite internal cab mics, by selector index. Verified from the plugin's mic dropdown (v1.1.0) and cross-checked against factory presets (index 0 and 8 observed in samples). Indices map to the *MicType / *RoomMicType integer fields in the binary.",
+  "source": "plugin mic dropdown screenshot 2026-05-29; confirmed 0=Dynamic 57, 8=Ribbon 121 in samples",
+  "mics": [
+    "Dynamic 57",
+    "Dynamic 57 Off-Axis",
+    "Dynamic 409",
+    "Dynamic 421",
+    "Condenser 184",
+    "Condenser 414",
+    "Condenser 4006",
+    "Condenser U47",
+    "Ribbon 121",
+    "Ribbon 160"
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "plugin": "Morgan Amps Suite",
+  "_comment": "Minimal hand-written schema fixture. Used by test_translate.py when the real schema/morgan_schema.json (generated, git-ignored) is absent, so the suite passes on a fresh clone. Covers every translatable kind and every metered unit. Values are representative encodings, not a dump of any preset library.",
+  "source_presets": ["Example_Clean_PR12.xml"],
+  "modules": {
+    "": [
+      {
+        "module_path": "",
+        "key": "name",
+        "type": "string",
+        "kind": "string",
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["Example Clean PR12"]
+      },
+      {
+        "module_path": "",
+        "key": "selectedAmp",
+        "type": "int",
+        "kind": "enum",
+        "observed_min": 0.0,
+        "observed_max": 2.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "1", "2"]
+      }
+    ],
+    "pr12Amp": [
+      {
+        "module_path": "pr12Amp",
+        "key": "pr12Volume",
+        "type": "float",
+        "kind": "rotation",
+        "observed_min": 0.0,
+        "observed_max": 1.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "0.5", "0.62", "0.446343", "1"]
+      }
+    ],
+    "cabParameters": [
+      {
+        "module_path": "cabParameters",
+        "key": "leftCabPosition",
+        "type": "float",
+        "kind": "fraction",
+        "observed_min": 0.0,
+        "observed_max": 1.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "0.3", "0.299781", "1"]
+      },
+      {
+        "module_path": "cabParameters",
+        "key": "leftMicType",
+        "type": "int",
+        "kind": "enum",
+        "observed_min": 0.0,
+        "observed_max": 9.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "8"]
+      },
+      {
+        "module_path": "cabParameters",
+        "key": "leftCabActive",
+        "type": "bool",
+        "kind": "switch",
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["true", "false"]
+      },
+      {
+        "module_path": "cabParameters",
+        "key": "leftChosenIRFilePath",
+        "type": "string",
+        "kind": "path",
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": [""]
+      },
+      {
+        "module_path": "cabParameters",
+        "key": "leftCabMicLevel",
+        "type": "float",
+        "kind": "metered",
+        "unit": "db",
+        "observed_min": -12.0,
+        "observed_max": 12.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "4.99754", "-6"]
+      }
+    ],
+    "parameters": [
+      {
+        "module_path": "parameters",
+        "key": "gateThreshold",
+        "type": "float",
+        "kind": "metered",
+        "unit": "db",
+        "observed_min": -80.0,
+        "observed_max": 0.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["-80", "-72", "-80.0205"]
+      },
+      {
+        "module_path": "parameters",
+        "key": "doublerSpread",
+        "type": "float",
+        "kind": "metered",
+        "unit": "ms",
+        "observed_min": 0.0,
+        "observed_max": 100.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["6", "60", "420"]
+      },
+      {
+        "module_path": "parameters",
+        "key": "transpose",
+        "type": "int",
+        "kind": "metered",
+        "unit": "semitones",
+        "observed_min": -12.0,
+        "observed_max": 12.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["0", "-12", "7"]
+      }
+    ],
+    "pr12EQ": [
+      {
+        "module_path": "pr12EQ",
+        "key": "pr12EQLpf",
+        "type": "float",
+        "kind": "metered",
+        "unit": "hz",
+        "observed_min": 20.0,
+        "observed_max": 20000.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["20", "45", "5027.64", "20000"]
+      }
+    ],
+    "reverb": [
+      {
+        "module_path": "reverb",
+        "key": "reverbDecay",
+        "type": "float",
+        "kind": "metered",
+        "unit": "seconds",
+        "observed_min": 0.1,
+        "observed_max": 10.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["1.45", "1.48034"]
+      }
+    ],
+    "delay": [
+      {
+        "module_path": "delay",
+        "key": "delayTempo",
+        "type": "float",
+        "kind": "metered",
+        "unit": "bpm",
+        "observed_min": 40.0,
+        "observed_max": 300.0,
+        "seen_in": ["Example_Clean_PR12.xml"],
+        "observed_values": ["120", "138.5"]
+      }
+    ]
+  }
+}
