@@ -129,6 +129,15 @@ def note_ms(bpm: float, division: str) -> float:
     return quarter_ms(bpm) * note_multiplier(division)
 
 
+def note_hz(bpm: float, division: str) -> float:
+    """Rate in Hz for a note division at a tempo — one cycle per note.
+
+    Lets a tempo-locked tremolo be written as a free-running rate, the same
+    trick `note_ms` plays for delay. An eighth-note tremolo at 120 BPM is 4 Hz.
+    """
+    return 1000.0 / note_ms(bpm, division)
+
+
 def table(bpm: float) -> Dict[str, float]:
     """Every plain and dotted division at a tempo — handy to show a user."""
     out: Dict[str, float] = {}

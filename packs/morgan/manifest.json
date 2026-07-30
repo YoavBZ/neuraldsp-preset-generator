@@ -9,20 +9,27 @@
     "AC20": {
       "module": "ac20Amp",
       "selected_amp": 0,
-      "character": "Vox AC15/AC30-flavoured top-boost chime with bite",
-      "range": "chimey clean to classic British crunch"
+      "based_on": "the Normal channel of a Vox AC30, voiced deliberately darker than a Vox to lose the ice-pick top end while keeping the chime and growl. 20W.",
+      "range": "chimey clean to British crunch",
+      "reach_for_it": "jangle, British invasion, indie rock, crunch rhythm",
+      "source": "https://www.guitarchalk.com/morgan-ac20-deluxe-settings/"
     },
     "PR12": {
       "module": "pr12Amp",
       "selected_amp": 1,
-      "character": "Princeton-flavoured 12W class A with spring reverb",
-      "range": "sparkly clean to edge-of-breakup"
+      "based_on": "a 1960s blackface Fender Princeton, rebuilt with a bigger power supply, tightened low end and a 12-inch speaker, so it has more bass, headroom and punch than the original. 12W class AB, 2x6V6, three-spring tube reverb.",
+      "range": "sparkly clean to edge-of-breakup",
+      "reach_for_it": "clean rhythm, country, blues cleans, the default clean platform",
+      "source": "https://www.morganamps.com/store/combos/pr12-combo/"
     },
     "SW50R": {
       "module": "sw50rAmp",
       "selected_amp": 2,
-      "character": "Vox-style chime with master volume and more headroom",
-      "range": "loud cleans through classic-rock break-up"
+      "based_on": "the Dumble Small Special \u2014 a mid-60s blackface-flavoured voice with unusual clarity and string-to-string definition. High headroom, parallel three-spring tube reverb. 50W.",
+      "range": "loud cleans through smooth singing lead",
+      "reach_for_it": "smooth lead, blues lead, polished clean lead, high-headroom rhythm",
+      "source": "https://www.sweetwater.com/store/detail/SW50RHead--morgan-amps-sw50r-50-watt-high-headroom-tube-head-with-reverb",
+      "correction": "Earlier notes in this repo described SW50R as a Vox-style chime amp in AC30 territory. That was wrong and it mattered: it is the Dumble-derived smooth-lead platform, and it is the amp to reach for when someone asks for singing lead."
     }
   },
   "enums": {
@@ -149,7 +156,7 @@
     "pr12Amp/pr12Dwell": {
       "kind": "rotation",
       "ui": "Dwell",
-      "note": "Spring reverb decay."
+      "note": "Spring-reverb decay. Morgan added it to the original Princeton circuit specifically so you can run a high reverb mix without washing the tone out \u2014 so for a wet-but-defined clean, raise pr12Reverb and keep dwell moderate."
     },
     "sw50rAmp/sw50rVolume": {
       "kind": "rotation",
@@ -184,7 +191,7 @@
     "sw50rAmp/sw50rTrebleBoost": {
       "kind": "switch",
       "ui": "Treble boost",
-      "note": "Rangemaster-style front-end gain stage. Good for solo boost."
+      "note": "Front-end treble boost. The config reference calls this control `bassEmphasis` and advises using it for a thicker lead, which would be the wrong direction \u2014 the stored key name is the plugin authors' own label and is the better evidence. Treat it as a brightness/cut boost, and verify by ear."
     },
     "sw50rAmp/sw50rInputMode": {
       "kind": "switch",
@@ -198,7 +205,7 @@
     "ac20Amp/ac20Cut": {
       "kind": "rotation",
       "ui": "Cut",
-      "note": "Treble cut - lower is darker."
+      "note": "Treble cut, borrowed from the Vox power-amp Cut control: HIGHER = DARKER. It works backwards from a normal tone knob. An earlier note in this repo claimed the opposite; the config reference, the control's name, and Morgan's own description of it as attenuating highs all agree on higher = darker. Check by ear in five seconds: raise it and listen for the top end to go."
     },
     "ac20Amp/ac20Bright": {
       "kind": "switch",
@@ -225,7 +232,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 1"
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand2": {
       "kind": "metered",
@@ -233,7 +242,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 2"
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand3": {
       "kind": "metered",
@@ -241,7 +252,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 3"
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand4": {
       "kind": "metered",
@@ -249,7 +262,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 4"
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand5": {
       "kind": "metered",
@@ -257,7 +272,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 5"
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand6": {
       "kind": "metered",
@@ -265,7 +282,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 6"
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand7": {
       "kind": "metered",
@@ -273,7 +292,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 7"
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand8": {
       "kind": "metered",
@@ -281,7 +302,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 8"
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQBand9": {
       "kind": "metered",
@@ -289,7 +312,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 9"
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "pr12EQ/pr12EQHpf": {
       "kind": "metered",
@@ -317,7 +342,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 1"
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand2": {
       "kind": "metered",
@@ -325,7 +352,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 2"
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand3": {
       "kind": "metered",
@@ -333,7 +362,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 3"
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand4": {
       "kind": "metered",
@@ -341,7 +372,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 4"
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand5": {
       "kind": "metered",
@@ -349,7 +382,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 5"
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand6": {
       "kind": "metered",
@@ -357,7 +392,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 6"
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand7": {
       "kind": "metered",
@@ -365,7 +402,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 7"
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand8": {
       "kind": "metered",
@@ -373,7 +412,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 8"
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQBand9": {
       "kind": "metered",
@@ -381,7 +422,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 9"
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "sw50rEQ/sw50rEQHpf": {
       "kind": "metered",
@@ -409,7 +452,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 1"
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand2": {
       "kind": "metered",
@@ -417,7 +462,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 2"
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand3": {
       "kind": "metered",
@@ -425,7 +472,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 3"
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand4": {
       "kind": "metered",
@@ -433,7 +482,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 4"
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand5": {
       "kind": "metered",
@@ -441,7 +492,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 5"
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand6": {
       "kind": "metered",
@@ -449,7 +502,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 6"
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand7": {
       "kind": "metered",
@@ -457,7 +512,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 7"
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand8": {
       "kind": "metered",
@@ -465,7 +522,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 8"
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQBand9": {
       "kind": "metered",
@@ -473,7 +532,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/morgan-config-reference.md#21",
-      "ui": "Band 9"
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
     },
     "ac20EQ/ac20EQHpf": {
       "kind": "metered",

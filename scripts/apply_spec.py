@@ -22,6 +22,12 @@ using each parameter's `kind` in the pack manifest (packs/<id>/manifest.json):
   switch   : true/false (or on/off)
   enum     : integer selector, or its member name ("PR12", "Ribbon 121")
 
+A time or rate value may be given as a note division instead of a number, so a
+recipe stays correct at any tempo:
+
+    {"module": "delay", "key": "delayTime", "value": {"note": "1/8 dotted",
+                                                      "bpm": 120}}   -> 375 ms
+
 Escape hatch: "raw": true writes the value as the literal stored string,
 bypassing translation and validation. Use only for IR file paths.
 
@@ -47,6 +53,7 @@ from format.structured import build, set_parameter
 from format.translate import describe
 from format.writer import write_file
 from packs.loader import PackError, detect_pack, load_pack
+from packs.timing import TimingError, note_hz, note_ms
 
 
 def main() -> None:
@@ -144,6 +151,7 @@ def run(args) -> None:
             stored = str(human)
         else:
             spec_meta = pack.require(module, key)
+            human = resolve_note(human, spec_meta, i)
             stored = pack.to_stored(
                 spec_meta, human, args.allow_out_of_range, warnings
             )
@@ -174,6 +182,48 @@ def run(args) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     write_file(str(out), preset.tokens)
     print(f"\nWrote {out}")
+
+
+def resolve_note(value, spec_meta, index: int):
+    """Turn {"note": "1/8 dotted", "bpm": 120} into a number.
+
+    Lets a recipe carry a note division instead of a fixed time, so it stays
+    correct at any tempo. Resolves to ms for time parameters and Hz for rate
+    parameters — the units the plugin actually stores, which is why this works
+    without the sync-note selector.
+    """
+    if not isinstance(value, dict):
+        return value
+
+    where = f"parameters[{index}] ({spec_meta.path})"
+    if "note" not in value:
+        die(f"{where}: object values must contain a 'note', e.g. "
+            f'{{"note": "1/8 dotted", "bpm": 120}}')
+    unknown = set(value) - {"note", "bpm"}
+    if unknown:
+        die(f"{where}: unexpected field(s) {sorted(unknown)} in a note value.")
+    if "bpm" not in value:
+        die(
+            f"{where}: a note division needs a tempo. Write "
+            f'{{"note": {value["note"]!r}, "bpm": 120}} — read the song\'s tempo '
+            f"from the user, or from the preset's delayTempo."
+        )
+
+    if spec_meta.unit == "ms":
+        convert = note_ms
+    elif spec_meta.unit == "hz":
+        convert = note_hz
+    else:
+        die(
+            f"{where}: a note division only makes sense for a time (ms) or rate "
+            f"(hz) parameter; {spec_meta.path} is "
+            f"{spec_meta.unit or spec_meta.kind}."
+        )
+
+    try:
+        return round(convert(value["bpm"], value["note"]), 4)
+    except TimingError as e:
+        die(f"{where}: {e}")
 
 
 def render(spec, stored: str) -> str:

@@ -39,9 +39,23 @@ instead. Don't invent a rig rundown.
 
 ## 3. Map it to the plugin
 
-Read `packs/<id>/tone.md` for that plugin's amps, their character, and the
-"when the user says X" mappings. Read `packs/<id>/manifest.json` for what each
-parameter is, its unit, and its legal range.
+Read `packs/<id>/tone.md` — it has the amps and their character, an
+**intent → recipe stack** table, and the "when the user says X" mappings. Read
+`packs/<id>/manifest.json` for what each parameter is, its unit, and its legal
+range.
+
+**Build from recipes, then adapt.** `packs/<id>/recipes.json` holds composable
+layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per
+layer from the intent table, concatenate their `parameters`, then **change what
+the song needs**. Two rules:
+
+- EQ recipes contain `{amp}` in module and key; substitute the live amp's prefix
+  (`pr12` / `sw50r` / `ac20`). The EQ is per-amp and must match `selectedAmp`.
+- A recipe value of `{"note": "1/4"}` needs a `bpm` added before it can be
+  applied. Get the tempo from the user or the song.
+
+Handing back an unmodified stack is a failure — it's a renamed factory preset.
+The research in step 2 is what should move the values.
 
 Choose the amp with the top-level `selectedAmp` parameter (module `""`), by
 name: `{"module": "", "key": "selectedAmp", "value": "PR12"}`. All amp modules

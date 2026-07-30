@@ -24,8 +24,8 @@ you should be touching are that amp's, not another's.
 
 ## 2. Interpret the ask against those values
 
-`packs/<id>/tone.md` has the "when the user says X" mappings for the plugin.
-Typical translations:
+`packs/<id>/tone.md` has the "when the user says X" mappings, including which EQ
+band is which frequency. Typical translations:
 
 - **"more reverb"** → raise `reverb/reverbMix` ~10–15 points, or the live amp's
   own reverb knob for a spring-tank character

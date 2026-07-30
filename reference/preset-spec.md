@@ -49,7 +49,19 @@ milliseconds or Hz instead. See
   the user's own presets by `python -m schema.build_schema`. This is what
   values are *typical* — a taste anchor, never a limit. Absent on a fresh
   clone; nothing breaks without it.
-- `packs/<id>/tone.md` — musical knowledge for that plugin.
+- `packs/<id>/recipes.json` — **composable starting points.** Committed. Tone
+  recipes grouped by layer (amp, compressor, drive1, drive2, tremolo, eq, cab,
+  delay, reverb, output). Stack one per layer, then adapt.
+- `packs/<id>/tone.md` — the decision layer: amps and their character, an
+  intent → recipe-stack table, and the "when the user says X" vocabulary.
+
+Two things to know when using a recipe:
+
+- **EQ recipes are amp-templated.** Their module and key contain `{amp}`;
+  substitute the live amp's prefix (`pr12` / `sw50r` / `ac20`). The graphic EQ is
+  per-amp, so an EQ recipe applied to the wrong amp does nothing audible.
+- **Note-division values need a tempo.** A recipe value of `{"note": "1/4"}` must
+  become `{"note": "1/4", "bpm": 96}` before it can be applied.
 
 ## The spec file
 

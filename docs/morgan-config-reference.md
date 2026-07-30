@@ -6,17 +6,40 @@ Verified 2026-05-29 against the 3 real Morgan presets in samples/ and
 the parser-derived parameter catalog (132 params). This file is a MUSICAL
 CONTROL REFERENCE, not the binary file format.
 
-PARTIALLY WIRED IN as of the pack refactor: section 21's validation ranges
-have been transcribed into packs/morgan/manifest.json and are now enforced
-at write time. Sections 6-19's tone recipes have NOT been reconciled - they
-still use this doc's 0-10 scale and its own parameter names, so do not feed
-them to the writer without translating. See `range_source` in the manifest
-for exactly which numbers came from here.
+RECONCILED as of the pack refactor. This document is now a SOURCE, not a
+reference the tools read:
+  - Section 21's validation ranges -> packs/morgan/manifest.json (see each
+    parameter's `range_source`).
+  - Section 15's nine EQ band centres -> manifest `centre_hz`, so band advice
+    can name frequencies instead of band numbers.
+  - Sections 6-19's templates -> packs/morgan/recipes.json, converted to binary
+    key names and the project's percent scale. tests/test_recipes.py proves
+    every key exists and every value survives translation, so the 0-10 scale
+    and the renames cannot silently leak through.
+  - Section 20's intent table and 20.2/20.3 guidance -> packs/morgan/tone.md.
+  - Fields that could NOT be translated are listed with reasons in
+    recipes.json under `not_translated`. Read that before assuming a template
+    here was absorbed whole.
+
+Prefer the pack files. This document is kept for provenance and for the prose
+reasoning in sections 20 and 27.
 
 ACCURATE (use as guidance):
   - PR12 amp controls map 1:1 (volume/treble/bass/reverb/dwell).
   - OD1/OD2, compressor, tremolo, delay, reverb control sets are correct
     in spirit; tone-shaping advice (Sections 20, 27) is solid.
+
+CORRECTED BY RESEARCH (2026-07-30), and the doc was right where this repo
+was wrong:
+  - SW50R is based on the Dumble Small Special, so this doc's
+    "Dumble-style singing lead" is correct. Earlier notes in this repo
+    called it a Vox-style chime amp, which sent lead requests to the wrong
+    amp.
+  - AC20 is built on the AC30 NORMAL channel, voiced darker than a Vox --
+    not top-boost.
+  - PR12's Dwell is a reverb-decay control Morgan added to the Princeton
+    circuit so a high reverb mix does not wash out.
+  - `cut` higher = darker is correct (it is the Vox power-amp Cut).
 
 MUST TRANSLATE before writing to the binary:
   - SCALE: this doc's 0–10 knob scale is NOT used by the project. The

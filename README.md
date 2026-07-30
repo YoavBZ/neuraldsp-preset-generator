@@ -73,8 +73,9 @@ A **pack** is everything the tool knows about one Neural DSP plugin:
 ```
 packs/morgan/
   manifest.json   committed — the contract: every parameter's kind, unit,
-                  declared range, selector members, UI name
-  tone.md         committed — musical knowledge for this plugin
+                  declared range, selector members, EQ band centres, UI name
+  recipes.json    committed — 40 composable tone recipes, one layer at a time
+  tone.md         committed — amps, intent -> recipe table, tone vocabulary
   observed.json   git-ignored, optional — what values YOUR presets use
   templates/      git-ignored — your own presets
 ```
@@ -89,6 +90,18 @@ with **no build step**.
 
 Presets identify their plugin in their first bytes (`morgan`), so the right pack
 is selected automatically for any preset you point at.
+
+### Recipes are composable, and the translation is tested
+
+A preset is built by stacking layers — amp + compressor + drive + EQ + cab +
+delay + reverb + output staging — then adapting the values to the song. The
+recipes were translated out of `docs/morgan-config-reference.md`, which uses a
+0–10 knob scale, its own parameter names, and a cab model that doesn't match the
+binary. Rather than trust that transcription, `tests/test_recipes.py` asserts
+every recipe key exists in the manifest and every value survives translation, so
+a knob left on the 0–10 scale or a stale `od1Drive` name fails the suite.
+Anything that *couldn't* be translated is listed with a reason under
+`not_translated`.
 
 ### Adding a pack for another plugin
 
