@@ -94,6 +94,16 @@ def templates_dir(pack_id: str) -> pathlib.Path:
     return data_root() / "packs" / pack_id / "templates"
 
 
+def learned_tones_path(pack_id: str) -> pathlib.Path:
+    """Where notes learned while generating are appended.
+
+    Deliberately under the data root, not beside the pack's committed tone.md:
+    the plugin directory is replaced on update, and losing accumulated taste
+    notes is exactly the failure the data root exists to prevent.
+    """
+    return data_root() / "packs" / pack_id / "learned-tones.md"
+
+
 def observed_path(pack_id: str) -> pathlib.Path:
     """Generated observed-value catalog for one plugin. Never committed."""
     return data_root() / "packs" / pack_id / "observed.json"

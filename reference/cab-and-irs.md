@@ -46,15 +46,12 @@ paths so the cab falls back to the internal mics, making the preset portable
 on any machine. Verified to produce byte-identical encoding to an IR-free
 preset's empty field.
 
-### Stripping is one-way
+### Stripping changes the sound
 
-An empty value's bytes merge into the neighbouring markers, so after stripping,
-`leftChosenIRFilePath` / `rightChosenIRFilePath` are **no longer addressable**
-in the output file. You cannot set an IR path back on a stripped preset with
-this tool — you'd have to go back to an IR-carrying template.
-
-That's fine for generated presets, which should be portable. Just don't strip a
-template the user wants to keep IR-based, and say what you did.
+Clearing an IR is reversible — the field stays addressable and you can set a
+path back on a stripped preset. But swapping a third-party IR for an internal
+mic is a real tonal change, not a formality. Don't strip a preset the user wants
+to keep IR-based, and always say what you did.
 
 `samples/Example_Clean_PR12.xml` is already IR-free, so `--strip-irs` is a
 harmless no-op there.

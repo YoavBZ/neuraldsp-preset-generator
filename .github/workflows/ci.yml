@@ -96,4 +96,8 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
       - name: Validate the plugin
-        run: claude plugin validate . --strict
+        run: |
+          # Point at plugin.json explicitly: with a marketplace.json present,
+          # "." resolves to the marketplace manifest and skills go unchecked.
+          claude plugin validate ./.claude-plugin/plugin.json --strict
+          claude plugin validate ./.claude-plugin/marketplace.json --strict

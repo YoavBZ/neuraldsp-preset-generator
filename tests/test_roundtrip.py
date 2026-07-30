@@ -46,3 +46,42 @@ def test_sample_files_present() -> None:
         "No presets found. The bundled samples/Example_Clean_PR12.xml should "
         "always be present; add your own under <data root>/packs/<id>/templates/."
     )
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Émile Lead",            # non-ASCII FIRST byte — the failure case
+        "É" + "x" * 200,         # non-ASCII first byte, long
+        "日本語プリセット",         # entirely non-ASCII
+        "Café Clean",            # non-ASCII interior (always worked)
+        "Ω",                     # 2 bytes total
+    ],
+    ids=["leading-accent", "leading-accent-long", "all-cjk", "interior", "tiny"],
+)
+def test_non_ascii_values_stay_addressable(name: str) -> None:
+    """A value whose first byte is non-ASCII must not vanish from the structured
+    view.
+
+    The prefix scan skips non-printable bytes, and a UTF-8 lead byte is
+    non-printable — so scanning past the value marker used to swallow the
+    value's own first byte, leaving a token that no longer looked like a value.
+    The key was then paired with nothing and the parameter disappeared: the file
+    still round-tripped byte-exact, but our own tools could no longer read or
+    re-edit it.
+    """
+    from format.structured import build, set_parameter
+
+    original = SAMPLE_FILES[0].read_bytes()
+    before = build(parse(original))
+
+    preset = build(parse(original))
+    set_parameter(preset, "", "name", name)
+    rewritten = write(preset.tokens)
+
+    after = build(parse(rewritten))
+    assert after.preset_name == name
+    assert ("", "name") in after.by_path
+    assert len(after.parameters) == len(before.parameters), (
+        "mutating a value must not change how many parameters are visible"
+    )

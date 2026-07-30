@@ -108,11 +108,32 @@ def test_missing_directories_are_not_an_error(monkeypatch, tmp_path):
     assert paths.all_presets(["morgan"])  # the bundled example still shows up
 
 
-def test_all_presets_deduplicates(monkeypatch):
-    """Bundled and user locations can coincide in a clone; no double-counting."""
-    monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(paths.PLUGIN_ROOT))
-    found = paths.all_presets(["morgan"])
-    assert len(found) == len({p.resolve() for p in found})
+def test_all_presets_deduplicates(monkeypatch, tmp_path):
+    """The same file reachable by two routes must be listed once.
+
+    Constructed with a symlink, because that is the only way the bundled and
+    user locations actually coincide — an earlier version of this test set the
+    data root to the repo and asserted uniqueness, but the templates directory
+    did not exist, so no duplicate was ever created and the assertion held even
+    with de-duplication removed entirely.
+    """
+    monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(tmp_path))
+    templates = paths.templates_dir("morgan")
+    templates.mkdir(parents=True)
+    bundled = paths.bundled_presets()[0]
+    try:
+        (templates / bundled.name).symlink_to(bundled)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable on this platform")
+
+    both_routes = paths.bundled_presets() + paths.user_presets("morgan")
+    assert len(both_routes) == 2, "the file is reachable two ways"
+    assert len({p.resolve() for p in both_routes}) == 1, "but it is one file"
+
+    assert len(paths.all_presets(["morgan"])) == 1, (
+        "all_presets must collapse the duplicate, or the preset would be parsed "
+        "twice and counted twice in the observed catalog"
+    )
 
 
 def test_describe_roots_flags_the_ephemeral_case(monkeypatch, tmp_path):

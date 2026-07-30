@@ -172,6 +172,16 @@ def resolve_value(value: Any, spec, bpm: Optional[float]) -> Any:
         raise PackError(f"{spec.path}: {e}") from e
 
 
+def selected_amp_in(refs: Iterable[str], pack_id: str = "morgan") -> Optional[Any]:
+    """The amp a recipe stack selects, if any. Last one wins, matching apply order."""
+    chosen = None
+    for ref in refs:
+        for entry in get_recipe(ref, pack_id).parameters:
+            if entry["key"] == "selectedAmp":
+                chosen = entry["value"]
+    return chosen
+
+
 def stack(
     refs: Iterable[str],
     pack: Pack,
@@ -181,20 +191,18 @@ def stack(
     """Concatenate several recipes into one list of spec entries.
 
     Later recipes win on conflict, so ordering is the caller's lever. `{amp}` is
-    resolved against `amp_prefix`, or against whichever amp the stack itself
-    selects, so an `amp/…` recipe listed before an `eq/…` one just works.
+    resolved against `amp_prefix` when given, else against whichever amp the
+    stack itself selects — so an `amp/…` recipe listed before an `eq/…` one just
+    works.
     """
     chosen = list(refs)
-    resolved: List[Dict[str, Any]] = []
-
-    # First pass: find the amp this stack selects, if it selects one.
     if amp_prefix is None:
-        for ref in chosen:
-            for entry in get_recipe(ref, pack_id).parameters:
-                if entry["key"] == "selectedAmp":
-                    amp_prefix = amp_prefix_for(pack, entry["value"])
+        selected = selected_amp_in(chosen, pack_id)
+        if selected is not None:
+            amp_prefix = amp_prefix_for(pack, selected)
 
-    for ref in chosen:
-        for entry in get_recipe(ref, pack_id).parameters:
-            resolved.append(expand_amp(entry, amp_prefix))
-    return resolved
+    return [
+        expand_amp(entry, amp_prefix)
+        for ref in chosen
+        for entry in get_recipe(ref, pack_id).parameters
+    ]

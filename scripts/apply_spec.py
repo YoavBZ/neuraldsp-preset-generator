@@ -42,6 +42,7 @@ import json
 import os
 import pathlib
 import sys
+from typing import Optional
 
 # The plugin's own modules live beside this script, so the root is always
 # derivable from __file__ — no environment variable needed, nothing to go stale.
@@ -53,14 +54,20 @@ from format.structured import build, set_parameter
 from format.translate import describe
 from format.writer import write_file
 from packs.loader import PackError, detect_pack, load_pack
-from packs.recipes import amp_prefix_for, resolve_value, stack
+from packs.recipes import (
+    amp_prefix_for,
+    load_recipes,
+    resolve_value,
+    selected_amp_in,
+    stack,
+)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Apply a human-valued parameter spec to a template preset."
     )
-    ap.add_argument("--template", required=True, help="existing .xml preset to clone")
+    ap.add_argument("--template", help="existing .xml preset to clone")
     ap.add_argument("--spec", help="JSON file with parameter overrides")
     ap.add_argument(
         "--recipe",
@@ -76,7 +83,7 @@ def main() -> None:
         help="tempo for recipes that carry a note division (e.g. a quarter-note delay)",
     )
     ap.add_argument("--name", help="new preset name (overrides spec.name)")
-    ap.add_argument("--out", required=True, help="output .xml path")
+    ap.add_argument("--out", help="output .xml path")
     ap.add_argument("--pack", help="plugin pack id (default: detect from the template)")
     ap.add_argument(
         "--strip-irs",
@@ -99,7 +106,16 @@ def main() -> None:
         action="store_true",
         help="validate and print the before/after diff without writing --out",
     )
+    ap.add_argument(
+        "--list-recipes",
+        action="store_true",
+        help="print every available recipe with what it is for, and exit",
+    )
     args = ap.parse_args()
+
+    if args.list_recipes:
+        list_recipes(args.pack)
+        return
 
     try:
         run(args)
@@ -107,9 +123,23 @@ def main() -> None:
         die(str(e))
 
 
+def list_recipes(pack_id: Optional[str]) -> None:
+    """Print the recipe catalogue. The only other discovery path was guessing."""
+    pack = load_pack(pack_id) if pack_id else load_pack()
+    for layer, group in load_recipes(pack.pack_id).items():
+        print(f"\n{layer}")
+        width = max(len(rid) for rid in group)
+        for rid, recipe in group.items():
+            print(f"  {rid:<{width}}  {recipe.use_when}")
+
+
 def run(args) -> None:
-    template = pathlib.Path(args.template)
-    out = pathlib.Path(args.out)
+    if not args.template:
+        die("--template is required (it is the preset the writer clones).")
+    if not args.out:
+        die("--out is required (where to write the result).")
+    template = pathlib.Path(os.path.expanduser(args.template))
+    out = pathlib.Path(os.path.expanduser(args.out))
 
     # --- guards ---------------------------------------------------------
     # These run for --dry-run too. A preview that reports success where the real
@@ -140,8 +170,7 @@ def run(args) -> None:
     # beats a recipe default.
     entries = list(spec.get("parameters", []))
     if args.recipe:
-        amp = amp_prefix_for(pack, _selected_amp(entries, preset))
-        entries = stack(args.recipe, pack, amp, pack.pack_id) + entries
+        entries = stack(args.recipe, pack, _amp_prefix(args, spec, pack, preset)) + entries
 
     # --- name -----------------------------------------------------------
     changes: list[tuple[str, str, str]] = []
@@ -172,6 +201,15 @@ def run(args) -> None:
             )
 
         if entry.get("raw"):
+            # `raw` skips translation and range checks, not the read-only guard:
+            # bypassing validation on an IR path is the point, corrupting the
+            # format-version field is not.
+            spec_meta = pack.get(module, key)
+            if spec_meta is not None and not spec_meta.writable:
+                die(
+                    f"{display} is marked read-only in the manifest and must not "
+                    f"be written, with or without \"raw\"."
+                )
             stored = str(human)
         else:
             spec_meta = pack.require(module, key)
@@ -208,14 +246,25 @@ def run(args) -> None:
     print(f"\nWrote {out}")
 
 
-def _selected_amp(entries, preset):
-    """Which amp the finished preset will use: whatever the spec sets, else the
-    template's current value. Needed to resolve an {amp}-templated EQ recipe."""
-    for entry in entries:
-        if isinstance(entry, dict) and entry.get("key") == "selectedAmp":
-            return entry["value"]
+def _amp_prefix(args, spec, pack, preset):
+    """Module prefix for the amp the finished preset will use.
+
+    Order matters and matches the order values are applied: an explicit --spec
+    wins, then whichever amp the recipe stack selects, then the template's
+    current amp. Getting this wrong is silent — an {amp}EQ recipe resolved
+    against the wrong amp writes to a module the live amp doesn't use, so the EQ
+    simply does nothing.
+    """
+    for entry in spec.get("parameters", []):
+        if isinstance(entry, dict) and entry.get("key") == "selectedAmp" and "value" in entry:
+            return amp_prefix_for(pack, entry["value"])
+
+    selected = selected_amp_in(args.recipe, pack.pack_id)
+    if selected is not None:
+        return amp_prefix_for(pack, selected)
+
     param = preset.by_path.get(("", "selectedAmp"))
-    return param.value if param else None
+    return amp_prefix_for(pack, param.value) if param else None
 
 
 def render(spec, stored: str) -> str:
@@ -276,10 +325,8 @@ def strip_custom_irs(preset) -> list:
     """Clear custom IR file paths so the cab falls back to internal mics.
 
     A custom IR is an absolute path that only resolves on the machine that
-    saved the preset. "No custom IR" is that field set to an empty string.
-
-    This is one-way: an empty value's bytes merge into the neighbouring
-    markers, so the key is no longer addressable in the output file.
+    saved the preset. "No custom IR" is that field set to an empty string,
+    byte-identical to how an IR-free preset stores it.
     """
     cleared = []
     for side in ("left", "right"):

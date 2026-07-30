@@ -2,7 +2,8 @@
 ========================================================================
 VERIFICATION STATUS — read before trusting this document
 ========================================================================
-Verified 2026-05-29 against the 3 real Morgan presets in samples/ and
+Verified 2026-05-29 against 3 real Morgan presets (the author's own; only
+the generated example ships in samples/) and
 the parser-derived parameter catalog (132 params). This file is a MUSICAL
 CONTROL REFERENCE, not the binary file format.
 

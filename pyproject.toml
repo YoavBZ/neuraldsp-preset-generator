@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "neuraldsp-preset-generator"
 version = "0.2.0"
@@ -9,6 +13,11 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
+
+# Without this, a flat layout makes setuptools refuse to build: it sees skills/,
+# reference/, samples/ and docs/ as candidate packages. Only these two are code.
+[tool.setuptools]
+packages = ["format", "packs"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

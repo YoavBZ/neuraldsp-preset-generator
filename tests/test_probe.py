@@ -122,3 +122,27 @@ def test_known_selector_shows_predictions(tmp_path):
     assert result.returncode == 0
     assert "predicted: AC20" in result.stdout
     assert "predicted: SW50R" in result.stdout
+
+
+def test_a_colliding_sweep_writes_nothing(tmp_path):
+    """A half-written sweep is worse than none: probe presets are read by loading
+    them in the plugin, so leftovers from an aborted run are misleading."""
+    assert run_probe(
+        "--param", "delay/delaySyncNote", "--values", "5", "--out-dir", str(tmp_path)
+    ).returncode == 0
+    before = {p.name for p in tmp_path.glob("*.xml")}
+
+    result = run_probe(
+        "--param", "delay/delaySyncNote", "--values", "0-9", "--out-dir", str(tmp_path)
+    )
+    assert result.returncode == 2
+    assert "Nothing was written" in result.stderr
+    assert {p.name for p in tmp_path.glob("*.xml")} == before, (
+        "the aborted sweep must not leave partial output behind"
+    )
+
+    assert run_probe(
+        "--param", "delay/delaySyncNote", "--values", "0-9",
+        "--out-dir", str(tmp_path), "--force",
+    ).returncode == 0
+    assert len(list(tmp_path.glob("*.xml"))) == 10

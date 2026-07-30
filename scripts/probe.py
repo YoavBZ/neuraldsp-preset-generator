@@ -119,12 +119,27 @@ def run(args) -> None:
     out_dir = pathlib.Path(os.path.expanduser(args.out_dir))
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Check the whole sweep before writing any of it. A half-written sweep is
+    # worse than none: the user reads these by loading them in the plugin, so
+    # leftover presets from an aborted run are actively misleading.
+    if not args.force:
+        clashes = [
+            out_dir / f"probe {key} {value:02d}.xml"
+            for value in values
+            if (out_dir / f"probe {key} {value:02d}.xml").exists()
+        ]
+        if clashes:
+            die(
+                f"{len(clashes)} probe preset(s) already exist, starting with "
+                f"{clashes[0].name}.\n"
+                f"  Nothing was written. Pass --force to overwrite them, or "
+                f"delete the previous sweep."
+            )
+
     written = []
     for value in values:
         label = f"probe {key} {value:02d}"
         out = out_dir / f"{label}.xml"
-        if out.exists() and not args.force:
-            die(f"{out} already exists. Pass --force to overwrite probe presets.")
 
         # Deliberately bypasses validation: the point is to explore values the
         # manifest does not yet describe.

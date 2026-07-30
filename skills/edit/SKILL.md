@@ -30,7 +30,7 @@ you should be touching are that amp's, not another's.
 
 ## 2. Interpret the ask against those values
 
-`packs/<id>/tone.md` has the "when the user says X" mappings, including which EQ
+`${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` has the "when the user says X" mappings, including which EQ
 band is which frequency. Typical translations:
 
 - **"more reverb"** → raise `reverb/reverbMix` ~10–15 points, or the live amp's
@@ -43,7 +43,7 @@ band is which frequency. Typical translations:
   `delayHighCut`
 - **"more break-up"** → raise the live amp's volume/gain knob, or engage a drive
 - **"dotted eighth delay", "in time with the track"** → compute ms from the
-  tempo with `packs/timing.py` and set `delay/delayTime`; do not touch the
+  tempo with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py` and set `delay/delayTime`; do not touch the
   sync-note selector. See
   [selectors-and-timing.md](../../reference/selectors-and-timing.md)
 

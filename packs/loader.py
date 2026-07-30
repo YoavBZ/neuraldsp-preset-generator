@@ -139,7 +139,7 @@ class Pack:
 
         try:
             stored = to_binary(spec.kind, human, spec.unit)
-        except ValueError as e:
+        except (ValueError, OverflowError, TypeError) as e:
             raise PackError(f"{spec.path}: {e}") from e
 
         note = self._check_range(spec, stored, allow_out_of_range)

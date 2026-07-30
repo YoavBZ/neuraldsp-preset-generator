@@ -664,7 +664,7 @@
     "cabParameters/leftChosenIRFilePath": {
       "kind": "path",
       "ui": "Left custom IR",
-      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic'. Setting it empty is irreversible in this tool: an empty value is absorbed into neighbouring marker bytes and the key stops being addressable. Use --strip-irs."
+      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic', stored byte-identically to how an IR-free preset holds it. Clearing it is reversible, but it does change the sound. Use --strip-irs to make a preset portable."
     },
     "cabParameters/rightCabActive": {
       "kind": "switch",
@@ -720,7 +720,7 @@
     "cabParameters/rightChosenIRFilePath": {
       "kind": "path",
       "ui": "Right custom IR",
-      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic'. Setting it empty is irreversible in this tool: an empty value is absorbed into neighbouring marker bytes and the key stops being addressable. Use --strip-irs."
+      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic', stored byte-identically to how an IR-free preset holds it. Clearing it is reversible, but it does change the sound. Use --strip-irs to make a preset portable."
     },
     "reverb/reverbActive": {
       "kind": "switch",

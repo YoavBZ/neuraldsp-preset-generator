@@ -138,3 +138,18 @@ def test_scripts_referenced_by_skills_exist(skill):
         if not (ROOT / rel).exists()
     ]
     assert not missing, f"{skill.parent.name} invokes missing scripts: {missing}"
+
+
+@pytest.mark.parametrize("skill", SKILLS, ids=lambda p: p.parent.name)
+def test_plugin_internal_paths_are_root_relative(skill):
+    """An installed plugin runs with the user's project as cwd, so a bare
+    `packs/…` path in skill text resolves to the wrong place — or nowhere."""
+    body = skill.read_text()
+    bare = re.findall(
+        r"(?<!\$\{CLAUDE_PLUGIN_ROOT\}/)`((?:packs|scripts|samples|format)/[\w<>/.\-]+)`",
+        body,
+    )
+    assert not bare, (
+        f"{skill.parent.name} refers to plugin files without "
+        f"${{CLAUDE_PLUGIN_ROOT}}/: {sorted(set(bare))}"
+    )

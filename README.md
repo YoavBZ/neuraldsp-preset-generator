@@ -48,8 +48,8 @@ export NDSP_PRESET_DATA=~/ndsp-presets
 
 Claude Code replaces a plugin's directory when the plugin updates, so your
 preset library and generated catalogs need to live outside it. See
-[Where your data lives](#where-your-data-lives). The tools warn you if they're
-about to write somewhere that will be wiped.
+[Where your data lives](#where-your-data-lives). `build_observed.py` warns when
+it is about to write a catalog somewhere that will be wiped.
 
 Then:
 
@@ -84,13 +84,15 @@ Both preview their changes before writing:
 ```
 .claude-plugin/  — plugin manifest
 skills/          — generate/ and edit/, the two entry points
-reference/       — shared detail, loaded on demand (spec format, cab/IRs, installing)
+reference/       — shared detail, loaded on demand (spec format, cab/IRs,
+                   selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
                    selectors), build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
-tests/           — round-trip, mutation, translation, cab, and pack-contract tests
+tests/           — round-trip, mutation, translation, cab, pack-contract,
+                   recipe, path, CLI and plugin-metadata tests
 docs/            — Morgan config reference (musical, not yet fully reconciled)
 ```
 
@@ -137,8 +139,7 @@ nothing, which is why it's done in code rather than by hand. Delay recipes carry
 a note division rather than a fixed time, so `--bpm 96` turns a quarter note into
 625 ms with no sync selector involved.
 
-The
-recipes were translated out of `docs/morgan-config-reference.md`, which uses a
+The recipes were translated out of `docs/morgan-config-reference.md`, which uses a
 0–10 knob scale, its own parameter names, and a cab model that doesn't match the
 binary. Rather than trust that transcription, `tests/test_recipes.py` asserts
 every recipe key exists in the manifest and every value survives translation, so
@@ -206,7 +207,8 @@ Two different things, in two different places:
 - **Your preset library and anything generated from it** live under a *data
   root*, resolved in this order:
 
-  1. `--data-dir` passed to a script
+  1. `--data-dir`, on the two scripts that read or write it (`show.py`,
+     `build_observed.py`)
   2. `$NDSP_PRESET_DATA`
   3. `$CLAUDE_PLUGIN_DATA` (set by Claude Code for installed plugins)
   4. the repo root — correct when working in a clone
@@ -217,6 +219,7 @@ in `<data root>/packs/<pack>/observed.json`. Neither is ever committed.
 ## Optional: taste anchors from your own library
 
 ```bash
+mkdir -p "$NDSP_PRESET_DATA/packs/morgan/templates"
 cp ~/Library/Audio/Presets/Neural\ DSP/Morgan*/User/*.xml \
    "$NDSP_PRESET_DATA/packs/morgan/templates/"
 python scripts/build_observed.py
@@ -263,12 +266,17 @@ pip install -e ".[dev]"
 python -m pytest
 ```
 
-Passes on a bare clone against the bundled example preset. Tests needing several
-real presets — the IR-stripping encoding check in particular — skip with a note
-until you add your own.
+Passes on a bare clone against the bundled example preset, with no skips: the
+IR-stripping check synthesises the preset it needs rather than requiring one of
+yours.
 
-`claude plugin validate . --strict` checks the plugin manifest and skill
-frontmatter.
+```bash
+claude plugin validate ./.claude-plugin/plugin.json --strict   # manifest + skills
+claude plugin validate ./.claude-plugin/marketplace.json --strict
+```
+
+Point it at `plugin.json` explicitly: with a `marketplace.json` present, a bare
+`.` resolves to the marketplace manifest and the skills go unchecked.
 
 ## License and scope
 

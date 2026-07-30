@@ -82,41 +82,57 @@ def test_set_mic_by_index_via_writer():
     assert reparsed.by_path[("cabParameters", "leftMicType")].value == "9"
 
 
-def test_strip_irs_matches_factory_default_encoding():
-    """Stripping a custom IR (set path to "") must produce byte-identical
-    encoding to an IR-free preset's empty-IR field, and the mic selection
-    must survive.
+def test_strip_irs_matches_the_ir_free_encoding():
+    """Clearing a custom IR must reproduce, byte for byte, how an IR-free preset
+    stores that field.
 
-    Needs two of the user's own presets: an IR-free reference and an IR-using
-    one. Neither ships with the repo, so this skips on a fresh clone — the
-    encoding it pins is exercised at runtime by apply_spec.py --strip-irs.
+    Previously this needed two of the user's own presets and skipped on a fresh
+    clone. It no longer does: the IR fields are addressable even when empty, so
+    an IR-using preset can be synthesised from the bundled IR-free one and
+    stripped back, which is a stronger check anyway — the round trip must land
+    on the original bytes exactly.
     """
-    library = {p.name: p for p in all_presets(list_packs())}
-    default, soft = library.get("Default.xml"), library.get("Soft_Touch.xml")
-    if default is None or soft is None:
-        pytest.skip("Default.xml / Soft_Touch.xml not present (bring your own presets)")
+    original = EXAMPLE_PRESET.read_bytes()
 
-    preset = build(parse_file(str(soft)))
+    with_ir = build(parse(original))
     for side in ("left", "right"):
-        key = f"{side}ChosenIRFilePath"
-        if ("cabParameters", key) in preset.by_path:
-            set_parameter(preset, "cabParameters", key, "")
-    out = write(preset.tokens)
-
-    def region(data: bytes, kw: bytes) -> bytes:
-        i = data.find(kw)
-        return data[i : i + len(kw) + 5]
-
-    default_bytes = default.read_bytes()
-    for kw in (b"leftChosenIRFilePath", b"rightChosenIRFilePath"):
-        assert region(out, kw) == region(default_bytes, kw), (
-            f"stripped {kw!r} encoding differs from factory Default"
+        set_parameter(
+            with_ir,
+            "cabParameters",
+            f"{side}ChosenIRFilePath",
+            f"/Users/someone/IRs/{side}-cab.wav",
         )
+    ir_bytes = write(with_ir.tokens)
+    assert ir_bytes != original, "the synthesised preset should carry IR paths"
 
-    # After strip + reparse, the IR keys are absent (internal-mic mode) and the
-    # mic selection is preserved.
-    rp = build(parse(out))
+    reparsed = build(parse(ir_bytes))
+    assert (
+        reparsed.by_path[("cabParameters", "leftChosenIRFilePath")].value
+        == "/Users/someone/IRs/left-cab.wav"
+    )
+
+    stripped = build(parse(ir_bytes))
     for side in ("left", "right"):
-        assert ("cabParameters", f"{side}ChosenIRFilePath") not in rp.by_path
-    assert rp.by_path[("cabParameters", "leftMicType")].value == "0"
-    assert rp.by_path[("cabParameters", "rightMicType")].value == "8"
+        set_parameter(stripped, "cabParameters", f"{side}ChosenIRFilePath", "")
+
+    assert write(stripped.tokens) == original, (
+        "stripping an IR must restore the exact bytes of the IR-free encoding"
+    )
+
+
+def test_stripping_preserves_every_other_parameter():
+    """--strip-irs must change the IR fields and nothing else."""
+    before = build(parse_file(str(EXAMPLE_PRESET)))
+    preset = build(parse_file(str(EXAMPLE_PRESET)))
+    set_parameter(
+        preset, "cabParameters", "leftChosenIRFilePath", "/tmp/x.wav"
+    )
+    after = build(parse(write(preset.tokens)))
+
+    assert len(after.parameters) == len(before.parameters)
+    differing = {
+        key
+        for key, param in after.by_path.items()
+        if before.by_path[key].value != param.value
+    }
+    assert differing == {("cabParameters", "leftChosenIRFilePath")}

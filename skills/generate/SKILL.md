@@ -47,12 +47,12 @@ instead. Don't invent a rig rundown.
 
 ## 3. Map it to the plugin
 
-Read `packs/<id>/tone.md` — it has the amps and their character, an
+Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` — it has the amps and their character, an
 **intent → recipe stack** table, and the "when the user says X" mappings. Read
-`packs/<id>/manifest.json` for what each parameter is, its unit, and its legal
+`${CLAUDE_PLUGIN_ROOT}/packs/<id>/manifest.json` for what each parameter is, its unit, and its legal
 range.
 
-**Build from recipes, then adapt.** `packs/<id>/recipes.json` holds composable
+**Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per
 layer from the intent table and pass them straight to the writer with `--recipe`;
 it resolves `{amp}` and note divisions for you. Then put **what the song needs**
@@ -66,14 +66,14 @@ name: `{"module": "", "key": "selectedAmp", "value": "PR12"}`. All amp modules
 exist in every preset, so **any template can produce any amp**.
 
 For **note-timed delay** ("dotted eighth", "quarter-note slapback"), compute
-milliseconds from the tempo with `packs/timing.py` and write `delay/delayTime`.
+milliseconds from the tempo with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py` and write `delay/delayTime`.
 Don't use the sync-note selector — its mapping is unknown, and ms is exact. Same
 for tremolo: use `tremoloRate` in Hz. See
 [selectors-and-timing.md](../../reference/selectors-and-timing.md).
 
 ## 4. Pick a template
 
-- Default to `samples/Example_Clean_PR12.xml` — IR-free, portable, ships with
+- Default to `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml` — IR-free, portable, ships with
   the repo.
 - One of the user's own presets is a fine template too, especially if it already
   uses the amp you want. Run `show.py` on it first.
@@ -102,5 +102,11 @@ Then report:
 ## 7. Bank what you learned
 
 If the research turned up something reusable, append an entry to
-`packs/<id>/tone.md` under "Mapped tones" — amp, key settings, and the source
-link. That file is append-only and makes the next run better.
+`<data root>/packs/<id>/learned-tones.md` — amp, the recipes you stacked, what
+you changed and why, and the source link. Follow the "Mapped tones" shape in
+`${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md`, and read that file too on later runs.
+
+It goes under the **data root**, not in the plugin directory: Claude Code
+replaces the plugin on update, and notes written there would be lost. Run
+`python "${CLAUDE_PLUGIN_ROOT}/scripts/show.py" --help` if you need to confirm
+where the data root resolves to.

@@ -54,9 +54,13 @@ class TimingError(ValueError):
 
 def quarter_ms(bpm: float) -> float:
     """Milliseconds per quarter note at the given tempo."""
-    if bpm <= 0:
+    try:
+        tempo = float(bpm)
+    except (TypeError, ValueError):
+        raise TimingError(f"tempo must be a number, got {bpm!r}") from None
+    if tempo <= 0:
         raise TimingError(f"tempo must be positive, got {bpm}")
-    return 60000.0 / float(bpm)
+    return 60000.0 / tempo
 
 
 def note_multiplier(division: str) -> float:

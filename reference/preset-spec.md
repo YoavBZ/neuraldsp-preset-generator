@@ -27,6 +27,8 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 | `metered`  | the **native unit**         | `-65` dB, `480` ms, `5000` Hz    |
 | `switch`   | `true` / `false`            | `true`                           |
 | `enum`     | integer **or member name**  | `"PR12"`, `"Ribbon 121"`, `2`    |
+| `string`   | text, written verbatim      | a preset name                    |
+| `path`     | absolute path, verbatim     | a custom IR file                 |
 
 `metered` units: **dB** (gate, input/output, mic levels, EQ bands), **Hz**
 (HPF/LPF/cuts, tremolo rate), **ms** (delay time, pre-delay, doubler spread),
@@ -132,6 +134,10 @@ Other flags:
 - `--force` — overwrite an existing `--out`. Ask first.
 - `--pack <id>` — force a pack instead of detecting it from the file header.
 - `--recipe LAYER/ID`, `--bpm N` — see [Stacking recipes](#stacking-recipes).
+- `--name` — set the preset name without putting it in a spec.
+
+A spec may also carry `"stripIRs": true` instead of passing `--strip-irs`.
+`/version` is marked read-only in the manifest and the writer refuses it.
 
 The tool refuses to write `--out` over `--template`, refuses to clobber an
 existing file without `--force`, and validates every value before writing

@@ -19,8 +19,9 @@ Each parameter's `kind` (from packs/<id>/manifest.json) decides the mapping:
   enum        integer                str(int)              1 -> "1"
   path/string text                   passthrough           "/IR/x.wav"
 
-There is no universal per-knob default; reason from the schema's observed
-factory values, with noon (50% / 0.5) as the neutral start for tone stacks.
+There is no universal per-knob default; reason from the observed catalog built
+from your own presets, with noon (50% / 0.5) as the neutral start for tone
+stacks.
 """
 
 from __future__ import annotations
