@@ -16,12 +16,40 @@ describe a change in plain English, and get a new one back.
 Format support so far targets **Morgan Amps Suite**. Other Neural DSP plugins
 are supported by adding a pack — see [Packs](#packs).
 
+## Requirements
+
+- **Python 3.10 or later** on your `PATH` as `python` — the skills call it to read
+  and write presets. Check with `python --version`.
+- **Your own licensed copy** of the Neural DSP plugin. Nothing here works without
+  at least one preset from it, and no plugin content ships in this repo.
+
 ## Install
+
+As a plugin, from this repo's own marketplace:
+
+```
+/plugin marketplace add YoavBZ/neuraldsp-preset-generator
+/plugin install neuraldsp-preset-generator@yoavbz-plugins
+```
+
+Or from a clone, which is also the way to develop it:
 
 ```bash
 git clone https://github.com/YoavBZ/neuraldsp-preset-generator
 claude --plugin-dir ./neuraldsp-preset-generator
 ```
+
+If you install it as a plugin, **set `NDSP_PRESET_DATA`** to a directory you
+control:
+
+```bash
+export NDSP_PRESET_DATA=~/ndsp-presets
+```
+
+Claude Code replaces a plugin's directory when the plugin updates, so your
+preset library and generated catalogs need to live outside it. See
+[Where your data lives](#where-your-data-lives). The tools warn you if they're
+about to write somewhere that will be wiped.
 
 Then:
 
@@ -153,15 +181,54 @@ the mic catalog), so the cheaper path is to read the control's options in order,
 write them as `members`, and confirm the whole table with a single probe. See
 [reference/selectors-and-timing.md](reference/selectors-and-timing.md).
 
+## Where your data lives
+
+Two different things, in two different places:
+
+- **Code and committed data** ship with the plugin: the pack manifests, the
+  recipes, the bundled example preset. Located from the code itself, never from
+  an environment variable.
+- **Your preset library and anything generated from it** live under a *data
+  root*, resolved in this order:
+
+  1. `--data-dir` passed to a script
+  2. `$NDSP_PRESET_DATA`
+  3. `$CLAUDE_PLUGIN_DATA` (set by Claude Code for installed plugins)
+  4. the repo root — correct when working in a clone
+
+Your presets go in `<data root>/packs/<pack>/templates/`, and generated catalogs
+in `<data root>/packs/<pack>/observed.json`. Neither is ever committed.
+
 ## Optional: taste anchors from your own library
 
 ```bash
-cp ~/Library/Audio/Presets/Neural\ DSP/Morgan*/User/*.xml samples/
+cp ~/Library/Audio/Presets/Neural\ DSP/Morgan*/User/*.xml \
+   "$NDSP_PRESET_DATA/packs/morgan/templates/"
 python -m schema.build_schema
 ```
 
-This writes `packs/morgan/observed.json`, which `show.py` folds in as advisory
-"what does this knob usually sit at" context. Nothing requires it.
+This writes `observed.json` per pack, which `show.py` folds in as advisory "what
+does this knob usually sit at" context. Nothing requires it. Presets are routed
+to the right pack by the plugin name in their own first bytes, so a mixed library
+sorts itself out.
+
+## Fewer permission prompts
+
+The skills run `scripts/show.py` and `scripts/apply_spec.py` through Bash, so
+Claude asks before each run. The plugin deliberately does **not** pre-approve
+Bash for itself — a plugin granting itself shell access is worth avoiding. If you
+want fewer prompts, opt in yourself in `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(python *scripts/show.py *)"]
+  }
+}
+```
+
+`show.py` only reads. Leaving `apply_spec.py` to prompt is the point: that's the
+one that writes a file.
 
 ## How it works
 

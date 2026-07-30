@@ -1,7 +1,15 @@
 ---
 name: generate
 description: Create a Neural DSP amp-sim preset for a specific guitar tone — from a song, an artist, a part, or a description of the sound. Researches how the tone was actually recorded, maps it to the plugin's amps and effects, and writes a loadable preset file.
-when_to_use: Use when someone wants a guitar tone or preset built for them and names a song, an artist, a genre, or a sound — "give me the clean tone from Hotel California", "make a Gilmour-ish lead patch", "I need a jangly rhythm sound for Morgan", "build me a preset for this riff". Also triggers on "amp sim", "patch", "tone", "Neural DSP", "Morgan Amps Suite".
+when_to_use: >-
+  Use whenever someone asks for a guitar tone, preset or patch to be built, or
+  describes a sound they want to get — even without naming a plugin or a file.
+  Triggers when they name a song, artist, band, genre or era; ask how to get a
+  sound or what settings to use; ask to make something sound like a reference;
+  or say tone, preset, patch, amp sim, amp settings, rig, Neural DSP, or Morgan
+  Amps Suite. For example — give me the clean tone from Hotel California; make
+  a Gilmour-ish lead patch; I need a jangly rhythm sound; set me up for blues
+  lead.
 argument-hint: "[song or tone description] [rhythm|lead|clean]"
 allowed-tools: Read, Glob, Grep, WebSearch, WebFetch
 ---

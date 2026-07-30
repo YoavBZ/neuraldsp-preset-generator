@@ -9,9 +9,11 @@ import pytest
 from format.parser import parse_file
 from format.structured import build
 from packs.loader import PackError, detect_pack, list_packs, load_pack
+from packs.paths import all_presets
 
-SAMPLES_DIR = pathlib.Path(__file__).parent.parent / "samples"
-SAMPLE_FILES = sorted(SAMPLES_DIR.glob("*.xml"))
+# Every preset this installation can see: the bundled example plus anything the
+# user has added to their own template directories.
+SAMPLE_FILES = all_presets(list_packs())
 
 TRANSLATABLE_KINDS = {
     "rotation", "fraction", "metered", "switch", "enum", "path", "string",

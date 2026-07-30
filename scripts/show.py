@@ -19,14 +19,16 @@ import os
 import pathlib
 import sys
 
-REPO_ROOT = pathlib.Path(
-    os.environ.get("CLAUDE_PLUGIN_ROOT") or pathlib.Path(__file__).resolve().parents[1]
-)
-sys.path.insert(0, str(REPO_ROOT))
+# The plugin's own modules live beside this script, so the root is always
+# derivable from __file__ — no environment variable needed, nothing to go stale.
+PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PLUGIN_ROOT))
 
 from format.parser import parse_file
 from format.structured import build
 from format.translate import describe, from_binary
+from packs import observed as observed_catalog
+from packs import paths
 from packs.loader import PackError, detect_pack, load_pack
 
 
@@ -35,7 +37,13 @@ def main() -> None:
     ap.add_argument("preset", help="path to .xml preset")
     ap.add_argument("--pack", help="plugin pack id (default: detect from the file)")
     ap.add_argument("--text", action="store_true", help="human-readable output")
+    ap.add_argument(
+        "--data-dir",
+        help="where your presets and generated catalogs live (default: "
+        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
+    )
     args = ap.parse_args()
+    paths.set_data_root(args.data_dir)
 
     path = pathlib.Path(args.preset)
     if not path.exists():
@@ -57,7 +65,7 @@ def main() -> None:
         )
         sys.exit(2)
 
-    observed = load_observed()
+    observed = observed_catalog.index(pack.pack_id)
 
     params = []
     for p in preset.parameters:
@@ -102,27 +110,15 @@ def main() -> None:
         "parameters": params,
     }
 
+    note = observed_catalog.summary(pack.pack_id)
+    if note:
+        out["observed"] = note
+
     if args.text:
         print_text(out, pack)
     else:
         json.dump(out, sys.stdout, indent=2)
         sys.stdout.write("\n")
-
-
-def load_observed() -> dict:
-    """Advisory typical values from the user's own presets, if built."""
-    path = REPO_ROOT / "packs" / "morgan" / "observed.json"
-    if not path.exists():
-        return {}
-    try:
-        raw = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
-        return {}
-    return {
-        (module, p["key"]): p.get("observed_values", [])
-        for module, params in raw.get("modules", {}).items()
-        for p in params
-    }
 
 
 def print_text(out: dict, pack) -> None:
@@ -136,6 +132,8 @@ def print_text(out: dict, pack) -> None:
         label = p.get("ui") or p["key"]
         flag = " (!)" if p.get("unconfirmed_selector") else ""
         print(f"    {label:<22} {p['display']:<22} {p['key']}{flag}")
+    if out.get("observed"):
+        print(f"\n  advisory: {out['observed']}")
     if any(p.get("unconfirmed_selector") for p in out["parameters"]):
         print(
             f"\n  (!) selector whose member names are not yet confirmed — see "

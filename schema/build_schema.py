@@ -1,9 +1,10 @@
 """
 Summarise the values used across the user's own preset library.
 
-Reads every `.xml` in `samples/`, parses each, and writes
-`packs/morgan/observed.json`: for every (module_path, key) seen, the values it
-actually holds across those presets, plus a heuristically inferred type.
+Reads every preset this installation can see, works out which plugin each one
+came from (from its file header), and writes one observed catalog per pack:
+for every (module_path, key) seen, the values it actually holds, plus a
+heuristically inferred type.
 
 This output is **advisory**. It answers "what does this knob tend to sit at in
 real presets?" — a taste anchor when choosing a value. It is NOT the contract:
@@ -14,26 +15,30 @@ absolute IR paths), and stays local.
 
 Running this is optional. The tools work without it.
 
-    python -m schema.build_schema
+Presets are read from the bundled `samples/` directory and from
+`<data root>/packs/<id>/templates/`. The catalog is written to
+`<data root>/packs/<id>/observed.json` — see `packs.paths` for how the data root
+is resolved, and pass `--data-dir` to override it.
+
+    python -m schema.build_schema [--data-dir DIR]
 """
 
 from __future__ import annotations
 
-import json
+import argparse
 import pathlib
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-REPO_ROOT = pathlib.Path(__file__).parent.parent
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from format.parser import parse_file  # noqa: E402
-from format.structured import build   # noqa: E402
-
-SAMPLES_DIR = REPO_ROOT / "samples"
-OUTPUT_PATH = REPO_ROOT / "packs" / "morgan" / "observed.json"
+from format.parser import parse_file           # noqa: E402
+from format.structured import build            # noqa: E402
+from packs import observed, paths              # noqa: E402
+from packs.loader import detect_pack, list_packs, load_pack  # noqa: E402
 
 
 # Native-unit (metered) parameters, matched by key suffix. These are shown
@@ -136,7 +141,9 @@ def _looks_like_number(s: str) -> bool:
         return False
 
 
-def build_schema(sample_paths: List[pathlib.Path]) -> Dict[str, Any]:
+def build_schema(
+    sample_paths: List[pathlib.Path], plugin_name: str = "unknown"
+) -> Dict[str, Any]:
     stats: Dict[Tuple[str, str], ParamStats] = {}
     presets_info: List[Dict[str, Any]] = []
 
@@ -159,7 +166,7 @@ def build_schema(sample_paths: List[pathlib.Path]) -> Dict[str, Any]:
 
     return {
         "schema_version": 1,
-        "plugin": "Morgan Amps Suite",
+        "plugin": plugin_name,
         "source_presets": presets_info,
         "modules": {
             module: sorted(params, key=lambda p: p["key"])
@@ -168,23 +175,86 @@ def build_schema(sample_paths: List[pathlib.Path]) -> Dict[str, Any]:
     }
 
 
+def group_by_pack(
+    preset_paths: List[pathlib.Path],
+) -> Tuple[Dict[str, List[pathlib.Path]], List[Tuple[pathlib.Path, str]]]:
+    """Route each preset to the pack whose plugin wrote it.
+
+    Presets name their plugin in their first bytes, so a mixed library sorts
+    itself out. Without this, a preset from one plugin would have its parameters
+    merged into another plugin's catalog.
+    """
+    grouped: Dict[str, List[pathlib.Path]] = defaultdict(list)
+    unmatched: List[Tuple[pathlib.Path, str]] = []
+
+    for path in preset_paths:
+        try:
+            header = build(parse_file(str(path))).file_header
+        except (OSError, UnicodeDecodeError, IndexError) as e:
+            unmatched.append((path, f"could not be parsed ({type(e).__name__})"))
+            continue
+        pack = detect_pack(header)
+        if pack is None:
+            unmatched.append((path, f"header {header!r} matches no pack"))
+        else:
+            grouped[pack.pack_id].append(path)
+
+    return grouped, unmatched
+
+
 def main() -> None:
-    samples = sorted(SAMPLES_DIR.glob("*.xml"))
-    if not samples:
-        print(f"No samples in {SAMPLES_DIR}. Drop some .xml presets there.")
+    ap = argparse.ArgumentParser(
+        description="Summarise the values used across your own preset library."
+    )
+    ap.add_argument(
+        "--data-dir",
+        help="where your presets and generated catalogs live (default: "
+        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
+    )
+    args = ap.parse_args()
+    paths.set_data_root(args.data_dir)
+
+    pack_ids = list_packs()
+    presets = paths.all_presets(pack_ids)
+    if not presets:
+        print(
+            f"No presets found.\n\n{paths.describe_roots()}\n\n"
+            f"Add your own presets to one of:\n"
+            + "\n".join(f"  {paths.templates_dir(p)}" for p in pack_ids),
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    schema = build_schema(samples)
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(schema, indent=2))
-    print(f"Wrote {OUTPUT_PATH} ({len(schema['modules'])} modules, "
-          f"{sum(len(p) for p in schema['modules'].values())} parameters "
-          f"from {len(samples)} preset(s))")
-    if len(samples) < 3:
+    grouped, unmatched = group_by_pack(presets)
+
+    for path, reason in unmatched:
+        print(f"skipped {path.name}: {reason}", file=sys.stderr)
+
+    if not grouped:
+        print("No presets matched a known pack; nothing written.", file=sys.stderr)
+        sys.exit(1)
+
+    warning = paths.data_root_warning()
+    if warning:
+        print(f"warning: {warning}\n", file=sys.stderr)
+    elif paths.is_ephemeral_data_root():
+        print(f"{paths.describe_roots()}\n")
+
+    for pack_id, pack_presets in sorted(grouped.items()):
+        catalog = build_schema(pack_presets, load_pack(pack_id).display_name)
+        observed.save(pack_id, catalog)
+        count = sum(len(p) for p in catalog["modules"].values())
         print(
-            "Note: built from few presets, so the observed values are a narrow "
-            "sample. Add more of your own presets to samples/ for better anchors."
+            f"{pack_id}: wrote {paths.observed_path(pack_id)} "
+            f"({len(catalog['modules'])} modules, {count} parameters "
+            f"from {len(pack_presets)} preset(s))"
         )
+        if len(pack_presets) < 3:
+            print(
+                f"  Note: built from {len(pack_presets)} preset(s), so these "
+                f"values are a narrow sample. Add more of your own to "
+                f"{paths.templates_dir(pack_id)} for better anchors."
+            )
 
 
 if __name__ == "__main__":

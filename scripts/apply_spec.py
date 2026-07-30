@@ -43,10 +43,10 @@ import os
 import pathlib
 import sys
 
-REPO_ROOT = pathlib.Path(
-    os.environ.get("CLAUDE_PLUGIN_ROOT") or pathlib.Path(__file__).resolve().parents[1]
-)
-sys.path.insert(0, str(REPO_ROOT))
+# The plugin's own modules live beside this script, so the root is always
+# derivable from __file__ — no environment variable needed, nothing to go stale.
+PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PLUGIN_ROOT))
 
 from format.parser import parse_file
 from format.structured import build, set_parameter

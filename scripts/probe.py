@@ -40,10 +40,10 @@ import os
 import pathlib
 import sys
 
-REPO_ROOT = pathlib.Path(
-    os.environ.get("CLAUDE_PLUGIN_ROOT") or pathlib.Path(__file__).resolve().parents[1]
-)
-sys.path.insert(0, str(REPO_ROOT))
+# The plugin's own modules live beside this script, so the root is always
+# derivable from __file__ — no environment variable needed, nothing to go stale.
+PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PLUGIN_ROOT))
 
 from format.parser import parse_file
 from format.structured import build, set_parameter
@@ -58,7 +58,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--template",
-        default=str(REPO_ROOT / "samples" / "Example_Clean_PR12.xml"),
+        default=str(PLUGIN_ROOT / "samples" / "Example_Clean_PR12.xml"),
         help="preset to clone (default: the bundled example)",
     )
     ap.add_argument(

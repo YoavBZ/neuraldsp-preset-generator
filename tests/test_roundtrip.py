@@ -8,9 +8,12 @@ import pytest
 
 from format.parser import parse
 from format.writer import write
+from packs.loader import list_packs
+from packs.paths import all_presets
 
-SAMPLES_DIR = pathlib.Path(__file__).parent.parent / "samples"
-SAMPLE_FILES = sorted(SAMPLES_DIR.glob("*.xml"))
+# Every preset this installation can see: the bundled example plus anything the
+# user has added to their own template directories.
+SAMPLE_FILES = all_presets(list_packs())
 
 
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
@@ -34,8 +37,12 @@ def test_tokens_have_consistent_structure(sample: pathlib.Path) -> None:
 
 
 def test_sample_files_present() -> None:
-    """Fail loudly if samples/ is empty so the suite isn't silently green."""
+    """Fail loudly if there are no presets, so the suite isn't silently green.
+
+    Most of this file is parametrised over the preset library; with an empty
+    library those tests would collect zero cases and pass vacuously.
+    """
     assert SAMPLE_FILES, (
-        "No sample preset files found in samples/. "
-        "Drop a few Morgan .xml presets there before running the suite."
+        "No presets found. The bundled samples/Example_Clean_PR12.xml should "
+        "always be present; add your own under <data root>/packs/<id>/templates/."
     )

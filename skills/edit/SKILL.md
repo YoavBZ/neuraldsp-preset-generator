@@ -1,7 +1,13 @@
 ---
 name: edit
 description: Change an existing Neural DSP amp-sim preset from a plain-English description of what should be different — "more reverb", "tighter low end", "too dark", "needs more bite". Reads the preset's current values, translates the ask into parameter changes, and writes a new preset without touching the original.
-when_to_use: Use when someone has a preset and wants it adjusted rather than built from scratch — "this is too boomy", "add some delay to my preset", "make it brighter", "tweak this patch", "less gain on that tone". Also triggers when they point at a .xml preset file and describe a change.
+when_to_use: >-
+  Use when a tone or preset already exists and someone wants it changed rather
+  than built from scratch — any complaint or adjustment about how it currently
+  sounds. For example — this is too boomy; make it brighter; too much gain; add
+  some delay to my preset; tweak this patch; can you dial that back. Also
+  triggers whenever they point at a .xml preset file and describe a change, or
+  ask to fix, adjust, tweak, warm up, tighten or brighten a sound.
 argument-hint: "[preset.xml] [what to change]"
 allowed-tools: Read, Glob, Grep
 ---

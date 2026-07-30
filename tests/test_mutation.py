@@ -9,9 +9,12 @@ import pytest
 from format.parser import parse, parse_file
 from format.structured import build, set_parameter
 from format.writer import write
+from packs.loader import list_packs
+from packs.paths import all_presets
 
-SAMPLES_DIR = pathlib.Path(__file__).parent.parent / "samples"
-SAMPLE_FILES = sorted(SAMPLES_DIR.glob("*.xml"))
+# Every preset this installation can see: the bundled example plus anything the
+# user has added to their own template directories.
+SAMPLE_FILES = all_presets(list_packs())
 
 
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
@@ -20,8 +23,7 @@ def test_mutate_preset_name(sample: pathlib.Path) -> None:
     changes only the name region."""
     tokens = parse_file(str(sample))
     preset = build(tokens)
-    original_name = preset.preset_name
-    assert original_name, "Preset must have a name"
+    assert preset.preset_name, "Preset must have a name"
 
     new_name = "Roundtripped"
     set_parameter(preset, "", "name", new_name)
@@ -39,7 +41,6 @@ def test_mutate_pr12_volume(sample: pathlib.Path) -> None:
 
     target = preset.by_path.get(("pr12Amp", "pr12Volume"))
     assert target is not None, "pr12Volume must exist in all Morgan presets"
-    original_value = target.value
 
     set_parameter(preset, "pr12Amp", "pr12Volume", "0.5")
     rewritten = write(preset.tokens)
