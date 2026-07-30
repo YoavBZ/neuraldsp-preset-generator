@@ -39,7 +39,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import add_data_dir_arg, die, guarded
+from _cli import add_data_dir_arg, guarded
 from format.parser import parse_file           # noqa: E402
 from format.structured import build            # noqa: E402
 from packs import observed, paths              # noqa: E402

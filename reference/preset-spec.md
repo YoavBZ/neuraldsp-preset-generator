@@ -127,8 +127,9 @@ and writes nothing. Show it to the user, then drop `--dry-run` to write.
 
 Other flags:
 
-- `--strip-irs` — clear custom IR paths so the preset is portable. See
-  [cab-and-irs.md](cab-and-irs.md). **Irreversible.**
+- `--strip-irs` — clear custom IR paths so the preset uses internal mics and is
+  portable on any machine. Reversible, but it changes the sound — see
+  [cab-and-irs.md](cab-and-irs.md).
 - `--allow-out-of-range` — downgrade a declared-range violation to a warning.
   Use only when the user asks for something deliberately extreme, and say so.
 - `--force` — overwrite an existing `--out`. Ask first.

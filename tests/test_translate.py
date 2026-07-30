@@ -7,7 +7,7 @@ import pytest
 from format.parser import parse_file
 from format.structured import build
 from format.translate import describe, from_binary, to_binary
-from packs.loader import detect_pack, list_packs, load_pack
+from packs.loader import detect_pack, list_packs
 from packs.paths import all_presets
 
 

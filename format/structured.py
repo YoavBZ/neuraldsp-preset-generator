@@ -21,7 +21,7 @@ enough for parameter mutation but is not a full grammar.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from .markers import fix_value_prefix, is_value_prefix
 from .parser import Token

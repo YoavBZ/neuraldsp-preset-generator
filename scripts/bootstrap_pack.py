@@ -164,32 +164,32 @@ def report(pack_id, manifest_path, parameters, review, selectors, preset_path):
     kinds = collections.Counter(e["kind"] for e in parameters.values())
     print("  inferred kinds: " + ", ".join(f"{k}={n}" for k, n in sorted(kinds.items())))
 
-    print(f"\nWhat this draft does NOT know — in the order worth fixing:\n")
-    print(f"1. RANGES. None are declared, so every value is written unchecked.")
-    print(f"   A preset shows one value, which says nothing about limits. Add")
-    print(f"   `min`/`max` from the plugin's own UI as you learn them.")
+    print("\nWhat this draft does NOT know — in the order worth fixing:\n")
+    print("1. RANGES. None are declared, so every value is written unchecked.")
+    print("   A preset shows one value, which says nothing about limits. Add")
+    print("   `min`/`max` from the plugin's own UI as you learn them.")
     if selectors:
         print(f"\n2. SELECTORS ({len(selectors)}). The plugin never displays the stored")
-        print(f"   integer, so these cannot be read off the screen:")
+        print("   integer, so these cannot be read off the screen:")
         for path in selectors[:8]:
             print(f"     {path}")
         if len(selectors) > 8:
             print(f"     … and {len(selectors) - 8} more")
-        print(f"   Use: python scripts/probe.py --param <path> --values 0-7 \\")
+        print("   Use: python scripts/probe.py --param <path> --values 0-7 \\")
         print(f"          --out-dir <your user preset folder> --pack {pack_id}")
     if review:
         print(f"\n3. GUESSED KINDS ({len(review)}). Marked `needs_review`. A wrong kind")
-        print(f"   means a wrong value: a knob read as metered writes raw numbers")
-        print(f"   where the plugin expects 0-1. Check these against the UI:")
+        print("   means a wrong value: a knob read as metered writes raw numbers")
+        print("   where the plugin expects 0-1. Check these against the UI:")
         for path in review[:8]:
             print(f"     {path}")
         if len(review) > 8:
             print(f"     … and {len(review) - 8} more")
 
-    print(f"\nThen: drop the preset in your templates directory, run")
+    print("\nThen: drop the preset in your templates directory, run")
     print(f"  python scripts/show.py {preset_path} --pack {pack_id} --text")
-    print(f"and check the values look like what the plugin shows you.")
-    print(f"\nRemove `\"draft\": true` from the manifest when you trust it.")
+    print("and check the values look like what the plugin shows you.")
+    print("\nRemove `\"draft\": true` from the manifest when you trust it.")
 
 
 def _is_draft(pack_id: str) -> bool:
