@@ -87,7 +87,8 @@ skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), build_observed.py (optional taste anchors)
+                   selectors), bootstrap_pack.py (support a new plugin),
+                   build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
@@ -108,7 +109,12 @@ packs/morgan/
   tone.md         committed — amps, intent -> recipe table, tone vocabulary
   observed.json   git-ignored, optional — what values YOUR presets use
   templates/      git-ignored — your own presets
+  learned-tones.md  git-ignored — what past runs learned, including your
+                    corrections. Read before generating, appended after.
 ```
+
+The last three live under the **data root**, not in the plugin directory, so a
+plugin update can't take them with it.
 
 The distinction that matters: **`manifest.json` says what is *legal*;
 `observed.json` says what is *typical*.** The first is a shared, hand-curated
@@ -149,10 +155,28 @@ Anything that *couldn't* be translated is listed with a reason under
 
 ### Adding a pack for another plugin
 
-You need one preset from that plugin as a template — the writer clones, it never
-synthesises. Drop it in `<data root>/packs/<id>/templates/`, run
-`python scripts/build_observed.py` to see what parameters it has, and write a `packs/<id>/manifest.json` against it. The
-format layer is plugin-agnostic; only the manifest is per-plugin.
+You need one preset from that plugin — the writer clones, it never synthesises.
+Then:
+
+```bash
+python scripts/bootstrap_pack.py --preset ~/…/SomePreset.xml \
+  --display-name "Archetype Gojira"
+```
+
+It reads the plugin's own name out of the file, drafts a manifest covering every
+parameter, and prints what it *couldn't* work out. That last part is the point:
+
+- **Ranges cannot be inferred.** One preset shows one value, which says nothing
+  about limits. They are left undeclared — meaning unchecked — until you add them.
+- **Selector members cannot be inferred** either, because the plugin never
+  displays the stored integer. `scripts/probe.py` is how you find those.
+- **Kinds are guessed** from key names and are marked `needs_review`. A wrong
+  kind writes a wrong value.
+
+The draft is immediately loadable, so `show.py` and `apply_spec.py` work against
+it right away — correct it against the plugin's UI as you go, and drop
+`"draft": true` when you trust it. The format layer is plugin-agnostic; only the
+pack is per-plugin.
 
 ## Value convention
 

@@ -60,6 +60,13 @@ class Preset:
     # Convenience: index by (module_path, key) → Parameter.
     by_path: Dict[Tuple[str, str], Parameter] = field(default_factory=dict)
 
+    # Paths seen more than once. The file flattens its module tree, so two
+    # sibling sub-modules sharing a name would collapse onto one path and a
+    # write would silently hit only the last. No Morgan preset does this, but
+    # nothing in the format prevents it, so callers can check rather than
+    # assume.
+    duplicates: List[Tuple[str, str]] = field(default_factory=list)
+
 
 def build(tokens: List[Token]) -> Preset:
     """Pair tokens into Parameters and identify sub-module structure."""
@@ -112,6 +119,8 @@ def build(tokens: List[Token]) -> Preset:
                 value_index=i + 1,
             )
             parameters.append(param)
+            if (module_path, tok.value) in preset.by_path:
+                preset.duplicates.append((module_path, tok.value))
             preset.by_path[(module_path, tok.value)] = param
             if param.module_path == "" and param.key == "name":
                 preset.preset_name = param.value

@@ -52,6 +52,11 @@ Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` — it has the amps and their ch
 `${CLAUDE_PLUGIN_ROOT}/packs/<id>/manifest.json` for what each parameter is, its unit, and its legal
 range.
 
+**Also read the learned notes**, if there are any. `show.py` reports their path
+as `learned_notes` — that's where past runs recorded what actually worked, and it
+beats generic guidance. It lives under the data root, so it survives plugin
+updates.
+
 **Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per
 layer from the intent table and pass them straight to the writer with `--recipe`;
@@ -101,12 +106,15 @@ Then report:
 
 ## 7. Bank what you learned
 
-If the research turned up something reusable, append an entry to
-`<data root>/packs/<id>/learned-tones.md` — amp, the recipes you stacked, what
-you changed and why, and the source link. Follow the "Mapped tones" shape in
-`${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md`, and read that file too on later runs.
+Append an entry to the `learned_notes` path that `show.py` reports — creating
+the file if it doesn't exist. Record:
 
-It goes under the **data root**, not in the plugin directory: Claude Code
-replaces the plugin on update, and notes written there would be lost. Run
-`python "${CLAUDE_PLUGIN_ROOT}/scripts/show.py" --help` if you need to confirm
-where the data root resolves to.
+- the **recipes you stacked** and the **values you changed**, with why
+- what the user **pushed back on**, if they did. "Too dark, ended up at 45%" is
+  worth more than a successful first try, because it's the thing generic
+  guidance got wrong.
+- the **source link** for the research
+
+Follow the "Mapped tones" shape in `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md`.
+The notes live under the data root, not in the plugin directory: Claude Code
+replaces the plugin on update, and anything written there would be lost.

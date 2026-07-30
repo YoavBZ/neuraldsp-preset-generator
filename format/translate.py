@@ -29,12 +29,18 @@ from __future__ import annotations
 from typing import Any
 
 
+# Real presets store up to 7 decimals (0.7803125). Six silently rounded those,
+# changing the value on any write-back; ten covers everything observed with room
+# to spare, and still avoids scientific notation.
+_DECIMALS = 10
+
+
 def _fmt_num(x: float) -> str:
-    """Format a number the way the preset format does: ints without a
-    trailing .0, floats trimmed to <=6 decimals with no trailing zeros."""
+    """Format a number the way the preset format does: ints without a trailing
+    .0, floats with no trailing zeros and no exponent."""
     if x == int(x):
         return str(int(x))
-    return f"{x:.6f}".rstrip("0").rstrip(".")
+    return f"{x:.{_DECIMALS}f}".rstrip("0").rstrip(".")
 
 
 def _as_bool(value: Any) -> bool:

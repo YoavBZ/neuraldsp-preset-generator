@@ -51,6 +51,16 @@ Move in **proportionate steps**. A vague "a bit more" is 5–10 points of rotati
 not 40. If the ask is genuinely ambiguous ("make it better"), ask what bothers
 them about the current sound.
 
+`show.py` reports a `learned_notes` path — read it if it exists. A correction the
+user made before is the best available evidence about their taste.
+
+## 2b. Record a correction
+
+When the user rejects or adjusts what you produced, append it to that same
+`learned_notes` file: what you set, what they wanted instead, and the preset it
+applied to. That is the whole point of the file — a run that needed correcting
+teaches more than one that didn't.
+
 ## 3. Change only what was asked
 
 Put **only** the parameters you're changing in the spec. The apply script clones

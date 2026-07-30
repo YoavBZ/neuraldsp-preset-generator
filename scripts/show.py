@@ -114,6 +114,18 @@ def main() -> None:
     if note:
         out["observed"] = note
 
+    # Where per-pack knowledge lives, so a skill can find it without having to
+    # work out how the data root resolved.
+    notes = paths.learned_tones_path(pack.pack_id)
+    out["data_root"] = str(paths.data_root())
+    out["tone_knowledge"] = str(paths.PLUGIN_ROOT / "packs" / pack.pack_id / "tone.md")
+    out["learned_notes"] = {"path": str(notes), "exists": notes.exists()}
+
+    if preset.duplicates:
+        out["duplicate_parameters"] = sorted(
+            f"{m}/{k}" if m else k for m, k in set(preset.duplicates)
+        )
+
     if args.text:
         print_text(out, pack)
     else:
@@ -134,6 +146,18 @@ def print_text(out: dict, pack) -> None:
         print(f"    {label:<22} {p['display']:<22} {p['key']}{flag}")
     if out.get("observed"):
         print(f"\n  advisory: {out['observed']}")
+    notes = out["learned_notes"]
+    print(f"  tone knowledge: {out['tone_knowledge']}")
+    print(
+        f"  learned notes:  {notes['path']}"
+        f"{'' if notes['exists'] else '  (none yet)'}"
+    )
+    if out.get("duplicate_parameters"):
+        print(
+            f"\n  (!) duplicate parameter path(s): "
+            f"{', '.join(out['duplicate_parameters'])}\n"
+            f"      A write to one of these reaches only the last occurrence."
+        )
     if any(p.get("unconfirmed_selector") for p in out["parameters"]):
         print(
             f"\n  (!) selector whose member names are not yet confirmed — see "
