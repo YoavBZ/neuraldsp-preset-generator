@@ -44,11 +44,13 @@ import sys
 # derivable from __file__ — no environment variable needed, nothing to go stale.
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from _cli import die, guarded, resolve_pack
 from format.parser import parse_file
 from format.structured import build, set_parameter
 from format.writer import write_file
-from packs.loader import PackError, detect_pack, load_pack
+
 
 
 def main() -> None:
@@ -78,15 +80,11 @@ def main() -> None:
         "--force", action="store_true", help="overwrite existing probe presets"
     )
     args = ap.parse_args()
-
-    try:
-        run(args)
-    except PackError as e:
-        die(str(e))
+    run(args)
 
 
 def run(args) -> None:
-    template = pathlib.Path(args.template)
+    template = pathlib.Path(os.path.expanduser(args.template))
     if not template.exists():
         die(f"Template not found: {template}")
 
@@ -94,12 +92,7 @@ def run(args) -> None:
     values = parse_values(args.values)
 
     preset = build(parse_file(str(template)))
-    pack = load_pack(args.pack) if args.pack else detect_pack(preset.file_header)
-    if pack is None:
-        die(
-            f"{template} identifies itself as {preset.file_header!r}, which has no "
-            f"pack in packs/. Pass --pack <id>."
-        )
+    pack = resolve_pack(args.pack, preset.file_header, template)
 
     if (module, key) not in preset.by_path:
         die(
@@ -188,14 +181,6 @@ def parse_values(text: str) -> list:
         die(f"--values {text!r} is not a number, list, or range.")
 
 
-def die(message: str) -> None:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(2)
-
 
 if __name__ == "__main__":
-    try:
-        main()
-    except BrokenPipeError:
-        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-        sys.exit(0)
+    guarded(main)

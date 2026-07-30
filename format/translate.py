@@ -8,16 +8,10 @@ stores. So the honest human unit for a bare knob is **percent of rotation**
 numbers in the UI (gate dB, EQ Hz, delay ms, tempo BPM, …) are stored in those
 real units and pass through unchanged.
 
-Each parameter's `kind` (from packs/<id>/manifest.json) decides the mapping:
-
-  kind        human value            stored string         example
-  ----------  ---------------------  --------------------  ------------------
-  rotation    percent 0–100          value/100             62  -> "0.62"
-  fraction    0.0–1.0 (UI decimal)   passthrough           0.30 -> "0.3"
-  metered     native number+unit     passthrough           -70 (dB) -> "-70"
-  switch      bool / on / off        "true" / "false"      true -> "true"
-  enum        integer                str(int)              1 -> "1"
-  path/string text                   passthrough           "/IR/x.wav"
+Each parameter's `kind` (from packs/<id>/manifest.json) decides the mapping.
+`rotation` divides by 100; `switch` becomes "true"/"false"; everything else
+passes through. The authoritative table of kinds and their human units is
+reference/preset-spec.md — kept in one place so it cannot drift from this code.
 
 There is no universal per-knob default; reason from the observed catalog built
 from your own presets, with noon (50% / 0.5) as the neutral start for tone

@@ -37,7 +37,9 @@ from typing import Any, Dict, List, Tuple
 # derivable from __file__ — no environment variable needed, nothing to go stale.
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from _cli import add_data_dir_arg, die, guarded
 from format.parser import parse_file           # noqa: E402
 from format.structured import build            # noqa: E402
 from packs import observed, paths              # noqa: E402
@@ -130,11 +132,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description="Summarise the values used across your own preset library."
     )
-    ap.add_argument(
-        "--data-dir",
-        help="where your presets and generated catalogs live (default: "
-        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
-    )
+    add_data_dir_arg(ap)
     args = ap.parse_args()
     paths.set_data_root(args.data_dir)
 
@@ -182,4 +180,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    guarded(main)

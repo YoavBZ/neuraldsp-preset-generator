@@ -16,11 +16,9 @@ using each parameter's `kind` in the pack manifest (packs/<id>/manifest.json):
       ]
     }
 
-  rotation : percent of knob rotation, 0-100   (62 -> stored "0.62")
-  fraction : 0.0-1.0 decimal (cab position/distance)
-  metered  : native unit shown in the UI (dB / Hz / ms / s / BPM / semitones)
-  switch   : true/false (or on/off)
-  enum     : integer selector, or its member name ("PR12", "Ribbon 121")
+Knobs are percent of rotation (0-100); everything else uses the unit the plugin
+shows. The full table lives in reference/preset-spec.md — one copy, so it cannot
+drift from what the code does.
 
 A time or rate value may be given as a note division instead of a number, so a
 recipe stays correct at any tempo:
@@ -48,12 +46,14 @@ from typing import Optional
 # derivable from __file__ — no environment variable needed, nothing to go stale.
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from _cli import die, guarded, resolve_pack
 from format.parser import parse_file
 from format.structured import build, set_parameter
 from format.translate import describe
 from format.writer import write_file
-from packs.loader import PackError, detect_pack, load_pack
+from packs.loader import load_pack
 from packs.recipes import (
     amp_prefix_for,
     load_recipes,
@@ -88,8 +88,7 @@ def main() -> None:
     ap.add_argument(
         "--strip-irs",
         action="store_true",
-        help="clear custom IR paths so the preset uses internal mics (portable). "
-        "Irreversible: the cleared field stops being addressable.",
+        help="clear custom IR paths so the preset uses internal mics (portable)",
     )
     ap.add_argument(
         "--allow-out-of-range",
@@ -117,10 +116,7 @@ def main() -> None:
         list_recipes(args.pack)
         return
 
-    try:
-        run(args)
-    except PackError as e:
-        die(str(e))
+    run(args)
 
 
 def list_recipes(pack_id: Optional[str]) -> None:
@@ -277,18 +273,6 @@ def render(spec, stored: str) -> str:
     return describe(spec.kind, stored, spec.unit)
 
 
-def resolve_pack(requested, file_header, template):
-    if requested:
-        return load_pack(requested)
-    pack = detect_pack(file_header)
-    if pack is None:
-        die(
-            f"{template} identifies itself as {file_header!r}, which has no pack "
-            f"in packs/.\n"
-            f"  Pass --pack <id> to force one, or add a pack for this plugin."
-        )
-    return pack
-
 
 def read_spec(path: pathlib.Path) -> dict:
     if not path.exists():
@@ -339,14 +323,6 @@ def strip_custom_irs(preset) -> list:
     return cleared
 
 
-def die(message: str) -> None:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(2)
-
 
 if __name__ == "__main__":
-    try:
-        main()
-    except BrokenPipeError:
-        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-        sys.exit(0)
+    guarded(main)

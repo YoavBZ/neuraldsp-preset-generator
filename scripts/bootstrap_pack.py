@@ -33,10 +33,12 @@ import sys
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from _cli import die, guarded
 from format.parser import parse_file
 from format.structured import build
-from packs.loader import PACKS_DIR, PackError, detect_pack
+from packs.loader import PACKS_DIR, detect_pack
 
 # Key-name patterns that reliably indicate a metered control and its unit. These
 # are conventions across Neural DSP plugins, not facts about any one of them, so
@@ -199,13 +201,6 @@ def _is_draft(pack_id: str) -> bool:
         return False
 
 
-def die(message: str) -> None:
-    print(f"error: {message}", file=sys.stderr)
-    sys.exit(2)
-
 
 if __name__ == "__main__":
-    try:
-        main()
-    except PackError as e:
-        die(str(e))
+    guarded(main)

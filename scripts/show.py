@@ -23,13 +23,15 @@ import sys
 # derivable from __file__ — no environment variable needed, nothing to go stale.
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+from _cli import add_data_dir_arg, die, guarded, resolve_pack
 from format.parser import parse_file
 from format.structured import build
 from format.translate import describe, from_binary
 from packs import observed as observed_catalog
 from packs import paths
-from packs.loader import PackError, detect_pack, load_pack
+
 
 
 def main() -> None:
@@ -37,33 +39,17 @@ def main() -> None:
     ap.add_argument("preset", help="path to .xml preset")
     ap.add_argument("--pack", help="plugin pack id (default: detect from the file)")
     ap.add_argument("--text", action="store_true", help="human-readable output")
-    ap.add_argument(
-        "--data-dir",
-        help="where your presets and generated catalogs live (default: "
-        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
-    )
+    add_data_dir_arg(ap)
     args = ap.parse_args()
     paths.set_data_root(args.data_dir)
 
-    path = pathlib.Path(args.preset)
+    path = pathlib.Path(os.path.expanduser(args.preset))
     if not path.exists():
-        print(f"error: preset not found: {path}", file=sys.stderr)
-        sys.exit(2)
+        die(f"Preset not found: {path}")
 
     preset = build(parse_file(str(path)))
 
-    try:
-        pack = load_pack(args.pack) if args.pack else detect_pack(preset.file_header)
-    except PackError as e:
-        print(f"error: {e}", file=sys.stderr)
-        sys.exit(2)
-    if pack is None:
-        print(
-            f"error: {path} identifies itself as {preset.file_header!r}, which has "
-            f"no pack in packs/.\n  Pass --pack <id> to force one.",
-            file=sys.stderr,
-        )
-        sys.exit(2)
+    pack = resolve_pack(args.pack, preset.file_header, path)
 
     observed = observed_catalog.index(pack.pack_id)
 
@@ -166,10 +152,4 @@ def print_text(out: dict, pack) -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except BrokenPipeError:
-        # Piped into `head`, `less`, etc. Exit quietly instead of dumping a
-        # traceback over the user's output.
-        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-        sys.exit(0)
+    guarded(main)

@@ -189,6 +189,8 @@ The plugin's knobs have no numbers — a knob is just a rotation. So:
   (`"PR12"`, `"Ribbon 121"`) or an integer.
 
 Every parameter's `kind` and `unit` live in `packs/<id>/manifest.json`.
+The full table, with what to write for each kind, is in
+[reference/preset-spec.md](reference/preset-spec.md).
 
 ## Musical timing without the sync selector
 
