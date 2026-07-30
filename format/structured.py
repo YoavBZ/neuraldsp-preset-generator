@@ -23,19 +23,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
-from .markers import fix_value_prefix
+from .markers import fix_value_prefix, is_value_prefix
 from .parser import Token
 
 def is_value_token(tok: Token) -> bool:
-    """A value's marker prefix is the 3-byte pattern 0x01 ?? 0x05.
+    """True when this token is a VALUE rather than a key or structural marker.
 
-    The middle byte varies (it appears to encode the value's display type:
-    short int, decimal, signed decimal, bool, etc.) but the wrapper bytes
-    are fixed. Shorter prefixes like ``b'\\x01\\x05'`` (the first-key marker
-    that appears immediately after a sub-module name) must NOT match.
+    The byte rule lives in `markers.is_value_prefix` so it is stated once.
     """
-    p = tok.raw_prefix
-    return len(p) >= 3 and p[-3] == 0x01 and p[-1] == 0x05
+    return is_value_prefix(tok.raw_prefix)
 
 
 @dataclass
@@ -63,12 +59,6 @@ class Preset:
 
     # Convenience: index by (module_path, key) → Parameter.
     by_path: Dict[Tuple[str, str], Parameter] = field(default_factory=dict)
-
-    def get(self, module_path: str, key: str) -> Optional[Parameter]:
-        return self.by_path.get((module_path, key))
-
-    def all_keys(self) -> List[Tuple[str, str]]:
-        return list(self.by_path.keys())
 
 
 def build(tokens: List[Token]) -> Preset:

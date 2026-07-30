@@ -7,7 +7,7 @@ import pytest
 from format.parser import parse_file
 from format.structured import build
 from format.translate import describe, from_binary, to_binary
-from packs.loader import list_packs, load_pack
+from packs.loader import detect_pack, list_packs, load_pack
 from packs.paths import all_presets
 
 
@@ -64,11 +64,10 @@ def test_every_real_value_roundtrips_through_human():
     covers whatever presets the user has added as well as the bundled example.
     A lossy conversion here would silently alter a preset on any edit.
     """
-    packs = {pid: load_pack(pid) for pid in list_packs()}
     checked = 0
-    for preset_path in all_presets(list(packs)):
+    for preset_path in all_presets(list_packs()):
         preset = build(parse_file(str(preset_path)))
-        pack = packs.get(_pack_for(packs, preset.file_header))
+        pack = detect_pack(preset.file_header)
         if pack is None:
             continue
         for param in preset.parameters:
@@ -90,9 +89,3 @@ def test_every_real_value_roundtrips_through_human():
             checked += 1
     assert checked > 100, f"only checked {checked} values — is samples/ empty?"
 
-
-def _pack_for(packs, file_header):
-    for pid, pack in packs.items():
-        if pack.file_header == file_header:
-            return pid
-    return None

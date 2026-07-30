@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from packs.timing import TimingError, note_ms, note_multiplier, quarter_ms, table
+from packs.timing import TimingError, note_ms, note_multiplier, quarter_ms
 
 
 def test_quarter_note_from_tempo():
@@ -73,12 +73,6 @@ def test_bad_input_is_rejected():
     with pytest.raises(TimingError, match="positive"):
         note_ms(0, "quarter")
 
-
-def test_table_covers_every_division():
-    t = table(120)
-    assert t["quarter"] == 500.0
-    assert t["eighth dotted"] == 375.0
-    assert len(t) == 18  # 6 divisions x plain/dotted/triplet
 
 
 def test_computed_times_fit_the_declared_delay_range():

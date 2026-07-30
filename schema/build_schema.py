@@ -3,8 +3,9 @@ Summarise the values used across the user's own preset library.
 
 Reads every preset this installation can see, works out which plugin each one
 came from (from its file header), and writes one observed catalog per pack:
-for every (module_path, key) seen, the values it actually holds, plus a
-heuristically inferred type.
+for every (module_path, key) seen, the values it actually holds and which
+presets they came from. Nothing more — no inferred kind, unit or type, because
+the manifest declares those and a second guess would only ever disagree.
 
 This output is **advisory**. It answers "what does this knob tend to sit at in
 real presets?" — a taste anchor when choosing a value. It is NOT the contract:
@@ -30,7 +31,7 @@ import pathlib
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -41,53 +42,6 @@ from packs import observed, paths              # noqa: E402
 from packs.loader import detect_pack, list_packs, load_pack  # noqa: E402
 
 
-# Native-unit (metered) parameters, matched by key suffix. These are shown
-# with real numbers in the plugin UI and stored in real units in the file.
-# Everything NOT matched here that is a float within [0,1] is a bare rotation
-# knob (no numbers on the dial) and is reasoned about as percent-of-rotation.
-def _classify(module: str, key: str, ptype: str, values: List[str]):
-    """Return (kind, unit). kind drives how human values translate to bytes."""
-    if ptype == "bool":
-        return "switch", None
-    if ptype == "string":
-        return ("path" if "Path" in key else "string"), None
-
-    # Name-based metered controls (work for both int and float storage).
-    if key.endswith(("Hpf", "Lpf", "HighCut", "LowCut")):
-        return "metered", "hz"
-    if key.endswith("EQBand1") or key[:-1].endswith("EQBand"):  # EQBand1..9
-        return "metered", "db"
-    if key in ("gateThreshold", "inputGain", "outputGain") or key.endswith("MicLevel"):
-        return "metered", "db"
-    if key.endswith("PreDelay") or key in ("doublerSpread", "delayTime"):
-        return "metered", "ms"
-    if key.endswith("Decay"):
-        return "metered", "seconds"
-    if key.endswith("Tempo"):
-        return "metered", "bpm"
-    if key == "transpose":
-        return "metered", "semitones"
-    if key.endswith("Rate"):
-        return "metered", "hz"
-
-    # Discrete selectors stored as integers.
-    if key in ("selectedAmp", "delaySync") or key.endswith(
-        ("Power", "SyncNote", "MicType", "Pan")
-    ):
-        return "enum", None
-
-    # Cab mic placement: shown as 0.000–1.000 decimals in the UI, not knobs.
-    if key.endswith(("Position", "Distance")):
-        return "fraction", None
-
-    nums = [float(v) for v in values if _looks_like_number(v)]
-    if nums and all(0.0 <= n <= 1.0 for n in nums):
-        return "rotation", None  # bare 0–1 knob → reason in percent
-
-    # Anything else numeric that escaped the rules: do NOT guess a scale.
-    return "unknown", None
-
-
 @dataclass
 class ParamStats:
     module_path: str
@@ -95,50 +49,18 @@ class ParamStats:
     observed_values: List[str] = field(default_factory=list)
     seen_in: List[str] = field(default_factory=list)
 
-    def infer_type(self) -> str:
-        vals = set(self.observed_values)
-        if vals <= {"true", "false"}:
-            return "bool"
-        if all(_looks_like_int(v) for v in vals):
-            return "int"
-        if all(_looks_like_number(v) for v in vals):
-            return "float"
-        return "string"
-
     def to_dict(self) -> Dict[str, Any]:
-        t = self.infer_type()
-        kind, unit = _classify(self.module_path, self.key, t, self.observed_values)
-        d: Dict[str, Any] = {
-            "module_path": self.module_path,
+        """Just the values seen, and where.
+
+        Deliberately does NOT record a kind, unit or type: the manifest declares
+        those, and a generated file that guesses them again is a second source of
+        truth waiting to disagree with the first.
+        """
+        return {
             "key": self.key,
-            "type": t,
-            "kind": kind,
             "seen_in": self.seen_in,
             "observed_values": list(dict.fromkeys(self.observed_values)),
         }
-        if unit:
-            d["unit"] = unit
-        if t in ("int", "float"):
-            nums = [float(v) for v in self.observed_values]
-            d["observed_min"] = min(nums)
-            d["observed_max"] = max(nums)
-        return d
-
-
-def _looks_like_int(s: str) -> bool:
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-
-def _looks_like_number(s: str) -> bool:
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
 
 
 def build_schema(

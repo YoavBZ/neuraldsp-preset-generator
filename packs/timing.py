@@ -137,12 +137,3 @@ def note_hz(bpm: float, division: str) -> float:
     """
     return 1000.0 / note_ms(bpm, division)
 
-
-def table(bpm: float) -> Dict[str, float]:
-    """Every plain and dotted division at a tempo — handy to show a user."""
-    out: Dict[str, float] = {}
-    for name in BASE:
-        out[name] = note_ms(bpm, name)
-        out[f"{name} dotted"] = note_ms(bpm, f"{name} dotted")
-        out[f"{name} triplet"] = note_ms(bpm, f"{name} triplet")
-    return out

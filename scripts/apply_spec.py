@@ -99,19 +99,20 @@ def run(args) -> None:
     out = pathlib.Path(args.out)
 
     # --- guards ---------------------------------------------------------
+    # These run for --dry-run too. A preview that reports success where the real
+    # run would refuse to write is a preview that lies.
     if not template.exists():
         die(f"Template not found: {template}")
-    if not args.dry_run:
-        if template.resolve() == out.resolve():
-            die(
-                f"--out is the same file as --template ({template}).\n"
-                f"  Editing never overwrites its input; choose a different --out."
-            )
-        if out.exists() and not args.force:
-            die(
-                f"--out already exists: {out}\n"
-                f"  Pass --force to overwrite it, or choose a different path."
-            )
+    if template.resolve() == out.resolve():
+        die(
+            f"--out is the same file as --template ({template}).\n"
+            f"  Editing never overwrites its input; choose a different --out."
+        )
+    if out.exists() and not args.force:
+        die(
+            f"--out already exists: {out}\n"
+            f"  Pass --force to overwrite it, or choose a different path."
+        )
 
     spec = read_spec(pathlib.Path(args.spec))
     tokens = parse_file(str(template))

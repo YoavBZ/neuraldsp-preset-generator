@@ -31,6 +31,17 @@ class PackError(Exception):
     """
 
 
+class _Strict(list):
+    """A warning sink for callers that passed none: promotes notes to errors.
+
+    Used so a caller who forgets to collect warnings gets told, instead of the
+    warning vanishing.
+    """
+
+    def append(self, note: str) -> None:  # type: ignore[override]
+        raise PackError(note)
+
+
 @dataclass
 class ParamSpec:
     """One parameter's curated facts."""
@@ -68,10 +79,7 @@ class Pack:
     pack_id: str
     display_name: str
     file_header: str
-    vendor: str = ""
-    amps: Dict[str, Any] = field(default_factory=dict)
     parameters: Dict[str, ParamSpec] = field(default_factory=dict)
-    root: pathlib.Path = PACKS_DIR
 
     def get(self, module: str, key: str) -> Optional[ParamSpec]:
         return self.parameters.get(f"{module}/{key}")
@@ -99,9 +107,14 @@ class Pack:
         """Translate a human value to its stored string, validating as we go.
 
         Raises PackError with an actionable message on anything illegal.
-        Non-fatal notes are appended to ``warnings`` when one is supplied.
+
+        Non-fatal notes are appended to ``warnings``. Passing no list means "I
+        expect no warnings": rather than discard one silently, a note raised
+        without somewhere to put it becomes an error. Warnings here flag values
+        that may not mean what the caller thinks, so losing one is worse than
+        failing.
         """
-        notes = warnings if warnings is not None else []
+        notes = warnings if warnings is not None else _Strict()
 
         if not spec.writable:
             raise PackError(
@@ -223,14 +236,13 @@ def _num(x: float) -> str:
     return str(int(x)) if x == int(x) else str(x)
 
 
-def load_pack(pack_id: str = "morgan", root: Optional[pathlib.Path] = None) -> Pack:
+def load_pack(pack_id: str = "morgan") -> Pack:
     """Load a pack manifest by id."""
-    root = root or PACKS_DIR
-    path = root / pack_id / "manifest.json"
+    path = PACKS_DIR / pack_id / "manifest.json"
     if not path.exists():
         raise PackError(
             f"No pack for {pack_id!r} (looked for {path}).\n"
-            f"  Available: {', '.join(list_packs(root)) or 'none'}"
+            f"  Available: {', '.join(list_packs()) or 'none'}"
         )
     raw = json.loads(path.read_text())
     enums = raw.get("enums", {})
@@ -260,29 +272,23 @@ def load_pack(pack_id: str = "morgan", root: Optional[pathlib.Path] = None) -> P
         pack_id=raw["pack_id"],
         display_name=raw["display_name"],
         file_header=raw["file_header"],
-        vendor=raw.get("vendor", ""),
-        amps=raw.get("amps", {}),
         parameters=params,
-        root=root / pack_id,
     )
 
 
-def list_packs(root: Optional[pathlib.Path] = None) -> List[str]:
-    root = root or PACKS_DIR
-    return sorted(
-        p.parent.name for p in root.glob("*/manifest.json")
-    )
+def list_packs() -> List[str]:
+    return sorted(p.parent.name for p in PACKS_DIR.glob("*/manifest.json"))
 
 
-def detect_pack(file_header: str, root: Optional[pathlib.Path] = None) -> Optional[Pack]:
+def detect_pack(file_header: str) -> Optional[Pack]:
     """Identify which plugin a preset came from, by its first token.
 
     Every preset opens with a printable header string naming the plugin
     ("morgan"), which makes it a reliable pack selector for any preset the
     user points at.
     """
-    for pack_id in list_packs(root):
-        pack = load_pack(pack_id, root)
+    for pack_id in list_packs():
+        pack = load_pack(pack_id)
         if pack.file_header == file_header:
             return pack
     return None

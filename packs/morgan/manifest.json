@@ -5,33 +5,6 @@
   "vendor": "Neural DSP",
   "file_header": "morgan",
   "description": "Curated parameter facts for Neural DSP Morgan Amps Suite. Hand-maintained: this is the contract the generator writes against. It contains no Neural DSP code, audio, or preset content - only parameter names, units, and ranges needed to read and write presets for a licensed copy of the plugin.",
-  "amps": {
-    "AC20": {
-      "module": "ac20Amp",
-      "selected_amp": 0,
-      "based_on": "the Normal channel of a Vox AC30, voiced deliberately darker than a Vox to lose the ice-pick top end while keeping the chime and growl. 20W.",
-      "range": "chimey clean to British crunch",
-      "reach_for_it": "jangle, British invasion, indie rock, crunch rhythm",
-      "source": "https://www.guitarchalk.com/morgan-ac20-deluxe-settings/"
-    },
-    "PR12": {
-      "module": "pr12Amp",
-      "selected_amp": 1,
-      "based_on": "a 1960s blackface Fender Princeton, rebuilt with a bigger power supply, tightened low end and a 12-inch speaker, so it has more bass, headroom and punch than the original. 12W class AB, 2x6V6, three-spring tube reverb.",
-      "range": "sparkly clean to edge-of-breakup",
-      "reach_for_it": "clean rhythm, country, blues cleans, the default clean platform",
-      "source": "https://www.morganamps.com/store/combos/pr12-combo/"
-    },
-    "SW50R": {
-      "module": "sw50rAmp",
-      "selected_amp": 2,
-      "based_on": "the Dumble Small Special \u2014 a mid-60s blackface-flavoured voice with unusual clarity and string-to-string definition. High headroom, parallel three-spring tube reverb. 50W.",
-      "range": "loud cleans through smooth singing lead",
-      "reach_for_it": "smooth lead, blues lead, polished clean lead, high-headroom rhythm",
-      "source": "https://www.sweetwater.com/store/detail/SW50RHead--morgan-amps-sw50r-50-watt-high-headroom-tube-head-with-reverb",
-      "correction": "Earlier notes in this repo described SW50R as a Vox-style chime amp in AC30 territory. That was wrong and it mattered: it is the Dumble-derived smooth-lead platform, and it is the amp to reach for when someone asks for singing lead."
-    }
-  },
   "enums": {
     "internalMic": {
       "0": "Dynamic 57",
@@ -45,15 +18,6 @@
       "8": "Ribbon 121",
       "9": "Ribbon 160"
     }
-  },
-  "value_convention": {
-    "rotation": "percent of knob rotation, 0-100 (noon = 50); stored as 0.0-1.0",
-    "fraction": "0.0-1.0 decimal shown directly in the UI",
-    "metered": "the native unit named in `unit` (db / hz / ms / seconds / bpm / semitones)",
-    "switch": "true / false",
-    "enum": "integer selector; `members` names them where confirmed",
-    "path": "absolute filesystem path, written verbatim",
-    "string": "text, written verbatim"
   },
   "parameters": {
     "/name": {
@@ -860,10 +824,9 @@
       "ui": "Tape drive"
     }
   },
-  "selector_discovery": {
-    "indexing": "index-based: the stored integer is the option's position in the control, counting from 0",
-    "evidence": "confirmed for enums.internalMic (0 = the first mic in the list, 8 = the ninth)",
-    "workflow": "read the control's options off the plugin UI in order, write them as `members`, then verify with scripts/probe.py using a single index",
-    "why_not_read_directly": "the plugin UI never displays the stored integer, so the mapping cannot be observed from the screen"
+  "see_also": {
+    "tone knowledge, amp characters and the intent table": "packs/morgan/tone.md",
+    "value convention and the spec format": "reference/preset-spec.md",
+    "how to discover a selector's members": "reference/selectors-and-timing.md"
   }
 }
