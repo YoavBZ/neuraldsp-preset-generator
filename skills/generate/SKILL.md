@@ -47,6 +47,12 @@ Choose the amp with the top-level `selectedAmp` parameter (module `""`), by
 name: `{"module": "", "key": "selectedAmp", "value": "PR12"}`. All amp modules
 exist in every preset, so **any template can produce any amp**.
 
+For **note-timed delay** ("dotted eighth", "quarter-note slapback"), compute
+milliseconds from the tempo with `packs/timing.py` and write `delay/delayTime`.
+Don't use the sync-note selector — its mapping is unknown, and ms is exact. Same
+for tremolo: use `tremoloRate` in Hz. See
+[selectors-and-timing.md](../../reference/selectors-and-timing.md).
+
 ## 4. Pick a template
 
 - Default to `samples/Example_Clean_PR12.xml` — IR-free, portable, ships with

@@ -113,7 +113,32 @@ def test_unconfirmed_selector_warns_but_writes(pack):
     warnings: list[str] = []
     spec = pack.require("delay", "delaySyncNote")
     assert pack.to_stored(spec, 13, warnings=warnings) == "13"
-    assert any("not yet confirmed" in w for w in warnings)
+    assert len(warnings) == 1
+    # The warning has to be actionable: the user cannot read the integer off the
+    # plugin UI, so pointing them at the UI would be a dead end.
+    assert "probe.py" in warnings[0]
+    assert "not known" in warnings[0]
+
+
+def test_selectors_lacking_members_explain_the_alternative(pack):
+    """An unknown selector is only acceptable if its note says what to do
+    instead. Otherwise the agent has no path forward."""
+    for spec in pack.parameters.values():
+        if spec.kind != "enum" or spec.members is not None:
+            continue
+        assert spec.note, f"{spec.path} has no members and no guidance"
+        assert "probe.py" in spec.note, (
+            f"{spec.path} does not point at the discovery workflow"
+        )
+
+
+def test_note_timed_delay_does_not_need_a_selector(pack):
+    """The functional consequence of the unknown sync-note table: a musical
+    delay must still be reachable through delayTime in ms."""
+    from packs.timing import note_ms
+
+    spec = pack.require("delay", "delayTime")
+    assert pack.to_stored(spec, note_ms(120, "1/8 dotted")) == "375"
 
 
 def test_read_only_parameter_is_refused(pack):

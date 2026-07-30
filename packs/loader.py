@@ -112,10 +112,12 @@ class Pack:
         if spec.kind == "enum":
             if spec.members is None:
                 notes.append(
-                    f"{spec.path} is a selector whose member names are not yet "
-                    f"confirmed, so the value is written unvalidated. Confirm the "
-                    f"mapping in the plugin UI and add it to "
-                    f"packs/{self.pack_id}/manifest.json."
+                    f"{spec.path} is a selector whose member names are not known, so "
+                    f"{human!r} is written unvalidated and may not mean what you "
+                    f"expect. The plugin never displays the stored integer, so run "
+                    f"`scripts/probe.py --param {spec.path}` to discover the mapping "
+                    f"— or avoid the selector entirely (see this parameter's `note` "
+                    f"in packs/{self.pack_id}/manifest.json)."
                 )
             return self._enum_to_stored(spec, human)
 

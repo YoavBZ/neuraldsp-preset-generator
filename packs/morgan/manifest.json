@@ -212,7 +212,7 @@
     "ac20Amp/ac20Power": {
       "kind": "enum",
       "ui": "Power",
-      "note": "Output-power mode selector. Member names not yet confirmed against the plugin UI.",
+      "note": "Output-power mode selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param ac20Amp/ac20Power --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "pr12EQ/pr12EQActive": {
@@ -577,7 +577,7 @@
     "tremolo/tremoloSyncNote": {
       "kind": "enum",
       "ui": "Sync note",
-      "note": "Note-division selector. Integer-to-note mapping not yet confirmed against the plugin UI - observed value 11.",
+      "note": "Note-division selector; member names not yet known. Prefer `tremoloRate` in Hz with `tremoloSync` off. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param tremolo/tremoloSyncNote --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "cabParameters/leftCabActive": {
@@ -614,7 +614,7 @@
     "cabParameters/leftCabPan": {
       "kind": "enum",
       "ui": "Left pan",
-      "note": "Pan position selector. Member names not yet confirmed against the plugin UI.",
+      "note": "Pan position selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param cabParameters/leftCabPan --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "cabParameters/leftRoomActive": {
@@ -670,7 +670,7 @@
     "cabParameters/rightCabPan": {
       "kind": "enum",
       "ui": "Right pan",
-      "note": "Pan position selector. Member names not yet confirmed against the plugin UI.",
+      "note": "Pan position selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param cabParameters/rightCabPan --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "cabParameters/rightRoomActive": {
@@ -761,13 +761,13 @@
     "delay/delaySync": {
       "kind": "enum",
       "ui": "Sync mode",
-      "note": "Sync-source selector (free / host tempo / tap per the config reference). Integer mapping not yet confirmed against the plugin UI - observed value 0.",
+      "note": "Sync-source selector (free / host tempo / tap per the config reference); member names not yet known. You usually do not need it: leave it at whatever the template has and set `delayTime` in ms. The bundled example holds 0 alongside a meaningful 420 ms delayTime, which suggests 0 is the free-running mode \u2014 an inference from one preset, not a verified fact. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param delay/delaySync --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "delay/delaySyncNote": {
       "kind": "enum",
       "ui": "Sync note",
-      "note": "Note-division selector. Integer-to-note mapping not yet confirmed against the plugin UI - observed value 13. Until this is filled in, prefer delayTime in ms over synced delay.",
+      "note": "Note-division selector; member names not yet known. PREFER `delayTime` IN MILLISECONDS INSTEAD: packs/timing.py converts a tempo and a division into exact ms (120 BPM + '1/8 dotted' = 375 ms), which needs no selector and leaves the delay free-running. Only use this selector when the user wants the delay to follow host tempo changes. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param delay/delaySyncNote --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
       "needs_confirmation": true
     },
     "delay/delayLowCut": {
@@ -798,5 +798,11 @@
       "kind": "rotation",
       "ui": "Tape drive"
     }
+  },
+  "selector_discovery": {
+    "indexing": "index-based: the stored integer is the option's position in the control, counting from 0",
+    "evidence": "confirmed for enums.internalMic (0 = the first mic in the list, 8 = the ninth)",
+    "workflow": "read the control's options off the plugin UI in order, write them as `members`, then verify with scripts/probe.py using a single index",
+    "why_not_read_directly": "the plugin UI never displays the stored integer, so the mapping cannot be observed from the screen"
   }
 }

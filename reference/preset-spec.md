@@ -35,6 +35,11 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 Prefer **member names over integers** for selectors — `"value": "SW50R"` reads
 better than `"value": 2` and is checked against the manifest.
 
+Six selectors have no member names yet, because the plugin never displays the
+stored integer. For musical delay and tremolo you don't need them — compute
+milliseconds or Hz instead. See
+[selectors-and-timing.md](selectors-and-timing.md).
+
 ## Where the facts live
 
 - `packs/<id>/manifest.json` — **the contract.** Committed and hand-curated:

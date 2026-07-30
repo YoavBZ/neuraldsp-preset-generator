@@ -36,6 +36,10 @@ Typical translations:
 - **"warmer" / "too harsh"** → drop treble, lower `reverbHighCut` /
   `delayHighCut`
 - **"more break-up"** → raise the live amp's volume/gain knob, or engage a drive
+- **"dotted eighth delay", "in time with the track"** → compute ms from the
+  tempo with `packs/timing.py` and set `delay/delayTime`; do not touch the
+  sync-note selector. See
+  [selectors-and-timing.md](../../reference/selectors-and-timing.md)
 
 Move in **proportionate steps**. A vague "a bit more" is 5–10 points of rotation,
 not 40. If the ask is genuinely ambiguous ("make it better"), ask what bothers

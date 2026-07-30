@@ -57,7 +57,7 @@ Both preview their changes before writing:
 .claude-plugin/  — plugin manifest
 skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs, installing)
-scripts/         — show.py (inspect) and apply_spec.py (write)
+scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover selectors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 schema/          — builds the optional observed-value catalog from your presets
@@ -108,6 +108,37 @@ The plugin's knobs have no numbers — a knob is just a rotation. So:
   (`"PR12"`, `"Ribbon 121"`) or an integer.
 
 Every parameter's `kind` and `unit` live in `packs/<id>/manifest.json`.
+
+## Musical timing without the sync selector
+
+A "dotted eighth delay" is just arithmetic, so it doesn't need the plugin's
+sync-note selector:
+
+```python
+from packs.timing import note_ms
+note_ms(120, "1/8 dotted")   # 375.0  ms  -> write to delay/delayTime
+```
+
+This matters because the plugin's UI shows a selector's *label* but never the
+integer stored in the file, so six selectors (`delaySyncNote`,
+`tremoloSyncNote`, `delaySync`, `ac20Power`, both `CabPan`) have no member names
+yet — the mapping can't be read off the screen. Writing them still works, with a
+warning that the value is unverified.
+
+To fill one in, `scripts/probe.py` inverts the problem: it writes disposable
+presets **named after the value they carry**, so the plugin's own preset browser
+labels them.
+
+```bash
+python scripts/probe.py --param delay/delaySyncNote --values 0-15 \
+  --out-dir ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User
+```
+
+Load `probe delaySyncNote 07`, read the control, and you've learned what 7 means
+— reading labels only, never integers. Selectors are index-based (confirmed for
+the mic catalog), so the cheaper path is to read the control's options in order,
+write them as `members`, and confirm the whole table with a single probe. See
+[reference/selectors-and-timing.md](reference/selectors-and-timing.md).
 
 ## Optional: taste anchors from your own library
 
