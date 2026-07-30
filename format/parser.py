@@ -52,10 +52,18 @@ def parse(buf: bytes) -> List[Token]:
     n = len(buf)
 
     while i < n:
-        # Collect non-printable prefix bytes up to the next printable byte.
+        # Collect non-printable prefix bytes up to the next printable byte —
+        # but stop the moment a complete value marker (0x01 <LEN> 0x05) has been
+        # consumed. A value's own first byte need not be printable: any value
+        # starting with a non-ASCII character begins with a UTF-8 lead byte
+        # (>= 0xC2), and scanning past the marker would swallow it, leaving a
+        # prefix that no longer looks like a value. The key would then be paired
+        # with nothing and the parameter would vanish from the structured view.
         prefix_start = i
         while i < n and not is_printable(buf[i]):
             i += 1
+            if is_value_prefix(buf[prefix_start:i]):
+                break
         prefix = buf[prefix_start:i]
 
         # --- Length-aware value handling ----------------------------------

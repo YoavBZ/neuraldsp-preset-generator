@@ -70,10 +70,13 @@ def fix_value_prefix(prefix: bytes, value: str) -> bytes:
     """
     if not is_value_prefix(prefix):
         return prefix
-    n = len(value.encode("utf-8")) + VALUE_LEN_OFFSET
+    encoded = len(value.encode("utf-8"))
+    n = encoded + VALUE_LEN_OFFSET
     if n > 0xFF:
         raise ValueError(
-            f"value too long to length-encode in one byte "
-            f"({len(value)} chars); multi-byte length encoding is unknown"
+            f"value too long to length-encode in one byte ({encoded} bytes, "
+            f"max {0xFF - VALUE_LEN_OFFSET}); multi-byte length encoding is "
+            f"unknown. Note the limit is on BYTES, so non-ASCII characters "
+            f"count more than once."
         )
     return prefix[:-2] + bytes([n]) + prefix[-1:]

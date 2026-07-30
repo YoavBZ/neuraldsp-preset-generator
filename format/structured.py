@@ -21,28 +21,27 @@ enough for parameter mutation but is not a full grammar.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
-from .markers import fix_value_prefix
+from .markers import fix_value_prefix, is_value_prefix
 from .parser import Token
 
 def is_value_token(tok: Token) -> bool:
-    """A value's marker prefix is the 3-byte pattern 0x01 ?? 0x05.
+    """True when this token is a VALUE rather than a key or structural marker.
 
-    The middle byte varies (it appears to encode the value's display type:
-    short int, decimal, signed decimal, bool, etc.) but the wrapper bytes
-    are fixed. Shorter prefixes like ``b'\\x01\\x05'`` (the first-key marker
-    that appears immediately after a sub-module name) must NOT match.
+    The byte rule lives in `markers.is_value_prefix` so it is stated once.
     """
-    p = tok.raw_prefix
-    return len(p) >= 3 and p[-3] == 0x01 and p[-1] == 0x05
+    return is_value_prefix(tok.raw_prefix)
 
 
 @dataclass
 class Parameter:
     """A (module_path, key, value) tuple with index back into the token list."""
 
-    module_path: str          # e.g. "ampParameters.pr12Amp"
+    # The file flattens its module tree: each `subModels` marker replaces the
+    # current module rather than nesting under it, so a path is a single name
+    # ("pr12Amp", "cabParameters"), never dotted. Top-level keys use "".
+    module_path: str          # e.g. "pr12Amp"
     key: str                  # e.g. "pr12Volume"
     value: str                # current value as stored (string form)
     key_index: int            # index of key token in the token list
@@ -61,11 +60,12 @@ class Preset:
     # Convenience: index by (module_path, key) → Parameter.
     by_path: Dict[Tuple[str, str], Parameter] = field(default_factory=dict)
 
-    def get(self, module_path: str, key: str) -> Optional[Parameter]:
-        return self.by_path.get((module_path, key))
-
-    def all_keys(self) -> List[Tuple[str, str]]:
-        return list(self.by_path.keys())
+    # Paths seen more than once. The file flattens its module tree, so two
+    # sibling sub-modules sharing a name would collapse onto one path and a
+    # write would silently hit only the last. No Morgan preset does this, but
+    # nothing in the format prevents it, so callers can check rather than
+    # assume.
+    duplicates: List[Tuple[str, str]] = field(default_factory=list)
 
 
 def build(tokens: List[Token]) -> Preset:
@@ -119,6 +119,8 @@ def build(tokens: List[Token]) -> Preset:
                 value_index=i + 1,
             )
             parameters.append(param)
+            if (module_path, tok.value) in preset.by_path:
+                preset.duplicates.append((module_path, tok.value))
             preset.by_path[(module_path, tok.value)] = param
             if param.module_path == "" and param.key == "name":
                 preset.preset_name = param.value

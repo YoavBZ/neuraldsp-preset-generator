@@ -13,9 +13,8 @@ file. The template-based approach sidesteps this entirely.
 
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import Iterable
 
-from .markers import fix_value_prefix
 from .parser import Token
 
 
@@ -28,16 +27,3 @@ def write_file(path: str, tokens: Iterable[Token]) -> None:
     with open(path, "wb") as f:
         f.write(write(tokens))
 
-
-def set_token_value(tokens: List[Token], index: int, new_value: str) -> None:
-    """Mutate a single token's string value in place.
-
-    The length byte embedded in ``raw_prefix`` is recomputed to match the
-    new value's byte length (see ``fix_value_prefix``); all other prefix
-    bytes are preserved.
-    """
-    tokens[index] = Token(
-        raw_prefix=fix_value_prefix(tokens[index].raw_prefix, new_value),
-        value=new_value,
-        terminator=tokens[index].terminator,
-    )

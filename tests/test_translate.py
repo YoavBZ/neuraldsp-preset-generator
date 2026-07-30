@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import pathlib
-
 import pytest
 
+from format.parser import parse_file
+from format.structured import build
 from format.translate import describe, from_binary, to_binary
-from schema.loader import SCHEMA_PATH, index_by_key, load_schema
-
-# The real schema is generated from whatever presets you supply, so it is
-# git-ignored. Fall back to a minimal committed fixture covering every
-# translatable kind, so this file passes on a fresh clone.
-FIXTURE_SCHEMA = pathlib.Path(__file__).parent / "fixtures" / "schema_min.json"
+from packs.loader import detect_pack, list_packs
+from packs.paths import all_presets
 
 
 def test_rotation_percent_to_fraction():
@@ -60,23 +56,36 @@ def test_enum_int():
     assert to_binary("enum", 1.0) == "1"
 
 
-def test_every_factory_value_roundtrips_through_human():
-    """For each real value in the schema, binary -> human -> binary should be
-    stable for the kinds where that is well-defined (rotation/fraction/switch/
-    enum/metered with integer-ish values)."""
-    schema = load_schema() if SCHEMA_PATH.exists() else load_schema(FIXTURE_SCHEMA)
-    idx = index_by_key(schema)
-    for (mod, key), meta in idx.items():
-        kind = meta["kind"]
-        if kind in ("path", "string", "unknown"):
+def test_every_real_value_roundtrips_through_human():
+    """Every value in every preset we can see must survive
+    binary -> human -> binary unchanged.
+
+    This runs against real stored values and the committed manifest, so it
+    covers whatever presets the user has added as well as the bundled example.
+    A lossy conversion here would silently alter a preset on any edit.
+    """
+    checked = 0
+    for preset_path in all_presets(list_packs()):
+        preset = build(parse_file(str(preset_path)))
+        pack = detect_pack(preset.file_header)
+        if pack is None:
             continue
-        for stored in meta["observed_values"]:
-            human = from_binary(kind, stored, meta.get("unit"))
-            back = to_binary(kind, human, meta.get("unit"))
-            # Compare numerically where applicable to avoid format noise.
-            if kind in ("rotation", "fraction", "metered"):
-                assert abs(float(back) - float(stored)) < 1e-6, (
-                    f"{mod}/{key} {kind}: {stored} -> {human} -> {back}"
+        for param in preset.parameters:
+            spec = pack.get(param.module_path, param.key)
+            if spec is None or spec.kind in ("path", "string"):
+                continue
+            human = from_binary(spec.kind, param.value, spec.unit)
+            back = to_binary(spec.kind, human, spec.unit)
+            if spec.kind in ("rotation", "fraction", "metered"):
+                assert abs(float(back) - float(param.value)) < 1e-6, (
+                    f"{preset_path.name} {spec.path} {spec.kind}: "
+                    f"{param.value} -> {human} -> {back}"
                 )
             else:
-                assert back == stored, f"{mod}/{key} {kind}: {stored} -> {back}"
+                assert back == param.value, (
+                    f"{preset_path.name} {spec.path} {spec.kind}: "
+                    f"{param.value} -> {back}"
+                )
+            checked += 1
+    assert checked > 100, f"only checked {checked} values — is samples/ empty?"
+

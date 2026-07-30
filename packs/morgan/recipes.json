@@ -1,0 +1,1414 @@
+{
+  "recipes_version": 1,
+  "pack_id": "morgan",
+  "description": "Composable tone recipes, one layer at a time. A preset is built by stacking layers - amp + compressor + drive + eq + cab + delay + reverb - then adapting the values to the actual song. These are starting points to adjust, not answers to ship unchanged.",
+  "translated_from": "docs/morgan-config-reference.md",
+  "conversion": {
+    "knob_scale": "the source doc uses a 0-10 knob scale; every knob value here is that number x10, as percent of rotation",
+    "renames": "od1 -> drive1, od2 -> drive2, comp -> compressorCompression, delay/reverb hpfHz -> *LowCut, lpfHz -> *HighCut, eq bandsDb.hzNNN -> *EQBand1..9 ascending",
+    "metered": "dB, Hz, ms and seconds pass through unchanged",
+    "verification": "tests/test_recipes.py asserts every key exists in the manifest and every value survives translation, so a mis-scaled or mis-named value fails the suite"
+  },
+  "not_translated": {
+    "ac20 powerLevel, standby; sw50r/pr12 power, standby": "no such parameters exist in the file",
+    "compressor releaseMode FAST/SLOW": "compressorRelease is a switch but which boolean is FAST is unknown, so recipes leave it at the template's value",
+    "sw50r inputMode DEFAULT/-6_DB": "sw50rInputMode is a switch; which boolean is the pad is unknown",
+    "ac20 bassCut": "probably ac20BassTreble, but the doc's 'cut the bass' reading and the key's own name point opposite ways, so recipes do not set it",
+    "cab micId MIC_1..MIC_6": "six abstract ids that do not map onto this plugin's ten named mics; mic choices in the cab recipes are substituted by standard practice",
+    "cab pan L25/R25": "the pan selector's integer mapping is unknown",
+    "delay/tremolo syncMode and timeNote": "expressed instead as ms and Hz computed from tempo, which needs no selector - see packs/timing.py",
+    "guitarNotes (section 19)": "playing advice, not plugin parameters; kept in tone.md instead"
+  },
+  "layers": {
+    "compressor": {
+      "subtle-clean-sustain": {
+        "title": "Subtle clean sustain",
+        "use_when": "clean rhythm that needs a little glue and pick control",
+        "source": "docs/morgan-config-reference.md#6",
+        "parameters": [
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 25
+          },
+          {
+            "module": "compressor",
+            "key": "compressorLevel",
+            "value": 50
+          },
+          {
+            "module": "compressor",
+            "key": "compressorMix",
+            "value": 40
+          }
+        ]
+      },
+      "country-funk-tight": {
+        "title": "Country / funk / tight clean",
+        "use_when": "snappy clean parts, chicken pickin', funk rhythm",
+        "source": "docs/morgan-config-reference.md#6",
+        "parameters": [
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 55
+          },
+          {
+            "module": "compressor",
+            "key": "compressorLevel",
+            "value": 52
+          },
+          {
+            "module": "compressor",
+            "key": "compressorMix",
+            "value": 65
+          }
+        ]
+      },
+      "lead-smoothing": {
+        "title": "Lead smoothing",
+        "use_when": "lead lines that need sustain without flattening dynamics",
+        "source": "docs/morgan-config-reference.md#6",
+        "parameters": [
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 22
+          },
+          {
+            "module": "compressor",
+            "key": "compressorLevel",
+            "value": 50
+          },
+          {
+            "module": "compressor",
+            "key": "compressorMix",
+            "value": 35
+          }
+        ]
+      },
+      "off": {
+        "title": "Compressor off",
+        "use_when": "crunch and high-gain rhythm, where the amp is already compressing",
+        "source": "docs/morgan-config-reference.md#6",
+        "parameters": [
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": false
+          }
+        ]
+      }
+    },
+    "drive1": {
+      "solo-boost": {
+        "title": "Solo boost into a clean or edge amp",
+        "use_when": "lifting a lead over a rhythm part without much added dirt",
+        "source": "docs/morgan-config-reference.md#7",
+        "parameters": [
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Drive",
+            "value": 20
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 65
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Tone",
+            "value": 50
+          }
+        ]
+      },
+      "classic-rock-crunch-push": {
+        "title": "Classic-rock crunch push",
+        "use_when": "pushing an edge-of-breakup amp into rhythm crunch",
+        "source": "docs/morgan-config-reference.md#7",
+        "parameters": [
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Drive",
+            "value": 40
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 60
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Tone",
+            "value": 55
+          }
+        ]
+      },
+      "singing-lead-push": {
+        "title": "Singing classic-rock lead push",
+        "use_when": "sustained vintage lead - the Joe Walsh / Eagles push",
+        "source": "docs/morgan-config-reference.md#7",
+        "parameters": [
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Drive",
+            "value": 28
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 63
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Tone",
+            "value": 52
+          }
+        ]
+      },
+      "off": {
+        "title": "OD1 off",
+        "use_when": "clean tones and anything driven by the amp alone",
+        "source": "docs/morgan-config-reference.md#7",
+        "parameters": [
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": false
+          }
+        ]
+      }
+    },
+    "drive2": {
+      "thicker-blues-lead": {
+        "title": "Thicker blues lead",
+        "use_when": "blues lead needing more body than OD1 gives",
+        "source": "docs/morgan-config-reference.md#8",
+        "parameters": [
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Gain",
+            "value": 35
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Level",
+            "value": 58
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Bass",
+            "value": 55
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Treble",
+            "value": 48
+          }
+        ]
+      },
+      "heavier-classic-rock-lead": {
+        "title": "Heavier classic-rock lead",
+        "use_when": "saturated classic-rock lead",
+        "source": "docs/morgan-config-reference.md#8",
+        "parameters": [
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Gain",
+            "value": 52
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Level",
+            "value": 55
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Bass",
+            "value": 50
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Treble",
+            "value": 58
+          }
+        ]
+      },
+      "off": {
+        "title": "OD2 off",
+        "use_when": "the default - do not stack OD1 and OD2 casually",
+        "source": "docs/morgan-config-reference.md#8",
+        "parameters": [
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": false
+          }
+        ]
+      }
+    },
+    "tremolo": {
+      "subtle-amp-pulse": {
+        "title": "Subtle amp-like pulse",
+        "use_when": "vintage clean movement, not a rhythmic effect",
+        "source": "docs/morgan-config-reference.md#9",
+        "parameters": [
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": true
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloSync",
+            "value": false
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloRate",
+            "value": 2.1
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloDepth",
+            "value": 25
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloLevel",
+            "value": 50
+          }
+        ]
+      },
+      "song-tempo": {
+        "title": "Song-tempo tremolo",
+        "use_when": "tempo-locked rhythmic pulsing",
+        "source": "docs/morgan-config-reference.md#9",
+        "note": "The doc locks this with the sync-note selector, whose mapping is unknown. Equivalent here as a free-running rate computed from the tempo: fill in bpm and the rate resolves to one cycle per eighth note. Cap is 5 Hz, so eighths above 150 BPM will not fit - use quarters instead.",
+        "parameters": [
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": true
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloSync",
+            "value": false
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloRate",
+            "value": {
+              "note": "1/8"
+            }
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloDepth",
+            "value": 50
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloLevel",
+            "value": 50
+          }
+        ]
+      },
+      "off": {
+        "title": "Tremolo off",
+        "use_when": "the default",
+        "source": "docs/morgan-config-reference.md#9",
+        "parameters": [
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": false
+          }
+        ]
+      }
+    },
+    "amp": {
+      "ac20-jangle": {
+        "title": "AC20 jangle / light crunch",
+        "use_when": "British invasion, jangle pop, indie rhythm",
+        "source": "docs/morgan-config-reference.md#11",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "AC20"
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Volume",
+            "value": 45
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Cut",
+            "value": 45
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Bright",
+            "value": true
+          }
+        ]
+      },
+      "ac20-singing-lead": {
+        "title": "AC20 Vox-style singing lead",
+        "use_when": "chimey lead with bite",
+        "source": "docs/morgan-config-reference.md#11",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "AC20"
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Volume",
+            "value": 65
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Cut",
+            "value": 40
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Bright",
+            "value": true
+          }
+        ]
+      },
+      "ac20-classic-rock-crunch": {
+        "title": "AC20 classic-rock crunch",
+        "use_when": "driven British rhythm",
+        "source": "docs/morgan-config-reference.md#11",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "AC20"
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Volume",
+            "value": 58
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Cut",
+            "value": 42
+          },
+          {
+            "module": "ac20Amp",
+            "key": "ac20Bright",
+            "value": true
+          }
+        ]
+      },
+      "pr12-clean": {
+        "title": "PR12 blackface clean",
+        "use_when": "the default clean platform: clean rhythm, country, blues clean",
+        "source": "docs/morgan-config-reference.md#12",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "PR12"
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Volume",
+            "value": 36
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Bass",
+            "value": 48
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Treble",
+            "value": 62
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Reverb",
+            "value": 24
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Dwell",
+            "value": 36
+          }
+        ]
+      },
+      "pr12-saggy-breakup": {
+        "title": "PR12 saggy blues breakup",
+        "use_when": "low-watt amp pushed into natural grit",
+        "source": "docs/morgan-config-reference.md#12",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "PR12"
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Volume",
+            "value": 58
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Bass",
+            "value": 42
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Treble",
+            "value": 58
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Reverb",
+            "value": 20
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Dwell",
+            "value": 30
+          }
+        ]
+      },
+      "sw50r-smooth-clean-lead": {
+        "title": "SW50R smooth clean lead platform",
+        "use_when": "polished clean lead, high-headroom clean",
+        "source": "docs/morgan-config-reference.md#13",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "SW50R"
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rVolume",
+            "value": 38
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rLevel",
+            "value": 50
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBass",
+            "value": 48
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rMid",
+            "value": 58
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rTreble",
+            "value": 52
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rReverb",
+            "value": 20
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBright",
+            "value": false
+          }
+        ]
+      },
+      "sw50r-singing-lead": {
+        "title": "SW50R Dumble-style singing lead",
+        "use_when": "smooth sustained blues and classic-rock lead - the first choice for 'singing lead'",
+        "source": "docs/morgan-config-reference.md#13",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "SW50R"
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rVolume",
+            "value": 52
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rLevel",
+            "value": 50
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBass",
+            "value": 45
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rMid",
+            "value": 65
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rTreble",
+            "value": 50
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rReverb",
+            "value": 18
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBright",
+            "value": false
+          }
+        ]
+      },
+      "sw50r-headroom-rhythm": {
+        "title": "SW50R clean high-headroom rhythm",
+        "use_when": "loud clean rhythm that must not break up",
+        "source": "docs/morgan-config-reference.md#13",
+        "parameters": [
+          {
+            "module": "",
+            "key": "selectedAmp",
+            "value": "SW50R"
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rVolume",
+            "value": 45
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rLevel",
+            "value": 55
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBass",
+            "value": 50
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rMid",
+            "value": 50
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rTreble",
+            "value": 58
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rReverb",
+            "value": 15
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rBright",
+            "value": true
+          }
+        ]
+      }
+    },
+    "eq": {
+      "natural-flat": {
+        "title": "Natural / mostly flat",
+        "use_when": "the default - trim the extremes and otherwise leave it alone",
+        "source": "docs/morgan-config-reference.md#15",
+        "note": "Module and keys contain {amp}; substitute the live amp's prefix (pr12 / sw50r / ac20). The EQ is per-amp, so it must match selectedAmp. Bands are 65, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz in order, in dB.",
+        "parameters": [
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQActive",
+            "value": true
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand1",
+            "value": -1.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand2",
+            "value": -0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand3",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand4",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand5",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand6",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand7",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand8",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand9",
+            "value": -1.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQHpf",
+            "value": 80
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQLpf",
+            "value": 9000
+          }
+        ]
+      },
+      "lead-focus": {
+        "title": "Classic-rock lead focus",
+        "use_when": "lead that needs to cut without turning the amp treble up",
+        "source": "docs/morgan-config-reference.md#15",
+        "note": "Module and keys contain {amp}; substitute the live amp's prefix (pr12 / sw50r / ac20). The EQ is per-amp, so it must match selectedAmp. Bands are 65, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz in order, in dB. Pushes 1k and 2k rather than raising treble globally.",
+        "parameters": [
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQActive",
+            "value": true
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand1",
+            "value": -2.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand2",
+            "value": -1.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand3",
+            "value": -0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand4",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand5",
+            "value": 1.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand6",
+            "value": 2.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand7",
+            "value": 1.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand8",
+            "value": -0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand9",
+            "value": -2.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQHpf",
+            "value": 90
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQLpf",
+            "value": 7500
+          }
+        ]
+      },
+      "warm-clean-rhythm": {
+        "title": "Warm clean rhythm",
+        "use_when": "clean rhythm that should sit back and stay warm",
+        "source": "docs/morgan-config-reference.md#15",
+        "note": "Module and keys contain {amp}; substitute the live amp's prefix (pr12 / sw50r / ac20). The EQ is per-amp, so it must match selectedAmp. Bands are 65, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz in order, in dB.",
+        "parameters": [
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQActive",
+            "value": true
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand1",
+            "value": -1.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand2",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand3",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand4",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand5",
+            "value": -0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand6",
+            "value": 0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand7",
+            "value": 0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand8",
+            "value": -0.5
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQBand9",
+            "value": -2.0
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQHpf",
+            "value": 75
+          },
+          {
+            "module": "{amp}EQ",
+            "key": "{amp}EQLpf",
+            "value": 8500
+          }
+        ]
+      }
+    },
+    "cab": {
+      "single-mic-focused": {
+        "title": "Single close mic, focused",
+        "use_when": "the default - one mic, centred, no room",
+        "source": "docs/morgan-config-reference.md#14",
+        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end.",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.45
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.2
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomActive",
+            "value": false
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": false
+          }
+        ]
+      },
+      "two-mic-fuller": {
+        "title": "Two mics, fuller clean rhythm",
+        "use_when": "clean rhythm needing body and a little air",
+        "source": "docs/morgan-config-reference.md#14",
+        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end.",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.55
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.25
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": -1.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftRoomMicLevel",
+            "value": -12.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Ribbon 121"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPosition",
+            "value": 0.7
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabDistance",
+            "value": 0.35
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabMicLevel",
+            "value": -4.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightRoomMicLevel",
+            "value": -15.0
+          }
+        ]
+      },
+      "two-mic-wide": {
+        "title": "Two mics, wider",
+        "use_when": "a wider practice or lead sound",
+        "source": "docs/morgan-config-reference.md#14",
+        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end. The doc pans the two mics L25/R25; the pan selector's mapping is unknown, so pan is NOT set here. Set it by hand in the plugin, or probe the selector - see reference/selectors-and-timing.md.",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.48
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.2
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": -1.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Condenser 414"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPosition",
+            "value": 0.68
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabDistance",
+            "value": 0.35
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabMicLevel",
+            "value": -3.0
+          }
+        ]
+      }
+    },
+    "delay": {
+      "subtle-slapback": {
+        "title": "Subtle slapback",
+        "use_when": "rockabilly, country, or just depth on a dry rhythm part",
+        "source": "docs/morgan-config-reference.md#17",
+        "parameters": [
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayTime",
+            "value": 115
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 18
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 15
+          },
+          {
+            "module": "delay",
+            "key": "delayPingPong",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayLowCut",
+            "value": 150
+          },
+          {
+            "module": "delay",
+            "key": "delayHighCut",
+            "value": 4200
+          },
+          {
+            "module": "delay",
+            "key": "delayTapeDrive",
+            "value": 20
+          },
+          {
+            "module": "delay",
+            "key": "delayWidth",
+            "value": 20
+          }
+        ]
+      },
+      "classic-lead": {
+        "title": "Classic quarter-note lead delay",
+        "use_when": "the Hotel California / classic-rock lead delay",
+        "source": "docs/morgan-config-reference.md#17",
+        "note": "delayTime carries a note division - fill in bpm and it resolves to ms. No sync selector needed.",
+        "parameters": [
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayTime",
+            "value": {
+              "note": "1/4"
+            }
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 26
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 32
+          },
+          {
+            "module": "delay",
+            "key": "delayPingPong",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayLowCut",
+            "value": 180
+          },
+          {
+            "module": "delay",
+            "key": "delayHighCut",
+            "value": 3600
+          },
+          {
+            "module": "delay",
+            "key": "delayTapeDrive",
+            "value": 25
+          },
+          {
+            "module": "delay",
+            "key": "delayWidth",
+            "value": 40
+          }
+        ]
+      },
+      "big-stereo-lead": {
+        "title": "Big stereo dotted lead delay",
+        "use_when": "wide ping-pong lead ambience",
+        "source": "docs/morgan-config-reference.md#17",
+        "note": "A dotted quarter needs bpm above 40 to fit the 1500 ms ceiling.",
+        "parameters": [
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayTime",
+            "value": {
+              "note": "1/4 dotted"
+            }
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 32
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 40
+          },
+          {
+            "module": "delay",
+            "key": "delayPingPong",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayLowCut",
+            "value": 220
+          },
+          {
+            "module": "delay",
+            "key": "delayHighCut",
+            "value": 3300
+          },
+          {
+            "module": "delay",
+            "key": "delayTapeDrive",
+            "value": 30
+          },
+          {
+            "module": "delay",
+            "key": "delayWidth",
+            "value": 70
+          }
+        ]
+      },
+      "off": {
+        "title": "Delay off",
+        "use_when": "tight dry rhythm",
+        "source": "docs/morgan-config-reference.md#17",
+        "parameters": [
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          }
+        ]
+      }
+    },
+    "reverb": {
+      "small-room": {
+        "title": "Small room, always-on",
+        "use_when": "the default - a little space without obvious effect",
+        "source": "docs/morgan-config-reference.md#18",
+        "parameters": [
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 15
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 20
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 1.8
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 150
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 6500
+          }
+        ]
+      },
+      "spring-ambience": {
+        "title": "Classic spring-ish ambience",
+        "use_when": "vintage clean rhythm",
+        "source": "docs/morgan-config-reference.md#18",
+        "parameters": [
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 25
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 35
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 2.8
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 180
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 6000
+          }
+        ]
+      },
+      "large-lead": {
+        "title": "Large lead ambience",
+        "use_when": "lead that should sound like it is in a big space",
+        "source": "docs/morgan-config-reference.md#18",
+        "parameters": [
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 32
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 60
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 4.5
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 220
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 5500
+          }
+        ]
+      }
+    },
+    "output": {
+      "clean-rhythm": {
+        "title": "Clean rhythm output staging",
+        "use_when": "starting output level for a clean rhythm preset",
+        "source": "docs/morgan-config-reference.md#20.3",
+        "note": "A starting point for gain staging, not a mix decision - level-match by ear afterwards.",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -3.0
+          }
+        ]
+      },
+      "edge-of-breakup": {
+        "title": "Edge of breakup output staging",
+        "use_when": "starting output level for a edge of breakup preset",
+        "source": "docs/morgan-config-reference.md#20.3",
+        "note": "A starting point for gain staging, not a mix decision - level-match by ear afterwards.",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -3.5
+          }
+        ]
+      },
+      "crunch-rhythm": {
+        "title": "Crunch rhythm output staging",
+        "use_when": "starting output level for a crunch rhythm preset",
+        "source": "docs/morgan-config-reference.md#20.3",
+        "note": "A starting point for gain staging, not a mix decision - level-match by ear afterwards.",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -4.0
+          }
+        ]
+      },
+      "lead": {
+        "title": "Lead with drive, delay and reverb output staging",
+        "use_when": "starting output level for a lead with drive, delay and reverb preset",
+        "source": "docs/morgan-config-reference.md#20.3",
+        "note": "A starting point for gain staging, not a mix decision - level-match by ear afterwards.",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -3.5
+          }
+        ]
+      },
+      "big-stereo-lead": {
+        "title": "Big stereo lead output staging",
+        "use_when": "starting output level for a big stereo lead preset",
+        "source": "docs/morgan-config-reference.md#20.3",
+        "note": "A starting point for gain staging, not a mix decision - level-match by ear afterwards.",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -4.5
+          }
+        ]
+      }
+    }
+  }
+}

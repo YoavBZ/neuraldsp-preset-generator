@@ -2,15 +2,45 @@
 ========================================================================
 VERIFICATION STATUS — read before trusting this document
 ========================================================================
-Verified 2026-05-29 against the 3 real Morgan presets in samples/ and
-the parser-derived schema/morgan_schema.json (132 params). This file is
-a MUSICAL CONTROL REFERENCE, not the binary file format. NOT yet wired
-into the skill — kept here for tone-reasoning guidance only.
+Verified 2026-05-29 against 3 real Morgan presets (the author's own; only
+the generated example ships in samples/) and
+the parser-derived parameter catalog (132 params). This file is a MUSICAL
+CONTROL REFERENCE, not the binary file format.
+
+RECONCILED as of the pack refactor. This document is now a SOURCE, not a
+reference the tools read:
+  - Section 21's validation ranges -> packs/morgan/manifest.json (see each
+    parameter's `range_source`).
+  - Section 15's nine EQ band centres -> manifest `centre_hz`, so band advice
+    can name frequencies instead of band numbers.
+  - Sections 6-19's templates -> packs/morgan/recipes.json, converted to binary
+    key names and the project's percent scale. tests/test_recipes.py proves
+    every key exists and every value survives translation, so the 0-10 scale
+    and the renames cannot silently leak through.
+  - Section 20's intent table and 20.2/20.3 guidance -> packs/morgan/tone.md.
+  - Fields that could NOT be translated are listed with reasons in
+    recipes.json under `not_translated`. Read that before assuming a template
+    here was absorbed whole.
+
+Prefer the pack files. This document is kept for provenance and for the prose
+reasoning in sections 20 and 27.
 
 ACCURATE (use as guidance):
   - PR12 amp controls map 1:1 (volume/treble/bass/reverb/dwell).
   - OD1/OD2, compressor, tremolo, delay, reverb control sets are correct
     in spirit; tone-shaping advice (Sections 20, 27) is solid.
+
+CORRECTED BY RESEARCH (2026-07-30), and the doc was right where this repo
+was wrong:
+  - SW50R is based on the Dumble Small Special, so this doc's
+    "Dumble-style singing lead" is correct. Earlier notes in this repo
+    called it a Vox-style chime amp, which sent lead requests to the wrong
+    amp.
+  - AC20 is built on the AC30 NORMAL channel, voiced darker than a Vox --
+    not top-boost.
+  - PR12's Dwell is a reverb-decay control Morgan added to the Princeton
+    circuit so a high reverb mix does not wash out.
+  - `cut` higher = darker is correct (it is the Vox power-amp Cut).
 
 MUST TRANSLATE before writing to the binary:
   - SCALE: this doc's 0–10 knob scale is NOT used by the project. The
@@ -18,7 +48,7 @@ MUST TRANSLATE before writing to the binary:
     rotation (0–100), stored as 0.0–1.0. Reinterpret any 0–10 value here
     as x*10 percent (doc 3.6 -> 36% -> stored "0.36"). Metered controls
     (dB/Hz/ms/s/BPM/semitones) use native units. The authoritative
-    kind+unit for every parameter is in schema/morgan_schema.json, and
+    kind+unit for every parameter is in packs/morgan/manifest.json, and
     format/translate.py performs the human->binary mapping.
   - NAMES differ: doc hpfHz/lpfHz -> binary delayLowCut/delayHighCut;
     doc comp -> compressorCompression; od1/od2 -> drive1/drive2; etc.
@@ -32,7 +62,7 @@ KNOWN ERRORS / CONFLICTS in this doc vs the binary:
     (bass vs treble — a real conflict). Doc power/standby absent.
   - CAB: doc's slots[]/micId model does NOT match the binary, which uses
     dual left/right cabs. Mic selection = leftMicType/rightMicType integer
-    index into the 10-mic catalog (schema/mic_catalog.json). Custom IR =
+    index into the 10-mic catalog (manifest `enums.internalMic`). Custom IR =
     *ChosenIRFilePath string; "no custom IR" is that field set to an empty
     string (use apply_spec.py --strip-irs for portable factory-mic presets).
 
@@ -41,7 +71,7 @@ CONFIRMED (user-verified 2026-05-29):
     (Verified by loading presets with each value in the plugin. Those
      presets are not part of this repo.)
 
-Authoritative source for stored keys/scales: schema/morgan_schema.json.
+Authoritative source for stored keys/scales: packs/morgan/manifest.json.
 ========================================================================
 -->
 

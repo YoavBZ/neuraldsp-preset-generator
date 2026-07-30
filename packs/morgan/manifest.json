@@ -1,0 +1,837 @@
+{
+  "manifest_version": 1,
+  "pack_id": "morgan",
+  "display_name": "Morgan Amps Suite",
+  "vendor": "Neural DSP",
+  "file_header": "morgan",
+  "amp_modules": {
+    "AC20": "ac20",
+    "PR12": "pr12",
+    "SW50R": "sw50r"
+  },
+  "description": "Curated parameter facts for Neural DSP Morgan Amps Suite. Hand-maintained: this is the contract the generator writes against. It contains no Neural DSP code, audio, or preset content - only parameter names, units, and ranges needed to read and write presets for a licensed copy of the plugin.",
+  "enums": {
+    "internalMic": {
+      "0": "Dynamic 57",
+      "1": "Dynamic 57 Off-Axis",
+      "2": "Dynamic 409",
+      "3": "Dynamic 421",
+      "4": "Condenser 184",
+      "5": "Condenser 414",
+      "6": "Condenser 4006",
+      "7": "Condenser U47",
+      "8": "Ribbon 121",
+      "9": "Ribbon 160"
+    }
+  },
+  "parameters": {
+    "/name": {
+      "kind": "string",
+      "ui": "Preset name"
+    },
+    "/version": {
+      "kind": "string",
+      "note": "Plugin format version. Never write this - it is the file's own schema tag.",
+      "writable": false
+    },
+    "/selectedAmp": {
+      "kind": "enum",
+      "members": {
+        "0": "AC20",
+        "1": "PR12",
+        "2": "SW50R"
+      },
+      "ui": "Amp selector",
+      "note": "Chooses the live amp. All three amp modules exist in every preset, so any template can reach any amp. User-verified in the plugin."
+    },
+    "parameters/inputGain": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Input"
+    },
+    "parameters/outputGain": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Output"
+    },
+    "parameters/gateActive": {
+      "kind": "switch",
+      "ui": "Gate"
+    },
+    "parameters/gateThreshold": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Gate threshold",
+      "note": "No declared range. Observed around -72 dB."
+    },
+    "parameters/transpose": {
+      "kind": "metered",
+      "unit": "semitones",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Transpose"
+    },
+    "parameters/doublerActive": {
+      "kind": "switch",
+      "ui": "Doubler"
+    },
+    "parameters/doublerSpread": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 3,
+      "max": 20,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Doubler spread"
+    },
+    "ampParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Amp section"
+    },
+    "eqParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "EQ section"
+    },
+    "pedalParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Pedals section"
+    },
+    "cabParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Cab section"
+    },
+    "fxParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "FX section"
+    },
+    "pr12Amp/pr12Volume": {
+      "kind": "rotation",
+      "ui": "Volume",
+      "note": "PR12 is a 12W Princeton-style amp; past roughly 60% it starts to break up."
+    },
+    "pr12Amp/pr12Treble": {
+      "kind": "rotation",
+      "ui": "Treble"
+    },
+    "pr12Amp/pr12Bass": {
+      "kind": "rotation",
+      "ui": "Bass"
+    },
+    "pr12Amp/pr12Reverb": {
+      "kind": "rotation",
+      "ui": "Reverb",
+      "note": "Built-in spring reverb mix."
+    },
+    "pr12Amp/pr12Dwell": {
+      "kind": "rotation",
+      "ui": "Dwell",
+      "note": "Spring-reverb decay. Morgan added it to the original Princeton circuit specifically so you can run a high reverb mix without washing the tone out \u2014 so for a wet-but-defined clean, raise pr12Reverb and keep dwell moderate."
+    },
+    "sw50rAmp/sw50rVolume": {
+      "kind": "rotation",
+      "ui": "Volume",
+      "note": "Preamp gain - drives break-up."
+    },
+    "sw50rAmp/sw50rLevel": {
+      "kind": "rotation",
+      "ui": "Level",
+      "note": "Master volume - does not add gain."
+    },
+    "sw50rAmp/sw50rTreble": {
+      "kind": "rotation",
+      "ui": "Treble"
+    },
+    "sw50rAmp/sw50rMid": {
+      "kind": "rotation",
+      "ui": "Mid"
+    },
+    "sw50rAmp/sw50rBass": {
+      "kind": "rotation",
+      "ui": "Bass"
+    },
+    "sw50rAmp/sw50rReverb": {
+      "kind": "rotation",
+      "ui": "Reverb"
+    },
+    "sw50rAmp/sw50rBright": {
+      "kind": "switch",
+      "ui": "Bright"
+    },
+    "sw50rAmp/sw50rTrebleBoost": {
+      "kind": "switch",
+      "ui": "Treble boost",
+      "note": "Front-end treble boost. The config reference calls this control `bassEmphasis` and advises using it for a thicker lead, which would be the wrong direction \u2014 the stored key name is the plugin authors' own label and is the better evidence. Treat it as a brightness/cut boost, and verify by ear."
+    },
+    "sw50rAmp/sw50rInputMode": {
+      "kind": "switch",
+      "ui": "Input mode",
+      "note": "Bright/normal channel toggle."
+    },
+    "ac20Amp/ac20Volume": {
+      "kind": "rotation",
+      "ui": "Volume"
+    },
+    "ac20Amp/ac20Cut": {
+      "kind": "rotation",
+      "ui": "Cut",
+      "note": "Treble cut, borrowed from the Vox power-amp Cut control: HIGHER = DARKER. It works backwards from a normal tone knob. An earlier note in this repo claimed the opposite; the config reference, the control's name, and Morgan's own description of it as attenuating highs all agree on higher = darker. Check by ear in five seconds: raise it and listen for the top end to go."
+    },
+    "ac20Amp/ac20Bright": {
+      "kind": "switch",
+      "ui": "Bright"
+    },
+    "ac20Amp/ac20BassTreble": {
+      "kind": "switch",
+      "ui": "Bass/Treble",
+      "note": "Engages the cathode-follower tonestack - fuller mids, more AC30-like."
+    },
+    "ac20Amp/ac20Power": {
+      "kind": "enum",
+      "ui": "Power",
+      "note": "Output-power mode selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param ac20Amp/ac20Power --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "pr12EQ/pr12EQActive": {
+      "kind": "switch",
+      "ui": "EQ"
+    },
+    "pr12EQ/pr12EQBand1": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand2": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand3": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand4": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand5": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand6": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand7": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand8": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQBand9": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "pr12EQ/pr12EQHpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "High-pass"
+    },
+    "pr12EQ/pr12EQLpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "Low-pass"
+    },
+    "sw50rEQ/sw50rEQActive": {
+      "kind": "switch",
+      "ui": "EQ"
+    },
+    "sw50rEQ/sw50rEQBand1": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand2": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand3": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand4": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand5": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand6": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand7": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand8": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQBand9": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "sw50rEQ/sw50rEQHpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "High-pass"
+    },
+    "sw50rEQ/sw50rEQLpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "Low-pass"
+    },
+    "ac20EQ/ac20EQActive": {
+      "kind": "switch",
+      "ui": "EQ"
+    },
+    "ac20EQ/ac20EQBand1": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "65 Hz",
+      "centre_hz": 65,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand2": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "125 Hz",
+      "centre_hz": 125,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand3": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "250 Hz",
+      "centre_hz": 250,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand4": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "500 Hz",
+      "centre_hz": 500,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand5": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "1 kHz",
+      "centre_hz": 1000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand6": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "2 kHz",
+      "centre_hz": 2000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand7": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "4 kHz",
+      "centre_hz": 4000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand8": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "8 kHz",
+      "centre_hz": 8000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQBand9": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "16 kHz",
+      "centre_hz": 16000,
+      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+    },
+    "ac20EQ/ac20EQHpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "High-pass"
+    },
+    "ac20EQ/ac20EQLpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 20000,
+      "range_source": "observed-endpoints",
+      "ui": "Low-pass"
+    },
+    "compressor/compressorActive": {
+      "kind": "switch",
+      "ui": "Compressor"
+    },
+    "compressor/compressorCompression": {
+      "kind": "rotation",
+      "ui": "Comp"
+    },
+    "compressor/compressorLevel": {
+      "kind": "rotation",
+      "ui": "Level"
+    },
+    "compressor/compressorMix": {
+      "kind": "rotation",
+      "ui": "Mix"
+    },
+    "compressor/compressorRelease": {
+      "kind": "switch",
+      "ui": "Release",
+      "note": "Fast/slow release toggle."
+    },
+    "drive1/drive1Active": {
+      "kind": "switch",
+      "ui": "OD1"
+    },
+    "drive1/drive1Drive": {
+      "kind": "rotation",
+      "ui": "Drive"
+    },
+    "drive1/drive1Level": {
+      "kind": "rotation",
+      "ui": "Level"
+    },
+    "drive1/drive1Tone": {
+      "kind": "rotation",
+      "ui": "Tone"
+    },
+    "drive2/drive2Active": {
+      "kind": "switch",
+      "ui": "OD2"
+    },
+    "drive2/drive2Gain": {
+      "kind": "rotation",
+      "ui": "Gain"
+    },
+    "drive2/drive2Level": {
+      "kind": "rotation",
+      "ui": "Level"
+    },
+    "drive2/drive2Bass": {
+      "kind": "rotation",
+      "ui": "Bass"
+    },
+    "drive2/drive2Treble": {
+      "kind": "rotation",
+      "ui": "Treble"
+    },
+    "tremolo/tremoloActive": {
+      "kind": "switch",
+      "ui": "Tremolo"
+    },
+    "tremolo/tremoloDepth": {
+      "kind": "rotation",
+      "ui": "Depth"
+    },
+    "tremolo/tremoloLevel": {
+      "kind": "rotation",
+      "ui": "Level"
+    },
+    "tremolo/tremoloRate": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 0.05,
+      "max": 5.0,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Rate",
+      "note": "Used when tremoloSync is off."
+    },
+    "tremolo/tremoloSync": {
+      "kind": "switch",
+      "ui": "Sync",
+      "note": "When on, tremoloSyncNote sets the rate and tremoloRate is ignored."
+    },
+    "tremolo/tremoloSyncNote": {
+      "kind": "enum",
+      "ui": "Sync note",
+      "note": "Note-division selector; member names not yet known. Prefer `tremoloRate` in Hz with `tremoloSync` off. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param tremolo/tremoloSyncNote --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "cabParameters/leftCabActive": {
+      "kind": "switch",
+      "ui": "Left cab"
+    },
+    "cabParameters/leftMicType": {
+      "kind": "enum",
+      "enum": "internalMic",
+      "ui": "Left mic"
+    },
+    "cabParameters/leftCabPosition": {
+      "kind": "fraction",
+      "ui": "Left position",
+      "note": "0 = cap centre, 1 = cone edge (darker)."
+    },
+    "cabParameters/leftCabDistance": {
+      "kind": "fraction",
+      "ui": "Left distance"
+    },
+    "cabParameters/leftCabMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Left mic level"
+    },
+    "cabParameters/leftCabPhase": {
+      "kind": "switch",
+      "ui": "Left phase"
+    },
+    "cabParameters/leftCabStereo": {
+      "kind": "switch",
+      "ui": "Left stereo"
+    },
+    "cabParameters/leftCabPan": {
+      "kind": "enum",
+      "ui": "Left pan",
+      "note": "Pan position selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param cabParameters/leftCabPan --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "cabParameters/leftRoomActive": {
+      "kind": "switch",
+      "ui": "Left room mic"
+    },
+    "cabParameters/leftRoomMicType": {
+      "kind": "enum",
+      "enum": "internalMic",
+      "ui": "Left room mic"
+    },
+    "cabParameters/leftRoomMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Left room level"
+    },
+    "cabParameters/leftChosenIRFilePath": {
+      "kind": "path",
+      "ui": "Left custom IR",
+      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic', stored byte-identically to how an IR-free preset holds it. Clearing it is reversible, but it does change the sound. Use --strip-irs to make a preset portable."
+    },
+    "cabParameters/rightCabActive": {
+      "kind": "switch",
+      "ui": "Right cab"
+    },
+    "cabParameters/rightMicType": {
+      "kind": "enum",
+      "enum": "internalMic",
+      "ui": "Right mic"
+    },
+    "cabParameters/rightCabPosition": {
+      "kind": "fraction",
+      "ui": "Right position",
+      "note": "0 = cap centre, 1 = cone edge (darker)."
+    },
+    "cabParameters/rightCabDistance": {
+      "kind": "fraction",
+      "ui": "Right distance"
+    },
+    "cabParameters/rightCabMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Right mic level"
+    },
+    "cabParameters/rightCabPhase": {
+      "kind": "switch",
+      "ui": "Right phase"
+    },
+    "cabParameters/rightCabStereo": {
+      "kind": "switch",
+      "ui": "Right stereo"
+    },
+    "cabParameters/rightCabPan": {
+      "kind": "enum",
+      "ui": "Right pan",
+      "note": "Pan position selector; member names not yet known. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param cabParameters/rightCabPan --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "cabParameters/rightRoomActive": {
+      "kind": "switch",
+      "ui": "Right room mic"
+    },
+    "cabParameters/rightRoomMicType": {
+      "kind": "enum",
+      "enum": "internalMic",
+      "ui": "Right room mic"
+    },
+    "cabParameters/rightRoomMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "ui": "Right room level"
+    },
+    "cabParameters/rightChosenIRFilePath": {
+      "kind": "path",
+      "ui": "Right custom IR",
+      "note": "Absolute path to a third-party IR on the machine that saved the preset. Empty means 'use the internal mic', stored byte-identically to how an IR-free preset holds it. Clearing it is reversible, but it does change the sound. Use --strip-irs to make a preset portable."
+    },
+    "reverb/reverbActive": {
+      "kind": "switch",
+      "ui": "Reverb"
+    },
+    "reverb/reverbMix": {
+      "kind": "rotation",
+      "ui": "Mix"
+    },
+    "reverb/reverbDecay": {
+      "kind": "metered",
+      "unit": "seconds",
+      "min": 1,
+      "max": 60,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Decay"
+    },
+    "reverb/reverbPreDelay": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 1,
+      "max": 200,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Pre-delay"
+    },
+    "reverb/reverbLowCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 50,
+      "max": 700,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Low cut"
+    },
+    "reverb/reverbHighCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 1000,
+      "max": 10000,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "High cut"
+    },
+    "delay/delayActive": {
+      "kind": "switch",
+      "ui": "Delay"
+    },
+    "delay/delayMix": {
+      "kind": "rotation",
+      "ui": "Mix"
+    },
+    "delay/delayFeedback": {
+      "kind": "rotation",
+      "ui": "Feedback"
+    },
+    "delay/delayTime": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 16,
+      "max": 1500,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Time",
+      "note": "Used when delaySync selects free-running mode."
+    },
+    "delay/delayTempo": {
+      "kind": "metered",
+      "unit": "bpm",
+      "ui": "Tempo"
+    },
+    "delay/delaySync": {
+      "kind": "enum",
+      "ui": "Sync mode",
+      "note": "Sync-source selector (free / host tempo / tap per the config reference); member names not yet known. You usually do not need it: leave it at whatever the template has and set `delayTime` in ms. The bundled example holds 0 alongside a meaningful 420 ms delayTime, which suggests 0 is the free-running mode \u2014 an inference from one preset, not a verified fact. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param delay/delaySync --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "delay/delaySyncNote": {
+      "kind": "enum",
+      "ui": "Sync note",
+      "note": "Note-division selector; member names not yet known. PREFER `delayTime` IN MILLISECONDS INSTEAD: packs/timing.py converts a tempo and a division into exact ms (120 BPM + '1/8 dotted' = 375 ms), which needs no selector and leaves the delay free-running. Only use this selector when the user wants the delay to follow host tempo changes. Selectors are index-based (position in the control, from 0), confirmed for enums.internalMic. To fill this in: read the control's options off the plugin UI in order, write them here as members, then confirm with `scripts/probe.py --param delay/delaySyncNote --values <one index>`. The integer is never shown in the UI, so it cannot be read directly.",
+      "needs_confirmation": true
+    },
+    "delay/delayLowCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 60,
+      "max": 500,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "Low cut"
+    },
+    "delay/delayHighCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 1000,
+      "max": 5000,
+      "range_source": "docs/morgan-config-reference.md#21",
+      "ui": "High cut"
+    },
+    "delay/delayPingPong": {
+      "kind": "switch",
+      "ui": "Ping-pong"
+    },
+    "delay/delayWidth": {
+      "kind": "rotation",
+      "ui": "Width"
+    },
+    "delay/delayTapeDrive": {
+      "kind": "rotation",
+      "ui": "Tape drive"
+    }
+  },
+  "see_also": {
+    "tone knowledge, amp characters and the intent table": "packs/morgan/tone.md",
+    "value convention and the spec format": "reference/preset-spec.md",
+    "how to discover a selector's members": "reference/selectors-and-timing.md"
+  }
+}

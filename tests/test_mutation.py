@@ -6,12 +6,15 @@ import pathlib
 
 import pytest
 
-from format.parser import parse_file
+from format.parser import parse, parse_file
 from format.structured import build, set_parameter
 from format.writer import write
+from packs.loader import list_packs
+from packs.paths import all_presets
 
-SAMPLES_DIR = pathlib.Path(__file__).parent.parent / "samples"
-SAMPLE_FILES = sorted(SAMPLES_DIR.glob("*.xml"))
+# Every preset this installation can see: the bundled example plus anything the
+# user has added to their own template directories.
+SAMPLE_FILES = all_presets(list_packs())
 
 
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
@@ -20,15 +23,13 @@ def test_mutate_preset_name(sample: pathlib.Path) -> None:
     changes only the name region."""
     tokens = parse_file(str(sample))
     preset = build(tokens)
-    original_name = preset.preset_name
-    assert original_name, "Preset must have a name"
+    assert preset.preset_name, "Preset must have a name"
 
     new_name = "Roundtripped"
     set_parameter(preset, "", "name", new_name)
-    rewritten = write(preset.tokens)
 
-    # Sanity: roundtripped through parser again, name matches.
-    preset2 = build(rewritten := list(__import__('format.parser', fromlist=['parse']).parse(rewritten)))
+    # Sanity: round-tripped through the parser again, name matches.
+    preset2 = build(parse(write(preset.tokens)))
     assert preset2.preset_name == new_name
 
 
@@ -40,12 +41,10 @@ def test_mutate_pr12_volume(sample: pathlib.Path) -> None:
 
     target = preset.by_path.get(("pr12Amp", "pr12Volume"))
     assert target is not None, "pr12Volume must exist in all Morgan presets"
-    original_value = target.value
 
     set_parameter(preset, "pr12Amp", "pr12Volume", "0.5")
     rewritten = write(preset.tokens)
 
-    from format.parser import parse
     preset2 = build(parse(rewritten))
     assert preset2.by_path[("pr12Amp", "pr12Volume")].value == "0.5"
     # Other PR12 params untouched.
@@ -61,8 +60,6 @@ def test_length_prefix_invariant_after_mutation(sample: pathlib.Path) -> None:
     """After mutating values to DIFFERENT lengths, every value's prefix
     length byte must still equal len(value)+2 (the plugin relies on this)."""
     from format.markers import VALUE_LEN_OFFSET, is_value_prefix
-    from format.parser import parse
-
     tokens = parse_file(str(sample))
     preset = build(tokens)
 
@@ -108,8 +105,6 @@ def test_long_value_roundtrips(name: str) -> None:
     """Values whose byte-length is 30..124 make the LEN byte land in printable
     ASCII; the tokenizer must still read exactly LEN-2 bytes (regression for
     the long-preset-name corruption bug)."""
-    from format.parser import parse
-
     tokens = parse_file(str(SAMPLE_FILES[0]))
     preset = build(tokens)
     set_parameter(preset, "", "name", name)
