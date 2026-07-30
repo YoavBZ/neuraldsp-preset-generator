@@ -53,7 +53,7 @@ from format.structured import build, set_parameter
 from format.translate import describe
 from format.writer import write_file
 from packs.loader import PackError, detect_pack, load_pack
-from packs.timing import TimingError, note_hz, note_ms
+from packs.recipes import amp_prefix_for, resolve_value, stack
 
 
 def main() -> None:
@@ -61,7 +61,20 @@ def main() -> None:
         description="Apply a human-valued parameter spec to a template preset."
     )
     ap.add_argument("--template", required=True, help="existing .xml preset to clone")
-    ap.add_argument("--spec", required=True, help="JSON file with parameter overrides")
+    ap.add_argument("--spec", help="JSON file with parameter overrides")
+    ap.add_argument(
+        "--recipe",
+        action="append",
+        default=[],
+        metavar="LAYER/ID",
+        help="stack a recipe from the pack, e.g. amp/sw50r-singing-lead. Repeatable; "
+        "later recipes win, and --spec is applied last so it can override them.",
+    )
+    ap.add_argument(
+        "--bpm",
+        type=float,
+        help="tempo for recipes that carry a note division (e.g. a quarter-note delay)",
+    )
     ap.add_argument("--name", help="new preset name (overrides spec.name)")
     ap.add_argument("--out", required=True, help="output .xml path")
     ap.add_argument("--pack", help="plugin pack id (default: detect from the template)")
@@ -114,11 +127,21 @@ def run(args) -> None:
             f"  Pass --force to overwrite it, or choose a different path."
         )
 
-    spec = read_spec(pathlib.Path(args.spec))
+    if not args.spec and not args.recipe:
+        die("Nothing to apply. Pass --spec, --recipe, or both.")
+
+    spec = read_spec(pathlib.Path(args.spec)) if args.spec else {}
     tokens = parse_file(str(template))
     preset = build(tokens)
 
     pack = resolve_pack(args.pack, preset.file_header, template)
+
+    # Recipes first, the hand-written spec last, so an explicit override always
+    # beats a recipe default.
+    entries = list(spec.get("parameters", []))
+    if args.recipe:
+        amp = amp_prefix_for(pack, _selected_amp(entries, preset))
+        entries = stack(args.recipe, pack, amp, pack.pack_id) + entries
 
     # --- name -----------------------------------------------------------
     changes: list[tuple[str, str, str]] = []
@@ -135,7 +158,7 @@ def run(args) -> None:
 
     # --- parameter overrides --------------------------------------------
     warnings: list[str] = []
-    for i, entry in enumerate(spec.get("parameters", [])):
+    for i, entry in enumerate(entries):
         module, key, human = read_entry(entry, i)
         param = preset.by_path.get((module, key))
         display = f"{module}/{key}" if module else key
@@ -152,7 +175,7 @@ def run(args) -> None:
             stored = str(human)
         else:
             spec_meta = pack.require(module, key)
-            human = resolve_note(human, spec_meta, i)
+            human = resolve_value(human, spec_meta, args.bpm)
             stored = pack.to_stored(
                 spec_meta, human, args.allow_out_of_range, warnings
             )
@@ -185,46 +208,14 @@ def run(args) -> None:
     print(f"\nWrote {out}")
 
 
-def resolve_note(value, spec_meta, index: int):
-    """Turn {"note": "1/8 dotted", "bpm": 120} into a number.
-
-    Lets a recipe carry a note division instead of a fixed time, so it stays
-    correct at any tempo. Resolves to ms for time parameters and Hz for rate
-    parameters — the units the plugin actually stores, which is why this works
-    without the sync-note selector.
-    """
-    if not isinstance(value, dict):
-        return value
-
-    where = f"parameters[{index}] ({spec_meta.path})"
-    if "note" not in value:
-        die(f"{where}: object values must contain a 'note', e.g. "
-            f'{{"note": "1/8 dotted", "bpm": 120}}')
-    unknown = set(value) - {"note", "bpm"}
-    if unknown:
-        die(f"{where}: unexpected field(s) {sorted(unknown)} in a note value.")
-    if "bpm" not in value:
-        die(
-            f"{where}: a note division needs a tempo. Write "
-            f'{{"note": {value["note"]!r}, "bpm": 120}} — read the song\'s tempo '
-            f"from the user, or from the preset's delayTempo."
-        )
-
-    if spec_meta.unit == "ms":
-        convert = note_ms
-    elif spec_meta.unit == "hz":
-        convert = note_hz
-    else:
-        die(
-            f"{where}: a note division only makes sense for a time (ms) or rate "
-            f"(hz) parameter; {spec_meta.path} is "
-            f"{spec_meta.unit or spec_meta.kind}."
-        )
-
-    try:
-        return round(convert(value["bpm"], value["note"]), 4)
-    except TimingError as e:
-        die(f"{where}: {e}")
+def _selected_amp(entries, preset):
+    """Which amp the finished preset will use: whatever the spec sets, else the
+    template's current value. Needed to resolve an {amp}-templated EQ recipe."""
+    for entry in entries:
+        if isinstance(entry, dict) and entry.get("key") == "selectedAmp":
+            return entry["value"]
+    param = preset.by_path.get(("", "selectedAmp"))
+    return param.value if param else None
 
 
 def render(spec, stored: str) -> str:

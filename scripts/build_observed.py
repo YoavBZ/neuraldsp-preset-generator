@@ -21,7 +21,7 @@ Presets are read from the bundled `samples/` directory and from
 `<data root>/packs/<id>/observed.json` — see `packs.paths` for how the data root
 is resolved, and pass `--data-dir` to override it.
 
-    python -m schema.build_schema [--data-dir DIR]
+    python scripts/build_observed.py [--data-dir DIR]
 """
 
 from __future__ import annotations
@@ -33,8 +33,10 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Tuple
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT))
+# The plugin's own modules live beside this script, so the root is always
+# derivable from __file__ — no environment variable needed, nothing to go stale.
+PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PLUGIN_ROOT))
 
 from format.parser import parse_file           # noqa: E402
 from format.structured import build            # noqa: E402
@@ -63,7 +65,7 @@ class ParamStats:
         }
 
 
-def build_schema(
+def summarise(
     sample_paths: List[pathlib.Path], plugin_name: str = "unknown"
 ) -> Dict[str, Any]:
     stats: Dict[Tuple[str, str], ParamStats] = {}
@@ -145,7 +147,7 @@ def main() -> None:
             + "\n".join(f"  {paths.templates_dir(p)}" for p in pack_ids),
             file=sys.stderr,
         )
-        sys.exit(1)
+        sys.exit(2)
 
     grouped, unmatched = group_by_pack(presets)
 
@@ -154,7 +156,7 @@ def main() -> None:
 
     if not grouped:
         print("No presets matched a known pack; nothing written.", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(2)
 
     warning = paths.data_root_warning()
     if warning:
@@ -163,7 +165,7 @@ def main() -> None:
         print(f"{paths.describe_roots()}\n")
 
     for pack_id, pack_presets in sorted(grouped.items()):
-        catalog = build_schema(pack_presets, load_pack(pack_id).display_name)
+        catalog = summarise(pack_presets, load_pack(pack_id).display_name)
         observed.save(pack_id, catalog)
         count = sum(len(p) for p in catalog["modules"].values())
         print(

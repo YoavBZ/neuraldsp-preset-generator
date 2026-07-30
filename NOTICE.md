@@ -21,7 +21,7 @@ and edit preset files (`.xml`) for their own copy.
   preset. The tone settings are this project's own.
 - **The observed-value catalog** (`packs/<id>/observed.json`) is derived from
   whichever presets you supply, so it is git-ignored too — build your own with
-  `python -m schema.build_schema`.
+  `python scripts/build_observed.py`.
 - **The pack manifest** (`packs/<id>/manifest.json`) *is* committed. It contains
   only parameter names, kinds, units, ranges and selector labels — the factual
   description needed to read and write presets for a licensed copy. It carries

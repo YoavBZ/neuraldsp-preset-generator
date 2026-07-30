@@ -54,13 +54,9 @@ range.
 
 **Build from recipes, then adapt.** `packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per
-layer from the intent table, concatenate their `parameters`, then **change what
-the song needs**. Two rules:
-
-- EQ recipes contain `{amp}` in module and key; substitute the live amp's prefix
-  (`pr12` / `sw50r` / `ac20`). The EQ is per-amp and must match `selectedAmp`.
-- A recipe value of `{"note": "1/4"}` needs a `bpm` added before it can be
-  applied. Get the tempo from the user or the song.
+layer from the intent table and pass them straight to the writer with `--recipe`;
+it resolves `{amp}` and note divisions for you. Then put **what the song needs**
+in a `--spec`, which is applied last and overrides the recipes.
 
 Handing back an unmodified stack is a failure — it's a renamed factory preset.
 The research in step 2 is what should move the values.

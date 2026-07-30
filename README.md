@@ -85,11 +85,11 @@ Both preview their changes before writing:
 .claude-plugin/  — plugin manifest
 skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs, installing)
-scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover selectors)
+scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
+                   selectors), build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
-schema/          — builds the optional observed-value catalog from your presets
-samples/         — presets. One generated example ships; add your own (git-ignored)
+samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, and pack-contract tests
 docs/            — Morgan config reference (musical, not yet fully reconciled)
 ```
@@ -122,7 +122,22 @@ is selected automatically for any preset you point at.
 ### Recipes are composable, and the translation is tested
 
 A preset is built by stacking layers — amp + compressor + drive + EQ + cab +
-delay + reverb + output staging — then adapting the values to the song. The
+delay + reverb + output staging — then adapting the values to the song:
+
+```bash
+python scripts/apply_spec.py --template samples/Example_Clean_PR12.xml \
+  --recipe amp/sw50r-singing-lead --recipe eq/lead-focus \
+  --recipe delay/classic-lead --recipe reverb/large-lead \
+  --bpm 96 --name "Singing Lead" --out lead.xml --dry-run
+```
+
+The EQ is per-amp, so EQ recipes are written against `{amp}EQ` and resolved to
+whichever amp the stack selects — get that wrong and the EQ silently does
+nothing, which is why it's done in code rather than by hand. Delay recipes carry
+a note division rather than a fixed time, so `--bpm 96` turns a quarter note into
+625 ms with no sync selector involved.
+
+The
 recipes were translated out of `docs/morgan-config-reference.md`, which uses a
 0–10 knob scale, its own parameter names, and a cab model that doesn't match the
 binary. Rather than trust that transcription, `tests/test_recipes.py` asserts
@@ -134,8 +149,8 @@ Anything that *couldn't* be translated is listed with a reason under
 ### Adding a pack for another plugin
 
 You need one preset from that plugin as a template — the writer clones, it never
-synthesises. Drop it in `samples/`, run `python -m schema.build_schema` to see
-what parameters it has, and write a `packs/<id>/manifest.json` against it. The
+synthesises. Drop it in `<data root>/packs/<id>/templates/`, run
+`python scripts/build_observed.py` to see what parameters it has, and write a `packs/<id>/manifest.json` against it. The
 format layer is plugin-agnostic; only the manifest is per-plugin.
 
 ## Value convention
@@ -204,7 +219,7 @@ in `<data root>/packs/<pack>/observed.json`. Neither is ever committed.
 ```bash
 cp ~/Library/Audio/Presets/Neural\ DSP/Morgan*/User/*.xml \
    "$NDSP_PRESET_DATA/packs/morgan/templates/"
-python -m schema.build_schema
+python scripts/build_observed.py
 ```
 
 This writes `observed.json` per pack, which `show.py` folds in as advisory "what

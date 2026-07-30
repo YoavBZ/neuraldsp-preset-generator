@@ -78,7 +78,7 @@ jobs:
 
       - name: Build the observed catalog into a separate data directory
         run: |
-          python -m schema.build_schema --data-dir /tmp/ndsp-data
+          python scripts/build_observed.py --data-dir /tmp/ndsp-data
           test -f /tmp/ndsp-data/packs/morgan/observed.json
           # And nothing was written into the plugin directory itself.
           test ! -f packs/morgan/observed.json

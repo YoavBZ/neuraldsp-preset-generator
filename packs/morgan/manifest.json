@@ -4,6 +4,11 @@
   "display_name": "Morgan Amps Suite",
   "vendor": "Neural DSP",
   "file_header": "morgan",
+  "amp_modules": {
+    "AC20": "ac20",
+    "PR12": "pr12",
+    "SW50R": "sw50r"
+  },
   "description": "Curated parameter facts for Neural DSP Morgan Amps Suite. Hand-maintained: this is the contract the generator writes against. It contains no Neural DSP code, audio, or preset content - only parameter names, units, and ranges needed to read and write presets for a licensed copy of the plugin.",
   "enums": {
     "internalMic": {

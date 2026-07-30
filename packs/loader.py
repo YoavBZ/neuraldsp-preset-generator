@@ -80,6 +80,9 @@ class Pack:
     display_name: str
     file_header: str
     parameters: Dict[str, ParamSpec] = field(default_factory=dict)
+    # Amp display name -> module prefix, so an {amp}-templated recipe can be
+    # resolved to the live amp's own EQ module.
+    amp_modules: Dict[str, str] = field(default_factory=dict)
 
     def get(self, module: str, key: str) -> Optional[ParamSpec]:
         return self.parameters.get(f"{module}/{key}")
@@ -273,6 +276,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         display_name=raw["display_name"],
         file_header=raw["file_header"],
         parameters=params,
+        amp_modules=raw.get("amp_modules", {}),
     )
 
 

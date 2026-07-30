@@ -46,7 +46,7 @@ milliseconds or Hz instead. See
   every parameter's kind, unit, declared range, selector members, UI name.
   This is what values are *legal*. Consult it before choosing a value.
 - `packs/<id>/observed.json` — **advisory, optional, local.** Generated from
-  the user's own presets by `python -m schema.build_schema`. This is what
+  the user's own presets by `python scripts/build_observed.py`. This is what
   values are *typical* — a taste anchor, never a limit. Absent on a fresh
   clone; nothing breaks without it.
 - `packs/<id>/recipes.json` — **composable starting points.** Committed. Tone
@@ -55,13 +55,30 @@ milliseconds or Hz instead. See
 - `packs/<id>/tone.md` — the decision layer: amps and their character, an
   intent → recipe-stack table, and the "when the user says X" vocabulary.
 
-Two things to know when using a recipe:
+### Stacking recipes
 
-- **EQ recipes are amp-templated.** Their module and key contain `{amp}`;
-  substitute the live amp's prefix (`pr12` / `sw50r` / `ac20`). The graphic EQ is
-  per-amp, so an EQ recipe applied to the wrong amp does nothing audible.
-- **Note-division values need a tempo.** A recipe value of `{"note": "1/4"}` must
-  become `{"note": "1/4", "bpm": 96}` before it can be applied.
+Pass them to the writer directly — don't hand-assemble them:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+  --template TEMPLATE.xml \
+  --recipe amp/sw50r-singing-lead --recipe compressor/lead-smoothing \
+  --recipe eq/lead-focus --recipe delay/classic-lead \
+  --bpm 96 --out OUT.xml --dry-run
+```
+
+`--recipe` is repeatable and order matters: later recipes win, and a `--spec` is
+applied last so your own values always override a recipe default. Combine both
+freely — recipes for the starting point, a spec for what the song actually needs.
+
+Two things the writer handles for you, which you must not do by hand:
+
+- **`{amp}` resolution.** EQ recipes target `{amp}EQ`; the writer substitutes the
+  amp the stack selects (or the template's current one). The graphic EQ is
+  per-amp, so an EQ recipe on the wrong amp does nothing audible.
+- **Note divisions.** A recipe value of `{"note": "1/4"}` becomes milliseconds
+  once `--bpm` is known. A hand-written spec can also carry its own
+  `{"note": "1/4", "bpm": 96}`, which beats `--bpm`.
 
 ## The spec file
 
@@ -114,6 +131,7 @@ Other flags:
   Use only when the user asks for something deliberately extreme, and say so.
 - `--force` — overwrite an existing `--out`. Ask first.
 - `--pack <id>` — force a pack instead of detecting it from the file header.
+- `--recipe LAYER/ID`, `--bpm N` — see [Stacking recipes](#stacking-recipes).
 
 The tool refuses to write `--out` over `--template`, refuses to clobber an
 existing file without `--force`, and validates every value before writing
