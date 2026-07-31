@@ -51,7 +51,14 @@ UNIT_HINTS = [
     (re.compile(r"Tempo$"), "bpm"),
     (re.compile(r"^transpose$"), "semitones"),
 ]
-SELECTOR_HINTS = re.compile(r"(Type|Mode|Note|Pan|Power|Sync|selected[A-Z])")
+SELECTOR_HINTS = re.compile(r"(Type|Mode|Note|Sync|selected[A-Z])")
+
+# `Pan` and `Power` used to be in the pattern above, on the reasoning that a
+# name like that reads as a list of positions. Measuring Morgan against the
+# running plugin showed both guesses were wrong: `*CabPan` is a signed number
+# from -50 to 50 and `ac20Power` is an ordinary 0-1 knob. Guessing "selector"
+# is the expensive way to be wrong, because it makes the value an opaque index
+# nobody can check, so these now fall through to the numeric branches below.
 
 
 def looks_numeric(text: str) -> bool:
@@ -84,6 +91,49 @@ def infer(key: str, values: list) -> dict:
         return {"kind": kind, "needs_review": True}
 
     return {"kind": "metered", "needs_review": True, "note": "unit unknown"}
+
+
+# Not every Neural DSP preset is shaped like Morgan's. Tone King Imperial MKII
+# uses a later encoding: numbers are raw IEEE-754 doubles introduced by this
+# marker, and parameters are a flat list of PARAM records carrying `id` and
+# `value` fields rather than one named key per value.
+#
+# The byte-level tokenizer handles both — round-trip is exact for every preset
+# of every Neural DSP plugin tested — but `format.structured` models the Morgan
+# shape, so on a Tone King preset it pairs the wrong tokens and produces a
+# handful of nonsense parameters. Drafting from that is worse than refusing:
+# the draft looks plausible and is silently wrong.
+TYPED_DOUBLE_MARKER = b"\x01\x09\x04"
+
+
+def unsupported_shape(raw: bytes, parameters: list, by_key: dict) -> str | None:
+    """Explain why this preset can't be drafted, or None if it can."""
+    if TYPED_DOUBLE_MARKER in raw:
+        return (
+            "This preset stores its numbers as raw binary doubles, not as text.\n"
+            f"  Found {raw.count(TYPED_DOUBLE_MARKER)} of them. Every value in a "
+            f"format this tool can draft is a printable string.\n"
+            "  The parser reads and rewrites the file losslessly, so nothing here "
+            "is corrupt — but the structured layer would mis-pair the tokens and "
+            "hand you a manifest full of parameters that do not exist.\n"
+            "  Supporting this needs a value decoder in format/, not a new pack. "
+            "See docs/open-questions.md."
+        )
+
+    # A named-key format has roughly one key per parameter. A record format has a
+    # few key names repeated over and over, which is the same mis-pairing wearing
+    # a different disguise.
+    if len(parameters) > 20 and len(by_key) * 4 < len(parameters):
+        return (
+            f"This preset has {len(parameters)} parameters but only "
+            f"{len(by_key)} distinct key names "
+            f"({', '.join(sorted(by_key)[:5])}…).\n"
+            "  That means the file identifies parameters by a field inside a "
+            "repeated record, not by the key itself — a shape this tool does not "
+            "model, so the draft would be meaningless.\n"
+            "  See docs/open-questions.md."
+        )
+    return None
 
 
 def main() -> None:
@@ -127,6 +177,10 @@ def main() -> None:
     by_key = collections.defaultdict(list)
     for param in preset.parameters:
         by_key[f"{param.module_path}/{param.key}"].append(param.value)
+
+    problem = unsupported_shape(preset_path.read_bytes(), preset.parameters, by_key)
+    if problem:
+        die(problem)
 
     parameters = collections.OrderedDict()
     for path in sorted(by_key):

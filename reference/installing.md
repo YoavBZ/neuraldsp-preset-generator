@@ -9,7 +9,9 @@ user exactly what to click.
 Don't hard-code a path. Locate it, because it varies by plugin name and version:
 
 ```bash
-# macOS
+# macOS — check BOTH. The installer's location is the system-wide one, and on a
+# normal install the per-user directory does not exist at all.
+ls -d /Library/Audio/Presets/Neural\ DSP/*/User 2>/dev/null
 ls -d ~/Library/Audio/Presets/Neural\ DSP/*/User 2>/dev/null
 
 # Windows (from Git Bash / WSL)
@@ -23,6 +25,14 @@ Pick the directory whose plugin name matches the pack you generated for
 (`Morgan Amps Suite` for pack `morgan`). If nothing matches, ask the user where
 their presets live rather than guessing — and if they tell you, note it so you
 don't have to ask again.
+
+`/Library/…` is owned by root but the Neural DSP installer leaves these folders
+world-writable, so writing there needs no `sudo`. If a write is refused, say so
+and ask — do not reach for `sudo`.
+
+The factory presets sit next to `User/` in the same place (`Factory/`,
+`Artists/`, `Default.xml`). They are useful as templates and as format
+examples, but they are Neural DSP's content — never copy one into this repo.
 
 ## Write there directly
 

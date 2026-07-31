@@ -305,12 +305,25 @@ def read_entry(entry, index: int):
     return entry["module"], entry["key"], entry["value"]
 
 
+# Index 10 of the mic selector is "Custom IR": the cab plays the file named by
+# `*ChosenIRFilePath` instead of a modelled mic. The plugin's own defaults for
+# the two selectors, which is what a cab with no custom IR should fall back to.
+CUSTOM_IR_INDEX = "10"
+DEFAULT_MIC_INDEX = {"left": "0", "right": "4"}  # Dynamic 57 / Condenser 184
+
+
 def strip_custom_irs(preset) -> list:
     """Clear custom IR file paths so the cab falls back to internal mics.
 
     A custom IR is an absolute path that only resolves on the machine that
     saved the preset. "No custom IR" is that field set to an empty string,
     byte-identical to how an IR-free preset stores it.
+
+    Clearing the path is not enough on its own. The mic selector is what decides
+    whether the cab plays a modelled mic or the file, and a preset that uses an
+    IR holds it at "Custom IR". Clear only the path and the plugin is left
+    showing `Custom IR / No File` — so the selector is moved back to the
+    plugin's own default for that side whenever it was pointing at the file.
     """
     cleared = []
     for side in ("left", "right"):
@@ -320,6 +333,13 @@ def strip_custom_irs(preset) -> list:
             before = param.value
             set_parameter(preset, "cabParameters", key, "")
             cleared.append((key, before))
+
+        mic_key = f"{side}MicType"
+        mic = preset.by_path.get(("cabParameters", mic_key))
+        if mic is not None and mic.value == CUSTOM_IR_INDEX:
+            before = mic.value
+            set_parameter(preset, "cabParameters", mic_key, DEFAULT_MIC_INDEX[side])
+            cleared.append((mic_key, before))
     return cleared
 
 

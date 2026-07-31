@@ -11,8 +11,13 @@ placement, level and phase, plus an optional room mic.
 | Mic choice | `leftMicType` / `rightMicType` | enum (by name) |
 | Placement | `*CabPosition`, `*CabDistance` | fraction 0–1 |
 | Level | `*CabMicLevel` | dB |
-| Phase / stereo / pan | `*CabPhase`, `*CabStereo`, `*CabPan` | switch / switch / enum |
+| Phase / stereo | `*CabPhase`, `*CabStereo` | switch / switch |
+| Pan | `*CabPan` | -50 (hard left) to 50 (hard right), 0 = centre |
 | Room mic | `*RoomActive`, `*RoomMicType`, `*RoomMicLevel` | switch / enum / dB |
+
+`*CabPan` is a number, not a selector — the plugin shows -25 as `25 L`. The room
+mic selector takes only 0–2 and is **not** the ten-entry close-mic catalog;
+writing a close-mic index like 8 there lands on 0.
 
 `*CabPosition` runs from the speaker cap (bright, aggressive) at 0 to the cone
 edge (darker, rounder) at 1. `*CabDistance` moves the mic back — more room, less
@@ -32,6 +37,13 @@ Condenser 184, Condenser 414, Condenser 4006, Condenser U47, Ribbon 121,
 Ribbon 160). `show.py` prints the mic name for each slot. An unknown name or an
 out-of-range index is a hard error, so you cannot write a mic that doesn't exist.
 
+**Index 10 is `Custom IR`, not a mic.** The plugin's dropdown lists the ten
+internal mics and then a separate CUSTOM IR section with a Load button; picking
+a file sets this selector to 10. It is the selector, not the path, that decides
+whether the cab plays a modelled mic or the file — which matters for stripping,
+below. Only write 10 alongside a valid `*ChosenIRFilePath`; on its own it leaves
+the plugin showing `Custom IR / No File`.
+
 A common pairing: a dynamic on one slot for body and attack, a ribbon on the
 other for smoothed top end, with the ribbon a little further back.
 
@@ -45,6 +57,12 @@ path — and the original author's home directory — into your output.
 paths so the cab falls back to the internal mics, making the preset portable
 on any machine. Verified to produce byte-identical encoding to an IR-free
 preset's empty field.
+
+It also moves any mic selector sitting on `Custom IR` (10) back to that side's
+plugin default — Dynamic 57 on the left, Condenser 184 on the right. Clearing
+the path alone used to leave the selector pointing at a file that was no longer
+named, so the plugin showed `Custom IR / No File`: a preset in a worse state
+than before it was stripped, and silently so.
 
 ### Stripping changes the sound
 

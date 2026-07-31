@@ -2,145 +2,115 @@
 
 What the manifest does **not** know, why, and exactly how to close each gap.
 
-Everything here needs the plugin running on a machine with a screen and audio
-output. No amount of static analysis substitutes — these are measurements, not
-deductions. Until they land, the affected values are written unchecked or with a
-warning, which is why they are tracked here rather than left implicit.
-
 Close one, delete its section, and update the corresponding test.
 
 ---
 
-## 1. Eight metered parameters have no declared range
+## 1. A second preset format needs a value decoder
 
-`UNIT_FLOOR` in `packs/loader.py` rejects values that are impossible in the unit
-(a negative frequency, a zero tempo). It says nothing about the plugin's actual
-limits, so `outputGain 1e6` still writes. The set is pinned in
-`tests/test_pack.py::UNDECLARED_RANGES` — shrinking it is the goal.
+`format/parser.py` reads and rewrites any Neural DSP preset losslessly — that
+generalises, and is now measured across **681 factory presets from four
+plugins**, every one of which round-trips byte for byte.
 
-| parameter | unit | value in `samples/Example_Clean_PR12.xml` |
-|---|---|---|
-| `parameters/inputGain` | dB | `0.0` |
-| `parameters/outputGain` | dB | `5.0` |
-| `parameters/gateThreshold` | dB | `-72.0` |
-| `delay/delayTempo` | BPM | `120.0` |
-| `cabParameters/leftCabMicLevel` | dB | `0.0` |
-| `cabParameters/leftRoomMicLevel` | dB | `-6.0` |
-| `cabParameters/rightCabMicLevel` | dB | `5.0` |
-| `cabParameters/rightRoomMicLevel` | dB | `-6.0` |
+`format/structured.py` does **not** generalise. It models one named key per
+printable value, which is how Morgan, Archetype Nolly X and Archetype Plini X
+are all encoded. Tone King Imperial MKII uses a later encoding:
 
-### How to measure
+- numbers are raw IEEE-754 doubles introduced by `01 09 04`, not text
+- parameters are a flat list of `PARAM` records carrying `id` and `value`
+  fields, so 259 parameters share 7 key names instead of having their own
 
-**Option A — read the UI.** Load the example preset (the on-screen numbers
-should match the table above, which confirms you have the right control), drag
-each control to each extreme, note both numbers.
+The two are related: because the structured layer expects printable values, the
+bytes of a double that happen to fall in ASCII get read as text. The exponent
+bytes of `120.0` are `5e 40` — `^@` — which is how the first draft of this pack
+ended up with a parameter named `^@presetNameProp`.
 
-**Option B — let the plugin answer in writing.** Same inversion `probe.py` uses:
-write a preset carrying an absurd value, load it, re-save it. The plugin clamps
-to its real limit and stores that number, which can then be read straight out of
-the binary — no transcription step, and it catches limits the UI rounds off.
+### What supporting it would take
 
-> **Turn your monitoring volume down before loading the gain probes.** A gain
-> stage clamped to its maximum is exactly as loud as that sounds.
+A value decoder in `format/`, keyed off the marker byte, plus a structured layer
+that can identify a parameter by a field inside a record rather than by its key.
+That is a real change to the format layer, not a new pack, and nothing currently
+needs it — the user owns Morgan and Tone King, and Morgan is fully supported.
 
-Record the result as `min`/`max` on the parameter in `packs/morgan/manifest.json`
-with a `range_source` saying how it was obtained, then delete the entry from
-`UNDECLARED_RANGES`. `test_every_other_metered_parameter_has_a_sourced_range`
-enforces the source.
-
----
-
-## 2. Three switches whose direction is unverified
-
-The stored key names are the plugin authors' own labels, so they are decent
-evidence — but `docs/morgan-config-reference.md` contradicts one of them, and a
-switch documented backwards sends every recipe that touches it the wrong way.
-
-| parameter | claim to verify | value in the example |
-|---|---|---|
-| `sw50rAmp/sw50rTrebleBoost` | ON = brighter, **not** thicker | `true` |
-| `sw50rAmp/sw50rInputMode` | which state is the bright channel | `false` |
-| `ac20Amp/ac20BassTreble` | ON = fuller mids, more AC30-like | `true` |
-
-`sw50rTrebleBoost` is the one that matters. The config reference calls it
-`bassEmphasis` and advises it for a thicker lead — the opposite direction. If the
-reference is right, the lead recipes are inverted.
-
-### How to measure
-
-Load the example preset, set `selectedAmp` to the relevant amp, flip the switch,
-listen. One sentence per switch settles it. Update the parameter's `note` in the
-manifest with what was heard.
-
----
-
-## 3. Six selectors have no member names
-
-The plugin displays a selector's **label** but never the integer stored in the
-file, so the mapping cannot be read off the screen. Writing these still works,
-with a warning that the value is unverified.
-
-- `delay/delaySyncNote`
-- `delay/delaySync`
-- `tremolo/tremoloSyncNote`
-- `ac20Amp/ac20Power`
-- `cabParameters/leftCabPan`
-- `cabParameters/rightCabPan`
-
-Musical timing does **not** depend on this: `packs/timing.py` converts a note
-division to milliseconds or Hz, so a dotted-eighth delay is reachable through
-`delayTime` with no selector involved. That is why this sits below the ranges in
-priority.
-
-### How to measure
-
-**Cheap:** selectors are index-based — confirmed for the mic catalog, which
-resolves correctly against the shared `enums` block. So the control's options,
-read top to bottom in order, *are* the table. Write them as `members` and confirm
-the whole thing with a single probe.
-
-**Empirical:** `probe.py` writes disposable presets named after the value they
-carry, so the plugin's own browser labels them:
-
-```bash
-python scripts/probe.py --param delay/delaySyncNote --values 0-15 \
-  --out-dir ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User
-```
-
-Load `probe delaySyncNote 07`, read the control, and you have learned what 7
-means — reading labels only, never integers. Delete them afterwards.
-
-See [reference/selectors-and-timing.md](../reference/selectors-and-timing.md).
-
----
-
-## 4. No pack has been bootstrapped from a second plugin
-
-`scripts/bootstrap_pack.py` drafts a pack from one preset of an unknown plugin,
-and the format layer is meant to be plugin-agnostic. Neither claim has been
-tested against a format nobody curated by hand.
-
-### How to test
-
-Save a preset from any other Neural DSP plugin at its factory defaults, then:
-
-```bash
-python scripts/bootstrap_pack.py --preset ~/path/to/ThatPreset.xml \
-  --display-name "Archetype Gojira"
-```
-
-A failure here is more informative than a success — it is the only evidence
-available about whether the parser generalises.
-
-**Do not commit the source preset.** It is Neural DSP's factory content; the
-generated manifest is parameter names and guessed kinds, and is fine to keep. See
+Until then `bootstrap_pack.py` refuses both shapes with a diagnosis rather than
+drafting a plausible-looking manifest that is silently wrong. That refusal is
+covered by `test_binary_valued_format_is_refused_not_drafted` and
+`test_record_shaped_format_is_refused_not_drafted`, both using synthetic
+fixtures — factory presets are Neural DSP's content and are not committed. See
 [NOTICE.md](../NOTICE.md).
 
 ---
 
-## Why these are not guesses in the meantime
+## 2. Two selectors have no member names
+
+`cabParameters/leftRoomMicType` and `cabParameters/rightRoomMicType`. The plugin
+accepts 0, 1 and 2 and silently rewrites anything higher to 0 — that much is
+measured — but this is one of the two controls that publishes no strings at all
+(they appear in the Audio Unit as `R3` and `R6` with blank labels), so the names
+cannot be read programmatically.
+
+This is a small gap: the bound is known, so a wrong value can no longer be
+written, and only the human-readable names are missing.
+
+### How to measure
+
+```bash
+python scripts/probe.py --param cabParameters/leftRoomMicType --values 0-2 \
+  --out-dir ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User
+```
+
+Load each, read the room mic control, write the three names into a new `enums`
+table in `packs/morgan/manifest.json`, and point both parameters at it. Delete
+the `needs_confirmation` flag and the note. Two tests need updating when you do:
+`test_room_mics_are_a_different_control` and
+`test_unconfirmed_selector_warns_but_writes` — the second uses this parameter
+precisely because it is the last unknown selector left.
+
+---
+
+## Closed
+
+All four of the original questions have been answered. Three were closed by
+measuring against the running plugin rather than by reading the UI or listening
+— both of which were the plan of record here, and neither of which turned out to
+be necessary. The method, and its limits, are in
+[measuring-against-the-plugin.md](measuring-against-the-plugin.md).
+
+The fourth — *does the format layer generalise to a second plugin?* — was
+answered by running it against 681 factory presets from four plugins. The answer
+is "the byte layer does, the structured layer doesn't", which is why it left a
+narrower question behind rather than disappearing. The factory presets were
+there all along, in `/Library/Audio/Presets/Neural DSP/`, not the per-user
+directory this repo had been looking in.
+
+- **Eight metered parameters had no declared range.** All eight now have one,
+  read from the plugin's published parameter info and confirmed from the other
+  side by writing an absurd value and reading back what the plugin clamped it
+  to. The same sweep caught four ranges that were already declared and *wrong*:
+  the three `*EQLpf` minimums (1 kHz, not 20 Hz) and `tremoloRate` (0.15–15 Hz,
+  not 0.05–5).
+- **Three switches had unverified directions.** All three settled, and one was
+  backwards: `sw50rTrebleBoost` moves the control the plugin publishes as *Bass
+  Emphasis*. The config reference was right and the stored key name — the
+  evidence this file argued was better — was wrong. No recipe had ever set it,
+  so nothing shipped inverted.
+- **Six selectors had no member names.** Three had full tables read out of the
+  plugin (`delaySyncNote`, `tremoloSyncNote`, `delaySync`); the other three
+  turned out not to be selectors at all (`ac20Power` is a knob, both `*CabPan`
+  are signed numbers).
+- **No pack had been bootstrapped from a second plugin.** Now done for three.
+  Archetype Nolly X (170 parameters) and Archetype Plini X (141) draft cleanly,
+  which is the claim this question was really asking about. Tone King is the
+  counter-example, and is question 1 above.
+
+## Why an undeclared range is not left as a guess in the meantime
 
 A declared range with no source is indistinguishable from a measured one once
 it is in the file, and it would silently overrule the user. Leaving the value
-undeclared is honest about what is known; `UNIT_FLOOR` catches the arithmetically
-impossible without pretending to know the plugin's limits.
+undeclared is honest about what is known; `UNIT_FLOOR` catches the
+arithmetically impossible without pretending to know the plugin's limits.
+
+That the `*EQLpf` and `tremoloRate` ranges were both wrong — one sourced to the
+config reference, one to `observed-endpoints` — is the argument for this rule
+rather than against it. A range is only as good as where it came from, which is
+why `range_source` is required and why the test suite enforces it.

@@ -119,27 +119,30 @@ but not the universal case.
   Bridge-pickup Tele into AC20 usually wants `ac20Cut` up a bit.
 - **Either way**, clean rhythm needs enough treble/presence not to go woolly.
 
-## Unresolved: three controls whose behaviour is a guess
+## Settled: four switches that used to be guesses
 
-The parameter names and ranges are solid. Three **switches** are not, because the
-source doc and the stored key name disagree about what they do. Each is a
-five-second check by ear — flip it and listen — and worth resolving, because the
-recipes deliberately leave all three alone rather than guess.
+These four were unresolved because the source doc and the stored key name
+disagreed about what they do. They are now read off the running plugin — each
+key was written into a preset document and handed to the plugin to see which
+control it moved and what that control is called. See
+[docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
 
-| Control | Doc says | Key name suggests | Check by ear |
-|---|---|---|---|
-| `sw50rTrebleBoost` | `bassEmphasis` — thickens for lead | a treble boost | Flip it on. Brighter, or thicker? |
-| `sw50rInputMode` | `DEFAULT` / `-6_DB` input pad | an input mode | Flip it on. Quieter and cleaner, or a tonal change? |
-| `ac20BassTreble` | `bassCut` — tightens low end | a bass+treble tonestack switch | Flip it on. Less bass, or fuller mids? |
+| Control | What it actually is | `true` means |
+|---|---|---|
+| `sw50rTrebleBoost` | **Bass Emphasis.** The key name is wrong; the doc was right | thicker, not brighter |
+| `sw50rInputMode` | the two input jacks | `Low` — the padded input. `false` is `High` |
+| `ac20BassTreble` | **Bass Cut**, a two-position voicing switch | the `Treble` position — brighter and tighter |
+| `compressorRelease` | fast/slow release | Fast |
 
-`compressorRelease` is a fast/slow toggle but which boolean is which is unknown —
-same treatment.
+The one that mattered was `sw50rTrebleBoost`: it drives the control Morgan
+publishes as *Bass Emphasis*, so turning it on for a brighter lead does the
+opposite. SW50R's actual brightness switch is the separate `sw50rBright`.
+Nothing shipped wrong, because the recipes deliberately left all four alone
+rather than guess.
 
-When you settle one, write it into the parameter's `note` in `manifest.json` and
-delete its row here.
-
-`ac20Cut`'s direction is settled by reasoning rather than by ear: it's the Vox
-power-amp Cut, so **higher = darker**. Still worth a five-second confirmation.
+`ac20Cut`'s direction is settled by reasoning rather than measurement: it's the
+Vox power-amp Cut, so **higher = darker**. Still worth a five-second
+confirmation by ear.
 
 ## Mapped tones
 

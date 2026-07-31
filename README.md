@@ -87,15 +87,18 @@ skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), bootstrap_pack.py (support a new plugin),
+                   selectors), au_probe.swift (ask the running plugin directly),
+                   bootstrap_pack.py (support a new plugin),
                    build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    recipe, path, CLI and plugin-metadata tests
-docs/            — Morgan config reference (musical, not yet fully reconciled)
-                   and open-questions.md, what the manifest doesn't know yet
+docs/            — Morgan config reference (musical, not yet fully reconciled),
+                   measuring-against-the-plugin.md (how the ranges, selector
+                   tables and switch directions were obtained) and
+                   open-questions.md, what the manifest doesn't know yet
 ```
 
 ## Packs
