@@ -17,9 +17,9 @@ a preset library there would lose it on the next update. Claude Code provides
     3. $CLAUDE_PLUGIN_DATA        (set by Claude Code for installed plugins)
     4. the repo root              (correct when working in a git clone)
 
-Skill instructions pass ``--data-dir "${CLAUDE_PLUGIN_DATA}"``, because the
-placeholder is substituted in skill text before the model runs the command —
-the environment variable itself is not guaranteed to reach a Bash subprocess.
+Only the scripts that read or write under the data root take ``--data-dir``:
+``show.py`` and ``build_observed.py``. ``apply_spec.py`` and ``probe.py`` take
+explicit input and output paths, so the flag would be inert for them.
 """
 
 from __future__ import annotations
@@ -38,9 +38,20 @@ _override: Optional[pathlib.Path] = None
 
 
 def set_data_root(path: Optional[str | pathlib.Path]) -> None:
-    """Pin the data root for this process (from a --data-dir flag)."""
+    """Pin the data root for this process (from a --data-dir flag).
+
+    None clears the override. An empty string is a mistake, not a request to
+    clear: it would silently fall back to the plugin directory, which is the
+    one place data must not go.
+    """
     global _override
-    _override = pathlib.Path(os.path.expanduser(str(path))).resolve() if path else None
+    if path is None:
+        _override = None
+        return
+    text = str(path).strip()
+    if not text:
+        raise ValueError("--data-dir cannot be empty; omit it to use the default")
+    _override = pathlib.Path(os.path.expanduser(text)).resolve()
 
 
 def data_root() -> pathlib.Path:

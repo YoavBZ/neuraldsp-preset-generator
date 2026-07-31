@@ -137,8 +137,8 @@ Other flags:
 - `--recipe LAYER/ID`, `--bpm N` — see [Stacking recipes](#stacking-recipes).
 - `--name` — set the preset name without putting it in a spec.
 
-A spec may also carry `"stripIRs": true` instead of passing `--strip-irs`.
-`/version` is marked read-only in the manifest and the writer refuses it.
+`/version` is marked read-only in the manifest and the writer refuses it, with
+or without the `raw` escape hatch.
 
 The tool refuses to write `--out` over `--template`, refuses to clobber an
 existing file without `--force`, and validates every value before writing

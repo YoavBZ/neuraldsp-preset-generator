@@ -10,6 +10,8 @@ state into the install directory.
 from __future__ import annotations
 
 import pathlib
+import subprocess
+import sys
 
 import pytest
 
@@ -140,3 +142,33 @@ def test_describe_roots_flags_the_ephemeral_case(monkeypatch, tmp_path):
     assert "same as the plugin directory" in paths.describe_roots()
     monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(tmp_path))
     assert "same as the plugin directory" not in paths.describe_roots()
+
+
+def test_empty_data_dir_is_rejected_not_ignored():
+    """An empty --data-dir used to clear the override silently, falling back to
+    the plugin directory — the one place data must not be written."""
+    with pytest.raises(ValueError, match="cannot be empty"):
+        paths.set_data_root("")
+    with pytest.raises(ValueError, match="cannot be empty"):
+        paths.set_data_root("   ")
+    paths.set_data_root(None)  # None still means "no override"
+    assert paths.data_root() == paths.PLUGIN_ROOT
+
+
+def test_empty_data_dir_fails_at_the_command_line_too():
+    """`--data-dir "$SOME_UNSET_VAR"` is the realistic way to produce it, so the
+    rejection has to reach the user as a usage error, not a traceback."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(paths.PLUGIN_ROOT / "scripts" / "show.py"),
+            str(paths.bundled_presets()[0]),
+            "--data-dir",
+            "",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "cannot be empty" in result.stderr
+    assert "Traceback" not in result.stderr

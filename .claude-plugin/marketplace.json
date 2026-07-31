@@ -1,10 +1,10 @@
 {
-  "name": "yoavbz-plugins",
+  "name": "yoavbz-tone-tools",
   "owner": {
     "name": "YoavBZ",
     "url": "https://github.com/YoavBZ"
   },
-  "description": "Tools for working with Neural DSP amp-sim plugins from Claude Code.",
+  "description": "Tools for building and editing guitar and bass amp-sim tones from Claude Code.",
   "plugins": [
     {
       "name": "neuraldsp-preset-generator",

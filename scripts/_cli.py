@@ -8,6 +8,7 @@ user in three different wordings depending on which script they happened to run.
 
 from __future__ import annotations
 
+import argparse
 import os
 import pathlib
 import sys
@@ -42,10 +43,25 @@ def guarded(main) -> None:
         sys.exit(130)
 
 
+def _data_dir(text: str) -> str:
+    """Reject an empty --data-dir at the argparse layer.
+
+    `--data-dir ""` is easy to produce from an unset shell variable. Without
+    this it would fall through to "no override" and write into the plugin
+    directory — the one place the data root exists to keep data out of.
+    """
+    if not text.strip():
+        raise argparse.ArgumentTypeError(
+            "cannot be empty; omit --data-dir to use the default"
+        )
+    return text
+
+
 def add_data_dir_arg(parser) -> None:
     """For scripts that read or write anything under the data root."""
     parser.add_argument(
         "--data-dir",
+        type=_data_dir,
         help="where your presets and generated catalogs live (default: "
         "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
     )
