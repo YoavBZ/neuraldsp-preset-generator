@@ -177,7 +177,7 @@ def run(args) -> None:
         changes.append(("name", before, str(new_name)))
 
     # --- IR stripping ---------------------------------------------------
-    if args.strip_irs or spec.get("stripIRs"):
+    if args.strip_irs:
         for key, before in strip_custom_irs(preset):
             changes.append((f"cabParameters/{key}", before, "(cleared)"))
 

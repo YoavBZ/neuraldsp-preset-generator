@@ -29,7 +29,7 @@ As a plugin, from this repo's own marketplace:
 
 ```
 /plugin marketplace add YoavBZ/neuraldsp-preset-generator
-/plugin install neuraldsp-preset-generator@yoavbz-plugins
+/plugin install neuraldsp-preset-generator@yoavbz-tone-tools
 ```
 
 Or from a clone, which is also the way to develop it:

@@ -174,3 +174,76 @@ def test_morgan_has_no_modulation_section(pack):
     """tone-references.md used to promise chorus/flanger. It does not exist."""
     modules = {spec.module for spec in pack.parameters.values()}
     assert not modules & {"chorus", "flanger", "phaser", "pitch"}
+
+
+# --- the gap where declared ranges are missing ----------------------------
+
+# Metered parameters whose real limits nobody has read off the plugin UI yet.
+# They are written unchecked apart from the dimensional floor in UNIT_FLOOR, so
+# this list is pinned: a new parameter added without a range fails here until
+# someone decides whether that is acceptable. Shrinking it is the goal; growing
+# it silently is the thing to prevent.
+UNDECLARED_RANGES = {
+    "cabParameters/leftCabMicLevel",
+    "cabParameters/leftRoomMicLevel",
+    "cabParameters/rightCabMicLevel",
+    "cabParameters/rightRoomMicLevel",
+    "delay/delayTempo",
+    "parameters/gateThreshold",
+    "parameters/inputGain",
+    "parameters/outputGain",
+}
+
+
+def test_the_set_of_undeclared_ranges_is_exactly_what_we_think(pack):
+    actual = {
+        spec.path
+        for spec in pack.parameters.values()
+        if spec.kind == "metered" and spec.min is None and spec.max is None
+    }
+    assert actual == UNDECLARED_RANGES, (
+        "the set of range-less parameters changed.\n"
+        f"  newly missing a range: {sorted(actual - UNDECLARED_RANGES)}\n"
+        f"  newly given a range:   {sorted(UNDECLARED_RANGES - actual)}\n"
+        "  If a range was added, delete it from UNDECLARED_RANGES. If a new "
+        "parameter arrived without one, decide whether that is acceptable."
+    )
+
+
+def test_every_other_metered_parameter_has_a_sourced_range(pack):
+    """A declared range without a source is a guess wearing a uniform."""
+    for spec in pack.parameters.values():
+        if spec.kind != "metered" or spec.path in UNDECLARED_RANGES:
+            continue
+        assert spec.range_source, f"{spec.path} declares a range with no source"
+
+
+def test_dimensional_floors_reject_impossible_values(pack):
+    """Not the plugin's limits — just what cannot mean anything in the unit."""
+    for path, value in [
+        ("delay/delayTempo", -400),      # negative tempo
+        ("delay/delayTempo", 0),         # zero tempo
+        ("pr12EQ/pr12EQHpf", -20),       # negative frequency
+        ("reverb/reverbPreDelay", -5),   # negative duration
+    ]:
+        module, _, key = path.rpartition("/")
+        with pytest.raises(PackError, match="not a possible value"):
+            pack.to_stored(pack.require(module, key), value, warnings=[])
+
+
+def test_dimensional_floors_do_not_touch_signed_units(pack):
+    """dB is signed; a negative output gain is entirely ordinary."""
+    assert pack.to_stored(pack.require("parameters", "outputGain"), -6, warnings=[]) == "-6"
+    assert pack.to_stored(
+        pack.require("cabParameters", "leftCabMicLevel"), -12, warnings=[]
+    ) == "-12"
+
+
+def test_dimensional_floors_are_not_overridable(pack):
+    """--allow-out-of-range covers values the plugin might accept but we have
+    not declared. A negative tempo is not in that category."""
+    with pytest.raises(PackError, match="not a possible value"):
+        pack.to_stored(
+            pack.require("delay", "delayTempo"), -120,
+            allow_out_of_range=True, warnings=[],
+        )

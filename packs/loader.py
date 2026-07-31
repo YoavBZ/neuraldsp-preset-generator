@@ -31,6 +31,23 @@ class PackError(Exception):
     """
 
 
+# Dimensional sanity, by unit. These are NOT the plugin's limits — those are the
+# manifest's declared `min`/`max`, and eight metered parameters still have none
+# (pinned in tests/test_pack.py::UNDECLARED_RANGES).
+# These reject only values that cannot mean anything in the unit at all: a
+# negative tempo, a negative duration, a non-positive frequency. That is a claim
+# about arithmetic, not about the plugin, so it can be made without a source.
+#
+# This is a floor beneath the missing-ranges gap, not a substitute for filling
+# it: an output gain of 10^6 dB is still dimensionally valid and still writes.
+UNIT_FLOOR = {
+    "hz": (0.0, False),       # 0 Hz is not a rate or a cutoff
+    "bpm": (0.0, False),      # a tempo of zero has no meaning
+    "ms": (0.0, True),        # 0 ms is a legitimate "no delay"
+    "seconds": (0.0, True),
+}
+
+
 class _Strict(list):
     """A warning sink for callers that passed none: promotes notes to errors.
 
@@ -142,10 +159,34 @@ class Pack:
         except (ValueError, OverflowError, TypeError) as e:
             raise PackError(f"{spec.path}: {e}") from e
 
+        self._check_dimensional(spec, stored)
         note = self._check_range(spec, stored, allow_out_of_range)
         if note:
             notes.append(note)
         return stored
+
+    def _check_dimensional(self, spec: ParamSpec, stored: str) -> None:
+        """Reject values that cannot mean anything in the parameter's unit.
+
+        Deliberately not overridable by --allow-out-of-range: that flag exists
+        for values the plugin might accept but we haven't declared. A negative
+        tempo is not in that category — it is nonsense in any plugin.
+        """
+        floor = UNIT_FLOOR.get(spec.unit or "")
+        if floor is None:
+            return
+        try:
+            value = float(stored)
+        except ValueError:
+            return
+        bound, inclusive = floor
+        if value > bound or (inclusive and value == bound):
+            return
+        comparison = "at least" if inclusive else "greater than"
+        raise PackError(
+            f"{spec.path}: {stored} {spec.unit} is not a possible value — "
+            f"{spec.unit} must be {comparison} {_num(bound)}."
+        )
 
     def _enum_to_stored(self, spec: ParamSpec, human: Any) -> str:
         # Accept a member name ("PR12", "Ribbon 121") as well as an integer.
