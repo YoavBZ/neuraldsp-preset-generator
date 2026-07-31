@@ -95,6 +95,7 @@ samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    recipe, path, CLI and plugin-metadata tests
 docs/            — Morgan config reference (musical, not yet fully reconciled)
+                   and open-questions.md, what the manifest doesn't know yet
 ```
 
 ## Packs
