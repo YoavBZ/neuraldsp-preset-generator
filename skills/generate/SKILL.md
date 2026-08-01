@@ -111,6 +111,9 @@ Then report:
 - what **research** the tone is based on, with links
 - anything you set **outside a declared range**, and why
 - any **unconfirmed selector** the tool warned about
+- any **guessed kind** the tool warned about (draft packs): the value was written
+  through a mapping nobody has checked, so ask the user to confirm it looks right
+  in the plugin
 
 ## 7. Bank what you learned
 

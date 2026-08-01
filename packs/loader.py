@@ -76,7 +76,13 @@ class ParamSpec:
     ui: Optional[str] = None
     note: Optional[str] = None
     writable: bool = True
+    # Two different doubts, and they are not interchangeable. `needs_confirmation`
+    # says a selector's member names are unknown; `needs_review` says the *kind*
+    # is a bootstrap guess, and the kind is what picks the human→stored mapping.
+    # A wrong kind is the more expensive of the two: it writes a plausible number
+    # instead of failing, so nothing downstream can notice.
     needs_confirmation: bool = False
+    needs_review: bool = False
 
     @property
     def path(self) -> str:
@@ -147,6 +153,21 @@ class Pack:
             raise PackError(
                 f"{spec.path} is marked read-only in the manifest and must not be "
                 f"written.\n  {spec.note or ''}".rstrip()
+            )
+
+        # A guessed kind is doubt the manifest already records; until now nothing
+        # carried it to the person doing the writing. It warns rather than
+        # refuses because a draft pack is meant to be usable while it is being
+        # corrected — and because the guess is often right. Checked before the
+        # kind branches, since the guess is what chose the branch.
+        if spec.needs_review:
+            notes.append(
+                f"{spec.path} has a guessed kind ({spec.kind}), so {human!r} is "
+                f"written through an unverified mapping and may not mean what you "
+                f"expect — a metered control guessed as a knob stores 50 as 0.5. "
+                f"Compare the result against what the plugin displays, then fix "
+                f"`kind` and drop `needs_review` for this parameter in "
+                f"packs/{self.pack_id}/manifest.json."
             )
 
         if spec.kind == "enum":
@@ -317,6 +338,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             note=entry.get("note"),
             writable=entry.get("writable", True),
             needs_confirmation=entry.get("needs_confirmation", False),
+            needs_review=entry.get("needs_review", False),
         )
 
     return Pack(
