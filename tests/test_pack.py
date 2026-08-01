@@ -35,11 +35,25 @@ def test_every_kind_is_translatable(pack):
         assert spec.kind in TRANSLATABLE_KINDS, f"{spec.path} has kind {spec.kind!r}"
 
 
+def pack_for(preset):
+    """The pack that actually describes this preset.
+
+    These run over every preset the installation can see, which now spans more
+    than one plugin. Checking a Tone King preset against Morgan's manifest
+    reports 259 missing parameters and says nothing true.
+    """
+    found = detect_pack(preset.file_header)
+    if found is None:
+        pytest.skip(f"no pack for file header {preset.file_header!r}")
+    return found
+
+
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
 def test_manifest_covers_every_parameter_in_sample(sample, pack):
     """Any parameter present in a real preset must be described by the manifest,
     or the agent can neither read it nor write it."""
     preset = build(parse_file(str(sample)))
+    pack = pack_for(preset)
     missing = [
         f"{p.module_path}/{p.key}"
         for p in preset.parameters
@@ -54,6 +68,7 @@ def test_declared_ranges_admit_real_values(sample, pack):
     manifest, not in the preset. This is the guard against transcribing a wrong
     range from the config reference."""
     preset = build(parse_file(str(sample)))
+    pack = pack_for(preset)
     for p in preset.parameters:
         spec = pack.get(p.module_path, p.key)
         if spec is None or (spec.min is None and spec.max is None):
@@ -74,6 +89,7 @@ def test_declared_ranges_admit_real_values(sample, pack):
 def test_declared_enum_values_are_members(sample, pack):
     """Every selector value in a real preset must be a declared member."""
     preset = build(parse_file(str(sample)))
+    pack = pack_for(preset)
     for p in preset.parameters:
         spec = pack.get(p.module_path, p.key)
         if spec is None or spec.kind != "enum" or not spec.members:

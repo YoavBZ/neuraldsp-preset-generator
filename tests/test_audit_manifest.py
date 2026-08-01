@@ -25,11 +25,10 @@ from audit_manifest import BoundsChecker, numeric  # noqa: E402
 
 
 @pytest.mark.parametrize("shown,expected", [
+    ("500 Hz", 500.0),
     ("-24.0 dB", -24.0),
     ("+24.0 dB", 24.0),
     ("40.0 BPM", 40.0),
-    ("1.00 kHz", 1000.0),     # prefix, not a bare number
-    ("20.0 kHz", 20000.0),
     ("500 Hz", 500.0),
     ("50 L", -50.0),          # the plugin signs a pan with a letter
     ("50 R", 50.0),
@@ -40,6 +39,25 @@ from audit_manifest import BoundsChecker, numeric  # noqa: E402
 ])
 def test_display_strings_parse_to_stored_units(shown, expected):
     assert numeric(shown) == expected
+
+
+def test_kilo_and_seconds_rescale_only_for_the_matching_unit():
+    """A blanket rescale broke reverbDecay, which really is stored in seconds
+    while delayTime is stored in milliseconds and displayed in seconds."""
+    from audit_manifest import numeric as n
+    assert n("1.00 s", "seconds") == 1.0          # stored in seconds: unchanged
+    assert n("1.50 s", "ms") == 1500.0            # stored in ms: rescaled
+    assert n("1.00 kHz", "hz") == 1000.0
+    assert n("20,000 Hz", "hz") == 20000.0        # thousands separator
+    assert n("20.0 KHZ", "hz") == 20000.0         # case-insensitive prefix
+
+
+def test_an_unreadable_display_is_not_a_disagreement():
+    """`-inf dB` has a value this cannot compare. Reporting it as a mismatch
+    would be a failure no manifest edit could fix."""
+    from audit_manifest import UNPARSEABLE
+    assert numeric("-inf dB") is UNPARSEABLE
+    assert numeric("") is None
 
 
 def test_pan_would_not_be_reported_as_a_disagreement():
@@ -109,10 +127,50 @@ def test_bounds_checker_declines_what_it_cannot_judge(monkeypatch):
 
 def test_audit_refuses_a_pack_that_names_no_plugin(tmp_path, monkeypatch):
     """A bootstrapped draft has no `audio_unit`, and guessing one would point the
-    probe at whatever plugin happened to match."""
+    probe at whatever plugin happened to match.
+
+    Uses a pack that EXISTS but declares no plugin. Naming a pack that does not
+    exist looks like the same test and is not: it dies in `load_pack` and never
+    reaches the guard, so the guard could be deleted with the suite still green.
+    """
+    import json
+    import audit_manifest
+    from packs import loader
+
+    pack_dir = tmp_path / "nameless"
+    pack_dir.mkdir()
+    (pack_dir / "manifest.json").write_text(json.dumps({
+        "manifest_version": 1, "pack_id": "nameless", "display_name": "Nameless",
+        "file_header": "nameless", "parameters": {},
+    }))
+    monkeypatch.setattr(loader, "PACKS_DIR", tmp_path)
+
+    with pytest.raises(SystemExit) as exc:
+        audit_manifest.audit("nameless")
+    assert exc.value.code == 2
+
+
+def test_a_missing_pack_is_still_reported_cleanly():
     result = subprocess.run(
         [sys.executable, str(AUDIT), "--pack", "definitely-not-a-pack"],
         capture_output=True, text=True, cwd=str(REPO_ROOT),
     )
     assert result.returncode == 2
     assert "Traceback" not in result.stderr
+
+
+def test_cannot_verify_reports_and_does_not_pass(capsys):
+    """A plugin whose state is opaque cannot be audited at all. That must not
+    read as a clean bill: it exits 3, distinct from both 0 and a disagreement."""
+    from audit_manifest import cannot_verify
+    from packs.loader import load_pack
+
+    pack = load_pack("morgan")
+    code = cannot_verify(pack, {1: {}, 2: {}})
+    assert code == 3
+    out = capsys.readouterr().out
+    assert "CANNOT VERIFY" in out
+    assert "2 controls" in out
+    # It has to say why, or the reader will assume the plugin is broken.
+    assert "opaque bytes" in out
+    assert "guess" in out

@@ -96,20 +96,24 @@ def infer(key: str, values: list) -> dict:
 # Binary values and PARAM records are both understood now (see
 # format/markers.py and format/structured.py), so neither is a reason to
 # refuse. What remains is the shape we would still get wrong silently.
-TYPED_MARKER = re.compile(rb"\x01(.)\x04", re.S)
 DECODABLE_WIDTHS = {8}          # 8 bytes: a little-endian IEEE-754 double
 
 
-def unsupported_shape(raw: bytes, parameters: list, by_key: dict) -> str | None:
-    """Explain why this preset can't be drafted, or None if it can."""
-    widths = {m.group(1)[0] - 1 for m in TYPED_MARKER.finditer(raw)}
+def unsupported_shape(tokens: list, parameters: list, by_key: dict) -> str | None:
+    """Explain why this preset can't be drafted, or None if it can.
+
+    Widths come from the tokenizer, not from scanning the raw bytes for the
+    marker pattern: a payload whose own contents happen to spell `01 xx 04`
+    would otherwise trigger a refusal on a file that is perfectly fine.
+    """
+    widths = {len(t.payload) for t in tokens if t.is_binary}
     unknown = sorted(widths - DECODABLE_WIDTHS)
     if unknown:
         return (
             f"This preset carries binary values "
             f"{', '.join(str(w) for w in unknown)} bytes wide, and only 8-byte "
             f"doubles are understood.\n"
-            "  The parser round-trips them safely — nothing is corrupt, and "
+            "  The parser handles them safely — nothing is corrupt, and "
             "reading the file is fine — but their values would be drafted as "
             "raw hex, and writing one would be a guess.\n"
             "  Teach format/parser.py:decode_payload the width first. "
@@ -176,7 +180,7 @@ def main() -> None:
     for param in preset.parameters:
         by_key[f"{param.module_path}/{param.key}"].append(param.value)
 
-    problem = unsupported_shape(preset_path.read_bytes(), preset.parameters, by_key)
+    problem = unsupported_shape(preset.tokens, preset.parameters, by_key)
     if problem:
         die(problem)
 

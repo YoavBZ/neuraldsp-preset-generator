@@ -51,23 +51,46 @@ PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 NUMBER = re.compile(r"[-+]?[0-9]*\.?[0-9]+")
 
 
-def numeric(shown: str):
+UNPARSEABLE = object()   # distinct from None, which means "no number here"
+
+
+def numeric(shown: str, unit: str = None):
     """The number the plugin displayed, in the units the manifest stores.
 
     The plugin formats for humans, not for comparison: a pan is `50 L` / `C` /
-    `50 R` rather than a signed number, and a frequency may be in kHz. Undo both
-    or the audit reports a disagreement that only exists in the display.
+    `50 R` rather than signed, a frequency may be in kHz, a time may be in
+    seconds, and a large number may carry a thousands separator. Undo all of
+    that, or the audit reports a disagreement that only exists in the display.
+
+    Rescaling needs the parameter's own unit, not just the display: `delayTime`
+    stores milliseconds and may be shown as `1.50 s`, while `reverbDecay` stores
+    seconds and is shown as `1.00 s`. Converting both would break the second —
+    it did, and the audit caught it.
+
+    Returns UNPARSEABLE when there is a value but this cannot read it (`-inf
+    dB`), so the caller can report "not checked" instead of a false failure.
     """
     shown = (shown or "").strip()
-    if shown == "C":
+    if not shown:
+        return None
+    if shown == "C":                      # a centred pan is not "0"
         return 0.0
-    match = NUMBER.search(shown)
+    if "inf" in shown.lower() or "nan" in shown.lower():
+        return UNPARSEABLE
+
+    match = NUMBER.search(shown.replace(",", ""))
     if not match:
         return None
     value = float(match.group())
-    if "kHz" in shown:
+
+    lowered = shown.lower()
+    if "khz" in lowered and unit == "hz":
         value *= 1000
-    if shown.endswith(" L"):
+    elif unit == "ms" and re.search(r"\d\s*(s|sec|secs)\b", lowered):
+        # Seconds shown for a parameter stored in milliseconds. delayTime tops
+        # out at 1500 ms, exactly where a plugin tends to switch its display.
+        value *= 1000
+    if lowered.endswith(" l"):            # pan: the sign is a letter
         value = -value
     return value
 
@@ -125,25 +148,31 @@ class BoundsChecker:
         if spec.kind != "metered" or spec.min is None or spec.max is None:
             return None
         below, above = spec.min - abs(spec.min or 1) - 1, spec.max + abs(spec.max or 1) + 1
-        rows = run_probe(
-            self.binary, self.au, "values", lookup,
-            f"{below:g},{spec.min:g},{spec.max:g},{above:g}",
-        )["results"]
+        # Index by the exact string written. The probe echoes `wrote` verbatim,
+        # so comparing floats would miss as soon as a bound needs more digits
+        # than "%g" prints — and a miss here is silent.
+        wrote = [f"{v:g}" for v in (below, spec.min, spec.max, above)]
+        rows = run_probe(self.binary, self.au, "values", lookup, ",".join(wrote))["results"]
         kept = {}
         for row in rows:
             try:
-                kept[float(row["wrote"])] = float(row["keptInState"])
+                kept[row["wrote"]] = float(row["keptInState"])
             except (TypeError, ValueError):
                 return None
-        # Writing past an end must come back as that end, and writing the end
-        # itself must survive. Either failing means the declared range is wrong.
-        low = kept.get(float(below))
-        high = kept.get(float(above))
-        if low is None or high is None:
+
+        try:
+            low, high = kept[wrote[0]], kept[wrote[3]]
+            at_min, at_max = kept[wrote[1]], kept[wrote[2]]
+        except KeyError:
             return None
-        if (low, high) == (float(spec.min), float(spec.max)):
-            return ("agrees", low, high)
-        return ("disagrees", low, high)
+        # Writing past an end must come back as that end, AND writing the end
+        # itself must survive unchanged. The second half was previously written
+        # and then thrown away, which left half the check unmade.
+        if (low, high) != (float(spec.min), float(spec.max)):
+            return ("disagrees", low, high)
+        if (at_min, at_max) != (float(spec.min), float(spec.max)):
+            return ("disagrees", at_min, at_max)
+        return ("agrees", low, high)
 
 
 def audit(pack_id: str) -> int:
@@ -193,73 +222,139 @@ def cannot_verify(pack, params) -> int:
     return 3
 
 
-def compare(pack, params, revmap, checker) -> int:
+def check_members(checker, lookup, spec):
+    """Verify a selector's declared member names against the plugin's labels.
 
+    The script claims to re-derive ranges *and selectors*; without this it only
+    ever did ranges, and every enum was counted as agreeing on the strength of
+    its key mapping to a control. Returns (verdict, detail).
+    """
+    if spec.kind != "enum" or not spec.members:
+        return None
+    indices = sorted(spec.members, key=int)
+    try:
+        rows = run_probe(
+            checker.binary, checker.au, "values", lookup, ",".join(indices)
+        )["results"]
+    except (StateNotADocument, KeyError, json.JSONDecodeError):
+        return None
+
+    wrong = []
+    seen = 0
+    for row in rows:
+        moved = row.get("moved") or []
+        if not moved:
+            # The plugin was already on this value, so nothing moved and there
+            # is no label to read. Not a failure — just no evidence.
+            continue
+        seen += 1
+        label = (moved[0].get("label") or "").strip()
+        declared = spec.members.get(row["wrote"], "")
+        if label and label.lower() != declared.lower():
+            wrong.append(f"{row['wrote']}: manifest {declared!r}, plugin {label!r}")
+    if not seen:
+        return None
+    return ("disagrees", wrong) if wrong else ("agrees", seen)
+
+
+def compare(pack, params, revmap, checker) -> int:
     # A preset key is only mapped when writing it moved exactly one control.
     mapped = {}
     for row in revmap:
         if len(row["moved"]) == 1:
             mapped[f"{row['element']}/{row['key']}"] = row["moved"][0]["address"]
 
-    agrees, disagrees, unmapped = [], [], []
+    verified, disagrees = [], []
+    nothing_declared = []      # mapped, but the manifest asserts nothing to test
+    unchecked_declared = []    # asserts something, and we could NOT test it
+    unchecked_bare = []        # asserts nothing and was not reached either
+
     for path, spec in sorted(pack.parameters.items()):
         if spec.kind not in ("metered", "enum", "rotation", "fraction"):
             continue
-        # The manifest addresses the document root as a bare "/key"; the plugin
-        # calls that element appModel.
         lookup = f"appModel/{path.lstrip('/')}" if path.startswith("/") else path
+        declares = (
+            spec.min is not None or spec.max is not None
+            or (spec.kind == "enum" and spec.members)
+        )
         address = mapped.get(lookup)
+
         if address is None:
-            # Do not just report the hole — this is the hole the wrong *EQHpf
-            # ranges hid in. Ask the plugin directly instead, by writing past
-            # each declared end and reading back what it kept.
-            verdict = checker.check(lookup, spec)
+            verdict = checker.check(lookup, spec) or check_members(checker, lookup, spec)
             if verdict is None:
-                unmapped.append((path, spec))
+                (unchecked_declared if declares else unchecked_bare).append((path, spec))
             elif verdict[0] == "agrees":
-                agrees.append((path, spec, None))
+                verified.append((path, spec))
             else:
-                disagrees.append((path, spec, None, verdict[1], verdict[2]))
+                disagrees.append((path, spec, None, verdict[1], verdict[2] if len(verdict) > 2 else ""))
+            continue
+
+        if spec.kind == "enum":
+            verdict = check_members(checker, lookup, spec)
+            if verdict is None:
+                (unchecked_declared if declares else unchecked_bare).append((path, spec))
+            elif verdict[0] == "agrees":
+                verified.append((path, spec))
+            else:
+                disagrees.append((path, spec, params[address], verdict[1], ""))
+            continue
+
+        if not declares:
+            # A rotation or fraction declares no bounds, so mapping it to a
+            # control proves only that the key exists. Counting it as "agrees"
+            # inflated the number that gets read as the audit's result.
+            nothing_declared.append((path, spec))
             continue
 
         control = params[address]
-        if spec.kind != "metered" or spec.min is None and spec.max is None:
-            agrees.append((path, spec, control))
-            continue
-        lo, hi = numeric(control["minString"]), numeric(control["maxString"])
-        if (spec.min, spec.max) == (lo, hi):
-            agrees.append((path, spec, control))
+        lo = numeric(control["minString"], spec.unit)
+        hi = numeric(control["maxString"], spec.unit)
+        if lo is UNPARSEABLE or hi is UNPARSEABLE:
+            unchecked_declared.append((path, spec))
+        elif (spec.min, spec.max) == (lo, hi):
+            verified.append((path, spec))
         else:
             disagrees.append((path, spec, control, lo, hi))
 
     for path, spec, control, lo, hi in disagrees:
         print(f"DISAGREES  {path}")
-        print(f"           manifest {spec.min} .. {spec.max} {spec.unit or ''}".rstrip())
-        if control is not None:
-            print(f"           plugin   {control['minString']} .. {control['maxString']}"
-                  f"   ({control['displayName']})")
+        if spec.kind == "enum":
+            print(f"           declared members do not match the plugin's labels:")
+            for line in (lo if isinstance(lo, list) else [str(lo)]):
+                print(f"             {line}")
         else:
-            print(f"           plugin   {lo} .. {hi}   (clamped a written value)")
-        print(f"           source   {spec.range_source}\n")
+            print(f"           manifest {spec.min} .. {spec.max} {spec.unit or ''}".rstrip())
+            if control is not None:
+                print(f"           plugin   {control['minString']} .. {control['maxString']}"
+                      f"   ({control['displayName']})")
+            else:
+                print(f"           plugin   {lo} .. {hi}   (clamped a written value)")
+            print(f"           source   {spec.range_source}")
+        print()
 
-    if unmapped:
-        print(f"NOT CHECKED — neither the map nor a write probe reached these "
-              f"{len(unmapped)}:\n")
-        for path, spec in unmapped:
-            declared = (f"{spec.min} .. {spec.max}"
-                        if spec.min is not None or spec.max is not None else "no range")
-            print(f"           {path}  ({spec.kind}, {declared})")
-        print("\n           These have no declared range to test against, so "
-              "there is nothing to\n"
-              "           compare. That is expected for selectors whose members "
-              "are unknown.\n")
+    if unchecked_declared:
+        print(f"NOT CHECKED, BUT ASSERTS SOMETHING — {len(unchecked_declared)}:\n")
+        for path, spec in unchecked_declared:
+            what = (f"{spec.min} .. {spec.max}" if spec.min is not None or spec.max is not None
+                    else f"{len(spec.members or {})} members")
+            print(f"           {path}  ({spec.kind}, {what})")
+        print("\n           These declare a fact the plugin was not asked about, so"
+              "\n           the audit proves nothing for them. That is a failure, not"
+              "\n           a clean bill: it is exactly how three wrong ranges survived"
+              "\n           a full pass. Probe each by hand with the `values` mode.\n")
 
-    print(f"{len(agrees)} agree, {len(disagrees)} DISAGREE, {len(unmapped)} not checked.")
+    print(f"{len(verified)} verified, {len(disagrees)} DISAGREE, "
+          f"{len(unchecked_declared)} unchecked, "
+          f"{len(nothing_declared)} declare nothing to check.")
+    if nothing_declared and not (disagrees or unchecked_declared):
+        print(f"\n{len(nothing_declared)} parameters map to a control but declare no range or "
+              f"members,\nso nothing about them was tested. That is expected for knobs stored "
+              f"0-1.")
     if disagrees:
         print("\nA disagreement means every value written through that parameter is "
               "silently clamped\nor rejected by the plugin. Fix the manifest, and "
               "set `range_source` to say how.")
-    return 1 if disagrees else 0
+    return 1 if (disagrees or unchecked_declared) else 0
 
 
 def main() -> None:

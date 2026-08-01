@@ -5,9 +5,11 @@ Shared reference for the `generate` and `edit` skills.
 ## How writing works
 
 The preset file is binary despite its `.xml` extension, and has no public
-spec. So the writer **clones a known-good preset and mutates only the printable
-string values of parameters it already contains**. Wrapper bytes are preserved
-verbatim; the one length byte the plugin validates is recomputed.
+spec. So the writer **clones a known-good preset and mutates only the values of
+parameters it already contains**. Wrapper bytes are preserved verbatim. A text
+value's one length byte is recomputed; a binary value is re-encoded in place at
+its fixed width. Both encodings are described under
+[The second preset encoding](#the-second-preset-encoding).
 
 Consequences you must design around:
 

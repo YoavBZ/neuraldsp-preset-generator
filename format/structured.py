@@ -95,7 +95,14 @@ def read_record(tokens: List[Token], i: int):
     name_key, name_val = tokens[i + 1], tokens[i + 2]
     if name_key.value != RECORD_NAME_KEY or not is_value_token(name_val):
         return None
-    if i + 4 < len(tokens):
+
+    # The field count is in the `id` key's own marker: 0x01 0x02 when a value
+    # follows, 0x01 0x01 when none does. Reading it beats looking ahead for a
+    # `value` token, which would happily adopt an unrelated one that came next.
+    field_count = name_key.raw_prefix[-1] if name_key.raw_prefix else None
+    has_value = field_count != 0x01
+
+    if has_value and i + 4 < len(tokens):
         value_key, value_val = tokens[i + 3], tokens[i + 4]
         if value_key.value == RECORD_VALUE_KEY and is_value_token(value_val):
             return name_val.value, i + 4, i + 5
@@ -184,6 +191,8 @@ def build(tokens: List[Token]) -> Preset:
                 if (module_path, name) in preset.by_path:
                     preset.duplicates.append((module_path, name))
                 preset.by_path[(module_path, name)] = param
+                if module_path == "" and name == "presetNameProp":
+                    preset.preset_name = param.value
                 i = end
                 continue
 
@@ -222,7 +231,7 @@ def build(tokens: List[Token]) -> Preset:
             if (module_path, tok.value) in preset.by_path:
                 preset.duplicates.append((module_path, tok.value))
             preset.by_path[(module_path, tok.value)] = param
-            if param.module_path == "" and param.key == "name":
+            if param.module_path == "" and param.key in ("name", "presetNameProp"):
                 preset.preset_name = param.value
             i += 2
             continue
@@ -239,6 +248,12 @@ def set_parameter(preset: Preset, module_path: str, key: str, new_value: str) ->
     if param is None:
         raise KeyError(f"No parameter {module_path!r}.{key!r} in preset")
     current = preset.tokens[param.value_index]
+    if is_typed_value_prefix(current.raw_prefix) and not current.is_binary:
+        raise ValueError(
+            f"{module_path}/{key} carries a binary marker but no payload, which "
+            f"means the file is truncated there. Writing it would put text "
+            f"behind a marker that declares a fixed width."
+        )
     if current.is_binary:
         # A binary value keeps its marker (the width is fixed) and is
         # re-encoded rather than length-patched.

@@ -37,14 +37,16 @@ def text(s: str) -> bytes:
 
 
 def record(name: str, value: float | None = None) -> bytes:
-    out = b"PARAM\x00" + b"\x01\x02" + b"id\x00" + text(name)
+    """A record. The `id` marker carries a field count: 0x02 with a value,
+    0x01 without, which is what real one-field records use."""
+    out = b"PARAM\x00" + bytes([0x01, 0x02 if value is not None else 0x01]) + b"id\x00" + text(name)
     if value is not None:
         out += b"value\x00" + double(value)
     return out
 
 
 def preset(*records: bytes, count_byte: int | None = None) -> bytes:
-    head = b"toneking\x00"
+    head = b"neural_dsp_toneking\x00"
     if count_byte is not None:
         head += bytes([0x01, count_byte])
     return head + b"".join(records)
@@ -61,7 +63,20 @@ def test_binary_values_round_trip_byte_for_byte():
 def test_a_payload_byte_in_ascii_does_not_leak_into_the_next_key():
     """120.0 ends in the bytes 0x5e 0x40 — `^@`. Read as text, those became the
     start of the next token, which is how a parameter called `^@presetNameProp`
-    appeared in the first Tone King draft."""
+    appeared in the first Tone King draft.
+
+    Built without a terminator after the payload, because that is how real
+    top-level binary values are stored: `tempo\\0 <marker> <8 bytes>` runs
+    straight into the next key with nothing between them.
+    """
+    import struct as _s
+    raw = (b"toneking\x00tempo\x00" + b"\x01\x09\x04" + _s.pack("<d", 120.0)
+           + b"presetNameProp\x00" + text("Default"))
+    tokens = parse(raw)
+    assert write(tokens) == raw
+    assert "presetNameProp" in [t.value for t in tokens]
+    assert not any(t.value.startswith("^@") for t in tokens)
+
     raw = preset(record("tempo", 120.0), record("gain", 0.5))
     tokens = parse(raw)
     assert write(tokens) == raw
@@ -91,7 +106,7 @@ def test_an_opaque_value_is_not_read_as_a_number():
     tokens = parse(raw)
     assert write(tokens) == raw
     opaque = [t for t in tokens if t.is_binary][0]
-    assert opaque.value == "4a046 4d66f2f4e02".replace(" ", "")
+    assert opaque.value == uid[3:].hex()
     # And the key after it survives intact — this is what ran off the end before.
     assert "nextKey" in [t.value for t in tokens]
 
@@ -99,6 +114,21 @@ def test_an_opaque_value_is_not_read_as_a_number():
 def test_writing_an_opaque_value_is_refused():
     with pytest.raises(ValueError, match="opaque identifier"):
         encode_payload("1.0", 8, opaque=True)
+
+
+def test_set_parameter_refuses_an_opaque_value_through_the_real_path():
+    """Not just the encoder in isolation: `presetUIDProp` is a real Parameter in
+    every Tone King preset, so `set_parameter` is reachable with it and must
+    refuse there too."""
+    uid = b"\x01\x09\x06" + bytes(range(8))
+    raw = b"toneking\x00presetUIDProp\x00" + uid + b"tempo\x00" + double(120.0)
+    pre = build(parse(raw))
+    assert pre.by_path[("", "presetUIDProp")].value == bytes(range(8)).hex()
+    with pytest.raises(ValueError, match="opaque identifier"):
+        set_parameter(pre, "", "presetUIDProp", "1.0")
+    # The neighbouring real value is still writable.
+    set_parameter(pre, "", "tempo", "90")
+    assert build(parse(write(pre.tokens))).by_path[("", "tempo")].value == "90"
 
 
 # --- the structured layer --------------------------------------------------

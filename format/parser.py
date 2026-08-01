@@ -1,9 +1,11 @@
 """
 Lossless tokenizer for Neural DSP preset binary files.
 
-A preset is a sequence of UTF-8 null-terminated printable strings separated by
-short non-printable "marker" bytes. We tokenize into (raw_prefix, value,
-terminator) triples that preserve every byte of the original file. The writer
+A preset is a sequence of null-terminated values separated by short
+non-printable "marker" bytes. Most values are printable UTF-8; some plugins
+store numbers as fixed-width binary instead, and those keep their raw bytes on
+the token (see `Token.payload`). We tokenize into (raw_prefix, value,
+terminator, payload) tuples that preserve every byte of the original file. The writer
 concatenates them back; mutating a `value` produces a valid edited preset as
 long as the marker bytes around it are unchanged.
 
@@ -17,6 +19,7 @@ carries no license.
 
 from __future__ import annotations
 
+import math
 import struct
 from dataclasses import dataclass
 from typing import List
@@ -91,10 +94,24 @@ def encode_payload(value: str, width: int, opaque: bool = False) -> bytes:
 
 
 def _fmt(x: float) -> str:
-    """Match the text format the string-valued plugins use: no trailing zeros."""
-    if x == int(x):
+    """Render a double so that reading it and writing it back is a no-op.
+
+    This is a SERIALISATION format, not a display one, and the difference is not
+    cosmetic. Rounding to a fixed number of decimals looked tidy and silently
+    changed 14% of the real corpus on an identity write-back: a value stored as
+    a promoted float32, `-14.200000762939453`, came back as `-14.2000007629` and
+    re-encoded to different bytes. `repr` gives the shortest string that
+    round-trips exactly, which is the only property that matters here.
+
+    Integral values still print without a decimal point, matching how the
+    text-valued plugins write them, and `str(int(x))` is exact for any integer a
+    double can hold. Non-finite values go through `repr` untouched: `inf` and
+    `nan` both survive a round trip, whereas `int(x)` on them raises and made
+    the whole preset unreadable.
+    """
+    if math.isfinite(x) and x == int(x) and abs(x) < 2 ** 53:
         return str(int(x))
-    return f"{x:.10f}".rstrip("0").rstrip(".")
+    return repr(x)
 
 
 def parse(buf: bytes) -> List[Token]:
@@ -157,8 +174,12 @@ def parse(buf: bytes) -> List[Token]:
         if is_typed_value_prefix(prefix):
             width = typed_payload_length(prefix)
             vend = i + width
-            if width >= 0 and vend <= n:
-                payload = buf[i:vend]
+            if width >= 0:
+                # A truncated file declares more payload than it has. Take what
+                # is there: the token stays binary, so it round-trips and the
+                # writer refuses it, rather than falling through to the text
+                # branch and becoming a marker with no payload.
+                payload = buf[i:min(vend, n)]
                 i = vend
                 terminator = NUL if (i < n and buf[i] == 0x00) else b""
                 if terminator:

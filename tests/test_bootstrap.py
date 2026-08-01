@@ -186,22 +186,24 @@ def record_shaped_preset(tmp_path):
     return path
 
 
-def test_undecodable_binary_width_is_refused_not_drafted(binary_valued_preset):
+def test_undecodable_binary_width_is_refused_not_drafted(binary_valued_preset, cleanup_pack):
     """The failure mode this guards against is a draft that looks fine.
 
     An 8-byte double is understood; anything else would be drafted as hex, and
     writing it would be a guess dressed as a value."""
+    cleanup_pack.append("otherplugin")
     result = run("--preset", str(binary_valued_preset))
     assert result.returncode == 2
     assert "4 bytes wide" in result.stderr
     assert "Traceback" not in result.stderr
     # It must say the file itself is intact, or the reader will assume the
     # preset is damaged and go looking for a problem that isn't there.
-    assert "round-trips them safely" in result.stderr
+    assert "8-byte doubles" in result.stderr and "nothing is corrupt" in result.stderr
     assert not (PACKS_DIR / "otherplugin").exists()
 
 
-def test_record_shaped_format_is_refused_not_drafted(record_shaped_preset):
+def test_record_shaped_format_is_refused_not_drafted(record_shaped_preset, cleanup_pack):
+    cleanup_pack.append("recordplugin")
     result = run("--preset", str(record_shaped_preset))
     assert result.returncode == 2
     assert "distinct key names" in result.stderr

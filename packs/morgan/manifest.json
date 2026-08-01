@@ -171,7 +171,7 @@
     "pr12Amp/pr12Volume": {
       "kind": "rotation",
       "ui": "Volume",
-      "note": "PR12 is a 12W Princeton-style amp and it does break up, but THE KNOB POSITION IS NOT THE WHOLE STORY \u2014 how hard you hit it matters as much. Measured as harmonic distortion on a 220 Hz sine: at a modest input, 1.8%% at 20%%, 4%% at 50%%, then a knee between 65%% and 70%% where it doubles (4.8%% to 10.3%%) and reaches 19%% by 80%%. Feed it three times as much signal and that knee moves down the dial: 5%% distortion arrives at 30%% instead of 60%%. So quote a range, not a number, and remember `inputGain` and the guitar move it. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "PR12 is a 12W Princeton-style amp and it does break up, but THE KNOB POSITION IS NOT THE WHOLE STORY \u2014 how hard you hit it matters as much. Measured as harmonic distortion on a bin-centred 222.66 Hz sine at a modest input: 1.4% at 20%, 3.5% at 50%, 4.6% at 60%, then a knee between 65% and 70% where it nearly doubles (4.6% to 8.1%) and reaches 15% by 80%. Feed it three times as much signal and that knee moves a long way down the dial: 5% distortion arrives around 28% instead of around 66%. So quote a range, not a number, and remember `inputGain` and the guitar move it. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "pr12Amp/pr12Treble": {
       "kind": "rotation",
@@ -194,12 +194,12 @@
     "sw50rAmp/sw50rVolume": {
       "kind": "rotation",
       "ui": "Volume",
-      "note": "Preamp gain, and the control that actually drives break-up: on a 220 Hz sine it takes distortion from 1.6%% at 20%% to 18.4%% at 80%%. Note the output can exceed 0 dBFS up there, so trim `outputGain` rather than letting the next stage clip. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "Preamp gain, and the control that actually drives break-up: on a bin-centred 222.66 Hz sine it takes distortion from about 0.5% at 20% and 50% to 14% at 80% \u2014 flat and then a cliff, rather than a gradual climb. Note the output can exceed 0 dBFS up there, so trim `outputGain` rather than letting the next stage clip. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rLevel": {
       "kind": "rotation",
       "ui": "Level",
-      "note": "Master volume: it is the loudness control, and it adds much less dirt than `sw50rVolume` \u2014 but 'adds no gain' was too strong. Measured on a 220 Hz sine it goes from 1.6%% distortion at 20%% to 7.7%% at 80%%, against 18.4%% for the preamp volume at the same setting. So roughly a third as much, not none, and the last quarter of its travel is not clean. For loud and clean, keep this high and `sw50rVolume` low, but do not treat it as distortion-free. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "Master volume: it is the loudness control, and it adds less dirt than `sw50rVolume` \u2014 but 'adds no gain' was too strong. Measured on a bin-centred 222.66 Hz sine it goes from about 0.3% distortion at 20% to 5.8% at 80%, against 14% for the preamp volume at the same setting: well under half, not none, and its top quarter is not clean. For loud and clean, keep this high and `sw50rVolume` low, but do not treat it as distortion-free. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rTreble": {
       "kind": "rotation",
@@ -208,7 +208,7 @@
     "sw50rAmp/sw50rMid": {
       "kind": "rotation",
       "ui": "Mid",
-      "note": "MOSTLY A LEVEL CONTROL, not a mid band. Across its full travel it lifts the whole spectrum by about 7.5 dB, with only a further ~2 dB of emphasis around 1.6-2.5 kHz on top of that \u2014 the signature of a passive tone stack where the mid pot sits in series with everything. For comparison, `sw50rTreble` over the same travel is a real tilt: -3.4 dB at 59 Hz and +7.2 dB at 2.5 kHz. So reach for this to change how loud and how driven the amp is; reach for treble or the graphic EQ to change the voicing. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "MOSTLY A LEVEL CONTROL, not a mid band. Across its full travel it lifts the whole spectrum by about 7.5 dB, with only a further ~2 dB of emphasis around 1.6-2.5 kHz on top of that. (That pattern is what a passive tone stack with the mid pot in series would give, but the measurement is of output, after a nonlinearity, so treat the circuit explanation as a guess and the shape as the fact.) For comparison, `sw50rTreble` over the same travel is a real tilt: -3.4 dB at 59 Hz and +7.2 dB at 2.5 kHz. So reach for this to change how loud and how driven the amp is; reach for treble or the graphic EQ to change the voicing. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rBass": {
       "kind": "rotation",
@@ -240,7 +240,7 @@
     "ac20Amp/ac20Cut": {
       "kind": "rotation",
       "ui": "Cut",
-      "note": "HIGHER = BRIGHTER, and this reverses what this repo previously asserted. Rendered through the plugin, raising it from 0%% to 100%% *adds* treble, monotonically and by a lot: +5 dB at 1 kHz, +11 dB at 2.5 kHz, +15 dB at 4 kHz, +19 dB at 6.3 kHz, with the low end within a dB. It behaves like a presence control, not like the Vox power-amp Cut it is named after. The manifest used to state the opposite in capitals on the strength of three name-based arguments \u2014 the config reference, the control's name, and Morgan's description of the original circuit \u2014 which all agreed with each other and were all wrong. See docs/measuring-against-the-plugin.md."
+      "note": "HIGHER = BRIGHTER, and this reverses what this repo previously asserted. Rendered through the plugin, raising it from 0% to 100% *adds* treble, monotonically and by a lot: +5 dB at 1 kHz, +11 dB at 2.5 kHz, +15 dB at 4 kHz, +19 dB at 6.3 kHz, with the low end within a dB. It behaves like a presence control, not like the Vox power-amp Cut it is named after. The manifest used to state the opposite in capitals on the strength of three name-based arguments \u2014 the config reference, the control's name, and Morgan's description of the original circuit \u2014 which all agreed with each other and were all wrong. See docs/measuring-against-the-plugin.md."
     },
     "ac20Amp/ac20Bright": {
       "kind": "switch",
@@ -694,7 +694,7 @@
     "cabParameters/leftCabPosition": {
       "kind": "fraction",
       "ui": "Left position",
-      "note": "0 = cap centre, 1 = cone edge, and cone edge really is darker \u2014 but it is a gentle tilt, not a tone control. End to end it is about +1.4 dB in the low mids against -1.1 dB at 6.3 kHz, roughly 2.5 dB of tilt in total. Use it to nudge; use a different mic to change the character. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "0 = cap centre, 1 = cone edge, and cone edge really is darker \u2014 but it is a gentle tilt, not a tone control. End to end it is about +1.4 dB in the low mids against -1.1 dB at 6.3 kHz, roughly 2.5 dB of tilt in total \u2014 measured on the LEFT slot; the right was not measured separately and can hold a different mic. Use it to nudge; use a different mic to change the character. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "cabParameters/leftCabDistance": {
       "kind": "fraction",
@@ -761,7 +761,7 @@
     "cabParameters/rightCabPosition": {
       "kind": "fraction",
       "ui": "Right position",
-      "note": "0 = cap centre, 1 = cone edge, and cone edge really is darker \u2014 but it is a gentle tilt, not a tone control. End to end it is about +1.4 dB in the low mids against -1.1 dB at 6.3 kHz, roughly 2.5 dB of tilt in total. Use it to nudge; use a different mic to change the character. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "0 = cap centre, 1 = cone edge, and cone edge really is darker \u2014 but it is a gentle tilt, not a tone control. End to end it is about +1.4 dB in the low mids against -1.1 dB at 6.3 kHz, roughly 2.5 dB of tilt in total \u2014 measured on the LEFT slot; the right was not measured separately and can hold a different mic. Use it to nudge; use a different mic to change the character. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "cabParameters/rightCabDistance": {
       "kind": "fraction",

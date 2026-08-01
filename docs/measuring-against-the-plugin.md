@@ -179,19 +179,29 @@ comparison cannot test it. Feed a **sine** and measure the harmonics the amp
 adds that were not in the input:
 
 ```bash
-/tmp/au_render aumf NMAS NDSP pr12Amp/pr12Volume 0.6 v60.wav 0.05 sine:220
-python3 scripts/spectrum_diff.py --thd 220 v60.wav
+/tmp/au_render aumf NMAS NDSP pr12Amp/pr12Volume 0.6 v60.wav 0.05 sine:222.65625
+python3 scripts/spectrum_diff.py --thd 222.65625 v60.wav
 ```
 
+**The test tone must land on an analysis bin centre**, and this is not a detail.
+The analyser uses a 4096-point window at 48 kHz, so bins are 11.71875 Hz apart.
+At 220 Hz — 0.23 of a bin off centre — the fundamental's own leakage lands in
+the harmonic bins and a *mathematically pure sine* reads **1.606% distortion**,
+amplitude-independent. The first version of this measurement used 220 Hz and
+published 1.6% as the clean anchor for two different controls: that number was
+the method, not the amp. `spectrum_diff.py` now refuses an off-centre
+fundamental and names the nearest valid one, because the failure is invisible —
+it produces plausible small numbers rather than an error.
+
 The result that matters is not the number but what moves it: **break-up is not a
-property of the knob.** `pr12Volume` reaches 5% distortion at 60% of its travel
-at one input level and at 30% when fed three times the signal. Any preset advice
-of the form "past N%" is only true for one input, and `inputGain`, the guitar
-and the pickup all move N.
+property of the knob.** `pr12Volume` reaches 5% distortion around 66% of its
+travel at one input level and around 28% when fed three times the signal. Any
+preset advice of the form "past N%" is only true for one input, and `inputGain`,
+the guitar and the pickup all move N.
 
 It also caught an overstatement. `sw50rLevel` was documented as a master volume
-that "does not add gain"; it goes from 1.6% to 7.7% distortion across its travel,
-against 18.4% for the preamp volume. Much less, but not none.
+that "does not add gain"; it goes from about 0.3% to 5.8% distortion across its
+travel, against 14% for the preamp volume. Well under half, but not none.
 
 One caution: check the peak level before believing a distortion number. A render
 that clips would report distortion that belongs to the harness rather than the

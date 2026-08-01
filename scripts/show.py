@@ -104,12 +104,23 @@ def main() -> None:
     # work out how the data root resolved.
     notes = paths.learned_tones_path(pack.pack_id)
     out["data_root"] = str(paths.data_root())
-    out["tone_knowledge"] = str(paths.PLUGIN_ROOT / "packs" / pack.pack_id / "tone.md")
+    # A bootstrapped pack has no tone.md, so report whether it is there rather
+    # than handing back a path that does not resolve.
+    tone = paths.PLUGIN_ROOT / "packs" / pack.pack_id / "tone.md"
+    out["tone_knowledge"] = {"path": str(tone), "exists": tone.exists()}
     out["learned_notes"] = {"path": str(notes), "exists": notes.exists()}
 
     if preset.duplicates:
         out["duplicate_parameters"] = sorted(
             f"{m}/{k}" if m else k for m, k in set(preset.duplicates)
+        )
+
+    # Named in the file but carrying no value: real parameters of the plugin
+    # that this preset does not store, so they can be neither read nor written.
+    # Without this they are simply invisible.
+    if preset.valueless:
+        out["valueless_parameters"] = sorted(
+            f"{m}/{k}" if m else k for m, k in set(preset.valueless)
         )
 
     if args.text:

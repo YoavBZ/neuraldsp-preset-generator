@@ -9,7 +9,7 @@ import pytest
 from format.parser import parse, parse_file
 from format.structured import build, set_parameter
 from format.writer import write
-from packs.loader import list_packs
+from packs.loader import detect_pack, list_packs
 from packs.paths import all_presets
 
 # Every preset this installation can see: the bundled example plus anything the
@@ -17,12 +17,25 @@ from packs.paths import all_presets
 SAMPLE_FILES = all_presets(list_packs())
 
 
+def morgan_only(sample: pathlib.Path):
+    """Skip a preset that isn't Morgan's.
+
+    These tests name Morgan parameters, but the sample set is every preset this
+    installation can see — which, now that a second pack exists, includes the
+    user's own presets for other plugins. Asserting `pr12Volume` against a Tone
+    King preset fails for a reason that has nothing to do with the code.
+    """
+    preset = build(parse_file(str(sample)))
+    if preset.file_header != "morgan":
+        pytest.skip(f"{sample.name} is a {preset.file_header!r} preset, not Morgan")
+    return preset
+
+
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
 def test_mutate_preset_name(sample: pathlib.Path) -> None:
     """Renaming the preset (top-level 'name') keeps the file valid and
     changes only the name region."""
-    tokens = parse_file(str(sample))
-    preset = build(tokens)
+    preset = morgan_only(sample)
     assert preset.preset_name, "Preset must have a name"
 
     new_name = "Roundtripped"
@@ -36,8 +49,7 @@ def test_mutate_preset_name(sample: pathlib.Path) -> None:
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
 def test_mutate_pr12_volume(sample: pathlib.Path) -> None:
     """Setting a known amp parameter survives a re-parse."""
-    tokens = parse_file(str(sample))
-    preset = build(tokens)
+    preset = morgan_only(sample)
 
     target = preset.by_path.get(("pr12Amp", "pr12Volume"))
     assert target is not None, "pr12Volume must exist in all Morgan presets"
@@ -105,8 +117,10 @@ def test_long_value_roundtrips(name: str) -> None:
     """Values whose byte-length is 30..124 make the LEN byte land in printable
     ASCII; the tokenizer must still read exactly LEN-2 bytes (regression for
     the long-preset-name corruption bug)."""
-    tokens = parse_file(str(SAMPLE_FILES[0]))
-    preset = build(tokens)
+    # Pin to the bundled Morgan example: this exercises Morgan's `name` key, and
+    # SAMPLE_FILES[0] is only incidentally that preset.
+    from packs.paths import EXAMPLES_DIR
+    preset = build(parse_file(str(EXAMPLES_DIR / "Example_Clean_PR12.xml")))
     set_parameter(preset, "", "name", name)
     out = write(preset.tokens)
     assert build(parse(out)).preset_name == name, (
@@ -116,11 +130,21 @@ def test_long_value_roundtrips(name: str) -> None:
 
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
 def test_setting_same_value_is_byte_identical(sample: pathlib.Path) -> None:
-    """Mutating a parameter to its current value should not change any bytes."""
-    original = sample.read_bytes()
-    tokens = parse_file(str(sample))
-    preset = build(tokens)
+    """Mutating a parameter to its current value should not change any bytes.
 
-    target = preset.by_path[("pr12Amp", "pr12Volume")]
-    set_parameter(preset, "pr12Amp", "pr12Volume", target.value)
+    Written against whatever the preset actually contains rather than a Morgan
+    parameter name, so it holds for every plugin — including the record-based
+    encoding, where a rewrite goes through a different path.
+    """
+    original = sample.read_bytes()
+    preset = build(parse_file(str(sample)))
+
+    from format.markers import is_opaque_value_prefix
+    rewritable = [
+        p for p in preset.parameters
+        if p.value and not is_opaque_value_prefix(preset.tokens[p.value_index].raw_prefix)
+    ]
+    assert rewritable, f"{sample.name} has no values to rewrite"
+    for param in rewritable[:20]:
+        set_parameter(preset, param.module_path, param.key, param.value)
     assert write(preset.tokens) == original

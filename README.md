@@ -100,7 +100,8 @@ packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
-                   recipe, path, CLI and plugin-metadata tests
+                   record-encoding, audit, recipe, path, CLI and
+                   plugin-metadata tests
 docs/            — Morgan config reference (musical, audited against the
                    plugin) and measuring-against-the-plugin.md: how every
                    range, selector table and switch direction was obtained,
@@ -284,9 +285,10 @@ one that writes a file.
 
 The `.xml` extension is a lie — the file is binary, with no public spec. Rather
 than synthesize one, the writer **clones a known-good preset and mutates only
-its printable string values**, preserving every wrapper byte and recomputing the
-one length byte the plugin validates. That's why round-trip fidelity is tested
-byte-for-byte, and why a template is always required.
+the values of parameters it already contains**, preserving every wrapper byte.
+For a text value it recomputes the one length byte the plugin validates; for a
+binary one it re-encodes in place at a fixed width. That's why round-trip
+fidelity is tested byte-for-byte, and why a template is always required.
 
 All three Morgan amp modules (AC20 / PR12 / SW50R) exist in every preset file,
 so the top-level `selectedAmp` key can reach any amp from any template.
