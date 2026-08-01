@@ -113,6 +113,31 @@ def test_draft_declares_no_ranges_and_no_selector_members(unknown_preset, cleanu
             assert entry.get("needs_confirmation") is True
 
 
+def test_guessed_kinds_survive_into_the_write_path(unknown_preset, cleanup_pack):
+    """`needs_review` is only worth writing if it reaches the person writing a
+    value. It was written to the manifest and then dropped by the loader, so
+    every guessed kind was applied in silence — the whole round trip is the test.
+    """
+    cleanup_pack.append("testplugin")
+    assert run("--preset", str(unknown_preset)).returncode == 0
+
+    manifest = json.loads((PACKS_DIR / "testplugin" / "manifest.json").read_text())
+    guessed = {p for p, e in manifest["parameters"].items() if e.get("needs_review")}
+    assert guessed, "a draft of a real preset should be guessing at some kinds"
+
+    from packs.loader import load_pack
+
+    pack = load_pack("testplugin")
+    assert {p for p, s in pack.parameters.items() if s.needs_review} == guessed
+
+    spec = next(s for s in pack.parameters.values() if s.needs_review and s.kind == "rotation")
+    warnings: list[str] = []
+    assert pack.to_stored(spec, 50, warnings=warnings) == "0.5"
+    assert any("needs_review" in w for w in warnings), (
+        "a value written through a guessed kind must say so"
+    )
+
+
 def test_draft_is_marked_as_a_draft(unknown_preset, cleanup_pack):
     cleanup_pack.append("testplugin")
     assert run("--preset", str(unknown_preset)).returncode == 0

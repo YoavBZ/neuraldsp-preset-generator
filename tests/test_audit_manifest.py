@@ -21,7 +21,12 @@ REPO_ROOT = pathlib.Path(__file__).parent.parent
 AUDIT = REPO_ROOT / "scripts" / "audit_manifest.py"
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from audit_manifest import BoundsChecker, numeric  # noqa: E402
+from audit_manifest import (  # noqa: E402
+    BoundsChecker,
+    numeric,
+    published_members,
+    report_state_coverage,
+)
 
 
 @pytest.mark.parametrize("shown,expected", [
@@ -60,10 +65,55 @@ def test_an_unreadable_display_is_not_a_disagreement():
     assert numeric("") is None
 
 
+def test_both_pan_conventions_parse():
+    """Morgan writes `50 L`, Tone King writes `L 50`. Handling one and not the
+    other reported a correctly declared -50..50 pan as a disagreement — the
+    audit caught it against the second plugin."""
+    assert numeric("50 L") == -50.0 and numeric("L 50") == -50.0
+    assert numeric("50 R") == 50.0 and numeric("R 50") == 50.0
+
+
 def test_pan_would_not_be_reported_as_a_disagreement():
     """The regression that made the first run cry wolf: `50 L` parsed as +50,
     so a correctly declared -50..50 pan looked wrong."""
     assert (numeric("50 L"), numeric("50 R")) == (-50.0, 50.0)
+
+
+def test_state_audit_checks_published_selector_labels():
+    """The state fallback used to promote enum kinds but never checked the
+    labels that the same mapped Audio Unit control publishes."""
+    from packs.loader import ParamSpec
+
+    spec = ParamSpec(module="", key="speed", kind="enum",
+                     members={"0": "Slow", "1": "Fast"})
+    control = {"valueStrings": ["Slow", "Fast"]}
+    assert published_members(spec, control)[0] == "agrees"
+
+    control["valueStrings"][1] = "Quick"
+    verdict = published_members(spec, control)
+    assert verdict[0] == "disagrees"
+    assert "manifest 'Fast', plugin 'Quick'" in verdict[1][0]
+
+
+def test_state_audit_does_not_pass_an_unpublished_selector():
+    from packs.loader import ParamSpec
+
+    spec = ParamSpec(module="", key="mode", kind="enum",
+                     members={"0": "A", "1": "B"})
+    assert published_members(spec, {})[0] == "unchecked"
+
+
+def test_unmoved_state_key_is_not_reported_as_nonexistent(capsys):
+    params = {
+        1: {"displayName": "Mapped"},
+        2: {"displayName": "Preset Next"},
+    }
+    report_state_coverage(params, target_count=3, mapped={"gain": 1})
+    out = capsys.readouterr().out
+    assert "2 numeric state keys were not reached" in out
+    assert "does not prove" in out
+    assert "Preset Next" in out
+    assert "they have no control" not in out
 
 
 class FakeProbe:

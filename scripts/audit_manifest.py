@@ -90,7 +90,10 @@ def numeric(shown: str, unit: str = None):
         # Seconds shown for a parameter stored in milliseconds. delayTime tops
         # out at 1500 ms, exactly where a plugin tends to switch its display.
         value *= 1000
-    if lowered.endswith(" l"):            # pan: the sign is a letter
+    # Pan: the sign is a letter, and the two plugins put it on opposite sides.
+    # Morgan writes "50 L", Tone King writes "L 50". Handling only one of them
+    # reported a correctly declared -50..50 pan as a disagreement.
+    if lowered.endswith(" l") or re.match(r"^l\s*[\d.]", lowered):
         value = -value
     return value
 
@@ -191,20 +194,147 @@ def audit(pack_id: str) -> int:
         try:
             revmap = run_probe(binary, pack.audio_unit, "revmap")
         except StateNotADocument:
-            return cannot_verify(pack, params)
+            return verify_via_state(pack, params, binary)
         checker = BoundsChecker(binary, pack.audio_unit)
         return compare(pack, params, revmap, checker)
 
 
-def cannot_verify(pack, params) -> int:
-    """The plugin answers, but its state cannot be written a key at a time.
+def verify_via_state(pack, params, binary) -> int:
+    """Fall back to the state probe for a plugin that keeps no XML document.
 
-    Morgan's ranges were verified by putting a preset key into the plugin's own
-    state document and reading back which control moved. A plugin that keeps
-    state as opaque bytes gives no such handle, so the two lists can only be
-    matched by name — and a name is exactly what this project keeps catching
-    itself trusting. Report the situation rather than guessing a mapping.
+    `au_probe`'s revmap edits an attribute in the plugin's state document, which
+    only exists for plugins that store state as text. Tone King stores the same
+    binary record format its presets use — but `format/` parses that, so the
+    same experiment runs with the halves swapped and the mapping is just as
+    verified. See scripts/probe_state.py.
     """
+    from probe_state import Probe, edited
+    from format.parser import parse
+    from format.structured import build
+
+    workdir = binary.parent
+    probe = Probe(pack.audio_unit, workdir, binary=binary)
+    state = probe.baseline_state()
+    try:
+        preset = build(parse(state))
+    except Exception:
+        return cannot_verify(pack, params)
+    if not preset.parameters:
+        return cannot_verify(pack, params)
+
+    print(f"  state is a {preset.file_header!r} preset document with "
+          f"{len(preset.parameters)} parameters; probing it directly.\n")
+
+    targets, blobs = [], [state]
+    for param in preset.parameters:
+        try:
+            current = float(param.value)
+        except ValueError:
+            continue
+        target = f"{current + 1 if current <= 0.5 else current - 1:g}"
+        targets.append(param)
+        blobs += [edited(state, param.module_path, param.key, target), state]
+
+    results = probe.apply_many(blobs)
+    mapped = {}
+    for i, param in enumerate(targets):
+        before, after = results[i * 2], results[i * 2 + 1]
+        moved = [a for a, r in after.items()
+                 if abs(r["value"] - before[a]["value"]) > 1e-9]
+        if len(moved) == 1:
+            path = f"{param.module_path}/{param.key}" if param.module_path else param.key
+            mapped[path] = moved[0]
+
+    verified_ranges = verified_selectors = disagrees = unchecked = 0
+    for path, spec in sorted(pack.parameters.items()):
+        address = mapped.get(path.lstrip("/"))
+        if address is None:
+            continue
+        control = params[address]
+
+        member_verdict = published_members(spec, control)
+        if member_verdict is not None:
+            if member_verdict[0] == "agrees":
+                verified_selectors += 1
+            elif member_verdict[0] == "unchecked":
+                unchecked += 1
+                print(f"NOT CHECKED {path}: the manifest declares selector members "
+                      f"but the Audio Unit publishes no valueStrings.\n")
+            else:
+                disagrees += 1
+                print(f"DISAGREES  {path}")
+                for detail in member_verdict[1]:
+                    print(f"           {detail}")
+                print()
+
+        if spec.min is None and spec.max is None:
+            continue
+        lo = numeric(control["minString"], spec.unit)
+        hi = numeric(control["maxString"], spec.unit)
+        if lo is UNPARSEABLE or hi is UNPARSEABLE:
+            unchecked += 1
+            continue
+        if (spec.min, spec.max) == (lo, hi):
+            verified_ranges += 1
+        else:
+            disagrees += 1
+            print(f"DISAGREES  {path}")
+            print(f"           manifest {spec.min} .. {spec.max}")
+            print(f"           plugin   {control['minString']} .. {control['maxString']}"
+                  f"   ({control['displayName']})\n")
+
+    print(f"{len(mapped)} of {len(targets)} numeric state keys map to exactly one control.")
+    print(f"{verified_ranges} declared ranges and {verified_selectors} selectors "
+          f"verified, {disagrees} DISAGREE, {unchecked} unchecked.")
+    report_state_coverage(params, len(targets), mapped)
+    return 1 if (disagrees or unchecked) else 0
+
+
+def report_state_coverage(params, target_count, mapped) -> None:
+    """Report missing state mappings without turning no movement into absence."""
+    not_reached = target_count - len(mapped)
+    print(
+        f"{not_reached} numeric state keys were not reached. A single nudge that "
+        f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
+        f"may have been a no-op\nor rejected by a discrete/quantized parameter."
+    )
+    mapped_controls = set(mapped.values())
+    missing = [p["displayName"] for a, p in params.items() if a not in mapped_controls]
+    print(
+        f"{len(mapped_controls)} of {len(params)} published Audio Unit controls were "
+        f"reached."
+    )
+    if missing:
+        print("Published controls not reached: " + ", ".join(sorted(missing)) + ".")
+
+
+def published_members(spec, control):
+    """Compare a declared enum with the Audio Unit's indexed labels.
+
+    Once the state experiment has mapped a preset key to this exact control,
+    ``valueStrings`` is stronger evidence than writing each index: Audio Unit
+    publishes the index order and labels together, including the baseline
+    value that a movement-only probe would otherwise skip.
+    """
+    if spec.kind != "enum" or not spec.members:
+        return None
+    labels = control.get("valueStrings")
+    if not labels:
+        return ("unchecked", [])
+    actual = {str(i): label for i, label in enumerate(labels)}
+    wrong = []
+    for index in sorted(set(spec.members) | set(actual), key=int):
+        declared = spec.members.get(index)
+        published = actual.get(index)
+        if declared != published:
+            wrong.append(
+                f"{index}: manifest {declared!r}, plugin {published!r}"
+            )
+    return ("disagrees", wrong) if wrong else ("agrees", [])
+
+
+def cannot_verify(pack, params) -> int:
+    """Neither probe works: the state is neither a document nor a preset."""
     declared = sum(
         1 for s in pack.parameters.values()
         if s.min is not None or s.max is not None

@@ -78,6 +78,11 @@ def main() -> None:
                 entry["writable"] = False
             if spec.needs_confirmation:
                 entry["unconfirmed_selector"] = True
+            if spec.needs_review:
+                # The write path warns about a guessed kind; the read path was
+                # silent, so `display` showed a human value computed through an
+                # unverified mapping with nothing marking it as a guess.
+                entry["guessed_kind"] = True
             name = spec.member_name(p.value)
             if name:
                 entry["member"] = name
@@ -139,12 +144,16 @@ def print_text(out: dict, pack) -> None:
             current = p["module"]
             print(f"  {current or '(top level)'}")
         label = p.get("ui") or p["key"]
-        flag = " (!)" if p.get("unconfirmed_selector") else ""
+        flag = " (!)" if (p.get("unconfirmed_selector") or p.get("guessed_kind")) else ""
         print(f"    {label:<22} {p['display']:<22} {p['key']}{flag}")
     if out.get("observed"):
         print(f"\n  advisory: {out['observed']}")
     notes = out["learned_notes"]
-    print(f"  tone knowledge: {out['tone_knowledge']}")
+    tone = out["tone_knowledge"]
+    print(
+        f"  tone knowledge: {tone['path']}"
+        f"{'' if tone['exists'] else '  (none for this pack)'}"
+    )
     print(
         f"  learned notes:  {notes['path']}"
         f"{'' if notes['exists'] else '  (none yet)'}"
@@ -158,6 +167,13 @@ def print_text(out: dict, pack) -> None:
     if any(p.get("unconfirmed_selector") for p in out["parameters"]):
         print(
             f"\n  (!) selector whose member names are not yet confirmed — see "
+            f"packs/{pack.pack_id}/manifest.json"
+        )
+    guessed = sum(1 for p in out["parameters"] if p.get("guessed_kind"))
+    if guessed:
+        print(
+            f"\n  (!) {guessed} parameter(s) have a GUESSED kind, so the value "
+            f"shown for them is\n      an interpretation, not a reading. See "
             f"packs/{pack.pack_id}/manifest.json"
         )
 

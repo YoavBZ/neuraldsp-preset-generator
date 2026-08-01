@@ -87,7 +87,7 @@ def to_binary(kind: str, value: Any, unit: str | None = None) -> str:
 def from_binary(kind: str, stored: str, unit: str | None = None) -> Any:
     """Convert a stored string back to a human value (inverse of to_binary)."""
     if kind == "switch":
-        return stored == "true"
+        return str(stored).strip().lower() in ("true", "1")
     if kind in ("path", "string", "enum"):
         return stored
     if kind == "rotation":
@@ -108,5 +108,5 @@ def describe(kind: str, stored: str, unit: str | None = None) -> str:
         u = f" {unit}" if unit else ""
         return f"{_fmt_num(float(stored))}{u}"
     if kind == "switch":
-        return "on" if stored == "true" else "off"
+        return "on" if from_binary(kind, stored, unit) else "off"
     return stored

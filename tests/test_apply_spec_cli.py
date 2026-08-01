@@ -127,6 +127,112 @@ def test_nothing_to_apply_is_an_error(out):
     assert "Nothing to apply" in result.stderr
 
 
+# --- warnings the user has to see -----------------------------------------
+# `to_stored` collecting a warning proves nothing about whether anyone reads it:
+# the warning for a guessed kind existed nowhere and the manifest's own
+# `needs_review` flag was dropped by the loader, so a value written through a
+# guessed mapping reached the file with no mention of it anywhere.
+
+
+@pytest.fixture
+def drafted_pack(tmp_path):
+    """A bootstrapped pack, whose kinds are all still guesses.
+
+    Built the way a user would get one — through bootstrap_pack.py — rather than
+    by hand-writing a manifest, so this covers the producer of the flag as well
+    as the consumer. The committed packs cannot stand in: Morgan is reviewed, and
+    Tone King has no preset in the repo to use as a template.
+    """
+    from format.parser import parse_file
+    from format.structured import Token, build
+    from format.writer import write_file
+    from packs.loader import PACKS_DIR
+
+    preset = build(parse_file(str(EXAMPLE)))
+    preset.tokens[0] = Token(raw_prefix=b"", value="draftplugin", terminator=b"\x00")
+    path = tmp_path / "Draft.xml"
+    write_file(str(path), preset.tokens)
+
+    bootstrap = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "bootstrap_pack.py"),
+         "--preset", str(path)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert bootstrap.returncode == 0, bootstrap.stderr
+
+    yield path
+
+    directory = PACKS_DIR / "draftplugin"
+    if directory.exists():
+        for child in directory.iterdir():
+            child.unlink()
+        directory.rmdir()
+
+
+def test_guessed_kind_warns_on_the_command_line(drafted_pack, tmp_path, out):
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps(
+        {"parameters": [{"module": "pr12Amp", "key": "pr12Volume", "value": 62}]}
+    ))
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(drafted_pack),
+         "--spec", str(spec), "--out", str(out)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+    assert "warning:" in result.stderr
+    assert "guessed kind" in result.stderr
+    assert "pr12Amp/pr12Volume" in result.stderr
+    assert "manifest.json" in result.stderr, "it must name the file to fix"
+    assert out.exists(), "the warning must not stop the write"
+
+
+def test_reviewed_pack_writes_without_a_guessed_kind_warning(out):
+    """Morgan's kinds were measured. A warning here would be noise on every run,
+    which is how a real warning stops being read."""
+    result = run(
+        "--recipe", "amp/sw50r-singing-lead", "--recipe", "eq/lead-focus",
+        "--recipe", "reverb/large-lead", "--out", str(out),
+    )
+    assert result.returncode == 0, result.stderr
+    assert "guessed kind" not in result.stderr
+    assert "needs_review" not in result.stderr
+
+
+def test_tone_king_numeric_switch_writes_through_the_cli(tmp_path):
+    """Exercise the format, pack and CLI together. Unit-testing `switch` alone
+    missed that Tone King's typed value encoder cannot encode text true/false."""
+    import struct
+
+    def text(value: str) -> bytes:
+        body = value.encode()
+        return bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00PARAM\x00\x01\x02id\x00"
+        + text("ampsActive")
+        + b"value\x00\x01\x09\x04"
+        + struct.pack("<d", 0.0)
+        + b"\x00"
+    )
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({
+        "parameters": [{"module": "", "key": "ampsActive", "value": True}]
+    }))
+    output = tmp_path / "out.xml"
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(template),
+         "--spec", str(spec), "--out", str(output)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+
+    from format.parser import parse
+    from format.structured import build
+    assert build(parse(output.read_bytes())).by_path[("", "ampsActive")].value == "1"
+
+
 # --- guards ---------------------------------------------------------------
 
 

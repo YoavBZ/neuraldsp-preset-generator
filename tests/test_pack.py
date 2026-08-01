@@ -138,6 +138,130 @@ def test_unconfirmed_selector_warns_but_writes(pack):
     assert "not known" in warnings[0]
 
 
+# --- guessed kinds ---------------------------------------------------------
+# `needs_review` marks a kind that bootstrap_pack.py guessed from the key name.
+# The manifest carried that doubt for 242 of Tone King's 259 parameters while the
+# loader dropped it on the floor, so every one of those values was written in
+# silence. A wrong kind is not a wrong-looking value: `metered` guessed as
+# `rotation` divides by 100 and writes a number the plugin will happily accept.
+
+
+@pytest.fixture(scope="module")
+def draft():
+    """A pack whose kinds are still guesses. Morgan's have all been measured."""
+    return load_pack("toneking")
+
+
+def test_guessed_kind_warns_but_writes(draft):
+    """Picks a still-guessed parameter rather than naming one.
+
+    Naming one couples this test to how far the pack has been verified: a
+    parameter measured against the plugin loses `needs_review`, and hardcoding
+    `ampReverb` broke here the moment it was. The property under test is about
+    the flag, not about any particular parameter carrying it.
+    """
+    spec = next(s for s in draft.parameters.values()
+                if s.needs_review and s.kind == "rotation" and s.writable)
+
+    warnings: list[str] = []
+    assert draft.to_stored(spec, 50, warnings=warnings) == "0.5", (
+        "the warning must not block the write — a draft pack is meant to be "
+        "usable while it is being corrected"
+    )
+    assert len(warnings) == 1
+    # Actionable in the same sense as the unconfirmed-selector warning: it has to
+    # say which kind is in doubt, how to check it, and which file to fix.
+    assert "rotation" in warnings[0]
+    assert "needs_review" in warnings[0]
+    assert "packs/toneking/manifest.json" in warnings[0]
+
+
+def test_guessed_kind_warns_for_every_guessed_parameter(draft):
+    """Not just the one above: the flag is per-parameter, so the warning is too."""
+    guessed = [s for s in draft.parameters.values() if s.needs_review]
+    # Most of the pack is still guesses; the verified ones are those a probe
+    # reached, and that number goes up as more are measured.
+    assert len(guessed) > 100, "the Tone King draft is mostly guesses"
+    for spec in guessed[:20]:
+        warnings: list[str] = []
+        draft.to_stored(spec, _plausible(spec), warnings=warnings)
+        assert any("guessed kind" in w for w in warnings), spec.path
+
+
+def test_tone_king_verified_switches_use_the_record_encoding(draft):
+    spec = draft.require("", "ampsActive")
+    assert spec.kind == "switch"
+    assert spec.switch_encoding == "numeric"
+    assert draft.to_stored(spec, True, warnings=[]) == "1"
+    assert draft.to_stored(spec, False, warnings=[]) == "0"
+
+
+def test_tone_king_unlabelled_continuous_controls_are_not_enums(draft):
+    for key in ("delayHPF", "delayLPF", "reverbPreDelay"):
+        spec = draft.require("", key)
+        assert spec.kind == "fraction"
+        assert spec.members is None
+        assert not spec.needs_confirmation
+
+
+def test_tone_king_mapped_selector_tables_are_confirmed(draft):
+    assert draft.require("", "ampAttenuation").members["5"] == "0 dB"
+    assert draft.require("", "cab1MicIR").members["16"] == "Custom IR"
+    assert draft.require("", "delaySyncNoteL").members["13"] == "1/4"
+    assert draft.require("", "wahMode").members == {
+        "0": "Auto-Wah OFF", "1": "Auto-Wah ON"
+    }
+    still_unknown = {
+        spec.path for spec in draft.parameters.values() if spec.needs_confirmation
+    }
+    assert still_unknown == {
+        "flangerVHMode", "midiMode", "phaserMode", "reverbMode"
+    }
+
+
+def test_reviewed_parameters_stay_silent(pack):
+    """Morgan has been measured against the running plugin. If the new warning
+    fires here it is noise, and noise is how a real warning gets ignored."""
+    flagged = [spec.path for spec in pack.parameters.values() if spec.needs_review]
+    assert not flagged, f"Morgan should carry no guessed kinds: {flagged}"
+
+
+def test_no_morgan_write_emits_a_review_warning(pack):
+    """Stronger than reading the flag: drive the write path for every writable
+    parameter, because that is where the warning is actually decided."""
+    for spec in pack.parameters.values():
+        if not spec.writable:
+            continue
+        warnings: list[str] = []
+        pack.to_stored(spec, _plausible(spec), warnings=warnings)
+        assert not any("guessed kind" in w for w in warnings), spec.path
+
+
+def _plausible(spec) -> object:
+    """A value this parameter will accept, whatever its kind.
+
+    Only used to exercise the write path — the point is which warnings come
+    back, not what lands in the file.
+    """
+    if spec.kind == "enum":
+        return min(int(k) for k in spec.members) if spec.members else 0
+    if spec.kind == "switch":
+        return True
+    if spec.kind in ("path", "string"):
+        return ""
+    if spec.kind == "fraction":
+        return 0.5
+    if spec.kind == "rotation":
+        return 50
+    # metered: the midpoint of the declared range clears both the range check and
+    # the dimensional floor. Undeclared means unchecked, so anything positive does.
+    if spec.min is None and spec.max is None:
+        return 1
+    lo = spec.min if spec.min is not None else spec.max
+    hi = spec.max if spec.max is not None else spec.min
+    return (lo + hi) / 2
+
+
 # --- what was measured against the running plugin --------------------------
 # These pin facts that cost a measurement to obtain, so that a later edit
 # "tidying up" a note cannot quietly undo one. See

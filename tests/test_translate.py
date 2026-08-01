@@ -49,6 +49,10 @@ def test_switch_forms():
     assert to_binary("switch", "on") == "true"
     assert to_binary("switch", "off") == "false"
     assert from_binary("switch", "true") is True
+    assert from_binary("switch", "1") is True
+    assert from_binary("switch", "0") is False
+    assert describe("switch", "1") == "on"
+    assert describe("switch", "0") == "off"
 
 
 def test_enum_int():
@@ -75,7 +79,9 @@ def test_every_real_value_roundtrips_through_human():
             if spec is None or spec.kind in ("path", "string"):
                 continue
             human = from_binary(spec.kind, param.value, spec.unit)
-            back = to_binary(spec.kind, human, spec.unit)
+            # Use the pack contract, not the format-only default: record-format
+            # packs can store a switch as numeric 1/0 instead of text true/false.
+            back = pack.to_stored(spec, human, warnings=[])
             if spec.kind in ("rotation", "fraction", "metered"):
                 assert abs(float(back) - float(param.value)) < 1e-6, (
                     f"{preset_path.name} {spec.path} {spec.kind}: "
@@ -88,4 +94,3 @@ def test_every_real_value_roundtrips_through_human():
                 )
             checked += 1
     assert checked > 100, f"only checked {checked} values — is samples/ empty?"
-

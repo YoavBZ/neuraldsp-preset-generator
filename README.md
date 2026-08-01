@@ -182,7 +182,8 @@ parameter, and prints what it *couldn't* work out. That last part is the point:
 - **Selector members cannot be inferred** either, because the plugin never
   displays the stored integer. `scripts/probe.py` is how you find those.
 - **Kinds are guessed** from key names and are marked `needs_review`. A wrong
-  kind writes a wrong value.
+  kind writes a wrong value, so `apply_spec.py` warns every time it writes one
+  through — the warning goes away when you confirm the kind and drop the flag.
 
 The draft is immediately loadable, so `show.py` and `apply_spec.py` work against
 it right away — correct it against the plugin's UI as you go, and drop

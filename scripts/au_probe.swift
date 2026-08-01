@@ -405,6 +405,58 @@ case "values":
     }
     jsonOut(["element": element, "key": key, "results": rows])
 
+case "setstate":
+    // Load a state blob from a file, hand it to the plugin, and report every
+    // control. The blob is produced and edited in Python, because for some
+    // plugins the state IS the preset format and `format/` already parses it
+    // properly -- reimplementing that here would be a second, untested copy.
+    //
+    // This is what makes a plugin auditable when its state is not an XML
+    // document: `revmap` and `values` only work on plugins that keep state as
+    // text, and Tone King does not.
+    // Takes a file listing one blob path per line and applies them in order,
+    // reporting the controls after each. Batched deliberately: instantiating
+    // the plugin costs a second or two, so a mapping run that spawned a process
+    // per blob would take twenty minutes instead of one.
+    guard args.count > 5 else {
+        FileHandle.standardError.write(
+            "setstate needs a file listing blob paths, one per line\n".data(using: .utf8)!)
+        exit(2)
+    }
+    guard var st = unit.fullState else { exit(1) }
+    let listing = try! String(contentsOfFile: args[5], encoding: .utf8)
+    let paths = listing.split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+
+    var results: [[[String: Any]]] = []
+    for path in paths {
+        st["jucePluginState"] = try! Data(contentsOf: URL(fileURLWithPath: path))
+        unit.fullState = st
+        usleep(90000)
+        var rows: [[String: Any]] = []
+        for p in unit.parameterTree?.allParameters ?? [] {
+            var v = p.value
+            rows.append([
+                "address": p.address,
+                "name": p.displayName,
+                "value": v,
+                "label": p.string(fromValue: &v),
+            ])
+        }
+        results.append(rows)
+    }
+    jsonOut(results)
+
+case "dumpstate":
+    // The raw state blob, for the caller to parse. Separate from `dumpraw`
+    // because that writes every blob under a prefix; this writes just the one.
+    guard args.count > 5 else {
+        FileHandle.standardError.write("dumpstate needs an output file\n".data(using: .utf8)!)
+        exit(2)
+    }
+    guard let st = unit.fullState, let blob = st["jucePluginState"] as? Data else { exit(1) }
+    try! blob.write(to: URL(fileURLWithPath: args[5]))
+    FileHandle.standardError.write("wrote \(blob.count) bytes\n".data(using: .utf8)!)
+
 default:
     FileHandle.standardError.write("unknown mode \(mode)\n".data(using: .utf8)!)
     exit(2)
