@@ -102,10 +102,8 @@ samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests
-docs/            — Morgan config reference (musical, audited against the
-                   plugin) and measuring-against-the-plugin.md: how every
-                   range, selector table and switch direction was obtained,
-                   and how to re-derive it
+docs/            — current maintainer procedures for measuring ranges,
+                   selectors, mappings and audible behavior against a plugin
 ```
 
 ## Packs
@@ -156,13 +154,10 @@ nothing, which is why it's done in code rather than by hand. Delay recipes carry
 a note division rather than a fixed time, so `--bpm 96` turns a quarter note into
 625 ms with no sync selector involved.
 
-The recipes were translated out of `docs/morgan-config-reference.md`, which uses a
-0–10 knob scale, its own parameter names, and a cab model that doesn't match the
-binary. Rather than trust that transcription, `tests/test_recipes.py` asserts
-every recipe key exists in the manifest and every value survives translation, so
-a knob left on the 0–10 scale or a stale `od1Drive` name fails the suite.
-Anything that *couldn't* be translated is listed with a reason under
-`not_translated`.
+Recipe values use the same kinds, names, and units as the pack manifest.
+`tests/test_recipes.py` asserts that every key exists and every value survives
+translation, so a stale name, invalid selector, or out-of-range setting fails
+the suite.
 
 ### Adding a pack for another plugin
 

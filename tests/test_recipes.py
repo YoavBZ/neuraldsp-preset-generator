@@ -1,10 +1,8 @@
-"""Recipes are a translation, so the suite has to check the translation.
+"""Recipe structure and compatibility with the current pack contract.
 
-The source doc uses a 0-10 knob scale, its own parameter names, and a cab model
-that doesn't match the binary. Transcribing that by hand is exactly where wrong
-numbers creep in. These tests can't judge whether a recipe sounds good, but they
-prove every recipe is *legal and in the right dialect*: keys that exist, values
-that survive translation, ranges that hold.
+These tests cannot judge whether a recipe sounds good. They prove every recipe
+uses existing keys, writable kinds, valid selectors, and values that survive
+translation within the declared ranges.
 """
 
 from __future__ import annotations
@@ -64,14 +62,11 @@ def all_expanded(recipes, pack):
 # --- structure -------------------------------------------------------------
 
 
-def test_every_recipe_is_documented(recipes):
+def test_every_recipe_has_current_metadata(recipes):
     for layer, group in recipes["layers"].items():
         for rid, recipe in group.items():
             assert recipe["title"], f"{layer}/{rid} has no title"
             assert recipe["use_when"], f"{layer}/{rid} does not say when to use it"
-            assert recipe["source"].startswith("docs/"), (
-                f"{layer}/{rid} does not cite where it came from"
-            )
             assert recipe["parameters"], f"{layer}/{rid} sets nothing"
 
 
@@ -95,9 +90,7 @@ def test_every_key_exists_in_the_manifest(recipes, pack):
 
 
 def test_every_value_survives_translation(recipes, pack):
-    """The load-bearing test. A knob left on the doc's 0-10 scale lands far
-    outside 0-100 and fails here; so does a dB value written where Hz belongs,
-    or an out-of-range time."""
+    """Reject values expressed on the wrong scale or in the wrong unit."""
     for layer, rid, i, entry, module, key in all_expanded(recipes, pack):
         spec = pack.require(module, key)
         value = resolve_value(entry["value"], spec, PROBE_BPM)
@@ -129,11 +122,12 @@ def test_no_recipe_writes_a_read_only_parameter(recipes, pack):
 # --- knob-scale specifics -------------------------------------------------
 
 
-def test_knob_values_look_like_percent_not_doc_scale(recipes, pack):
-    """A value the translator forgot to multiply by 10 is legal (0-100 admits
-    3.6) but wrong. Every rotation value in the source doc is a one-decimal
-    number on a 0-10 scale, so a correctly converted value is a multiple of 5
-    at minimum and never below 10 unless it is deliberately zero."""
+def test_knob_values_use_percent_scale(recipes, pack):
+    """Rotation recipes use the pack's 0-100 percent convention.
+
+    Small nonzero values are legal but suspicious here because the curated
+    recipes use coarse musical starting points rather than near-zero trims.
+    """
     suspicious = []
     for layer, rid, i, entry, module, key in all_expanded(recipes, pack):
         spec = pack.require(module, key)
@@ -143,8 +137,8 @@ def test_knob_values_look_like_percent_not_doc_scale(recipes, pack):
         if 0 < value < 10:
             suspicious.append(f"{layer}/{rid} {module}/{key}={value}")
     assert not suspicious, (
-        "rotation values below 10% are suspicious — they look like a doc 0-10 "
-        f"knob value that was never scaled: {suspicious}"
+        "rotation values below 10% are suspicious for curated recipe starting "
+        f"points: {suspicious}"
     )
 
 
@@ -213,24 +207,6 @@ def test_recipes_declaring_tempo_limits_say_so(recipes):
                     f"{layer}/{rid} uses a note division but has no note "
                     f"explaining that bpm must be supplied"
                 )
-
-
-# --- integrity of the record ---------------------------------------------
-
-
-def test_untranslated_fields_are_recorded(recipes):
-    """Anything dropped in translation must be written down, or the next reader
-    will assume the doc was fully absorbed."""
-    dropped = recipes["not_translated"]
-    assert len(dropped) >= 8
-    for reason in dropped.values():
-        assert len(reason) > 20, "a dropped field needs a real reason"
-
-
-def test_conversion_rules_are_stated(recipes):
-    conversion = recipes["conversion"]
-    for field in ("knob_scale", "renames", "metered", "verification"):
-        assert field in conversion, f"conversion is missing {field}"
 
 
 def test_tone_md_only_cites_recipes_that_exist(recipes):

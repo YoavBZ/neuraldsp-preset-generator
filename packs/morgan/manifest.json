@@ -133,7 +133,7 @@
       "unit": "semitones",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Transpose"
     },
     "parameters/doublerActive": {
@@ -145,7 +145,7 @@
       "unit": "ms",
       "min": 3,
       "max": 20,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Doubler spread"
     },
     "ampParameters/sectionActive": {
@@ -199,7 +199,7 @@
     "sw50rAmp/sw50rLevel": {
       "kind": "rotation",
       "ui": "Level",
-      "note": "Master volume: it is the loudness control, and it adds less dirt than `sw50rVolume` \u2014 but 'adds no gain' was too strong. Measured on a bin-centred 222.66 Hz sine it goes from about 0.3% distortion at 20% to 5.8% at 80%, against 14% for the preamp volume at the same setting: well under half, not none, and its top quarter is not clean. For loud and clean, keep this high and `sw50rVolume` low, but do not treat it as distortion-free. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "Master volume: it is the loudness control and adds less dirt than `sw50rVolume`. Measured on a bin-centred 222.66 Hz sine, it produces about 0.3% distortion at 20% and 5.8% at 80%, against 14% for the preamp volume at the same setting. For loud and clean, keep this high and `sw50rVolume` low, but do not treat its top quarter as distortion-free. Rendered offline \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rTreble": {
       "kind": "rotation",
@@ -231,7 +231,7 @@
     "sw50rAmp/sw50rInputMode": {
       "kind": "switch",
       "ui": "Input mode",
-      "note": "Two input jacks, not a bright/normal toggle: `false` selects the control's `High` position and `true` selects `Low`. High is the default and the hotter input; Low is the padded one, which is the config reference's `-6_DB`. Measured against the plugin \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "Two input jacks, not a bright/normal toggle: `false` selects the control's `High` position and `true` selects `Low`. High is the default and the hotter input; Low is the padded input. Measured against the plugin \u2014 see docs/measuring-against-the-plugin.md."
     },
     "ac20Amp/ac20Volume": {
       "kind": "rotation",
@@ -240,7 +240,7 @@
     "ac20Amp/ac20Cut": {
       "kind": "rotation",
       "ui": "Cut",
-      "note": "HIGHER = BRIGHTER, and this reverses what this repo previously asserted. Rendered through the plugin, raising it from 0% to 100% *adds* treble, monotonically and by a lot: +5 dB at 1 kHz, +11 dB at 2.5 kHz, +15 dB at 4 kHz, +19 dB at 6.3 kHz, with the low end within a dB. It behaves like a presence control, not like the Vox power-amp Cut it is named after. The manifest used to state the opposite in capitals on the strength of three name-based arguments \u2014 the config reference, the control's name, and Morgan's description of the original circuit \u2014 which all agreed with each other and were all wrong. See docs/measuring-against-the-plugin.md."
+      "note": "HIGHER = BRIGHTER. Rendered through the plugin, raising this control from 0% to 100% adds treble monotonically: +5 dB at 1 kHz, +11 dB at 2.5 kHz, +15 dB at 4 kHz, and +19 dB at 6.3 kHz, with the low end within 1 dB. It behaves like a presence control, not like the Vox power-amp Cut suggested by its name. See docs/measuring-against-the-plugin.md."
     },
     "ac20Amp/ac20Bright": {
       "kind": "switch",
@@ -249,7 +249,7 @@
     "ac20Amp/ac20BassTreble": {
       "kind": "switch",
       "ui": "Bass cut",
-      "note": "A two-position voicing switch the plugin publishes as `AC20 Bass Cut`: `false` selects the `Bass` position, `true` selects `Treble`. ON is a large bass cut \u2014 -15.6 dB at 60 Hz, -10.9 dB at 100 Hz, -8 dB at 160 Hz, tapering to -1 dB by 6.3 kHz \u2014 so it is brighter and much tighter, and OFF is the fuller voicing. The config reference's `bassCut` reading was the right one. Rendered offline through the plugin \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "A two-position voicing switch the plugin publishes as `AC20 Bass Cut`: `false` selects the `Bass` position and `true` selects `Treble`. ON is a large bass cut \u2014 -15.6 dB at 60 Hz, -10.9 dB at 100 Hz, and -8 dB at 160 Hz, tapering to -1 dB by 6.3 kHz \u2014 so it is brighter and much tighter; OFF is the fuller voicing. Rendered offline through the plugin \u2014 see docs/measuring-against-the-plugin.md."
     },
     "ac20Amp/ac20Power": {
       "kind": "rotation",
@@ -265,90 +265,90 @@
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "65 Hz",
       "centre_hz": 65,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand2": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "125 Hz",
       "centre_hz": 125,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand3": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "250 Hz",
       "centre_hz": 250,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand4": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "500 Hz",
       "centre_hz": 500,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand5": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "1 kHz",
       "centre_hz": 1000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand6": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "2 kHz",
       "centre_hz": 2000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand7": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "4 kHz",
       "centre_hz": 4000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand8": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "8 kHz",
       "centre_hz": 8000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQBand9": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "16 kHz",
       "centre_hz": 16000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "pr12EQ/pr12EQHpf": {
       "kind": "metered",
@@ -357,7 +357,7 @@
       "max": 500,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "High-pass",
-      "note": "The top of this range is 500 Hz, not 20 kHz. An earlier `observed-endpoints` range let 2000 through, which the plugin silently rewrites to 500."
+      "note": "The top of this range is 500 Hz. The plugin silently clamps larger values to 500."
     },
     "pr12EQ/pr12EQLpf": {
       "kind": "metered",
@@ -366,7 +366,7 @@
       "max": 20000,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Low-pass",
-      "note": "The low end of this range is 1 kHz, not 20 Hz. An earlier `observed-endpoints` range let 200 Hz through, which the plugin silently rewrites to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
+      "note": "The low end of this range is 1 kHz; the plugin silently clamps smaller values to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
     },
     "sw50rEQ/sw50rEQActive": {
       "kind": "switch",
@@ -377,90 +377,90 @@
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "65 Hz",
       "centre_hz": 65,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand2": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "125 Hz",
       "centre_hz": 125,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand3": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "250 Hz",
       "centre_hz": 250,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand4": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "500 Hz",
       "centre_hz": 500,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand5": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "1 kHz",
       "centre_hz": 1000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand6": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "2 kHz",
       "centre_hz": 2000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand7": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "4 kHz",
       "centre_hz": 4000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand8": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "8 kHz",
       "centre_hz": 8000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQBand9": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "16 kHz",
       "centre_hz": 16000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "sw50rEQ/sw50rEQHpf": {
       "kind": "metered",
@@ -469,7 +469,7 @@
       "max": 500,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "High-pass",
-      "note": "The top of this range is 500 Hz, not 20 kHz. An earlier `observed-endpoints` range let 2000 through, which the plugin silently rewrites to 500."
+      "note": "The top of this range is 500 Hz. The plugin silently clamps larger values to 500."
     },
     "sw50rEQ/sw50rEQLpf": {
       "kind": "metered",
@@ -478,7 +478,7 @@
       "max": 20000,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Low-pass",
-      "note": "The low end of this range is 1 kHz, not 20 Hz. An earlier `observed-endpoints` range let 200 Hz through, which the plugin silently rewrites to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
+      "note": "The low end of this range is 1 kHz; the plugin silently clamps smaller values to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
     },
     "ac20EQ/ac20EQActive": {
       "kind": "switch",
@@ -489,90 +489,90 @@
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "65 Hz",
       "centre_hz": 65,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand2": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "125 Hz",
       "centre_hz": 125,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand3": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "250 Hz",
       "centre_hz": 250,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand4": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "500 Hz",
       "centre_hz": 500,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand5": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "1 kHz",
       "centre_hz": 1000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand6": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "2 kHz",
       "centre_hz": 2000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand7": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "4 kHz",
       "centre_hz": 4000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand8": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "8 kHz",
       "centre_hz": 8000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQBand9": {
       "kind": "metered",
       "unit": "db",
       "min": -12,
       "max": 12,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "16 kHz",
       "centre_hz": 16000,
-      "centre_source": "docs/morgan-config-reference.md#15 (nine named centres mapped to nine bands in ascending order)"
+      "centre_source": "docs/measuring-against-the-plugin.md (Audio Unit/UI band order)"
     },
     "ac20EQ/ac20EQHpf": {
       "kind": "metered",
@@ -581,7 +581,7 @@
       "max": 500,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "High-pass",
-      "note": "The top of this range is 500 Hz, not 20 kHz. An earlier `observed-endpoints` range let 2000 through, which the plugin silently rewrites to 500."
+      "note": "The top of this range is 500 Hz. The plugin silently clamps larger values to 500."
     },
     "ac20EQ/ac20EQLpf": {
       "kind": "metered",
@@ -590,7 +590,7 @@
       "max": 20000,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Low-pass",
-      "note": "The low end of this range is 1 kHz, not 20 Hz. An earlier `observed-endpoints` range let 200 Hz through, which the plugin silently rewrites to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
+      "note": "The low end of this range is 1 kHz; the plugin silently clamps smaller values to 1000. At the top of the range the plugin displays `LPF : OFF`, so 20000 means the filter is bypassed rather than set to 20 kHz."
     },
     "compressor/compressorActive": {
       "kind": "switch",
@@ -668,7 +668,7 @@
       "max": 15.0,
       "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Rate",
-      "note": "Used when tremoloSync is off. The config reference said 0.05–5.0 Hz; the plugin's real range is 0.15–15 Hz, so fast tremolo above 5 Hz is available and was previously rejected."
+      "note": "Used when tremoloSync is off. The plugin range is 0.15–15 Hz."
     },
     "tremolo/tremoloSync": {
       "kind": "switch",
@@ -828,7 +828,7 @@
       "unit": "seconds",
       "min": 1,
       "max": 60,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Decay"
     },
     "reverb/reverbPreDelay": {
@@ -836,7 +836,7 @@
       "unit": "ms",
       "min": 1,
       "max": 200,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Pre-delay"
     },
     "reverb/reverbLowCut": {
@@ -844,7 +844,7 @@
       "unit": "hz",
       "min": 50,
       "max": 700,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Low cut"
     },
     "reverb/reverbHighCut": {
@@ -852,7 +852,7 @@
       "unit": "hz",
       "min": 1000,
       "max": 10000,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "High cut"
     },
     "delay/delayActive": {
@@ -872,7 +872,7 @@
       "unit": "ms",
       "min": 16,
       "max": 1500,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Time",
       "note": "Used when delaySync selects free-running mode."
     },
@@ -901,7 +901,7 @@
       "unit": "hz",
       "min": 60,
       "max": 500,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "Low cut"
     },
     "delay/delayHighCut": {
@@ -909,7 +909,7 @@
       "unit": "hz",
       "min": 1000,
       "max": 5000,
-      "range_source": "docs/measuring-against-the-plugin.md (confirmed; first stated in docs/morgan-config-reference.md#21)",
+      "range_source": "docs/measuring-against-the-plugin.md",
       "ui": "High cut"
     },
     "delay/delayPingPong": {
