@@ -4,8 +4,7 @@ A recipe is a partial spec for one layer of a preset — amp, compressor, drive,
 EQ, cab, delay, reverb, output staging. A preset is built by stacking one per
 layer and then adapting the values to the actual song.
 
-Two things in a recipe need resolving before it can be applied, and both used to
-be prose instructions that only a human or an agent could follow:
+Two things in a recipe need resolving before it can be applied:
 
 - **`{amp}` templates.** The graphic EQ is per-amp (`pr12EQ`, `sw50rEQ`,
   `ac20EQ`), so EQ recipes are written against `{amp}EQ` and substituted with
@@ -39,7 +38,6 @@ class Recipe:
     id: str
     title: str
     use_when: str
-    source: str
     parameters: List[Dict[str, Any]]
     note: Optional[str] = None
 
@@ -61,7 +59,6 @@ def load_recipes(pack_id: str = "morgan") -> Dict[str, Dict[str, Recipe]]:
                 id=rid,
                 title=entry["title"],
                 use_when=entry["use_when"],
-                source=entry["source"],
                 parameters=entry["parameters"],
                 note=entry.get("note"),
             )

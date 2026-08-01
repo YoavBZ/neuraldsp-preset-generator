@@ -65,8 +65,7 @@ def test_manifest_covers_every_parameter_in_sample(sample, pack):
 @pytest.mark.parametrize("sample", SAMPLE_FILES, ids=lambda p: p.name)
 def test_declared_ranges_admit_real_values(sample, pack):
     """A declared range that excludes a value from a real preset is a bug in the
-    manifest, not in the preset. This is the guard against transcribing a wrong
-    range from the config reference."""
+    manifest, not in the preset."""
     preset = build(parse_file(str(sample)))
     pack = pack_for(preset)
     for p in preset.parameters:

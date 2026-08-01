@@ -1,187 +1,140 @@
 # Measuring against the plugin
 
-Every range, selector table and switch direction in `packs/morgan/manifest.json`
-that cites this file was read off Morgan Amps Suite while it was running. This
-is the procedure, so the numbers can be re-derived rather than trusted.
+This guide describes how to verify manifest facts against an installed Neural
+DSP Audio Unit. Use it to establish parameter mappings, ranges, selector
+members, switch directions, and audible behavior.
 
-Reading the UI and listening were the plan of record. Neither was needed for the
-ranges, the selector tables, or identifying which control a key moves — and the
-UI would have been the weaker source for those, since it rounds and never shows
-the integer a selector stores. The UI is still the only way to see that a
-parameter has no control at all, and rendering audio is the only way to learn
-which way a control moves the sound. Both are used below.
+The committed results live in each pack:
 
-## The two things the plugin will tell you
+- `manifest.json`: stored keys, kinds, units, ranges, selector members, and UI
+  names
+- `tone.md`: musical interpretation and usage guidance
+- `recipes.json`: legal starting-point settings
 
-An Audio Unit publishes a parameter list, and Morgan fills it in properly:
+Do not copy facts into those files from parameter names or a single preset.
+Record the measurement in `range_source` or the parameter note.
+
+## Requirements
+
+- macOS
+- the plugin installed, licensed, and able to open standalone
+- Xcode command-line tools with a Swift compiler that matches the installed SDK
+- Python 3.10 or newer
+
+An unlicensed or unavailable Neural DSP Audio Unit normally fails to instantiate
+with `-1`.
+
+## Inspect the published Audio Unit parameters
+
+An Audio Unit publishes control names, normalized bounds, display strings,
+units, and discrete value labels. Inspect the component directly:
 
 ```bash
 auval -v aumf NMAS NDSP
-```
-
-For every one of its 128 controls that prints a name, a type, and the minimum,
-default and maximum **as the plugin formats them** — `-24.0 dB`, `40.0 BPM`,
-`1/64T`. That is the range, in the unit, from the plugin itself.
-
-Second, the plugin's state is readable and writable. `AUAudioUnit.fullState`
-carries a `jucePluginState` blob:
-
-```
-"VC2!" <uint32 length> <?xml … ?><appModel selectedAmp="0" …>
-```
-
-The document inside uses **exactly the key names a saved preset uses**
-(`sw50rTrebleBoost`, `leftCabPan`). So state can be edited and handed back, and
-the plugin's response read out — which is what turns a name into a measurement.
-
-`scripts/au_probe.swift` does both. Build and run it:
-
-```bash
 swiftc -swift-version 5 -O scripts/au_probe.swift -o /tmp/au_probe
 /tmp/au_probe aumf NMAS NDSP params
 ```
 
-## Why writing beats reading
+Morgan Amps Suite uses component `aumf NMAS NDSP`. Tone King Imperial MKII uses
+`aumf TKI2 NDSP`. The pack's `audio_unit` object is the authoritative component
+identifier.
 
-The obvious experiment — move a control, see which key changes — **does not
-work**. Setting a parameter through the AU parameter tree does not reach the
-plugin's own state until it processes audio, so the document comes back
-unchanged for all 128 controls.
+Display strings are the plugin's own formatting, such as `-24.0 dB`, `40.0
+BPM`, `1/64T`, `50 L`, or `L 50`. `scripts/audit_manifest.py` normalizes these
+forms before comparing them with a manifest.
 
-Run it backwards instead. Write a value into the document, hand it to the
-plugin, and see which published control moved:
+## Map stored keys to controls
+
+The parameter list alone does not establish which preset key controls which
+Audio Unit parameter. Establish that relationship by changing one stored key,
+loading the state, and observing the published control that moves.
+
+### XML-state plugins
+
+Morgan's `jucePluginState` contains an editable XML document whose attribute
+names match its preset keys. Run the reverse map:
 
 ```bash
-/tmp/au_probe aumf NMAS NDSP revmap        # every key, one at a time
+/tmp/au_probe aumf NMAS NDSP revmap
 ```
 
-This is the better experiment anyway, because it exercises the exact path a
-generated preset takes: *this key, written to a file, moves that control*. It
-maps 123 preset keys to exactly one control each, with no ambiguity to resolve.
-
-For one key at a time, with chosen values:
+Probe selected values when a key needs closer inspection:
 
 ```bash
 /tmp/au_probe aumf NMAS NDSP values delay/delaySyncNote 0,1,2,3
 /tmp/au_probe aumf NMAS NDSP values parameters/outputGain -99,0,99
 ```
 
-Each result reports three things: the control that moved, the label the plugin
-shows for it, and **the value the plugin kept in its state**. The last one is
-where limits appear — write 99 to `outputGain` and the plugin stores 24.
+Each result includes the moved control, the label displayed by the plugin, and
+the value retained in plugin state. Values beyond a numeric range reveal the
+plugin's clamped endpoints.
 
-## What this settled
+Morgan currently maps 123 preset keys to exactly one published control.
 
-**Ranges.** Read from the published parameter info, then confirmed from the
-other side by writing an absurd value and reading back what the plugin clamped
-it to. Two independent measurements agreeing. This also caught **seven** ranges
-that were already declared and wrong: the three `*EQLpf` minimums (1 kHz, not
-20 Hz), the three `*EQHpf` maximums (500 Hz, not 20 kHz), and `tremoloRate`
-(0.15–15 Hz, not 0.05–5).
+### Preset-state plugins
 
-The high-pass trio nearly escaped, and how is worth recording. `revmap` only
-maps a parameter whose probe value actually **moves** the control; those three
-already sat at their minimum in the plugin's default state, so writing a low
-value changed nothing, no control moved, and they were quietly absent from the
-audit table rather than flagged. **A parameter missing from the map is not a
-parameter that passed.** Diff the mapped set against the manifest and probe the
-remainder by hand.
-
-**Selector tables.** Write each index, read the label the plugin shows. The
-sync-note tables are ordered by note *duration*, not grouped by kind, which is
-why the indices look shuffled — and why delay's table and tremolo's are offset
-by two rather than identical.
-
-**Switch directions.** Which control a key moves — see below for what that
-control then does to the sound, which is not the same question.
-`sw50rTrebleBoost` moves the control Morgan publishes as **SW50R Bass
-Emphasis**, and SW50R has a separate `sw50rBright` for actual brightness.
-
-**Out-of-range selector values are silent, and not consistently so.** Writing 19
-to `tremoloSyncNote` (valid: 0–18) neither fails nor clamps to the top — the
-plugin stores 9. Writing 3 to a room mic selector (valid: 0–2) stores 0. Two
-controls, two different behaviours, one observation each: assume neither rule
-generalises, and declare the members. An undeclared selector is not a harmless
-unknown.
-
-## Re-running all of it: `scripts/audit_manifest.py`
+Tone King's `jucePluginState` is the same binary `PARAM` record format as its
+presets. The Python format layer edits the record and the Swift helper performs
+Audio Unit state I/O:
 
 ```bash
-python scripts/audit_manifest.py --pack morgan
+python3 scripts/probe_state.py --pack toneking --map
+python3 scripts/probe_state.py --pack toneking --values ampReverb 0,0.5,1
 ```
 
-Rebuilds the probe, asks the plugin for its parameter table, and checks every
-declared range and selector against it. Three buckets: **agrees**, **DISAGREES**
-(exit 1), and **not checked**.
+Tone King currently maps 94 of 255 numeric state keys to exactly one control.
+Those mappings cover 94 of its 96 published controls; the other two are the
+host-only Preset Previous and Preset Next actions.
 
-The third bucket is the one that matters, and it is why this is a script rather
-than a note. The map only reaches a key whose probe value actually moves a
-control, so a key already holding that value drops out of the comparison — which
-is exactly how three `*EQHpf` maximums stayed wrong by a factor of forty through
-a full audit. They were not *reported* as wrong; they were *absent*. The script
-now falls back to writing past each declared end and reading back what the
-plugin kept, which works whether or not anything moved, so that bucket should
-be empty. If it is not, probe those by hand.
+Tone King stores switches as binary doubles `0` and `1`. Morgan stores switch
+values as the text strings `false` and `true`. The pack's `switch_encoding`
+selects the correct writable representation.
 
-It is not part of the test suite and cannot be — it needs macOS, a licence and
-an installed Audio Unit. `tests/test_audit_manifest.py` covers the parts that do
-not need the plugin, including the pan-display parsing that made the first run
-cry wolf about two correct ranges.
+### Interpret missing mappings conservatively
 
-## When the state is a preset, not a document
+A key is mapped only when the attempted value changes exactly one control. No
+movement is inconclusive: the value may already be active, may be invalid for a
+discrete parameter, or may be quantized into a no-op.
 
-Tone King Imperial MKII stores its Audio Unit state in the same binary record
-format as its presets — `neural_dsp_toneking`, `PARAM` records, 8-byte doubles.
-`au_probe` looks for `<?xml` and gives up, which is why this plugin was first
-written off as unverifiable and its pack shipped with no declared ranges at all.
+For an unreached key:
 
-That was a property of the probe, not the plugin. `format/` parses that format
-and round-trips it byte for byte, so the same experiment runs with the halves
-swapped: Swift does the Audio Unit I/O, Python does the format work.
+1. Try a known-valid alternate value from another real preset.
+2. Try endpoints and interior values appropriate to the declared kind.
+3. Compare the mapped control set with the complete published parameter list.
+4. Keep the kind marked `needs_review` until the mapping is observed.
+
+Do not describe an unreached key as having no Audio Unit control unless the UI
+or another independent observation establishes that absence.
+
+## Verify ranges and selector members
+
+Run the pack audit:
 
 ```bash
-python scripts/probe_state.py --pack toneking --map
-python scripts/probe_state.py --pack toneking --values ampReverb 0,0.5,1
+python3 scripts/audit_manifest.py --pack morgan
+python3 scripts/audit_manifest.py --pack toneking
 ```
 
-`audit_manifest.py` falls back to this automatically. Against Tone King it maps
-**94 of 255 preset keys to exactly one control each** — covering 94 of the
-plugin's 96 published controls — in about a minute. The other two published
-controls are host-only Preset Previous/Next actions. The remaining 161 keys did
-not move a control for the one value tried. That makes them **unreached**, not
-proven control-less: an enum can reject an invalid nudge, and a quantized value
-can turn it into a no-op.
+The audit rebuilds the Swift helper, reads the parameter table, maps stored keys,
+and checks declared facts. It exits nonzero when a declaration disagrees or
+cannot be checked.
 
-Two things this immediately found, neither of which name-matching would have:
+For numeric ranges, confirm both sources:
 
-- **44 of those 94 had the wrong `kind`**, guessed from the key name by
-  `bootstrap_pack.py`. Twenty were switches read as knobs — writing `50` to
-  `ampsActive` stored `0.5` where the plugin wants on/off. Tone King stores its
-  switches as binary `0`/`1`, unlike the text `false`/`true` used by Morgan, so
-  the manifest records that storage encoding too.
-- **12 mapped selectors publish complete indexed label tables.** Once a key is
-  tied to the exact Audio Unit control, its `valueStrings` order verifies the
-  stored integer-to-label mapping without guessing from names.
-- **The pan convention is reversed between the two plugins.** Morgan displays
-  `50 L`, Tone King displays `L 50`. The audit reported a correctly declared
-  pan as a disagreement until the parser handled both.
+- the minimum and maximum display strings published by the mapped control
+- values retained in state after writes below and above the declared endpoints
 
-Batch the writes. Instantiating a plugin costs a second or two, so a probe that
-spawns a process per value turns a one-minute run into twenty.
+For selectors, use the mapped control's indexed `valueStrings`. The index order
+is the stored integer-to-label mapping. Morgan's delay and tremolo note tables
+are separate: both are ordered by note duration, but their index offsets differ.
 
-Treat a missing mapping as an audit gap. To distinguish an absent parameter
-from a rejected or no-op nudge, retry known-valid values from real presets or
-probe the control manually; do not turn “nothing moved once” into an existence
-claim.
+An undeclared selector should remain untouched by recipes. Out-of-range enum
+values can be remapped silently rather than rejected.
 
-## Measuring what a control does to the sound
+## Measure audible behavior
 
-Everything above identifies controls. It says nothing about what they *do* —
-and on this plugin, the names actively mislead.
-
-`scripts/au_render.swift` renders audio through the plugin offline; nothing
-reaches an output device. `scripts/spectrum_diff.py` compares two renders band
-by band, using Goertzel rather than an FFT so it runs on a stock Python.
+Parameter mapping identifies a control but does not establish what it does to
+the sound. Render deterministic audio through the plugin:
 
 ```bash
 swiftc -swift-version 5 -O scripts/au_render.swift -o /tmp/au_render
@@ -192,115 +145,68 @@ for level in 0.005 0.25; do
 done
 ```
 
-Both levels, every time — that is what the second bullet below means in
-practice. The reported frequencies are the analyser's actual bin centres, which
-land within a few percent of the round numbers quoted in this repo's notes.
+Use identical seeded input for both states. Repeat at widely separated input
+levels: a spectral difference that persists across levels indicates filtering;
+a difference that grows with level may be saturation. Ensure the amp that owns
+the tested control is selected and active.
 
-Three things make the result trustworthy, and all three were needed:
+Current Morgan measurements:
 
-- **Seed the noise.** Both states must see byte-identical input, or you are
-  comparing two noise realisations and small differences mean nothing.
-- **Run it at two levels far apart.** This is a non-linear amp model. A
-  difference that survives a 50× change in input level is a filter; one that
-  only appears when loud is the amp saturating.
-- **Select the amp that owns the control.** The first `ac20BassTreble` run
-  returned a difference of exactly `0.00 dB` in every band, because the harness
-  had left SW50R live and the AC20's switch was out of circuit. An exact zero is
-  a useful signal: it means the control was not in the path at all.
+| Control change | Measured effect |
+|---|---|
+| `sw50rTrebleBoost` off → on | −5.5 dB at 60 Hz; +2.5 dB from 400 Hz to 4 kHz |
+| `sw50rBright` off → on | +5 dB at 2.5 kHz; +8 dB at 6.3 kHz; lows unchanged |
+| `ac20BassTreble` off → on | −15.6 dB at 60 Hz; about −1 dB at 6.3 kHz |
+| `ac20Cut` 0 → 100% | +11 dB at 2.5 kHz; +19 dB at 6.3 kHz |
+| `sw50rMid` 0 → 100% | about +7.5 dB broadband; another +2 dB at 1.6–2.5 kHz |
+| `sw50rTreble` 0 → 100% | −3.4 dB at 59 Hz; +7.2 dB at 2.5 kHz |
+| `*CabPosition` 0 → 1 | +1.4 dB in the low mids; −1.1 dB at 6.3 kHz |
 
-| switch | ON does | so |
-|---|---|---|
-| `sw50rTrebleBoost` | −5.5 dB @ 60 Hz, +2.5 dB @ 400 Hz–4 kHz | brighter, tighter |
-| `sw50rBright` | +5 dB @ 2.5 kHz, +8 dB @ 6.3 kHz | air, lows untouched |
-| `ac20BassTreble` | −15.6 dB @ 60 Hz, −1 dB @ 6.3 kHz | a big bass cut |
-| `ac20Cut` 0→100% | +11 dB @ 2.5 kHz, +19 dB @ 6.3 kHz | presence, **not** a cut |
-| `sw50rMid` 0→100% | +7.5 dB everywhere, +2 dB more at 1.6–2.5 kHz | a level control |
-| `sw50rTreble` 0→100% | −3.4 dB @ 59 Hz, +7.2 dB @ 2.5 kHz | a real tilt |
-| `*CabPosition` 0→1 | +1.4 dB low mids, −1.1 dB @ 6.3 kHz | gently darker |
+These figures establish direction and rough magnitude for preset decisions.
+They are not full transfer functions.
 
-## Measuring break-up, which is not a spectrum
+## Measure distortion
 
-"It breaks up past 60%" is a claim about distortion, so noise and a band
-comparison cannot test it. Feed a **sine** and measure the harmonics the amp
-adds that were not in the input:
+Use a sine wave and measure harmonics added by the plugin:
 
 ```bash
-/tmp/au_render aumf NMAS NDSP pr12Amp/pr12Volume 0.6 v60.wav 0.05 sine:222.65625
-python3 scripts/spectrum_diff.py --thd 222.65625 v60.wav
+/tmp/au_render aumf NMAS NDSP pr12Amp/pr12Volume 0.6 /tmp/v60.wav 0.05 sine:222.65625
+python3 scripts/spectrum_diff.py --thd 222.65625 /tmp/v60.wav
 ```
 
-**The test tone must land on an analysis bin centre**, and this is not a detail.
-The analyser uses a 4096-point window at 48 kHz, so bins are 11.71875 Hz apart.
-At 220 Hz — 0.23 of a bin off centre — the fundamental's own leakage lands in
-the harmonic bins and a *mathematically pure sine* reads **1.606% distortion**,
-amplitude-independent. The first version of this measurement used 220 Hz and
-published 1.6% as the clean anchor for two different controls: that number was
-the method, not the amp. `spectrum_diff.py` now refuses an off-centre
-fundamental and names the nearest valid one, because the failure is invisible —
-it produces plausible small numbers rather than an error.
+The test frequency must lie on an analysis-bin center. With a 4096-point window
+at 48 kHz, bins are 11.71875 Hz apart. `spectrum_diff.py` rejects an off-center
+fundamental and reports the nearest valid value.
 
-The result that matters is not the number but what moves it: **break-up is not a
-property of the knob.** `pr12Volume` reaches 5% distortion around 66% of its
-travel at one input level and around 28% when fed three times the signal. Any
-preset advice of the form "past N%" is only true for one input, and `inputGain`,
-the guitar and the pickup all move N.
+Distortion depends on both the control position and input level. For PR12,
+approximately 5% distortion occurs around 66% volume at the reference input and
+around 28% when the input is three times stronger. Treat breakup positions as
+input-dependent ranges, and check rendered peak level so output clipping is not
+misidentified as plugin distortion.
 
-It also caught an overstatement. `sw50rLevel` was documented as a master volume
-that "does not add gain"; it goes from about 0.3% to 5.8% distortion across its
-travel, against 14% for the preamp volume. Well under half, but not none.
+## Method limits
 
-One caution: check the peak level before believing a distortion number. A render
-that clips would report distortion that belongs to the harness rather than the
-plugin. `sw50rVolume` at 80% pushes the output past 0 dBFS on its own, which is
-worth knowing separately.
+- Audio Unit metadata covers only published controls.
+- Controls with no display strings require state writes, UI inspection, or
+  audio measurement.
+- Spectral results depend on the excitation, operating point, and nonlinear
+  state of the model.
+- The state-mapping method requires a decoded, editable state representation.
+  `audit_manifest.py` reports `CANNOT VERIFY` for unsupported state formats.
+- Plugin-dependent audits are deliberate local checks, not CI tests.
+  `tests/test_audit_manifest.py` covers the comparison logic that does not need
+  an installed plugin.
 
-**The name is a hypothesis, not evidence — including the plugin's own.** Two
-cases, both of which this repo got wrong by reasoning:
+## Evidence rules
 
-- `sw50rTrebleBoost` moves a control published as *Bass Emphasis*. The names
-  contradict each other; this repo picked the plugin's as the more authoritative
-  and documented the switch as thickening the low end. It does the opposite.
-- `ac20Cut` was "settled by reasoning" and stated in capitals as *higher =
-  darker*, on the strength of three sources that agreed: the config reference,
-  the control's name, and Morgan's description of the Vox circuit it is named
-  after. Higher is **brighter**. Three agreeing arguments were three
-  restatements of one name.
+- A mapped key/control relationship is established by a state write that moves
+  exactly one control.
+- A numeric range needs a mapped control and endpoint evidence.
+- A selector table needs the mapped control's indexed labels or an equivalent
+  write-and-read experiment.
+- Audible direction needs deterministic rendering at more than one input level.
+- An unverified value stays undeclared or marked `needs_review`.
 
-Agreement between name-based arguments is not corroboration. Render the audio.
-
-## Limits of the method
-
-- It reads what the plugin *publishes*. Two controls publish no strings at all
-  (`R3`, `R6` — the room mic selectors), so nothing here can name their options.
-  They also have no control anywhere in the UI, so there is nothing to read.
-- The spectral numbers are one measurement of a non-linear system with one
-  excitation. They are solid on **direction and rough magnitude**, which is what
-  a tone decision needs; they are not a datasheet frequency response.
-- macOS only, and it needs the plugin licensed and installed. Unlicensed Neural
-  DSP plugins fail to instantiate with `-1`.
-- **It needs the plugin's state to be something we can edit.** Everything here
-  rests on writing one preset key into the plugin's own state and reading back
-  which control moved. `au_probe`'s `revmap` does that for a state that is an
-  XML document. For a state that is a *preset* — see below — `probe_state.py`
-  does the same thing through `format/`.
-
-  A plugin that keeps state in some third form nobody has decoded still cannot
-  be verified, and `audit_manifest.py` says `CANNOT VERIFY` rather than
-  falling back to matching control names against key names.
-
-## Why an undeclared range beats a guessed one
-
-Every metered parameter in the Morgan pack now has a measured range, so this is
-a rule for the next pack rather than a description of this one.
-
-A declared range with no source is indistinguishable from a measured one once it
-is in the file, and it would silently overrule the user. Leaving the value
-undeclared is honest about what is known; `UNIT_FLOOR` in `packs/loader.py`
-catches the arithmetically impossible — a negative frequency, a zero tempo —
-without pretending to know the plugin's limits.
-
-That seven already-declared ranges turned out to be wrong — `tremoloRate` sourced
-to the config reference, the `*EQLpf` and `*EQHpf` bounds to `observed-endpoints` — is the
-argument for this rule rather than against it. A range is only as good as where
-it came from, which is why `range_source` is required and why
-`test_every_other_metered_parameter_has_a_sourced_range` enforces it.
+`packs/loader.py` still rejects arithmetically impossible values through
+`UNIT_FLOOR`, such as negative frequency or zero tempo, without treating those
+generic constraints as plugin-specific ranges.
