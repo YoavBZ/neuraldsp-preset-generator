@@ -75,11 +75,14 @@ turns a legible number into an opaque index.
 ## Selectors whose member names are still unknown
 
 Two: `leftRoomMicType` and `rightRoomMicType`. The plugin accepts 0, 1 and 2 and
-silently rewrites anything higher to 0 — measured — but it publishes no names
-for them, so the labels have to be read by a human.
+silently rewrites anything higher to 0 — measured — but publishes no names for
+them, and **has no control for them anywhere in its UI**: the cab page offers
+two mics and a Room Send level, nothing else. So there is no screen to read them
+off either. Treat them as vestigial and leave them at whatever the template
+holds.
 
-These were previously declared against `enums.internalMic`, the ten-entry
-close-mic catalog. That was wrong in the dangerous direction: writing
+These were previously declared against `enums.internalMic`, the eleven-entry
+close-mic catalog (ten mics plus `Custom IR`). That was wrong in the dangerous direction: writing
 `"Ribbon 121"` (8) to a room mic passed validation and landed on 0.
 
 Writing one of these still works — the tool validates it as an integer and warns
@@ -96,8 +99,12 @@ swiftc -swift-version 5 -O scripts/au_probe.swift -o /tmp/au_probe
 ```
 
 That writes each index into the preset document, hands it to the plugin, and
-reports the label the plugin shows. For the room mics it comes back empty, which
-is the case the UI workflow below exists for.
+reports the label the plugin shows.
+
+If it comes back empty, the UI workflow below is the fallback — but check the UI
+actually has the control first. Morgan's two room mic selectors publish no
+labels *and* have no control, so nothing below will recover them; the workflow
+is here for the next pack, not for those two.
 
 Selectors in this format are **index-based**: the stored integer is the option's
 position in the control, counting from 0. That's confirmed for the mic catalog

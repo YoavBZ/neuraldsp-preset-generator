@@ -191,7 +191,7 @@ def test_treble_boost_documents_the_measured_direction(pack):
 
 
 def test_room_mics_do_not_share_the_close_mic_catalog(pack):
-    """The room selector takes 0-2; the close-mic catalog has ten entries.
+    """The room selector takes 0-2; the close-mic catalog has eleven entries.
     Pointing one at the other would let 'Ribbon 121' be written to a control
     that silently rewrites it to 0."""
     close = pack.require("cabParameters", "leftMicType")

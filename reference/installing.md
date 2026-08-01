@@ -30,8 +30,9 @@ don't have to ask again.
 world-writable, so writing there needs no `sudo`. If a write is refused, say so
 and ask — do not reach for `sudo`.
 
-The factory presets sit next to `User/` in the same place (`Factory/`,
-`Artists/`, `Default.xml`). They are useful as templates and as format
+The presets that ship with the plugin sit next to `User/` in the same place:
+`Artists/`, `Neural DSP/`, `Default.xml`, and on some plugins a `Factory/`
+(Tone King has one; Morgan does not). They are useful as templates and as format
 examples, but they are Neural DSP's content — never copy one into this repo.
 
 ## Write there directly
@@ -41,7 +42,7 @@ Once you know the folder, point `--out` at it instead of copying afterwards:
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
   --template TEMPLATE.xml --spec /tmp/spec.json --strip-irs \
-  --out ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User/"Hotel California Lead.xml"
+  --out /Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User/"Hotel California Lead.xml"
 ```
 
 The file name is what shows up in the plugin's preset browser, so name it the

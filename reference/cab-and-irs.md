@@ -16,7 +16,7 @@ placement, level and phase, plus an optional room mic.
 | Room mic | `*RoomActive`, `*RoomMicType`, `*RoomMicLevel` | switch / enum / dB |
 
 `*CabPan` is a number, not a selector — the plugin shows -25 as `25 L`. The room
-mic selector takes only 0–2 and is **not** the ten-entry close-mic catalog;
+mic selector takes only 0–2 and is **not** the eleven-entry close-mic catalog;
 writing a close-mic index like 8 there lands on 0.
 
 `*CabPosition` runs from the speaker cap (bright, aggressive) at 0 to the cone

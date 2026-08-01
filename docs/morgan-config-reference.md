@@ -40,7 +40,12 @@ was wrong:
     not top-boost.
   - PR12's Dwell is a reverb-decay control Morgan added to the Princeton
     circuit so a high reverb mix does not wash out.
-  - `cut` higher = darker is correct (it is the Vox power-amp Cut).
+  - `cut` higher = darker: WRONG, and this entry was itself the "correction".
+    Rendered through the plugin, ac20Cut higher = BRIGHTER, monotonically:
+    +11 dB at 2.5 kHz and +19 dB at 6.3 kHz from 0% to 100%. Three name-based
+    arguments (this doc, the control's name, and Morgan's description of the
+    original Vox circuit) agreed with each other and were all wrong. See
+    docs/measuring-against-the-plugin.md.
 
 MUST TRANSLATE before writing to the binary:
   - SCALE: this doc's 0–10 knob scale is NOT used by the project. The
@@ -58,11 +63,14 @@ KNOWN ERRORS / CONFLICTS in this doc vs the binary:
   - AC20: doc's `powerLevel` and `standby` do NOT exist in the binary
     (binary: ac20Power[int], ac20Cut, ac20Volume, ac20Bright,
     ac20BassTreble). Doc `bassCut` is probably `ac20BassTreble`.
-  - SW50R: doc says `bassEmphasis`; binary has `sw50rTrebleBoost`
-    (bass vs treble — a real conflict). Doc power/standby absent.
+  - SW50R: doc says `bassEmphasis`; binary has `sw50rTrebleBoost`.
+    RESOLVED BY MEASUREMENT: they are the same control, and the sound matches
+    neither name -- it cuts lows and lifts 400 Hz-4 kHz. This doc's advice to
+    use it for a THICKER lead (sections 12 and 27) is backwards and is
+    annotated there. Doc power/standby absent.
   - CAB: doc's slots[]/micId model does NOT match the binary, which uses
     dual left/right cabs. Mic selection = leftMicType/rightMicType integer
-    index into the 10-mic catalog (manifest `enums.internalMic`). Custom IR =
+    index into the 11-entry catalog: ten mics plus `Custom IR` (manifest `enums.internalMic`). Custom IR =
     *ChosenIRFilePath string; "no custom IR" is that field set to an empty
     string (use apply_spec.py --strip-irs for portable factory-mic presets).
 
@@ -518,7 +526,7 @@ interface Ac20AmpConfig {
   power: boolean;
   standby: boolean;
   powerLevel: Knob; // 0.0 to 10.0
-  cut: Knob;        // 0.0 to 10.0; higher = darker / more high cut
+  cut: Knob;        // 0.0 to 10.0; WRONG: measured higher = BRIGHTER (presence)
   volume: Knob;     // 0.0 to 10.0
   bright: boolean;
   bassCut: boolean;
@@ -716,7 +724,7 @@ amp:
 
 - Use SW50R for smooth lead tones and polished clean lead.
 - Use `inputMode: -6_DB` for cleaner high-headroom sounds.
-- Use `bassEmphasis: true` for thicker lead, but avoid it for already-boomy Les Paul neck tones.
+- Use `bassEmphasis: true` for thicker lead, but avoid it for already-boomy Les Paul neck tones. **WRONG — measured backwards.** `bassEmphasis` (`sw50rTrebleBoost`) *removes* low end: -5.5 dB at 60 Hz, +2.5 dB from 400 Hz to 4 kHz. It is the control to reach for on a boomy neck pickup, not the one to avoid.
 - Use `mid 6.0–6.8` for singing lead sustain.
 - Use `bright: false` for warmer leads, `bright: true` for articulate clean rhythm.
 
@@ -1170,10 +1178,15 @@ Your generator should validate at least the following:
 > line below into it again. Method and evidence:
 > [measuring-against-the-plugin.md](measuring-against-the-plugin.md).
 >
+> The other thirteen were each checked against the plugin's published range and
+> agreed, so the manifest now cites the measurement for them rather than this
+> file.
+>
 > Note also what is *absent* here, because absence is where the other errors
 > came from: no ranges for the EQ high/low-pass, input/output gain, gate
-> threshold, delay tempo, cab mic levels or pan. The EQ low-pass minimum was
-> guessed at 20 Hz from observed values and is really 1 kHz.
+> threshold, delay tempo, cab mic levels or pan. Guessed from observed values
+> instead, both EQ filter ranges were wrong — the low-pass minimum is 1 kHz, not
+> 20 Hz, and the high-pass **maximum is 500 Hz, not 20 kHz**.
 
 ```ts
 const validationRules = {
@@ -1200,12 +1213,11 @@ const validationRules = {
 - If `delay.syncMode === 'DAW_APP'` or `TAP`, require `timeNote` and ignore `timeMs`.
 - If `tremolo.syncMode === 'FREE'`, require `rateHz` and ignore `rateNote`.
 - If `tremolo.syncMode === 'NOTE'`, require `rateNote` and ignore `rateHz`.
-
-These four are correct, and the sync modes named here are real: `delaySync`
-stores 0/1/2 for the controls the plugin labels `Free`, `DAW` and `Tap`.
-Tremolo's is a plain switch rather than a three-way — `tremoloSync` off is
-`FREE`, on is `NOTE`. Both tables are now in the manifest, so a note division
-can be set by name.
+- All four are correct. The sync modes named here are real: `delaySync` stores
+  0/1/2 for the controls the plugin labels `Free`, `DAW` and `Tap`. Tremolo's is
+  a plain switch rather than a three-way — `tremoloSync` off is `FREE`, on is
+  `NOTE`. Both tables are now in the manifest, so a note division can be set by
+  name.
 - If `global.doublerEnabled === false`, `doublerSpreadMs` can be omitted or kept as a remembered value.
 - If `cab.bypassed === true`, generator should skip cab slot validation except for structure.
 - For `CUSTOM_IR`, do not require `position` or `distance`.
@@ -1840,14 +1852,14 @@ defaults:
 
 | Problem | First Fix | Second Fix |
 |---|---|---|
-| Tone is too muddy | Lower `125 Hz` / `250 Hz`; raise HPF to `90 Hz` | Reduce amp bass or disable bass emphasis |
+| Tone is too muddy | Lower `125 Hz` / `250 Hz`; raise HPF to `90 Hz` | Reduce amp bass **or enable bass emphasis** (measured: it cuts 5.5 dB at 60 Hz — this row said *disable*, which is backwards) |
 | Tone is too harsh | Lower `4 kHz` / `8 kHz`; lower LPF | Reduce OD tone/treble or increase AC20 cut |
 | Lead does not sustain | Raise OD1 level/drive slightly | Add subtle compressor or raise amp volume |
 | Chords blur together | Lower drive/gain | Tighten bass with HPF and reduce low EQ bands |
 | Backing track buries guitar | Boost `1 kHz` and `2 kHz` | Increase output only after EQ is right |
 | Delay is too obvious | Lower delay mix/feedback | Lower delay LPF to darken repeats |
 | Reverb clouds the tone | Lower reverb mix/decay | Raise reverb HPF |
-| Single notes sound thin | Add mids around `1–2 kHz` | Use SW50R with bass emphasis carefully |
+| Single notes sound thin | Add mids around `1–2 kHz` | Use SW50R with `sw50rBright` off (**not** bass emphasis, which thins rather than fattens — measured) |
 
 ---
 

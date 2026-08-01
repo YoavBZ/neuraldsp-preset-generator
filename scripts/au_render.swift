@@ -56,6 +56,10 @@ let trailer = Array(bytes[docEnd...])
 let doc = String(decoding: bytes[xmlStart..<docEnd], as: UTF8.self)
 
 let spec = args[4].split(separator: "/", maxSplits: 1).map(String.init)
+guard spec.count == 2 else {
+    FileHandle.standardError.write("expected <element>/<key>, got \(args[4])\n".data(using: .utf8)!)
+    exit(2)
+}
 let ns = doc as NSString
 let elemRE = try! NSRegularExpression(pattern: "<\(spec[0])\\b[^>]*>")
 guard let em = elemRE.firstMatch(in: doc, range: NSRange(location: 0, length: ns.length)) else { exit(1) }
@@ -69,7 +73,16 @@ let ampIndex: String
 if spec[0].hasPrefix("ac20") { ampIndex = "0" }
 else if spec[0].hasPrefix("pr12") { ampIndex = "1" }
 else { ampIndex = "2" }
-newDoc = newDoc.replacingOccurrences(of: "selectedAmp=\"0\"", with: "selectedAmp=\"\(ampIndex)\"")
+let ampRE = try! NSRegularExpression(pattern: "selectedAmp=\"[^\"]*\"")
+let before = newDoc
+newDoc = ampRE.stringByReplacingMatches(
+    in: newDoc, range: NSRange(location: 0, length: (newDoc as NSString).length),
+    withTemplate: "selectedAmp=\"\(ampIndex)\"")
+if newDoc == before {
+    FileHandle.standardError.write(
+        "warning: could not select amp \(ampIndex); the control under test may be out of circuit\n"
+            .data(using: .utf8)!)
+}
 // The gate would squash a quiet test signal and hide the difference.
 newDoc = newDoc.replacingOccurrences(of: "gateActive=\"true\"", with: "gateActive=\"false\"")
 
@@ -127,14 +140,15 @@ let inputBlock: AURenderPullInputBlock = { _, _, frameCount, _, audioBufferList 
 
 let outBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)!
 let outURL = URL(fileURLWithPath: args[6])
-let file = try! AVAudioFile(forWriting: outURL, settings: format.settings,
-                            commonFormat: .pcmFormatFloat32, interleaved: false)
+var file: AVAudioFile? = try! AVAudioFile(forWriting: outURL, settings: format.settings,
+                                          commonFormat: .pcmFormatFloat32, interleaved: false)
 
 var flags = AudioUnitRenderActionFlags()
 var timestamp = AudioTimeStamp()
 timestamp.mFlags = .sampleTimeValid
 var rendered = 0
 while rendered < total {
+    flags = AudioUnitRenderActionFlags()
     outBuffer.frameLength = frames
     let status = unit.renderBlock(&flags, &timestamp, frames, 0,
                                   outBuffer.mutableAudioBufferList, inputBlock)
@@ -143,7 +157,10 @@ while rendered < total {
         exit(1)
     }
     timestamp.mSampleTime += Double(frames)
-    try! file.write(from: outBuffer)
+    try! file!.write(from: outBuffer)
     rendered += Int(frames)
 }
+// Release it explicitly: this is what patches the RIFF and `data` chunk sizes.
+// Without it the samples are on disk but every reader sees a 0-length file.
+file = nil
 FileHandle.standardError.write("wrote \(args[6]) (input pulled \(pulls) times)\n".data(using: .utf8)!)

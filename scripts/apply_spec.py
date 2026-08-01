@@ -178,8 +178,16 @@ def run(args) -> None:
 
     # --- IR stripping ---------------------------------------------------
     if args.strip_irs:
-        for key, before in strip_custom_irs(preset):
-            changes.append((f"cabParameters/{key}", before, "(cleared)"))
+        for key, before, after in strip_custom_irs(preset):
+            # Report these the way every other row is reported, so a mic index
+            # reads as "Custom IR -> Dynamic 57" rather than a bare integer.
+            # Only a genuinely emptied path is "(cleared)".
+            meta = pack.get("cabParameters", key)
+            changes.append((
+                f"cabParameters/{key}",
+                render(meta, before) if meta else before,
+                "(cleared)" if after == "" else (render(meta, after) if meta else after),
+            ))
 
     # --- parameter overrides --------------------------------------------
     warnings: list[str] = []
@@ -325,22 +333,23 @@ def strip_custom_irs(preset) -> list:
     showing `Custom IR / No File` — so the selector is moved back to the
     plugin's own default for that side whenever it was pointing at the file.
     """
-    cleared = []
+    changed = []
     for side in ("left", "right"):
         key = f"{side}ChosenIRFilePath"
         param = preset.by_path.get(("cabParameters", key))
         if param is not None and param.value != "":
             before = param.value
             set_parameter(preset, "cabParameters", key, "")
-            cleared.append((key, before))
+            changed.append((key, before, ""))
 
         mic_key = f"{side}MicType"
         mic = preset.by_path.get(("cabParameters", mic_key))
         if mic is not None and mic.value == CUSTOM_IR_INDEX:
             before = mic.value
-            set_parameter(preset, "cabParameters", mic_key, DEFAULT_MIC_INDEX[side])
-            cleared.append((mic_key, before))
-    return cleared
+            after = DEFAULT_MIC_INDEX[side]
+            set_parameter(preset, "cabParameters", mic_key, after)
+            changed.append((mic_key, before, after))
+    return changed
 
 
 

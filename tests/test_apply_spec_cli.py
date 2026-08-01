@@ -223,3 +223,48 @@ def test_list_recipes_needs_no_other_arguments():
     assert result.returncode == 0, result.stderr
     assert "sw50r-singing-lead" in result.stdout
     assert "classic-lead" in result.stdout
+
+
+def test_strip_irs_reports_the_mic_change_in_human_terms(tmp_path):
+    """The change list is the thing the user approves, so it has to be true.
+
+    --strip-irs clears the IR path *and* moves the mic selector off "Custom IR".
+    Both were once reported as "(cleared)", which was wrong for the selector: it
+    is set, not emptied, and 10 means something. The bundled example is IR-free,
+    so a template that actually uses an IR has to be synthesised here — which is
+    why this went unnoticed: every existing --strip-irs test was a no-op.
+    """
+    from format.parser import parse_file
+    from format.structured import build, set_parameter
+    from format.writer import write_file
+
+    template = tmp_path / "WithIR.xml"
+    preset = build(parse_file(str(EXAMPLE)))
+    for side in ("left", "right"):
+        set_parameter(preset, "cabParameters", f"{side}ChosenIRFilePath",
+                      f"/Users/someone/IRs/{side}.wav")
+        set_parameter(preset, "cabParameters", f"{side}MicType", "10")
+    write_file(str(template), preset.tokens)
+
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({"parameters": []}))
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(template),
+         "--spec", str(spec), "--strip-irs", "--out", str(tmp_path / "o.xml")],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+
+    assert "leftMicType" in result.stdout
+    # Named at both ends, like every other row — not a bare index, not "(cleared)".
+    assert "Custom IR  ->  Dynamic 57" in result.stdout
+    assert "Custom IR  ->  Condenser 184" in result.stdout
+    assert "MicType" not in [
+        line.split()[0].split("/")[-1]
+        for line in result.stdout.splitlines()
+        if "(cleared)" in line
+    ], "a mic selector is set, not cleared"
+
+    written = build(parse_file(str(tmp_path / "o.xml")))
+    assert written.by_path[("cabParameters", "leftMicType")].value == "0"
+    assert written.by_path[("cabParameters", "rightMicType")].value == "4"

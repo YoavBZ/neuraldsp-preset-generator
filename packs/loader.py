@@ -32,14 +32,16 @@ class PackError(Exception):
 
 
 # Dimensional sanity, by unit. These are NOT the plugin's limits — those are the
-# manifest's declared `min`/`max`, and eight metered parameters still have none
-# (pinned in tests/test_pack.py::UNDECLARED_RANGES).
+# manifest's declared `min`/`max`, which every metered parameter now carries
+# (tests/test_pack.py::UNDECLARED_RANGES is empty and guards against that
+# changing).
 # These reject only values that cannot mean anything in the unit at all: a
 # negative tempo, a negative duration, a non-positive frequency. That is a claim
 # about arithmetic, not about the plugin, so it can be made without a source.
 #
-# This is a floor beneath the missing-ranges gap, not a substitute for filling
-# it: an output gain of 10^6 dB is still dimensionally valid and still writes.
+# The floor still earns its place beneath a declared range, because a range can
+# be absent on a freshly bootstrapped pack and because it catches nonsense that
+# is in range on no plugin at all.
 UNIT_FLOOR = {
     "hz": (0.0, False),       # 0 Hz is not a rate or a cutoff
     "bpm": (0.0, False),      # a tempo of zero has no meaning

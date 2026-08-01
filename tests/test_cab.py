@@ -196,8 +196,10 @@ def test_strip_irs_also_moves_the_mic_off_custom_ir():
                       f"/Users/someone/IRs/{side}.wav")
         set_parameter(preset, "cabParameters", f"{side}MicType", "10")
 
-    changed = dict(strip_custom_irs(preset))
-    assert "leftMicType" in changed and "rightMicType" in changed
+    changed = {key: (before, after) for key, before, after in strip_custom_irs(preset)}
+    assert changed["leftMicType"] == ("10", "0")
+    assert changed["rightMicType"] == ("10", "4")
+    assert changed["leftChosenIRFilePath"][1] == ""
 
     after = build(parse(write(preset.tokens)))
     for side, expected in (("left", "0"), ("right", "4")):
@@ -208,11 +210,19 @@ def test_strip_irs_also_moves_the_mic_off_custom_ir():
 
 
 def test_strip_irs_leaves_a_real_mic_alone():
-    """Only a selector actually pointing at the file may be moved."""
+    """Only a selector actually pointing at the file may be moved.
+
+    Uses the RIGHT cab deliberately: the example holds Ribbon 121 (8) there, so
+    a regression that reset every mic unconditionally would show up as 8 -> 4.
+    The left cab holds Dynamic 57 (0), which is also its reset default, so the
+    same bug would be invisible on that side.
+    """
     from scripts.apply_spec import strip_custom_irs
 
     preset = build(parse_file(str(EXAMPLE_PRESET)))
-    before = preset.by_path[("cabParameters", "leftMicType")].value
-    set_parameter(preset, "cabParameters", "leftChosenIRFilePath", "/tmp/x.wav")
-    strip_custom_irs(preset)
-    assert preset.by_path[("cabParameters", "leftMicType")].value == before
+    before = preset.by_path[("cabParameters", "rightMicType")].value
+    assert before == "8", "fixture assumption: the right cab is not on its default"
+    set_parameter(preset, "cabParameters", "rightChosenIRFilePath", "/tmp/x.wav")
+    changed = strip_custom_irs(preset)
+    assert preset.by_path[("cabParameters", "rightMicType")].value == before
+    assert not any(key.endswith("MicType") for key, _, _ in changed)

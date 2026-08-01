@@ -999,7 +999,7 @@
         "title": "Two mics, wider",
         "use_when": "a wider practice or lead sound",
         "source": "docs/morgan-config-reference.md#14",
-        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end. The doc pans the two mics L25/R25; the pan selector's mapping is unknown, so pan is NOT set here. Set it by hand in the plugin, or probe the selector - see reference/selectors-and-timing.md.",
+        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end. The doc pans the two mics L25/R25; pan is expressible (-25 / 25) but left centred here by choice. Set it by hand in the plugin, or set *CabPan directly - see reference/selectors-and-timing.md.",
         "parameters": [
           {
             "module": "cabParameters",

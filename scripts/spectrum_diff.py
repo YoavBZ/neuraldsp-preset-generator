@@ -22,9 +22,10 @@ def goertzel(x, f, sr=48000.0):
     N = 4096
     total, blocks = 0.0, 0
     k = int(0.5 + N * f / sr)
+    actual = k * sr / N          # the bin actually measured, not the one asked for
     w = 2.0 * math.pi * k / N
     coeff = 2.0 * math.cos(w)
-    for start in range(0, len(x) - N, N):
+    for start in range(0, len(x) - N + 1, N):
         s1 = s2 = 0.0
         for i in range(start, start + N):
             s0 = x[i] + coeff * s1 - s2
@@ -32,14 +33,14 @@ def goertzel(x, f, sr=48000.0):
         power = s1*s1 + s2*s2 - coeff*s1*s2
         total += power
         blocks += 1
-    return math.sqrt(total / blocks) if blocks else 0.0
+    return (math.sqrt(total / blocks) if blocks else 0.0), actual
 
 a, b = samples(sys.argv[1]), samples(sys.argv[2])
 print(f"{sys.argv[1]}: peak {max(abs(v) for v in a):.5f}   "
       f"{sys.argv[2]}: peak {max(abs(v) for v in b):.5f}\n")
-print(f"{'freq':>8}  {'OFF dB':>9} {'ON dB':>9} {'ON-OFF':>9}")
+print(f"{'bin Hz':>8}  {'OFF dB':>9} {'ON dB':>9} {'ON-OFF':>9}")
 for f in (60, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000, 6300):
-    ma, mb = goertzel(a, f), goertzel(b, f)
+    (ma, actual), (mb, _) = goertzel(a, f), goertzel(b, f)
     da = 20*math.log10(ma) if ma > 0 else -999
     db_ = 20*math.log10(mb) if mb > 0 else -999
-    print(f"{f:>7}   {da:>8.2f}  {db_:>8.2f}  {db_-da:>+8.2f}")
+    print(f"{actual:>7.0f}   {da:>8.2f}  {db_:>8.2f}  {db_-da:>+8.2f}")

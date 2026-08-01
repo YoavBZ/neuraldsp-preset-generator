@@ -69,9 +69,15 @@ func flatten(_ value: Any, _ path: String, into out: inout [String: String]) {
     case let a as [Any]:
         for (i, v) in a.enumerated() { flatten(v, "\(path)[\(i)]", into: &out) }
     case let data as Data:
-        // JUCE-style plugins hide the real preset in an opaque blob. If it is
-        // text, keep it as text so the diff can see individual keys.
-        if let s = String(data: data, encoding: .utf8), !s.isEmpty {
+        // JUCE-style plugins hide the real preset in an opaque blob, behind a
+        // binary frame. Decode from the document itself rather than trying to
+        // decode the frame: one byte of the frame's little-endian length is
+        // enough to make the whole Data invalid UTF-8, which would silently
+        // turn the document into "<N bytes>" for most document sizes.
+        let bytes = [UInt8](data)
+        if let start = bytes.firstRange(of: Array("<?xml".utf8))?.lowerBound {
+            out[path] = String(decoding: bytes[start...], as: UTF8.self)
+        } else if let s = String(data: data, encoding: .utf8), !s.isEmpty {
             out[path] = s
         } else {
             out[path] = "<\(data.count) bytes>"
@@ -151,6 +157,10 @@ case "table":
         flatten(unit.fullState ?? [:], "", into: &flat)
         return flat["jucePluginState"] ?? ""
     }
+    guard args.count > 5 else {
+        FileHandle.standardError.write("table needs <address[,address...]>\n".data(using: .utf8)!)
+        exit(2)
+    }
     let addresses = args[5].split(separator: ",").compactMap { AUParameterAddress($0) }
     let steps = args.count > 6 ? (Int(args[6]) ?? 2001) : 2001
     var out: [[String: Any]] = []
@@ -176,6 +186,10 @@ case "table":
     jsonOut(out)
 
 case "dumpraw":
+    guard args.count > 5 else {
+        FileHandle.standardError.write("dumpraw needs an output prefix\n".data(using: .utf8)!)
+        exit(2)
+    }
     guard let st = unit.fullState else { exit(1) }
     for (k, v) in st {
         if let d = v as? Data {
@@ -332,7 +346,15 @@ case "values":
     func label(_ p: AUParameter) -> String { var v = p.value; return p.string(fromValue: &v) }
 
     // element/key, then the values to try.
+    guard args.count > 6 else {
+        FileHandle.standardError.write("values needs <element>/<key> <v1,v2,...>\n".data(using: .utf8)!)
+        exit(2)
+    }
     let spec = args[5].split(separator: "/", maxSplits: 1).map(String.init)
+    guard spec.count == 2 else {
+        FileHandle.standardError.write("expected <element>/<key>, got \(args[5])\n".data(using: .utf8)!)
+        exit(2)
+    }
     let (element, key) = (spec[0], spec[1])
     let wanted = args[6].split(separator: ",").map(String.init)
 

@@ -37,10 +37,11 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 Prefer **member names over integers** for selectors — `"value": "SW50R"` reads
 better than `"value": 2` and is checked against the manifest.
 
-Six selectors have no member names yet, because the plugin never displays the
-stored integer. For musical delay and tremolo you don't need them — compute
-milliseconds or Hz instead. See
-[selectors-and-timing.md](selectors-and-timing.md).
+Two selectors have no member names — `leftRoomMicType` and `rightRoomMicType`,
+which the plugin neither labels nor exposes a control for. Everything else,
+including both sync-note tables, can be set by name. For musical delay and
+tremolo you still don't need the selector — compute milliseconds or Hz instead.
+See [selectors-and-timing.md](selectors-and-timing.md).
 
 ## Where the facts live
 
@@ -155,7 +156,7 @@ anything — so a failed run leaves no partial output.
 ## Formats this tool cannot read
 
 The byte-level parser and writer are plugin-agnostic and measured to be so:
-every one of 681 factory presets across Morgan Amps Suite, Tone King Imperial
+every one of 681 presets across Morgan Amps Suite, Tone King Imperial
 MKII, Archetype Nolly X and Archetype Plini X round-trips byte for byte.
 
 The *structured* layer is narrower. It models one named key per printable value,
