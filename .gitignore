@@ -48,3 +48,6 @@ dist/
 
 # Leftover from the schema package dissolved in #1.
 schema/
+
+# Agent worktrees created by the Agent tool; never part of the repo.
+.claude/worktrees/

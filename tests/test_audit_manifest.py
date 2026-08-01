@@ -60,6 +60,14 @@ def test_an_unreadable_display_is_not_a_disagreement():
     assert numeric("") is None
 
 
+def test_both_pan_conventions_parse():
+    """Morgan writes `50 L`, Tone King writes `L 50`. Handling one and not the
+    other reported a correctly declared -50..50 pan as a disagreement — the
+    audit caught it against the second plugin."""
+    assert numeric("50 L") == -50.0 and numeric("L 50") == -50.0
+    assert numeric("50 R") == 50.0 and numeric("R 50") == 50.0
+
+
 def test_pan_would_not_be_reported_as_a_disagreement():
     """The regression that made the first run cry wolf: `50 L` parsed as +50,
     so a correctly declared -50..50 pan looked wrong."""

@@ -128,6 +128,40 @@ an installed Audio Unit. `tests/test_audit_manifest.py` covers the parts that do
 not need the plugin, including the pan-display parsing that made the first run
 cry wolf about two correct ranges.
 
+## When the state is a preset, not a document
+
+Tone King Imperial MKII stores its Audio Unit state in the same binary record
+format as its presets — `neural_dsp_toneking`, `PARAM` records, 8-byte doubles.
+`au_probe` looks for `<?xml` and gives up, which is why this plugin was first
+written off as unverifiable and its pack shipped with no declared ranges at all.
+
+That was a property of the probe, not the plugin. `format/` parses that format
+and round-trips it byte for byte, so the same experiment runs with the halves
+swapped: Swift does the Audio Unit I/O, Python does the format work.
+
+```bash
+python scripts/probe_state.py --pack toneking --map
+python scripts/probe_state.py --pack toneking --values ampReverb 0,0.5,1
+```
+
+`audit_manifest.py` falls back to this automatically. Against Tone King it maps
+**94 of 255 preset keys to exactly one control each** — covering 94 of the
+plugin's 96 published controls — in about a minute. The remaining 161 keys move
+no control at all: they are preset state with no Audio Unit parameter behind
+them, which is a fact about the plugin rather than a gap in the method.
+
+Two things this immediately found, neither of which name-matching would have:
+
+- **44 of those 94 had the wrong `kind`**, guessed from the key name by
+  `bootstrap_pack.py`. Twenty were switches read as knobs — writing `50` to
+  `ampsActive` stored `0.5` where the plugin wants on/off.
+- **The pan convention is reversed between the two plugins.** Morgan displays
+  `50 L`, Tone King displays `L 50`. The audit reported a correctly declared
+  pan as a disagreement until the parser handled both.
+
+Batch the writes. Instantiating a plugin costs a second or two, so a probe that
+spawns a process per value turns a one-minute run into twenty.
+
 ## Measuring what a control does to the sound
 
 Everything above identifies controls. It says nothing about what they *do* —
@@ -232,14 +266,15 @@ Agreement between name-based arguments is not corroboration. Render the audio.
   a tone decision needs; they are not a datasheet frequency response.
 - macOS only, and it needs the plugin licensed and installed. Unlicensed Neural
   DSP plugins fail to instantiate with `-1`.
-- **It only works on a plugin whose state is a document.** Everything here rests
-  on being able to write one preset key into the plugin's own state and read
-  back which control moved. Tone King Imperial MKII keeps its state as opaque
-  bytes, so `revmap` and `values` cannot run against it and `audit_manifest.py`
-  reports `CANNOT VERIFY`. Its Audio Unit still publishes real ranges via
-  `params` — but nothing ties them to preset keys except their names, which is
-  the one kind of evidence this document exists to distrust. Its pack ships with
-  no declared ranges rather than 35 name-matched guesses.
+- **It needs the plugin's state to be something we can edit.** Everything here
+  rests on writing one preset key into the plugin's own state and reading back
+  which control moved. `au_probe`'s `revmap` does that for a state that is an
+  XML document. For a state that is a *preset* — see below — `probe_state.py`
+  does the same thing through `format/`.
+
+  A plugin that keeps state in some third form nobody has decoded still cannot
+  be verified, and `audit_manifest.py` says `CANNOT VERIFY` rather than
+  falling back to matching control names against key names.
 
 ## Why an undeclared range beats a guessed one
 

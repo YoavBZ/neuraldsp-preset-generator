@@ -13,31 +13,42 @@ something to find, and so nobody mistakes silence for "nothing to say".
   of the 135 factory presets round-trips byte for byte. This is the part that
   is solid — see [reference/preset-spec.md](../../reference/preset-spec.md).
 - **The parameter names**, straight out of a preset, so they are exact.
-- **Nothing else.** Kinds are guessed from key names and marked `needs_review`.
-  No ranges. No selector members. No idea which knob does what to the sound.
+- **94 parameters verified against the running plugin**, by writing each key
+  into the plugin's own state and reading back which control moved. For those,
+  the kind and the plugin's own control name are facts, and 29 carry a measured
+  numeric range. This corrected 44 wrong kinds — twenty of them switches that
+  had been guessed as knobs.
+- **The other 161 are still guesses**, marked `needs_review`; writing through
+  one warns, and `show.py` flags them on the way in. They move no Audio Unit
+  control at all, so the probe cannot reach them.
+- **No selector members**, for any of them. And no idea which control does what
+  to the sound.
 
 ## What that means in practice
 
 Editing an existing preset is reasonable: clone one, change a value you can see
-in the plugin, and check the result by ear. Generating a preset from a
-description is not — there is no tone vocabulary here to map a request onto, and
-the amp's own controls have not been characterised.
+in the plugin, and check the result by ear. The 94 verified parameters can be
+written with confidence in the *kind*; the rest warn. Generating a preset from a
+description is still not viable — there is no tone vocabulary here to map a
+request onto, and no control has been characterised acoustically.
 
 Prefer the user's own presets as templates over the factory ones, and say
 plainly that values are being set without a declared range behind them.
 
-## Filling this in
+## Filling in the rest
 
-The ranges cannot simply be copied from the plugin. It publishes 96 controls
-with real ranges to its Audio Unit, but keeps its state as opaque bytes rather
-than a document, so the write-a-key-and-see-what-moves probe that verified every
-Morgan range does not work here — `scripts/audit_manifest.py --pack toneking`
-says so and exits 3. Matching the two lists by name reaches 35 of 259, and name
-matching is exactly the kind of evidence this project has repeatedly caught
-itself trusting and being wrong about.
+Re-run the verification any time:
 
-So: one parameter at a time, each with a `range_source` recording how it was
-checked. `scripts/au_render.swift` and `scripts/spectrum_diff.py` work against
-any installed plugin and will answer "what does this control do to the sound"
-without needing the state probe at all. See
+```bash
+python scripts/audit_manifest.py --pack toneking
+```
+
+It maps keys to controls through the plugin's own state and checks every
+declared range. What it cannot give you is **selector members** and **what any
+control does to the sound** — for those, `scripts/au_render.swift` and
+`scripts/spectrum_diff.py` work against any installed plugin. See
 [docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
+
+Whatever you add, record a `range_source` saying how you checked. This project
+has been wrong about a parameter more than once by reasoning from its name, and
+the only thing that has ever settled it is a measurement.

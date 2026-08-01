@@ -153,8 +153,15 @@ def draft():
 
 
 def test_guessed_kind_warns_but_writes(draft):
-    spec = draft.require("", "ampReverb")
-    assert spec.needs_review, "fixture expects a kind that is still a guess"
+    """Picks a still-guessed parameter rather than naming one.
+
+    Naming one couples this test to how far the pack has been verified: a
+    parameter measured against the plugin loses `needs_review`, and hardcoding
+    `ampReverb` broke here the moment it was. The property under test is about
+    the flag, not about any particular parameter carrying it.
+    """
+    spec = next(s for s in draft.parameters.values()
+                if s.needs_review and s.kind == "rotation" and s.writable)
 
     warnings: list[str] = []
     assert draft.to_stored(spec, 50, warnings=warnings) == "0.5", (
@@ -172,7 +179,9 @@ def test_guessed_kind_warns_but_writes(draft):
 def test_guessed_kind_warns_for_every_guessed_parameter(draft):
     """Not just the one above: the flag is per-parameter, so the warning is too."""
     guessed = [s for s in draft.parameters.values() if s.needs_review]
-    assert len(guessed) > 200, "the Tone King draft is almost entirely guesses"
+    # Most of the pack is still guesses; the verified ones are those a probe
+    # reached, and that number goes up as more are measured.
+    assert len(guessed) > 100, "the Tone King draft is mostly guesses"
     for spec in guessed[:20]:
         warnings: list[str] = []
         draft.to_stored(spec, _plausible(spec), warnings=warnings)

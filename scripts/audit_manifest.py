@@ -90,7 +90,10 @@ def numeric(shown: str, unit: str = None):
         # Seconds shown for a parameter stored in milliseconds. delayTime tops
         # out at 1500 ms, exactly where a plugin tends to switch its display.
         value *= 1000
-    if lowered.endswith(" l"):            # pan: the sign is a letter
+    # Pan: the sign is a letter, and the two plugins put it on opposite sides.
+    # Morgan writes "50 L", Tone King writes "L 50". Handling only one of them
+    # reported a correctly declared -50..50 pan as a disagreement.
+    if lowered.endswith(" l") or re.match(r"^l\s*[\d.]", lowered):
         value = -value
     return value
 
@@ -191,20 +194,88 @@ def audit(pack_id: str) -> int:
         try:
             revmap = run_probe(binary, pack.audio_unit, "revmap")
         except StateNotADocument:
-            return cannot_verify(pack, params)
+            return verify_via_state(pack, params, binary)
         checker = BoundsChecker(binary, pack.audio_unit)
         return compare(pack, params, revmap, checker)
 
 
-def cannot_verify(pack, params) -> int:
-    """The plugin answers, but its state cannot be written a key at a time.
+def verify_via_state(pack, params, binary) -> int:
+    """Fall back to the state probe for a plugin that keeps no XML document.
 
-    Morgan's ranges were verified by putting a preset key into the plugin's own
-    state document and reading back which control moved. A plugin that keeps
-    state as opaque bytes gives no such handle, so the two lists can only be
-    matched by name — and a name is exactly what this project keeps catching
-    itself trusting. Report the situation rather than guessing a mapping.
+    `au_probe`'s revmap edits an attribute in the plugin's state document, which
+    only exists for plugins that store state as text. Tone King stores the same
+    binary record format its presets use — but `format/` parses that, so the
+    same experiment runs with the halves swapped and the mapping is just as
+    verified. See scripts/probe_state.py.
     """
+    from probe_state import Probe, edited
+    from format.parser import parse
+    from format.structured import build
+
+    workdir = binary.parent
+    probe = Probe(pack.audio_unit, workdir)
+    probe.binary = binary                      # already built by the caller
+    state = probe.baseline_state()
+    try:
+        preset = build(parse(state))
+    except Exception:
+        return cannot_verify(pack, params)
+    if not preset.parameters:
+        return cannot_verify(pack, params)
+
+    print(f"  state is a {preset.file_header!r} preset document with "
+          f"{len(preset.parameters)} parameters; probing it directly.\n")
+
+    targets, blobs = [], [state]
+    for param in preset.parameters:
+        try:
+            current = float(param.value)
+        except ValueError:
+            continue
+        target = f"{current + 1 if current <= 0.5 else current - 1:g}"
+        targets.append(param)
+        blobs += [edited(state, param.module_path, param.key, target), state]
+
+    results = probe.apply_many(blobs)
+    mapped = {}
+    for i, param in enumerate(targets):
+        before, after = results[i * 2], results[i * 2 + 1]
+        moved = [a for a, r in after.items()
+                 if abs(r["value"] - before[a]["value"]) > 1e-9]
+        if len(moved) == 1:
+            path = f"{param.module_path}/{param.key}" if param.module_path else param.key
+            mapped[path] = moved[0]
+
+    verified = disagrees = 0
+    for path, spec in sorted(pack.parameters.items()):
+        address = mapped.get(path.lstrip("/"))
+        if address is None or spec.min is None:
+            continue
+        control = params[address]
+        lo = numeric(control["minString"], spec.unit)
+        hi = numeric(control["maxString"], spec.unit)
+        if lo is UNPARSEABLE or hi is UNPARSEABLE:
+            continue
+        if (spec.min, spec.max) == (lo, hi):
+            verified += 1
+        else:
+            disagrees += 1
+            print(f"DISAGREES  {path}")
+            print(f"           manifest {spec.min} .. {spec.max}")
+            print(f"           plugin   {control['minString']} .. {control['maxString']}"
+                  f"   ({control['displayName']})\n")
+
+    print(f"{len(mapped)} of {len(targets)} keys map to exactly one control.")
+    print(f"{verified} declared ranges verified, {disagrees} DISAGREE.")
+    unverified = len(pack.parameters) - len(mapped)
+    print(f"{unverified} parameters were not reached — they have no control in "
+          f"this plugin's\nAudio Unit, so nothing here can say anything about "
+          f"them.")
+    return 1 if disagrees else 0
+
+
+def cannot_verify(pack, params) -> int:
+    """Neither probe works: the state is neither a document nor a preset."""
     declared = sum(
         1 for s in pack.parameters.values()
         if s.min is not None or s.max is not None

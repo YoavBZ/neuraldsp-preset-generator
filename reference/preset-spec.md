@@ -195,12 +195,18 @@ nothing here knows what its bytes mean.
 silently: a binary width other than 8 bytes, and a record layout that is not
 `PARAM {id, value}`.
 
-### What Tone King's ranges cost
+### Verifying a plugin whose state is a preset
 
-Its Audio Unit publishes 96 controls with real ranges, but its AU state is the
-same opaque binary rather than a document — so the write-a-key-and-see-what-moves
-probe that verified every Morgan range cannot run against it, and
-`audit_manifest.py` reports `CANNOT VERIFY`. Matching preset keys to controls by
-name alone reaches 35 of 259. The pack therefore ships with **no declared
-ranges** rather than transcribed guesses. See
+Tone King keeps its Audio Unit state in this same record format rather than as a
+document, so the probe that verified every Morgan range looked for `<?xml`,
+found none, and reported `CANNOT VERIFY`. The pack shipped with no declared
+ranges rather than 35 guesses matched by name.
+
+Since `format/` parses that format, `scripts/probe_state.py` runs the same
+experiment through it, and `audit_manifest.py` falls back to it automatically.
+94 of 255 preset keys map to exactly one control each — which promptly showed
+that 44 of them had the wrong guessed `kind`. See
 [../docs/measuring-against-the-plugin.md](../docs/measuring-against-the-plugin.md).
+
+Parameters that no probe reaches keep `needs_review`, and writing through one
+warns.
