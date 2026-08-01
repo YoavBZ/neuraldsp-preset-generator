@@ -222,8 +222,12 @@ case "revmap":
     // rebuilt byte for byte around an edited document.
     let bytes = [UInt8](blob)
     guard let xmlStart = bytes.firstRange(of: Array("<?xml".utf8))?.lowerBound else {
-        FileHandle.standardError.write("no document in state blob\n".data(using: .utf8)!)
-        exit(1)
+        FileHandle.standardError.write(
+            ("STATE_IS_NOT_A_DOCUMENT: this plugin keeps its state as opaque bytes "
+             + "rather than an XML document, so a preset key cannot be written into "
+             + "it. `params` still works; `revmap` and `values` do not.\n")
+                .data(using: .utf8)!)
+        exit(3)
     }
     let header = Array(bytes[0..<xmlStart])
     var docEnd = bytes.count

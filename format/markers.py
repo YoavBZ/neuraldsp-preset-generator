@@ -80,3 +80,58 @@ def fix_value_prefix(prefix: bytes, value: str) -> bytes:
             f"count more than once."
         )
     return prefix[:-2] + bytes([n]) + prefix[-1:]
+
+
+# --- typed binary values ---------------------------------------------------
+# Not every Neural DSP plugin stores its numbers as text. Tone King Imperial
+# MKII writes them as raw IEEE-754 doubles behind a marker that mirrors the
+# string one but ends 0x04 instead of 0x05:
+#
+#     0x01 <LEN> 0x04  <LEN-1 payload bytes>  0x00
+#
+# Only LEN == 0x09 (an 8-byte double) occurs in the 135 Tone King presets on
+# hand, but the length is read from the marker rather than assumed, so a
+# different width decodes as opaque bytes instead of corrupting the file.
+#
+# This encoding is why a text-only parser cannot be pointed at these files: a
+# payload byte that happens to land in printable ASCII gets read as text. The
+# exponent bytes of 120.0 are 0x5e 0x40 — "^@" — which is how an early Tone
+# King draft acquired a parameter named `^@presetNameProp`.
+TYPED_VALUE_TAIL = 0x04     # a number: 8 bytes, little-endian IEEE-754 double
+OPAQUE_VALUE_TAIL = 0x06    # an identifier: 8 bytes with no numeric meaning
+TYPED_LEN_OFFSET = 1
+DOUBLE_WIDTH = 8
+
+# Both tails are exclusive to Tone King across the 681 factory presets on hand;
+# Morgan, Nolly X and Plini X use none, so widening the parser to accept them
+# cannot change how those three are read.
+BINARY_VALUE_TAILS = (TYPED_VALUE_TAIL, OPAQUE_VALUE_TAIL)
+
+
+def is_typed_value_prefix(prefix: bytes) -> bool:
+    """True for a 0x01 <LEN> <tail> marker introducing a fixed-width binary body.
+
+    The 0x06 form matters even though nothing reads its value: `presetUIDProp`
+    uses it, and a parser that scans it as text runs off the end of the payload
+    and glues a stray byte onto the *next* key. That is how the first parameter
+    record in every Tone King preset came out named `fPARAM`.
+    """
+    return (
+        len(prefix) >= 3
+        and prefix[-3] == VALUE_PREFIX_HEAD
+        and prefix[-1] in BINARY_VALUE_TAILS
+    )
+
+
+def is_opaque_value_prefix(prefix: bytes) -> bool:
+    """True when the binary body has no interpretation, only bytes to preserve."""
+    return (
+        len(prefix) >= 3
+        and prefix[-3] == VALUE_PREFIX_HEAD
+        and prefix[-1] == OPAQUE_VALUE_TAIL
+    )
+
+
+def typed_payload_length(prefix: bytes) -> int:
+    """How many binary bytes follow this marker."""
+    return prefix[-2] - TYPED_LEN_OFFSET

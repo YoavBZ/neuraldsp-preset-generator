@@ -13,8 +13,11 @@ describe a change in plain English, and get a new one back.
 > (`samples/Example_Clean_PR12.xml`); everything else you'd want as a template
 > comes from your own library.
 
-Format support so far targets **Morgan Amps Suite**. Other Neural DSP plugins
-are supported by adding a pack — see [Packs](#packs).
+Format support targets **Morgan Amps Suite** (fully measured against the plugin)
+and **Tone King Imperial MKII** (a draft pack: reads, edits and writes, but its
+ranges are undeclared — see [reference/preset-spec.md](reference/preset-spec.md)).
+Both Neural DSP preset encodings are handled. Other plugins are supported by
+adding a pack — see [Packs](#packs).
 
 ## Requirements
 

@@ -88,11 +88,17 @@ def build_probe(workdir: pathlib.Path) -> pathlib.Path:
     return binary
 
 
+class StateNotADocument(Exception):
+    """The plugin keeps its state as opaque bytes, so keys cannot be written."""
+
+
 def run_probe(binary: pathlib.Path, au: dict, mode: str, *args: str):
     result = subprocess.run(
         [str(binary), au["type"], au["subtype"], au["manufacturer"], mode, *args],
         capture_output=True, text=True,
     )
+    if "STATE_IS_NOT_A_DOCUMENT" in result.stderr:
+        raise StateNotADocument()
     if result.returncode != 0:
         die(
             f"the plugin would not answer ({mode}): {result.stderr.strip()}\n"
@@ -153,9 +159,38 @@ def audit(pack_id: str) -> int:
         binary = build_probe(pathlib.Path(tmp))
         print(f"Asking {pack.display_name} for its own parameter table…\n")
         params = {p["address"]: p for p in run_probe(binary, pack.audio_unit, "params")}
-        revmap = run_probe(binary, pack.audio_unit, "revmap")
+        try:
+            revmap = run_probe(binary, pack.audio_unit, "revmap")
+        except StateNotADocument:
+            return cannot_verify(pack, params)
         checker = BoundsChecker(binary, pack.audio_unit)
         return compare(pack, params, revmap, checker)
+
+
+def cannot_verify(pack, params) -> int:
+    """The plugin answers, but its state cannot be written a key at a time.
+
+    Morgan's ranges were verified by putting a preset key into the plugin's own
+    state document and reading back which control moved. A plugin that keeps
+    state as opaque bytes gives no such handle, so the two lists can only be
+    matched by name — and a name is exactly what this project keeps catching
+    itself trusting. Report the situation rather than guessing a mapping.
+    """
+    declared = sum(
+        1 for s in pack.parameters.values()
+        if s.min is not None or s.max is not None
+    )
+    print(f"CANNOT VERIFY {pack.display_name}.\n")
+    print(f"  The plugin answers and publishes {len(params)} controls with real")
+    print(f"  ranges, but it keeps its state as opaque bytes rather than a")
+    print(f"  document, so a preset key cannot be written into it and no key can")
+    print(f"  be tied to a control by experiment.\n")
+    print(f"  {len(pack.parameters)} parameters in the pack, {declared} with a declared range.")
+    print(f"  Matching the two lists by name is a guess; do not bulk-import ranges")
+    print(f"  that way. Read `au_probe params` alongside the plugin UI and fill")
+    print(f"  them in one at a time, each with a range_source saying how.\n")
+    print(f"  See docs/measuring-against-the-plugin.md.")
+    return 3
 
 
 def compare(pack, params, revmap, checker) -> int:

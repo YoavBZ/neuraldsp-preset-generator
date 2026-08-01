@@ -222,6 +222,14 @@ Agreement between name-based arguments is not corroboration. Render the audio.
   a tone decision needs; they are not a datasheet frequency response.
 - macOS only, and it needs the plugin licensed and installed. Unlicensed Neural
   DSP plugins fail to instantiate with `-1`.
+- **It only works on a plugin whose state is a document.** Everything here rests
+  on being able to write one preset key into the plugin's own state and read
+  back which control moved. Tone King Imperial MKII keeps its state as opaque
+  bytes, so `revmap` and `values` cannot run against it and `audit_manifest.py`
+  reports `CANNOT VERIFY`. Its Audio Unit still publishes real ranges via
+  `params` — but nothing ties them to preset keys except their names, which is
+  the one kind of evidence this document exists to distrust. Its pack ships with
+  no declared ranges rather than 35 name-matched guesses.
 
 ## Why an undeclared range beats a guessed one
 
