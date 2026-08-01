@@ -4,25 +4,79 @@
   "display_name": "Tone King Imperial MKII",
   "vendor": "Neural DSP",
   "file_header": "neural_dsp_toneking",
+  "switch_encoding": "numeric",
   "audio_unit": {
     "type": "aumf",
     "subtype": "TKI2",
     "manufacturer": "NDSP",
-    "note": "`scripts/audit_manifest.py --pack toneking` reports CANNOT VERIFY against this plugin, and that is correct rather than a bug: it publishes 96 controls with real ranges, but keeps its Audio Unit state as opaque bytes instead of a document, so a preset key cannot be written into it and no key can be tied to a control by experiment. Matching the two lists by name alone reaches 35 of 259 and is a guess."
+    "note": "`scripts/audit_manifest.py --pack toneking` parses the Audio Unit state through the preset format and maps 94 of 255 numeric state keys to controls by experiment. Those mappings cover 94 of the 96 published controls; the other two are host-only Preset Previous/Next controls. A key not reached by the one-value nudge remains unverified: no movement does not by itself prove that no control exists."
   },
   "draft": true,
   "drafted_from": "Default.xml",
-  "description": "DRAFT pack for Tone King Imperial MKII, in the second Neural DSP preset encoding: 8-byte binary doubles inside PARAM records. Reading, editing and writing all work. 94 of its parameters have been VERIFIED against the running plugin by writing each key into the plugin's own state and reading back which control moved (scripts/probe_state.py); for those, the kind and the plugin's own control name are facts, and a numeric range is declared where the plugin published one. The rest are still guesses from key names and carry `needs_review`. Selector members are not known for any of them.",
+  "description": "DRAFT pack for Tone King Imperial MKII, in the second Neural DSP preset encoding: 8-byte binary doubles inside PARAM records. Reading, editing and writing all work. 94 of 255 numeric state keys have been VERIFIED against the running plugin by writing each key into the plugin's own state and reading back which control moved (scripts/probe_state.py); for those, the kind and the plugin's own control name are facts, and a numeric range is declared where the plugin published one. The mappings cover every published control except the host-only Preset Previous/Next controls. The 161 numeric keys not reached by the one-value experiment remain unverified; most carry `needs_review` when their kind was guessed.",
+  "enums": {
+    "cab_mics": {
+      "0": "Dynamic 57 E33",
+      "1": "Dynamic 409 E33",
+      "2": "Dynamic 421 E33",
+      "3": "Condenser 184 E33",
+      "4": "Condenser 414 E33",
+      "5": "Condenser U47 E33",
+      "6": "Ribbon 121 E33",
+      "7": "Ribbon 160 E33",
+      "8": "Dynamic 57 H30",
+      "9": "Dynamic 409 H30",
+      "10": "Dynamic 421 H30",
+      "11": "Condenser 184 H30",
+      "12": "Condenser 414 H30",
+      "13": "Condenser U47 H30",
+      "14": "Ribbon 121 H30",
+      "15": "Ribbon 160 H30",
+      "16": "Custom IR"
+    },
+    "delay_notes": {
+      "0": "1/64T",
+      "1": "1/64",
+      "2": "1/32T",
+      "3": "1/64D",
+      "4": "1/32",
+      "5": "1/16T",
+      "6": "1/32D",
+      "7": "1/16",
+      "8": "1/8T",
+      "9": "1/16D",
+      "10": "1/8",
+      "11": "1/4T",
+      "12": "1/8D",
+      "13": "1/4",
+      "14": "1/2T",
+      "15": "1/4D",
+      "16": "1/2",
+      "17": "1/1T",
+      "18": "1/2D",
+      "19": "1/1",
+      "20": "1/1D"
+    }
+  },
   "parameters": {
     "/ampAttenuation": {
       "kind": "enum",
-      "note": "unit unknown",
-      "needs_confirmation": true,
+      "members": {
+        "0": "-36 dB",
+        "1": "-24 dB",
+        "2": "-15 dB",
+        "3": "-9 dB",
+        "4": "-3 dB",
+        "5": "0 dB"
+      },
       "ui": "Amp Attenuation"
     },
     "/ampHfc": {
       "kind": "enum",
-      "needs_confirmation": true,
+      "members": {
+        "0": "NORMAL",
+        "1": "MAX"
+      },
       "ui": "Amp HFC"
     },
     "/ampOutput": {
@@ -43,8 +97,10 @@
     },
     "/ampType": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "members": {
+        "0": "Rhythm Channel",
+        "1": "Lead Channel"
+      },
       "ui": "Amp Channel"
     },
     "/ampView": {
@@ -73,7 +129,7 @@
     },
     "/cab1MicIR": {
       "kind": "enum",
-      "needs_confirmation": true,
+      "enum": "cab_mics",
       "ui": "Cab L Mic IR"
     },
     "/cab1Pan": {
@@ -126,8 +182,7 @@
     },
     "/cab2MicIR": {
       "kind": "enum",
-      "note": "unit unknown",
-      "needs_confirmation": true,
+      "enum": "cab_mics",
       "ui": "Cab R Mic IR"
     },
     "/cab2Pan": {
@@ -272,7 +327,10 @@
     },
     "/compSpeed": {
       "kind": "enum",
-      "needs_confirmation": true,
+      "members": {
+        "0": "Slow",
+        "1": "Fast"
+      },
       "ui": "Compressor Speed"
     },
     "/compVolume": {
@@ -298,13 +356,11 @@
       "ui": "Delay Feedback"
     },
     "/delayHPF": {
-      "kind": "enum",
-      "needs_confirmation": true,
+      "kind": "fraction",
       "ui": "Delay High Pass"
     },
     "/delayLPF": {
-      "kind": "enum",
-      "needs_confirmation": true,
+      "kind": "fraction",
       "ui": "Delay Low Pass"
     },
     "/delayMix": {
@@ -317,14 +373,18 @@
     },
     "/delayNoteMs": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "members": {
+        "0": "Note",
+        "1": "ms"
+      },
       "ui": "Delay Note/ms Display"
     },
     "/delayStereoMode": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "members": {
+        "0": "Mono",
+        "1": "Stereo"
+      },
       "ui": "Delay Mode"
     },
     "/delaySwell": {
@@ -333,26 +393,24 @@
     },
     "/delaySync": {
       "kind": "switch",
-      "members": null,
-      "needs_confirmation": true,
       "ui": "Delay Sync"
     },
     "/delaySyncNoteL": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "enum": "delay_notes",
       "ui": "Delay Sync Note L"
     },
     "/delaySyncNoteR": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "enum": "delay_notes",
       "ui": "Delay Sync Note R"
     },
     "/delayTapTempo": {
       "kind": "enum",
-      "unit": "bpm",
-      "needs_confirmation": true,
+      "members": {
+        "0": "Tap 1",
+        "1": "Tap 2"
+      },
       "ui": "Delay Tap Tempo"
     },
     "/delayTape": {
@@ -937,9 +995,7 @@
       "needs_confirmation": true
     },
     "/reverbPreDelay": {
-      "kind": "enum",
-      "unit": "ms",
-      "needs_confirmation": true,
+      "kind": "fraction",
       "ui": "Reverb Pre-Delay"
     },
     "/rhythmAmpBass": {
@@ -1176,8 +1232,10 @@
     },
     "/wahMode": {
       "kind": "enum",
-      "members": null,
-      "needs_confirmation": true,
+      "members": {
+        "0": "Auto-Wah OFF",
+        "1": "Auto-Wah ON"
+      },
       "ui": "Wah Mode"
     },
     "/wahPosition": {

@@ -188,6 +188,37 @@ def test_guessed_kind_warns_for_every_guessed_parameter(draft):
         assert any("guessed kind" in w for w in warnings), spec.path
 
 
+def test_tone_king_verified_switches_use_the_record_encoding(draft):
+    spec = draft.require("", "ampsActive")
+    assert spec.kind == "switch"
+    assert spec.switch_encoding == "numeric"
+    assert draft.to_stored(spec, True, warnings=[]) == "1"
+    assert draft.to_stored(spec, False, warnings=[]) == "0"
+
+
+def test_tone_king_unlabelled_continuous_controls_are_not_enums(draft):
+    for key in ("delayHPF", "delayLPF", "reverbPreDelay"):
+        spec = draft.require("", key)
+        assert spec.kind == "fraction"
+        assert spec.members is None
+        assert not spec.needs_confirmation
+
+
+def test_tone_king_mapped_selector_tables_are_confirmed(draft):
+    assert draft.require("", "ampAttenuation").members["5"] == "0 dB"
+    assert draft.require("", "cab1MicIR").members["16"] == "Custom IR"
+    assert draft.require("", "delaySyncNoteL").members["13"] == "1/4"
+    assert draft.require("", "wahMode").members == {
+        "0": "Auto-Wah OFF", "1": "Auto-Wah ON"
+    }
+    still_unknown = {
+        spec.path for spec in draft.parameters.values() if spec.needs_confirmation
+    }
+    assert still_unknown == {
+        "flangerVHMode", "midiMode", "phaserMode", "reverbMode"
+    }
+
+
 def test_reviewed_parameters_stay_silent(pack):
     """Morgan has been measured against the running plugin. If the new warning
     fires here it is noise, and noise is how a real warning gets ignored."""

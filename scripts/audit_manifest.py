@@ -213,8 +213,7 @@ def verify_via_state(pack, params, binary) -> int:
     from format.structured import build
 
     workdir = binary.parent
-    probe = Probe(pack.audio_unit, workdir)
-    probe.binary = binary                      # already built by the caller
+    probe = Probe(pack.audio_unit, workdir, binary=binary)
     state = probe.baseline_state()
     try:
         preset = build(parse(state))
@@ -246,18 +245,37 @@ def verify_via_state(pack, params, binary) -> int:
             path = f"{param.module_path}/{param.key}" if param.module_path else param.key
             mapped[path] = moved[0]
 
-    verified = disagrees = 0
+    verified_ranges = verified_selectors = disagrees = unchecked = 0
     for path, spec in sorted(pack.parameters.items()):
         address = mapped.get(path.lstrip("/"))
-        if address is None or spec.min is None:
+        if address is None:
             continue
         control = params[address]
+
+        member_verdict = published_members(spec, control)
+        if member_verdict is not None:
+            if member_verdict[0] == "agrees":
+                verified_selectors += 1
+            elif member_verdict[0] == "unchecked":
+                unchecked += 1
+                print(f"NOT CHECKED {path}: the manifest declares selector members "
+                      f"but the Audio Unit publishes no valueStrings.\n")
+            else:
+                disagrees += 1
+                print(f"DISAGREES  {path}")
+                for detail in member_verdict[1]:
+                    print(f"           {detail}")
+                print()
+
+        if spec.min is None and spec.max is None:
+            continue
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
         if lo is UNPARSEABLE or hi is UNPARSEABLE:
+            unchecked += 1
             continue
         if (spec.min, spec.max) == (lo, hi):
-            verified += 1
+            verified_ranges += 1
         else:
             disagrees += 1
             print(f"DISAGREES  {path}")
@@ -265,13 +283,54 @@ def verify_via_state(pack, params, binary) -> int:
             print(f"           plugin   {control['minString']} .. {control['maxString']}"
                   f"   ({control['displayName']})\n")
 
-    print(f"{len(mapped)} of {len(targets)} keys map to exactly one control.")
-    print(f"{verified} declared ranges verified, {disagrees} DISAGREE.")
-    unverified = len(pack.parameters) - len(mapped)
-    print(f"{unverified} parameters were not reached — they have no control in "
-          f"this plugin's\nAudio Unit, so nothing here can say anything about "
-          f"them.")
-    return 1 if disagrees else 0
+    print(f"{len(mapped)} of {len(targets)} numeric state keys map to exactly one control.")
+    print(f"{verified_ranges} declared ranges and {verified_selectors} selectors "
+          f"verified, {disagrees} DISAGREE, {unchecked} unchecked.")
+    report_state_coverage(params, len(targets), mapped)
+    return 1 if (disagrees or unchecked) else 0
+
+
+def report_state_coverage(params, target_count, mapped) -> None:
+    """Report missing state mappings without turning no movement into absence."""
+    not_reached = target_count - len(mapped)
+    print(
+        f"{not_reached} numeric state keys were not reached. A single nudge that "
+        f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
+        f"may have been a no-op\nor rejected by a discrete/quantized parameter."
+    )
+    mapped_controls = set(mapped.values())
+    missing = [p["displayName"] for a, p in params.items() if a not in mapped_controls]
+    print(
+        f"{len(mapped_controls)} of {len(params)} published Audio Unit controls were "
+        f"reached."
+    )
+    if missing:
+        print("Published controls not reached: " + ", ".join(sorted(missing)) + ".")
+
+
+def published_members(spec, control):
+    """Compare a declared enum with the Audio Unit's indexed labels.
+
+    Once the state experiment has mapped a preset key to this exact control,
+    ``valueStrings`` is stronger evidence than writing each index: Audio Unit
+    publishes the index order and labels together, including the baseline
+    value that a movement-only probe would otherwise skip.
+    """
+    if spec.kind != "enum" or not spec.members:
+        return None
+    labels = control.get("valueStrings")
+    if not labels:
+        return ("unchecked", [])
+    actual = {str(i): label for i, label in enumerate(labels)}
+    wrong = []
+    for index in sorted(set(spec.members) | set(actual), key=int):
+        declared = spec.members.get(index)
+        published = actual.get(index)
+        if declared != published:
+            wrong.append(
+                f"{index}: manifest {declared!r}, plugin {published!r}"
+            )
+    return ("disagrees", wrong) if wrong else ("agrees", [])
 
 
 def cannot_verify(pack, params) -> int:

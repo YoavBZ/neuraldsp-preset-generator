@@ -146,21 +146,33 @@ python scripts/probe_state.py --pack toneking --values ampReverb 0,0.5,1
 
 `audit_manifest.py` falls back to this automatically. Against Tone King it maps
 **94 of 255 preset keys to exactly one control each** — covering 94 of the
-plugin's 96 published controls — in about a minute. The remaining 161 keys move
-no control at all: they are preset state with no Audio Unit parameter behind
-them, which is a fact about the plugin rather than a gap in the method.
+plugin's 96 published controls — in about a minute. The other two published
+controls are host-only Preset Previous/Next actions. The remaining 161 keys did
+not move a control for the one value tried. That makes them **unreached**, not
+proven control-less: an enum can reject an invalid nudge, and a quantized value
+can turn it into a no-op.
 
 Two things this immediately found, neither of which name-matching would have:
 
 - **44 of those 94 had the wrong `kind`**, guessed from the key name by
   `bootstrap_pack.py`. Twenty were switches read as knobs — writing `50` to
-  `ampsActive` stored `0.5` where the plugin wants on/off.
+  `ampsActive` stored `0.5` where the plugin wants on/off. Tone King stores its
+  switches as binary `0`/`1`, unlike the text `false`/`true` used by Morgan, so
+  the manifest records that storage encoding too.
+- **12 mapped selectors publish complete indexed label tables.** Once a key is
+  tied to the exact Audio Unit control, its `valueStrings` order verifies the
+  stored integer-to-label mapping without guessing from names.
 - **The pan convention is reversed between the two plugins.** Morgan displays
   `50 L`, Tone King displays `L 50`. The audit reported a correctly declared
   pan as a disagreement until the parser handled both.
 
 Batch the writes. Instantiating a plugin costs a second or two, so a probe that
 spawns a process per value turns a one-minute run into twenty.
+
+Treat a missing mapping as an audit gap. To distinguish an absent parameter
+from a rejected or no-op nudge, retry known-valid values from real presets or
+probe the control manually; do not turn “nothing moved once” into an existence
+claim.
 
 ## Measuring what a control does to the sound
 

@@ -143,6 +143,23 @@ def test_records_are_named_by_their_id_field():
     assert not {"id", "value"} & {p.key for p in pre.parameters}
 
 
+def test_tone_king_switch_writes_use_numeric_binary_values():
+    """Tone King's switches are doubles, not the text true/false used by
+    Morgan. Promoting their kinds to switch without carrying that encoding to
+    the writer made every real switch write fail at ``float('true')``."""
+    from packs.loader import load_pack
+
+    pack = load_pack("toneking")
+    spec = pack.require("", "ampsActive")
+    assert pack.to_stored(spec, True, warnings=[]) == "1"
+    assert pack.to_stored(spec, False, warnings=[]) == "0"
+
+    pre = build(parse(preset(record("ampsActive", 0.0))))
+    set_parameter(pre, "", "ampsActive", pack.to_stored(spec, True, warnings=[]))
+    reparsed = build(parse(write(pre.tokens)))
+    assert reparsed.by_path[("", "ampsActive")].value == "1"
+
+
 def test_a_printable_record_count_does_not_break_the_first_record():
     """The record list is introduced by `0x01 <count+1>`. When that byte is
     printable it is read as text and glued to the first marker (`fPARAM`), which

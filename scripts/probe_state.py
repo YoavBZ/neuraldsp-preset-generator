@@ -49,16 +49,20 @@ PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 class Probe:
     """One plugin instance's worth of state read/write, via the Swift helper."""
 
-    def __init__(self, au: dict, workdir: pathlib.Path):
-        if shutil.which("swiftc") is None:
-            die("swiftc not found. Install the Xcode command line tools.")
-        self.binary = workdir / "au_probe"
-        built = subprocess.run(
-            ["swiftc", "-swift-version", "5", "-O", str(PROBE_SOURCE), "-o", str(self.binary)],
-            capture_output=True, text=True,
-        )
-        if built.returncode != 0:
-            die(f"could not build au_probe.swift:\n{built.stderr}")
+    def __init__(
+        self, au: dict, workdir: pathlib.Path, binary: pathlib.Path | None = None
+    ):
+        self.binary = binary or workdir / "au_probe"
+        if binary is None:
+            if shutil.which("swiftc") is None:
+                die("swiftc not found. Install the Xcode command line tools.")
+            built = subprocess.run(
+                ["swiftc", "-swift-version", "5", "-O", str(PROBE_SOURCE),
+                 "-o", str(self.binary)],
+                capture_output=True, text=True,
+            )
+            if built.returncode != 0:
+                die(f"could not build au_probe.swift:\n{built.stderr}")
         self.au = au
         self.workdir = workdir
 

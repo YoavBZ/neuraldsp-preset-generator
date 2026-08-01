@@ -83,6 +83,11 @@ class ParamSpec:
     # instead of failing, so nothing downstream can notice.
     needs_confirmation: bool = False
     needs_review: bool = False
+    # Most presets spell switches as "true"/"false". Record-format plugins
+    # such as Tone King store the same fact as a binary double, so their
+    # writable representation is 1/0. This is storage syntax, not a different
+    # human-facing kind.
+    switch_encoding: str = "text"
 
     @property
     def path(self) -> str:
@@ -184,6 +189,8 @@ class Pack:
 
         try:
             stored = to_binary(spec.kind, human, spec.unit)
+            if spec.kind == "switch" and spec.switch_encoding == "numeric":
+                stored = "1" if stored == "true" else "0"
         except (ValueError, OverflowError, TypeError) as e:
             raise PackError(f"{spec.path}: {e}") from e
 
@@ -318,6 +325,12 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         )
     raw = json.loads(path.read_text())
     enums = raw.get("enums", {})
+    switch_encoding = raw.get("switch_encoding", "text")
+    if switch_encoding not in ("text", "numeric"):
+        raise PackError(
+            f"Pack {pack_id!r} has unknown switch_encoding {switch_encoding!r}; "
+            f"expected 'text' or 'numeric'."
+        )
 
     params: Dict[str, ParamSpec] = {}
     for full, entry in raw["parameters"].items():
@@ -339,6 +352,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             writable=entry.get("writable", True),
             needs_confirmation=entry.get("needs_confirmation", False),
             needs_review=entry.get("needs_review", False),
+            switch_encoding=entry.get("switch_encoding", switch_encoding),
         )
 
     return Pack(

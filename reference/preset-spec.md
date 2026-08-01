@@ -205,8 +205,11 @@ ranges rather than 35 guesses matched by name.
 Since `format/` parses that format, `scripts/probe_state.py` runs the same
 experiment through it, and `audit_manifest.py` falls back to it automatically.
 94 of 255 preset keys map to exactly one control each — which promptly showed
-that 44 of them had the wrong guessed `kind`. See
+that 44 of them had the wrong guessed `kind`. Those mappings cover every
+published control except the host-only Preset Previous/Next actions, and also
+tie 12 selector label tables to their stored indices. See
 [../docs/measuring-against-the-plugin.md](../docs/measuring-against-the-plugin.md).
 
-Parameters that no probe reaches keep `needs_review`, and writing through one
-warns.
+An unreached key is not declared control-less: a single value can be rejected
+or quantized into a no-op. Guessed kinds keep `needs_review`, and writing through
+one warns.

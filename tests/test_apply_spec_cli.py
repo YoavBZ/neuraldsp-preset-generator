@@ -199,6 +199,40 @@ def test_reviewed_pack_writes_without_a_guessed_kind_warning(out):
     assert "needs_review" not in result.stderr
 
 
+def test_tone_king_numeric_switch_writes_through_the_cli(tmp_path):
+    """Exercise the format, pack and CLI together. Unit-testing `switch` alone
+    missed that Tone King's typed value encoder cannot encode text true/false."""
+    import struct
+
+    def text(value: str) -> bytes:
+        body = value.encode()
+        return bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00PARAM\x00\x01\x02id\x00"
+        + text("ampsActive")
+        + b"value\x00\x01\x09\x04"
+        + struct.pack("<d", 0.0)
+        + b"\x00"
+    )
+    spec = tmp_path / "spec.json"
+    spec.write_text(json.dumps({
+        "parameters": [{"module": "", "key": "ampsActive", "value": True}]
+    }))
+    output = tmp_path / "out.xml"
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(template),
+         "--spec", str(spec), "--out", str(output)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+
+    from format.parser import parse
+    from format.structured import build
+    assert build(parse(output.read_bytes())).by_path[("", "ampsActive")].value == "1"
+
+
 # --- guards ---------------------------------------------------------------
 
 

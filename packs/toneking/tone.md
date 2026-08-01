@@ -16,13 +16,15 @@ something to find, and so nobody mistakes silence for "nothing to say".
 - **94 parameters verified against the running plugin**, by writing each key
   into the plugin's own state and reading back which control moved. For those,
   the kind and the plugin's own control name are facts, and 29 carry a measured
-  numeric range. This corrected 44 wrong kinds — twenty of them switches that
-  had been guessed as knobs.
-- **The other 161 are still guesses**, marked `needs_review`; writing through
-  one warns, and `show.py` flags them on the way in. They move no Audio Unit
-  control at all, so the probe cannot reach them.
-- **No selector members**, for any of them. And no idea which control does what
-  to the sound.
+  numeric range. This corrected 44 wrong kinds — twenty of them numeric 0/1
+  switches that had been guessed as knobs — and confirms 12 selector tables
+  from the mapped controls' published labels.
+- **The other 161 numeric state keys were not reached by the one-value probe.**
+  That is not proof that no control exists: a nudge can be rejected or be a
+  no-op. Of those, 155 still have guessed kinds marked `needs_review`; writing
+  through one warns, and `show.py` flags it on the way in.
+- **Four unreached mode selectors still have unknown members.** And no idea
+  which control does what to the sound.
 
 ## What that means in practice
 
@@ -44,9 +46,10 @@ python scripts/audit_manifest.py --pack toneking
 ```
 
 It maps keys to controls through the plugin's own state and checks every
-declared range. What it cannot give you is **selector members** and **what any
-control does to the sound** — for those, `scripts/au_render.swift` and
-`scripts/spectrum_diff.py` work against any installed plugin. See
+declared range and mapped selector table. What it cannot give you is the member
+table of an **unreached selector** or **what any control does to the sound** —
+for the latter, `scripts/au_render.swift` and `scripts/spectrum_diff.py` work
+against any installed plugin. See
 [docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
 
 Whatever you add, record a `range_source` saying how you checked. This project
