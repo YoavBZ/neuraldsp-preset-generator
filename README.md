@@ -89,7 +89,9 @@ reference/       — shared detail, loaded on demand (spec format, cab/IRs,
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
                    selectors), au_probe.swift (ask the running plugin directly),
                    au_render.swift + spectrum_diff.py (measure what a control
-                   does to the sound), bootstrap_pack.py (support a new plugin),
+                   does to the sound), audit_manifest.py (re-check every
+                   declared fact against the plugin), bootstrap_pack.py
+                   (support a new plugin),
                    build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation

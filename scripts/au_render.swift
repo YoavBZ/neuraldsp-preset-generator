@@ -121,7 +121,18 @@ func nextFloat() -> Float {
 }
 var noise = [Float](repeating: 0, count: total)
 let amp = args.count > 7 ? (Float(args[7]) ?? 0.25) : 0.25
-for i in 0..<total { noise[i] = nextFloat() * amp }
+// An 8th argument switches the excitation to a sine, e.g. "sine:220". Noise
+// measures what a control does to the spectrum; a sine measures how much
+// distortion the amp is making, which is what "break-up" actually means.
+let source = args.count > 8 ? args[8] : "noise"
+if source.hasPrefix("sine:") {
+    let freq = Double(source.dropFirst(5)) ?? 220.0
+    for i in 0..<total {
+        noise[i] = Float(sin(2.0 * Double.pi * freq * Double(i) / sampleRate)) * amp
+    }
+} else {
+    for i in 0..<total { noise[i] = nextFloat() * amp }
+}
 
 var cursor = 0
 var pulls = 0

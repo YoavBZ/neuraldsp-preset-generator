@@ -17,8 +17,11 @@ tightened low end and a 12″ speaker — so more bass, headroom and punch than 
 real Princeton. 12W class AB, 2×6V6, three-spring tube reverb.
 
 - **Reach for it:** clean rhythm, country, blues cleans. The default clean platform.
-- **Range:** sparkly clean → edge-of-breakup. It's 12 watts; past ~55–60% volume
-  it starts to sag and grit up, which is the point.
+- **Range:** sparkly clean → edge-of-breakup. It's 12 watts and it does grit up,
+  but **where depends on how hard you hit it**, so don't quote a fixed number.
+  Measured: at a modest input the knee is around 65–70% (distortion doubles);
+  feed it three times the signal and the same grit arrives at 30%. `inputGain`
+  and the guitar move it as much as the knob does.
 - **Knobs:** `pr12Volume`, `pr12Treble`, `pr12Bass`, `pr12Reverb`, `pr12Dwell`.
 - **Dwell is the trick.** Morgan added it to the Princeton circuit specifically so
   you can run a high reverb mix without washing out. Want wet but defined? Raise
@@ -48,8 +51,14 @@ tube reverb. 50W.
 - **Knobs:** `sw50rVolume` (preamp gain — this is what breaks up),
   `sw50rLevel` (master, adds no gain), `sw50rTreble`, `sw50rMid`, `sw50rBass`,
   `sw50rReverb`, `sw50rBright`, `sw50rTrebleBoost`, `sw50rInputMode`.
-- **Mids do the singing.** `sw50rMid` around 60–68% is where the sustained lead
-  voice lives.
+- **`sw50rMid` is mostly a level control.** Measured across its travel it lifts
+  the whole spectrum ~7.5 dB with only ~2 dB of extra emphasis at 1.6–2.5 kHz —
+  a passive tone stack, not a mid band. There is nothing special about 60–68%;
+  this file used to claim the lead voice lived there, and no spectral feature
+  does. Turning it up mostly makes the amp louder and more driven, which is a
+  real way to get a singing lead — just not the reason previously given. Use
+  `sw50rTreble` (a genuine tilt: −3.4 dB at 59 Hz, +7.2 dB at 2.5 kHz) or the
+  graphic EQ to change voicing.
 
 > Earlier notes in this repo called SW50R a Vox-style chime amp in AC30
 > territory, good for Brian May and AC/DC. That was wrong, and it mattered — it
@@ -101,9 +110,12 @@ through `EQBand9`, in dB. Naming the frequency beats naming the band number.
 - **"muddy" / "woolly"** → cut 125/250 Hz, raise `EQHpf` to 80–90 Hz, and check
   you haven't got amp bass above ~55%.
 - **"more break-up"** → raise the live amp's volume knob. On SW50R that's
-  `sw50rVolume`, not `sw50rLevel`. Or engage `drive1`.
+  `sw50rVolume` (1.6% → 18.4% distortion across its travel), not `sw50rLevel`.
+  Or engage `drive1`. Raising `inputGain` moves the breakup point too.
 - **"cleaner"** → lower amp volume; on SW50R raise `sw50rLevel` and drop
-  `sw50rVolume` to keep loudness with less grit.
+  `sw50rVolume` to keep loudness with less grit. `sw50rLevel` is *much* cleaner
+  but not clean: it still reaches 7.7% distortion at 80%, so if you need
+  pristine, keep it out of its top quarter and make up level with `outputGain`.
 - **"in time with the track"** → compute ms from tempo, don't use the sync
   selector. See `reference/selectors-and-timing.md`.
 
