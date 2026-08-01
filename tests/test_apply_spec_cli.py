@@ -233,6 +233,55 @@ def test_tone_king_numeric_switch_writes_through_the_cli(tmp_path):
     assert build(parse(output.read_bytes())).by_path[("", "ampsActive")].value == "1"
 
 
+def test_tone_king_cli_loads_recipes_from_the_detected_pack(tmp_path):
+    """The recipe library defaults to Morgan, so the CLI must pass the pack it
+    detected from the template instead of relying on that default."""
+    import struct
+
+    def text(value: str) -> bytes:
+        body = value.encode()
+        return bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+
+    def record(key: str, value: float) -> bytes:
+        return (
+            b"PARAM\x00\x01\x02id\x00"
+            + text(key)
+            + b"value\x00\x01\x09\x04"
+            + struct.pack("<d", value)
+            + b"\x00"
+        )
+
+    def text_record(key: str, value: str) -> bytes:
+        return (
+            b"PARAM\x00\x01\x02id\x00"
+            + text(key)
+            + b"value\x00"
+            + text(value)
+        )
+
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00"
+        + text_record("presetNameProp", "Original")
+        + record("outputGain", 0.0)
+        + record("gateThreshold", -80.0)
+    )
+    output = tmp_path / "out.xml"
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(template),
+         "--recipe", "output/headroom", "--name", "Tone King Test",
+         "--out", str(output)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+
+    from format.parser import parse
+    from format.structured import build
+    preset = build(parse(output.read_bytes()))
+    assert preset.by_path[("", "outputGain")].value == "-6"
+    assert preset.by_path[("", "presetNameProp")].value == "Tone King Test"
+
+
 # --- guards ---------------------------------------------------------------
 
 

@@ -23,6 +23,7 @@
         "neural-dsp",
         "amp-sim",
         "morgan-amps-suite",
+        "tone-king",
         "audio"
       ]
     }

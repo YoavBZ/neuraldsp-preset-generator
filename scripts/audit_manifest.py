@@ -32,7 +32,6 @@ import argparse
 import json
 import pathlib
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -42,6 +41,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
+from _swift import compile_swift
 from packs.loader import load_pack
 
 PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
@@ -99,18 +99,10 @@ def numeric(shown: str, unit: str = None):
 
 
 def build_probe(workdir: pathlib.Path) -> pathlib.Path:
-    if shutil.which("swiftc") is None:
-        die(
-            "swiftc not found. The audit compiles scripts/au_probe.swift to talk "
-            "to the plugin.\n  Install the Xcode command line tools: xcode-select --install"
-        )
     binary = workdir / "au_probe"
-    result = subprocess.run(
-        ["swiftc", "-swift-version", "5", "-O", str(PROBE_SOURCE), "-o", str(binary)],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        die(f"could not build {PROBE_SOURCE.name}:\n{result.stderr}")
+    result, error = compile_swift(PROBE_SOURCE, binary)
+    if result is None or result.returncode != 0:
+        die(f"could not build {PROBE_SOURCE.name}:\n{error}")
     return binary
 
 
@@ -178,7 +170,7 @@ class BoundsChecker:
         return ("agrees", low, high)
 
 
-def audit(pack_id: str) -> int:
+def audit(pack_id: str, binary_path: pathlib.Path | None = None) -> int:
     pack = load_pack(pack_id)
     if not pack.audio_unit:
         die(
@@ -188,7 +180,7 @@ def audit(pack_id: str) -> int:
         )
 
     with tempfile.TemporaryDirectory() as tmp:
-        binary = build_probe(pathlib.Path(tmp))
+        binary = binary_path or build_probe(pathlib.Path(tmp))
         print(f"Asking {pack.display_name} for its own parameter table…\n")
         params = {p["address"]: p for p in run_probe(binary, pack.audio_unit, "params")}
         try:
@@ -208,7 +200,13 @@ def verify_via_state(pack, params, binary) -> int:
     same experiment runs with the halves swapped and the mapping is just as
     verified. See scripts/probe_state.py.
     """
-    from probe_state import Probe, edited
+    from probe_state import (
+        Probe,
+        adaptive_probe,
+        collect_observed_values,
+        default_preset_dirs,
+        preset_files,
+    )
     from format.parser import parse
     from format.structured import build
 
@@ -225,25 +223,22 @@ def verify_via_state(pack, params, binary) -> int:
     print(f"  state is a {preset.file_header!r} preset document with "
           f"{len(preset.parameters)} parameters; probing it directly.\n")
 
-    targets, blobs = [], [state]
-    for param in preset.parameters:
-        try:
-            current = float(param.value)
-        except ValueError:
-            continue
-        target = f"{current + 1 if current <= 0.5 else current - 1:g}"
-        targets.append(param)
-        blobs += [edited(state, param.module_path, param.key, target), state]
-
-    results = probe.apply_many(blobs)
-    mapped = {}
-    for i, param in enumerate(targets):
-        before, after = results[i * 2], results[i * 2 + 1]
-        moved = [a for a, r in after.items()
-                 if abs(r["value"] - before[a]["value"]) > 1e-9]
-        if len(moved) == 1:
-            path = f"{param.module_path}/{param.key}" if param.module_path else param.key
-            mapped[path] = moved[0]
+    roots = default_preset_dirs(pack.display_name)
+    observed, preset_count = collect_observed_values(
+        preset_files(roots), pack.file_header
+    )
+    print(
+        f"  adaptive mapping uses valid candidates from {preset_count} installed "
+        f"presets.\n"
+    )
+    mapping_results = adaptive_probe(
+        probe, state, preset, pack, observed=observed, maximum=4
+    )
+    mapped = {
+        row["key"]: row["address"]
+        for row in mapping_results
+        if row["status"] == "mapped"
+    }
 
     verified_ranges = verified_selectors = disagrees = unchecked = 0
     for path, spec in sorted(pack.parameters.items()):
@@ -283,21 +278,30 @@ def verify_via_state(pack, params, binary) -> int:
             print(f"           plugin   {control['minString']} .. {control['maxString']}"
                   f"   ({control['displayName']})\n")
 
-    print(f"{len(mapped)} of {len(targets)} numeric state keys map to exactly one control.")
+    print(
+        f"{len(mapped)} of {len(mapping_results)} numeric state keys map to "
+        f"exactly one control."
+    )
     print(f"{verified_ranges} declared ranges and {verified_selectors} selectors "
           f"verified, {disagrees} DISAGREE, {unchecked} unchecked.")
-    report_state_coverage(params, len(targets), mapped)
+    report_state_coverage(params, len(mapping_results), mapped, mapping_results)
     return 1 if (disagrees or unchecked) else 0
 
 
-def report_state_coverage(params, target_count, mapped) -> None:
+def report_state_coverage(params, target_count, mapped, results=None) -> None:
     """Report missing state mappings without turning no movement into absence."""
     not_reached = target_count - len(mapped)
-    print(
-        f"{not_reached} numeric state keys were not reached. A single nudge that "
-        f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
-        f"may have been a no-op\nor rejected by a discrete/quantized parameter."
-    )
+    if results:
+        print(
+            f"{not_reached} numeric state keys did not produce one consistent "
+            f"control mapping under adaptive probing."
+        )
+    else:
+        print(
+            f"{not_reached} numeric state keys were not reached. A single nudge that "
+            f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
+            f"may have been a no-op\nor rejected by a discrete/quantized parameter."
+        )
     mapped_controls = set(mapped.values())
     missing = [p["displayName"] for a, p in params.items() if a not in mapped_controls]
     print(
@@ -306,6 +310,12 @@ def report_state_coverage(params, target_count, mapped) -> None:
     )
     if missing:
         print("Published controls not reached: " + ", ".join(sorted(missing)) + ".")
+    if results:
+        from collections import Counter
+
+        counts = Counter(row["status"] for row in results)
+        detail = ", ".join(f"{name}={counts[name]}" for name in sorted(counts))
+        print("Adaptive state-key outcomes: " + detail + ".")
 
 
 def published_members(spec, control):
@@ -492,8 +502,12 @@ def main() -> None:
         description="Check a pack's declared facts against the installed plugin."
     )
     ap.add_argument("--pack", default="morgan", help="pack id (default: morgan)")
+    ap.add_argument("--binary", type=pathlib.Path,
+                    help="use an already-built au_probe helper")
     args = ap.parse_args()
-    raise SystemExit(audit(args.pack))
+    if args.binary is not None and not args.binary.is_file():
+        die(f"--binary does not exist: {args.binary}")
+    raise SystemExit(audit(args.pack, args.binary))
 
 
 if __name__ == "__main__":

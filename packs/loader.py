@@ -155,9 +155,15 @@ class Pack:
         notes = warnings if warnings is not None else _Strict()
 
         if not spec.writable:
+            detail = spec.note or (
+                "This key is retained only for lossless state round-trip and has "
+                "no verified writable Audio Unit control."
+                if spec.kind == "internal"
+                else ""
+            )
             raise PackError(
                 f"{spec.path} is marked read-only in the manifest and must not be "
-                f"written.\n  {spec.note or ''}".rstrip()
+                f"written.\n  {detail}".rstrip()
             )
 
         # A guessed kind is doubt the manifest already records; until now nothing

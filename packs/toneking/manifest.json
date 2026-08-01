@@ -9,11 +9,10 @@
     "type": "aumf",
     "subtype": "TKI2",
     "manufacturer": "NDSP",
-    "note": "`scripts/audit_manifest.py --pack toneking` parses the Audio Unit state through the preset format and maps 94 of 255 numeric state keys to controls by experiment. Those mappings cover 94 of the 96 published controls; the other two are host-only Preset Previous/Next controls. A key not reached by the one-value nudge remains unverified: no movement does not by itself prove that no control exists."
+    "note": "`scripts/audit_manifest.py --pack toneking` adaptively writes multiple observed and synthetic values through the record-state format. It maps 94 of 255 numeric preset keys to 94 of the 96 published controls; the other two published parameters are host-only Preset Previous/Next actions. Of the remaining numeric keys, 158 retain alternate state without moving a published control and `tempo` rejects every observed alternate."
   },
-  "draft": true,
-  "drafted_from": "Default.xml",
-  "description": "DRAFT pack for Tone King Imperial MKII, in the second Neural DSP preset encoding: 8-byte binary doubles inside PARAM records. Reading, editing and writing all work. 94 of 255 numeric state keys have been VERIFIED against the running plugin by writing each key into the plugin's own state and reading back which control moved (scripts/probe_state.py); for those, the kind and the plugin's own control name are facts, and a numeric range is declared where the plugin published one. The mappings cover every published control except the host-only Preset Previous/Next controls. The 161 numeric keys not reached by the one-value experiment remain unverified; most carry `needs_review` when their kind was guessed.",
+  "description": "Production pack for Tone King Imperial MKII presets, which store 8-byte binary doubles inside PARAM records. Its 94 control-bearing writable keys are mapped to published Audio Unit controls with verified kinds, display names, ranges, and selector tables where applicable. Recipes and tone guidance cover the two amp channels, pedals, cabinet section, EQ, modulation, delay, reverb, and gain staging.",
+  "internal_state": "The 159 parameters marked `internal` are retained for inspection and lossless state round-trip but are read-only. Adaptive multi-value probing showed that 158 preserve alternate state without moving a published Audio Unit control; `tempo` rejects every observed alternate. Generated specs use the 94 mapped writable controls instead.",
   "enums": {
     "cab_mics": {
       "0": "Dynamic 57 E33",
@@ -80,8 +79,8 @@
       "ui": "Amp HFC"
     },
     "/ampOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/ampReverb": {
       "kind": "fraction",
@@ -104,8 +103,8 @@
       "ui": "Amp Channel"
     },
     "/ampView": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/ampsActive": {
       "kind": "switch",
@@ -161,8 +160,8 @@
       "ui": "Cab L Room IR Level"
     },
     "/cab1RoomIRPosition": {
-      "kind": "fraction",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cab2Active": {
       "kind": "switch",
@@ -214,47 +213,44 @@
       "ui": "Cab R Room IR Level"
     },
     "/cab2RoomIRPosition": {
-      "kind": "fraction",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cabSectionActive": {
       "kind": "switch",
       "ui": "Cab Section Active"
     },
     "/chorus2Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Depth": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Highpass": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Lowpass": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Mix": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Rate": {
-      "kind": "metered",
-      "unit": "hz",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Switch": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorus2Width": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorusActive": {
       "kind": "switch",
@@ -265,8 +261,8 @@
       "ui": "Chorus Depth"
     },
     "/chorusLevel": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/chorusMix": {
       "kind": "fraction",
@@ -277,37 +273,36 @@
       "ui": "Chorus Rate"
     },
     "/chorusSwitch": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpBass": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpMaster": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpMid": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpPresence": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/cleanAmpTreble": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/compActive": {
       "kind": "switch",
@@ -322,8 +317,8 @@
       "ui": "Compressor Comp"
     },
     "/compOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/compSpeed": {
       "kind": "enum",
@@ -345,8 +340,8 @@
       "ui": "Delay Active"
     },
     "/delayCrystal": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/delayFeedback": {
       "kind": "metered",
@@ -368,8 +363,8 @@
       "ui": "Delay Dry/Wet"
     },
     "/delayMultiplier": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/delayNoteMs": {
       "kind": "enum",
@@ -388,8 +383,8 @@
       "ui": "Delay Mode"
     },
     "/delaySwell": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/delaySync": {
       "kind": "switch",
@@ -414,8 +409,8 @@
       "ui": "Delay Tap Tempo"
     },
     "/delayTape": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/delayTempo": {
       "kind": "metered",
@@ -441,20 +436,20 @@
       "ui": "Delay Time R"
     },
     "/delayXFeedback": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/detuneMultiplier": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/diLevel": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/doublerActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive1Active": {
       "kind": "switch",
@@ -465,16 +460,16 @@
       "ui": "Overdrive 1 Bass"
     },
     "/drive1Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive1Overdrive": {
       "kind": "fraction",
       "ui": "Overdrive 1 Drive"
     },
     "/drive1Tone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive1Treble": {
       "kind": "fraction",
@@ -493,20 +488,20 @@
       "ui": "Overdrive 2 Bass"
     },
     "/drive2BassCut": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive2Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive2Overdrive": {
       "kind": "fraction",
       "ui": "Overdrive 2 Drive"
     },
     "/drive2Tone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/drive2Treble": {
       "kind": "fraction",
@@ -517,156 +512,132 @@
       "ui": "Overdrive 2 Volume"
     },
     "/driveActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/driveLevel": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/driveOverdrive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/driveSwitch": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/driveTone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq1Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq1HighFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq1HighGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq1HighMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq1HighMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq1LowFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq1LowGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq1LowMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq1LowMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq2Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq2HighFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq2HighGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq2HighMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq2HighMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq2LowFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq2LowGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq2LowMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq2LowMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq3Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq3HighFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq3HighGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq3HighMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq3HighMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq3LowFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq3LowGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eq3LowMidFreq": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/eq3LowMidGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/eqActive": {
       "kind": "switch",
@@ -746,29 +717,28 @@
       "kind": "path"
     },
     "/flangerActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/flangerManual": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/flangerRegen": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/flangerSpeed": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/flangerVHMode": {
-      "kind": "enum",
-      "members": null,
-      "needs_confirmation": true
+      "kind": "internal",
+      "writable": false
     },
     "/flangerWidth": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/gateThreshold": {
       "kind": "metered",
@@ -778,8 +748,8 @@
       "ui": "Gate Amount"
     },
     "/harmonizerActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/inputGain": {
       "kind": "metered",
@@ -789,98 +759,96 @@
       "ui": "Input Gain"
     },
     "/leadAmpBass": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpEq2200": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpEq240": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpEq6600": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpEq750": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpEq80": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpMaster": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpMid": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpMidBite": {
       "kind": "fraction",
       "ui": "Lead Channel Mid Bite"
     },
     "/leadAmpOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpPresence": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpShred": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpTight": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpTone": {
       "kind": "fraction",
       "ui": "Lead Channel Tone"
     },
     "/leadAmpTreble": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/leadAmpVolume": {
       "kind": "fraction",
       "ui": "Lead Channel Volume"
     },
     "/levelAdder": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/midiEnabled": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/midiMode": {
-      "kind": "enum",
-      "members": null,
-      "needs_confirmation": true
+      "kind": "internal",
+      "writable": false
     },
     "/modSectionActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/mode": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/output": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/outputGain": {
       "kind": "metered",
@@ -890,57 +858,56 @@
       "ui": "Output Gain"
     },
     "/panMultiplier": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/pedalSectionActive": {
       "kind": "switch",
       "ui": "Pedal Section Active"
     },
     "/phaserActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/phaserMode": {
-      "kind": "enum",
-      "members": null,
-      "needs_confirmation": true
+      "kind": "internal",
+      "writable": false
     },
     "/phaserSpeed": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpBass": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpBody": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpMid": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpPresence": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpTreble": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/piezoAmpUltra": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/pitchSectionActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/presetNameProp": {
       "kind": "string"
@@ -955,8 +922,8 @@
       "kind": "string"
     },
     "/quantize": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/reverbActive": {
       "kind": "switch",
@@ -990,9 +957,8 @@
       "ui": "Reverb Dry/Wet"
     },
     "/reverbMode": {
-      "kind": "enum",
-      "members": null,
-      "needs_confirmation": true
+      "kind": "internal",
+      "writable": false
     },
     "/reverbPreDelay": {
       "kind": "fraction",
@@ -1003,53 +969,52 @@
       "ui": "Rhythm Channel Bass"
     },
     "/rhythmAmpEq2200": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpEq240": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpEq6600": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpEq750": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpEq80": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpMaster": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpMid": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpOutput": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpPresence": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpShred": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpTight": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/rhythmAmpTreble": {
       "kind": "fraction",
@@ -1064,159 +1029,156 @@
       "ui": "Rhythm Channel Attenuation Bypass"
     },
     "/root": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/tempo": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/timeSectionActive": {
       "kind": "switch",
       "ui": "FX Section Active"
     },
     "/tone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/transposeSemitones": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/tuning": {
-      "kind": "metered",
-      "needs_review": true,
-      "note": "unit unknown"
+      "kind": "internal",
+      "writable": false
     },
     "/unison": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Delay": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Detune": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Interval": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Pan": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice0Semitone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Delay": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Detune": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Interval": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Pan": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice1Semitone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Delay": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Detune": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Interval": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Pan": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice2Semitone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Active": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Delay": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Detune": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Interval": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Level": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Pan": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/voice3Semitone": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/volumeActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/volumeGain": {
-      "kind": "metered",
-      "unit": "db",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/volumeSkew": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/wahActive": {
       "kind": "switch",
@@ -1251,8 +1213,8 @@
       "ui": "Auto-Wah Release"
     },
     "/wahSectionActive": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     },
     "/wahSens": {
       "kind": "metered",
@@ -1263,8 +1225,8 @@
       "ui": "Auto-Wah Sensitivity"
     },
     "/width": {
-      "kind": "rotation",
-      "needs_review": true
+      "kind": "internal",
+      "writable": false
     }
   }
 }

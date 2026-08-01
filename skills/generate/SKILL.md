@@ -74,24 +74,26 @@ in a `--spec`, which is applied last and overrides the recipes.
 Handing back an unmodified stack is a failure — it's a renamed factory preset.
 The research in step 2 is what should move the values.
 
-Choose the amp with the top-level `selectedAmp` parameter (module `""`), by
-name: `{"module": "", "key": "selectedAmp", "value": "PR12"}`. All amp modules
-exist in every preset, so **any template can produce any amp**.
+Select the amp or channel through the pack's `amp/*` recipe. Morgan uses
+`selectedAmp`; Tone King uses its own channel selector. Do not hard-code one
+pack's selector into another pack's spec.
 
-For **note-timed delay** ("dotted eighth", "quarter-note slapback"), compute
-milliseconds from the tempo with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py` and write `delay/delayTime`.
-Don't use the sync-note selector — its mapping is unknown, and ms is exact. Same
-for tremolo: use `tremoloRate` in Hz. See
+For **note-timed delay** ("dotted eighth", "quarter-note slapback"), prefer a
+pack recipe that already expresses the timing safely. Morgan recipes resolve
+note divisions to milliseconds with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py`;
+Tone King recipes use its verified sync-note selectors. See
 [selectors-and-timing.md](../../reference/selectors-and-timing.md).
 
 ## 4. Pick a template
 
-- Default to `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml` — IR-free, portable, ships with
-  the repo.
+- For Morgan, default to `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
+  — IR-free, portable, and shipped with the repo.
+- For Tone King, require one of the user's own Tone King presets. No Tone King
+  preset content ships in the repository.
 - One of the user's own presets is a fine template too, especially if it already
   uses the amp you want. Run `show.py` on it first.
-- Either way, **set `selectedAmp` explicitly** unless you have confirmed the
-  template already has the value you want.
+- Either way, select the intended amp or channel explicitly through an amp
+  recipe unless the inspected template already has the required value.
 
 ## 5. Write the spec, preview, apply
 
@@ -107,7 +109,7 @@ Write the preset into the user's preset folder and tell them how to load it —
 see [installing.md](../../reference/installing.md).
 
 Then report:
-- which **template** you cloned and which **amp** you selected
+- which **template** you cloned and which **amp or channel** you selected
 - what **research** the tone is based on, with links
 - anything you set **outside a declared range**, and why
 - any **unconfirmed selector** the tool warned about
@@ -126,6 +128,6 @@ the file if it doesn't exist. Record:
   guidance got wrong.
 - the **source link** for the research
 
-Follow the "Mapped tones" shape in `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md`.
-The notes live under the data root, not in the plugin directory: Claude Code
-replaces the plugin on update, and anything written there would be lost.
+Keep the entry concise and actionable. The notes live under the data root, not
+in the plugin directory: Claude Code replaces the plugin on update, and
+anything written there would be lost.

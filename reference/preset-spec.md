@@ -31,6 +31,7 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 | `enum`     | integer **or member name**  | `"PR12"`, `"Ribbon 121"`, `2`    |
 | `string`   | text, written verbatim      | a preset name                    |
 | `path`     | absolute path, verbatim     | a custom IR file                 |
+| `internal` | nothing; always read-only   | retained state with no writable control |
 
 `metered` units: **dB** (gate, input/output, mic levels, EQ bands), **Hz**
 (HPF/LPF/cuts, tremolo rate), **ms** (delay time, pre-delay, doubler spread),
@@ -38,6 +39,10 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 
 Prefer **member names over integers** for selectors — `"value": "SW50R"` reads
 better than `"value": 2` and is checked against the manifest.
+
+An `internal` entry remains in the manifest so a preset can be inspected and
+round-tripped without dropping state. It is never a generation target:
+`apply_spec.py` rejects writes to it before value translation.
 
 Two selectors have no member names — `leftRoomMicType` and `rightRoomMicType`,
 which the plugin neither labels nor exposes a control for. Everything else,
@@ -198,18 +203,15 @@ silently: a binary width other than 8 bytes, and a record layout that is not
 ### Verifying a plugin whose state is a preset
 
 Tone King keeps its Audio Unit state in this same record format rather than as a
-document, so the probe that verified every Morgan range looked for `<?xml`,
-found none, and reported `CANNOT VERIFY`. The pack shipped with no declared
-ranges rather than 35 guesses matched by name.
+document. `scripts/probe_state.py` edits that state through `format/`, applies
+multiple candidates per numeric key, and reads back both retained state and the
+published control tree. `audit_manifest.py` selects this mapper automatically.
 
-Since `format/` parses that format, `scripts/probe_state.py` runs the same
-experiment through it, and `audit_manifest.py` falls back to it automatically.
-94 of 255 preset keys map to exactly one control each — which promptly showed
-that 44 of them had the wrong guessed `kind`. Those mappings cover every
-published control except the host-only Preset Previous/Next actions, and also
-tie 12 selector label tables to their stored indices. See
+Of 255 numeric saved-preset keys, 94 map consistently to one published control,
+158 retain alternate state without moving a published control, and `tempo`
+rejects its observed alternates. The mappings reach every published control
+except the host-only Preset Previous/Next actions and tie 12 selector label
+tables to their stored indices. The 159 state-only or rejected fields are
+`internal` and read-only: they remain in the manifest for inspection and
+lossless round-trip, but generated specs cannot write them. See
 [../docs/measuring-against-the-plugin.md](../docs/measuring-against-the-plugin.md).
-
-An unreached key is not declared control-less: a single value can be rejected
-or quantized into a no-op. Guessed kinds keep `needs_review`, and writing through
-one warns.

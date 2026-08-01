@@ -16,9 +16,10 @@ using each parameter's `kind` in the pack manifest (packs/<id>/manifest.json):
       ]
     }
 
-Knobs are percent of rotation (0-100); everything else uses the unit the plugin
-shows. The full table lives in reference/preset-spec.md — one copy, so it cannot
-drift from what the code does.
+`rotation` controls are percent of rotation (0-100); `fraction` controls use
+0.0-1.0 directly; everything else uses the unit the plugin shows. The full table
+lives in reference/preset-spec.md — one copy, so it cannot drift from what the
+code does.
 
 A time or rate value may be given as a note division instead of a number, so a
 recipe stays correct at any tempo:
@@ -166,14 +167,28 @@ def run(args) -> None:
     # beats a recipe default.
     entries = list(spec.get("parameters", []))
     if args.recipe:
-        entries = stack(args.recipe, pack, _amp_prefix(args, spec, pack, preset)) + entries
+        entries = stack(
+            args.recipe,
+            pack,
+            _amp_prefix(args, spec, pack, preset),
+            pack_id=pack.pack_id,
+        ) + entries
 
     # --- name -----------------------------------------------------------
     changes: list[tuple[str, str, str]] = []
     new_name = args.name or spec.get("name")
     if new_name:
         before = preset.preset_name
-        set_parameter(preset, "", "name", str(new_name))
+        name_key = next(
+            (key for key in ("name", "presetNameProp") if ("", key) in preset.by_path),
+            None,
+        )
+        if name_key is None:
+            die(
+                "This template has no writable preset-name field.\n"
+                "  Omit --name or inspect the template with show.py."
+            )
+        set_parameter(preset, "", name_key, str(new_name))
         changes.append(("name", before, str(new_name)))
 
     # --- IR stripping ---------------------------------------------------

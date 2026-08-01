@@ -427,11 +427,22 @@ case "setstate":
     let listing = try! String(contentsOfFile: args[5], encoding: .utf8)
     let paths = listing.split(separator: "\n").map(String.init).filter { !$0.isEmpty }
 
+    let captureDir = args.count > 6 ? args[6] : ""
+    if !captureDir.isEmpty {
+        try! FileManager.default.createDirectory(
+            atPath: captureDir, withIntermediateDirectories: true)
+    }
+
     var results: [[[String: Any]]] = []
-    for path in paths {
+    for (index, path) in paths.enumerated() {
         st["jucePluginState"] = try! Data(contentsOf: URL(fileURLWithPath: path))
         unit.fullState = st
         usleep(90000)
+        if !captureDir.isEmpty,
+           let applied = unit.fullState?["jucePluginState"] as? Data {
+            try! applied.write(
+                to: URL(fileURLWithPath: "\(captureDir)/\(index).bin"))
+        }
         var rows: [[String: Any]] = []
         for p in unit.parameterTree?.allParameters ?? [] {
             var v = p.value
