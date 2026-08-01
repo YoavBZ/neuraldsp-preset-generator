@@ -95,10 +95,10 @@ format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    recipe, path, CLI and plugin-metadata tests
-docs/            — Morgan config reference (musical, not yet fully reconciled),
-                   measuring-against-the-plugin.md (how the ranges, selector
-                   tables and switch directions were obtained) and
-                   open-questions.md, what the manifest doesn't know yet
+docs/            — Morgan config reference (musical, audited against the
+                   plugin) and measuring-against-the-plugin.md: how every
+                   range, selector table and switch direction was obtained,
+                   and how to re-derive it
 ```
 
 ## Packs

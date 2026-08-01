@@ -129,16 +129,23 @@ control it moved and what that control is called. See
 
 | Control | What it actually is | `true` means |
 |---|---|---|
-| `sw50rTrebleBoost` | **Bass Emphasis.** The key name is wrong; the doc was right | thicker, not brighter |
+| `sw50rTrebleBoost` | a tilt around 250 Hz — **despite being named Bass Emphasis** | brighter and tighter: −5.5 dB @ 60 Hz, +2.5 dB @ 400 Hz–4 kHz |
+| `sw50rBright` | the real brightness switch | +5 dB @ 2.5 kHz, +8 dB @ 6.3 kHz, lows untouched |
 | `sw50rInputMode` | the two input jacks | `Low` — the padded input. `false` is `High` |
-| `ac20BassTreble` | **Bass Cut**, a two-position voicing switch | the `Treble` position — brighter and tighter |
+| `ac20BassTreble` | **Bass Cut**, a two-position voicing switch | the `Treble` position: −15.6 dB @ 60 Hz. A big cut |
 | `compressorRelease` | fast/slow release | Fast |
 
-The one that mattered was `sw50rTrebleBoost`: it drives the control Morgan
-publishes as *Bass Emphasis*, so turning it on for a brighter lead does the
-opposite. SW50R's actual brightness switch is the separate `sw50rBright`.
-Nothing shipped wrong, because the recipes deliberately left all four alone
-rather than guess.
+`sw50rTrebleBoost` is the cautionary one, and it took two measurements to get
+right. The stored key says *treble boost*. The control the plugin publishes says
+*Bass Emphasis* — the opposite — and reading that name alone led this repo to
+document it as "ON thickens the low end", which is wrong. Rendering audio
+through it settles it: ON **removes** low end and lifts the mids. The key name
+happened to describe the sound better than the plugin's own control name did.
+
+The lesson generalises past this switch: a name is a hypothesis. Two names
+disagreeing is a signal to measure, not to pick the more authoritative-looking
+one. Nothing shipped wrong here only because the recipes deliberately left all
+of these alone rather than guess.
 
 `ac20Cut`'s direction is settled by reasoning rather than measurement: it's the
 Vox power-amp Cut, so **higher = darker**. Still worth a five-second

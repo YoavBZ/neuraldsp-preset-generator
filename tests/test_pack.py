@@ -175,12 +175,19 @@ def test_ac20_power_is_a_knob_not_a_selector(pack):
     assert pack.to_stored(spec, 50) == "0.5"
 
 
-def test_treble_boost_is_documented_as_bass_emphasis(pack):
-    """The stored key name says treble; the control is a bass emphasis. Anything
-    that reads the manifest must be told, because the key cannot be trusted."""
+def test_treble_boost_documents_the_measured_direction(pack):
+    """Two names disagree about this switch and both are unreliable: the key says
+    treble boost, the plugin's own control says Bass Emphasis, and rendering
+    audio through it shows ON *removes* low end. The note must carry the
+    measured direction, because either name alone sends the reader the wrong
+    way — reading the plugin's name is exactly how this got documented
+    backwards once already."""
     spec = pack.require("sw50rAmp", "sw50rTrebleBoost")
-    assert "Bass emphasis" == spec.ui
-    assert "bass emphasis" in spec.note.lower()
+    assert "Bass emphasis" == spec.ui  # the plugin's own label for the control
+    note = spec.note.lower()
+    assert "bass emphasis" in note, "must say which control it moves"
+    assert "brighter and tighter" in note, "must say which way the sound goes"
+    assert "60 hz" in note, "must carry the measurement, not just an adjective"
 
 
 def test_room_mics_do_not_share_the_close_mic_catalog(pack):

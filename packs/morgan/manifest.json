@@ -213,12 +213,13 @@
     },
     "sw50rAmp/sw50rBright": {
       "kind": "switch",
-      "ui": "Bright"
+      "ui": "Bright",
+      "note": "The real brightness switch, drawn as a sun/moon toggle. ON is a rising treble shelf: +1.3 dB at 1 kHz, +5 dB at 2.5 kHz, +8 dB at 6.3 kHz, with the low end untouched. Rendered offline through the plugin \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rTrebleBoost": {
       "kind": "switch",
       "ui": "Bass emphasis",
-      "note": "THE STORED KEY NAME IS MISLEADING. Writing this key moves the control the plugin itself publishes as `SW50R Bass Emphasis`, so ON thickens the low end \u2014 it is not a treble boost. The config reference's `bassEmphasis` was right and this manifest was wrong; the key name is the one thing here that is not evidence. SW50R's actual brightness switch is the separate `sw50rBright`, drawn on the amp panel as a sun/moon toggle right next to this one. This control is drawn as a treble-clef/bass-clef toggle, so OFF is not neutral \u2014 it is the treble position. Measured against the plugin \u2014 see docs/measuring-against-the-plugin.md."
+      "note": "THE NAME IS MISLEADING IN BOTH DIRECTIONS, AND ONLY THE MEASUREMENT SETTLES IT. Writing this key moves the control the plugin publishes as `SW50R Bass Emphasis` \u2014 but turning it ON *removes* low end: -5.5 dB at 60 Hz, -3.3 dB at 100 Hz, and +2.5 dB from 400 Hz to 4 kHz, pivoting near 250 Hz. The same shape appears at two input levels 50x apart, so it is a filter and not a saturation artefact. In use it is BRIGHTER AND TIGHTER, not thicker. So the stored key name says treble, the plugin's own control name says bass, and they disagree with each other while the sound follows the key name. Do not reason from either name. SW50R's dedicated brightness switch is the separate `sw50rBright`, which is a far stronger and higher-up lift (+8 dB at 6.3 kHz); use that for air, and this one to tighten the low end. Rendered offline through the plugin \u2014 see docs/measuring-against-the-plugin.md."
     },
     "sw50rAmp/sw50rInputMode": {
       "kind": "switch",
@@ -241,7 +242,7 @@
     "ac20Amp/ac20BassTreble": {
       "kind": "switch",
       "ui": "Bass cut",
-      "note": "A two-position voicing switch the plugin publishes as `AC20 Bass Cut`: `false` selects the `Bass` position, `true` selects `Treble`. So ON is the brighter, tighter voicing and OFF is the fuller one — the config reference's `bassCut` reading was the right one. Measured against the plugin — see docs/measuring-against-the-plugin.md."
+      "note": "A two-position voicing switch the plugin publishes as `AC20 Bass Cut`: `false` selects the `Bass` position, `true` selects `Treble`. ON is a large bass cut \u2014 -15.6 dB at 60 Hz, -10.9 dB at 100 Hz, -8 dB at 160 Hz, tapering to -1 dB by 6.3 kHz \u2014 so it is brighter and much tighter, and OFF is the fuller voicing. The config reference's `bassCut` reading was the right one. Rendered offline through the plugin \u2014 see docs/measuring-against-the-plugin.md."
     },
     "ac20Amp/ac20Power": {
       "kind": "rotation",

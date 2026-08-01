@@ -151,3 +151,30 @@ anything — so a failed run leaves no partial output.
    broken, do not ship the preset.
 3. Tell the user where the file is and how to load it —
    see [installing.md](installing.md).
+
+## Formats this tool cannot read
+
+The byte-level parser and writer are plugin-agnostic and measured to be so:
+every one of 681 factory presets across Morgan Amps Suite, Tone King Imperial
+MKII, Archetype Nolly X and Archetype Plini X round-trips byte for byte.
+
+The *structured* layer is narrower. It models one named key per printable value,
+which is how Morgan, Nolly X and Plini X are encoded — those three draft cleanly
+with `scripts/bootstrap_pack.py`. **Tone King Imperial MKII does not.** It uses a
+later encoding:
+
+- numbers are raw IEEE-754 doubles introduced by `01 09 04`, not text
+- parameters are a flat list of `PARAM` records carrying `id` and `value`
+  fields, so 259 parameters share 7 key names instead of having their own
+
+The two interact badly. Because the structured layer expects printable values,
+the bytes of a double that happen to land in ASCII get read as text: the
+exponent bytes of `120.0` are `5e 40` — `^@` — which is how an early draft of a
+Tone King pack ended up with a parameter named `^@presetNameProp`.
+
+Supporting it needs a value decoder in `format/`, keyed off the marker byte,
+plus a structured layer that can identify a parameter by a field inside a record
+rather than by its key. That is a change to the format layer, not a new pack.
+Nothing currently needs it, so `bootstrap_pack.py` refuses both shapes with a
+diagnosis rather than drafting a manifest that looks plausible and is silently
+wrong.

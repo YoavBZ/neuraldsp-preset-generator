@@ -1163,13 +1163,25 @@ Then level-match by ear or metering.
 
 Your generator should validate at least the following:
 
+> **Audited against the running plugin.** Thirteen of these fourteen are right.
+> **`tremoloRateHz` is wrong**: the real range is **0.15–15 Hz**, so this block
+> both forbids fast tremolo the plugin supports and permits slow rates it does
+> not. `packs/morgan/manifest.json` carries the measured value; do not copy the
+> line below into it again. Method and evidence:
+> [measuring-against-the-plugin.md](measuring-against-the-plugin.md).
+>
+> Note also what is *absent* here, because absence is where the other errors
+> came from: no ranges for the EQ high/low-pass, input/output gain, gate
+> threshold, delay tempo, cab mic levels or pan. The EQ low-pass minimum was
+> guessed at 20 Hz from observed values and is really 1 kHz.
+
 ```ts
 const validationRules = {
   knob: { min: 0.0, max: 10.0 },
   eqBandDb: { min: -12.0, max: 12.0 },
   transposeSemitones: { min: -12, max: 12 },
   doublerSpreadMs: { min: 3, max: 20 },
-  tremoloRateHz: { min: 0.05, max: 5.0 },
+  tremoloRateHz: { min: 0.05, max: 5.0 },   // WRONG — measured 0.15 to 15.0
   delayTimeMs: { min: 16, max: 1500 },
   delayHpfHz: { min: 60, max: 500 },
   delayLpfHz: { min: 1000, max: 5000 },
@@ -1188,6 +1200,12 @@ const validationRules = {
 - If `delay.syncMode === 'DAW_APP'` or `TAP`, require `timeNote` and ignore `timeMs`.
 - If `tremolo.syncMode === 'FREE'`, require `rateHz` and ignore `rateNote`.
 - If `tremolo.syncMode === 'NOTE'`, require `rateNote` and ignore `rateHz`.
+
+These four are correct, and the sync modes named here are real: `delaySync`
+stores 0/1/2 for the controls the plugin labels `Free`, `DAW` and `Tap`.
+Tremolo's is a plain switch rather than a three-way — `tremoloSync` off is
+`FREE`, on is `NOTE`. Both tables are now in the manifest, so a note division
+can be set by name.
 - If `global.doublerEnabled === false`, `doublerSpreadMs` can be omitted or kept as a remembered value.
 - If `cab.bypassed === true`, generator should skip cab slot validation except for structure.
 - For `CUSTOM_IR`, do not require `position` or `distance`.

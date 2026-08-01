@@ -117,7 +117,7 @@ def unsupported_shape(raw: bytes, parameters: list, by_key: dict) -> str | None:
             "is corrupt — but the structured layer would mis-pair the tokens and "
             "hand you a manifest full of parameters that do not exist.\n"
             "  Supporting this needs a value decoder in format/, not a new pack. "
-            "See docs/open-questions.md."
+            "See reference/preset-spec.md."
         )
 
     # A named-key format has roughly one key per parameter. A record format has a
@@ -131,7 +131,7 @@ def unsupported_shape(raw: bytes, parameters: list, by_key: dict) -> str | None:
             "  That means the file identifies parameters by a field inside a "
             "repeated record, not by the key itself — a shape this tool does not "
             "model, so the draft would be meaningless.\n"
-            "  See docs/open-questions.md."
+            "  See reference/preset-spec.md."
         )
     return None
 
