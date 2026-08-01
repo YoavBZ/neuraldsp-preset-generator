@@ -9,7 +9,9 @@ user exactly what to click.
 Don't hard-code a path. Locate it, because it varies by plugin name and version:
 
 ```bash
-# macOS
+# macOS — check BOTH. The installer's location is the system-wide one, and on a
+# normal install the per-user directory does not exist at all.
+ls -d /Library/Audio/Presets/Neural\ DSP/*/User 2>/dev/null
 ls -d ~/Library/Audio/Presets/Neural\ DSP/*/User 2>/dev/null
 
 # Windows (from Git Bash / WSL)
@@ -24,6 +26,15 @@ Pick the directory whose plugin name matches the pack you generated for
 their presets live rather than guessing — and if they tell you, note it so you
 don't have to ask again.
 
+`/Library/…` is owned by root but the Neural DSP installer leaves these folders
+world-writable, so writing there needs no `sudo`. If a write is refused, say so
+and ask — do not reach for `sudo`.
+
+The presets that ship with the plugin sit next to `User/` in the same place:
+`Artists/`, `Neural DSP/`, `Default.xml`, and on some plugins a `Factory/`
+(Tone King has one; Morgan does not). They are useful as templates and as format
+examples, but they are Neural DSP's content — never copy one into this repo.
+
 ## Write there directly
 
 Once you know the folder, point `--out` at it instead of copying afterwards:
@@ -31,7 +42,7 @@ Once you know the folder, point `--out` at it instead of copying afterwards:
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
   --template TEMPLATE.xml --spec /tmp/spec.json --strip-irs \
-  --out ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User/"Hotel California Lead.xml"
+  --out /Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User/"Hotel California Lead.xml"
 ```
 
 The file name is what shows up in the plugin's preset browser, so name it the

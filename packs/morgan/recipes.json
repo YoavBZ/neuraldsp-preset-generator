@@ -11,12 +11,12 @@
   },
   "not_translated": {
     "ac20 powerLevel, standby; sw50r/pr12 power, standby": "no such parameters exist in the file",
-    "compressor releaseMode FAST/SLOW": "compressorRelease is a switch but which boolean is FAST is unknown, so recipes leave it at the template's value",
-    "sw50r inputMode DEFAULT/-6_DB": "sw50rInputMode is a switch; which boolean is the pad is unknown",
-    "ac20 bassCut": "probably ac20BassTreble, but the doc's 'cut the bass' reading and the key's own name point opposite ways, so recipes do not set it",
+    "compressor releaseMode FAST/SLOW": "now known - compressorRelease true is Fast, false is Slow - but recipes still leave it at the template's value because no recipe has a reason to set it",
+    "sw50r inputMode DEFAULT/-6_DB": "now known - sw50rInputMode false is the High input, true is the padded Low one - but no recipe needs to change input jacks",
+    "ac20 bassCut": "now known - ac20BassTreble is the Bass Cut voicing switch, true selects Treble - but it is a per-guitar taste choice, so recipes leave it alone",
     "cab micId MIC_1..MIC_6": "six abstract ids that do not map onto this plugin's ten named mics; mic choices in the cab recipes are substituted by standard practice",
-    "cab pan L25/R25": "the pan selector's integer mapping is unknown",
-    "delay/tremolo syncMode and timeNote": "expressed instead as ms and Hz computed from tempo, which needs no selector - see packs/timing.py",
+    "cab pan L25/R25": "now expressible - *CabPan is a signed number, so L25 is -25 and R25 is 25 - but the cab recipes leave the stock centred pair alone",
+    "delay/tremolo syncMode and timeNote": "expressed instead as ms and Hz computed from tempo, which needs no selector - see packs/timing.py. The selector tables are now known if a recipe ever needs host-tempo sync.",
     "guitarNotes (section 19)": "playing advice, not plugin parameters; kept in tone.md instead"
   },
   "layers": {
@@ -999,7 +999,7 @@
         "title": "Two mics, wider",
         "use_when": "a wider practice or lead sound",
         "source": "docs/morgan-config-reference.md#14",
-        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end. The doc pans the two mics L25/R25; the pan selector's mapping is unknown, so pan is NOT set here. Set it by hand in the plugin, or probe the selector - see reference/selectors-and-timing.md.",
+        "note": "Mic CHOICES are substituted, not transcribed: the config reference names six abstract mic ids (MIC_1..MIC_6) that do not correspond to this plugin's ten named mics, so the ids are untranslatable. The placement, distance and level numbers ARE from the doc. Mics here follow standard practice - a dynamic close for body and attack, a ribbon further back for smoothed top end. The doc pans the two mics L25/R25; pan is expressible (-25 / 25) but left centred here by choice. Set it by hand in the plugin, or set *CabPan directly - see reference/selectors-and-timing.md.",
         "parameters": [
           {
             "module": "cabParameters",

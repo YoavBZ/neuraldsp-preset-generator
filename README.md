@@ -87,14 +87,19 @@ skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), bootstrap_pack.py (support a new plugin),
+                   selectors), au_probe.swift (ask the running plugin directly),
+                   au_render.swift + spectrum_diff.py (measure what a control
+                   does to the sound), bootstrap_pack.py (support a new plugin),
                    build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    recipe, path, CLI and plugin-metadata tests
-docs/            — Morgan config reference (musical, not yet fully reconciled)
+docs/            — Morgan config reference (musical, audited against the
+                   plugin) and measuring-against-the-plugin.md: how every
+                   range, selector table and switch direction was obtained,
+                   and how to re-derive it
 ```
 
 ## Packs
@@ -202,25 +207,21 @@ from packs.timing import note_ms
 note_ms(120, "1/8 dotted")   # 375.0  ms  -> write to delay/delayTime
 ```
 
-This matters because the plugin's UI shows a selector's *label* but never the
-integer stored in the file, so six selectors (`delaySyncNote`,
-`tremoloSyncNote`, `delaySync`, `ac20Power`, both `CabPan`) have no member names
-yet — the mapping can't be read off the screen. Writing them still works, with a
-warning that the value is unverified.
+Both sync-note tables are declared in the manifest and can be set by name
+(`"1/8D"`), so the selector is available when you do want host-tempo sync. They
+are ordered by note *duration* rather than grouped by kind, and delay's table
+and tremolo's are offset by two — which is exactly why they are measured and
+written down rather than guessed.
 
-To fill one in, `scripts/probe.py` inverts the problem: it writes disposable
+Two selectors still have no member names: `leftRoomMicType` and
+`rightRoomMicType`. The plugin publishes no labels for them and has no control
+for them anywhere in its UI, so there is nothing to read. Writing them works,
+with a warning, but there is no reason to.
+
+`scripts/au_probe.swift` reads whatever the plugin does publish, directly. For
+anything it cannot, `scripts/probe.py` inverts the problem: it writes disposable
 presets **named after the value they carry**, so the plugin's own preset browser
-labels them.
-
-```bash
-python scripts/probe.py --param delay/delaySyncNote --values 0-15 \
-  --out-dir ~/Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User
-```
-
-Load `probe delaySyncNote 07`, read the control, and you've learned what 7 means
-— reading labels only, never integers. Selectors are index-based (confirmed for
-the mic catalog), so the cheaper path is to read the control's options in order,
-write them as `members`, and confirm the whole table with a single probe. See
+labels them. See
 [reference/selectors-and-timing.md](reference/selectors-and-timing.md).
 
 ## Where your data lives

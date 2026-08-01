@@ -31,6 +31,7 @@ BASE: Dict[str, float] = {
     "eighth": 0.5,
     "sixteenth": 0.25,
     "thirtysecond": 0.125,
+    "sixtyfourth": 0.0625,
 }
 
 # Spellings people actually use, mapped onto the canonical names above.
@@ -42,6 +43,10 @@ ALIASES: Dict[str, str] = {
     "1/16": "sixteenth", "16th": "sixteenth", "s": "sixteenth",
     "1/32": "thirtysecond", "32nd": "thirtysecond",
     "thirty-second": "thirtysecond", "thirty second": "thirtysecond",
+    # The plugin's own sync-note tables go down to 1/64, so this path has to
+    # reach as far as the selector does or it stops being a full alternative.
+    "1/64": "sixtyfourth", "64th": "sixtyfourth",
+    "sixty-fourth": "sixtyfourth", "sixty fourth": "sixtyfourth",
 }
 
 DOTTED = 1.5          # a dot adds half the note's value

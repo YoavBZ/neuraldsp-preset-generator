@@ -32,8 +32,9 @@ ice-pick top end. 20W.
 - **Reach for it:** jangle pop, British invasion, indie rhythm, British crunch.
 - **Range:** chimey clean → classic British crunch.
 - **Knobs:** `ac20Volume`, `ac20Cut`, `ac20Bright`, `ac20BassTreble`, `ac20Power`.
-- **`ac20Cut` runs backwards.** It's the Vox power-amp Cut: **higher = darker.**
-  Don't reach for it expecting a treble control.
+- **`ac20Cut` is a presence control: higher = BRIGHTER.** Measured, not reasoned:
+  +11 dB at 2.5 kHz and +19 dB at 6.3 kHz from 0% to 100%. It is named after the
+  Vox power-amp Cut, which works the other way, and this file used to say so.
 
 ### SW50R (`sw50rAmp`, `selectedAmp: "SW50R"`)
 The **Dumble Small Special** — a mid-60s blackface-flavoured voice with unusual
@@ -94,7 +95,8 @@ through `EQBand9`, in dB. Naming the frequency beats naming the band number.
 - **"more presence" / "needs to cut"** → push 1 kHz and 2 kHz (`EQBand5`,
   `EQBand6`) rather than raising treble globally. That's what `lead-focus` does.
 - **"harsh" / "brittle"** → cut 4 kHz or 8 kHz (`EQBand7`, `EQBand8`), or lower
-  `EQLpf`. On AC20, *raise* `ac20Cut`.
+  `EQLpf`. On AC20, *lower* `ac20Cut` — it adds presence, so raising it makes
+  harshness worse. (This line used to say raise.)
 - **"warmer"** → drop treble, lower `reverbHighCut` and `delayHighCut`.
 - **"muddy" / "woolly"** → cut 125/250 Hz, raise `EQHpf` to 80–90 Hz, and check
   you haven't got amp bass above ~55%.
@@ -116,30 +118,48 @@ but not the universal case.
   Neck-pickup lead: less bass, a little more 2 kHz.
 - **Single coils** (Strat, Tele): less low end to fight, so `EQHpf` can sit
   lower (70–80 Hz). Watch 2–4 kHz instead — that's where they get shrill.
-  Bridge-pickup Tele into AC20 usually wants `ac20Cut` up a bit.
+  Bridge-pickup Tele into AC20 usually wants `ac20Cut` *down* a bit, since it
+  adds presence exactly where a Tele bridge is already sharp.
 - **Either way**, clean rhythm needs enough treble/presence not to go woolly.
 
-## Unresolved: three controls whose behaviour is a guess
+## Settled: the switches that used to be guesses
 
-The parameter names and ranges are solid. Three **switches** are not, because the
-source doc and the stored key name disagree about what they do. Each is a
-five-second check by ear — flip it and listen — and worth resolving, because the
-recipes deliberately leave all three alone rather than guess.
+Four of these were unresolved because the source doc and the stored key name
+disagreed about what they do. They are now read off the running plugin — each
+key was written into a preset document and handed to the plugin to see which
+control it moved, and audio was rendered through it to hear which way the sound
+goes. `sw50rBright` was never in doubt and is listed for comparison, because it
+is the control people reach for when they mean "brighter". See
+[docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
 
-| Control | Doc says | Key name suggests | Check by ear |
-|---|---|---|---|
-| `sw50rTrebleBoost` | `bassEmphasis` — thickens for lead | a treble boost | Flip it on. Brighter, or thicker? |
-| `sw50rInputMode` | `DEFAULT` / `-6_DB` input pad | an input mode | Flip it on. Quieter and cleaner, or a tonal change? |
-| `ac20BassTreble` | `bassCut` — tightens low end | a bass+treble tonestack switch | Flip it on. Less bass, or fuller mids? |
+| Control | What it actually is | `true` means |
+|---|---|---|
+| `sw50rTrebleBoost` | a tilt around 250 Hz — **despite being named Bass Emphasis** | brighter and tighter: −5.5 dB @ 60 Hz, +2.5 dB @ 400 Hz–4 kHz |
+| `sw50rBright` | the real brightness switch | +5 dB @ 2.5 kHz, +8 dB @ 6.3 kHz, still rising at the top band measured; lows unchanged |
+| `sw50rInputMode` | the two input jacks | `Low` — the padded input. `false` is `High` |
+| `ac20BassTreble` | **Bass Cut**, a two-position voicing switch | the `Treble` position: −15.6 dB @ 60 Hz. A big cut |
+| `compressorRelease` | fast/slow release | Fast |
 
-`compressorRelease` is a fast/slow toggle but which boolean is which is unknown —
-same treatment.
+`sw50rTrebleBoost` is the cautionary one, and it took two measurements to get
+right. The stored key says *treble boost*. The control the plugin publishes says
+*Bass Emphasis* — the opposite — and reading that name alone led this repo to
+document it as "ON thickens the low end", which is wrong. Rendering audio
+through it settles it: ON **removes** low end and lifts the mids. The key name
+happened to describe the sound better than the plugin's own control name did.
 
-When you settle one, write it into the parameter's `note` in `manifest.json` and
-delete its row here.
+The lesson generalises past this switch: a name is a hypothesis. Two names
+disagreeing is a signal to measure, not to pick the more authoritative-looking
+one. Nothing shipped wrong for the four that were in doubt, because the recipes
+deliberately left them alone rather than guess. (`sw50rBright` *is* set by three
+amp recipes — but it was never ambiguous, and the measurement confirms it.)
 
-`ac20Cut`'s direction is settled by reasoning rather than by ear: it's the Vox
-power-amp Cut, so **higher = darker**. Still worth a five-second confirmation.
+**`ac20Cut` went the same way, and worse.** It was "settled by reasoning": it is
+the Vox power-amp Cut, so higher = darker, agreed on by the config reference,
+the control's name, and Morgan's description of the original circuit. Rendered
+through the plugin, higher is **brighter** — monotonically, +11 dB at 2.5 kHz
+and +19 dB at 6.3 kHz across the sweep. It behaves like a presence control. Three
+independent-looking arguments were three restatements of the same name, and the
+five-second confirmation nobody ran would have caught it.
 
 ## Mapped tones
 

@@ -147,3 +147,70 @@ def test_missing_preset_is_reported_cleanly(tmp_path):
     assert result.returncode == 2
     assert "not found" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+# --- formats this tool cannot draft ---------------------------------------
+# Neural DSP presets are not all shaped like Morgan's. Tone King Imperial MKII
+# stores numbers as raw IEEE-754 doubles inside repeated PARAM records, and the
+# structured layer — which assumes one named key per printable value — mis-pairs
+# the tokens and yields a handful of parameters that do not exist. It drafted a
+# plausible-looking six-parameter manifest, one of whose names was two bytes of
+# a float glued to the next key. Refusing is the only honest outcome until
+# format/ can decode those values.
+#
+# The fixtures below are synthetic. Real presets are Neural DSP's factory
+# content and are not committed — see NOTICE.md.
+
+
+@pytest.fixture
+def binary_valued_preset(tmp_path):
+    """A preset whose numbers are raw doubles rather than printable strings."""
+    import struct
+
+    body = b"otherplugin\x00"
+    for i, key in enumerate(["ampType", "gain", "bass"]):
+        body += key.encode() + b"\x00"
+        body += b"\x01\x09\x04" + struct.pack("<d", float(i))
+    path = tmp_path / "BinaryValues.xml"
+    path.write_bytes(body)
+    return path
+
+
+@pytest.fixture
+def record_shaped_preset(tmp_path):
+    """A preset that names parameters inside repeated records, so the same few
+    key names repeat instead of one key per parameter."""
+    body = b"recordplugin\x00"
+    for i in range(40):
+        body += b"PARAM\x00"
+        body += b"id\x00" + b"\x01\x09\x05" + f"param{i}".encode() + b"\x00"
+        body += b"value\x00" + b"\x01\x05\x05" + b"0.5" + b"\x00"
+    path = tmp_path / "Records.xml"
+    path.write_bytes(body)
+    return path
+
+
+def test_binary_valued_format_is_refused_not_drafted(binary_valued_preset):
+    """The failure mode this guards against is a draft that looks fine."""
+    result = run("--preset", str(binary_valued_preset))
+    assert result.returncode == 2
+    assert "binary doubles" in result.stderr
+    assert "Traceback" not in result.stderr
+    # It must say the file itself is intact, or the reader will assume the
+    # preset is damaged and go looking for a problem that isn't there.
+    assert "losslessly" in result.stderr
+    assert not (PACKS_DIR / "otherplugin").exists()
+
+
+def test_record_shaped_format_is_refused_not_drafted(record_shaped_preset):
+    result = run("--preset", str(record_shaped_preset))
+    assert result.returncode == 2
+    assert "distinct key names" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not (PACKS_DIR / "recordplugin").exists()
+
+
+def test_a_normal_preset_is_still_drafted(unknown_preset, cleanup_pack):
+    """The guards must not fire on the shape the tool does support."""
+    cleanup_pack.append("testplugin")
+    assert run("--preset", str(unknown_preset)).returncode == 0

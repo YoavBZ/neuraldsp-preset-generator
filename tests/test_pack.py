@@ -111,8 +111,10 @@ def test_unknown_mic_index_is_rejected(pack):
 
 def test_unconfirmed_selector_warns_but_writes(pack):
     warnings: list[str] = []
-    spec = pack.require("delay", "delaySyncNote")
-    assert pack.to_stored(spec, 13, warnings=warnings) == "13"
+    # The room mic catalog is the last selector whose member names nobody has
+    # read: the plugin publishes no strings for it.
+    spec = pack.require("cabParameters", "leftRoomMicType")
+    assert pack.to_stored(spec, 1, warnings=warnings) == "1"
     assert len(warnings) == 1
     # The warning has to be actionable: the user cannot read the integer off the
     # plugin UI, so pointing them at the UI would be a dead end.
@@ -120,15 +122,97 @@ def test_unconfirmed_selector_warns_but_writes(pack):
     assert "not known" in warnings[0]
 
 
+# --- what was measured against the running plugin --------------------------
+# These pin facts that cost a measurement to obtain, so that a later edit
+# "tidying up" a note cannot quietly undo one. See
+# docs/measuring-against-the-plugin.md.
+
+
+def test_sync_note_tables_are_the_measured_ones(pack):
+    delay = pack.require("delay", "delaySyncNote")
+    tremolo = pack.require("tremolo", "tremoloSyncNote")
+    assert delay.members["13"] == "1/4"
+    assert tremolo.members["11"] == "1/4"
+    assert len(delay.members) == 21
+    assert len(tremolo.members) == 19
+    # The two tables are the same list of divisions, but tremolo's starts two
+    # entries later. Sharing one table would silently shift every tremolo value.
+    assert [delay.members[str(i + 2)] for i in range(19)] == [
+        tremolo.members[str(i)] for i in range(19)
+    ]
+
+
+def test_sync_note_is_ordered_by_duration(pack):
+    """The tables are not grouped straight/dotted/triplet — they ascend by note
+    length, which is why the indices look shuffled."""
+    from packs.timing import note_ms
+
+    spec = pack.require("delay", "delaySyncNote")
+    durations = []
+    for i in range(len(spec.members)):
+        name = spec.members[str(i)]
+        base = name.rstrip("TD")
+        suffix = name[len(base):]
+        ms = note_ms(120, base)
+        durations.append(ms * {"": 1.0, "T": 2 / 3, "D": 1.5}[suffix])
+    assert durations == sorted(durations)
+
+
+def test_pan_is_a_signed_number_not_a_selector(pack):
+    for key in ("leftCabPan", "rightCabPan"):
+        spec = pack.require("cabParameters", key)
+        assert spec.kind == "metered"
+        assert (spec.min, spec.max) == (-50, 50)
+        assert pack.to_stored(spec, -25) == "-25"
+        with pytest.raises(PackError, match="outside the declared range"):
+            pack.to_stored(spec, 60)
+
+
+def test_ac20_power_is_a_knob_not_a_selector(pack):
+    spec = pack.require("ac20Amp", "ac20Power")
+    assert spec.kind == "rotation"
+    assert pack.to_stored(spec, 100) == "1"
+    assert pack.to_stored(spec, 50) == "0.5"
+
+
+def test_treble_boost_documents_the_measured_direction(pack):
+    """Two names disagree about this switch and both are unreliable: the key says
+    treble boost, the plugin's own control says Bass Emphasis, and rendering
+    audio through it shows ON *removes* low end. The note must carry the
+    measured direction, because either name alone sends the reader the wrong
+    way — reading the plugin's name is exactly how this got documented
+    backwards once already."""
+    spec = pack.require("sw50rAmp", "sw50rTrebleBoost")
+    assert "Bass emphasis" == spec.ui  # the plugin's own label for the control
+    note = spec.note.lower()
+    assert "bass emphasis" in note, "must say which control it moves"
+    assert "brighter and tighter" in note, "must say which way the sound goes"
+    assert "60 hz" in note, "must carry the measurement, not just an adjective"
+
+
+def test_room_mics_do_not_share_the_close_mic_catalog(pack):
+    """The room selector takes 0-2; the close-mic catalog has eleven entries.
+    Pointing one at the other would let 'Ribbon 121' be written to a control
+    that silently rewrites it to 0."""
+    close = pack.require("cabParameters", "leftMicType")
+    room = pack.require("cabParameters", "leftRoomMicType")
+    assert len(close.members) == 11  # ten mics plus Custom IR
+    assert room.members is None
+
+
 def test_selectors_lacking_members_explain_the_alternative(pack):
     """An unknown selector is only acceptable if its note says what to do
-    instead. Otherwise the agent has no path forward."""
+    instead. Otherwise the agent has no path forward — and "run the discovery
+    workflow" is only a path forward when the workflow can actually succeed."""
     for spec in pack.parameters.values():
         if spec.kind != "enum" or spec.members is not None:
             continue
         assert spec.note, f"{spec.path} has no members and no guidance"
-        assert "probe.py" in spec.note, (
-            f"{spec.path} does not point at the discovery workflow"
+        discoverable = "probe.py" in spec.note
+        undiscoverable = "NO CONTROL FOR THIS EXISTS" in spec.note
+        assert discoverable or undiscoverable, (
+            f"{spec.path} neither points at the discovery workflow nor says why "
+            f"discovery is impossible"
         )
 
 
@@ -178,21 +262,13 @@ def test_morgan_has_no_modulation_section(pack):
 
 # --- the gap where declared ranges are missing ----------------------------
 
-# Metered parameters whose real limits nobody has read off the plugin UI yet.
-# They are written unchecked apart from the dimensional floor in UNIT_FLOOR, so
-# this list is pinned: a new parameter added without a range fails here until
-# someone decides whether that is acceptable. Shrinking it is the goal; growing
-# it silently is the thing to prevent.
-UNDECLARED_RANGES = {
-    "cabParameters/leftCabMicLevel",
-    "cabParameters/leftRoomMicLevel",
-    "cabParameters/rightCabMicLevel",
-    "cabParameters/rightRoomMicLevel",
-    "delay/delayTempo",
-    "parameters/gateThreshold",
-    "parameters/inputGain",
-    "parameters/outputGain",
-}
+# Metered parameters whose real limits nobody has measured against the plugin.
+# The set is empty: every metered parameter now carries a range read off the
+# running plugin. It stays here as a guard rather than being deleted, because
+# the failure it catches is a new parameter arriving with no range at all —
+# which would be written unchecked apart from the dimensional floor in
+# UNIT_FLOOR. Growing this set silently is the thing to prevent.
+UNDECLARED_RANGES: set[str] = set()
 
 
 def test_the_set_of_undeclared_ranges_is_exactly_what_we_think(pack):
