@@ -41,7 +41,8 @@ license of its own. The acknowledgement is for factual insight into the file
 layout, not for reused source.
 
 This project is not affiliated with, endorsed by, or supported by Neural DSP.
-"Morgan", "Morgan Amps Suite", and "Neural DSP" are the trademarks of their
+"Morgan", "Morgan Amps Suite", "Tone King", "Tone King Imperial MKII", and
+"Neural DSP" are the trademarks of their
 respective owners and are used here only to describe what the tool interoperates
 with.
 

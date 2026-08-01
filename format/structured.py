@@ -23,15 +23,90 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
 
-from .markers import fix_value_prefix, is_value_prefix
-from .parser import Token
+from .markers import (
+    fix_value_prefix,
+    is_opaque_value_prefix,
+    is_typed_value_prefix,
+    is_value_prefix,
+)
+from .parser import Token, encode_payload
 
 def is_value_token(tok: Token) -> bool:
     """True when this token is a VALUE rather than a key or structural marker.
 
-    The byte rule lives in `markers.is_value_prefix` so it is stated once.
+    The byte rule lives in `markers` so it is stated once. Both encodings count:
+    a printable string behind 0x05, and a binary number behind 0x04.
     """
-    return is_value_prefix(tok.raw_prefix)
+    return is_value_prefix(tok.raw_prefix) or is_typed_value_prefix(tok.raw_prefix)
+
+
+# Some plugins do not name a parameter with its own key. Tone King Imperial
+# MKII writes a flat list of records instead:
+#
+#     PARAM  id -> "ampType"  value -> <binary double>
+#
+# so 259 parameters share seven key names and the key says nothing about which
+# control it is. The parameter's real identity is the `id` field *inside* the
+# record. Reading these as plain key/value pairs collapses every one of them
+# onto ("", "id") and ("", "value"), which is how an early Tone King draft
+# produced six parameters instead of two hundred.
+RECORD_MARKER = "PARAM"
+RECORD_NAME_KEY = "id"
+RECORD_VALUE_KEY = "value"
+
+
+def is_record_marker(value: str) -> bool:
+    """True for the token that opens a parameter record.
+
+    The list of records is introduced by `0x01 <count+1>`, and when that count
+    byte lands in printable ASCII the tokenizer reads it as text and glues it to
+    the front of the first marker: 101 records makes `0x66`, so the token comes
+    out as `fPARAM`. Only the first record in a file is affected, and only when
+    the count happens to be printable — which is why every preset parsed
+    perfectly except its very first parameter.
+
+    Tolerating one stray leading byte here is deliberate: the byte layer is
+    already lossless and rewrites the file exactly, so this is purely a question
+    of reading, and teaching the tokenizer to recognise every structural marker
+    a plugin might invent is a much bigger promise than this needs.
+    """
+    return value == RECORD_MARKER or (
+        value.endswith(RECORD_MARKER) and len(value) == len(RECORD_MARKER) + 1
+    )
+
+
+def read_record(tokens: List[Token], i: int):
+    """Parse `PARAM {id: <name>[, value: <v>]}` at `i`.
+
+    Returns (name, value_index_or_None, end_index), or None when the tokens
+    after the marker are not a record at all — in which case the caller falls
+    back to treating them as ordinary keys, so an unfamiliar shape cannot
+    silently vanish.
+
+    The value field is genuinely optional. A record's `id` key carries a field
+    count in its marker (`0x01 0x02` with a value, `0x01 0x01` without), and
+    presets do contain one-field records: `Rawds.xml` names `drive1Treble` and
+    stores nothing for it. Requiring the value made those records fail to parse,
+    and the leftover `id` and `value` keys then registered as parameters in
+    their own right.
+    """
+    if i + 2 >= len(tokens):
+        return None
+    name_key, name_val = tokens[i + 1], tokens[i + 2]
+    if name_key.value != RECORD_NAME_KEY or not is_value_token(name_val):
+        return None
+
+    # The field count is in the `id` key's own marker: 0x01 0x02 when a value
+    # follows, 0x01 0x01 when none does. Reading it beats looking ahead for a
+    # `value` token, which would happily adopt an unrelated one that came next.
+    field_count = name_key.raw_prefix[-1] if name_key.raw_prefix else None
+    has_value = field_count != 0x01
+
+    if has_value and i + 4 < len(tokens):
+        value_key, value_val = tokens[i + 3], tokens[i + 4]
+        if value_key.value == RECORD_VALUE_KEY and is_value_token(value_val):
+            return name_val.value, i + 4, i + 5
+    return name_val.value, None, i + 3
 
 
 @dataclass
@@ -67,6 +142,11 @@ class Preset:
     # assume.
     duplicates: List[Tuple[str, str]] = field(default_factory=list)
 
+    # Records that name a parameter but store no value for it. They are not
+    # parameters you can read or write, and they are not errors either, so they
+    # are listed rather than dropped or faked.
+    valueless: List[Tuple[str, str]] = field(default_factory=list)
+
 
 def build(tokens: List[Token]) -> Preset:
     """Pair tokens into Parameters and identify sub-module structure."""
@@ -86,6 +166,35 @@ def build(tokens: List[Token]) -> Preset:
             # second half of a subModels declaration consumed below.
             i += 1
             continue
+
+        if is_record_marker(tok.value):
+            record = read_record(tokens, i)
+            if record is not None:
+                name, value_index, end = record
+                module_path = ".".join(module_stack)
+                if value_index is None:
+                    # Named but valueless. There is nothing to read and nothing
+                    # to write -- the writer clones a template and mutates
+                    # existing values, it cannot add a field -- so record the
+                    # name and move on rather than inventing an empty value.
+                    preset.valueless.append((module_path, name))
+                    i = end
+                    continue
+                param = Parameter(
+                    module_path=module_path,
+                    key=name,
+                    value=tokens[value_index].value,
+                    key_index=i + 2,      # the `id` value token names it
+                    value_index=value_index,
+                )
+                parameters.append(param)
+                if (module_path, name) in preset.by_path:
+                    preset.duplicates.append((module_path, name))
+                preset.by_path[(module_path, name)] = param
+                if module_path == "" and name == "presetNameProp":
+                    preset.preset_name = param.value
+                i = end
+                continue
 
         if tok.value == "subModels":
             # The next non-value token is the new sub-module name. Pop the
@@ -122,7 +231,7 @@ def build(tokens: List[Token]) -> Preset:
             if (module_path, tok.value) in preset.by_path:
                 preset.duplicates.append((module_path, tok.value))
             preset.by_path[(module_path, tok.value)] = param
-            if param.module_path == "" and param.key == "name":
+            if param.module_path == "" and param.key in ("name", "presetNameProp"):
                 preset.preset_name = param.value
             i += 2
             continue
@@ -138,11 +247,30 @@ def set_parameter(preset: Preset, module_path: str, key: str, new_value: str) ->
     param = preset.by_path.get((module_path, key))
     if param is None:
         raise KeyError(f"No parameter {module_path!r}.{key!r} in preset")
-    preset.tokens[param.value_index] = Token(
-        raw_prefix=fix_value_prefix(
-            preset.tokens[param.value_index].raw_prefix, new_value
-        ),
-        value=new_value,
-        terminator=preset.tokens[param.value_index].terminator,
-    )
+    current = preset.tokens[param.value_index]
+    if is_typed_value_prefix(current.raw_prefix) and not current.is_binary:
+        raise ValueError(
+            f"{module_path}/{key} carries a binary marker but no payload, which "
+            f"means the file is truncated there. Writing it would put text "
+            f"behind a marker that declares a fixed width."
+        )
+    if current.is_binary:
+        # A binary value keeps its marker (the width is fixed) and is
+        # re-encoded rather than length-patched.
+        preset.tokens[param.value_index] = Token(
+            raw_prefix=current.raw_prefix,
+            value=new_value,
+            terminator=current.terminator,
+            payload=encode_payload(
+                new_value,
+                len(current.payload),
+                opaque=is_opaque_value_prefix(current.raw_prefix),
+            ),
+        )
+    else:
+        preset.tokens[param.value_index] = Token(
+            raw_prefix=fix_value_prefix(current.raw_prefix, new_value),
+            value=new_value,
+            terminator=current.terminator,
+        )
     param.value = new_value

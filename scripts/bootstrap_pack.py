@@ -93,44 +93,46 @@ def infer(key: str, values: list) -> dict:
     return {"kind": "metered", "needs_review": True, "note": "unit unknown"}
 
 
-# Not every Neural DSP preset is shaped like Morgan's. Tone King Imperial MKII
-# uses a later encoding: numbers are raw IEEE-754 doubles introduced by this
-# marker, and parameters are a flat list of PARAM records carrying `id` and
-# `value` fields rather than one named key per value.
-#
-# The byte-level tokenizer handles both — round-trip is exact for every preset
-# of every Neural DSP plugin tested — but `format.structured` models the Morgan
-# shape, so on a Tone King preset it pairs the wrong tokens and produces a
-# handful of nonsense parameters. Drafting from that is worse than refusing:
-# the draft looks plausible and is silently wrong.
-TYPED_DOUBLE_MARKER = b"\x01\x09\x04"
+# Binary values and PARAM records are both understood now (see
+# format/markers.py and format/structured.py), so neither is a reason to
+# refuse. What remains is the shape we would still get wrong silently.
+DECODABLE_WIDTHS = {8}          # 8 bytes: a little-endian IEEE-754 double
 
 
-def unsupported_shape(raw: bytes, parameters: list, by_key: dict) -> str | None:
-    """Explain why this preset can't be drafted, or None if it can."""
-    if TYPED_DOUBLE_MARKER in raw:
+def unsupported_shape(tokens: list, parameters: list, by_key: dict) -> str | None:
+    """Explain why this preset can't be drafted, or None if it can.
+
+    Widths come from the tokenizer, not from scanning the raw bytes for the
+    marker pattern: a payload whose own contents happen to spell `01 xx 04`
+    would otherwise trigger a refusal on a file that is perfectly fine.
+    """
+    widths = {len(t.payload) for t in tokens if t.is_binary}
+    unknown = sorted(widths - DECODABLE_WIDTHS)
+    if unknown:
         return (
-            "This preset stores its numbers as raw binary doubles, not as text.\n"
-            f"  Found {raw.count(TYPED_DOUBLE_MARKER)} of them. Every value in a "
-            f"format this tool can draft is a printable string.\n"
-            "  The parser reads and rewrites the file losslessly, so nothing here "
-            "is corrupt — but the structured layer would mis-pair the tokens and "
-            "hand you a manifest full of parameters that do not exist.\n"
-            "  Supporting this needs a value decoder in format/, not a new pack. "
+            f"This preset carries binary values "
+            f"{', '.join(str(w) for w in unknown)} bytes wide, and only 8-byte "
+            f"doubles are understood.\n"
+            "  The parser handles them safely — nothing is corrupt, and "
+            "reading the file is fine — but their values would be drafted as "
+            "raw hex, and writing one would be a guess.\n"
+            "  Teach format/parser.py:decode_payload the width first. "
             "See reference/preset-spec.md."
         )
 
-    # A named-key format has roughly one key per parameter. A record format has a
-    # few key names repeated over and over, which is the same mis-pairing wearing
-    # a different disguise.
+    # A named-key format has roughly one key per parameter. Far fewer distinct
+    # keys than parameters means the file identifies them by a field inside a
+    # repeated record — and since `format.structured` understands the one record
+    # shape it has seen, reaching here means this is a *different* one, still
+    # being mis-paired.
     if len(parameters) > 20 and len(by_key) * 4 < len(parameters):
         return (
             f"This preset has {len(parameters)} parameters but only "
             f"{len(by_key)} distinct key names "
             f"({', '.join(sorted(by_key)[:5])}…).\n"
-            "  That means the file identifies parameters by a field inside a "
-            "repeated record, not by the key itself — a shape this tool does not "
-            "model, so the draft would be meaningless.\n"
+            "  It identifies parameters by a field inside a repeated record, and "
+            "not in the `PARAM {id, value}` shape format/structured.py knows, so "
+            "the draft would be meaningless.\n"
             "  See reference/preset-spec.md."
         )
     return None
@@ -178,7 +180,7 @@ def main() -> None:
     for param in preset.parameters:
         by_key[f"{param.module_path}/{param.key}"].append(param.value)
 
-    problem = unsupported_shape(preset_path.read_bytes(), preset.parameters, by_key)
+    problem = unsupported_shape(preset.tokens, preset.parameters, by_key)
     if problem:
         die(problem)
 

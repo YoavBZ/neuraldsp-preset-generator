@@ -17,8 +17,12 @@ tightened low end and a 12″ speaker — so more bass, headroom and punch than 
 real Princeton. 12W class AB, 2×6V6, three-spring tube reverb.
 
 - **Reach for it:** clean rhythm, country, blues cleans. The default clean platform.
-- **Range:** sparkly clean → edge-of-breakup. It's 12 watts; past ~55–60% volume
-  it starts to sag and grit up, which is the point.
+- **Range:** sparkly clean → edge-of-breakup. It's 12 watts and it does grit up,
+  but **where depends on how hard you hit it**, so don't quote a fixed number.
+  Measured: at a modest input the knee is around 65–70%, where distortion
+  nearly doubles (4.6% → 8.1%). Feed it three times the signal and 5%
+  distortion arrives around 28% instead of around 66%. `inputGain` and the
+  guitar move it as much as the knob does.
 - **Knobs:** `pr12Volume`, `pr12Treble`, `pr12Bass`, `pr12Reverb`, `pr12Dwell`.
 - **Dwell is the trick.** Morgan added it to the Princeton circuit specifically so
   you can run a high reverb mix without washing out. Want wet but defined? Raise
@@ -46,10 +50,17 @@ tube reverb. 50W.
 - **Range:** loud cleans → smooth break-up. It has far more headroom than the
   other two.
 - **Knobs:** `sw50rVolume` (preamp gain — this is what breaks up),
-  `sw50rLevel` (master, adds no gain), `sw50rTreble`, `sw50rMid`, `sw50rBass`,
+  `sw50rLevel` (master — much less dirt than the preamp volume, but not none), `sw50rTreble`, `sw50rMid`, `sw50rBass`,
   `sw50rReverb`, `sw50rBright`, `sw50rTrebleBoost`, `sw50rInputMode`.
-- **Mids do the singing.** `sw50rMid` around 60–68% is where the sustained lead
-  voice lives.
+- **`sw50rMid` is mostly a level control.** Measured end to end it lifts the
+  whole spectrum ~7.5 dB with only ~2 dB of extra emphasis at 1.6–2.5 kHz — not
+  a mid band. This file used to claim the lead voice lived at 60–68%; the
+  endpoint measurement gives no reason to believe that window is special, though
+  only the endpoints were measured, so it does not disprove a feature between
+  them either. Turning it up mostly makes the amp louder and more driven, which is a
+  real way to get a singing lead — just not the reason previously given. Use
+  `sw50rTreble` (a genuine tilt: −3.4 dB at 59 Hz, +7.2 dB at 2.5 kHz) or the
+  graphic EQ to change voicing.
 
 > Earlier notes in this repo called SW50R a Vox-style chime amp in AC30
 > territory, good for Brian May and AC/DC. That was wrong, and it mattered — it
@@ -101,9 +112,13 @@ through `EQBand9`, in dB. Naming the frequency beats naming the band number.
 - **"muddy" / "woolly"** → cut 125/250 Hz, raise `EQHpf` to 80–90 Hz, and check
   you haven't got amp bass above ~55%.
 - **"more break-up"** → raise the live amp's volume knob. On SW50R that's
-  `sw50rVolume`, not `sw50rLevel`. Or engage `drive1`.
+  `sw50rVolume` (~0.5% → 14% distortion across its travel), not `sw50rLevel`.
+  Or engage `drive1`. Raising `inputGain` moves the breakup point too.
 - **"cleaner"** → lower amp volume; on SW50R raise `sw50rLevel` and drop
-  `sw50rVolume` to keep loudness with less grit.
+  `sw50rVolume` to keep loudness with less grit. `sw50rLevel` is cleaner but not
+  clean: it still reaches 5.8% distortion at 80% against the preamp's 14%, so if
+  you need pristine, keep it out of its top quarter and make up level with
+  `outputGain`.
 - **"in time with the track"** → compute ms from tempo, don't use the sync
   selector. See `reference/selectors-and-timing.md`.
 

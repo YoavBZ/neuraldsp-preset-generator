@@ -99,6 +99,11 @@ class Pack:
     display_name: str
     file_header: str
     parameters: Dict[str, ParamSpec] = field(default_factory=dict)
+    # The installed Audio Unit this pack describes, as a type/subtype/manufacturer
+    # triple. Only scripts/audit_manifest.py uses it: it re-derives every declared
+    # range and selector from the running plugin. Absent on a bootstrapped draft,
+    # which is why nothing on the write path may depend on it.
+    audio_unit: Dict[str, str] = field(default_factory=dict)
     # Amp display name -> module prefix, so an {amp}-templated recipe can be
     # resolved to the live amp's own EQ module.
     amp_modules: Dict[str, str] = field(default_factory=dict)
@@ -319,6 +324,9 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         display_name=raw["display_name"],
         file_header=raw["file_header"],
         parameters=params,
+        audio_unit={
+            k: v for k, v in raw.get("audio_unit", {}).items() if k != "note"
+        },
         amp_modules=raw.get("amp_modules", {}),
     )
 

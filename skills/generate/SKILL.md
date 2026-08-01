@@ -27,7 +27,9 @@ The user speaks in plain language, not flags. Extract:
 - **the tone** — song, artist, era, or a bare description ("jangly", "creamy lead")
 - **the role** — rhythm / lead / clean, if stated
 - **the plugin** — which pack. Detect it from a template they point at; if they
-  don't say and only one pack exists, use it and mention which.
+  don't say, detect the pack from the template's own header rather than
+  assuming — more than one pack exists now. If there is genuinely nothing to
+  detect from, ask rather than picking.
 
 Ask at most **one** clarifying question, and only if the answer would change the
 amp choice. Otherwise pick sensible defaults and say what you assumed.
@@ -56,6 +58,12 @@ range.
 as `learned_notes` — that's where past runs recorded what actually worked, and it
 beats generic guidance. It lives under the data root, so it survives plugin
 updates.
+
+**Not every pack has this knowledge.** `show.py` reports `tone_knowledge.exists`,
+and a bootstrapped pack has no `recipes.json` at all. When either is missing,
+say so plainly: you can still edit a template the user points at, but you cannot
+map a tonal description onto controls nobody has characterised. Do not invent
+the mapping — that is the guess this project exists to avoid.
 
 **Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per

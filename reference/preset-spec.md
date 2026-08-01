@@ -5,9 +5,11 @@ Shared reference for the `generate` and `edit` skills.
 ## How writing works
 
 The preset file is binary despite its `.xml` extension, and has no public
-spec. So the writer **clones a known-good preset and mutates only the printable
-string values of parameters it already contains**. Wrapper bytes are preserved
-verbatim; the one length byte the plugin validates is recomputed.
+spec. So the writer **clones a known-good preset and mutates only the values of
+parameters it already contains**. Wrapper bytes are preserved verbatim. A text
+value's one length byte is recomputed; a binary value is re-encoded in place at
+its fixed width. Both encodings are described under
+[The second preset encoding](#the-second-preset-encoding).
 
 Consequences you must design around:
 
@@ -153,29 +155,52 @@ anything — so a failed run leaves no partial output.
 3. Tell the user where the file is and how to load it —
    see [installing.md](installing.md).
 
-## Formats this tool cannot read
+## The second preset encoding
 
-The byte-level parser and writer are plugin-agnostic and measured to be so:
-every one of 681 presets across Morgan Amps Suite, Tone King Imperial
-MKII, Archetype Nolly X and Archetype Plini X round-trips byte for byte.
+The byte-level parser and writer are plugin-agnostic, and measured to be so:
+every one of 681 presets across Morgan Amps Suite, Tone King Imperial MKII,
+Archetype Nolly X and Archetype Plini X round-trips byte for byte.
 
-The *structured* layer is narrower. It models one named key per printable value,
-which is how Morgan, Nolly X and Plini X are encoded — those three draft cleanly
-with `scripts/bootstrap_pack.py`. **Tone King Imperial MKII does not.** It uses a
-later encoding:
+Two encodings exist above that layer.
 
-- numbers are raw IEEE-754 doubles introduced by `01 09 04`, not text
-- parameters are a flat list of `PARAM` records carrying `id` and `value`
-  fields, so 259 parameters share 7 key names instead of having their own
+**Named keys with text values** — Morgan, Nolly X, Plini X. Every parameter has
+its own key and its value is a printable string behind a `0x01 <len+2> 0x05`
+marker.
 
-The two interact badly. Because the structured layer expects printable values,
-the bytes of a double that happen to land in ASCII get read as text: the
-exponent bytes of `120.0` are `5e 40` — `^@` — which is how an early draft of a
-Tone King pack ended up with a parameter named `^@presetNameProp`.
+**PARAM records with binary values** — Tone King Imperial MKII:
 
-Supporting it needs a value decoder in `format/`, keyed off the marker byte,
-plus a structured layer that can identify a parameter by a field inside a record
-rather than by its key. That is a change to the format layer, not a new pack.
-Nothing currently needs it, so `bootstrap_pack.py` refuses both shapes with a
-diagnosis rather than drafting a manifest that looks plausible and is silently
-wrong.
+```
+PARAM  id -> "ampType"   value -> 0x01 0x09 0x04 <8-byte little-endian double>
+```
+
+The key says nothing about which control it is; the parameter's identity is the
+`id` field inside the record. Both are read, edited and written. Three details
+were each a bug before they were understood:
+
+- **A payload byte can be printable.** The exponent bytes of `120.0` are
+  `5e 40` — `^@` — so a text-only parser reads them as the start of the next
+  key. That is where the parameter `^@presetNameProp` came from.
+- **The record list is introduced by `0x01 <count+1>`,** and when that count is
+  printable it glues to the first marker: 101 records produces `fPARAM`. Exactly
+  one record per preset was affected — the first.
+- **The value field is optional.** `PARAM {id: drive1Treble}` with no value is
+  legal. Those are listed on `Preset.valueless` rather than given an invented
+  value, because there is nothing to read and the writer cannot add a field.
+
+A third marker, `0x01 <LEN> 0x06`, holds an 8-byte identifier (`presetUIDProp`).
+It is preserved byte for byte, rendered as hex, and refuses to be written —
+nothing here knows what its bytes mean.
+
+`bootstrap_pack.py` still refuses two shapes, because it would get them wrong
+silently: a binary width other than 8 bytes, and a record layout that is not
+`PARAM {id, value}`.
+
+### What Tone King's ranges cost
+
+Its Audio Unit publishes 96 controls with real ranges, but its AU state is the
+same opaque binary rather than a document — so the write-a-key-and-see-what-moves
+probe that verified every Morgan range cannot run against it, and
+`audit_manifest.py` reports `CANNOT VERIFY`. Matching preset keys to controls by
+name alone reaches 35 of 259. The pack therefore ships with **no declared
+ranges** rather than transcribed guesses. See
+[../docs/measuring-against-the-plugin.md](../docs/measuring-against-the-plugin.md).

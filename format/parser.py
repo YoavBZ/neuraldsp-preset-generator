@@ -1,9 +1,11 @@
 """
 Lossless tokenizer for Neural DSP preset binary files.
 
-A preset is a sequence of UTF-8 null-terminated printable strings separated by
-short non-printable "marker" bytes. We tokenize into (raw_prefix, value,
-terminator) triples that preserve every byte of the original file. The writer
+A preset is a sequence of null-terminated values separated by short
+non-printable "marker" bytes. Most values are printable UTF-8; some plugins
+store numbers as fixed-width binary instead, and those keep their raw bytes on
+the token (see `Token.payload`). We tokenize into (raw_prefix, value,
+terminator, payload) tuples that preserve every byte of the original file. The writer
 concatenates them back; mutating a `value` produces a valid edited preset as
 long as the marker bytes around it are unchanged.
 
@@ -17,28 +19,99 @@ carries no license.
 
 from __future__ import annotations
 
+import math
+import struct
 from dataclasses import dataclass
 from typing import List
 
 from .markers import (
+    DOUBLE_WIDTH,
     NUL,
+    TYPED_VALUE_TAIL,
     VALUE_LEN_OFFSET,
     VALUE_PREFIX_TAIL,
+    is_opaque_value_prefix,
     is_printable,
+    is_typed_value_prefix,
     is_value_prefix,
+    typed_payload_length,
 )
 
 
 @dataclass
 class Token:
-    """One printable string in the preset, with the bytes that preceded it."""
+    """One value in the preset, with the bytes that preceded it.
+
+    Usually the body is printable text. Some plugins store numbers as raw
+    binary instead; for those, ``payload`` holds the exact bytes and ``value``
+    holds their decoded form, so the structured layer can read a number while
+    the writer still reproduces the file byte for byte. ``payload`` is what
+    goes back out — never re-encode from ``value`` except through
+    ``format.structured.set_parameter``, which knows the width.
+    """
 
     raw_prefix: bytes  # non-printable bytes between previous string and this one
-    value: str         # printable UTF-8 body (no NUL)
+    value: str         # printable UTF-8 body (no NUL), or decoded binary value
     terminator: bytes  # b"\x00" normally; b"" only at EOF if file lacks final NUL
+    payload: bytes | None = None  # raw bytes when the value is binary, else None
+
+    @property
+    def is_binary(self) -> bool:
+        return self.payload is not None
 
     def to_bytes(self) -> bytes:
-        return self.raw_prefix + self.value.encode("utf-8") + self.terminator
+        body = self.payload if self.payload is not None else self.value.encode("utf-8")
+        return self.raw_prefix + body + self.terminator
+
+
+def decode_payload(payload: bytes, opaque: bool = False) -> str:
+    """Human-readable form of a binary value, for the structured layer.
+
+    Eight bytes behind the numeric marker are a little-endian IEEE-754 double.
+    Anything else — an identifier, or a width nobody has decoded — is rendered
+    as hex: unreadable, but honest, and the original bytes still round-trip
+    because `payload` is what gets written back.
+    """
+    if not opaque and len(payload) == DOUBLE_WIDTH:
+        return _fmt(struct.unpack("<d", payload)[0])
+    return payload.hex()
+
+
+def encode_payload(value: str, width: int, opaque: bool = False) -> bytes:
+    """Inverse of `decode_payload`, for writing a new value."""
+    if opaque:
+        raise ValueError(
+            "this value is an opaque identifier, not a number: nothing here "
+            "knows what its bytes mean, so writing one would be a guess. It "
+            "round-trips untouched as long as you leave it alone."
+        )
+    if width == DOUBLE_WIDTH:
+        return struct.pack("<d", float(value))
+    raise ValueError(
+        f"cannot encode a {width}-byte typed value; only 8-byte doubles are "
+        f"understood. The original bytes are preserved if you do not write to it."
+    )
+
+
+def _fmt(x: float) -> str:
+    """Render a double so that reading it and writing it back is a no-op.
+
+    This is a SERIALISATION format, not a display one, and the difference is not
+    cosmetic. Rounding to a fixed number of decimals looked tidy and silently
+    changed 14% of the real corpus on an identity write-back: a value stored as
+    a promoted float32, `-14.200000762939453`, came back as `-14.2000007629` and
+    re-encoded to different bytes. `repr` gives the shortest string that
+    round-trips exactly, which is the only property that matters here.
+
+    Integral values still print without a decimal point, matching how the
+    text-valued plugins write them, and `str(int(x))` is exact for any integer a
+    double can hold. Non-finite values go through `repr` untouched: `inf` and
+    `nan` both survive a round trip, whereas `int(x)` on them raises and made
+    the whole preset unreadable.
+    """
+    if math.isfinite(x) and x == int(x) and abs(x) < 2 ** 53:
+        return str(int(x))
+    return repr(x)
 
 
 def parse(buf: bytes) -> List[Token]:
@@ -62,7 +135,9 @@ def parse(buf: bytes) -> List[Token]:
         prefix_start = i
         while i < n and not is_printable(buf[i]):
             i += 1
-            if is_value_prefix(buf[prefix_start:i]):
+            if is_value_prefix(buf[prefix_start:i]) or is_typed_value_prefix(
+                buf[prefix_start:i]
+            ):
                 break
         prefix = buf[prefix_start:i]
 
@@ -92,6 +167,34 @@ def parse(buf: bytes) -> List[Token]:
                 i += 1
             tokens.append(Token(raw_prefix=prefix, value=value, terminator=terminator))
             continue
+
+        # --- Typed binary value (0x01 <LEN> 0x04) -------------------------
+        # The payload is raw bytes, so it must be taken by length and never
+        # scanned for a terminator or decoded as text.
+        if is_typed_value_prefix(prefix):
+            width = typed_payload_length(prefix)
+            vend = i + width
+            if width >= 0:
+                # A truncated file declares more payload than it has. Take what
+                # is there: the token stays binary, so it round-trips and the
+                # writer refuses it, rather than falling through to the text
+                # branch and becoming a marker with no payload.
+                payload = buf[i:min(vend, n)]
+                i = vend
+                terminator = NUL if (i < n and buf[i] == 0x00) else b""
+                if terminator:
+                    i += 1
+                tokens.append(
+                    Token(
+                        raw_prefix=prefix,
+                        value=decode_payload(
+                            payload, opaque=is_opaque_value_prefix(prefix)
+                        ),
+                        terminator=terminator,
+                        payload=payload,
+                    )
+                )
+                continue
 
         if i >= n:
             # File ended in a run of non-printable bytes (e.g. trailing

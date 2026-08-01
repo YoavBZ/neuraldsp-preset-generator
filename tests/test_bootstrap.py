@@ -150,13 +150,10 @@ def test_missing_preset_is_reported_cleanly(tmp_path):
 
 
 # --- formats this tool cannot draft ---------------------------------------
-# Neural DSP presets are not all shaped like Morgan's. Tone King Imperial MKII
-# stores numbers as raw IEEE-754 doubles inside repeated PARAM records, and the
-# structured layer — which assumes one named key per printable value — mis-pairs
-# the tokens and yields a handful of parameters that do not exist. It drafted a
-# plausible-looking six-parameter manifest, one of whose names was two bytes of
-# a float glued to the next key. Refusing is the only honest outcome until
-# format/ can decode those values.
+# Tone King's shape — 8-byte doubles inside `PARAM {id, value}` records — is now
+# understood, so it drafts rather than being refused. What is still refused is
+# the shape we would get wrong *silently*: a binary width we cannot decode, and
+# a record layout that is not the one format/structured.py knows.
 #
 # The fixtures below are synthetic. Real presets are Neural DSP's factory
 # content and are not committed — see NOTICE.md.
@@ -164,13 +161,12 @@ def test_missing_preset_is_reported_cleanly(tmp_path):
 
 @pytest.fixture
 def binary_valued_preset(tmp_path):
-    """A preset whose numbers are raw doubles rather than printable strings."""
-    import struct
-
+    """A preset whose numbers are binary at a width nobody has decoded."""
     body = b"otherplugin\x00"
     for i, key in enumerate(["ampType", "gain", "bass"]):
         body += key.encode() + b"\x00"
-        body += b"\x01\x09\x04" + struct.pack("<d", float(i))
+        # 0x05 -> a 4-byte payload: plausibly a float32, but unverified.
+        body += b"\x01\x05\x04" + bytes([i, 0, 0, 0])
     path = tmp_path / "BinaryValues.xml"
     path.write_bytes(body)
     return path
@@ -178,31 +174,36 @@ def binary_valued_preset(tmp_path):
 
 @pytest.fixture
 def record_shaped_preset(tmp_path):
-    """A preset that names parameters inside repeated records, so the same few
-    key names repeat instead of one key per parameter."""
+    """A record layout that is NOT the `PARAM {id, value}` shape we understand,
+    so the same few key names repeat instead of one key per parameter."""
     body = b"recordplugin\x00"
     for i in range(40):
-        body += b"PARAM\x00"
-        body += b"id\x00" + b"\x01\x09\x05" + f"param{i}".encode() + b"\x00"
-        body += b"value\x00" + b"\x01\x05\x05" + b"0.5" + b"\x00"
+        body += b"ENTRY\x00"
+        body += b"tag\x00" + b"\x01\x09\x05" + f"param{i}".encode() + b"\x00"
+        body += b"data\x00" + b"\x01\x05\x05" + b"0.5" + b"\x00"
     path = tmp_path / "Records.xml"
     path.write_bytes(body)
     return path
 
 
-def test_binary_valued_format_is_refused_not_drafted(binary_valued_preset):
-    """The failure mode this guards against is a draft that looks fine."""
+def test_undecodable_binary_width_is_refused_not_drafted(binary_valued_preset, cleanup_pack):
+    """The failure mode this guards against is a draft that looks fine.
+
+    An 8-byte double is understood; anything else would be drafted as hex, and
+    writing it would be a guess dressed as a value."""
+    cleanup_pack.append("otherplugin")
     result = run("--preset", str(binary_valued_preset))
     assert result.returncode == 2
-    assert "binary doubles" in result.stderr
+    assert "4 bytes wide" in result.stderr
     assert "Traceback" not in result.stderr
     # It must say the file itself is intact, or the reader will assume the
     # preset is damaged and go looking for a problem that isn't there.
-    assert "losslessly" in result.stderr
+    assert "8-byte doubles" in result.stderr and "nothing is corrupt" in result.stderr
     assert not (PACKS_DIR / "otherplugin").exists()
 
 
-def test_record_shaped_format_is_refused_not_drafted(record_shaped_preset):
+def test_record_shaped_format_is_refused_not_drafted(record_shaped_preset, cleanup_pack):
+    cleanup_pack.append("recordplugin")
     result = run("--preset", str(record_shaped_preset))
     assert result.returncode == 2
     assert "distinct key names" in result.stderr

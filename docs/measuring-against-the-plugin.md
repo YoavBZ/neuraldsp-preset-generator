@@ -104,6 +104,30 @@ controls, two different behaviours, one observation each: assume neither rule
 generalises, and declare the members. An undeclared selector is not a harmless
 unknown.
 
+## Re-running all of it: `scripts/audit_manifest.py`
+
+```bash
+python scripts/audit_manifest.py --pack morgan
+```
+
+Rebuilds the probe, asks the plugin for its parameter table, and checks every
+declared range and selector against it. Three buckets: **agrees**, **DISAGREES**
+(exit 1), and **not checked**.
+
+The third bucket is the one that matters, and it is why this is a script rather
+than a note. The map only reaches a key whose probe value actually moves a
+control, so a key already holding that value drops out of the comparison — which
+is exactly how three `*EQHpf` maximums stayed wrong by a factor of forty through
+a full audit. They were not *reported* as wrong; they were *absent*. The script
+now falls back to writing past each declared end and reading back what the
+plugin kept, which works whether or not anything moved, so that bucket should
+be empty. If it is not, probe those by hand.
+
+It is not part of the test suite and cannot be — it needs macOS, a licence and
+an installed Audio Unit. `tests/test_audit_manifest.py` covers the parts that do
+not need the plugin, including the pan-display parsing that made the first run
+cry wolf about two correct ranges.
+
 ## Measuring what a control does to the sound
 
 Everything above identifies controls. It says nothing about what they *do* —
@@ -144,6 +168,45 @@ Three things make the result trustworthy, and all three were needed:
 | `sw50rBright` | +5 dB @ 2.5 kHz, +8 dB @ 6.3 kHz | air, lows untouched |
 | `ac20BassTreble` | −15.6 dB @ 60 Hz, −1 dB @ 6.3 kHz | a big bass cut |
 | `ac20Cut` 0→100% | +11 dB @ 2.5 kHz, +19 dB @ 6.3 kHz | presence, **not** a cut |
+| `sw50rMid` 0→100% | +7.5 dB everywhere, +2 dB more at 1.6–2.5 kHz | a level control |
+| `sw50rTreble` 0→100% | −3.4 dB @ 59 Hz, +7.2 dB @ 2.5 kHz | a real tilt |
+| `*CabPosition` 0→1 | +1.4 dB low mids, −1.1 dB @ 6.3 kHz | gently darker |
+
+## Measuring break-up, which is not a spectrum
+
+"It breaks up past 60%" is a claim about distortion, so noise and a band
+comparison cannot test it. Feed a **sine** and measure the harmonics the amp
+adds that were not in the input:
+
+```bash
+/tmp/au_render aumf NMAS NDSP pr12Amp/pr12Volume 0.6 v60.wav 0.05 sine:222.65625
+python3 scripts/spectrum_diff.py --thd 222.65625 v60.wav
+```
+
+**The test tone must land on an analysis bin centre**, and this is not a detail.
+The analyser uses a 4096-point window at 48 kHz, so bins are 11.71875 Hz apart.
+At 220 Hz — 0.23 of a bin off centre — the fundamental's own leakage lands in
+the harmonic bins and a *mathematically pure sine* reads **1.606% distortion**,
+amplitude-independent. The first version of this measurement used 220 Hz and
+published 1.6% as the clean anchor for two different controls: that number was
+the method, not the amp. `spectrum_diff.py` now refuses an off-centre
+fundamental and names the nearest valid one, because the failure is invisible —
+it produces plausible small numbers rather than an error.
+
+The result that matters is not the number but what moves it: **break-up is not a
+property of the knob.** `pr12Volume` reaches 5% distortion around 66% of its
+travel at one input level and around 28% when fed three times the signal. Any
+preset advice of the form "past N%" is only true for one input, and `inputGain`,
+the guitar and the pickup all move N.
+
+It also caught an overstatement. `sw50rLevel` was documented as a master volume
+that "does not add gain"; it goes from about 0.3% to 5.8% distortion across its
+travel, against 14% for the preamp volume. Well under half, but not none.
+
+One caution: check the peak level before believing a distortion number. A render
+that clips would report distortion that belongs to the harness rather than the
+plugin. `sw50rVolume` at 80% pushes the output past 0 dBFS on its own, which is
+worth knowing separately.
 
 **The name is a hypothesis, not evidence — including the plugin's own.** Two
 cases, both of which this repo got wrong by reasoning:
@@ -169,6 +232,14 @@ Agreement between name-based arguments is not corroboration. Render the audio.
   a tone decision needs; they are not a datasheet frequency response.
 - macOS only, and it needs the plugin licensed and installed. Unlicensed Neural
   DSP plugins fail to instantiate with `-1`.
+- **It only works on a plugin whose state is a document.** Everything here rests
+  on being able to write one preset key into the plugin's own state and read
+  back which control moved. Tone King Imperial MKII keeps its state as opaque
+  bytes, so `revmap` and `values` cannot run against it and `audit_manifest.py`
+  reports `CANNOT VERIFY`. Its Audio Unit still publishes real ranges via
+  `params` — but nothing ties them to preset keys except their names, which is
+  the one kind of evidence this document exists to distrust. Its pack ships with
+  no declared ranges rather than 35 name-matched guesses.
 
 ## Why an undeclared range beats a guessed one
 
