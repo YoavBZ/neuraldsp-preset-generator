@@ -514,3 +514,132 @@ def test_a_complete_selector_check_says_so_without_the_caveat(monkeypatch, capsy
     assert "1 verified, 0 DISAGREE" in out
     assert "PARTLY VERIFIED" not in out
     assert code == 0
+
+
+# --- the paths a review found could be replaced with `return 0` -------------
+# 55 mutations, 25 survived, and 11 of those were in `verify_via_state` — the
+# path every Tone King number comes from. It could be made to return 0
+# unconditionally, or to count disagreements as verified, with a green suite.
+
+
+class _StubProbe:
+    """A plugin that answers however the test needs."""
+
+    def __init__(self, controls, states=None):
+        self.controls, self.states = controls, states or []
+
+    def apply_many_with_states(self, blobs):
+        return None, [self.states[i] if i < len(self.states) else blobs[i]
+                      for i in range(len(blobs))]
+
+
+def _pack_with(**specs):
+    from packs.loader import Pack
+    return Pack(pack_id="stub", display_name="Stub", file_header="stub",
+                parameters=specs, audio_unit={"type": "aumf", "subtype": "X", "manufacturer": "Y"})
+
+
+def _metered(module, key, lo, hi, unit=None):
+    from packs.loader import ParamSpec
+    return ParamSpec(module=module, key=key, kind="metered", unit=unit, min=lo, max=hi)
+
+
+def test_compare_returns_nonzero_when_a_range_disagrees(capsys):
+    """Nothing asserted a failing exit code. `compare()` could be changed to
+    ignore disagreements entirely and stay green."""
+    import audit_manifest
+
+    pack = _pack_with(**{"eq/hpf": _metered("eq", "hpf", 20, 20000, "hz")})
+    params = {7: {"displayName": "HPF", "minString": "20 Hz", "maxString": "500 Hz"}}
+    revmap = [{"element": "eq", "key": "hpf", "moved": [{"address": 7}]}]
+    code = audit_manifest.compare(pack, params, revmap, checker=None)
+    assert code == 1, "a disagreement must fail the run"
+    assert "DISAGREES" in capsys.readouterr().out
+
+
+def test_compare_reports_a_declared_fact_no_probe_reached(capsys):
+    """An asserted-but-unreached parameter must be loud, not silent. Collapsing
+    the declared/bare routing was a surviving mutation."""
+    import audit_manifest
+
+    pack = _pack_with(**{"eq/hpf": _metered("eq", "hpf", 20, 500, "hz")})
+    class _Declines:
+        def check(self, *a, **k):
+            return None
+
+    code = audit_manifest.compare(pack, params={}, revmap=[], checker=_Declines())
+    out = capsys.readouterr().out
+    assert code == 1
+    assert "ASSERTS SOMETHING" in out and "eq/hpf" in out
+
+
+def test_bounds_checker_still_checks_that_the_ends_survive(monkeypatch):
+    """Two halves: a value written past an end must come back AS that end, and
+    the end itself must survive unchanged. Deleting the first half survived
+    mutation — and it is the half that catches a plugin which RETAINS an
+    out-of-range value instead of clamping, which Tone King does."""
+    import audit_manifest
+    from audit_manifest import BoundsChecker
+
+    # A plugin that retains whatever it is given: no clamping at all.
+    def retaining(binary, au, mode, *args):
+        return {"results": [{"wrote": w, "keptInState": w} for w in args[1].split(",")]}
+
+    monkeypatch.setattr(audit_manifest, "run_probe", retaining)
+    checker = BoundsChecker(pathlib.Path("/nonexistent"), {})
+    verdict = checker.check("eq/hpf", _metered("eq", "hpf", 20, 500))
+    assert verdict[0] == "disagrees", "a plugin that clamps nothing cannot confirm a range"
+
+
+def test_float32_tolerance_is_tight_enough_to_be_worth_having():
+    """Widening it to 10% survived mutation: the tests bracketed one ULP and a
+    50x error with nothing in between."""
+    from audit_manifest import _same_to_float32
+
+    assert not _same_to_float32(1.09, 1.0), "9% out is not a rounding artefact"
+    assert not _same_to_float32(0.9, 1.0)
+    assert _same_to_float32(1.0000001, 1.0)
+
+
+def test_a_switch_with_labels_is_checked_as_a_selector(monkeypatch):
+    """Admitting switches to the loop without routing them to the member check
+    compared them as a numeric range and reported DISAGREES on a correct
+    manifest. That defect was introduced while fixing a different one."""
+    import audit_manifest
+    from packs.loader import ParamSpec
+
+    spec = ParamSpec(module="", key="ampsActive", kind="switch",
+                     members={"0": "Inactive", "1": "Active"})
+    pack = _pack_with(**{"/ampsActive": spec})
+    params = {7: {"displayName": "Amp Section Active", "minString": "0.00", "maxString": "1.00"}}
+    revmap = [{"element": "appModel", "key": "ampsActive", "moved": [{"address": 7}]}]
+
+    def probe(binary, au, mode, *args):
+        return {"results": [
+            {"wrote": "0", "moved": [{"address": 7, "label": "Inactive"}]},
+            {"wrote": "1", "moved": [{"address": 7, "label": "Active"}]},
+        ]}
+
+    monkeypatch.setattr(audit_manifest, "run_probe", probe)
+    checker = audit_manifest.BoundsChecker(pathlib.Path("/nonexistent"), {})
+    assert audit_manifest.compare(pack, params, revmap, checker) == 0
+
+
+def test_a_moved_control_with_no_label_is_not_counted_as_read(monkeypatch):
+    """`seen` counted controls that moved, so a selector whose every index moved
+    but published no label reported as completely verified on zero labels read —
+    unread evidence counted as read, one level down from the bug this audit
+    exists to catch."""
+    import audit_manifest
+    from packs.loader import ParamSpec
+
+    spec = ParamSpec(module="", key="sel", kind="enum",
+                     members={"0": "A", "1": "B"})
+
+    def blank(binary, au, mode, *args):
+        return {"results": [{"wrote": w, "moved": [{"address": 7, "label": ""}]}
+                            for w in args[1].split(",")]}
+
+    monkeypatch.setattr(audit_manifest, "run_probe", blank)
+    checker = audit_manifest.BoundsChecker(pathlib.Path("/nonexistent"), {})
+    assert audit_manifest.check_members(checker, "/sel", spec) is None

@@ -537,10 +537,16 @@ def check_members(checker, lookup, spec):
             # The plugin was already on this value, so nothing moved and there
             # is no label to read. Not a failure — just no evidence.
             continue
-        seen += 1
         label = (moved[0].get("label") or "").strip()
+        if not label:
+            # The control moved but published no label, so nothing was read.
+            # Counting it would report unread evidence as read.
+            continue
+        seen += 1
         declared = spec.members.get(row["wrote"], "")
-        if label and label.lower() != declared.lower():
+        # D-3: match the way `published_members` does — exactly. Two checkers
+        # disagreeing about what "matches" means is a hole either way.
+        if label != declared:
             wrong.append(f"{row['wrote']}: manifest {declared!r}, plugin {label!r}")
     if not seen:
         return None
@@ -604,7 +610,7 @@ def compare(pack, params, revmap, checker) -> int:
                 record(path, spec, None, verdict)
             continue
 
-        if spec.kind == "enum":
+        if spec.kind in ("enum", "switch"):
             verdict = check_members(checker, lookup, spec)
             if verdict is None:
                 (unchecked_declared if declares else unchecked_bare).append((path, spec))
