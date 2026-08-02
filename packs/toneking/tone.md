@@ -14,7 +14,8 @@ library; no factory preset content ships with the pack.
 - `fraction` controls use `0.0`–`1.0`.
 - `metered` controls use the native value declared in the manifest, such as dB,
   milliseconds, seconds, or frequency.
-- switches use `true` / `false`.
+- switches use `true` / `false`, or the plugin's own two labels — `"Active"` /
+  `"Inactive"`, `"On"` / `"Off"` — which is what `show.py` displays for them.
 - selectors accept their displayed member names, such as `"Lead Channel"`,
   `"Ribbon 121 E33"`, or `"1/8D"`.
 
@@ -109,5 +110,12 @@ large ambience sources can obscure the pick attack quickly.
 The manifest establishes writable mappings, kinds, ranges, and selector labels
 against the running Audio Unit. The musical settings here are conservative
 starting points supported by the manual and aggregate factory-preset behavior;
-they are not transfer-function or distortion measurements. Always audition the
-result with the target guitar and level-match it in context.
+they are not transfer-function or distortion measurements.
+
+**Nor can they be, yet.** This plugin produces no audio at all in a headless
+render — `scripts/au_silence_check.swift` reports a peak of 0.0 for it and
+0.55 for Morgan under identical code — so nothing here has been characterised by
+listening to it. The cause is unconfirmed; see
+[docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
+Read that as "not established" rather than "not needed", and audition the result
+with the target guitar, level-matched in context.

@@ -515,7 +515,11 @@ def check_members(checker, lookup, spec):
       ("disagrees", wrong)        a label contradicts the manifest
       None                        no member produced a label at all
     """
-    if spec.kind != "enum" or not spec.members:
+    if spec.kind not in ("enum", "switch") or not spec.members:
+        # A switch that declares the plugin's own two labels is a two-index
+        # selector and is checked as one. Morgan declares none today, so this
+        # only bites a future pack -- which is how the same gap went unnoticed
+        # on the other path.
         return None
     indices = sorted(spec.members, key=int)
     try:
@@ -583,12 +587,12 @@ def compare(pack, params, revmap, checker) -> int:
                               verdict[2] if len(verdict) > 2 else ""))
 
     for path, spec in sorted(pack.parameters.items()):
-        if spec.kind not in ("metered", "enum", "rotation", "fraction"):
+        if spec.kind not in ("metered", "enum", "rotation", "fraction", "switch"):
             continue
         lookup = f"appModel/{path.lstrip('/')}" if path.startswith("/") else path
         declares = (
             spec.min is not None or spec.max is not None
-            or (spec.kind == "enum" and spec.members)
+            or (spec.kind in ("enum", "switch") and spec.members)
         )
         address = mapped.get(lookup)
 

@@ -219,7 +219,7 @@ the two counts differ. The mappings reach every published control
 except the host-only Preset Previous/Next actions and tie 33 selector label
 tables to their stored indices — 12 enums plus the two-label table each of the
 21 switches publishes. Every mapped control's declared range is re-derived from
-the plugin except `reverbPreDelay`, whose lower end no write can establish
+the plugin except `reverbPreDelay`, which declares no range at all because no write can establish its lower end
 because the control already sits on it. The 159 state-only or rejected fields are
 `internal` and read-only: they remain in the manifest for inspection and
 lossless round-trip, but generated specs cannot write them. See
