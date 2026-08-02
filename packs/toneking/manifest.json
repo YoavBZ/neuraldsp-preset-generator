@@ -1119,7 +1119,7 @@
     },
     "/reverbPreDelay": {
       "kind": "fraction",
-      "note": "Deliberately undeclared. The plugin publishes an empty min/max display string for this control, and its default state already sits at 0 \u2014 the bottom of the control \u2014 so writing below that moves nothing and the plugin keeps the out-of-range number verbatim (-1 came back as -1). The top clamps at 1 (2 came back as 1), but half a range is not a range, and the missing half is exactly the \u201calready at that value\u201d blind spot that let three wrong ranges through a full audit. `audit_manifest.py` reports it as declaring nothing, which is the truth.",
+      "note": "Deliberately undeclared. The plugin publishes an empty min/max display string for this control, and its default state already sits at 0 \u2014 the bottom of the control \u2014 so writing below that moves nothing and the plugin keeps the out-of-range number verbatim (-1 came back as -1). The top clamps at 1 (2 came back as 1), but half a range is not a range, and the missing half is exactly the \u201calready at that value\u201d blind spot that let three wrong ranges through a full audit. `audit_manifest.py` reports it as declaring nothing, which is the truth. What is unique here is not the blind spot but the absence of a second source: `ampReverb`, `wahPosition` and `chorusMix` sit at an end of their range too, and writing past it is retained verbatim there as well \u2014 their ranges stand because the plugin also publishes a display string for them, which this control does not.",
       "ui": "Reverb Pre-Delay"
     },
     "/rhythmAmpBass": {

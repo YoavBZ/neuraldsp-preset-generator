@@ -527,3 +527,21 @@ def test_toneking_recipes_pan_within_the_real_scale():
                 spec = toneking.require(entry["module"], entry["key"])
                 # Must survive the manifest's own validation, not just look small.
                 toneking.to_stored(spec, entry["value"], warnings=[])
+
+
+def test_a_bad_switch_value_names_the_labels_it_would_accept():
+    """Declaring `members` on a switch means show.py displays "Active" — so a
+    reader hands "Active" back, and the error for a wrong guess has to name what
+    is actually accepted rather than only true/false."""
+    toneking = load_pack("toneking")
+    spec = toneking.require("", "ampsActive")
+    with pytest.raises(PackError) as exc:
+        toneking.to_stored(spec, "Enabled", warnings=[])
+    message = str(exc.value)
+    assert "Inactive" in message and "Active" in message, message
+
+    # Morgan's switches declare no labels, so its message must stay unchanged.
+    morgan = load_pack("morgan")
+    with pytest.raises(PackError) as plain:
+        morgan.to_stored(morgan.require("parameters", "gateActive"), "Enabled", warnings=[])
+    assert "accepts its displayed labels" not in str(plain.value)

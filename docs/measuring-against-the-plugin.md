@@ -308,6 +308,11 @@ nothing here has not been shown to do nothing.
   A control sitting at one end by default cannot supply evidence for that end by
   write-and-read: nothing moves and the state keeps the out-of-range number.
   `reverbPreDelay` is the worked example — it stays undeclared for that reason.
+  It is not the only control sitting at an end of its range, though: `ampReverb`,
+  `wahPosition` and `chorusMix` do too, and writing past that end is retained
+  verbatim there as well. Their ranges stand because the plugin publishes a
+  display string for them as a second source. One unmeasurable end is only fatal
+  when nothing else covers it.
 - A selector table needs the mapped control's indexed labels or an equivalent
   write-and-read experiment covering **every** declared member.
 - Audible direction needs deterministic rendering at more than one input level.

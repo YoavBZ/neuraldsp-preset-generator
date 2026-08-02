@@ -208,6 +208,15 @@ class Pack:
             if spec.kind == "switch" and spec.switch_encoding == "numeric":
                 stored = "1" if stored == "true" else "0"
         except (ValueError, OverflowError, TypeError) as e:
+            if spec.kind == "switch" and spec.members:
+                # The error from the true/false reader names only true/false,
+                # which is now half the story: this switch also displays its own
+                # labels, and those are what a reader was just shown.
+                raise PackError(
+                    f"{spec.path}: {e}.\n"
+                    f"  This switch also accepts its displayed labels: "
+                    f"{_render_members(spec.members)}"
+                ) from e
             raise PackError(f"{spec.path}: {e}") from e
 
         self._check_dimensional(spec, stored)
