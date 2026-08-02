@@ -29,10 +29,10 @@ See docs/measuring-against-the-plugin.md.
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import pathlib
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -42,6 +42,9 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
+from _swift import compile_swift
+from format.parser import parse
+from format.structured import build
 from packs.loader import load_pack
 
 PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
@@ -72,7 +75,10 @@ def numeric(shown: str, unit: str = None):
     """
     shown = (shown or "").strip()
     if not shown:
-        return None
+        # Unreadable, not absent. Several real controls in both plugins publish
+        # empty min/max strings; treating that as "no number" made it compare
+        # unequal to any declared range and report a failure nothing could fix.
+        return UNPARSEABLE
     if shown == "C":                      # a centred pan is not "0"
         return 0.0
     if "inf" in shown.lower() or "nan" in shown.lower():
@@ -90,27 +96,27 @@ def numeric(shown: str, unit: str = None):
         # Seconds shown for a parameter stored in milliseconds. delayTime tops
         # out at 1500 ms, exactly where a plugin tends to switch its display.
         value *= 1000
-    # Pan: the sign is a letter, and the two plugins put it on opposite sides.
-    # Morgan writes "50 L", Tone King writes "L 50". Handling only one of them
-    # reported a correctly declared -50..50 pan as a disagreement.
-    if lowered.endswith(" l") or re.match(r"^l\s*[\d.]", lowered):
-        value = -value
+    # Pan is displayed as a POSITION OUT OF 50 with the side as a letter, and
+    # that is not necessarily the unit the file stores. Morgan stores -50..50 and
+    # Tone King stores -1..1, both displaying `L 50`/`50 L` at the same end. So
+    # the display cannot establish the range for these, and pretending it can is
+    # how a Tone King pan came to be declared 50x too large.
+    #
+    # This function previously converted the letter to a sign, which made the
+    # audit agree with that wrong range — the checker was adjusted until it
+    # matched the manifest instead of the manifest being questioned. Refuse
+    # instead; the caller falls back to writing a value and reading it back,
+    # which measures the stored unit rather than inferring it.
+    if re.search(r"(^|\s)[lr]\s*[\d.]|[\d.]\s*[lr]$", lowered):
+        return UNPARSEABLE
     return value
 
 
 def build_probe(workdir: pathlib.Path) -> pathlib.Path:
-    if shutil.which("swiftc") is None:
-        die(
-            "swiftc not found. The audit compiles scripts/au_probe.swift to talk "
-            "to the plugin.\n  Install the Xcode command line tools: xcode-select --install"
-        )
     binary = workdir / "au_probe"
-    result = subprocess.run(
-        ["swiftc", "-swift-version", "5", "-O", str(PROBE_SOURCE), "-o", str(binary)],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        die(f"could not build {PROBE_SOURCE.name}:\n{result.stderr}")
+    result, error = compile_swift(PROBE_SOURCE, binary)
+    if result is None or result.returncode != 0:
+        die(f"could not build {PROBE_SOURCE.name}:\n{error}")
     return binary
 
 
@@ -178,7 +184,7 @@ class BoundsChecker:
         return ("agrees", low, high)
 
 
-def audit(pack_id: str) -> int:
+def audit(pack_id: str, binary_path: pathlib.Path | None = None) -> int:
     pack = load_pack(pack_id)
     if not pack.audio_unit:
         die(
@@ -188,18 +194,69 @@ def audit(pack_id: str) -> int:
         )
 
     with tempfile.TemporaryDirectory() as tmp:
-        binary = build_probe(pathlib.Path(tmp))
+        binary = binary_path or build_probe(pathlib.Path(tmp))
         print(f"Asking {pack.display_name} for its own parameter table…\n")
         params = {p["address"]: p for p in run_probe(binary, pack.audio_unit, "params")}
         try:
             revmap = run_probe(binary, pack.audio_unit, "revmap")
         except StateNotADocument:
-            return verify_via_state(pack, params, binary)
+            return verify_via_state(pack, params, binary, pathlib.Path(tmp))
         checker = BoundsChecker(binary, pack.audio_unit)
         return compare(pack, params, revmap, checker)
 
 
-def verify_via_state(pack, params, binary) -> int:
+def probe_bounds(probe, state, path, spec):
+    """Measure a range by writing past both ends and reading back what stuck.
+
+    Used where the plugin's own display cannot be compared to the stored value —
+    a pan shows a position out of 50 whichever scale it is stored on, so the
+    display establishes nothing. Writing past each end and reading the state the
+    plugin kept measures the stored unit directly.
+
+    Returns ("agrees"|"disagrees", low, high), or None if the write told us
+    nothing.
+    """
+    from probe_state import edited
+
+    if spec.min is None or spec.max is None:
+        # Half a declared range cannot be probed from both ends. Reported as
+        # unchecked rather than crashing on None arithmetic.
+        return None
+    key = path.lstrip("/")
+    module, _, bare = key.rpartition("/")
+    below = spec.min - abs(spec.min or 1) - 1
+    above = spec.max + abs(spec.max or 1) + 1
+    try:
+        blobs = [edited(state, module, bare, f"{below:g}"),
+                 edited(state, module, bare, f"{above:g}")]
+    except (KeyError, ValueError):
+        return None
+
+    _, states = probe.apply_many_with_states(blobs)
+    try:
+        kept = [float(build(parse(st)).by_path[(module, bare)].value) for st in states]
+    except (KeyError, ValueError):
+        return None
+
+    # Compare at the precision the plugin actually has. Its parameters are
+    # float32, so a value written as 1.0 comes back as 0.99999994 — one ULP
+    # below, not a different limit. Demanding double-exact equality would report
+    # that as a disagreement forever, and no manifest edit could fix it.
+    # The tolerance is far tighter than any real range error, which differs by
+    # orders of magnitude rather than by an ULP.
+    if all(_same_to_float32(k, want)
+           for k, want in zip(kept, (float(spec.min), float(spec.max)))):
+        return ("agrees", kept[0], kept[1])
+    return ("disagrees", kept[0], kept[1])
+
+
+def _same_to_float32(a: float, b: float) -> bool:
+    import struct as _struct
+    to32 = lambda x: _struct.unpack("<f", _struct.pack("<f", x))[0]
+    return to32(a) == to32(b) or abs(a - b) <= 1e-6 * max(1.0, abs(b))
+
+
+def verify_via_state(pack, params, binary, scratch) -> int:
     """Fall back to the state probe for a plugin that keeps no XML document.
 
     `au_probe`'s revmap edits an attribute in the plugin's state document, which
@@ -208,11 +265,20 @@ def verify_via_state(pack, params, binary) -> int:
     same experiment runs with the halves swapped and the mapping is just as
     verified. See scripts/probe_state.py.
     """
-    from probe_state import Probe, edited
+    from probe_state import (
+        Probe,
+        adaptive_probe,
+        collect_observed_values,
+        default_preset_dirs,
+        preset_files,
+    )
     from format.parser import parse
     from format.structured import build
 
-    workdir = binary.parent
+    # Scratch goes in our own temp dir, never beside a caller-supplied binary:
+    # apply_many_with_states rmtree's a subdirectory of the workdir, and a run
+    # writes thousands of blob files into it.
+    workdir = scratch
     probe = Probe(pack.audio_unit, workdir, binary=binary)
     state = probe.baseline_state()
     try:
@@ -225,30 +291,35 @@ def verify_via_state(pack, params, binary) -> int:
     print(f"  state is a {preset.file_header!r} preset document with "
           f"{len(preset.parameters)} parameters; probing it directly.\n")
 
-    targets, blobs = [], [state]
-    for param in preset.parameters:
-        try:
-            current = float(param.value)
-        except ValueError:
-            continue
-        target = f"{current + 1 if current <= 0.5 else current - 1:g}"
-        targets.append(param)
-        blobs += [edited(state, param.module_path, param.key, target), state]
-
-    results = probe.apply_many(blobs)
-    mapped = {}
-    for i, param in enumerate(targets):
-        before, after = results[i * 2], results[i * 2 + 1]
-        moved = [a for a, r in after.items()
-                 if abs(r["value"] - before[a]["value"]) > 1e-9]
-        if len(moved) == 1:
-            path = f"{param.module_path}/{param.key}" if param.module_path else param.key
-            mapped[path] = moved[0]
+    roots = default_preset_dirs(pack.display_name)
+    observed, preset_count = collect_observed_values(
+        preset_files(roots), pack.file_header
+    )
+    print(
+        f"  adaptive mapping uses valid candidates from {preset_count} installed "
+        f"presets.\n"
+    )
+    mapping_results = adaptive_probe(
+        probe, state, preset, pack, observed=observed, maximum=4
+    )
+    mapped = {
+        row["key"]: row["address"]
+        for row in mapping_results
+        if row["status"] == "mapped"
+    }
 
     verified_ranges = verified_selectors = disagrees = unchecked = 0
+    nothing_declared = []
+    unmapped_declared = []
     for path, spec in sorted(pack.parameters.items()):
         address = mapped.get(path.lstrip("/"))
         if address is None:
+            declares = (spec.min is not None or spec.max is not None
+                        or (spec.kind == "enum" and spec.members))
+            if declares:
+                # It asserts something and nothing tested it. Counting this as
+                # silence is exactly how three wrong ranges survived a full pass.
+                unmapped_declared.append((path, spec))
             continue
         control = params[address]
 
@@ -268,11 +339,32 @@ def verify_via_state(pack, params, binary) -> int:
                 print()
 
         if spec.min is None and spec.max is None:
+            if member_verdict is None:
+                # Mapped, but the manifest asserts nothing about it, so nothing
+                # was tested. The Morgan path keeps and prints this bucket; not
+                # doing so here made the summary read cleaner while proving
+                # strictly less — 53 of 94 parameters silently untested behind
+                # a headline of "0 unchecked".
+                nothing_declared.append((path, spec))
             continue
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
         if lo is UNPARSEABLE or hi is UNPARSEABLE:
-            unchecked += 1
+            # The display cannot be compared to what the file stores — a pan
+            # shows a position out of 50 whichever scale it is stored on. Ask
+            # the plugin instead: write past each end and read back what it
+            # kept, which measures the stored unit rather than inferring it.
+            verdict = probe_bounds(probe, state, path, spec)
+            if verdict is None:
+                unchecked += 1
+            elif verdict[0] == "agrees":
+                verified_ranges += 1
+            else:
+                disagrees += 1
+                print(f"DISAGREES  {path}")
+                print(f"           manifest {spec.min} .. {spec.max}")
+                print(f"           plugin kept {verdict[1]} .. {verdict[2]} "
+                      f"when written past both ends   ({control['displayName']})\n")
             continue
         if (spec.min, spec.max) == (lo, hi):
             verified_ranges += 1
@@ -283,21 +375,45 @@ def verify_via_state(pack, params, binary) -> int:
             print(f"           plugin   {control['minString']} .. {control['maxString']}"
                   f"   ({control['displayName']})\n")
 
-    print(f"{len(mapped)} of {len(targets)} numeric state keys map to exactly one control.")
+    print(
+        f"{len(mapped)} of {len(mapping_results)} numeric state keys map to "
+        f"exactly one control."
+    )
     print(f"{verified_ranges} declared ranges and {verified_selectors} selectors "
           f"verified, {disagrees} DISAGREE, {unchecked} unchecked.")
-    report_state_coverage(params, len(targets), mapped)
-    return 1 if (disagrees or unchecked) else 0
+    if unmapped_declared:
+        print(f"NOT CHECKED, BUT ASSERTS SOMETHING — {len(unmapped_declared)}:\n")
+        for path, spec in unmapped_declared:
+            what = (f"{spec.min} .. {spec.max}" if spec.min is not None
+                    else f"{len(spec.members or {})} members")
+            print(f"           {path}  ({spec.kind}, {what})")
+        print("\n           These declare a fact no probe reached, so the audit "
+              "proves nothing\n           for them. That is a failure, not a clean "
+              "bill.\n")
+    if nothing_declared:
+        kinds = collections.Counter(spec.kind for _, spec in nothing_declared)
+        print(f"{len(nothing_declared)} mapped parameters declare no range and no "
+              f"members, so nothing about them\nwas tested "
+              f"({', '.join(f'{n} {k}' for k, n in kinds.most_common())}). "
+              f"'verified' above counts only\nwhat the manifest actually asserts.")
+    report_state_coverage(params, len(mapping_results), mapped, mapping_results)
+    return 1 if (disagrees or unchecked or unmapped_declared) else 0
 
 
-def report_state_coverage(params, target_count, mapped) -> None:
+def report_state_coverage(params, target_count, mapped, results=None) -> None:
     """Report missing state mappings without turning no movement into absence."""
     not_reached = target_count - len(mapped)
-    print(
-        f"{not_reached} numeric state keys were not reached. A single nudge that "
-        f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
-        f"may have been a no-op\nor rejected by a discrete/quantized parameter."
-    )
+    if results:
+        print(
+            f"{not_reached} numeric state keys did not produce one consistent "
+            f"control mapping under adaptive probing."
+        )
+    else:
+        print(
+            f"{not_reached} numeric state keys were not reached. A single nudge that "
+            f"moves nothing\ndoes not prove a key has no Audio Unit control: the value "
+            f"may have been a no-op\nor rejected by a discrete/quantized parameter."
+        )
     mapped_controls = set(mapped.values())
     missing = [p["displayName"] for a, p in params.items() if a not in mapped_controls]
     print(
@@ -306,6 +422,12 @@ def report_state_coverage(params, target_count, mapped) -> None:
     )
     if missing:
         print("Published controls not reached: " + ", ".join(sorted(missing)) + ".")
+    if results:
+        from collections import Counter
+
+        counts = Counter(row["status"] for row in results)
+        detail = ", ".join(f"{name}={counts[name]}" for name in sorted(counts))
+        print("Adaptive state-key outcomes: " + detail + ".")
 
 
 def published_members(spec, control):
@@ -440,7 +562,16 @@ def compare(pack, params, revmap, checker) -> int:
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
         if lo is UNPARSEABLE or hi is UNPARSEABLE:
-            unchecked_declared.append((path, spec))
+            # The display cannot be compared to what the file stores. Ask the
+            # plugin instead: write past each end and read back what it kept.
+            # That measures the stored unit rather than inferring it.
+            verdict = checker.check(lookup, spec)
+            if verdict is None:
+                unchecked_declared.append((path, spec))
+            elif verdict[0] == "agrees":
+                verified.append((path, spec))
+            else:
+                disagrees.append((path, spec, None, verdict[1], verdict[2]))
         elif (spec.min, spec.max) == (lo, hi):
             verified.append((path, spec))
         else:
@@ -492,8 +623,12 @@ def main() -> None:
         description="Check a pack's declared facts against the installed plugin."
     )
     ap.add_argument("--pack", default="morgan", help="pack id (default: morgan)")
+    ap.add_argument("--binary", type=pathlib.Path,
+                    help="use an already-built au_probe helper")
     args = ap.parse_args()
-    raise SystemExit(audit(args.pack))
+    if args.binary is not None and not args.binary.is_file():
+        die(f"--binary does not exist: {args.binary}")
+    raise SystemExit(audit(args.pack, args.binary))
 
 
 if __name__ == "__main__":

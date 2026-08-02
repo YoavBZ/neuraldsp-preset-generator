@@ -13,11 +13,10 @@ describe a change in plain English, and get a new one back.
 > (`samples/Example_Clean_PR12.xml`); everything else you'd want as a template
 > comes from your own library.
 
-Format support targets **Morgan Amps Suite** (fully measured against the plugin)
-and **Tone King Imperial MKII** (a draft pack: reads, edits and writes, but its
-ranges are undeclared — see [reference/preset-spec.md](reference/preset-spec.md)).
-Both Neural DSP preset encodings are handled. Other plugins are supported by
-adding a pack — see [Packs](#packs).
+Production packs target **Morgan Amps Suite** and **Tone King Imperial MKII**.
+Both packs have verified writable Audio Unit mappings, ranges, selector tables,
+tone guidance, and composable recipes. Both Neural DSP preset encodings are
+handled. Other plugins are supported by adding a pack — see [Packs](#packs).
 
 ## Requirements
 
@@ -111,10 +110,13 @@ docs/            — current maintainer procedures for measuring ranges,
 A **pack** is everything the tool knows about one Neural DSP plugin:
 
 ```
-packs/morgan/
-  manifest.json   committed — the contract: every parameter's kind, unit,
-                  declared range, selector members, EQ band centres, UI name
-  recipes.json    committed — 40 composable tone recipes, one layer at a time
+packs/<id>/
+  manifest.json   committed — the contract: every parameter's kind, and
+                  whatever else has been established for it — unit, declared
+                  range, selector members, EQ band centres, UI name. A pack
+                  carries what was measured, not a full set
+  recipes.json    committed — composable tone recipes, one layer at a time
+                  (Morgan 40, Tone King 39)
   tone.md         committed — amps, intent -> recipe table, tone vocabulary
   observed.json   git-ignored, optional — what values YOUR presets use
   templates/      git-ignored — your own presets
@@ -155,9 +157,20 @@ a note division rather than a fixed time, so `--bpm 96` turns a quarter note int
 625 ms with no sync selector involved.
 
 Recipe values use the same kinds, names, and units as the pack manifest.
-`tests/test_recipes.py` asserts that every key exists and every value survives
-translation, so a stale name, invalid selector, or out-of-range setting fails
-the suite.
+The recipe tests for both production packs assert that every key exists and
+every value survives translation, so a stale name, invalid selector, read-only
+field, or out-of-range setting fails the suite.
+
+Tone King recipes use its flat record-state keys and can be stacked the same
+way:
+
+```bash
+python scripts/apply_spec.py --template ~/…/ToneKingTemplate.xml \
+  --pack toneking --recipe amp/lead-crunch \
+  --recipe cab/balanced-57-ribbon --recipe delay/mono-quarter \
+  --recipe reverb/lead-space --recipe output/unity \
+  --name "Focused Lead" --out focused-lead.xml --dry-run
+```
 
 ### Adding a pack for another plugin
 
@@ -187,9 +200,11 @@ pack is per-plugin.
 
 ## Value convention
 
-The plugin's knobs have no numbers — a knob is just a rotation. So:
+The human value depends on the manifest kind:
 
-- **Bare knobs** are **percent of rotation, 0–100** (noon = 50); stored as `0.0–1.0`.
+- **Rotation knobs** are **percent of rotation, 0–100** (noon = 50), stored as
+  `0.0–1.0`.
+- **Fraction controls** use their normalized value directly, `0.0–1.0`.
 - **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose)
   use their **native unit** (dB / Hz / ms / s / BPM / semitones).
 - **Switches** are `true`/`false`; **selectors** take a member name

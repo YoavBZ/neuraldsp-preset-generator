@@ -40,8 +40,24 @@ Morgan Amps Suite uses component `aumf NMAS NDSP`. Tone King Imperial MKII uses
 identifier.
 
 Display strings are the plugin's own formatting, such as `-24.0 dB`, `40.0
-BPM`, `1/64T`, `50 L`, or `L 50`. `scripts/audit_manifest.py` normalizes these
-forms before comparing them with a manifest.
+BPM`, or `1/64T`. `scripts/audit_manifest.py` normalizes those before comparing
+them with a manifest.
+
+**A display is not a unit.** Both plugins show a pan as a position out of 50 —
+`50 L` on Morgan, `L 50` on Tone King — but Morgan *stores* -50..50 and Tone
+King stores -1..1. Reading the range off the display gave Tone King's pan a
+range fifty times too large, and the cab recipes built on it hard-panned both
+cabs while asking for a gentle spread. Every value still wrote, still
+round-tripped, and still looked reasonable in the file.
+
+Worse, when the audit flagged the resulting mismatch, the *checker* was changed
+to parse `L 50` as -50 so that it would agree — the tool was bent to fit the
+claim instead of the claim being questioned. `numeric()` now refuses a pan
+display outright and the caller falls back to writing past each end and reading
+back what the plugin kept, which measures the stored unit instead of inferring
+it. Compare at float32 precision when you do: these parameters are 32-bit, so a
+value written as `1.0` comes back as `0.99999994` and exact equality would
+report a disagreement no edit could fix.
 
 ## Map stored keys to controls
 
@@ -86,25 +102,39 @@ Tone King currently maps 94 of 255 numeric state keys to exactly one control.
 Those mappings cover 94 of its 96 published controls; the other two are the
 host-only Preset Previous and Preset Next actions.
 
+The map mode is adaptive. For each numeric key it tries up to four distinct
+values, preferring values observed in installed presets, and reads both the
+plugin-retained state and published controls after every attempt. Its statuses
+have precise meanings:
+
+- `mapped`: every effective write moves the same one published control
+- `state_only`: the plugin retains an alternate value but no published control
+  moves
+- `rejected`: the plugin restores the baseline for every alternate
+- `no_op`: none of the candidates differs effectively from the baseline
+- `ambiguous`: effective writes move different or multiple controls
+- `unsupported` / `inconclusive`: the experiment cannot establish a result
+
+Tone King has 94 mapped keys, 158 state-only keys, and one rejected key
+(`tempo`) in its saved-preset manifest. State-only and rejected keys are marked
+read-only `internal`; they remain in the manifest so parsing and round-trip
+inspection stay complete.
+
 Tone King stores switches as binary doubles `0` and `1`. Morgan stores switch
 values as the text strings `false` and `true`. The pack's `switch_encoding`
 selects the correct writable representation.
 
 ### Interpret missing mappings conservatively
 
-A key is mapped only when the attempted value changes exactly one control. No
-movement is inconclusive: the value may already be active, may be invalid for a
-discrete parameter, or may be quantized into a no-op.
+A single write that moves nothing proves little. Use adaptive candidates and
+separate state retention from control movement. Only classify a key as
+state-only when at least one alternate survives plugin readback while no
+published parameter moves. Treat rejected, no-op, ambiguous, unsupported, and
+inconclusive outcomes separately rather than collapsing them into “unmapped.”
 
-For an unreached key:
-
-1. Try a known-valid alternate value from another real preset.
-2. Try endpoints and interior values appropriate to the declared kind.
-3. Compare the mapped control set with the complete published parameter list.
-4. Keep the kind marked `needs_review` until the mapping is observed.
-
-Do not describe an unreached key as having no Audio Unit control unless the UI
-or another independent observation establishes that absence.
+Compare the mapped controls with the complete published parameter list before
+declaring coverage. A selector or numeric control that remains unresolved stays
+out of recipes until its write path and meaning are established.
 
 ## Verify ranges and selector members
 
@@ -150,6 +180,18 @@ levels: a spectral difference that persists across levels indicates filtering;
 a difference that grows with level may be saturation. Ensure the amp that owns
 the tested control is selected and active.
 
+For a record-state plugin, create a disposable preset with `apply_spec.py` and
+pass the resulting state directly:
+
+```bash
+/tmp/au_render aumf TKI2 NDSP --state /tmp/toneking-test.xml \
+  /tmp/toneking-test.wav 0.005
+```
+
+Do not publish audible conclusions from a silent render. Confirm a nonzero peak
+first; some Audio Units require host behavior that the minimal offline helper
+does not provide.
+
 Current Morgan measurements:
 
 | Control change | Measured effect |
@@ -192,7 +234,8 @@ misidentified as plugin distortion.
 - Spectral results depend on the excitation, operating point, and nonlinear
   state of the model.
 - The state-mapping method requires a decoded, editable state representation.
-  `audit_manifest.py` reports `CANNOT VERIFY` for unsupported state formats.
+  `audit_manifest.py` reports `CANNOT VERIFY` when neither its XML mapper nor
+  record-state mapper supports the state format.
 - Plugin-dependent audits are deliberate local checks, not CI tests.
   `tests/test_audit_manifest.py` covers the comparison logic that does not need
   an installed plugin.
@@ -205,7 +248,7 @@ misidentified as plugin distortion.
 - A selector table needs the mapped control's indexed labels or an equivalent
   write-and-read experiment.
 - Audible direction needs deterministic rendering at more than one input level.
-- An unverified value stays undeclared or marked `needs_review`.
+- An unresolved value stays undeclared, read-only, or marked `needs_review`.
 
 `packs/loader.py` still rejects arithmetically impossible values through
 `UNIT_FLOOR`, such as negative frequency or zero tempo, without treating those

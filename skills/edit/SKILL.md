@@ -23,33 +23,37 @@ Adjust an existing preset from a description of what should change. Read
 python "${CLAUDE_PLUGIN_ROOT}/scripts/show.py" PRESET.xml
 ```
 
-Never edit blind. You need the current values to know what "more" means: adding
-15 points of reverb to a preset already at 80% is not the same move as adding it
-to one at 10%. Note which amp is live (`selectedAmp`) — the amp-specific knobs
-you should be touching are that amp's, not another's.
+Never edit blind. You need the current values to know what "more" means: a
+change to a nearly dry effect is not the same move as a change to one already
+near its limit. Note which amp or channel is live — Morgan reports
+`selectedAmp`; Tone King reports its channel selector — and touch the controls
+that belong to it.
 
 ## 2. Interpret the ask against those values
 
-`${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` has the "when the user says X" mappings, including which EQ
-band is which frequency. Typical translations:
+`${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` has the pack-specific adjustment
+vocabulary and recipes. Use its exact parameter names and value convention;
+Morgan rotation controls use 0–100 while Tone King fraction controls use
+0.0–1.0. Typical translations are:
 
-- **"more reverb"** → raise `reverb/reverbMix` ~10–15 points, or the live amp's
-  own reverb knob for a spring-tank character
-- **"tighter low end"** → drop the live amp's bass a few points, and/or raise
-  `reverb/reverbLowCut` and `delay/delayLowCut` (Hz)
+- **"more reverb"** → raise the post-reverb mix modestly, or the live amp's own
+  reverb control for a spring-tank character
+- **"tighter low end"** → lower the live amp's bass modestly, trim the lowest
+  graphic-EQ bands, and/or raise ambience high-pass filtering
 - **"more presence" / "more bite"** → raise the live amp's treble, or push the
   upper EQ bands (dB)
-- **"warmer" / "too harsh"** → drop treble, lower `reverbHighCut` /
-  `delayHighCut`
+- **"warmer" / "too harsh"** → lower treble/tone, lower ambience low-pass
+  filtering, or choose the pack's warmer cabinet recipe
 - **"more break-up"** → raise the live amp's volume/gain knob, or engage a drive
-- **"dotted eighth delay", "in time with the track"** → compute ms from the
-  tempo with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py` and set `delay/delayTime`; do not touch the
-  sync-note selector. See
-  [selectors-and-timing.md](../../reference/selectors-and-timing.md)
+- **"dotted eighth delay", "in time with the track"** → use the pack's verified
+  timing recipe; Morgan can resolve milliseconds through
+  `${CLAUDE_PLUGIN_ROOT}/packs/timing.py`, while Tone King exposes verified note
+  selectors. See [selectors-and-timing.md](../../reference/selectors-and-timing.md)
 
-Move in **proportionate steps**. A vague "a bit more" is 5–10 points of rotation,
-not 40. If the ask is genuinely ambiguous ("make it better"), ask what bothers
-them about the current sound.
+Move in **proportionate steps**. A vague "a bit more" is about 5–10 points for a
+rotation control or 0.05–0.10 for a fraction, not a near-full-range jump. If the
+ask is genuinely ambiguous ("make it better"), ask what bothers them about the
+current sound.
 
 `show.py` reports a `learned_notes` path — read it if it exists. A correction the
 user made before is the best available evidence about their taste.
