@@ -35,10 +35,7 @@ from audit_manifest import (  # noqa: E402
     ("+24.0 dB", 24.0),
     ("40.0 BPM", 40.0),
     ("500 Hz", 500.0),
-    ("50 L", -50.0),          # the plugin signs a pan with a letter
-    ("50 R", 50.0),
     ("C", 0.0),               # centre is not "0"
-    ("25 L", -25.0),
     ("", None),
     ("Custom IR", None),      # a label, not a number
 ])
@@ -65,18 +62,16 @@ def test_an_unreadable_display_is_not_a_disagreement():
     assert numeric("") is None
 
 
-def test_both_pan_conventions_parse():
-    """Morgan writes `50 L`, Tone King writes `L 50`. Handling one and not the
-    other reported a correctly declared -50..50 pan as a disagreement — the
-    audit caught it against the second plugin."""
-    assert numeric("50 L") == -50.0 and numeric("L 50") == -50.0
-    assert numeric("50 R") == 50.0 and numeric("R 50") == 50.0
-
-
-def test_pan_would_not_be_reported_as_a_disagreement():
-    """The regression that made the first run cry wolf: `50 L` parsed as +50,
-    so a correctly declared -50..50 pan looked wrong."""
-    assert (numeric("50 L"), numeric("50 R")) == (-50.0, 50.0)
+def test_a_pan_display_is_refused_rather_than_guessed():
+    """Both plugins display a pan as a position out of 50 — `50 L`, `L 50` — but
+    Morgan stores -50..50 and Tone King stores -1..1. The display therefore
+    cannot establish the range, and an earlier version of this function returned
+    a signed 50 for both, which made the audit agree with a Tone King range that
+    was 50x too large. Refusing sends the caller to the write probe, which
+    measures the stored unit instead of inferring it."""
+    from audit_manifest import UNPARSEABLE
+    for shown in ("50 L", "50 R", "L 50", "R 50", "25 L", "L 25"):
+        assert numeric(shown) is UNPARSEABLE, shown
 
 
 def test_state_audit_checks_published_selector_labels():

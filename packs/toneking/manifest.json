@@ -134,10 +134,11 @@
     "/cab1Pan": {
       "kind": "metered",
       "unit": "pan",
-      "min": -50.0,
-      "max": 50.0,
-      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab L Pan"
+      "min": -1.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, value read back)",
+      "ui": "Cab L Pan",
+      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1."
     },
     "/cab1Phase": {
       "kind": "switch",
@@ -187,10 +188,11 @@
     "/cab2Pan": {
       "kind": "metered",
       "unit": "pan",
-      "min": -50.0,
-      "max": 50.0,
-      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab R Pan"
+      "min": -1.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, value read back)",
+      "ui": "Cab R Pan",
+      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1."
     },
     "/cab2Phase": {
       "kind": "switch",

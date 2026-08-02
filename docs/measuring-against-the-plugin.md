@@ -40,8 +40,24 @@ Morgan Amps Suite uses component `aumf NMAS NDSP`. Tone King Imperial MKII uses
 identifier.
 
 Display strings are the plugin's own formatting, such as `-24.0 dB`, `40.0
-BPM`, `1/64T`, `50 L`, or `L 50`. `scripts/audit_manifest.py` normalizes these
-forms before comparing them with a manifest.
+BPM`, or `1/64T`. `scripts/audit_manifest.py` normalizes those before comparing
+them with a manifest.
+
+**A display is not a unit.** Both plugins show a pan as a position out of 50 —
+`50 L` on Morgan, `L 50` on Tone King — but Morgan *stores* -50..50 and Tone
+King stores -1..1. Reading the range off the display gave Tone King's pan a
+range fifty times too large, and the cab recipes built on it hard-panned both
+cabs while asking for a gentle spread. Every value still wrote, still
+round-tripped, and still looked reasonable in the file.
+
+Worse, when the audit flagged the resulting mismatch, the *checker* was changed
+to parse `L 50` as -50 so that it would agree — the tool was bent to fit the
+claim instead of the claim being questioned. `numeric()` now refuses a pan
+display outright and the caller falls back to writing past each end and reading
+back what the plugin kept, which measures the stored unit instead of inferring
+it. Compare at float32 precision when you do: these parameters are 32-bit, so a
+value written as `1.0` comes back as `0.99999994` and exact equality would
+report a disagreement no edit could fix.
 
 ## Map stored keys to controls
 

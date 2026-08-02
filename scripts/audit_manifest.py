@@ -42,6 +42,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
 from _swift import compile_swift
+from format.parser import parse
+from format.structured import build
 from packs.loader import load_pack
 
 PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
@@ -90,11 +92,19 @@ def numeric(shown: str, unit: str = None):
         # Seconds shown for a parameter stored in milliseconds. delayTime tops
         # out at 1500 ms, exactly where a plugin tends to switch its display.
         value *= 1000
-    # Pan: the sign is a letter, and the two plugins put it on opposite sides.
-    # Morgan writes "50 L", Tone King writes "L 50". Handling only one of them
-    # reported a correctly declared -50..50 pan as a disagreement.
-    if lowered.endswith(" l") or re.match(r"^l\s*[\d.]", lowered):
-        value = -value
+    # Pan is displayed as a POSITION OUT OF 50 with the side as a letter, and
+    # that is not necessarily the unit the file stores. Morgan stores -50..50 and
+    # Tone King stores -1..1, both displaying `L 50`/`50 L` at the same end. So
+    # the display cannot establish the range for these, and pretending it can is
+    # how a Tone King pan came to be declared 50x too large.
+    #
+    # This function previously converted the letter to a sign, which made the
+    # audit agree with that wrong range — the checker was adjusted until it
+    # matched the manifest instead of the manifest being questioned. Refuse
+    # instead; the caller falls back to writing a value and reading it back,
+    # which measures the stored unit rather than inferring it.
+    if re.search(r"(^|\s)[lr]\s*[\d.]|[\d.]\s*[lr]$", lowered):
+        return UNPARSEABLE
     return value
 
 
@@ -191,6 +201,53 @@ def audit(pack_id: str, binary_path: pathlib.Path | None = None) -> int:
         return compare(pack, params, revmap, checker)
 
 
+def probe_bounds(probe, state, path, spec):
+    """Measure a range by writing past both ends and reading back what stuck.
+
+    Used where the plugin's own display cannot be compared to the stored value —
+    a pan shows a position out of 50 whichever scale it is stored on, so the
+    display establishes nothing. Writing past each end and reading the state the
+    plugin kept measures the stored unit directly.
+
+    Returns ("agrees"|"disagrees", low, high), or None if the write told us
+    nothing.
+    """
+    from probe_state import edited
+
+    key = path.lstrip("/")
+    module, _, bare = key.rpartition("/")
+    below = spec.min - abs(spec.min or 1) - 1
+    above = spec.max + abs(spec.max or 1) + 1
+    try:
+        blobs = [edited(state, module, bare, f"{below:g}"),
+                 edited(state, module, bare, f"{above:g}")]
+    except (KeyError, ValueError):
+        return None
+
+    _, states = probe.apply_many_with_states(blobs)
+    try:
+        kept = [float(build(parse(st)).by_path[(module, bare)].value) for st in states]
+    except (KeyError, ValueError):
+        return None
+
+    # Compare at the precision the plugin actually has. Its parameters are
+    # float32, so a value written as 1.0 comes back as 0.99999994 — one ULP
+    # below, not a different limit. Demanding double-exact equality would report
+    # that as a disagreement forever, and no manifest edit could fix it.
+    # The tolerance is far tighter than any real range error, which differs by
+    # orders of magnitude rather than by an ULP.
+    if all(_same_to_float32(k, want)
+           for k, want in zip(kept, (float(spec.min), float(spec.max)))):
+        return ("agrees", kept[0], kept[1])
+    return ("disagrees", kept[0], kept[1])
+
+
+def _same_to_float32(a: float, b: float) -> bool:
+    import struct as _struct
+    to32 = lambda x: _struct.unpack("<f", _struct.pack("<f", x))[0]
+    return to32(a) == to32(b) or abs(a - b) <= 1e-6 * max(1.0, abs(b))
+
+
 def verify_via_state(pack, params, binary) -> int:
     """Fall back to the state probe for a plugin that keeps no XML document.
 
@@ -267,7 +324,21 @@ def verify_via_state(pack, params, binary) -> int:
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
         if lo is UNPARSEABLE or hi is UNPARSEABLE:
-            unchecked += 1
+            # The display cannot be compared to what the file stores — a pan
+            # shows a position out of 50 whichever scale it is stored on. Ask
+            # the plugin instead: write past each end and read back what it
+            # kept, which measures the stored unit rather than inferring it.
+            verdict = probe_bounds(probe, state, path, spec)
+            if verdict is None:
+                unchecked += 1
+            elif verdict[0] == "agrees":
+                verified_ranges += 1
+            else:
+                disagrees += 1
+                print(f"DISAGREES  {path}")
+                print(f"           manifest {spec.min} .. {spec.max}")
+                print(f"           plugin kept {verdict[1]} .. {verdict[2]} "
+                      f"when written past both ends   ({control['displayName']})\n")
             continue
         if (spec.min, spec.max) == (lo, hi):
             verified_ranges += 1
@@ -450,7 +521,16 @@ def compare(pack, params, revmap, checker) -> int:
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
         if lo is UNPARSEABLE or hi is UNPARSEABLE:
-            unchecked_declared.append((path, spec))
+            # The display cannot be compared to what the file stores. Ask the
+            # plugin instead: write past each end and read back what it kept.
+            # That measures the stored unit rather than inferring it.
+            verdict = checker.check(lookup, spec)
+            if verdict is None:
+                unchecked_declared.append((path, spec))
+            elif verdict[0] == "agrees":
+                verified.append((path, spec))
+            else:
+                disagrees.append((path, spec, None, verdict[1], verdict[2]))
         elif (spec.min, spec.max) == (lo, hi):
             verified.append((path, spec))
         else:

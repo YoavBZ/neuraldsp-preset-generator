@@ -437,3 +437,43 @@ def test_dimensional_floors_are_not_overridable(pack):
             pack.require("delay", "delayTempo"), -120,
             allow_out_of_range=True, warnings=[],
         )
+
+
+def test_pan_scales_differ_between_packs(pack):
+    """The two plugins display a pan identically and store it differently.
+
+    Morgan stores -50..50; Tone King stores -1..1. Both show `50 L` / `L 50` at
+    the same end, so the display establishes nothing — reading the range off it
+    gave Tone King a range 50x too large, and the cab recipes built on that
+    hard-panned both cabs while asking for a gentle spread.
+
+    Pinned because the mistake is invisible: every value still writes, still
+    round-trips, and still looks reasonable in the file.
+    """
+    toneking = load_pack("toneking")
+    assert (pack.require("cabParameters", "leftCabPan").min,
+            pack.require("cabParameters", "leftCabPan").max) == (-50, 50)
+    assert (toneking.require("", "cab1Pan").min,
+            toneking.require("", "cab1Pan").max) == (-1.0, 1.0)
+
+    # A value that is legal on one is far out of range on the other.
+    assert pack.to_stored(pack.require("cabParameters", "leftCabPan"), -25) == "-25"
+    with pytest.raises(PackError, match="outside the declared range"):
+        toneking.to_stored(toneking.require("", "cab1Pan"), -25)
+
+
+def test_toneking_recipes_pan_within_the_real_scale():
+    """The recipes were written against the wrong scale once already."""
+    import json as _json
+    from packs.paths import PLUGIN_ROOT
+
+    toneking = load_pack("toneking")
+    recipes = _json.loads((PLUGIN_ROOT / "packs" / "toneking" / "recipes.json").read_text())
+    for layer, group in recipes["layers"].items():
+        for name, recipe in group.items():
+            for entry in recipe["parameters"]:
+                if not entry["key"].endswith("Pan"):
+                    continue
+                spec = toneking.require(entry["module"], entry["key"])
+                # Must survive the manifest's own validation, not just look small.
+                toneking.to_stored(spec, entry["value"], warnings=[])

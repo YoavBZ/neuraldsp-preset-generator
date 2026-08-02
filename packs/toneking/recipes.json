@@ -8,75 +8,255 @@
         "title": "Balanced rhythm clean",
         "use_when": "clear clean rhythm, arpeggios, and pedal-platform parts",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Rhythm Channel"},
-          {"module": "", "key": "rhythmAmpVolume", "value": 0.38},
-          {"module": "", "key": "rhythmAmpBass", "value": 0.34},
-          {"module": "", "key": "rhythmAmpTreble", "value": 0.55},
-          {"module": "", "key": "ampAttenuation", "value": "0 dB"},
-          {"module": "", "key": "ampHfc", "value": "NORMAL"},
-          {"module": "", "key": "ampReverb", "value": 0.08},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.0}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Rhythm Channel"
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpVolume",
+            "value": 0.38
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpBass",
+            "value": 0.34
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpTreble",
+            "value": 0.55
+          },
+          {
+            "module": "",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "",
+            "key": "ampHfc",
+            "value": "NORMAL"
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.08
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.0
+          }
         ]
       },
       "rhythm-edge": {
         "title": "Rhythm edge of breakup",
         "use_when": "touch-sensitive rhythm that should clean up from the guitar",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Rhythm Channel"},
-          {"module": "", "key": "rhythmAmpVolume", "value": 0.63},
-          {"module": "", "key": "rhythmAmpBass", "value": 0.30},
-          {"module": "", "key": "rhythmAmpTreble", "value": 0.52},
-          {"module": "", "key": "ampAttenuation", "value": "0 dB"},
-          {"module": "", "key": "ampHfc", "value": "NORMAL"},
-          {"module": "", "key": "ampReverb", "value": 0.06},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.0}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Rhythm Channel"
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpVolume",
+            "value": 0.63
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpBass",
+            "value": 0.3
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpTreble",
+            "value": 0.52
+          },
+          {
+            "module": "",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "",
+            "key": "ampHfc",
+            "value": "NORMAL"
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.06
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.0
+          }
         ]
       },
       "lead-crunch": {
         "title": "Focused lead-channel crunch",
         "use_when": "blues and classic-rock rhythm or a restrained lead",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Lead Channel"},
-          {"module": "", "key": "leadAmpVolume", "value": 0.57},
-          {"module": "", "key": "leadAmpTone", "value": 0.56},
-          {"module": "", "key": "leadAmpMidBite", "value": 0.64},
-          {"module": "", "key": "ampAttenuation", "value": "0 dB"},
-          {"module": "", "key": "ampHfc", "value": "NORMAL"},
-          {"module": "", "key": "ampReverb", "value": 0.0},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.0}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Lead Channel"
+          },
+          {
+            "module": "",
+            "key": "leadAmpVolume",
+            "value": 0.57
+          },
+          {
+            "module": "",
+            "key": "leadAmpTone",
+            "value": 0.56
+          },
+          {
+            "module": "",
+            "key": "leadAmpMidBite",
+            "value": 0.64
+          },
+          {
+            "module": "",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "",
+            "key": "ampHfc",
+            "value": "NORMAL"
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.0
+          }
         ]
       },
       "lead-saturated": {
         "title": "Saturated vintage lead",
         "use_when": "singing lead and heavier classic-rock parts driven by the amp",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Lead Channel"},
-          {"module": "", "key": "leadAmpVolume", "value": 0.74},
-          {"module": "", "key": "leadAmpTone", "value": 0.52},
-          {"module": "", "key": "leadAmpMidBite", "value": 0.75},
-          {"module": "", "key": "ampAttenuation", "value": "0 dB"},
-          {"module": "", "key": "ampHfc", "value": "NORMAL"},
-          {"module": "", "key": "ampReverb", "value": 0.0},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.0}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Lead Channel"
+          },
+          {
+            "module": "",
+            "key": "leadAmpVolume",
+            "value": 0.74
+          },
+          {
+            "module": "",
+            "key": "leadAmpTone",
+            "value": 0.52
+          },
+          {
+            "module": "",
+            "key": "leadAmpMidBite",
+            "value": 0.75
+          },
+          {
+            "module": "",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "",
+            "key": "ampHfc",
+            "value": "NORMAL"
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.0
+          }
         ]
       },
       "attenuated-lead": {
         "title": "Attenuated lead with high-frequency compensation",
         "use_when": "a driven lead should retain brightness while the virtual attenuator is engaged",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Lead Channel"},
-          {"module": "", "key": "leadAmpVolume", "value": 0.74},
-          {"module": "", "key": "leadAmpTone", "value": 0.50},
-          {"module": "", "key": "leadAmpMidBite", "value": 0.70},
-          {"module": "", "key": "ampAttenuation", "value": "-9 dB"},
-          {"module": "", "key": "ampHfc", "value": "MAX"},
-          {"module": "", "key": "ampReverb", "value": 0.0},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.0}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Lead Channel"
+          },
+          {
+            "module": "",
+            "key": "leadAmpVolume",
+            "value": 0.74
+          },
+          {
+            "module": "",
+            "key": "leadAmpTone",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "leadAmpMidBite",
+            "value": 0.7
+          },
+          {
+            "module": "",
+            "key": "ampAttenuation",
+            "value": "-9 dB"
+          },
+          {
+            "module": "",
+            "key": "ampHfc",
+            "value": "MAX"
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.0
+          }
         ],
         "note": "HFC compensates high-frequency loss from attenuation and has no effect at 0 dB attenuation."
       },
@@ -84,14 +264,46 @@
         "title": "Spring-and-tremolo clean",
         "use_when": "vintage clean rhythm with audible but controlled amp tremolo",
         "parameters": [
-          {"module": "", "key": "ampsActive", "value": true},
-          {"module": "", "key": "ampType", "value": "Rhythm Channel"},
-          {"module": "", "key": "rhythmAmpVolume", "value": 0.37},
-          {"module": "", "key": "rhythmAmpBass", "value": 0.34},
-          {"module": "", "key": "rhythmAmpTreble", "value": 0.55},
-          {"module": "", "key": "ampReverb", "value": 0.18},
-          {"module": "", "key": "ampTremoloSpeed", "value": 0.73},
-          {"module": "", "key": "ampTremoloDepth", "value": 0.35}
+          {
+            "module": "",
+            "key": "ampsActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "ampType",
+            "value": "Rhythm Channel"
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpVolume",
+            "value": 0.37
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpBass",
+            "value": 0.34
+          },
+          {
+            "module": "",
+            "key": "rhythmAmpTreble",
+            "value": 0.55
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0.18
+          },
+          {
+            "module": "",
+            "key": "ampTremoloSpeed",
+            "value": 0.73
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0.35
+          }
         ]
       }
     },
@@ -100,42 +312,120 @@
         "title": "Gentle clean glue",
         "use_when": "clean rhythm needs steadier pick attack without losing much dynamics",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "compActive", "value": true},
-          {"module": "", "key": "compCompression", "value": 0.39},
-          {"module": "", "key": "compBlend", "value": 0.62},
-          {"module": "", "key": "compSpeed", "value": "Slow"},
-          {"module": "", "key": "compVolume", "value": 0.0}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compCompression",
+            "value": 0.39
+          },
+          {
+            "module": "",
+            "key": "compBlend",
+            "value": 0.62
+          },
+          {
+            "module": "",
+            "key": "compSpeed",
+            "value": "Slow"
+          },
+          {
+            "module": "",
+            "key": "compVolume",
+            "value": 0.0
+          }
         ]
       },
       "fast-snap": {
         "title": "Fast country and funk snap",
         "use_when": "tight clean picking needs firm transient control",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "compActive", "value": true},
-          {"module": "", "key": "compCompression", "value": 0.50},
-          {"module": "", "key": "compBlend", "value": 0.87},
-          {"module": "", "key": "compSpeed", "value": "Fast"},
-          {"module": "", "key": "compVolume", "value": 0.0}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compCompression",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "compBlend",
+            "value": 0.87
+          },
+          {
+            "module": "",
+            "key": "compSpeed",
+            "value": "Fast"
+          },
+          {
+            "module": "",
+            "key": "compVolume",
+            "value": 0.0
+          }
         ]
       },
       "sustain": {
         "title": "Sustained clean lead",
         "use_when": "a clean or lightly driven lead needs more sustain",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "compActive", "value": true},
-          {"module": "", "key": "compCompression", "value": 0.63},
-          {"module": "", "key": "compBlend", "value": 1.0},
-          {"module": "", "key": "compSpeed", "value": "Fast"},
-          {"module": "", "key": "compVolume", "value": 1.5}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "compCompression",
+            "value": 0.63
+          },
+          {
+            "module": "",
+            "key": "compBlend",
+            "value": 1.0
+          },
+          {
+            "module": "",
+            "key": "compSpeed",
+            "value": "Fast"
+          },
+          {
+            "module": "",
+            "key": "compVolume",
+            "value": 1.5
+          }
         ]
       },
       "off": {
         "title": "Compressor off",
         "use_when": "the amp or drive already supplies enough compression",
-        "parameters": [{"module": "", "key": "compActive", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "compActive",
+            "value": false
+          }
+        ]
       }
     },
     "drive1": {
@@ -143,30 +433,84 @@
         "title": "Low-gain level push",
         "use_when": "push the amp harder while keeping pedal distortion restrained",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "drive1Active", "value": true},
-          {"module": "", "key": "drive1Overdrive", "value": 0.20},
-          {"module": "", "key": "drive1Volume", "value": 0.63},
-          {"module": "", "key": "drive1Bass", "value": 0.42},
-          {"module": "", "key": "drive1Treble", "value": 0.52}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive1Overdrive",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "drive1Volume",
+            "value": 0.63
+          },
+          {
+            "module": "",
+            "key": "drive1Bass",
+            "value": 0.42
+          },
+          {
+            "module": "",
+            "key": "drive1Treble",
+            "value": 0.52
+          }
         ]
       },
       "vintage-crunch": {
         "title": "Vintage overdrive crunch",
         "use_when": "an edge-of-breakup amp needs a fuller crunch layer",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "drive1Active", "value": true},
-          {"module": "", "key": "drive1Overdrive", "value": 0.42},
-          {"module": "", "key": "drive1Volume", "value": 0.50},
-          {"module": "", "key": "drive1Bass", "value": 0.49},
-          {"module": "", "key": "drive1Treble", "value": 0.55}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive1Overdrive",
+            "value": 0.42
+          },
+          {
+            "module": "",
+            "key": "drive1Volume",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "drive1Bass",
+            "value": 0.49
+          },
+          {
+            "module": "",
+            "key": "drive1Treble",
+            "value": 0.55
+          }
         ]
       },
       "off": {
         "title": "Overdrive 1 off",
         "use_when": "the amp or second drive should provide all of the gain",
-        "parameters": [{"module": "", "key": "drive1Active", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "drive1Active",
+            "value": false
+          }
+        ]
       }
     },
     "drive2": {
@@ -174,30 +518,84 @@
         "title": "Warm second-stage boost",
         "use_when": "a lead needs body and sustain without extreme pedal gain",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "drive2Active", "value": true},
-          {"module": "", "key": "drive2Overdrive", "value": 0.20},
-          {"module": "", "key": "drive2Volume", "value": 0.57},
-          {"module": "", "key": "drive2Bass", "value": 0.56},
-          {"module": "", "key": "drive2Treble", "value": 0.44}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive2Overdrive",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "drive2Volume",
+            "value": 0.57
+          },
+          {
+            "module": "",
+            "key": "drive2Bass",
+            "value": 0.56
+          },
+          {
+            "module": "",
+            "key": "drive2Treble",
+            "value": 0.44
+          }
         ]
       },
       "saturated-lead": {
         "title": "Saturated second-stage lead",
         "use_when": "a vintage lead needs more gain than the amp alone supplies",
         "parameters": [
-          {"module": "", "key": "pedalSectionActive", "value": true},
-          {"module": "", "key": "drive2Active", "value": true},
-          {"module": "", "key": "drive2Overdrive", "value": 0.50},
-          {"module": "", "key": "drive2Volume", "value": 0.50},
-          {"module": "", "key": "drive2Bass", "value": 0.48},
-          {"module": "", "key": "drive2Treble", "value": 0.55}
+          {
+            "module": "",
+            "key": "pedalSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "drive2Overdrive",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "drive2Volume",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "drive2Bass",
+            "value": 0.48
+          },
+          {
+            "module": "",
+            "key": "drive2Treble",
+            "value": 0.55
+          }
         ]
       },
       "off": {
         "title": "Overdrive 2 off",
         "use_when": "the amp or first drive should provide all of the gain",
-        "parameters": [{"module": "", "key": "drive2Active", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "drive2Active",
+            "value": false
+          }
+        ]
       }
     },
     "eq": {
@@ -205,68 +603,244 @@
         "title": "Flat graphic EQ",
         "use_when": "the amp and cab already sit correctly in the arrangement",
         "parameters": [
-          {"module": "", "key": "eqSectionActive", "value": true},
-          {"module": "", "key": "eqActive", "value": true},
-          {"module": "", "key": "eqBand1", "value": 0.0},
-          {"module": "", "key": "eqBand2", "value": 0.0},
-          {"module": "", "key": "eqBand3", "value": 0.0},
-          {"module": "", "key": "eqBand4", "value": 0.0},
-          {"module": "", "key": "eqBand5", "value": 0.0},
-          {"module": "", "key": "eqBand6", "value": 0.0},
-          {"module": "", "key": "eqBand7", "value": 0.0},
-          {"module": "", "key": "eqBand8", "value": 0.0},
-          {"module": "", "key": "eqBand9", "value": 0.0}
+          {
+            "module": "",
+            "key": "eqSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqBand1",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand2",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand3",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand4",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand5",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand6",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand7",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand8",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand9",
+            "value": 0.0
+          }
         ]
       },
       "tight-low-end": {
         "title": "Tighter low end",
         "use_when": "the guitar masks bass or kick and needs less rumble",
         "parameters": [
-          {"module": "", "key": "eqSectionActive", "value": true},
-          {"module": "", "key": "eqActive", "value": true},
-          {"module": "", "key": "eqBand1", "value": -6.0},
-          {"module": "", "key": "eqBand2", "value": -2.0},
-          {"module": "", "key": "eqBand3", "value": -1.0},
-          {"module": "", "key": "eqBand4", "value": 0.0},
-          {"module": "", "key": "eqBand5", "value": 0.0},
-          {"module": "", "key": "eqBand6", "value": 0.0},
-          {"module": "", "key": "eqBand7", "value": 0.0},
-          {"module": "", "key": "eqBand8", "value": 0.0},
-          {"module": "", "key": "eqBand9", "value": 0.0}
+          {
+            "module": "",
+            "key": "eqSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqBand1",
+            "value": -6.0
+          },
+          {
+            "module": "",
+            "key": "eqBand2",
+            "value": -2.0
+          },
+          {
+            "module": "",
+            "key": "eqBand3",
+            "value": -1.0
+          },
+          {
+            "module": "",
+            "key": "eqBand4",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand5",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand6",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand7",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand8",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand9",
+            "value": 0.0
+          }
         ]
       },
       "lead-focus": {
         "title": "Lead focus",
         "use_when": "a lead needs more mid presence and less extreme low end",
         "parameters": [
-          {"module": "", "key": "eqSectionActive", "value": true},
-          {"module": "", "key": "eqActive", "value": true},
-          {"module": "", "key": "eqBand1", "value": -6.0},
-          {"module": "", "key": "eqBand2", "value": -2.0},
-          {"module": "", "key": "eqBand3", "value": 0.0},
-          {"module": "", "key": "eqBand4", "value": 1.0},
-          {"module": "", "key": "eqBand5", "value": 1.5},
-          {"module": "", "key": "eqBand6", "value": 2.0},
-          {"module": "", "key": "eqBand7", "value": 1.0},
-          {"module": "", "key": "eqBand8", "value": 0.0},
-          {"module": "", "key": "eqBand9", "value": -1.0}
+          {
+            "module": "",
+            "key": "eqSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqBand1",
+            "value": -6.0
+          },
+          {
+            "module": "",
+            "key": "eqBand2",
+            "value": -2.0
+          },
+          {
+            "module": "",
+            "key": "eqBand3",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand4",
+            "value": 1.0
+          },
+          {
+            "module": "",
+            "key": "eqBand5",
+            "value": 1.5
+          },
+          {
+            "module": "",
+            "key": "eqBand6",
+            "value": 2.0
+          },
+          {
+            "module": "",
+            "key": "eqBand7",
+            "value": 1.0
+          },
+          {
+            "module": "",
+            "key": "eqBand8",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand9",
+            "value": -1.0
+          }
         ]
       },
       "soft-top": {
         "title": "Softer top end",
         "use_when": "a bright pickup or close dynamic mic sounds sharp",
         "parameters": [
-          {"module": "", "key": "eqSectionActive", "value": true},
-          {"module": "", "key": "eqActive", "value": true},
-          {"module": "", "key": "eqBand1", "value": -3.0},
-          {"module": "", "key": "eqBand2", "value": 0.0},
-          {"module": "", "key": "eqBand3", "value": 0.0},
-          {"module": "", "key": "eqBand4", "value": 0.0},
-          {"module": "", "key": "eqBand5", "value": 0.0},
-          {"module": "", "key": "eqBand6", "value": 0.0},
-          {"module": "", "key": "eqBand7", "value": -1.0},
-          {"module": "", "key": "eqBand8", "value": -2.0},
-          {"module": "", "key": "eqBand9", "value": -3.0}
+          {
+            "module": "",
+            "key": "eqSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "eqBand1",
+            "value": -3.0
+          },
+          {
+            "module": "",
+            "key": "eqBand2",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand3",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand4",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand5",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand6",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "eqBand7",
+            "value": -1.0
+          },
+          {
+            "module": "",
+            "key": "eqBand8",
+            "value": -2.0
+          },
+          {
+            "module": "",
+            "key": "eqBand9",
+            "value": -3.0
+          }
         ]
       }
     },
@@ -275,71 +849,259 @@
         "title": "Balanced dynamic and ribbon pair",
         "use_when": "a dependable starting point that balances attack and body",
         "parameters": [
-          {"module": "", "key": "cabSectionActive", "value": true},
-          {"module": "", "key": "cab1Active", "value": true},
-          {"module": "", "key": "cab1MicIR", "value": "Dynamic 57 E33"},
-          {"module": "", "key": "cab1Position", "value": 0.50},
-          {"module": "", "key": "cab1Distance", "value": 0.0},
-          {"module": "", "key": "cab1Level", "value": -12.0},
-          {"module": "", "key": "cab1Pan", "value": -10.0},
-          {"module": "", "key": "cab2Active", "value": true},
-          {"module": "", "key": "cab2MicIR", "value": "Ribbon 121 E33"},
-          {"module": "", "key": "cab2Position", "value": 0.50},
-          {"module": "", "key": "cab2Distance", "value": 0.0},
-          {"module": "", "key": "cab2Level", "value": -12.0},
-          {"module": "", "key": "cab2Pan", "value": 10.0}
+          {
+            "module": "",
+            "key": "cabSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1MicIR",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "",
+            "key": "cab1Position",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "cab1Distance",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab1Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab1Pan",
+            "value": -0.2
+          },
+          {
+            "module": "",
+            "key": "cab2Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab2MicIR",
+            "value": "Ribbon 121 E33"
+          },
+          {
+            "module": "",
+            "key": "cab2Position",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "cab2Distance",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab2Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab2Pan",
+            "value": 0.2
+          }
         ]
       },
       "bright-dynamics": {
         "title": "Bright dynamic pair",
         "use_when": "clean rhythm needs more attack and articulation",
         "parameters": [
-          {"module": "", "key": "cabSectionActive", "value": true},
-          {"module": "", "key": "cab1Active", "value": true},
-          {"module": "", "key": "cab1MicIR", "value": "Dynamic 57 E33"},
-          {"module": "", "key": "cab1Position", "value": 0.42},
-          {"module": "", "key": "cab1Distance", "value": 0.0},
-          {"module": "", "key": "cab1Level", "value": -12.0},
-          {"module": "", "key": "cab1Pan", "value": -8.0},
-          {"module": "", "key": "cab2Active", "value": true},
-          {"module": "", "key": "cab2MicIR", "value": "Dynamic 421 E33"},
-          {"module": "", "key": "cab2Position", "value": 0.55},
-          {"module": "", "key": "cab2Distance", "value": 0.0},
-          {"module": "", "key": "cab2Level", "value": -12.0},
-          {"module": "", "key": "cab2Pan", "value": 8.0}
+          {
+            "module": "",
+            "key": "cabSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1MicIR",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "",
+            "key": "cab1Position",
+            "value": 0.42
+          },
+          {
+            "module": "",
+            "key": "cab1Distance",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab1Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab1Pan",
+            "value": -0.16
+          },
+          {
+            "module": "",
+            "key": "cab2Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab2MicIR",
+            "value": "Dynamic 421 E33"
+          },
+          {
+            "module": "",
+            "key": "cab2Position",
+            "value": 0.55
+          },
+          {
+            "module": "",
+            "key": "cab2Distance",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab2Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab2Pan",
+            "value": 0.16
+          }
         ]
       },
       "warm-ribbons": {
         "title": "Warm ribbon pair",
         "use_when": "a lead or bright guitar needs a rounder cabinet balance",
         "parameters": [
-          {"module": "", "key": "cabSectionActive", "value": true},
-          {"module": "", "key": "cab1Active", "value": true},
-          {"module": "", "key": "cab1MicIR", "value": "Ribbon 121 E33"},
-          {"module": "", "key": "cab1Position", "value": 0.55},
-          {"module": "", "key": "cab1Distance", "value": 0.05},
-          {"module": "", "key": "cab1Level", "value": -12.0},
-          {"module": "", "key": "cab1Pan", "value": -8.0},
-          {"module": "", "key": "cab2Active", "value": true},
-          {"module": "", "key": "cab2MicIR", "value": "Ribbon 160 E33"},
-          {"module": "", "key": "cab2Position", "value": 0.55},
-          {"module": "", "key": "cab2Distance", "value": 0.05},
-          {"module": "", "key": "cab2Level", "value": -12.0},
-          {"module": "", "key": "cab2Pan", "value": 8.0}
+          {
+            "module": "",
+            "key": "cabSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1MicIR",
+            "value": "Ribbon 121 E33"
+          },
+          {
+            "module": "",
+            "key": "cab1Position",
+            "value": 0.55
+          },
+          {
+            "module": "",
+            "key": "cab1Distance",
+            "value": 0.05
+          },
+          {
+            "module": "",
+            "key": "cab1Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab1Pan",
+            "value": -0.16
+          },
+          {
+            "module": "",
+            "key": "cab2Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab2MicIR",
+            "value": "Ribbon 160 E33"
+          },
+          {
+            "module": "",
+            "key": "cab2Position",
+            "value": 0.55
+          },
+          {
+            "module": "",
+            "key": "cab2Distance",
+            "value": 0.05
+          },
+          {
+            "module": "",
+            "key": "cab2Level",
+            "value": -12.0
+          },
+          {
+            "module": "",
+            "key": "cab2Pan",
+            "value": 0.16
+          }
         ]
       },
       "single-57": {
         "title": "Single close dynamic 57",
         "use_when": "a centered, direct cabinet sound should leave stereo space elsewhere",
         "parameters": [
-          {"module": "", "key": "cabSectionActive", "value": true},
-          {"module": "", "key": "cab1Active", "value": true},
-          {"module": "", "key": "cab1MicIR", "value": "Dynamic 57 E33"},
-          {"module": "", "key": "cab1Position", "value": 0.50},
-          {"module": "", "key": "cab1Distance", "value": 0.0},
-          {"module": "", "key": "cab1Level", "value": -6.0},
-          {"module": "", "key": "cab1Pan", "value": 0.0},
-          {"module": "", "key": "cab2Active", "value": false}
+          {
+            "module": "",
+            "key": "cabSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1Active",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "cab1MicIR",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "",
+            "key": "cab1Position",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "cab1Distance",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab1Level",
+            "value": -6.0
+          },
+          {
+            "module": "",
+            "key": "cab1Pan",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "cab2Active",
+            "value": false
+          }
         ]
       }
     },
@@ -348,28 +1110,74 @@
         "title": "Subtle chorus width",
         "use_when": "clean rhythm needs gentle movement without obvious modulation",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "chorusActive", "value": true},
-          {"module": "", "key": "chorusRate", "value": 0.50},
-          {"module": "", "key": "chorusDepth", "value": 0.20},
-          {"module": "", "key": "chorusMix", "value": 0.25}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "chorusActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "chorusRate",
+            "value": 0.5
+          },
+          {
+            "module": "",
+            "key": "chorusDepth",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "chorusMix",
+            "value": 0.25
+          }
         ]
       },
       "deep-vintage": {
         "title": "Deep vintage chorus",
         "use_when": "an exposed clean part should have obvious slow movement",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "chorusActive", "value": true},
-          {"module": "", "key": "chorusRate", "value": 0.42},
-          {"module": "", "key": "chorusDepth", "value": 0.70},
-          {"module": "", "key": "chorusMix", "value": 0.52}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "chorusActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "chorusRate",
+            "value": 0.42
+          },
+          {
+            "module": "",
+            "key": "chorusDepth",
+            "value": 0.7
+          },
+          {
+            "module": "",
+            "key": "chorusMix",
+            "value": 0.52
+          }
         ]
       },
       "off": {
         "title": "Chorus off",
         "use_when": "the part needs a stable center or another modulation source",
-        "parameters": [{"module": "", "key": "chorusActive", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "chorusActive",
+            "value": false
+          }
+        ]
       }
     },
     "delay": {
@@ -377,57 +1185,195 @@
         "title": "Mono quarter-note delay",
         "use_when": "lead phrases need a conventional tempo-synced echo",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "delayActive", "value": true},
-          {"module": "", "key": "delaySync", "value": true},
-          {"module": "", "key": "delayNoteMs", "value": "Note"},
-          {"module": "", "key": "delayStereoMode", "value": "Mono"},
-          {"module": "", "key": "delaySyncNoteL", "value": "1/4"},
-          {"module": "", "key": "delaySyncNoteR", "value": "1/4"},
-          {"module": "", "key": "delayFeedback", "value": 0.16},
-          {"module": "", "key": "delayMix", "value": 0.14},
-          {"module": "", "key": "delayHPF", "value": 0.30},
-          {"module": "", "key": "delayLPF", "value": 0.65}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delaySync",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delayNoteMs",
+            "value": "Note"
+          },
+          {
+            "module": "",
+            "key": "delayStereoMode",
+            "value": "Mono"
+          },
+          {
+            "module": "",
+            "key": "delaySyncNoteL",
+            "value": "1/4"
+          },
+          {
+            "module": "",
+            "key": "delaySyncNoteR",
+            "value": "1/4"
+          },
+          {
+            "module": "",
+            "key": "delayFeedback",
+            "value": 0.16
+          },
+          {
+            "module": "",
+            "key": "delayMix",
+            "value": 0.14
+          },
+          {
+            "module": "",
+            "key": "delayHPF",
+            "value": 0.3
+          },
+          {
+            "module": "",
+            "key": "delayLPF",
+            "value": 0.65
+          }
         ]
       },
       "stereo-dotted-eighth": {
         "title": "Stereo dotted-eighth delay",
         "use_when": "clean or lead parts need rhythmic stereo motion",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "delayActive", "value": true},
-          {"module": "", "key": "delaySync", "value": true},
-          {"module": "", "key": "delayNoteMs", "value": "Note"},
-          {"module": "", "key": "delayStereoMode", "value": "Stereo"},
-          {"module": "", "key": "delaySyncNoteL", "value": "1/8D"},
-          {"module": "", "key": "delaySyncNoteR", "value": "1/4"},
-          {"module": "", "key": "delayFeedback", "value": 0.20},
-          {"module": "", "key": "delayMix", "value": 0.20},
-          {"module": "", "key": "delayHPF", "value": 0.35},
-          {"module": "", "key": "delayLPF", "value": 0.60}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delaySync",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delayNoteMs",
+            "value": "Note"
+          },
+          {
+            "module": "",
+            "key": "delayStereoMode",
+            "value": "Stereo"
+          },
+          {
+            "module": "",
+            "key": "delaySyncNoteL",
+            "value": "1/8D"
+          },
+          {
+            "module": "",
+            "key": "delaySyncNoteR",
+            "value": "1/4"
+          },
+          {
+            "module": "",
+            "key": "delayFeedback",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "delayMix",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "delayHPF",
+            "value": 0.35
+          },
+          {
+            "module": "",
+            "key": "delayLPF",
+            "value": 0.6
+          }
         ]
       },
       "short-slap": {
         "title": "Short fixed-time slap",
         "use_when": "country, rockabilly, or vintage lead needs one compact echo",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "delayActive", "value": true},
-          {"module": "", "key": "delaySync", "value": false},
-          {"module": "", "key": "delayNoteMs", "value": "ms"},
-          {"module": "", "key": "delayStereoMode", "value": "Mono"},
-          {"module": "", "key": "delayTimeMSL", "value": 120.0},
-          {"module": "", "key": "delayTimeMSR", "value": 120.0},
-          {"module": "", "key": "delayFeedback", "value": 0.05},
-          {"module": "", "key": "delayMix", "value": 0.12},
-          {"module": "", "key": "delayHPF", "value": 0.30},
-          {"module": "", "key": "delayLPF", "value": 0.58}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "delaySync",
+            "value": false
+          },
+          {
+            "module": "",
+            "key": "delayNoteMs",
+            "value": "ms"
+          },
+          {
+            "module": "",
+            "key": "delayStereoMode",
+            "value": "Mono"
+          },
+          {
+            "module": "",
+            "key": "delayTimeMSL",
+            "value": 120.0
+          },
+          {
+            "module": "",
+            "key": "delayTimeMSR",
+            "value": 120.0
+          },
+          {
+            "module": "",
+            "key": "delayFeedback",
+            "value": 0.05
+          },
+          {
+            "module": "",
+            "key": "delayMix",
+            "value": 0.12
+          },
+          {
+            "module": "",
+            "key": "delayHPF",
+            "value": 0.3
+          },
+          {
+            "module": "",
+            "key": "delayLPF",
+            "value": 0.58
+          }
         ]
       },
       "off": {
         "title": "Delay off",
         "use_when": "the arrangement supplies ambience or the part must stay dry",
-        "parameters": [{"module": "", "key": "delayActive", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "delayActive",
+            "value": false
+          }
+        ]
       }
     },
     "reverb": {
@@ -435,45 +1381,135 @@
         "title": "Compact filtered room",
         "use_when": "a dry rhythm needs space without an obvious tail",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "reverbActive", "value": true},
-          {"module": "", "key": "reverbMix", "value": 0.14},
-          {"module": "", "key": "reverbDecay", "value": 1.4},
-          {"module": "", "key": "reverbPreDelay", "value": 0.05},
-          {"module": "", "key": "reverbHPF", "value": 395.0},
-          {"module": "", "key": "reverbLPF", "value": 4938.0}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbMix",
+            "value": 0.14
+          },
+          {
+            "module": "",
+            "key": "reverbDecay",
+            "value": 1.4
+          },
+          {
+            "module": "",
+            "key": "reverbPreDelay",
+            "value": 0.05
+          },
+          {
+            "module": "",
+            "key": "reverbHPF",
+            "value": 395.0
+          },
+          {
+            "module": "",
+            "key": "reverbLPF",
+            "value": 4938.0
+          }
         ]
       },
       "lead-space": {
         "title": "Lead space",
         "use_when": "a lead needs a clear tail without washing out the attack",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "reverbActive", "value": true},
-          {"module": "", "key": "reverbMix", "value": 0.21},
-          {"module": "", "key": "reverbDecay", "value": 2.2},
-          {"module": "", "key": "reverbPreDelay", "value": 0.20},
-          {"module": "", "key": "reverbHPF", "value": 395.0},
-          {"module": "", "key": "reverbLPF", "value": 4938.0}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbMix",
+            "value": 0.21
+          },
+          {
+            "module": "",
+            "key": "reverbDecay",
+            "value": 2.2
+          },
+          {
+            "module": "",
+            "key": "reverbPreDelay",
+            "value": 0.2
+          },
+          {
+            "module": "",
+            "key": "reverbHPF",
+            "value": 395.0
+          },
+          {
+            "module": "",
+            "key": "reverbLPF",
+            "value": 4938.0
+          }
         ]
       },
       "ambient": {
         "title": "Ambient wash",
         "use_when": "sparse clean parts can support a long, prominent tail",
         "parameters": [
-          {"module": "", "key": "timeSectionActive", "value": true},
-          {"module": "", "key": "reverbActive", "value": true},
-          {"module": "", "key": "reverbMix", "value": 0.34},
-          {"module": "", "key": "reverbDecay", "value": 4.0},
-          {"module": "", "key": "reverbPreDelay", "value": 0.28},
-          {"module": "", "key": "reverbHPF", "value": 430.0},
-          {"module": "", "key": "reverbLPF", "value": 4938.0}
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "",
+            "key": "reverbMix",
+            "value": 0.34
+          },
+          {
+            "module": "",
+            "key": "reverbDecay",
+            "value": 4.0
+          },
+          {
+            "module": "",
+            "key": "reverbPreDelay",
+            "value": 0.28
+          },
+          {
+            "module": "",
+            "key": "reverbHPF",
+            "value": 430.0
+          },
+          {
+            "module": "",
+            "key": "reverbLPF",
+            "value": 4938.0
+          }
         ]
       },
       "off": {
         "title": "Post reverb off",
         "use_when": "using only the amp spring reverb or keeping the part dry",
-        "parameters": [{"module": "", "key": "reverbActive", "value": false}]
+        "parameters": [
+          {
+            "module": "",
+            "key": "reverbActive",
+            "value": false
+          }
+        ]
       }
     },
     "output": {
@@ -481,35 +1517,79 @@
         "title": "Unity input and output",
         "use_when": "start gain staging from neutral trims",
         "parameters": [
-          {"module": "", "key": "inputGain", "value": 0.0},
-          {"module": "", "key": "outputGain", "value": 0.0},
-          {"module": "", "key": "gateThreshold", "value": -80.0}
+          {
+            "module": "",
+            "key": "inputGain",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "outputGain",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
         ]
       },
       "hot-pickup-pad": {
         "title": "Hot-pickup input pad",
         "use_when": "high-output pickups drive every recipe harder than intended",
         "parameters": [
-          {"module": "", "key": "inputGain", "value": -4.0},
-          {"module": "", "key": "outputGain", "value": 0.0},
-          {"module": "", "key": "gateThreshold", "value": -72.0}
+          {
+            "module": "",
+            "key": "inputGain",
+            "value": -4.0
+          },
+          {
+            "module": "",
+            "key": "outputGain",
+            "value": 0.0
+          },
+          {
+            "module": "",
+            "key": "gateThreshold",
+            "value": -72.0
+          }
         ]
       },
       "low-output-lift": {
         "title": "Low-output pickup lift",
         "use_when": "a quiet vintage pickup needs a small level lift into the preset",
         "parameters": [
-          {"module": "", "key": "inputGain", "value": 3.0},
-          {"module": "", "key": "outputGain", "value": -1.5},
-          {"module": "", "key": "gateThreshold", "value": -80.0}
+          {
+            "module": "",
+            "key": "inputGain",
+            "value": 3.0
+          },
+          {
+            "module": "",
+            "key": "outputGain",
+            "value": -1.5
+          },
+          {
+            "module": "",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
         ]
       },
       "headroom": {
         "title": "Output headroom",
         "use_when": "several gain or ambience layers make the result clip or jump in level",
         "parameters": [
-          {"module": "", "key": "outputGain", "value": -6.0},
-          {"module": "", "key": "gateThreshold", "value": -80.0}
+          {
+            "module": "",
+            "key": "outputGain",
+            "value": -6.0
+          },
+          {
+            "module": "",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
         ]
       }
     }
