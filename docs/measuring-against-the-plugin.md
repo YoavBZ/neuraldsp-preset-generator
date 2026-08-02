@@ -226,6 +226,38 @@ around 28% when the input is three times stronger. Treat breakup positions as
 input-dependent ranges, and check rendered peak level so output clipping is not
 misidentified as plugin distortion.
 
+## Tone King renders silence, and it is not the harness
+
+`scripts/au_render.swift` gets audio out of Morgan and **exact zeros** out of
+Tone King Imperial MKII. So none of the acoustic work — switch directions,
+break-up curves, the EQ band ordering three recipes assume — has been done for
+that plugin, and those recipes say so rather than guessing.
+
+What has been ruled out, each by running Morgan through the identical code path
+and getting audio:
+
+- **Not the state.** Silent with no `fullState` manipulation at all.
+- **Not the input level.** Silent at amplitudes 0.005 through 0.9.
+- **Not the API.** Silent through both `AUAudioUnit.renderBlock` with a pull
+  block and the v2 `AudioUnitRender` with a render callback — the latter is
+  what `auval` uses.
+- **Not the bus configuration.** Both report one input and one output bus and
+  accept mono or stereo at 48 kHz.
+- **Not a gate, bypass or latency.** `kAudioUnitProperty_BypassEffect` reads 0
+  and latency reads 0 for both.
+
+`auval -v aumf TKI2 NDSP` passes, but that is weaker evidence than it looks: it
+checks for NaNs and malformed output, not for non-silence.
+
+The remaining hypothesis is authorization — PACE-protected plugins commonly
+render silence rather than failing when they cannot authorize, and a headless
+CLI process is not an environment vendors test. Unconfirmed, and it is the next
+thing to check: run the same render with the standalone app open, or on a
+machine where the licence is definitely active.
+
+**Do not read the silence as a measurement.** A control that appears to do
+nothing here has not been shown to do nothing.
+
 ## Method limits
 
 - Audio Unit metadata covers only published controls.
