@@ -111,9 +111,12 @@ A **pack** is everything the tool knows about one Neural DSP plugin:
 
 ```
 packs/<id>/
-  manifest.json   committed — the contract: every parameter's kind, unit,
-                  declared range, selector members, EQ band centres, UI name
-  recipes.json    committed — 40 composable tone recipes, one layer at a time
+  manifest.json   committed — the contract: every parameter's kind, and
+                  whatever else has been established for it — unit, declared
+                  range, selector members, EQ band centres, UI name. A pack
+                  carries what was measured, not a full set
+  recipes.json    committed — composable tone recipes, one layer at a time
+                  (Morgan 40, Tone King 39)
   tone.md         committed — amps, intent -> recipe table, tone vocabulary
   observed.json   git-ignored, optional — what values YOUR presets use
   templates/      git-ignored — your own presets

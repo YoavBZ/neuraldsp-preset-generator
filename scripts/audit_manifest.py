@@ -29,6 +29,7 @@ See docs/measuring-against-the-plugin.md.
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import pathlib
 import re
@@ -74,7 +75,10 @@ def numeric(shown: str, unit: str = None):
     """
     shown = (shown or "").strip()
     if not shown:
-        return None
+        # Unreadable, not absent. Several real controls in both plugins publish
+        # empty min/max strings; treating that as "no number" made it compare
+        # unequal to any declared range and report a failure nothing could fix.
+        return UNPARSEABLE
     if shown == "C":                      # a centred pan is not "0"
         return 0.0
     if "inf" in shown.lower() or "nan" in shown.lower():
@@ -196,7 +200,7 @@ def audit(pack_id: str, binary_path: pathlib.Path | None = None) -> int:
         try:
             revmap = run_probe(binary, pack.audio_unit, "revmap")
         except StateNotADocument:
-            return verify_via_state(pack, params, binary)
+            return verify_via_state(pack, params, binary, pathlib.Path(tmp))
         checker = BoundsChecker(binary, pack.audio_unit)
         return compare(pack, params, revmap, checker)
 
@@ -214,6 +218,10 @@ def probe_bounds(probe, state, path, spec):
     """
     from probe_state import edited
 
+    if spec.min is None or spec.max is None:
+        # Half a declared range cannot be probed from both ends. Reported as
+        # unchecked rather than crashing on None arithmetic.
+        return None
     key = path.lstrip("/")
     module, _, bare = key.rpartition("/")
     below = spec.min - abs(spec.min or 1) - 1
@@ -248,7 +256,7 @@ def _same_to_float32(a: float, b: float) -> bool:
     return to32(a) == to32(b) or abs(a - b) <= 1e-6 * max(1.0, abs(b))
 
 
-def verify_via_state(pack, params, binary) -> int:
+def verify_via_state(pack, params, binary, scratch) -> int:
     """Fall back to the state probe for a plugin that keeps no XML document.
 
     `au_probe`'s revmap edits an attribute in the plugin's state document, which
@@ -267,7 +275,10 @@ def verify_via_state(pack, params, binary) -> int:
     from format.parser import parse
     from format.structured import build
 
-    workdir = binary.parent
+    # Scratch goes in our own temp dir, never beside a caller-supplied binary:
+    # apply_many_with_states rmtree's a subdirectory of the workdir, and a run
+    # writes thousands of blob files into it.
+    workdir = scratch
     probe = Probe(pack.audio_unit, workdir, binary=binary)
     state = probe.baseline_state()
     try:
@@ -298,9 +309,17 @@ def verify_via_state(pack, params, binary) -> int:
     }
 
     verified_ranges = verified_selectors = disagrees = unchecked = 0
+    nothing_declared = []
+    unmapped_declared = []
     for path, spec in sorted(pack.parameters.items()):
         address = mapped.get(path.lstrip("/"))
         if address is None:
+            declares = (spec.min is not None or spec.max is not None
+                        or (spec.kind == "enum" and spec.members))
+            if declares:
+                # It asserts something and nothing tested it. Counting this as
+                # silence is exactly how three wrong ranges survived a full pass.
+                unmapped_declared.append((path, spec))
             continue
         control = params[address]
 
@@ -320,6 +339,13 @@ def verify_via_state(pack, params, binary) -> int:
                 print()
 
         if spec.min is None and spec.max is None:
+            if member_verdict is None:
+                # Mapped, but the manifest asserts nothing about it, so nothing
+                # was tested. The Morgan path keeps and prints this bucket; not
+                # doing so here made the summary read cleaner while proving
+                # strictly less — 53 of 94 parameters silently untested behind
+                # a headline of "0 unchecked".
+                nothing_declared.append((path, spec))
             continue
         lo = numeric(control["minString"], spec.unit)
         hi = numeric(control["maxString"], spec.unit)
@@ -355,8 +381,23 @@ def verify_via_state(pack, params, binary) -> int:
     )
     print(f"{verified_ranges} declared ranges and {verified_selectors} selectors "
           f"verified, {disagrees} DISAGREE, {unchecked} unchecked.")
+    if unmapped_declared:
+        print(f"NOT CHECKED, BUT ASSERTS SOMETHING — {len(unmapped_declared)}:\n")
+        for path, spec in unmapped_declared:
+            what = (f"{spec.min} .. {spec.max}" if spec.min is not None
+                    else f"{len(spec.members or {})} members")
+            print(f"           {path}  ({spec.kind}, {what})")
+        print("\n           These declare a fact no probe reached, so the audit "
+              "proves nothing\n           for them. That is a failure, not a clean "
+              "bill.\n")
+    if nothing_declared:
+        kinds = collections.Counter(spec.kind for _, spec in nothing_declared)
+        print(f"{len(nothing_declared)} mapped parameters declare no range and no "
+              f"members, so nothing about them\nwas tested "
+              f"({', '.join(f'{n} {k}' for k, n in kinds.most_common())}). "
+              f"'verified' above counts only\nwhat the manifest actually asserts.")
     report_state_coverage(params, len(mapping_results), mapped, mapping_results)
-    return 1 if (disagrees or unchecked) else 0
+    return 1 if (disagrees or unchecked or unmapped_declared) else 0
 
 
 def report_state_coverage(params, target_count, mapped, results=None) -> None:

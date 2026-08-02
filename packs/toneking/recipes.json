@@ -53,7 +53,12 @@
             "key": "ampTremoloDepth",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "rhythm-edge": {
         "title": "Rhythm edge of breakup",
@@ -104,7 +109,12 @@
             "key": "ampTremoloDepth",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "lead-crunch": {
         "title": "Focused lead-channel crunch",
@@ -155,7 +165,12 @@
             "key": "ampTremoloDepth",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "lead-saturated": {
         "title": "Saturated vintage lead",
@@ -206,7 +221,12 @@
             "key": "ampTremoloDepth",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "attenuated-lead": {
         "title": "Attenuated lead with high-frequency compensation",
@@ -258,7 +278,12 @@
             "value": 0.0
           }
         ],
-        "note": "HFC compensates high-frequency loss from attenuation and has no effect at 0 dB attenuation."
+        "note": "HFC compensates high-frequency loss from attenuation and has no effect at 0 dB attenuation.",
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "tremolo-clean": {
         "title": "Spring-and-tremolo clean",
@@ -304,7 +329,12 @@
             "key": "ampTremoloDepth",
             "value": 0.35
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "compressor": {
@@ -342,7 +372,12 @@
             "key": "compVolume",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "fast-snap": {
         "title": "Fast country and funk snap",
@@ -378,7 +413,12 @@
             "key": "compVolume",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "sustain": {
         "title": "Sustained clean lead",
@@ -414,7 +454,12 @@
             "key": "compVolume",
             "value": 1.5
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Compressor off",
@@ -425,7 +470,12 @@
             "key": "compActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "drive1": {
@@ -463,7 +513,12 @@
             "key": "drive1Treble",
             "value": 0.52
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "vintage-crunch": {
         "title": "Vintage overdrive crunch",
@@ -499,7 +554,12 @@
             "key": "drive1Treble",
             "value": 0.55
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Overdrive 1 off",
@@ -510,7 +570,12 @@
             "key": "drive1Active",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "drive2": {
@@ -548,7 +613,12 @@
             "key": "drive2Treble",
             "value": 0.44
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "saturated-lead": {
         "title": "Saturated second-stage lead",
@@ -584,7 +654,12 @@
             "key": "drive2Treble",
             "value": 0.55
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Overdrive 2 off",
@@ -595,7 +670,12 @@
             "key": "drive2Active",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "eq": {
@@ -658,11 +738,16 @@
             "key": "eqBand9",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "tight-low-end": {
         "title": "Tighter low end",
-        "use_when": "the guitar masks bass or kick and needs less rumble",
+        "use_when": "the guitar masks bass or kick and needs less rumble The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
         "parameters": [
           {
             "module": "",
@@ -719,11 +804,16 @@
             "key": "eqBand9",
             "value": 0.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "lead-focus": {
         "title": "Lead focus",
-        "use_when": "a lead needs more mid presence and less extreme low end",
+        "use_when": "a lead needs more mid presence and less extreme low end The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
         "parameters": [
           {
             "module": "",
@@ -780,11 +870,16 @@
             "key": "eqBand9",
             "value": -1.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "soft-top": {
         "title": "Softer top end",
-        "use_when": "a bright pickup or close dynamic mic sounds sharp",
+        "use_when": "a bright pickup or close dynamic mic sounds sharp The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
         "parameters": [
           {
             "module": "",
@@ -841,7 +936,12 @@
             "key": "eqBand9",
             "value": -3.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "cab": {
@@ -914,7 +1014,12 @@
             "key": "cab2Pan",
             "value": 0.2
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "bright-dynamics": {
         "title": "Bright dynamic pair",
@@ -985,7 +1090,12 @@
             "key": "cab2Pan",
             "value": 0.16
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "warm-ribbons": {
         "title": "Warm ribbon pair",
@@ -1056,7 +1166,12 @@
             "key": "cab2Pan",
             "value": 0.16
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "single-57": {
         "title": "Single close dynamic 57",
@@ -1102,7 +1217,12 @@
             "key": "cab2Active",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "chorus": {
@@ -1135,7 +1255,12 @@
             "key": "chorusMix",
             "value": 0.25
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "deep-vintage": {
         "title": "Deep vintage chorus",
@@ -1166,7 +1291,12 @@
             "key": "chorusMix",
             "value": 0.52
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Chorus off",
@@ -1177,7 +1307,12 @@
             "key": "chorusActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "delay": {
@@ -1240,7 +1375,12 @@
             "key": "delayLPF",
             "value": 0.65
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "stereo-dotted-eighth": {
         "title": "Stereo dotted-eighth delay",
@@ -1301,7 +1441,12 @@
             "key": "delayLPF",
             "value": 0.6
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "short-slap": {
         "title": "Short fixed-time slap",
@@ -1362,7 +1507,12 @@
             "key": "delayLPF",
             "value": 0.58
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Delay off",
@@ -1373,7 +1523,12 @@
             "key": "delayActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "reverb": {
@@ -1416,7 +1571,12 @@
             "key": "reverbLPF",
             "value": 4938.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "lead-space": {
         "title": "Lead space",
@@ -1457,7 +1617,12 @@
             "key": "reverbLPF",
             "value": 4938.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "ambient": {
         "title": "Ambient wash",
@@ -1498,7 +1663,12 @@
             "key": "reverbLPF",
             "value": 4938.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "off": {
         "title": "Post reverb off",
@@ -1509,7 +1679,12 @@
             "key": "reverbActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     },
     "output": {
@@ -1532,7 +1707,12 @@
             "key": "gateThreshold",
             "value": -80.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "hot-pickup-pad": {
         "title": "Hot-pickup input pad",
@@ -1553,7 +1733,12 @@
             "key": "gateThreshold",
             "value": -72.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "low-output-lift": {
         "title": "Low-output pickup lift",
@@ -1574,7 +1759,12 @@
             "key": "gateThreshold",
             "value": -80.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       },
       "headroom": {
         "title": "Output headroom",
@@ -1590,7 +1780,12 @@
             "key": "gateThreshold",
             "value": -80.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+        }
       }
     }
   }

@@ -207,9 +207,12 @@ document. `scripts/probe_state.py` edits that state through `format/`, applies
 multiple candidates per numeric key, and reads back both retained state and the
 published control tree. `audit_manifest.py` selects this mapper automatically.
 
-Of 255 numeric saved-preset keys, 94 map consistently to one published control,
-158 retain alternate state without moving a published control, and `tempo`
-rejects its observed alternates. The mappings reach every published control
+Of the 255 numeric keys in the plugin's **live state**, 94 map consistently to
+one published control, 158 retain alternate state without moving a published
+control, `tempo` rejects its observed alternates, and 2 (`/5`, `/6`) are
+bulk-recall flags that move dozens of controls at once. A **saved preset**
+carries 253 of these — the last two exist only in the live state, which is why
+the two counts differ. The mappings reach every published control
 except the host-only Preset Previous/Next actions and tie 12 selector label
 tables to their stored indices. The 159 state-only or rejected fields are
 `internal` and read-only: they remain in the manifest for inspection and

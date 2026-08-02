@@ -36,7 +36,6 @@ from audit_manifest import (  # noqa: E402
     ("40.0 BPM", 40.0),
     ("500 Hz", 500.0),
     ("C", 0.0),               # centre is not "0"
-    ("", None),
     ("Custom IR", None),      # a label, not a number
 ])
 def test_display_strings_parse_to_stored_units(shown, expected):
@@ -55,11 +54,14 @@ def test_kilo_and_seconds_rescale_only_for_the_matching_unit():
 
 
 def test_an_unreadable_display_is_not_a_disagreement():
-    """`-inf dB` has a value this cannot compare. Reporting it as a mismatch
-    would be a failure no manifest edit could fix."""
+    """`-inf dB` has a value this cannot compare, and an EMPTY display is the
+    same case — several real controls in both plugins publish one. Returning
+    None for those made them compare unequal to a declared range and print a
+    DISAGREES that no manifest edit could fix."""
     from audit_manifest import UNPARSEABLE
     assert numeric("-inf dB") is UNPARSEABLE
-    assert numeric("") is None
+    assert numeric("") is UNPARSEABLE
+    assert numeric("   ") is UNPARSEABLE
 
 
 def test_a_pan_display_is_refused_rather_than_guessed():
@@ -219,3 +221,96 @@ def test_cannot_verify_reports_and_does_not_pass(capsys):
     # It has to say why, or the reader will assume the plugin is broken.
     assert "opaque bytes" in out
     assert "guess" in out
+
+
+# --- the pan fix, protected ------------------------------------------------
+# A review mutated 31 lines of this change and 18 survived, including EVERY
+# function added to fix the pan bug: `_same_to_float32` could return True
+# unconditionally, `probe_bounds` could return "agrees" without asking the
+# plugin, and `verify_via_state` could count unchecked parameters as verified —
+# all with a green suite. A fix nothing tests is a fix that reverts by accident.
+
+
+def test_float32_tolerance_accepts_an_ulp_and_rejects_a_real_error():
+    """The plugin's parameters are 32-bit: 1.0 comes back as 0.99999994, which
+    must pass. A range that is genuinely wrong differs by orders of magnitude
+    and must not — a tolerance that accepts everything is worse than none."""
+    from audit_manifest import _same_to_float32
+
+    assert _same_to_float32(0.9999999403953552, 1.0)      # one float32 ULP
+    assert _same_to_float32(11.999999046325684, 12.0)
+    assert not _same_to_float32(-1.0, -50.0)              # the pan bug: 50x
+    assert not _same_to_float32(1.0, 50.0)
+    assert not _same_to_float32(500.0, 20000.0)
+    assert not _same_to_float32(0.5, 1.0)
+
+
+class _ClampingProbe:
+    """Stands in for the plugin, recording what the checker actually wrote."""
+
+    def __init__(self, lo, hi):
+        self.lo, self.hi = lo, hi
+        self.written = []
+
+    def apply_many_with_states(self, blobs):
+        from format.parser import parse
+        from format.structured import build, set_parameter
+        from format.writer import write
+
+        states = []
+        for blob in blobs:
+            preset = build(parse(blob))
+            param = preset.parameters[0]
+            self.written.append(float(param.value))
+            kept = min(max(float(param.value), self.lo), self.hi)
+            set_parameter(preset, param.module_path, param.key, f"{kept:g}")
+            states.append(write(preset.tokens))
+        return None, states
+
+
+def _one_param_state(key: str, value: str) -> bytes:
+    body = len(value.encode()) + 2
+    return (b"plug\x00" + key.encode() + b"\x00"
+            + bytes([0x01, body, 0x05]) + value.encode() + b"\x00")
+
+
+def _pan_spec(lo, hi):
+    from packs.loader import ParamSpec
+    return ParamSpec(module="", key="cabPan", kind="metered", unit="pan", min=lo, max=hi)
+
+
+def test_probe_bounds_writes_past_both_ends():
+    """Probing inside the range would confirm anything at all."""
+    from audit_manifest import probe_bounds
+
+    probe = _ClampingProbe(-1.0, 1.0)
+    probe_bounds(probe, _one_param_state("cabPan", "0"), "/cabPan", _pan_spec(-1.0, 1.0))
+    assert min(probe.written) < -1.0, probe.written
+    assert max(probe.written) > 1.0, probe.written
+
+
+def test_probe_bounds_catches_a_range_in_the_wrong_unit():
+    """The pan bug exactly: declared -50..50, the plugin keeps -1..1."""
+    from audit_manifest import probe_bounds
+
+    verdict = probe_bounds(_ClampingProbe(-1.0, 1.0), _one_param_state("cabPan", "0"),
+                           "/cabPan", _pan_spec(-50.0, 50.0))
+    assert verdict[0] == "disagrees"
+    assert (verdict[1], verdict[2]) == (-1.0, 1.0)
+
+
+def test_probe_bounds_confirms_a_correct_range():
+    from audit_manifest import probe_bounds
+
+    verdict = probe_bounds(_ClampingProbe(-1.0, 1.0), _one_param_state("cabPan", "0"),
+                           "/cabPan", _pan_spec(-1.0, 1.0))
+    assert verdict[0] == "agrees"
+
+
+def test_probe_bounds_declines_half_a_range_instead_of_crashing():
+    """A bootstrapped draft can carry a min with no max. That used to raise a
+    TypeError straight through `guarded()` as a raw traceback."""
+    from audit_manifest import probe_bounds
+
+    assert probe_bounds(_ClampingProbe(-1.0, 1.0), _one_param_state("cabPan", "0"),
+                        "/cabPan", _pan_spec(None, 50.0)) is None

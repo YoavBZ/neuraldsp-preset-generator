@@ -28,7 +28,11 @@
             "key": "compressorMix",
             "value": 40
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#6"
+        }
       },
       "country-funk-tight": {
         "title": "Country / funk / tight clean",
@@ -54,7 +58,11 @@
             "key": "compressorMix",
             "value": 65
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#6"
+        }
       },
       "lead-smoothing": {
         "title": "Lead smoothing",
@@ -80,7 +88,11 @@
             "key": "compressorMix",
             "value": 35
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#6"
+        }
       },
       "off": {
         "title": "Compressor off",
@@ -91,7 +103,11 @@
             "key": "compressorActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#6"
+        }
       }
     },
     "drive1": {
@@ -119,7 +135,11 @@
             "key": "drive1Tone",
             "value": 50
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#7"
+        }
       },
       "classic-rock-crunch-push": {
         "title": "Classic-rock crunch push",
@@ -145,7 +165,11 @@
             "key": "drive1Tone",
             "value": 55
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#7"
+        }
       },
       "singing-lead-push": {
         "title": "Singing classic-rock lead push",
@@ -171,7 +195,11 @@
             "key": "drive1Tone",
             "value": 52
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#7"
+        }
       },
       "off": {
         "title": "OD1 off",
@@ -182,7 +210,11 @@
             "key": "drive1Active",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#7"
+        }
       }
     },
     "drive2": {
@@ -215,7 +247,11 @@
             "key": "drive2Treble",
             "value": 48
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#8"
+        }
       },
       "heavier-classic-rock-lead": {
         "title": "Heavier classic-rock lead",
@@ -246,7 +282,11 @@
             "key": "drive2Treble",
             "value": 58
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#8"
+        }
       },
       "off": {
         "title": "OD2 off",
@@ -257,7 +297,11 @@
             "key": "drive2Active",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#8"
+        }
       }
     },
     "tremolo": {
@@ -290,12 +334,16 @@
             "key": "tremoloLevel",
             "value": 50
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#9"
+        }
       },
       "song-tempo": {
         "title": "Song-tempo tremolo",
         "use_when": "tempo-locked rhythmic pulsing",
-        "note": "Uses a free-running rate computed from tempo: supply bpm and the rate resolves to one cycle per eighth note. The declared 0.15–15 Hz range covers ordinary song tempos; choose another division if the computed rate falls outside it.",
+        "note": "Uses a free-running rate computed from tempo: supply bpm and the rate resolves to one cycle per eighth note. The declared 0.15\u201315 Hz range covers ordinary song tempos; choose another division if the computed rate falls outside it.",
         "parameters": [
           {
             "module": "tremolo",
@@ -324,7 +372,11 @@
             "key": "tremoloLevel",
             "value": 50
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#9"
+        }
       },
       "off": {
         "title": "Tremolo off",
@@ -335,7 +387,11 @@
             "key": "tremoloActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#9"
+        }
       }
     },
     "amp": {
@@ -363,7 +419,11 @@
             "key": "ac20Bright",
             "value": true
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#11"
+        }
       },
       "ac20-singing-lead": {
         "title": "AC20 Vox-style singing lead",
@@ -389,7 +449,11 @@
             "key": "ac20Bright",
             "value": true
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#11"
+        }
       },
       "ac20-classic-rock-crunch": {
         "title": "AC20 classic-rock crunch",
@@ -415,7 +479,11 @@
             "key": "ac20Bright",
             "value": true
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#11"
+        }
       },
       "pr12-clean": {
         "title": "PR12 blackface clean",
@@ -451,7 +519,11 @@
             "key": "pr12Dwell",
             "value": 36
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#12"
+        }
       },
       "pr12-saggy-breakup": {
         "title": "PR12 saggy blues breakup",
@@ -487,7 +559,11 @@
             "key": "pr12Dwell",
             "value": 30
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#12"
+        }
       },
       "sw50r-smooth-clean-lead": {
         "title": "SW50R smooth clean lead platform",
@@ -533,7 +609,11 @@
             "key": "sw50rBright",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#13"
+        }
       },
       "sw50r-singing-lead": {
         "title": "SW50R Dumble-style singing lead",
@@ -579,7 +659,11 @@
             "key": "sw50rBright",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#13"
+        }
       },
       "sw50r-headroom-rhythm": {
         "title": "SW50R clean high-headroom rhythm",
@@ -625,7 +709,11 @@
             "key": "sw50rBright",
             "value": true
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#13"
+        }
       }
     },
     "eq": {
@@ -694,7 +782,11 @@
             "key": "{amp}EQLpf",
             "value": 9000
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#15"
+        }
       },
       "lead-focus": {
         "title": "Classic-rock lead focus",
@@ -761,7 +853,11 @@
             "key": "{amp}EQLpf",
             "value": 7500
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#15"
+        }
       },
       "warm-clean-rhythm": {
         "title": "Warm clean rhythm",
@@ -828,7 +924,11 @@
             "key": "{amp}EQLpf",
             "value": 8500
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#15"
+        }
       }
     },
     "cab": {
@@ -872,7 +972,11 @@
             "key": "rightCabActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#14"
+        }
       },
       "two-mic-fuller": {
         "title": "Two mics, fuller clean rhythm",
@@ -949,7 +1053,11 @@
             "key": "rightRoomMicLevel",
             "value": -15.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#14"
+        }
       },
       "two-mic-wide": {
         "title": "Two mics, wider",
@@ -1006,7 +1114,11 @@
             "key": "rightCabMicLevel",
             "value": -3.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#14"
+        }
       }
     },
     "delay": {
@@ -1059,7 +1171,11 @@
             "key": "delayWidth",
             "value": 20
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#17"
+        }
       },
       "classic-lead": {
         "title": "Classic quarter-note lead delay",
@@ -1113,7 +1229,11 @@
             "key": "delayWidth",
             "value": 40
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#17"
+        }
       },
       "big-stereo-lead": {
         "title": "Big stereo dotted lead delay",
@@ -1167,7 +1287,11 @@
             "key": "delayWidth",
             "value": 70
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#17"
+        }
       },
       "off": {
         "title": "Delay off",
@@ -1178,7 +1302,11 @@
             "key": "delayActive",
             "value": false
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#17"
+        }
       }
     },
     "reverb": {
@@ -1216,7 +1344,11 @@
             "key": "reverbHighCut",
             "value": 6500
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#18"
+        }
       },
       "spring-ambience": {
         "title": "Classic spring-ish ambience",
@@ -1252,7 +1384,11 @@
             "key": "reverbHighCut",
             "value": 6000
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#18"
+        }
       },
       "large-lead": {
         "title": "Large lead ambience",
@@ -1288,7 +1424,11 @@
             "key": "reverbHighCut",
             "value": 5500
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#18"
+        }
       }
     },
     "output": {
@@ -1302,7 +1442,11 @@
             "key": "outputGain",
             "value": -3.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#20.3"
+        }
       },
       "edge-of-breakup": {
         "title": "Edge of breakup output staging",
@@ -1314,7 +1458,11 @@
             "key": "outputGain",
             "value": -3.5
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#20.3"
+        }
       },
       "crunch-rhythm": {
         "title": "Crunch rhythm output staging",
@@ -1326,7 +1474,11 @@
             "key": "outputGain",
             "value": -4.0
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#20.3"
+        }
       },
       "lead": {
         "title": "Lead with drive, delay and reverb output staging",
@@ -1338,7 +1490,11 @@
             "key": "outputGain",
             "value": -3.5
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#20.3"
+        }
       },
       "big-stereo-lead": {
         "title": "Big stereo lead output staging",
@@ -1350,7 +1506,11 @@
             "key": "outputGain",
             "value": -4.5
           }
-        ]
+        ],
+        "evidence": {
+          "class": "config-reference",
+          "source": "docs/morgan-config-reference.md#20.3"
+        }
       }
     }
   }

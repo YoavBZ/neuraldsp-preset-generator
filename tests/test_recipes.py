@@ -11,6 +11,8 @@ import json
 import pathlib
 
 import pytest
+from packs.loader import list_packs
+from packs.paths import PLUGIN_ROOT
 
 from packs.loader import PackError, load_pack
 from packs.recipes import (
@@ -315,3 +317,37 @@ def test_resolve_value_needs_a_tempo_and_says_so(pack):
         resolve_value({"note": "1/4", "bpm": 96, "typo": 1}, spec, None)
     with pytest.raises(PackError, match="only makes sense"):
         resolve_value({"note": "1/4"}, pack.require("delay", "delayMix"), 96)
+
+
+# --- provenance ------------------------------------------------------------
+# A merged change once stripped `source` from every Morgan recipe and deleted
+# the assertion that required it, in the same window that 39 unsourced Tone King
+# recipes shipped. The repo's only machine-checkable provenance guarantee went
+# with it. This is that guarantee, widened: a recipe must say not just where a
+# value came from but what KIND of evidence it is, because "measured against the
+# plugin" and "conventional practice" are not interchangeable and this project
+# has been wrong about the difference more than once.
+
+EVIDENCE_CLASSES = {
+    "measured",          # rendered or probed against the running plugin
+    "config-reference",  # transcribed from a source document
+    "factory-corpus",    # anchored on what factory presets actually do
+    "convention",        # standard practice; nobody measured it here
+}
+
+
+@pytest.mark.parametrize("pack_id", sorted(list_packs()))
+def test_every_recipe_declares_where_its_values_came_from(pack_id):
+    path = PLUGIN_ROOT / "packs" / pack_id / "recipes.json"
+    if not path.exists():
+        pytest.skip(f"{pack_id} has no recipes")
+    recipes = json.loads(path.read_text())
+    for layer, group in recipes["layers"].items():
+        for name, recipe in group.items():
+            evidence = recipe.get("evidence")
+            assert evidence, f"{pack_id} {layer}/{name} does not say where its values came from"
+            assert evidence.get("class") in EVIDENCE_CLASSES, (
+                f"{pack_id} {layer}/{name} evidence class "
+                f"{evidence.get('class')!r} is not one of {sorted(EVIDENCE_CLASSES)}"
+            )
+            assert evidence.get("source"), f"{pack_id} {layer}/{name} names no source"
