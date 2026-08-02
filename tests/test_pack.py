@@ -172,6 +172,56 @@ def test_tone_king_verified_switches_use_the_record_encoding(toneking):
     assert toneking.to_stored(spec, False, warnings=[]) == "0"
 
 
+def test_tone_king_switches_carry_the_plugin_s_own_two_labels(toneking):
+    """All 21 switches used to declare nothing, so `audit_manifest.py` tested
+    nothing about them — 21 of the 53 parameters it reported as untested. The
+    plugin publishes both labels for every one of them; declaring them is what
+    gives the audit something to re-derive."""
+    switches = [s for s in toneking.parameters.values() if s.kind == "switch"]
+    assert len(switches) == 21
+    for spec in switches:
+        assert list(spec.members.values()) in (["Inactive", "Active"], ["Off", "On"]), (
+            f"{spec.path} must carry the labels the plugin publishes, not a "
+            f"paraphrase — the audit compares them literally"
+        )
+    assert toneking.require("", "ampsActive").members == {"0": "Inactive", "1": "Active"}
+    assert toneking.require("", "cab1Phase").members == {"0": "Off", "1": "On"}
+
+
+def test_a_tone_king_switch_accepts_the_label_it_displays(toneking):
+    """Declaring members makes `member_name` fire, and that is what show.py and
+    apply_spec.py print — so "Active" is what a reader hands back. It has to be
+    writable, or the display and the write path disagree."""
+    spec = toneking.require("", "ampsActive")
+    assert spec.member_name("1") == "Active"
+    assert toneking.to_stored(spec, "Active", warnings=[]) == "1"
+    assert toneking.to_stored(spec, "Inactive", warnings=[]) == "0"
+    assert toneking.to_stored(spec, True, warnings=[]) == "1"    # still a switch
+    with pytest.raises(PackError):
+        toneking.to_stored(spec, "Enabled", warnings=[])
+
+
+def test_tone_king_fractions_declare_the_range_the_plugin_publishes(toneking):
+    """31 of the 32 fractions now carry the 0..1 the mapped control publishes,
+    with a source saying which evidence it came from."""
+    fractions = [s for s in toneking.parameters.values() if s.kind == "fraction"]
+    assert len(fractions) == 32
+    undeclared = sorted(s.path for s in fractions if s.min is None and s.max is None)
+    # `reverbPreDelay` is the one the plugin will not answer for: it already
+    # sits at its own minimum, so writing below that moves nothing and the state
+    # keeps the out-of-range number verbatim. Half a range is not a range, and
+    # the missing half is precisely the blind spot that hid three wrong ranges.
+    assert undeclared == ["reverbPreDelay"]
+    for spec in fractions:
+        if spec.path in undeclared:
+            assert "undeclared" in (spec.note or "").lower(), (
+                f"{spec.path} declares nothing and must say why"
+            )
+            continue
+        assert (spec.min, spec.max) == (0.0, 1.0), spec.path
+        assert spec.range_source, f"{spec.path} declares a range with no source"
+
+
 def test_tone_king_unlabelled_continuous_controls_are_not_enums(toneking):
     for key in ("delayHPF", "delayLPF", "reverbPreDelay"):
         spec = toneking.require("", key)
