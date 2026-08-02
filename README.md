@@ -207,7 +207,8 @@ The human value depends on the manifest kind:
 - **Fraction controls** use their normalized value directly, `0.0–1.0`.
 - **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose)
   use their **native unit** (dB / Hz / ms / s / BPM / semitones).
-- **Switches** are `true`/`false`; **selectors** take a member name
+- **Switches** are `true`/`false`, or the plugin's own label where the pack
+  declares one (`"Active"`, `"Off"`); **selectors** take a member name
   (`"PR12"`, `"Ribbon 121"`) or an integer.
 
 Every parameter's `kind` and `unit` live in `packs/<id>/manifest.json`.

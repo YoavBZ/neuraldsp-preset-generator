@@ -84,14 +84,23 @@
     },
     "/ampReverb": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Amp Reverb"
     },
     "/ampTremoloDepth": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Amp Tremolo Depth"
     },
     "/ampTremoloSpeed": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Amp Tremolo Speed"
     },
     "/ampType": {
@@ -108,14 +117,25 @@
     },
     "/ampsActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Amp Section Active"
     },
     "/cab1Active": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Cab L Active"
     },
     "/cab1Distance": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Cab L Distance"
     },
     "/cab1Level": {
@@ -142,14 +162,25 @@
     },
     "/cab1Phase": {
       "kind": "switch",
+      "members": {
+        "0": "Off",
+        "1": "On"
+      },
       "ui": "Cab L Phase"
     },
     "/cab1Position": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Cab L Position"
     },
     "/cab1RoomActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Cab L Room Active"
     },
     "/cab1RoomIRLevel": {
@@ -166,10 +197,17 @@
     },
     "/cab2Active": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Cab R Active"
     },
     "/cab2Distance": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Cab R Distance"
     },
     "/cab2Level": {
@@ -196,14 +234,25 @@
     },
     "/cab2Phase": {
       "kind": "switch",
+      "members": {
+        "0": "Off",
+        "1": "On"
+      },
       "ui": "Cab R Phase"
     },
     "/cab2Position": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Cab R Position"
     },
     "/cab2RoomActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Cab R Room Active"
     },
     "/cab2RoomIRLevel": {
@@ -220,6 +269,10 @@
     },
     "/cabSectionActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Cab Section Active"
     },
     "/chorus2Active": {
@@ -256,10 +309,17 @@
     },
     "/chorusActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Chorus Active"
     },
     "/chorusDepth": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Chorus Depth"
     },
     "/chorusLevel": {
@@ -268,10 +328,16 @@
     },
     "/chorusMix": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Chorus Dry/Wet"
     },
     "/chorusRate": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Chorus Rate"
     },
     "/chorusSwitch": {
@@ -308,14 +374,24 @@
     },
     "/compActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Compressor Active"
     },
     "/compBlend": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Compressor Blend"
     },
     "/compCompression": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Compressor Comp"
     },
     "/compOutput": {
@@ -339,6 +415,10 @@
     },
     "/delayActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Delay Active"
     },
     "/delayCrystal": {
@@ -354,14 +434,25 @@
     },
     "/delayHPF": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written past both ends, read back clamped)",
+      "note": "The plugin publishes an empty min/max display string for this control, so the range is measured rather than read: writing -1 came back as 0 and writing 2 came back as 1.",
       "ui": "Delay High Pass"
     },
     "/delayLPF": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written past both ends, read back clamped)",
+      "note": "The plugin publishes an empty min/max display string for this control, so the range is measured rather than read: writing -1 came back as 0 and writing 2 came back as 1.",
       "ui": "Delay Low Pass"
     },
     "/delayMix": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Delay Dry/Wet"
     },
     "/delayMultiplier": {
@@ -390,6 +481,10 @@
     },
     "/delaySync": {
       "kind": "switch",
+      "members": {
+        "0": "Off",
+        "1": "On"
+      },
       "ui": "Delay Sync"
     },
     "/delaySyncNoteL": {
@@ -455,10 +550,17 @@
     },
     "/drive1Active": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Overdrive 1 Active"
     },
     "/drive1Bass": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 1 Bass"
     },
     "/drive1Level": {
@@ -467,6 +569,9 @@
     },
     "/drive1Overdrive": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 1 Drive"
     },
     "/drive1Tone": {
@@ -475,18 +580,31 @@
     },
     "/drive1Treble": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 1 Treble"
     },
     "/drive1Volume": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 1 Volume"
     },
     "/drive2Active": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Overdrive 2 Active"
     },
     "/drive2Bass": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 2 Bass"
     },
     "/drive2BassCut": {
@@ -499,6 +617,9 @@
     },
     "/drive2Overdrive": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 2 Drive"
     },
     "/drive2Tone": {
@@ -507,10 +628,16 @@
     },
     "/drive2Treble": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 2 Treble"
     },
     "/drive2Volume": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Overdrive 2 Volume"
     },
     "/driveActive": {
@@ -643,6 +770,10 @@
     },
     "/eqActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "EQ Active"
     },
     "/eqBand1": {
@@ -710,6 +841,10 @@
     },
     "/eqSectionActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "EQ Section Active"
     },
     "/filePath1": {
@@ -798,6 +933,9 @@
     },
     "/leadAmpMidBite": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Lead Channel Mid Bite"
     },
     "/leadAmpOutput": {
@@ -818,6 +956,9 @@
     },
     "/leadAmpTone": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Lead Channel Tone"
     },
     "/leadAmpTreble": {
@@ -826,6 +967,9 @@
     },
     "/leadAmpVolume": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Lead Channel Volume"
     },
     "/levelAdder": {
@@ -865,6 +1009,10 @@
     },
     "/pedalSectionActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Pedal Section Active"
     },
     "/phaserActive": {
@@ -929,6 +1077,10 @@
     },
     "/reverbActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Reverb Active"
     },
     "/reverbDecay": {
@@ -956,6 +1108,9 @@
     },
     "/reverbMix": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Reverb Dry/Wet"
     },
     "/reverbMode": {
@@ -964,10 +1119,14 @@
     },
     "/reverbPreDelay": {
       "kind": "fraction",
+      "note": "Deliberately undeclared. The plugin publishes an empty min/max display string for this control, and its default state already sits at 0 \u2014 the bottom of the control \u2014 so writing below that moves nothing and the plugin keeps the out-of-range number verbatim (-1 came back as -1). The top clamps at 1 (2 came back as 1), but half a range is not a range, and the missing half is exactly the \u201calready at that value\u201d blind spot that let three wrong ranges through a full audit. `audit_manifest.py` reports it as declaring nothing, which is the truth.",
       "ui": "Reverb Pre-Delay"
     },
     "/rhythmAmpBass": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Rhythm Channel Bass"
     },
     "/rhythmAmpEq2200": {
@@ -1020,14 +1179,24 @@
     },
     "/rhythmAmpTreble": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Rhythm Channel Treble"
     },
     "/rhythmAmpVolume": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Rhythm Channel Volume"
     },
     "/rhythmAttBypass": {
       "kind": "switch",
+      "members": {
+        "0": "Off",
+        "1": "On"
+      },
       "ui": "Rhythm Channel Attenuation Bypass"
     },
     "/root": {
@@ -1040,6 +1209,10 @@
     },
     "/timeSectionActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "FX Section Active"
     },
     "/tone": {
@@ -1184,6 +1357,10 @@
     },
     "/wahActive": {
       "kind": "switch",
+      "members": {
+        "0": "Inactive",
+        "1": "Active"
+      },
       "ui": "Wah Active"
     },
     "/wahAtt": {
@@ -1204,6 +1381,9 @@
     },
     "/wahPosition": {
       "kind": "fraction",
+      "min": 0.0,
+      "max": 1.0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
       "ui": "Wah Pedal Position"
     },
     "/wahRel": {

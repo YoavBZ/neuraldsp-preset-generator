@@ -154,12 +154,40 @@ For numeric ranges, confirm both sources:
 - the minimum and maximum display strings published by the mapped control
 - values retained in state after writes below and above the declared endpoints
 
+Compare the retained values at float32 precision on both paths — `probe_bounds`
+and `BoundsChecker.check` measure the same quantity and must agree about what
+"the same" means.
+
 For selectors, use the mapped control's indexed `valueStrings`. The index order
 is the stored integer-to-label mapping. Morgan's delay and tremolo note tables
 are separate: both are ordered by note duration, but their index offsets differ.
 
+A `switch` is a two-index selector: the plugin publishes both of its labels in
+the same `valueStrings` array (`Inactive`/`Active`, `Off`/`On`). Declare them as
+`members` and the audit checks them like any other selector. Without them a
+switch asserts nothing and nothing about it is tested.
+
+**Writing every index is weaker evidence than reading `valueStrings`.** Writing
+the index a control already holds moves nothing and produces no label, so the
+baseline member goes unread. `audit_manifest.py` reports those selectors as
+partly verified with a count (`20 of 21 declared members produced a label`)
+rather than as verified. It is not a failure — the members that answered did
+agree — but it is not a completed check either, and it is the same blind spot
+that hid three wrong `*EQHpf` maximums through a full audit. Close it by
+probing the remainder from a different starting value.
+
 An undeclared selector should remain untouched by recipes. Out-of-range enum
 values can be remapped silently rather than rejected.
+
+### A published bound is not always a published number
+
+Tone King publishes every continuous control with raw `minValue`/`maxValue` of
+`0`/`1`, whatever the parameter stores: `Delay Time L` publishes `0..1` and
+displays `100.00 .. 1100.00`. The raw pair is the normalized control range and
+says nothing about the stored unit — only `minString`/`maxString` do, subject to
+the pan caveat above. Three of its controls (`delayHPF`, `delayLPF`,
+`reverbPreDelay`) publish empty display strings, and reading `0..1` off their
+raw bounds would have been a guess that happened to be right for two of them.
 
 ## Measure audible behavior
 
@@ -276,9 +304,12 @@ nothing here has not been shown to do nothing.
 
 - A mapped key/control relationship is established by a state write that moves
   exactly one control.
-- A numeric range needs a mapped control and endpoint evidence.
+- A numeric range needs a mapped control and endpoint evidence at **both** ends.
+  A control sitting at one end by default cannot supply evidence for that end by
+  write-and-read: nothing moves and the state keeps the out-of-range number.
+  `reverbPreDelay` is the worked example — it stays undeclared for that reason.
 - A selector table needs the mapped control's indexed labels or an equivalent
-  write-and-read experiment.
+  write-and-read experiment covering **every** declared member.
 - Audible direction needs deterministic rendering at more than one input level.
 - An unresolved value stays undeclared, read-only, or marked `needs_review`.
 
