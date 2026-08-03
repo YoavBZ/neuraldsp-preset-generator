@@ -27,7 +27,7 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 | `rotation` | percent **0–100** (noon=50) | `62` → knob at ~2 o'clock        |
 | `fraction` | decimal **0.0–1.0**         | `0.30` (cab position/distance)   |
 | `metered`  | the **native unit**         | `-65` dB, `480` ms, `5000` Hz    |
-| `switch`   | `true` / `false`            | `true`                           |
+| `switch`   | `true` / `false`, or its label | `true`, `"Active"`, `"Off"`   |
 | `enum`     | integer **or member name**  | `"PR12"`, `"Ribbon 121"`, `2`    |
 | `string`   | text, written verbatim      | a preset name                    |
 | `path`     | absolute path, verbatim     | a custom IR file                 |
@@ -38,7 +38,10 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 **seconds** (reverb decay), **BPM** (tempo), **semitones** (transpose).
 
 Prefer **member names over integers** for selectors — `"value": "SW50R"` reads
-better than `"value": 2` and is checked against the manifest.
+better than `"value": 2` and is checked against the manifest. A `switch` may
+also declare the two labels the plugin publishes for it (Tone King's do:
+`Inactive`/`Active`, `Off`/`On`); where it does, either the label or a plain
+boolean is accepted, and the audit re-derives the labels from the plugin.
 
 An `internal` entry remains in the manifest so a preset can be inspected and
 round-tripped without dropping state. It is never a generation target:
@@ -213,8 +216,11 @@ control, `tempo` rejects its observed alternates, and 2 (`/5`, `/6`) are
 bulk-recall flags that move dozens of controls at once. A **saved preset**
 carries 253 of these — the last two exist only in the live state, which is why
 the two counts differ. The mappings reach every published control
-except the host-only Preset Previous/Next actions and tie 12 selector label
-tables to their stored indices. The 159 state-only or rejected fields are
+except the host-only Preset Previous/Next actions and tie 33 selector label
+tables to their stored indices — 12 enums plus the two-label table each of the
+21 switches publishes. Every mapped control's declared range is re-derived from
+the plugin except `reverbPreDelay`, which declares no range at all because no write can establish its lower end
+because the control already sits on it. The 159 state-only or rejected fields are
 `internal` and read-only: they remain in the manifest for inspection and
 lossless round-trip, but generated specs cannot write them. See
 [../docs/measuring-against-the-plugin.md](../docs/measuring-against-the-plugin.md).

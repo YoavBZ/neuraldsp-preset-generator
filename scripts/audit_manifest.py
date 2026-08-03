@@ -8,18 +8,23 @@ copy of the plugin, and the plugin installed as an Audio Unit. Run it
 deliberately — after a plugin update, or before trusting a range you did not
 measure yourself.
 
-It reports three buckets, and the third is the reason this exists:
+It reports four buckets, and the last two are the reason this exists:
 
   agrees       the manifest matches what the plugin publishes
   DISAGREES    the manifest is wrong, and every value written is wrong with it
+  PARTLY       a selector's members agreed as far as they were asked, and the
+               rest were never asked because the plugin already held them
   NOT MAPPED   the probe never moved this control, so nothing was checked
 
-The third bucket is not "fine". Three `*EQHpf` maximums were wrong by a factor
-of forty and sat in the manifest for a full audit cycle because they already
-held their minimum value in the plugin's default state: writing a low probe
-value changed nothing, no control moved, and they dropped out of the comparison
-silently instead of being flagged. A parameter missing from the map is a
-parameter nobody checked. Probe those by hand:
+The last two are not "fine", and they are the same defect seen twice. Three
+`*EQHpf` maximums were wrong by a factor of forty and sat in the manifest for a
+full audit cycle because they already held their minimum value in the plugin's
+default state: writing a low probe value changed nothing, no control moved, and
+they dropped out of the comparison silently instead of being flagged. A
+selector's baseline member goes unread for exactly the same reason, which is
+why it is now counted apart from the ones that answered. A parameter missing
+from the map is a parameter nobody checked, and a selector member that never
+moved is a member nobody read. Probe those by hand:
 
     /tmp/au_probe aumf NMAS NDSP values pr12EQ/pr12EQHpf 5,20,100,500,900
 
@@ -177,10 +182,17 @@ class BoundsChecker:
         # Writing past an end must come back as that end, AND writing the end
         # itself must survive unchanged. The second half was previously written
         # and then thrown away, which left half the check unmade.
-        if (low, high) != (float(spec.min), float(spec.max)):
-            return ("disagrees", low, high)
-        if (at_min, at_max) != (float(spec.min), float(spec.max)):
-            return ("disagrees", at_min, at_max)
+        #
+        # Compared at float32 like probe_bounds, and for the same reason: this
+        # measures the same physical quantity through a 32-bit parameter, so a
+        # bound written as 1.0 can come back as 0.99999994. Exact `!=` was
+        # latent here only because Morgan round-trips its bounds as decimal text
+        # — the first pack whose state keeps binary doubles would have seen a
+        # disagreement no manifest edit could fix.
+        want = (float(spec.min), float(spec.max))
+        for measured in ((low, high), (at_min, at_max)):
+            if not all(_same_to_float32(a, b) for a, b in zip(measured, want)):
+                return ("disagrees", measured[0], measured[1])
         return ("agrees", low, high)
 
 
@@ -314,8 +326,11 @@ def verify_via_state(pack, params, binary, scratch) -> int:
     for path, spec in sorted(pack.parameters.items()):
         address = mapped.get(path.lstrip("/"))
         if address is None:
+            # Members are not an enum-only assertion: a switch that names its
+            # two labels asserts them just as hard, and must not fall through
+            # into silence when no probe reached it.
             declares = (spec.min is not None or spec.max is not None
-                        or (spec.kind == "enum" and spec.members))
+                        or bool(spec.members))
             if declares:
                 # It asserts something and nothing tested it. Counting this as
                 # silence is exactly how three wrong ranges survived a full pass.
@@ -391,11 +406,18 @@ def verify_via_state(pack, params, binary, scratch) -> int:
               "proves nothing\n           for them. That is a failure, not a clean "
               "bill.\n")
     if nothing_declared:
+        # Named, not just counted. A list of 53 was a statistic; a list short
+        # enough to read is a to-do list, which is what this bucket should be.
         kinds = collections.Counter(spec.kind for _, spec in nothing_declared)
-        print(f"{len(nothing_declared)} mapped parameters declare no range and no "
-              f"members, so nothing about them\nwas tested "
-              f"({', '.join(f'{n} {k}' for k, n in kinds.most_common())}). "
-              f"'verified' above counts only\nwhat the manifest actually asserts.")
+        count = len(nothing_declared)
+        subject = ("1 mapped parameter declares" if count == 1
+                   else f"{count} mapped parameters declare")
+        named = ", ".join(path for path, _ in nothing_declared[:6])
+        print(f"{subject} no range and no members, so nothing about\n"
+              f"{'it' if count == 1 else 'them'} was tested "
+              f"({', '.join(f'{n} {k}' for k, n in kinds.most_common())}): "
+              f"{named}{'…' if count > 6 else ''}.\n"
+              f"'verified' above counts only what the manifest actually asserts.")
     report_state_coverage(params, len(mapping_results), mapped, mapping_results)
     return 1 if (disagrees or unchecked or unmapped_declared) else 0
 
@@ -437,8 +459,13 @@ def published_members(spec, control):
     ``valueStrings`` is stronger evidence than writing each index: Audio Unit
     publishes the index order and labels together, including the baseline
     value that a movement-only probe would otherwise skip.
+
+    A `switch` counts as a selector here. It is a two-index one whose labels the
+    plugin publishes in the same array (`Inactive`/`Active`, `Off`/`On`), and
+    declaring them is the only thing that gives the audit anything to check
+    about a switch at all — 21 of them were previously "declares nothing".
     """
-    if spec.kind != "enum" or not spec.members:
+    if spec.kind not in ("enum", "switch") or not spec.members:
         return None
     labels = control.get("valueStrings")
     if not labels:
@@ -479,9 +506,20 @@ def check_members(checker, lookup, spec):
 
     The script claims to re-derive ranges *and selectors*; without this it only
     ever did ranges, and every enum was counted as agreeing on the strength of
-    its key mapping to a control. Returns (verdict, detail).
+    its key mapping to a control.
+
+    Returns one of:
+
+      ("agrees", seen)            every declared member produced a label
+      ("partial", seen, total)    only `seen` of them did — see below
+      ("disagrees", wrong)        a label contradicts the manifest
+      None                        no member produced a label at all
     """
-    if spec.kind != "enum" or not spec.members:
+    if spec.kind not in ("enum", "switch") or not spec.members:
+        # A switch that declares the plugin's own two labels is a two-index
+        # selector and is checked as one. Morgan declares none today, so this
+        # only bites a future pack -- which is how the same gap went unnoticed
+        # on the other path.
         return None
     indices = sorted(spec.members, key=int)
     try:
@@ -499,14 +537,30 @@ def check_members(checker, lookup, spec):
             # The plugin was already on this value, so nothing moved and there
             # is no label to read. Not a failure — just no evidence.
             continue
-        seen += 1
         label = (moved[0].get("label") or "").strip()
+        if not label:
+            # The control moved but published no label, so nothing was read.
+            # Counting it would report unread evidence as read.
+            continue
+        seen += 1
         declared = spec.members.get(row["wrote"], "")
-        if label and label.lower() != declared.lower():
+        # D-3: match the way `published_members` does — exactly. Two checkers
+        # disagreeing about what "matches" means is a hole either way.
+        if label != declared:
             wrong.append(f"{row['wrote']}: manifest {declared!r}, plugin {label!r}")
     if not seen:
         return None
-    return ("disagrees", wrong) if wrong else ("agrees", seen)
+    if wrong:
+        return ("disagrees", wrong)
+    if seen < len(indices):
+        # Evidence for `seen` members is not evidence for all of them. The
+        # member that goes unseen is normally the plugin's *current* index —
+        # writing it moves nothing, so there is no label to read — which is the
+        # same "already at that value" hole that hid three wrong `*EQHpf`
+        # maximums through a full audit. Not a failure (partial evidence is
+        # still evidence), but it must not be counted as a completed check.
+        return ("partial", seen, len(indices))
+    return ("agrees", seen)
 
 
 def compare(pack, params, revmap, checker) -> int:
@@ -517,17 +571,34 @@ def compare(pack, params, revmap, checker) -> int:
             mapped[f"{row['element']}/{row['key']}"] = row["moved"][0]["address"]
 
     verified, disagrees = [], []
+    partly_verified = []       # checked, agreed, but not every member was seen
     nothing_declared = []      # mapped, but the manifest asserts nothing to test
     unchecked_declared = []    # asserts something, and we could NOT test it
     unchecked_bare = []        # asserts nothing and was not reached either
 
+    def record(path, spec, control, verdict) -> None:
+        """File one selector or range verdict into the bucket it belongs in.
+
+        "partial" gets its own bucket rather than joining `verified`: a selector
+        whose baseline index never moved was checked on the members that did
+        move and on no others, and reporting that as a completed check is how
+        an unexamined value passes for an examined one.
+        """
+        if verdict[0] == "agrees":
+            verified.append((path, spec))
+        elif verdict[0] == "partial":
+            partly_verified.append((path, spec, verdict[1], verdict[2]))
+        else:
+            disagrees.append((path, spec, control, verdict[1],
+                              verdict[2] if len(verdict) > 2 else ""))
+
     for path, spec in sorted(pack.parameters.items()):
-        if spec.kind not in ("metered", "enum", "rotation", "fraction"):
+        if spec.kind not in ("metered", "enum", "rotation", "fraction", "switch"):
             continue
         lookup = f"appModel/{path.lstrip('/')}" if path.startswith("/") else path
         declares = (
             spec.min is not None or spec.max is not None
-            or (spec.kind == "enum" and spec.members)
+            or (spec.kind in ("enum", "switch") and spec.members)
         )
         address = mapped.get(lookup)
 
@@ -535,20 +606,16 @@ def compare(pack, params, revmap, checker) -> int:
             verdict = checker.check(lookup, spec) or check_members(checker, lookup, spec)
             if verdict is None:
                 (unchecked_declared if declares else unchecked_bare).append((path, spec))
-            elif verdict[0] == "agrees":
-                verified.append((path, spec))
             else:
-                disagrees.append((path, spec, None, verdict[1], verdict[2] if len(verdict) > 2 else ""))
+                record(path, spec, None, verdict)
             continue
 
-        if spec.kind == "enum":
+        if spec.kind in ("enum", "switch"):
             verdict = check_members(checker, lookup, spec)
             if verdict is None:
                 (unchecked_declared if declares else unchecked_bare).append((path, spec))
-            elif verdict[0] == "agrees":
-                verified.append((path, spec))
             else:
-                disagrees.append((path, spec, params[address], verdict[1], ""))
+                record(path, spec, params[address], verdict)
             continue
 
         if not declares:
@@ -568,10 +635,8 @@ def compare(pack, params, revmap, checker) -> int:
             verdict = checker.check(lookup, spec)
             if verdict is None:
                 unchecked_declared.append((path, spec))
-            elif verdict[0] == "agrees":
-                verified.append((path, spec))
             else:
-                disagrees.append((path, spec, None, verdict[1], verdict[2]))
+                record(path, spec, None, verdict)
         elif (spec.min, spec.max) == (lo, hi):
             verified.append((path, spec))
         else:
@@ -593,6 +658,18 @@ def compare(pack, params, revmap, checker) -> int:
             print(f"           source   {spec.range_source}")
         print()
 
+    if partly_verified:
+        print(f"PARTLY VERIFIED — {len(partly_verified)}:\n")
+        for path, spec, seen, total in partly_verified:
+            print(f"           {path}  ({seen} of {total} declared members "
+                  f"produced a label)")
+        print("\n           Every member that answered agreed with the manifest, but "
+              "the rest\n           were not asked: writing the value a control "
+              "already holds moves\n           nothing, so there is no label to read. "
+              "That is evidence about\n           the members seen and about no "
+              "others. Probe the remainder from a\n           different starting "
+              "value with the `values` mode.\n")
+
     if unchecked_declared:
         print(f"NOT CHECKED, BUT ASSERTS SOMETHING — {len(unchecked_declared)}:\n")
         for path, spec in unchecked_declared:
@@ -604,7 +681,15 @@ def compare(pack, params, revmap, checker) -> int:
               "\n           a clean bill: it is exactly how three wrong ranges survived"
               "\n           a full pass. Probe each by hand with the `values` mode.\n")
 
-    print(f"{len(verified)} verified, {len(disagrees)} DISAGREE, "
+    # The headline counts everything that was checked and did not disagree, then
+    # splits it: a partial check is not a lesser kind of clean, it is a check
+    # that did not finish, and burying it inside one number is what let a
+    # selector with an unread member read as fully re-derived.
+    agreed = len(verified) + len(partly_verified)
+    complete = (f"{agreed} verified" if not partly_verified else
+                f"{agreed} verified ({len(verified)} completely, "
+                f"{len(partly_verified)} on partial evidence)")
+    print(f"{complete}, {len(disagrees)} DISAGREE, "
           f"{len(unchecked_declared)} unchecked, "
           f"{len(nothing_declared)} declare nothing to check.")
     if nothing_declared and not (disagrees or unchecked_declared):

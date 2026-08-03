@@ -193,11 +193,30 @@ class Pack:
                 )
             return self._enum_to_stored(spec, human)
 
+        if spec.kind == "switch" and spec.members and isinstance(human, str):
+            # A switch may declare the plugin's own two labels, and once it does,
+            # `member_name` is what show.py and apply_spec.py display — so a
+            # reader is shown "Active" and will hand "Active" straight back.
+            # Resolve it here; anything unrecognised falls through to the
+            # true/false reader, which names the mistake.
+            match = _find_member(spec.members, human)
+            if match is not None:
+                human = match
+
         try:
             stored = to_binary(spec.kind, human, spec.unit)
             if spec.kind == "switch" and spec.switch_encoding == "numeric":
                 stored = "1" if stored == "true" else "0"
         except (ValueError, OverflowError, TypeError) as e:
+            if spec.kind == "switch" and spec.members:
+                # The error from the true/false reader names only true/false,
+                # which is now half the story: this switch also displays its own
+                # labels, and those are what a reader was just shown.
+                raise PackError(
+                    f"{spec.path}: {e}.\n"
+                    f"  This switch also accepts its displayed labels: "
+                    f"{_render_members(spec.members)}"
+                ) from e
             raise PackError(f"{spec.path}: {e}") from e
 
         self._check_dimensional(spec, stored)
