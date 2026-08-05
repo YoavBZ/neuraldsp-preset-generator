@@ -85,6 +85,57 @@ def test_rt60_from_synthetic_decay():
         assert result["rt60_confidence"] > 0.5
 
 
+def test_onsets_land_on_the_note_and_not_a_window_early():
+    """An onset must be reported where the note is, within about one hop.
+
+    `_frames` is uncentred, so a transient raises the spectral flux one whole
+    analysis window before it happens. Reporting the frame's start put every
+    onset about 30 ms early — larger than the attack times measured against it,
+    and comparable to the pre-delays. Nothing caught it, because every feature
+    downstream searched forward from the onset and found the note anyway.
+    """
+    hop_ms = F.FRAME_HOP / SR * 1000.0
+    for gap in (0.9, 1.3):
+        truth = np.arange(0.1, 8.0 - 0.4, gap)
+        found = F.onsets(fx.plucks(seconds=8.0, gap=gap), SR) / SR
+        assert len(found) >= len(truth)
+        error = np.array([(found[np.argmin(np.abs(found - t))] - t) * 1000 for t in truth])
+        assert np.abs(error).max() < 1.5 * hop_ms, f"gap={gap}, errors {error}"
+        assert abs(error.mean()) < hop_ms, f"gap={gap}: systematic bias {error.mean():.1f} ms"
+
+
+def test_predelay_recovers_a_known_gap_before_the_tail():
+    """A direct sound, a gap, then a decaying tail: the gap is recovered.
+
+    The tolerance is one envelope-smoothing width, not a fudge: the envelope is
+    low-passed at 60 Hz, which blurs the crossover by a few milliseconds in a
+    consistent direction.
+    """
+    for want in (80.0, 120.0, 150.0, 200.0):
+        signal = fx.bursts_with_predelay(predelay_ms=want)
+        assert F.time_effects(signal, SR)["predelay_ms"] == pytest.approx(want, abs=20.0), (
+            f"predelay={want}"
+        )
+
+
+def test_predelay_abstains_when_nothing_is_separated():
+    """Dry material has no pre-delay, and inventing one would set a reverb control.
+
+    Every one of these decays without a tail arriving after it. A pre-delay
+    reported here would come from the shape of a note.
+    """
+    for label, signal in (
+        ("plain decaying bursts", fx.decaying_bursts(rt60_s=1.2)),
+        ("long reverb, no pre-delay", fx.decaying_bursts(rt60_s=2.4)),
+        ("sustained note", fx.harmonic_note(seconds=4.0)),
+        ("dry plucks", fx.plucks(seconds=8.0)),
+        ("plucks that ring on", fx.plucks(seconds=8.0, decay=6.0, length=0.8)),
+        ("white noise", fx.noise(seconds=4.0)),
+        ("an echo, which is not a reverb", fx.with_echo(fx.plucks(seconds=8.0), 0.42, 0.35)),
+    ):
+        assert F.time_effects(signal, SR)["predelay_ms"] is None, label
+
+
 def test_tremolo_rate():
     """5 Hz amplitude modulation is recovered as 5 Hz, with its depth."""
     result = F.modulation(fx.tremolo(fx.noise(seconds=6.0), rate_hz=5.0, depth=0.6), SR)

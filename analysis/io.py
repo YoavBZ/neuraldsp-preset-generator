@@ -28,6 +28,9 @@ SILENCE_FLOOR_DB = -45.0
 FRAME = 2048
 HOP = 512
 
+# BS.1770 weights are defined up to five channels and pyloudnorm refuses more.
+MAX_METERED_CHANNELS = 5
+
 
 @dataclass(frozen=True)
 class Audio:
@@ -136,6 +139,15 @@ def loudness_lufs(audio: Audio) -> Optional[float]:
 
     Returns None for material shorter than the 400 ms gating block or for
     digital silence, rather than the -inf that a meter reports there.
+
+    BS.1770 defines its channel weights for up to five channels, and a meter
+    refuses more. Rather than fail the whole fingerprint on a six-channel file —
+    the exit criterion is a valid Fingerprint v1 for *any* input — such material
+    is metered on the channel-summed fold, which is the signal every spectral
+    feature is computed from anyway. That is an approximation of the standard
+    rather than the standard, so `Fingerprint.caveats()` says so. Normalisation
+    matters more here than strict conformance: without it, nothing downstream
+    compares a mastered record with a raw render at all.
     """
     require("loudness metering")
     import numpy as np
@@ -146,9 +158,20 @@ def loudness_lufs(audio: Audio) -> Optional[float]:
         import pyloudnorm
     except ImportError:
         return None
+
+    data = np.asarray(audio.samples, dtype=np.float64)
+    if audio.channels > MAX_METERED_CHANNELS:
+        data = audio.mono()
+
     meter = pyloudnorm.Meter(audio.sample_rate)
     with np.errstate(divide="ignore", invalid="ignore"):
-        value = float(meter.integrated_loudness(np.asarray(audio.samples, dtype=np.float64)))
+        try:
+            value = float(meter.integrated_loudness(data))
+        except ValueError:
+            # A meter that still refuses this material tells us the loudness is
+            # unmeasurable, which is a legitimate answer. It is not a reason to
+            # lose the other forty fields.
+            return None
     return None if not np.isfinite(value) else value
 
 

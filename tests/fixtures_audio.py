@@ -102,6 +102,42 @@ def decaying_bursts(rt60_s: float = 1.2, seconds: float = 10.0, gap: float = 1.8
     return out
 
 
+def bursts_with_predelay(predelay_ms: float = 80.0, rt60_s: float = 1.2,
+                         seconds: float = 10.0, gap: float = 1.8, tail_level: float = 0.5,
+                         seed: int = 7, sample_rate: int = SAMPLE_RATE):
+    """A short direct sound, then a gap, then a decaying tail.
+
+    A reverb with a pre-delay, built so the answer is known: the direct burst
+    stops, the envelope falls into the gap, and the tail arrives `predelay_ms`
+    after the attack and pushes it back up. That shoulder is the only thing
+    `_detect_predelay` looks for.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    out = np.zeros(int(seconds * sample_rate))
+    direct_len = int(0.012 * sample_rate)
+    offset = int(predelay_ms / 1000.0 * sample_rate)
+    for onset in np.arange(0.2, seconds - 2.0, gap):
+        start = int(onset * sample_rate)
+        # The direct sound: brief, and gone well before the tail arrives.
+        length = min(direct_len, len(out) - start)
+        if length <= 0:
+            break
+        t = np.arange(length) / sample_rate
+        out[start : start + length] += rng.standard_normal(length) * np.exp(-t * 400.0)
+
+        tail_start = start + offset
+        tail_len = min(int(1.6 * sample_rate), len(out) - tail_start)
+        if tail_len <= 0:
+            continue
+        t = np.arange(tail_len) / sample_rate
+        out[tail_start : tail_start + tail_len] += (
+            rng.standard_normal(tail_len) * tail_level * 10 ** (-3 * t / rt60_s)
+        )
+    return out
+
+
 def tremolo(signal_1d, rate_hz: float = 5.0, depth: float = 0.6,
             sample_rate: int = SAMPLE_RATE):
     """Amplitude modulation at a known rate and depth."""

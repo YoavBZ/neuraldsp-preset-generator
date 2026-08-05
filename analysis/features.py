@@ -256,6 +256,13 @@ def onsets(mono, sample_rate: int):
     Attack, decay and every reverb estimate below hang off these: an onset is
     where a note begins, and the interesting parts of an envelope are measured
     relative to one.
+
+    Positions are the **centre** of the analysis window, not its start. `_frames`
+    is uncontented — frame *i* covers samples `[i*hop, i*hop + n_fft)` — so a
+    transient first raises the flux one whole window before it happens, and
+    returning `i*hop` reported every onset about 30 ms early. That bias is larger
+    than the attack times measured against it and comparable to the pre-delays,
+    so it is corrected here rather than in each caller.
     """
     require("onset detection")
     import numpy as np
@@ -284,7 +291,10 @@ def onsets(mono, sample_rate: int):
         distance=max(2, int(0.08 * sample_rate / FRAME_HOP)),
     )
     picked = [index for index in picked if flux[index] > 0.05]
-    return np.asarray(picked, dtype=int) * FRAME_HOP
+    # `diff` puts frame i's flux between frames i and i+1, so the window it
+    # describes is centred half a hop further on than frame i's own centre.
+    centre = FRAME_FFT // 2 + FRAME_HOP // 2
+    return np.maximum(np.asarray(picked, dtype=int) * FRAME_HOP + centre, 0)
 
 
 def dynamics(mono, sample_rate: int, samples_2d=None) -> Dict[str, object]:
@@ -561,6 +571,7 @@ def time_effects(mono, sample_rate: int) -> Dict[str, object]:
 
     rt60, rt60_confidence = _detect_rt60(mono, sample_rate, env, env_rate)
     result.update(rt60_s=rt60, rt60_confidence=rt60_confidence)
+    result.update(predelay_ms=_detect_predelay(mono, sample_rate, env, env_rate))
     return result
 
 
@@ -730,6 +741,93 @@ def _detect_rt60(mono, sample_rate: int, env, env_rate: float):
     # by more than the estimate itself carry no confidence at all.
     spread = float(np.median(np.abs(slopes - median))) / median if median > 0 else 1.0
     return round(median, 4), float(round(max(0.0, 1.0 - spread), 4))
+
+
+PREDELAY_MAX_MS = 250.0     # past this it is heard as a slapback, not a pre-delay
+PREDELAY_MIN_DIP_DB = 2.0   # the direct sound has to fall by this much to see a gap
+PREDELAY_MIN_RISE_DB = 1.0  # and the tail has to come back up by this much
+PREDELAY_MIN_SEGMENTS = 2   # one shoulder is a note shape; two is an effect
+PREDELAY_PRIMARY_GAP_MS = 400.0  # an onset closer than this belongs to the previous note
+
+
+def _detect_predelay(mono, sample_rate: int, env, env_rate: float) -> Optional[float]:
+    """The gap between the direct sound and the arrival of the reverb tail.
+
+    Visible in the envelope as a *shoulder*: the direct sound decays, and then
+    the tail arrives and pushes the envelope back up. The lag from the attack to
+    that second rise is the pre-delay.
+
+    It is only visible when the two are actually separated — on sustained or
+    overlapping playing the tail arrives underneath a note that is still
+    sounding, and there is no dip to find. This returns `None` far more often
+    than it returns a number, which is correct: a pre-delay invented from a note
+    shape would set a reverb parameter from the way someone was playing.
+
+    `PREDELAY_MIN_SEGMENTS` is the substance of that: a single shoulder is how a
+    plucked note decays, and only agreement across onsets makes it an effect.
+    """
+    import numpy as np
+
+    starts = onsets(mono, sample_rate)
+    if len(starts) == 0 or env.max() <= 0:
+        return None
+
+    span = int(PREDELAY_MAX_MS / 1000.0 * env_rate)
+    if span < 4:
+        return None
+
+    # Only note starts, not the reverb arriving. A tail loud enough to have a
+    # measurable pre-delay is loud enough for the onset detector to call it an
+    # onset of its own, and those land about one pre-delay after the note — so
+    # measuring from them returns a fraction of the answer and drags the median
+    # down with it. An onset within `PREDELAY_PRIMARY_GAP_MS` of the previous one
+    # is treated as belonging to it.
+    gap_samples = PREDELAY_PRIMARY_GAP_MS / 1000.0 * sample_rate
+    primary = [s for i, s in enumerate(starts)
+               if i == 0 or (s - starts[i - 1]) > gap_samples]
+
+    estimates = []
+    for start in primary:
+        begin = int(start / sample_rate * env_rate)
+        # Deliberately *not* clamped at the next onset: the tail's arrival is
+        # the thing being measured, and clamping there cuts it off.
+        segment = env[begin:begin + span]
+        if len(segment) < 4:
+            continue
+        # Anchor on the *direct* attack, which is at the onset — not on the
+        # loudest point in the window. A long reverb tail can carry more envelope
+        # than the short sound that caused it, and anchoring on the maximum then
+        # starts the search inside the tail and measures its first wobble.
+        attack_window = max(2, int(0.030 * env_rate))
+        peak = int(np.argmax(segment[:attack_window]))
+        tail = segment[peak:]
+        if len(tail) < 4 or tail[0] <= 0:
+            continue
+
+        db = 20.0 * np.log10(np.maximum(tail, tail[0] * 1e-6) / tail[0])
+
+        # The crossover is where the *rise* to the tail begins, so it is found by
+        # walking back from the tail's peak to the latest low point before it.
+        # `argmin` over the whole window does not find it: across a silent gap
+        # every sample is equally the minimum and `argmin` returns the first, so
+        # it reported the moment the direct sound ended — a constant ~23 ms —
+        # whatever the pre-delay actually was. The *last* such sample is the one
+        # that means something.
+        tail_peak = int(np.argmax(db))
+        prefix = db[: tail_peak + 1]
+        if len(prefix) < 2:
+            continue
+        floor = float(prefix.min())
+        if floor > -PREDELAY_MIN_DIP_DB:
+            continue  # the direct sound never falls: nothing is separated
+        if float(db[tail_peak] - floor) < PREDELAY_MIN_RISE_DB:
+            continue  # it falls and stays down: a decay, not a pre-delay
+        crossover = tail_peak - int(np.argmin(prefix[::-1]))
+        estimates.append((peak + crossover) / env_rate * 1000.0)
+
+    if len(estimates) < PREDELAY_MIN_SEGMENTS:
+        return None
+    return float(round(float(np.median(estimates)), 2))
 
 
 def tempo(mono, sample_rate: int) -> Optional[float]:

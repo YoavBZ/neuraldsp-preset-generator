@@ -22,10 +22,12 @@ FINGERPRINT_VERSION = 1
 
 # The canonical analysis format. 48 kHz matches what the render harnesses
 # produce (scripts/au_render.swift), so a render is never resampled before it is
-# measured. Stereo is preserved at ingest and folded per feature: width and
-# inter-channel correlation are features in their own right.
+# measured. Channel count is preserved at ingest and folded per feature, because
+# width and inter-channel correlation are features in their own right — see
+# `io.load` and `Audio.mono`, which are where that actually happens. A
+# `CHANNELS_PRESERVED = True` constant used to sit here asserting it; nothing
+# read it, so it asserted nothing.
 SAMPLE_RATE = 48000
-CHANNELS_PRESERVED = True
 
 _INSTALL_HINT = (
     "the analysis extra is not installed.\n"

@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
 from . import FINGERPRINT_VERSION, require
+from .io import MAX_METERED_CHANNELS
 
 # How much a match against this kind of reference is worth. A paired DI means
 # the same performance through the same notes; a commercial mix means the guitar
@@ -140,6 +141,12 @@ class Fingerprint:
             )
         if int(self.source.get("channels") or 1) < 2:
             notes.append("mono source: stereo width is not measured")
+        if int(self.source.get("channels") or 1) > MAX_METERED_CHANNELS:
+            notes.append(
+                f"{self.source['channels']} channels: BS.1770 weights are defined for "
+                f"{MAX_METERED_CHANNELS}, so loudness was metered on the channel-summed "
+                "fold rather than the multichannel program"
+            )
         return notes
 
 
