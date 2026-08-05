@@ -349,12 +349,12 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
     synthetic chain that recovers a low-pass *exactly*: 2 kHz, 4 kHz and 8 kHz all
     come back as themselves, against 4 kHz, 6.3 kHz and 12.5 kHz before.
 
-    A high-pass still lands low — 100/200/400 Hz recover as 80/100/125 — and the fit
+    A high-pass still lands low — 100/200/400 Hz recover as 80/125/125 — and the fit
     residual says why rather than leaving it to be discovered: the cab's own low-end
     roll-off is in the same measurement, so above about 200 Hz what is measured is
-    not the shape of a high-pass at all. The residual crosses
-    `FILTER_MAX_FIT_DB` exactly there (0.9 dB at 100 Hz, 2.1 at 200, 3.6 at 400) and
-    a caveat says the corner is a rough placement for the search to improve on.
+    not the shape of a high-pass at all. The residual crosses `FILTER_MAX_FIT_DB`
+    exactly there (0.84 dB at 100 Hz, 2.43 at 200, 3.97 at 400) and a caveat says the
+    corner is a rough placement for the search to improve on.
 
     Because the response is now in closed form, `invert()` subtracts it from the
     delta and the bands fit what is left. That replaces deleting the covered bands,
@@ -396,52 +396,54 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
             f"roll-off, so the high-pass and low-pass were left alone"
         ], detail={"filter_response_db": {}})
 
-    def best_corner(path: str, side: str) -> Tuple[Optional[float], float]:
-        """The declared corner whose response best matches what was measured."""
+    def candidates(path: str) -> List[Optional[float]]:
+        """The corners the pack allows, on the analysis grid."""
         spec = declared(pack_id, path)
         low, high = float(spec.min), float(spec.max)
-        candidates = [float(f) for f in frequencies if low <= f <= high]
-        if not candidates:
-            # The analysis grid has no centre inside the declared range, so there is
-            # nothing to choose between; the ends of the range are the only offer.
-            candidates = [low, high]
-        best, best_cost = None, float("inf")
-        for corner in candidates:
-            modelled = filter_response_db(
-                frequencies, **{f"{side}_hz": corner})
-            error = modelled - delta
-            error = error - np.average(error, weights=weights)
-            cost = float(np.sqrt(np.average(error ** 2, weights=weights)))
+        inside = [float(f) for f in frequencies if low <= f <= high]
+        # If the analysis grid has no centre inside the declared range there is
+        # nothing to choose between, so the ends of the range are the only offer.
+        return inside or [low, high]
+
+    def cost_of(hpf_hz: Optional[float], lpf_hz: Optional[float]) -> float:
+        error = filter_response_db(frequencies, hpf_hz=hpf_hz, lpf_hz=lpf_hz) - delta
+        error = error - np.average(error, weights=weights)
+        return float(np.sqrt(np.average(error ** 2, weights=weights)))
+
+    hpf_path = f"{module}EQ/{module}EQHpf"
+    lpf_path = f"{module}EQ/{module}EQLpf"
+    # Fitted together, not one at a time. Fitting each against the whole measurement
+    # independently makes the *other* corner's roll-off look like unexplained error:
+    # a target with a real 200 Hz high-pass and a real 4 kHz low-pass reported 7.6 dB
+    # and 5.5 dB of misfit and said "not the shape a corner makes" about a difference
+    # that was exactly two corners. Two lists of about fourteen grid points is under
+    # 200 vector operations, so there is nothing to save by being clever.
+    hpf_options: List[Optional[float]] = (candidates(hpf_path)
+                                          if low_run >= FILTER_MIN_BANDS else [None])
+    lpf_options: List[Optional[float]] = (candidates(lpf_path)
+                                          if high_run >= FILTER_MIN_BANDS else [None])
+
+    hpf = lpf = None
+    best_cost = float("inf")
+    for hpf_try in hpf_options:
+        for lpf_try in lpf_options:
+            cost = cost_of(hpf_try, lpf_try)
             if cost < best_cost:
-                best, best_cost = corner, cost
-        return best, best_cost
+                hpf, lpf, best_cost = hpf_try, lpf_try, cost
 
     values: Dict[str, Any] = {}
-    fits: Dict[str, float] = {}
-    hpf = lpf = None
-
-    if low_run >= FILTER_MIN_BANDS:
-        path = f"{module}EQ/{module}EQHpf"
-        hpf, cost = best_corner(path, "hpf")
-        values[path] = round(float(hpf), 1)
-        fits["hpf"] = round(cost, 2)
-
-    if high_run >= FILTER_MIN_BANDS:
-        path = f"{module}EQ/{module}EQLpf"
-        lpf, cost = best_corner(path, "lpf")
-        values[path] = round(float(lpf), 1)
-        fits["lpf"] = round(cost, 2)
+    if hpf is not None:
+        values[hpf_path] = round(float(hpf), 1)
+    if lpf is not None:
+        values[lpf_path] = round(float(lpf), 1)
 
     caveats: List[str] = []
-    rough = sorted(name for name, cost in fits.items() if cost > FILTER_MAX_FIT_DB)
-    if rough:
-        spelled = " and ".join("high-pass" if n == "hpf" else "low-pass" for n in rough)
+    if values and best_cost > FILTER_MAX_FIT_DB:
         caveats.append(
-            f"the measured roll-off is not the shape a corner makes — the best "
-            f"{spelled} fit is still "
-            f"{max(fits[n] for n in rough):.1f} dB out — so the amp's own voicing or "
-            f"the cabinet is part of what was measured. The corner is a rough "
-            f"placement for the search to improve on, not a reading."
+            f"the measured roll-off is not quite the shape a corner makes — the best "
+            f"fit is still {best_cost:.1f} dB out — so the amp's own voicing or the "
+            f"cabinet is part of what was measured. The corner is a rough placement "
+            f"for the search to improve on, not a reading."
         )
 
     response = filter_response_db(frequencies, hpf_hz=hpf, lpf_hz=lpf)
@@ -455,7 +457,7 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
         detail={"filter_response_db": {float(f): round(float(r), 2)
                                        for f, r in zip(frequencies, response)
                                        if abs(r) >= 0.05},
-                "filter_fit_db": fits,
+                "filter_fit_db": round(best_cost, 2) if values else None,
                 "filter_deficit_bands": (int(low_run), int(high_run))},
     )
 

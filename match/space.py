@@ -244,15 +244,18 @@ class Space:
         absent = [d.path for d in self.dimensions
                   if _get(values, (d.module, d.key)) is None]
         if absent and missing == "refuse":
-            shown = ", ".join(absent[:6])
-            more = f" and {len(absent) - 6} more" if len(absent) > 6 else ""
+            shown = ", ".join(absent[:4])
+            more = f", and {len(absent) - 4} more" if len(absent) > 4 else ""
             raise SpaceError(
-                f"{len(absent)} of {len(self.dimensions)} dimensions have no value: "
-                f"{shown}{more}.\n"
-                f"  Encoding them as zero would put a real coordinate — the bottom "
-                f"of each range — into the vector, and nothing downstream could tell "
-                f"that apart from a deliberate choice. Supply them, or pass "
-                f"missing='floor' if the minimum is what you mean."
+                f"{len(absent)} of {len(self.dimensions)} dimensions have no value, "
+                f"so there is nothing to encode them as.\n"
+                f"  Start from a complete set — `decode()` of another vector, or a "
+                f"template read through `format.structured` — and override the few "
+                f"you mean to change. Pass missing='floor' only if the bottom of "
+                f"every missing range really is what you want: that is a legitimate "
+                f"coordinate, so nothing downstream can tell it from a deliberate "
+                f"choice.\n"
+                f"  Missing: {shown}{more}."
             )
 
         out = np.zeros(len(self.dimensions), dtype=np.float64)

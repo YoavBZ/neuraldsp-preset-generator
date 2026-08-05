@@ -173,7 +173,33 @@ def test_a_corner_is_recovered_from_a_real_roll_off():
         delta = {float(r["centre_hz"]): float(r["delta_db"]) for r in rows}
         result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
         assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(truth), truth
-        assert result.detail["filter_fit_db"]["lpf"] < invert.FILTER_MAX_FIT_DB
+        assert result.detail["filter_fit_db"] < invert.FILTER_MAX_FIT_DB
+
+
+def test_two_corners_are_fitted_together_not_one_at_a_time():
+    """Fitting each corner against the whole measurement independently makes the
+    *other* corner's roll-off look like unexplained error. A target that really is a
+    200 Hz high-pass and a 4 kHz low-pass reported 7.6 dB and 5.5 dB of misfit,
+    picked `100 / 5000`, and said "not the shape a corner makes" about a difference
+    that was exactly two corners."""
+    flat = measure()
+    target = measure({f"{AMP}EQ/{AMP}EQHpf": 200.0, f"{AMP}EQ/{AMP}EQLpf": 4000.0,
+                      f"{AMP}EQ/{AMP}EQActive": True})
+    rows = band_delta(target, flat)
+    delta = {float(r["centre_hz"]): float(r["delta_db"]) for r in rows}
+    result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
+
+    # The low-pass is still recovered exactly with a high-pass in the way.
+    assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(4000.0)
+    assert result.values[f"{AMP}EQ/{AMP}EQHpf"] == pytest.approx(160.0)
+    # And one honest residual for the pair, not two inflated ones.
+    assert result.detail["filter_fit_db"] < 3.0, result.detail["filter_fit_db"]
+
+    # Scored through the chain: both corners plus the bands close it.
+    after = measure(invert.invert(target, flat, amp=AMP)
+                    .as_settings(refchain.parameter_specs()))
+    assert band_rms(target, flat) > 9.0
+    assert band_rms(target, after) < 1.5, band_rms(target, after)
 
 
 def test_a_high_pass_lands_low_and_the_fit_residual_says_so():
@@ -193,8 +219,8 @@ def test_a_high_pass_lands_low_and_the_fit_residual_says_so():
         delta = {float(r["centre_hz"]): float(r["delta_db"]) for r in rows}
         result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
         corners[truth] = result.values[f"{AMP}EQ/{AMP}EQHpf"]
-        costs[truth] = result.detail["filter_fit_db"]["hpf"]
-        rough = any("not the shape a corner makes" in c for c in result.caveats)
+        costs[truth] = result.detail["filter_fit_db"]
+        rough = any("shape a corner makes" in c for c in result.caveats)
         assert rough == (costs[truth] > invert.FILTER_MAX_FIT_DB), (truth, costs)
 
     # Not monotonic — 200 Hz and 400 Hz both come back as 125 on this fixture, which
@@ -283,7 +309,7 @@ def test_a_clamped_corner_is_still_the_best_the_plugin_can_do():
     corner = result.values[f"{AMP}EQ/{AMP}EQHpf"]
     assert 20.0 <= corner <= 500.0, corner
     assert corner == pytest.approx(500.0), "the range's own limit is the best offer"
-    assert any("not the shape a corner makes" in c for c in result.caveats), (
+    assert any("shape a corner makes" in c for c in result.caveats), (
         result.caveats
     )
 

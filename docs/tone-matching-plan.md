@@ -1184,6 +1184,14 @@ measured is not the shape of a high-pass at all. The residual crosses
 `FILTER_MAX_FIT_DB` exactly there — 0.84, 2.43, 3.97 dB — and the caveat is driven by
 that number.
 
+The two corners are fitted **together**, over the product of the two candidate lists.
+Fitting each against the whole measurement independently makes the other's roll-off
+look like unexplained error: a target that really is a 200 Hz high-pass and a 4 kHz
+low-pass reported 7.6 dB and 5.5 dB of misfit, chose `100 / 5000`, and said "not the
+shape a corner makes" about a difference that was exactly two corners. Jointly it
+chooses `160 / 4000` at 2.26 dB, and the band RMS goes 9.37 → 0.92. Two lists of
+fourteen grid points is under 200 vector operations, so there was nothing to save.
+
 Second, the same "closed the named branch, left the twin" shape, three times over:
 
 - **The silent drop moved one line down.** `to_spec` was made to refuse a missing
