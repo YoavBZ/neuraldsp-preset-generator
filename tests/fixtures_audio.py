@@ -86,7 +86,11 @@ def decaying_bursts(rt60_s: float = 1.2, seconds: float = 10.0, gap: float = 1.8
                     seed: int = 7, sample_rate: int = SAMPLE_RATE):
     """Noise bursts that decay at a known rate — a room, with the answer known.
 
-    RT60 is the time to fall 60 dB, so the envelope is 10^(-3t/rt60).
+    RT60 is the time to fall 60 dB, so the envelope is 10^(-3t/rt60). Kept
+    separate from `plucks` rather than expressed through it: `plucks` takes an
+    exponential rate and this takes the RT60 those tests are asserting against, and
+    routing one through the other would put `6.908 / rt60` between the fixture and
+    the number under test.
     """
     import numpy as np
 
@@ -114,26 +118,54 @@ def dense(seconds: float = 8.0, pulse: float = 0.25, decay: float = 8.0,
 
     `tonal=True` cycles four pitches, which makes it worse in a second way — the
     part repeats *literally* every four notes, in the waveform as well as the
-    envelope, which is what an echo does.
+    envelope, which is what an echo does. That is the only behaviour here that
+    `plucks` cannot produce, so the untuned case delegates to it.
     """
+    if not tonal:
+        return plucks(seconds=seconds, gap=pulse, decay=decay, length=length,
+                      seed=seed, sample_rate=sample_rate)
+
     import numpy as np
 
-    rng = np.random.default_rng(seed)
     out = np.zeros(int(seconds * sample_rate))
-    for index, onset in enumerate(np.arange(0.1, seconds - 0.8, pulse)):
+    for index, onset in enumerate(np.arange(0.1, seconds - 0.4, pulse)):
         start = int(onset * sample_rate)
         span = min(int(length * sample_rate), len(out) - start)
         if span <= 0:
             break
         shape = np.exp(-np.arange(span) / sample_rate * decay)
-        if tonal:
-            f0 = [196.0, 220.0, 246.9, 261.6][index % 4]
-            t = np.arange(span) / sample_rate
-            note = sum(np.sin(2 * np.pi * f0 * k * t) / k for k in (1, 2, 3))
-        else:
-            note = rng.standard_normal(span)
+        f0 = [196.0, 220.0, 246.9, 261.6][index % 4]
+        t = np.arange(span) / sample_rate
+        note = sum(np.sin(2 * np.pi * f0 * k * t) / k for k in (1, 2, 3))
         out[start : start + span] += note * shape
     return out
+
+
+def looped_phrase(period: float = 1.0, seconds: float = 10.0, seed: int = 9,
+                  sample_rate: int = SAMPLE_RATE):
+    """A phrase repeated *verbatim* — broadband and unpitched, unlike `dense`.
+
+    The hardest false positive for a delay detector, and the one case the decay
+    gate is the only defence against. `dense(tonal=True)` repeats too, but it is
+    pitched, so it fills the correlation with a comb and is caught that way.
+    This is a literal copy of the same noise bursts, so nothing about its spectrum
+    marks it out: the *only* thing distinguishing it from an echo is that its
+    repeats do not get quieter.
+
+    Without the decay gate this reports a delay at the loop period with
+    confidence 0.9 — higher than a real echo ever scores.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    unit = np.zeros(int(period * sample_rate))
+    for position in (0.0, 0.25, 0.5, 0.75):
+        start = int(position * period * sample_rate)
+        span = int(0.18 * period * sample_rate)
+        shape = np.exp(-np.arange(span) / sample_rate * 10.0)
+        unit[start : start + span] += rng.standard_normal(span) * shape
+    repeats = int(seconds / period) + 1
+    return np.tile(unit, repeats)[: int(seconds * sample_rate)]
 
 
 def bursts_with_predelay(predelay_ms: float = 80.0, rt60_s: float = 1.2,

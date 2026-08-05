@@ -8,9 +8,13 @@ inversion in M3 and the optimiser in M4 can be developed and benchmarked against
 known answers before the plugin's 0.2 dB render noise and 0.29 s per render enter
 the picture.
 
-    input gain -> gate -> compressor -> drive -> 9-band graphic EQ
-                -> HPF/LPF -> power-amp saturation -> cab (FIR)
+    input gain -> gate -> compressor -> drive -> amp tone stack -> 9-band graphic
+                EQ -> HPF/LPF -> power-amp saturation -> amp level -> cab (FIR)
                 -> delay -> reverb -> output gain
+
+The tone stack (bass/mid/treble, plus the bright switch) and the amp level are
+easy to leave out of that list, and this docstring did leave them out, in the one
+module whose entire claim is about order. Both run unconditionally.
 
 Two properties are load-bearing and both are tested:
 
@@ -99,15 +103,39 @@ for _band in EQ_BANDS:
 del _band
 
 
+# `gateThreshold`'s declared minimum. At or below it the gate is a bypass rather
+# than a very quiet gate -- see `_gate`.
+GATE_BYPASS_DB = -96.0
+
+# How far down the last modelled echo repeat is. The tap sum is truncated, so this
+# is the honest figure: 32 taps at feedback 0.95 stopped at -13.8 dB while the
+# comment claimed 60, which is louder than the -17 dB `loss_profiles.json` calls a
+# match. Filtering each repeat separately (as a real feedback line does) makes the
+# high end die on its own, so the loop now ends on measured amplitude.
+DELAY_TAIL_FLOOR_DB = -40.0
+DELAY_MAX_TAPS = 48
+# A rotation reaches 100%, which as a feedback coefficient would never decay. The
+# clamp is stated because it means the ground-truth vehicle's feedback is not the
+# parameter value at the very top of the range.
+DELAY_MAX_FEEDBACK = 0.95
+
+
 class ChainError(ValueError):
     """A parameter this chain does not implement, or a value out of its range."""
 
 
+@lru_cache(maxsize=1)
 def parameter_specs():
     """The manifest's `ParamSpec` for every key the chain implements.
 
     Raises if the chain names a key the pack does not, which is the check that
     keeps the two from drifting apart.
+
+    Cached because `load_pack()` re-reads and re-parses `manifest.json` on every
+    call, and this used to be called once per render plus once per supplied
+    setting: a render with all 45 parameters spent about 25 of its 47 ms parsing
+    the same file 47 times. Returned specs are read-only dataclasses. A test that
+    edits a manifest in place must call `parameter_specs.cache_clear()`.
     """
     from packs.loader import load_pack
 
@@ -125,7 +153,11 @@ def parameter_specs():
 
 
 def band_centres():
-    """The nine EQ centre frequencies, from the manifest."""
+    """The nine EQ centre frequencies, from the manifest.
+
+    `render()` calls this rather than inlining the same comprehension, so the
+    tested helper and the shipped path cannot disagree.
+    """
     specs = parameter_specs()
     return [float(specs[(f"{AMP}EQ", band)].centre_hz) for band in EQ_BANDS]
 
@@ -143,11 +175,16 @@ def resolve(settings: Optional[Mapping] = None) -> Dict[Key, Any]:
     would fail in `apply_spec.py` — the synthetic chain does not accept settings
     the real plugin would refuse.
     """
-    from packs.loader import PackError
+    from packs.loader import PackError, load_pack
 
     specs = parameter_specs()
     resolved = dict(PARAMETERS)
-    for raw_key, value in (settings or {}).items():
+    if not settings:
+        return resolved
+
+    # One pack, not one per setting.
+    pack = load_pack(PACK_ID)
+    for raw_key, value in settings.items():
         key = tuple(raw_key.split("/", 1)) if isinstance(raw_key, str) else tuple(raw_key)
         if len(key) != 2:
             raise ChainError(f"{raw_key!r} is not a module/key pair")
@@ -159,23 +196,21 @@ def resolve(settings: Optional[Mapping] = None) -> Dict[Key, Any]:
             )
         spec = specs[key]
         try:
-            # Round-trip through the pack's own conversion. This is what makes an
-            # out-of-range value an error here rather than a strange render.
-            from format.translate import from_binary
-
-            stored = spec_to_stored(spec, value)
-            from_binary(spec.kind, stored)
+            # The pack's own conversion, which is what makes an out-of-range value
+            # an error here rather than a strange render.
+            pack.to_stored(spec, value, warnings=[])
         except PackError as e:
-            raise ChainError(str(e)) from e
+            # The loader's advice ends in "pass --allow-out-of-range", which is a
+            # flag on `apply_spec.py`. There is no such flag on this path, and
+            # telling someone to pass one would send them looking for it.
+            raise ChainError(
+                str(e).replace(
+                    "to write it once, pass --allow-out-of-range",
+                    "the synthetic chain has no override for this",
+                )
+            ) from e
         resolved[key] = value
     return resolved
-
-
-def spec_to_stored(spec, value) -> str:
-    """The pack's human→stored conversion, including its range check."""
-    from packs.loader import load_pack
-
-    return load_pack(PACK_ID).to_stored(spec, value, warnings=[])
 
 
 # --- the blocks -------------------------------------------------------------
@@ -219,9 +254,21 @@ def _envelope_db(mono, sample_rate: int, attack_ms: float, release_ms: float):
 
 
 def _gate(mono, sample_rate: int, threshold_db: float):
-    """Open above the threshold, closed below, with a smoothed edge."""
+    """Open above the threshold, closed below, with a smoothed edge.
+
+    At the declared minimum threshold this is a bypass. It has to be: the mask is
+    smoothed with a causal filter, so opening lags the note and the first 5 ms of
+    every attack after a silent gap got scaled by a ramp — a -13 dB residual
+    against gate-off, which is worse than the -17 dB the loss profile treats as
+    identical. Since digital silence sits below -96 dBFS, no threshold was
+    otherwise transparent, and "wide open" is exactly the setting a search uses to
+    take the gate out of the picture.
+    """
     import numpy as np
     from scipy import signal
+
+    if threshold_db <= GATE_BYPASS_DB:
+        return mono
 
     level_db = _envelope_db(mono, sample_rate, 1.0, 60.0)
     open_mask = (level_db > threshold_db).astype(np.float64)
@@ -367,9 +414,20 @@ def _delay(mono, sample_rate: int, time_ms: float, feedback: float, mix: float,
     """A feedback delay, as a sum of decaying taps rather than a sample loop.
 
     An IIR feedback line is a per-sample recursion, which in Python costs more
-    than every filter in this chain put together. `g**k` at successive multiples
-    of the delay is the same signal to within the tail that is truncated once the
-    repeat is 60 dB down.
+    than every filter in this chain put together. A sum of taps at successive
+    multiples of the delay is the same signal, *provided each tap is filtered as
+    many times as it has been round the loop*.
+
+    That proviso is the whole point of `delayLowCut` and `delayHighCut`, and the
+    first version of this got it wrong: it filtered the summed taps once, so every
+    repeat came back with an identical spectrum. Measured against a real
+    filter-in-loop reference, the sixth repeat's centroid sat at 4115 Hz instead of
+    1578 Hz — the controls had no cumulative effect at all, which is the only
+    effect they are for.
+
+    Filtering per repeat also ends the loop honestly. Each pass takes the high end
+    down, so the tail reaches `DELAY_TAIL_FLOOR_DB` on its own rather than being
+    cut off at a fixed tap count.
     """
     import numpy as np
     from scipy import signal
@@ -378,20 +436,28 @@ def _delay(mono, sample_rate: int, time_ms: float, feedback: float, mix: float,
     if blend <= 0.0:
         return mono
     step = max(1, int(round(float(time_ms) * 1e-3 * sample_rate)))
-    g = min(max(float(feedback) / 100.0, 0.0), 0.95)
-
-    wet = np.zeros_like(mono)
-    for k in range(1, 33):
-        amplitude = g ** (k - 1)
-        offset = step * k
-        if amplitude < 1e-3 or offset >= len(mono):
-            break
-        wet[offset:] += mono[: len(mono) - offset] * amplitude
+    g = min(max(float(feedback) / 100.0, 0.0), DELAY_MAX_FEEDBACK)
 
     nyquist = sample_rate / 2.0
     sos = signal.butter(1, [max(20.0, low_cut), min(high_cut, nyquist * 0.99)],
                         "band", fs=sample_rate, output="sos")
-    wet = signal.sosfilt(sos, wet)
+
+    floor = 10.0 ** (DELAY_TAIL_FLOOR_DB / 20.0)
+    wet = np.zeros_like(mono)
+    repeat = mono
+    for k in range(1, DELAY_MAX_TAPS + 1):
+        amplitude = g ** (k - 1)
+        offset = step * k
+        remaining = len(mono) - offset
+        if amplitude < floor or remaining <= 0:
+            break
+        # One more trip round the loop is one more pass through its filter, and
+        # only the part that still lands inside the output needs it. Truncating
+        # the *input* is exact for a causal filter: output sample n depends on no
+        # input past n, so the first `remaining` outputs are unchanged.
+        repeat = signal.sosfilt(sos, repeat[:remaining])
+        wet[offset:] += repeat * amplitude
+
     return mono + wet * blend
 
 
@@ -433,9 +499,16 @@ def _reverb(mono, sample_rate: int, decay_s: float, predelay_ms: float, mix: flo
         return mono
 
     rt60 = float(decay_s)
-    # Tail samples beyond the end of the signal cannot reach the output, which is
-    # truncated to the input length — so generating them is pure cost. Capping
-    # here is exact, not an approximation.
+    # Two caps, and only one of them is free. Tail samples beyond the end of the
+    # signal cannot reach the output, which is truncated to the input length, so
+    # `len(mono)` costs nothing — that part is exact.
+    #
+    # The 4-second cap is not: `reverbDecay` is declared up to 60 s, where the
+    # envelope is still only 4 dB down at 4 s, so the impulse response is cut off
+    # mid-decay. What saves it is that the T20 window `_detect_rt60` fits sits
+    # inside the first four seconds, so a measured RT60 still tracks the parameter
+    # (2.4 -> 2.42, 4.0 -> 4.00, 8.0 -> 7.95). Anything that comes to depend on the
+    # far tail of a very long reverb needs this raised.
     length = min(int(min(rt60, 4.0) * sample_rate), len(mono))
     if length < 16:
         return mono
@@ -465,8 +538,7 @@ def render(di, settings: Optional[Mapping] = None, sample_rate: int = SAMPLE_RAT
     import numpy as np
 
     values = resolve(settings)
-    specs = parameter_specs()
-    centres = [float(specs[(f"{AMP}EQ", band)].centre_hz) for band in EQ_BANDS]
+    centres = band_centres()
 
     def value(module, key):
         return values[(module, key)]

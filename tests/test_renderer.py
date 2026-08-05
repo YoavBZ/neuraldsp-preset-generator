@@ -102,9 +102,25 @@ def test_a_backend_must_declare_whether_it_repeats_itself():
         "the default must be the pessimistic one: a real host does not repeat"
     )
     assert SyntheticRenderer().metadata().reproducible is True
-    assert REUSED_INSTANCE_BAND_NOISE_DB < 0.5, (
-        "M4's sensitivity screen must freeze above this, so it has to stay a number"
-    )
+
+
+def test_a_backend_answers_whether_a_band_difference_is_above_its_own_noise():
+    """M4's sensitivity screen needs a floor, and on a real host it is measured.
+
+    This replaces an assertion that compared one module literal with another
+    (`0.23 < 0.5`), which exercised nothing. The behaviour that matters is that a
+    reused-instance backend refuses to resolve a difference smaller than the spread
+    it shows against itself, and the synthetic one resolves anything.
+    """
+    reused = meta(band_noise_db=REUSED_INSTANCE_BAND_NOISE_DB)
+    assert not reused.resolves_band_difference(0.1)
+    assert not reused.resolves_band_difference(-0.2)
+    assert reused.resolves_band_difference(0.5)
+    assert reused.resolves_band_difference(-1.4)   # the smallest change M0 measured
+
+    exact = SyntheticRenderer().metadata()
+    assert exact.band_noise_db == 0.0
+    assert exact.resolves_band_difference(0.01)
 
 
 def test_metadata_survives_a_round_trip_into_the_store():

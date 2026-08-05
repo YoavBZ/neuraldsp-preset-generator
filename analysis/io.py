@@ -143,21 +143,26 @@ def loudness_lufs(audio: Audio) -> Optional[float]:
     BS.1770 defines its channel weights for up to five channels, and a meter
     refuses more. Rather than fail the whole fingerprint on a six-channel file —
     the exit criterion is a valid Fingerprint v1 for *any* input — such material
-    is metered on the channel-summed fold, which is the signal every spectral
-    feature is computed from anyway. That is an approximation of the standard
-    rather than the standard, so `Fingerprint.caveats()` says so. Normalisation
-    matters more here than strict conformance: without it, nothing downstream
-    compares a mastered record with a raw render at all.
+    is metered on the channel-**averaged** fold, which is the signal every
+    spectral feature is computed from anyway. That is an approximation of the
+    standard rather than the standard, so `Fingerprint.caveats()` says so.
+    Normalisation matters more here than strict conformance: without it, nothing
+    downstream compares a mastered record with a raw render at all.
+
+    Averaged, not summed, and the difference is not cosmetic: because it divides
+    by the channel count, adding one silent channel to a five-channel file moves
+    the reported loudness by about 9 dB on identical audio — three units of
+    "wrong" at `compare._level`'s 3 dB scale. Both this docstring and
+    `caveats()` used to say "summed" while the code averaged. The number to
+    distrust across a channel-count change is this one; `normalise()` is
+    self-consistent, so the spectral path is unaffected.
     """
     require("loudness metering")
     import numpy as np
 
     if audio.duration_s < 0.4:
         return None
-    try:
-        import pyloudnorm
-    except ImportError:
-        return None
+    import pyloudnorm
 
     data = np.asarray(audio.samples, dtype=np.float64)
     if audio.channels > MAX_METERED_CHANNELS:

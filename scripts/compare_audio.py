@@ -99,7 +99,7 @@ def main() -> None:
             die(f"{path} does not exist")
 
     from analysis import AnalysisUnavailable
-    from analysis.compare import ProfileError, band_delta, compare, list_profiles, scalar
+    from analysis.compare import ProfileError, band_delta, compare, scalar
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError
 
     excerpt = DEFAULT_EXCERPT_S if args.excerpt is None else (args.excerpt or None)
@@ -109,7 +109,9 @@ def main() -> None:
         objectives = compare(target, candidate, profile=args.profile)
         value = scalar(objectives)
     except ProfileError as e:
-        die(f"{e}\n  Available profiles: {', '.join(list_profiles())}")
+        # ProfileError already lists the available profiles; appending them again
+        # printed the same list twice.
+        die(str(e))
     except (AnalysisUnavailable, FingerprintError) as e:
         die(str(e))
 

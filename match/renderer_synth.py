@@ -46,7 +46,6 @@ class SyntheticRenderer(Renderer):
             quality_mode=self.quality_mode,
             # The one backend that can say this truthfully.
             reproducible=True,
-            licensed=None,
             band_noise_db=0.0,
             notes=("synthetic chain: mirrors Morgan's topology, models none of its DSP",),
         )

@@ -31,6 +31,14 @@ host = ["pedalboard>=0.9"]
 [tool.setuptools]
 packages = ["format", "packs", "analysis", "match"]
 
+# The wheel used to contain no non-Python files at all, so an installed (rather
+# than editable) copy died on `analysis/loss_profiles.json` with a
+# FileNotFoundError, and `packs/*/manifest.json` — the file the whole project
+# calls its contract — was missing too.
+[tool.setuptools.package-data]
+analysis = ["loss_profiles.json"]
+packs = ["*/manifest.json", "*/recipes.json", "*/tone.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

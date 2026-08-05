@@ -102,14 +102,19 @@ scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discove
                    build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
-analysis/        — measure audio into a comparable fingerprint (optional extra,
-                   never needed to read or write a preset)
+analysis/        — measure audio into a comparable fingerprint, plus a synthetic
+                   amp chain to measure against (optional extra, never needed to
+                   read or write a preset)
+match/           — drive a renderer from a parameter vector: the Renderer
+                   protocol and the synthetic backend (optional extra)
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
-                   plugin-metadata tests
-docs/            — current maintainer procedures for measuring ranges,
-                   selectors, mappings and audible behavior against a plugin
+                   plugin-metadata tests, plus audio-analysis, synthetic-chain,
+                   renderer and bare-clone tests
+docs/            — maintainer procedures for measuring ranges, selectors,
+                   mappings and audible behavior against a plugin, and the
+                   design plan for reference-guided tone matching
 ```
 
 ## Packs
@@ -342,10 +347,16 @@ so the top-level `selectedAmp` key can reach any amp from any template.
 ## Tests
 
 ```bash
-pip install -e ".[dev]"            # the preset tools
-pip install -e ".[dev,analysis]"   # and the audio measurement
+pip install -e ".[dev]"                  # the preset tools
+pip install -e ".[dev,analysis]"         # and the audio measurement
+pip install -e ".[dev,analysis,match]"   # and the synthetic renderer
 python -m pytest
 ```
+
+Two more extras exist and neither is needed for the tests. `match` resolves to
+`analysis` today, so the second line is already enough to run everything. `host`
+adds `pedalboard` for `scripts/spike_pedalboard.py`, which needs macOS and a
+licensed plugin and is never run by CI.
 
 Passes on a bare clone against the bundled example preset: the IR-stripping
 check synthesises the preset it needs rather than requiring one of yours. The

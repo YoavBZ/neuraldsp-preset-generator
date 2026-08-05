@@ -251,7 +251,16 @@ def _residual(residual_db: Optional[float], scales) -> Dict[str, float]:
         return {}
     if not math.isfinite(value):
         return {}
-    floor = float(scales.get("residual_floor_db", -60.0))
+    if "residual_floor_db" not in scales:
+        # Not defaulted: a profile that weighs the residual but forgets its floor
+        # would silently demand better agreement than the plugin can produce, and
+        # a made-up -60 dB fallback would contradict the paragraph above.
+        raise ProfileError(
+            "a profile that scales residual_db must also set residual_floor_db, "
+            "the agreement a correct answer actually reaches (M0 measured -17 dB "
+            "between two renders of identical parameters)"
+        )
+    floor = float(scales["residual_floor_db"])
     return {"waveform": max(0.0, value - floor) / float(scale)}
 
 
@@ -322,12 +331,16 @@ def scalar(objectives: Objectives, profile: Optional[str] = None) -> Optional[fl
     return None if used <= 0 else float(total / used)
 
 
-def band_delta(target: Fingerprint, candidate: Fingerprint,
-               remove_offset: bool = True) -> List[Dict[str, float]]:
+def band_delta(target: Fingerprint, candidate: Fingerprint) -> List[Dict[str, float]]:
     """Signed per-band difference, in dB — what the equaliser has to undo.
 
     This is the table a person reads and the input `match/invert.py` fits onto
     the plugin's nine fixed-centre bands.
+
+    The mean is always removed, for the reason `_timbre` removes it: a constant
+    offset across every band is a level difference, and an equaliser asked to
+    correct one would chase output gain. There was a `remove_offset=False`
+    parameter here that nothing ever passed.
     """
     a_centres = target.spectrum.get("band_centres_hz") or []
     b_map = dict(zip(candidate.spectrum.get("band_centres_hz") or [],
@@ -338,7 +351,7 @@ def band_delta(target: Fingerprint, candidate: Fingerprint,
     if not shared:
         return []
     differences = {c: a_map[c] - b_map[c] for c in shared}
-    offset = sum(differences.values()) / len(differences) if remove_offset else 0.0
+    offset = sum(differences.values()) / len(differences)
     return [
         {"centre_hz": float(c),
          "target_db": float(a_map[c]),

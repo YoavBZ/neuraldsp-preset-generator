@@ -27,17 +27,28 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, Mapping, Optional, Tuple
 
-# How far apart two renders of identical parameters were measured to be, in dB
-# relative to the signal, on a backend that reuses one plugin instance. Third-
-# octave band levels moved by at most 0.23 dB across the same repeats, so a
-# consumer reading a difference smaller than about 0.5 dB out of a reused
-# instance is reading this instead of a parameter change.
-REUSED_INSTANCE_RESIDUAL_DB = -17.0
+# What a backend that reuses one plugin instance does to two renders of identical
+# parameters: they sit about -17 dB apart relative to the signal, and third-octave
+# band levels move by up to this much. A consumer reading a smaller per-band
+# difference than this out of a reused instance is reading the noise rather than a
+# parameter change -- which is why M4's sensitivity screen has to freeze above it.
+#
+# Carried on `RenderMetadata.band_noise_db` rather than only living here: a
+# constant nobody reads asserts nothing, which this repository has now learned
+# twice.
 REUSED_INSTANCE_BAND_NOISE_DB = 0.23
 
 
 class RenderError(RuntimeError):
-    """A backend could not produce audio. Never returned as silence."""
+    """A backend could not produce audio at all — no array came back.
+
+    Deliberately *not* raised for silence. A silent render is a legitimate return
+    value that the caller has to interpret: Tone King produced exact zeros from
+    the Swift helpers for months, and that turned out to be a property of the
+    bare CLI instantiation rather than a failure to render. `RenderResult.silent`
+    is how a caller asks, and the standing rule is that silence is not evidence
+    about a control either way.
+    """
 
 
 @dataclass(frozen=True)
@@ -56,9 +67,21 @@ class RenderMetadata:
     renderer_build: str = "n/a"
     quality_mode: str = "standard"
     reproducible: bool = False
-    licensed: Optional[bool] = None
+    # The per-band spread between two renders of identical parameters on this
+    # backend. Zero for a reproducible one. `resolves_band_difference()` is what
+    # reads it, so a caller can ask instead of hardcoding a threshold.
     band_noise_db: float = 0.0
     notes: Tuple[str, ...] = ()
+
+    def resolves_band_difference(self, difference_db: float) -> bool:
+        """Whether a per-band difference this small means anything on this backend.
+
+        M4's sensitivity screen freezes a parameter that moves the objective too
+        little, and on a reused plugin instance the floor is measured rather than
+        chosen: below `band_noise_db` it would be screening on noise and would
+        discard real controls while keeping imaginary ones.
+        """
+        return abs(float(difference_db)) > self.band_noise_db
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -69,7 +92,6 @@ class RenderMetadata:
             "renderer_build": self.renderer_build,
             "quality_mode": self.quality_mode,
             "reproducible": self.reproducible,
-            "licensed": self.licensed,
             "band_noise_db": self.band_noise_db,
             "notes": list(self.notes),
         }
@@ -149,17 +171,28 @@ class Renderer:
     renderer_id = "abstract"
 
     def metadata(self) -> RenderMetadata:
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement metadata(), which is how a "
+            "caller learns the sample rate, the plugin version, and whether this "
+            "backend repeats itself"
+        )
 
     def _render(self, di, settings: Optional[Mapping]):
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement _render(di, settings) and "
+            "return audio shaped (frames, channels)"
+        )
 
     def render(self, di, settings: Optional[Mapping] = None,
                di_sha256: Optional[str] = None) -> RenderResult:
         metadata = self.metadata()
         audio = self._render(di, settings)
         if audio is None:
-            raise RenderError(f"{self.renderer_id} returned no audio")
+            raise RenderError(
+                f"{self.renderer_id} returned no audio. A backend that cannot "
+                f"render must raise, so that a caller never mistakes 'nothing "
+                f"came back' for a measurement."
+            )
         return RenderResult(
             audio=audio,
             metadata=metadata,
@@ -173,7 +206,10 @@ class Renderer:
         `match/space.py` builds its search space from this, which is why it is on
         the protocol: a backend that cannot say what it accepts cannot be searched.
         """
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement parameter_specs() before it can "
+            "be searched over"
+        )
 
 
 def _hash_audio(di) -> str:

@@ -33,22 +33,34 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded
+from _cli import die, guarded, positive_float, positive_int
 
-COMPONENTS = pathlib.Path("/Library/Audio/Plug-Ins/Components")
+# Both places macOS looks for Audio Units. A user-level install is common and
+# reporting "Installed: none" because only the system path was searched is a
+# confidently wrong message.
+COMPONENT_DIRS = (
+    pathlib.Path("/Library/Audio/Plug-Ins/Components"),
+    pathlib.Path.home() / "Library/Audio/Plug-Ins/Components",
+)
 SAMPLE_RATE = 48000.0
 BUFFER_SIZE = 512
 
 
 def _require_host():
-    """Import the extra, or explain how to get it rather than tracebacking."""
+    """Import the extras, or explain how to get them rather than tracebacking.
+
+    Both are named because both are used, and `[host]` declares only pedalboard.
+    That works today because pedalboard happens to pull numpy in, which is not a
+    promise: telling someone to install `[host]` for a numpy error would send them
+    to the wrong place.
+    """
     try:
         import numpy
         import pedalboard
-    except ImportError:
+    except ImportError as e:
         die(
-            "this spike needs the host extra.\n"
-            "  pip install -e '.[host]'"
+            f"this spike needs pedalboard and numpy ({e}).\n"
+            f"  pip install -e '.[host,analysis]'"
         )
     return pedalboard, numpy
 
@@ -140,13 +152,17 @@ def find_plugin(name: str) -> str:
     candidate = pathlib.Path(name)
     if candidate.exists():
         return str(candidate)
-    for suffix in (name, f"{name}.component"):
-        path = COMPONENTS / suffix
-        if path.exists():
-            return str(path)
-    installed = sorted(p.stem for p in COMPONENTS.glob("*.component"))
+    for directory in COMPONENT_DIRS:
+        for suffix in (name, f"{name}.component"):
+            path = directory / suffix
+            if path.exists():
+                return str(path)
+
+    installed = sorted({p.stem for directory in COMPONENT_DIRS
+                        for p in directory.glob("*.component")})
+    searched = " and ".join(str(d) for d in COMPONENT_DIRS)
     die(
-        f"no Audio Unit named {name!r} in {COMPONENTS}.\n"
+        f"no Audio Unit named {name!r} in {searched}.\n"
         f"  Installed: {', '.join(installed) or 'none'}"
     )
 
@@ -154,14 +170,21 @@ def find_plugin(name: str) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Spike an Audio Unit through pedalboard's JUCE host.",
-        epilog="A backend spike, not a measurement of the plugin.",
+        epilog=(
+            "Requires macOS, an installed and licensed plugin, and the host "
+            "extra (pip install -e '.[host]'). A backend spike, not a "
+            "measurement of the plugin."
+        ),
     )
     ap.add_argument("--plugin", required=True, help="component name or path")
     ap.add_argument("--parameters", action="store_true", help="list published parameters")
-    ap.add_argument("--bench", type=int, default=0, metavar="N", help="time N renders")
+    ap.add_argument("--bench", type=positive_int, default=0, metavar="N",
+                    help="time N renders (N >= 1)")
     ap.add_argument("--out", type=pathlib.Path, help="write the render to a wav")
-    ap.add_argument("--seconds", type=float, default=2.0)
-    ap.add_argument("--amplitude", type=float, default=0.25)
+    ap.add_argument("--seconds", type=positive_float, default=2.0,
+                    help="length of the generated excitation (default: 2.0)")
+    ap.add_argument("--amplitude", type=positive_float, default=0.25,
+                    help="linear gain applied to the excitation (default: 0.25)")
     ap.add_argument("--state", type=pathlib.Path,
                     help="apply this file as raw plugin state, then read it back "
                          "and report which parameters the plugin kept")
@@ -193,7 +216,22 @@ def main() -> None:
         incoming, current = state_encoding(blob), state_encoding(raw or b"")
         print(f"state encoding: {args.state.name} is {incoming}, "
               f"the plugin's own state is {current}")
-        if current != "unknown" and incoming != "unknown" and incoming != current:
+        if incoming == "unknown":
+            # A truncated preset, or one from a plugin no pack claims, used to be
+            # applied anyway: the guard only fired when *both* encodings were
+            # known, so 300 bytes of noise went in and the resulting peak was
+            # reported as though the state had taken. That is the exact failure
+            # this script exists to prevent.
+            die(
+                f"{args.state} is not a state document this tool recognises: it "
+                f"neither parses as a preset record for a known pack nor looks "
+                f"like XML.\n"
+                f"  Applying it would change nothing and the render would be of "
+                f"the plugin's own state, reported as though it were yours.\n"
+                f"  Check the file is a complete preset written by "
+                f"scripts/apply_spec.py."
+            )
+        if current != "unknown" and incoming != current:
             die(
                 f"{args.state} is a {incoming} document and this plugin keeps its "
                 f"state as {current}. Nothing converts between them, so applying "

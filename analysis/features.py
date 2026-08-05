@@ -383,11 +383,7 @@ def loudness_range(samples_2d, sample_rate: int) -> Optional[float]:
     """
     require("loudness range")
     import numpy as np
-
-    try:
-        import pyloudnorm
-    except ImportError:
-        return None
+    import pyloudnorm
 
     data = np.asarray(samples_2d, dtype=np.float64)
     if data.ndim == 1:
@@ -603,6 +599,13 @@ DELAY_MIN_ENVELOPE = 0.05     # envelope: below this the repeat is not audible a
 # delay from the tempo.
 DELAY_MAX_REPEAT_RATIO = 0.80
 
+# How much of a candidate's correlation has to survive at half (or a third) of its
+# lag before the shorter lag is taken as the real one. An echo's own 2T peak is
+# weaker than its T peak, so this walks a harmonic back down to its fundamental
+# before the decay test runs -- see `fundamental()` for what went wrong without it.
+DELAY_SUBMULTIPLE_SHARE = 0.7
+DELAY_HARMONICS = 6          # how many descent steps before giving up
+
 # When the envelope is not entitled to veto: the band where it is *saturated* by
 # overlapping notes rather than merely quiet. Measured p90/p10 envelope range is
 # 53-229 dB for sparse playing, 11-28 dB once notes ring into each other, and
@@ -675,14 +678,28 @@ def _detect_delay(mono, sample_rate: int):
     `delay_confidence` is the waveform correlation height, which doubles as an
     estimate of how loud the repeat is.
 
-    Two limits stand, both reported as *no* delay rather than as a wrong one:
+    Two limits stand, both reported as *no* delay rather than as a wrong one —
+    and the first of those only became true after a review found it was not:
 
-    - Feedback above about 0.8, where the second repeat is as loud as the first
-      and the decay test cannot tell it from a recurrence.
+    - Feedback above about 0.85, where the second repeat is nearly as loud as the
+      first and the decay test cannot tell it from a recurrence. Abstaining here
+      required `fundamental()`: rejecting a lag is useless if its own harmonics
+      are then accepted, and they were, at double the true time and high
+      confidence.
+
+      This limit is the *price* of the decay test rather than a fault in it, and
+      the trade was measured in both directions. Removing the gate recovers every
+      runaway echo exactly — 250, 420, 650 ms all correct between 0.85 and 0.95
+      feedback — and costs one confident false positive: a phrase repeated
+      verbatim comes back as a delay at the loop period with confidence 0.9. No
+      other rule catches that, because an unpitched loop leaves no comb in the
+      correlation and its envelope repeats as faithfully as its waveform. A missed
+      echo is cheaper than an invented one, so the gate stays.
     - Echoes shorter than roughly 150 ms on material whose notes ring longer than
-      the echo — a 65 ms slapback under 250 ms notes is not found. This predates
-      the work above and is unchanged by it: the repeat lands inside the note that
-      caused it, so neither the envelope nor the prominence separates them.
+      the echo — a 65 ms slapback under 250 ms notes is not found, and neither is
+      a faint 180 ms one. This predates the work above and is unchanged by it: the
+      repeat lands inside the note that caused it, so neither the envelope nor the
+      prominence separates them.
     """
     import numpy as np
     from scipy import signal
@@ -724,7 +741,7 @@ def _detect_delay(mono, sample_rate: int):
 
     # Is the envelope entitled to an opinion? On overlapping material it stays
     # near-constant, so it endorses nothing anywhere and vetoing on it discards
-    # correct answers -- see DELAY_ENVELOPE_STRUCTURE_DB.
+    # correct answers -- see DELAY_ENVELOPE_SATURATED_DB.
     positive = env[env > 0]
     if len(positive) >= 10:
         p10, p90 = np.percentile(positive, [10, 90])
@@ -749,12 +766,49 @@ def _detect_delay(mono, sample_rate: int):
             return None
         return float(correlation[second - window : second + window + 1].max() / height)
 
+    strong_peaks = [int(p) for p in peaks if prominence_curve[p] >= DELAY_MIN_PROMINENCE]
+
+    def fundamental(index: int) -> int:
+        """Walk a candidate down to the shortest lag of its own family.
+
+        Whatever repeats at T also repeats at 2T and 3T. Testing 2T for decay
+        compares it against 4T and finds it quieter, so a harmonic of a recurring
+        pattern passes the very test its fundamental fails — and the loop below
+        then accepts it. That is not hypothetical: a 250 ms echo at feedback 0.90
+        was rejected correctly at 250 ms and accepted at 500 ms, reporting double
+        the truth at confidence 0.76, five times the floor `compare._ambience`
+        uses. Descending first means a rejected fundamental takes its whole family
+        with it, because every member descends to the same place.
+
+        Searching a fixed set of divisors does not work, which two attempts
+        established: dividing by 2, 3 and 4 left 1000 ms descending only to 500 ms,
+        and extending to 5 left a 250 ms echo reported at 1750 ms — the 7th
+        harmonic. There is no bound on which harmonic carries the most prominence.
+        So this searches the peaks that are actually present, for any shorter one
+        the candidate is a whole-number multiple of, and takes the shortest.
+        """
+        lag = index + low
+        best = index
+        for other in strong_peaks:
+            if other >= index:
+                continue
+            shorter = other + low
+            multiple = int(round(lag / shorter))
+            if multiple < 2:
+                continue
+            if abs(lag - multiple * shorter) > max(2.0, 0.01 * lag):
+                continue
+            if float(band[other]) >= DELAY_SUBMULTIPLE_SHARE * float(band[index]):
+                best = min(best, other)
+        return best
+
     best, best_ratio = None, None
     for candidate in np.argsort(properties["prominences"])[::-1]:
         index = int(peaks[candidate])
         if prominence_curve[index] < DELAY_MIN_PROMINENCE:
             break  # sorted by prominence: nothing after this passes either
 
+        index = fundamental(index)
         lag = index + low
         ratio = repeat_ratio(lag, float(band[index]))
         if ratio is not None and ratio >= DELAY_MAX_REPEAT_RATIO:
@@ -870,6 +924,7 @@ def _detect_rt60(mono, sample_rate: int, env, env_rate: float):
 PREDELAY_MAX_MS = 250.0     # past this it is heard as a slapback, not a pre-delay
 PREDELAY_MIN_DIP_DB = 2.0   # the direct sound has to fall by this much to see a gap
 PREDELAY_MIN_RISE_DB = 1.0  # and the tail has to come back up by this much
+PREDELAY_DIP_TOLERANCE_DB = 1.0  # how close to the floor still counts as in the dip
 PREDELAY_MIN_SEGMENTS = 2   # one shoulder is a note shape; two is an effect
 PREDELAY_PRIMARY_GAP_MS = 400.0  # an onset closer than this belongs to the previous note
 
@@ -930,23 +985,30 @@ def _detect_predelay(mono, sample_rate: int, env, env_rate: float) -> Optional[f
 
         db = 20.0 * np.log10(np.maximum(tail, tail[0] * 1e-6) / tail[0])
 
-        # The crossover is where the *rise* to the tail begins, so it is found by
-        # walking back from the tail's peak to the latest low point before it.
-        # `argmin` over the whole window does not find it: across a silent gap
-        # every sample is equally the minimum and `argmin` returns the first, so
-        # it reported the moment the direct sound ended — a constant ~23 ms —
-        # whatever the pre-delay actually was. The *last* such sample is the one
-        # that means something.
-        tail_peak = int(np.argmax(db))
-        prefix = db[: tail_peak + 1]
-        if len(prefix) < 2:
-            continue
-        floor = float(prefix.min())
+        # The crossover is the *end* of the dip — the last moment still at the
+        # floor before the tail lifts the envelope again.
+        #
+        # Two earlier versions are recorded because both looked right and both
+        # were wrong in ways the tests did not see. Taking the first local minimum
+        # finds envelope ripple. Taking `argmin` over the window returns the first
+        # of many equal minima across a silent gap, i.e. the moment the direct
+        # sound ended, so it reported a constant ~23 ms whatever the pre-delay was.
+        #
+        # And anchoring the rise on `argmax(db)` — the version a review caught —
+        # only ever worked when the tail was *louder* than the direct sound.
+        # `db` is relative to the attack, so `db[0] == 0`; whenever the tail is
+        # quieter, as it normally is, `argmax` returned 0 and the onset was
+        # skipped. It discarded 108 of 175 onset windows, and the fixture passed
+        # only because its tail happened to survive smoothing louder than the
+        # 12 ms burst that caused it.
+        floor = float(db.min())
         if floor > -PREDELAY_MIN_DIP_DB:
             continue  # the direct sound never falls: nothing is separated
-        if float(db[tail_peak] - floor) < PREDELAY_MIN_RISE_DB:
+        # Every sample still within a hair of the floor, and the last of them.
+        in_dip = np.flatnonzero(db <= floor + PREDELAY_DIP_TOLERANCE_DB)
+        crossover = int(in_dip[-1])
+        if float(db[crossover:].max() - db[crossover]) < PREDELAY_MIN_RISE_DB:
             continue  # it falls and stays down: a decay, not a pre-delay
-        crossover = tail_peak - int(np.argmin(prefix[::-1]))
         estimates.append((peak + crossover) / env_rate * 1000.0)
 
     if len(estimates) < PREDELAY_MIN_SEGMENTS:

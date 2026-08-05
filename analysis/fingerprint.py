@@ -144,8 +144,9 @@ class Fingerprint:
         if int(self.source.get("channels") or 1) > MAX_METERED_CHANNELS:
             notes.append(
                 f"{self.source['channels']} channels: BS.1770 weights are defined for "
-                f"{MAX_METERED_CHANNELS}, so loudness was metered on the channel-summed "
-                "fold rather than the multichannel program"
+                f"{MAX_METERED_CHANNELS}, so loudness was metered on the channel-averaged "
+                "fold rather than the multichannel program, and is not comparable "
+                "with a measurement of a different channel count"
             )
         return notes
 
@@ -174,13 +175,16 @@ def fingerprint(audio, regime: str = "probe",
         audio = take_excerpt(audio, excerpt_s)
 
     loudness = loudness_lufs(audio)
+    # Measured once. Each call resamples the whole excerpt 4x, which made this the
+    # most expensive line in the function -- and it was calling it twice.
+    true_peak = true_peak_dbtp(audio)
     source = {
         "sha256": audio.sha256,
         "sample_rate": audio.sample_rate,
         "channels": audio.channels,
         "duration_s": round(audio.duration_s, 4),
         "lufs_i": None if loudness is None else round(loudness, 2),
-        "true_peak_dbtp": None if true_peak_dbtp(audio) is None else round(true_peak_dbtp(audio), 2),
+        "true_peak_dbtp": None if true_peak is None else round(true_peak, 2),
         "regime": regime,
         "source_sample_rate": audio.source_rate,
         "source_channels": audio.source_channels,

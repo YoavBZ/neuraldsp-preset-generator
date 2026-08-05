@@ -44,8 +44,9 @@ func fourCC(_ s: String) -> OSType {
 
 // --- phase timing -----------------------------------------------------------
 // One question: how much of a render is the plugin processing audio, and how
-// much is this process getting to the point where it can. Nothing here runs
-// unless --timings is passed.
+// much is this process getting to the point where it can. The marks are taken on
+// every run -- reading a clock costs nothing against an instantiate -- and only
+// the report at the end is gated on --timings.
 final class Phases {
     private let started = DispatchTime.now()
     private var previous = DispatchTime.now()

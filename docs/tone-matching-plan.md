@@ -780,7 +780,7 @@ no-new-dependency fallback that independently corroborated the numbers.
 ## 12. What M1 built, and where it departed from this plan
 
 `analysis/` is in the repository: `io.py`, `align.py`, `features.py`,
-`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 60
+`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 99
 tests that synthesise every signal they measure. The exit criterion holds —
 `python scripts/fingerprint.py <wav>` prints a valid Fingerprint v1 for any
 input, including one-sample files, digital silence and full-scale DC, each of
@@ -791,10 +791,10 @@ Recovery against signals built with the answer known:
 | Measurement | Result |
 |---|---|
 | LTAS against a known biquad | within **0.73 dB** across 50 Hz–16 kHz |
-| Delay time and feedback | **420.0 ms** and **0.325** for a 420 ms / 0.35 echo |
+| Delay time and feedback | **420.0 ms** and **0.319** for a 420 ms / 0.35 echo |
 | RT60 | within 15% at 0.6, 1.2 and 2.4 s |
 | Tremolo rate and depth | **5.0 Hz**, depth 0.60, for 5 Hz at 0.6 |
-| Alignment | exact integer offset, fractional to ±0.01 samples, polarity |
+| Alignment | exact integer offset, fractional to within 0.014 samples, polarity |
 | Level invariance | identical spectrum, cepstrum and crest 14 dB apart |
 
 ### Four departures, each forced by a signal that broke the obvious version
@@ -886,7 +886,9 @@ has headroom, since halving it leaves every measurement inside its tolerance.
   audio — see §11, finding 2.
 - Loss profiles are `analysis/loss_profiles.json`. Tuning weights is a data
   change, and M4's sensitivity screen must set its freeze threshold above the
-  0.2 dB per-band render noise that §11, finding 1 measured.
+  0.23 dB per-band render noise that §11, finding 1 measured — which it turns
+  into a freeze threshold of about 0.5 dB. `RenderMetadata.band_noise_db` carries
+  that number per backend so the screen can ask instead of hardcoding it.
 - The signed per-band difference `match/invert.py` fits onto the nine bands comes
   from `analysis.compare.band_delta()`. See §12a for what M2 then found about
   mapping those bands onto the analysis ones.
@@ -895,9 +897,19 @@ has headroom, since halving it leaves every measurement inside its tolerance.
 
 `analysis/refchain.py` is the chain, `match/renderer.py` the protocol, and
 `match/renderer_synth.py` the backend that wraps them. Both exit criteria hold: a
-2-second DI renders in 11–16 ms through the default chain and 43–50 ms with every
-effect enabled at a maximal reverb, and 30 tests in `tests/test_refchain.py` show
-each parameter moving the fingerprint field it should.
+2-second DI renders in 21 ms through the default chain, **23 ms with all 45
+parameters supplied — which is what a search does** — 51 ms with every effect
+engaged at a maximal reverb, and 90 ms for the pathological case of a 16 ms delay
+at 95% feedback. 34 tests in `tests/test_refchain.py` show each parameter moving
+the fingerprint field it should.
+
+The all-parameters figure is the one that matters and it was nearly reported
+wrong: the first measurement was taken with *no* settings supplied, the only case
+that avoids re-parsing the manifest, and a review found that supplying 45
+parameters cost 47 ms of which about 25 was `load_pack()` reading the same JSON 47
+times. `parameter_specs()` is cached and `resolve()` loads the pack once, so the
+two cases are now within 2 ms of each other — and a test asserts that as a ratio,
+which means the same thing on a slow CI runner as on a fast laptop.
 
 Two decisions are worth carrying forward.
 
@@ -937,6 +949,53 @@ The sensitivity test earned its place immediately by finding three things:
 The chain is exactly reproducible, which neither real backend is. That is the
 property that makes it a ground truth, and `RenderMetadata.reproducible` is where
 a caller asks — defaulting to `False`, because a real host does not repeat itself.
+
+### What a four-way review of M2 found
+
+Four reviewers went over the branch for correctness, test rigour, simplicity and
+user experience, each required to demonstrate a finding rather than suspect it.
+The test-rigour pass worked by mutating the source and checking whether the suite
+noticed. It is worth recording what that turned up, because the pattern repeats:
+
+**Ten mutations survived a green suite**, including deleting the gate that three
+docstrings called load-bearing. Two defects were real and both had passed every
+test:
+
+1. **A runaway echo was reported as a multiple of its own delay time.** The decay
+   gate rejected a lag and then walked up to that same echo's 2T, where the ratio
+   is `g²` and passes — so a 250 ms echo at 0.90 feedback came back as 500 ms at
+   confidence 0.76, five times the floor `compare._ambience` uses. Fixed lists of
+   divisors did not solve it either; the 7th harmonic escaped. `fundamental()` now
+   searches the peaks that are present.
+2. **`predelay_ms` only worked when the reverb was louder than the direct sound.**
+   Anchoring on `argmax(db)` returned index 0 whenever the tail was quieter, which
+   is the normal case, and the onset was dropped — 108 of 175 windows. It passed
+   because the fixture's tail happened to survive smoothing louder than the 12 ms
+   burst that caused it.
+
+**And a redundant-looking gate turned out to be the only defence against the worst
+false positive.** Disabling `DELAY_MAX_REPEAT_RATIO` changed nothing in the suite,
+and removing it *improved* every runaway-echo case. What it actually protects
+against is a phrase repeated verbatim: unpitched, so it leaves no comb, and its
+envelope repeats as faithfully as its waveform. Without the gate that reads as a
+delay at the loop period with confidence 0.9. The gate stays, its cost is now
+written down where it is set, and `fixtures_audio.looped_phrase` exists so the
+next person cannot delete it quietly.
+
+Elsewhere: `true_peak_dbtp()` was computed twice per fingerprint (a quarter of the
+call), `pyloudnorm` was caught at its call sites and turned into `None` — making a
+missing library indistinguishable from unmeasurable material, and silently
+suspending loudness normalisation — the multichannel fold was an average
+documented as a sum, six paths in the pedalboard spike tracebacked on a mistyped
+argument, unrecognised state was applied and the render reported as good, the
+wheel shipped no data files at all, and the most-seen error message in the project
+read "loading audio needs the analysis extra is not installed."
+
+The mutation set now stands at 25 caught of 27. The two survivors are documented
+at the code as not load-bearing rather than covered by a contrived test:
+half-wave rectifying the spectral flux is the correct definition but is
+indistinguishable from an absolute value on any signal tried, and `ENVELOPE_RATE`
+has headroom.
 
 ### What M3 inherits
 

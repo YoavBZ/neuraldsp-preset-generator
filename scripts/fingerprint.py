@@ -115,6 +115,10 @@ def main() -> None:
 
     if not args.audio.exists():
         die(f"{args.audio} does not exist")
+    if args.audio.is_dir():
+        # `.exists()` is true for a directory, which then reached soundfile and
+        # came back as an IsADirectoryError traceback.
+        die(f"{args.audio} is a directory; pass an audio file")
 
     from analysis import AnalysisUnavailable
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError, fingerprint_file

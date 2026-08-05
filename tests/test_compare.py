@@ -9,7 +9,8 @@ pytest.importorskip("scipy", reason="needs the analysis extra")
 
 from analysis import io
 from analysis.compare import (
-    DIMENSIONS, ProfileError, band_delta, compare, list_profiles, load_profile, scalar,
+    DIMENSIONS, Objectives, ProfileError, band_delta, compare, list_profiles,
+    load_profile, scalar,
 )
 from analysis.fingerprint import Fingerprint, fingerprint
 from tests import fixtures_audio as fx
@@ -49,8 +50,15 @@ def test_a_closer_candidate_scores_lower():
     assert scalar(compare(target, near)) < scalar(compare(target, far))
 
 
-def test_a_level_difference_is_not_a_timbre_difference():
-    """Turning it up must not look like a tone change; that is what `level` is for."""
+def test_turning_up_real_audio_is_not_a_timbre_difference():
+    """Turning it up must not look like a tone change; that is what `level` is for.
+
+    End to end, through the fingerprint and its loudness normalisation. The
+    arithmetic underneath is checked separately by
+    `test_a_pure_level_difference_is_not_a_timbre_difference`, which builds band
+    curves by hand — the two were previously named almost identically, so a
+    failure in one sent a reader to the other.
+    """
     signal = fx.band_limited(seconds=3.0)
     quiet, loud = make(signal * 0.1), make(signal * 0.6)
     objectives = compare(quiet, loud)
@@ -59,28 +67,46 @@ def test_a_level_difference_is_not_a_timbre_difference():
 
 
 def test_unmeasurable_dimensions_are_none_not_zero():
-    """Noise has no harmonic series. Ambience and harmonic must abstain."""
+    """Mono noise has no harmonic series and no stereo field.
+
+    The docstring used to say "ambience and harmonic" while asserting harmonic and
+    spatial. `ambience` is not assertable from this fixture — with no `rt60_s` on
+    either side it is `None` however the confidence gates behave — so naming it
+    here claimed a check that could not exist.
+    """
     fp = make(fx.noise(seconds=3.0))
     objectives = compare(fp, fp)
     assert objectives["harmonic"] is None
     assert objectives["spatial"] is None
 
 
-def test_a_missing_dimension_does_not_flatter_the_score():
-    """An abstaining dimension is dropped from the mean, not scored as perfect."""
-    target = make(fx.band_limited(seconds=3.0, high=2000, seed=3))
-    candidate = make(fx.band_limited(seconds=3.0, high=8000, seed=3))
-    objectives = compare(target, candidate)
-    combined = scalar(objectives)
-    measured = objectives.measured()
-    assert combined >= min(measured.values())
-    assert combined <= max(measured.values())
-
-
 def test_an_echo_on_only_one_side_is_a_full_unit_of_wrong():
     dry = make(fx.plucks(seconds=8.0))
     wet = make(fx.with_echo(fx.plucks(seconds=8.0), 0.42, 0.35))
     assert compare(dry, wet).detail["ambience"]["delay_present"] == 1.0
+
+
+def test_two_different_echoes_are_compared_rather_than_only_counted():
+    """The branch where *both* sides have a delay, which nothing covered.
+
+    Deleting it outright — `if target_has and candidate_has:` → `if False:` — left
+    all 498 tests passing, while a 180 ms echo against a 420 ms one silently scored
+    as no ambience difference at all. Setting a delay time is the single thing M3
+    inverts from this dimension.
+    """
+    short = make(fx.with_echo(fx.plucks(seconds=8.0), 0.180, 0.35))
+    long = make(fx.with_echo(fx.plucks(seconds=8.0), 0.420, 0.35))
+
+    detail = compare(short, long).detail["ambience"]
+    assert "delay_present" not in detail, "both sides have one; it is not a mismatch"
+    assert detail["delay_time"] > 1.0, (
+        f"240 ms apart at a 40 ms scale should be several units: {detail}"
+    )
+    assert compare(short, long)["ambience"] > 0.5
+
+    # And two identical echoes must cost nothing on that term.
+    same = compare(long, make(fx.with_echo(fx.plucks(seconds=8.0), 0.420, 0.35)))
+    assert same.detail["ambience"]["delay_time"] == pytest.approx(0.0, abs=0.1)
 
 
 def test_prior_and_complexity_are_passed_in():
@@ -122,6 +148,46 @@ def test_paired_profile_weights_time_features_higher():
     paired = load_profile("paired-v1")["weights"]
     assert paired["dynamics"] > unpaired["dynamics"]
     assert paired["ambience"] > unpaired["ambience"]
+
+
+def test_an_abstaining_dimension_is_dropped_and_not_scored_as_perfect():
+    """`scalar()`'s headline invariant, against arithmetic rather than a bound.
+
+    The previous version asserted only `min(measured) <= scalar <= max(measured)`,
+    which a weighted mean of any subset satisfies by construction — so it could not
+    fail. Two mutations passed it: scoring `None` as 0.0 (the exact thing the
+    module docstring says must never happen), and renormalising over a count
+    instead of over the weights.
+
+    Here the expected value is computed by hand from the profile's own weights, so
+    both mutations produce a different number.
+    """
+    weights = load_profile("unpaired-v1")["weights"]
+    objectives = Objectives(
+        values={"timbre": 0.4, "dynamics": 1.0, "ambience": None,
+                "level": None, "harmonic": None, "spatial": None,
+                "residual": None, "prior_deviation": None, "complexity": None},
+        profile="unpaired-v1",
+    )
+
+    expected = ((0.4 * weights["timbre"] + 1.0 * weights["dynamics"])
+                / (weights["timbre"] + weights["dynamics"]))
+    assert scalar(objectives) == pytest.approx(expected)
+
+    # Scoring the six absent dimensions as zero would drag it far below this.
+    assert scalar(objectives) > 0.5
+    # And weighting by count rather than by weight would give the plain mean.
+    assert scalar(objectives) != pytest.approx((0.4 + 1.0) / 2)
+
+
+def test_a_dimension_with_no_weight_cannot_influence_the_scalar():
+    """`complexity` ships at 0.0 in both profiles, so it must be inert until a
+    profile asks for it. Otherwise M4 pays for a term nobody chose."""
+    base = Objectives(values={"timbre": 0.5, "complexity": None},
+                      profile="unpaired-v1")
+    loaded = Objectives(values={"timbre": 0.5, "complexity": 99.0},
+                        profile="unpaired-v1")
+    assert scalar(loaded) == pytest.approx(scalar(base))
 
 
 def _spectrum(band_db, centres=(125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0)):

@@ -24,13 +24,11 @@ FINGERPRINT_VERSION = 1
 # produce (scripts/au_render.swift), so a render is never resampled before it is
 # measured. Channel count is preserved at ingest and folded per feature, because
 # width and inter-channel correlation are features in their own right — see
-# `io.load` and `Audio.mono`, which are where that actually happens. A
-# `CHANNELS_PRESERVED = True` constant used to sit here asserting it; nothing
-# read it, so it asserted nothing.
+# `io.load` and `Audio.mono`, which are where that actually happens.
 SAMPLE_RATE = 48000
 
 _INSTALL_HINT = (
-    "the analysis extra is not installed.\n"
+    "the analysis extra, which is not installed.\n"
     "  pip install -e '.[analysis]'"
 )
 
@@ -41,9 +39,18 @@ def require(feature: str = "audio analysis"):
     Every entry point calls this before touching numpy, so a missing extra
     produces one line a person can act on instead of an ImportError traceback
     from six frames down.
+
+    `pyloudnorm` is checked here with the rest, and that matters more than it
+    looks. It used to be caught at its two call sites and turned into `None`,
+    which in this schema means "the recording could not support the measurement".
+    A missing library is not a property of the recording: the effect was that
+    `lufs_i` and `lra_lu` went absent with no caveat, and `normalise()` quietly
+    stopped normalising, so every "spectral features are loudness-normalised"
+    guarantee in the package silently lapsed.
     """
     try:
         import numpy  # noqa: F401
+        import pyloudnorm  # noqa: F401
         import scipy  # noqa: F401
         import soundfile  # noqa: F401
     except ImportError as e:

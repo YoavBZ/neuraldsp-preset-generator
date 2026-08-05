@@ -64,9 +64,16 @@ def test_the_eq_centres_come_from_the_manifest():
 
 def test_defaults_are_legal_values_for_their_own_parameters():
     """Every default survives the pack's own validation, so a bare render is a
-    render of a preset the plugin would accept."""
-    resolved = refchain.resolve()
-    assert resolved == refchain.defaults()
+    render of a preset the plugin would accept.
+
+    Passed explicitly, one at a time. `resolve(None)` returns the defaults without
+    entering its validation loop at all, so asserting `resolve() == defaults()` was
+    `dict(X) == dict(X)` — it passed with `inputGain` defaulted to 9999 dB against a
+    declared range of -24..24.
+    """
+    for (module, key), value in refchain.defaults().items():
+        resolved = refchain.resolve({f"{module}/{key}": value})
+        assert resolved[(module, key)] == value, f"{module}/{key}"
 
 
 @pytest.mark.parametrize("key, value, message", [
@@ -109,31 +116,63 @@ def test_settings_round_trip_into_a_spec():
 # --- M2's exit criterion: speed ---------------------------------------------
 
 
-def test_a_di_renders_fast_enough_to_search_with():
-    """< 50 ms per render, which is what makes a 300-render budget free.
+EVERYTHING_ON = {
+    "parameters/gateActive": True, "compressor/compressorActive": True,
+    "drive1/drive1Active": True, "delay/delayActive": True,
+    "reverb/reverbActive": True, "reverb/reverbDecay": 60.0,
+}
 
-    Bounds are generous because CI timing is noisy; measured locally this is
-    11-16 ms for the default chain and 43-50 ms with every effect enabled and a
-    maximal reverb. The point of the assertion is to catch a change that makes a
-    render cost seconds, not to police milliseconds.
+
+def best_of(settings, signal, runs: int = 5) -> float:
+    refchain.render(signal, settings)        # warm the scipy and IR caches
+    times = []
+    for _ in range(runs):
+        started = time.perf_counter()
+        refchain.render(signal, settings)
+        times.append(time.perf_counter() - started)
+    return min(times)
+
+
+def test_a_di_renders_fast_enough_to_search_with():
+    """Measured on this machine for a 2-second DI: 21 ms for the default chain,
+    23 ms with all 45 parameters supplied — which is what a search does — 51 ms
+    with every effect engaged at a maximal reverb, and 90 ms for the pathological
+    16 ms delay at 95% feedback.
+
+    The absolute bound is deliberately loose: this runs on shared CI runners, and
+    a tight wall-clock assertion there is a flake, not a check. The *ratio* below
+    is the part that means something, because it holds on any machine.
     """
     signal = di(seconds=2.0)
-    refchain.render(signal)          # warm up scipy and the impulse-response caches
+    assert best_of(None, signal) < 1.0, "a render should not take a second"
 
-    times = []
-    for _ in range(5):
-        started = time.perf_counter()
-        refchain.render(signal)
-        times.append(time.perf_counter() - started)
-    assert min(times) < 0.10, f"default chain: {min(times) * 1000:.0f} ms"
 
-    everything = {"parameters/gateActive": True, "compressor/compressorActive": True,
-                  "drive1/drive1Active": True, "delay/delayActive": True,
-                  "reverb/reverbActive": True, "reverb/reverbDecay": 60.0}
-    refchain.render(signal, everything)
-    started = time.perf_counter()
-    refchain.render(signal, everything)
-    assert time.perf_counter() - started < 0.40
+def test_supplying_every_parameter_costs_little_more_than_supplying_none():
+    """The check that keeps manifest parsing out of the render path.
+
+    `load_pack()` re-reads and re-parses `manifest.json` on every call, and this
+    used to run once per render *plus once per supplied setting*: a render with all
+    45 parameters spent about 25 of its 47 ms parsing the same file 47 times. A
+    search supplies every parameter on every trial, so that was the real cost of a
+    render, and the documented 11-16 ms was measured on the one case that avoids it.
+
+    A ratio, so it means the same thing on a slow runner as on a fast one.
+    """
+    signal = di(seconds=2.0)
+    bare = best_of(None, signal)
+    full = best_of({"/".join(key): value for key, value in refchain.defaults().items()},
+                   signal)
+    assert full < bare * 2.0, (
+        f"supplying 45 parameters cost {full / bare:.1f}x a bare render "
+        f"({full * 1000:.0f} ms against {bare * 1000:.0f} ms)"
+    )
+
+
+def test_engaging_every_effect_stays_within_a_few_times_the_dry_render():
+    """Catches a change that makes one stage pathologically expensive, without
+    asserting a millisecond count on a runner we do not control."""
+    signal = di(seconds=2.0)
+    assert best_of(EVERYTHING_ON, signal) < best_of(None, signal) * 8.0
 
 
 def test_the_synthetic_chain_is_exactly_reproducible():
@@ -246,11 +285,20 @@ def test_the_bright_switch_lifts_the_top_relative_to_the_bottom():
 
 def test_the_cab_position_trades_top_end_for_low_mids():
     """The direction M0 measured on the real `*CabPosition`: +1.4 dB in the low
-    mids and -1.1 dB at 6.3 kHz."""
+    mids and -1.1 dB at 6.3 kHz.
+
+    Magnitudes, not just signs. Asserting the sign alone passed with the control
+    made fifty times weaker, moving the bands by 0.1 dB — below the 0.23 dB
+    per-band noise the real plugin shows between two identical renders, so an
+    inversion built against it would be fitting noise.
+    """
     centre = measure({"cabParameters/leftCabPosition": 0.0})
     edge = measure({"cabParameters/leftCabPosition": 1.0})
-    assert edge.band_db(6300.0) < centre.band_db(6300.0)
-    assert edge.band_db(500.0) > centre.band_db(500.0)
+
+    top = centre.band_db(6300.0) - edge.band_db(6300.0)
+    lows = edge.band_db(500.0) - centre.band_db(500.0)
+    assert top > 1.0, f"6.3 kHz moved only {top:+.2f} dB"
+    assert lows > 1.0, f"500 Hz moved only {lows:+.2f} dB"
 
 
 def test_the_delay_moves_the_measured_delay_time():
@@ -270,11 +318,59 @@ def test_no_delay_in_the_chain_means_none_measured():
 
 
 def test_the_delay_feedback_moves_the_measured_feedback():
-    low = measure({"delay/delayActive": True, "delay/delayMix": 60.0,
-                   "delay/delayFeedback": 20.0}, signal=di(seconds=8.0))
-    high = measure({"delay/delayActive": True, "delay/delayMix": 60.0,
-                    "delay/delayFeedback": 60.0}, signal=di(seconds=8.0))
-    assert low.time_fx["delay_feedback_est"] < high.time_fx["delay_feedback_est"]
+    """Against the knob's own value, not merely in the right order.
+
+    Ordering alone passed with the control made nearly inert — 0.263 against 0.270
+    for a knob moved from 20% to 60% — which would let M3 invert feedback onto a
+    parameter that barely does anything.
+
+    Not asserted equal to the knob, because it is not: filtering each repeat
+    inside the loop costs energy the raw coefficient does not account for, so a
+    60% knob measures about 0.42. That is the *effective* decay, which is what the
+    reference audio actually contains and therefore what M3 should invert onto.
+    What is asserted is that each step of the knob moves it substantially.
+    """
+    measured = [
+        measure({"delay/delayActive": True, "delay/delayMix": 60.0,
+                 "delay/delayFeedback": knob}, signal=di(seconds=8.0))
+        .time_fx["delay_feedback_est"]
+        for knob in (20.0, 40.0, 60.0)
+    ]
+    for lower, higher in zip(measured, measured[1:]):
+        assert higher - lower > 0.08, f"the knob barely moved it: {measured}"
+
+
+def test_the_delay_repeats_get_darker_the_way_a_feedback_line_does():
+    """`delayLowCut`/`delayHighCut` act once per trip round the loop.
+
+    The first version summed the taps and filtered the sum once, so every repeat
+    came back with an identical spectrum and these two controls had no cumulative
+    effect at all — the only effect they exist for. Measured here on successive
+    repeats of a single burst.
+    """
+    from analysis.features import spectral_statistics
+
+    # One short burst then silence, so each 300 ms window holds exactly one
+    # repeat. `plucks(seconds=0.3)` cannot be used: its onset range is empty at
+    # that length and it returns digital silence.
+    rng = np.random.default_rng(21)
+    burst = np.zeros(int(3.3 * SR))
+    burst[: int(0.05 * SR)] = rng.standard_normal(int(0.05 * SR)) * 0.5
+    audio = refchain.render(burst, {
+        "delay/delayActive": True, "delay/delayTime": 300.0,
+        "delay/delayFeedback": 60.0, "delay/delayMix": 100.0,
+        "delay/delayLowCut": 60.0, "delay/delayHighCut": 5000.0,
+    })[:, 0]
+
+    def centroid(repeat: int) -> float:
+        window = int(0.3 * SR)
+        return spectral_statistics(audio[window * repeat: window * (repeat + 1)],
+                                   SR)["centroid_hz"]["p50"]
+
+    first, last = centroid(1), centroid(6)
+    assert last < first - 300.0, (
+        f"repeat 6 centroid {last:.0f} Hz against repeat 1's {first:.0f} Hz"
+    )
 
 
 def test_the_reverb_decay_moves_the_measured_rt60():
@@ -346,10 +442,31 @@ def test_the_gate_removes_the_quiet_frames_from_the_distribution():
     assert quiet_shut > quiet_open + 5.0, (
         f"the gate did not remove the quiet frames: {quiet_shut:.1f} vs {quiet_open:.1f}"
     )
-    # And a threshold below everything present must change nothing at all.
-    wide_open = measure({"parameters/gateActive": True,
-                         "parameters/gateThreshold": -96.0})
-    assert wide_open.dynamics["rms_percentiles_db"]["p10"] == pytest.approx(quiet_open)
+
+
+def test_a_gate_at_its_minimum_threshold_is_a_bypass():
+    """Compared against the gate being *off*, which is the only version of this
+    claim that says anything.
+
+    The earlier test re-rendered the identical settings and compared them, on a
+    chain proven bit-deterministic two tests up — so it restated determinism, and
+    a mutation that made a wide-open gate duck hard by 10 dB passed it.
+
+    Bit-exactness rather than approximate equality, because the causal mask
+    smoothing this guards against does not merely shift the level: it ramped the
+    first 5 ms of every attack after a silent gap, and digital silence is always
+    below the -96 dB minimum, so nothing was ever transparent.
+    """
+    signal = di(seconds=2.0)
+    off = refchain.render(signal, {"parameters/gateActive": False})
+    wide_open = refchain.render(signal, {"parameters/gateActive": True,
+                                         "parameters/gateThreshold": -96.0})
+    assert np.array_equal(off, wide_open)
+
+    # And a threshold that does bite is not a bypass, so the test can fail.
+    shut = refchain.render(signal, {"parameters/gateActive": True,
+                                    "parameters/gateThreshold": -12.0})
+    assert not np.array_equal(off, shut)
 
 
 # --- the renderer wrapper ----------------------------------------------------

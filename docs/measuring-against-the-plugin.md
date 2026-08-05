@@ -391,6 +391,10 @@ render: 229 ms for 2.0 s of audio, peak 0.5653260
 bench: 10 renders, 232 ms each, 4.31 renders/s
 ```
 
+Abridged: the script also prints the peak spread across the bench and whether
+every render was bit-identical, which is how the non-reproducibility below was
+found. The lines above are the throughput ones.
+
 232 ms against the Swift server's 291 ms, with no wav round-trip and no
 subprocess, and parameters arrive named, typed, and carrying their ranges and
 display units instead of as attributes to be edited by regular expression.
@@ -499,9 +503,15 @@ and **0.5546125** for Morgan — the identical numbers recorded above. So the
 silence is a property of the bare CLI instantiation, and **authorization is
 ruled out**: a plugin that could not authorize would be silent in both hosts.
 
-That unblocks acoustic work on Tone King, through that host, at a price: it
-renders at about 0.38 renders/s against Morgan's 4.31, roughly eleven times the
-cost per render.
+That unblocks acoustic work on Tone King, through that host, at a price — but
+**the size of that price is unresolved and needs re-measuring.** The two figures
+recorded from that session disagree, and not in the direction warm-up would
+explain: the single render above took 783 ms, which is 1.28 renders/s, while the
+`--bench 5` steady state was written down as about 0.38 renders/s. A steady state
+slower than the first render is not something a warm cache does, so one of the two
+is wrong and the notes do not say which. Treat "roughly eleven times Morgan's cost"
+as the loose upper bound it is, and re-run `--bench` before any budget depends on
+it.
 
 Nothing in `packs/toneking/` has been measured acoustically yet. Its recipes
 still say so, and they should keep saying so until someone actually renders the

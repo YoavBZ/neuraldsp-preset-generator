@@ -119,14 +119,75 @@ def test_a_repeated_phrase_is_not_reported_as_a_confident_delay():
 def test_an_echo_that_decays_is_told_from_one_that_does_not():
     """The gate underneath both cases above: an echo gets quieter, a loop does not.
 
-    Feedback is recovered across the usable range. Above about 0.8 the second
-    repeat is as loud as the first and the detector reports no delay rather than
-    a wrong one — a stated limit, tested so it stays a known one.
+    Feedback is recovered across the usable range, and the *estimate* is checked
+    too — without that, `DELAY_MAX_REPEAT_RATIO` could be raised to 0.999,
+    disabling the gate three docstrings call load-bearing, with a green suite.
     """
     for feedback in (0.15, 0.35, 0.55, 0.75):
         result = F.time_effects(fx.with_echo(fx.plucks(gap=0.9), 0.420, feedback), SR)
         assert result["delay_ms"] == pytest.approx(420.0, abs=5.0), f"feedback={feedback}"
         assert result["delay_feedback_est"] == pytest.approx(feedback, abs=0.1)
+
+
+def test_a_verbatim_loop_is_not_reported_as_a_delay():
+    """What `DELAY_MAX_REPEAT_RATIO` is actually for, and nothing tested it.
+
+    Setting the ratio to 0.999 — deleting the gate three docstrings call
+    load-bearing — passed the entire suite. The reason is that every other
+    recurring fixture is *pitched*, so it fills the search band with a comb and
+    the comb rule catches it. A broadband phrase repeated verbatim has no such
+    signature: the only thing separating it from an echo is that its repeats do
+    not get quieter, and without the gate it comes back at the loop period with
+    confidence 0.9, higher than a real echo ever scores.
+
+    The cost of the gate is real and is stated on `_detect_delay`: it is why an
+    echo above about 0.85 feedback is declined rather than measured.
+    """
+    for period in (0.8, 1.0, 1.5):
+        result = F.time_effects(fx.looped_phrase(period=period), SR)
+        assert result["delay_ms"] is None, (
+            f"a {period}s loop was reported as a {result['delay_ms']} ms delay "
+            f"at confidence {result['delay_confidence']}"
+        )
+
+    # And a real echo laid over the same looped material is still found, so the
+    # gate is not simply refusing everything on this input.
+    over_a_loop = F.time_effects(
+        fx.with_echo(fx.looped_phrase(period=1.0), 0.420, 0.35), SR)
+    assert over_a_loop["delay_ms"] == pytest.approx(420.0, abs=20.0)
+
+
+def test_a_runaway_echo_abstains_instead_of_reporting_a_multiple():
+    """The stated limit above 0.85 feedback, now actually exercised.
+
+    This was claimed and untested, and the claim was false. Rejecting a lag for
+    recurring is worthless if the same echo's 2T, 3T … 7T peaks are then offered
+    and accepted: a 250 ms echo at 0.90 came back as 500 ms at confidence 0.76,
+    and once two fixed divisors were tried, as 1750 ms. There is no bound on which
+    harmonic carries the most prominence, so `fundamental()` searches the peaks
+    that are present.
+
+    The requirement is therefore not "detects it" but **never reports a wrong
+    number**: either the true time, or nothing.
+    """
+    for delay_s, feedback in [(0.250, 0.85), (0.250, 0.90), (0.250, 0.95),
+                              (0.420, 0.88), (0.420, 0.90), (0.420, 0.95),
+                              (0.180, 0.92), (0.650, 0.93)]:
+        result = F.time_effects(
+            fx.with_echo(fx.plucks(seconds=10.0, gap=0.9), delay_s, feedback), SR)
+        measured = result["delay_ms"]
+        assert measured is None or measured == pytest.approx(delay_s * 1000, abs=20.0), (
+            f"delay={delay_s * 1000:.0f} ms at feedback {feedback} reported "
+            f"{measured} ms, a multiple of the truth"
+        )
+
+
+def test_a_delay_is_reported_at_its_fundamental_not_at_a_harmonic():
+    """Directly, so the mechanism is pinned and not only its consequence."""
+    for delay_s in (0.250, 0.420):
+        result = F.time_effects(
+            fx.with_echo(fx.plucks(seconds=10.0, gap=1.4), delay_s, 0.55), SR)
+        assert result["delay_ms"] == pytest.approx(delay_s * 1000, abs=20.0)
 
 
 def test_rt60_from_synthetic_decay():
@@ -214,15 +275,33 @@ def test_tilt_is_fitted_over_the_guitar_range_only():
 def test_predelay_recovers_a_known_gap_before_the_tail():
     """A direct sound, a gap, then a decaying tail: the gap is recovered.
 
-    The tolerance is one envelope-smoothing width, not a fudge: the envelope is
-    low-passed at 60 Hz, which blurs the crossover by a few milliseconds in a
-    consistent direction.
+    The tolerance is one envelope-smoothing width and no more. The envelope is
+    low-passed at 60 Hz, which blurs the crossover by a consistent +5 ms, so 10 ms
+    is the honest bound — at 20 ms a detector that added a flat 15 ms passed.
     """
     for want in (80.0, 120.0, 150.0, 200.0):
         signal = fx.bursts_with_predelay(predelay_ms=want)
-        assert F.time_effects(signal, SR)["predelay_ms"] == pytest.approx(want, abs=20.0), (
+        assert F.time_effects(signal, SR)["predelay_ms"] == pytest.approx(want, abs=10.0), (
             f"predelay={want}"
         )
+
+
+def test_predelay_is_found_when_the_tail_is_quieter_than_the_direct_sound():
+    """The normal case, and the one that used to be silently skipped.
+
+    `db` is measured relative to the attack, so anchoring the rise on `argmax(db)`
+    only worked when the tail was *louder* than the direct sound — otherwise
+    `argmax` returned 0 and the onset was discarded, 108 of 175 windows. The
+    original fixture passed at `tail_level=0.5` purely because a 1.6 s tail
+    survives envelope smoothing louder than the 12 ms burst that caused it.
+    """
+    for tail_level in (0.1, 0.2, 0.3):
+        for want in (80.0, 150.0):
+            signal = fx.bursts_with_predelay(predelay_ms=want, tail_level=tail_level)
+            measured = F.time_effects(signal, SR)["predelay_ms"]
+            assert measured == pytest.approx(want, abs=10.0), (
+                f"tail_level={tail_level}, predelay={want}: got {measured}"
+            )
 
 
 def test_predelay_abstains_when_nothing_is_separated():
@@ -333,14 +412,42 @@ def test_spatial_width_increases_with_decorrelation():
 
 
 def test_cepstral_shape_is_stable_and_discriminative():
-    """Same signal, same MFCCs; different filter, different MFCCs."""
-    dark = fx.band_limited(high=2000, seed=3)
-    a = F.cepstral(dark, SR)
-    b = F.cepstral(dark, SR)
-    c = F.cepstral(fx.band_limited(high=8000, seed=3), SR)
-    assert a["mfcc_mean"] == b["mfcc_mean"]
-    difference = np.abs(np.array(a["mfcc_mean"]) - np.array(c["mfcc_mean"])).max()
-    assert difference > 1.0
+    """Same signal, same MFCCs; different filter, different MFCCs.
+
+    "Same signal, same MFCCs" used to be checked by calling `cepstral` twice on one
+    array, which is comparing a pure function with itself — it cannot fail. Stability
+    that means something is across a *different realisation* of the same process:
+    two noise seeds through the same filter must land close together while a
+    different filter lands far away.
+    """
+    dark = F.cepstral(fx.band_limited(high=2000, seed=3), SR)
+    dark_again = F.cepstral(fx.band_limited(high=2000, seed=11), SR)
+    bright = F.cepstral(fx.band_limited(high=8000, seed=3), SR)
+
+    same_process = np.abs(np.array(dark["mfcc_mean"]) - np.array(dark_again["mfcc_mean"])).max()
+    different_filter = np.abs(np.array(dark["mfcc_mean"]) - np.array(bright["mfcc_mean"])).max()
+    assert same_process < 1.0, f"two seeds of one process differ by {same_process:.2f}"
+    assert different_filter > 1.0
+    assert different_filter > same_process * 3.0
+
+
+def test_the_cepstrum_is_a_dct_of_the_mel_energies_and_not_the_energies():
+    """The first coefficient is overall level, which is why `compare._timbre`
+    skips it. That is only true of a DCT: dropping the transform, or offsetting
+    which coefficients are kept, leaves the field no longer an MFCC mean while
+    every "is it stable, is it discriminative" assertion still passes.
+
+    Checked against the property the DCT gives and the raw energies do not — a
+    strong level change moves coefficient 0 far more than the rest.
+    """
+    quiet = F.cepstral(fx.band_limited(high=4000, seed=5) * 0.05, SR)
+    loud = F.cepstral(fx.band_limited(high=4000, seed=5) * 0.9, SR)
+
+    coefficients = np.array(loud["mfcc_mean"]) - np.array(quiet["mfcc_mean"])
+    assert abs(coefficients[0]) > 5.0, "coefficient 0 must carry the level"
+    assert np.abs(coefficients[1:]).max() < abs(coefficients[0]) / 3.0, (
+        f"the shape coefficients moved with the level: {coefficients}"
+    )
 
 
 def test_dynamics_separate_a_compressed_signal_from_a_dynamic_one():
