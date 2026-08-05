@@ -1030,8 +1030,13 @@ declared `members`, on the reasoning that applies to enums — and thereby remov
 every effect on/off control from the space, so nothing could turn an effect on. An
 enum's stored integer is meaningless without its table because the plugin never
 displays it; a switch is true or false whatever the plugin labels it, and
-`to_binary` never consults members. Morgan declares members for only some of its
-32 switches, which is why this mattered.
+`to_binary` never consults members.
+
+The counts are worth stating because they are lopsided and this document first got
+them wrong: **none** of Morgan's 32 switches declares members, and **all 21** of
+Tone King's do. So the rule emptied Morgan's space completely while leaving Tone
+King's untouched — a bug that would have looked pack-specific and been chased in
+the wrong place.
 
 **The gate relationships are spelled but not stated.** No manifest field says
 `leftCabActive` governs `leftCabPan`, but the names do: a switch called
@@ -1060,10 +1065,14 @@ the *plugin's* parameters while a backend may model fewer: the synthetic chain
 covers 45 and refuses the rest outright, which is correct of it but means the
 caller has to filter. `dropped_for()` says what was left behind so a report can.
 
-### Still to do in M3
+### What M3 deliberately leaves to later milestones
 
-- `scripts/measure_eq_basis.py` and the committed `eq_basis.json` are M5 work, but
-  the fit is already written to consume them.
+Neither of these blocks M3, and both are named here so they are not mistaken for
+oversights:
+
+- `scripts/measure_eq_basis.py` and the committed `eq_basis.json` are M5 work — they
+  need the plugin. The fit is already written to consume them and says out loud when
+  it is working without them.
 - Nothing yet quantises against *audible* resolution measured from the plugin;
   `space.QUANTA` is a set of stated engineering choices, not measurements.
 
