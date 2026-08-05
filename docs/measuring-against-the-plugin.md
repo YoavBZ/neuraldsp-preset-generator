@@ -395,6 +395,40 @@ bench: 10 renders, 232 ms each, 4.31 renders/s
 subprocess, and parameters arrive named, typed, and carrying their ranges and
 display units instead of as attributes to be edited by regular expression.
 
+### Driving it from a generated preset, and what has not been run yet
+
+Renders above use the plugin's default state, which proves throughput and not
+that the backend can be driven by a parameter vector. `--state` applies a file
+as raw state, reads it back, and reports which parameters the plugin kept:
+
+```bash
+python scripts/spike_pedalboard.py --plugin "Tone King Imperial MKII" \
+  --state /tmp/generated.xml
+```
+
+Two things make that less obvious than it sounds, and the script now enforces
+both.
+
+A preset file is a state blob **only for a record-state plugin**. Tone King keeps
+the same `PARAM` record format in its presets and in its `jucePluginState`, so a
+generated preset is a legal state document for it. Morgan does not: its state is
+an XML document and its presets are the `morgan\0` record format, and nothing
+converts between them — see the section below. Handing a Morgan preset to
+`raw_state` raises nothing and changes nothing, so the render would be of the
+default preset and reported as the generated one. The encoding is checked before
+the write and the mismatch is refused.
+
+And applying state without an error is not evidence that it was applied. The
+values are read back and compared, for the same reason the pan range needed
+writing past each end rather than reading the display: this repository has
+already been wrong once about a write it did not verify.
+
+**Not yet run against a plugin.** The comparison logic is tested without one
+(`tests/test_spike_pedalboard.py`), but the round trip itself needs macOS and a
+licence, and M5 depends on it. Until someone runs it, treat "the backend can be
+driven by a generated preset" as untested for Tone King and as *impossible by
+this path* for Morgan.
+
 The two hosts agree. Fed byte-identical noise — the spike reimplements the
 harness's seeded xorshift exactly — and the same default state, they differ by
 **0.12 dB at worst in any third-octave band**. The waveforms correlate at 0.991

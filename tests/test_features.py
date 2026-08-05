@@ -156,6 +156,61 @@ def test_onsets_land_on_the_note_and_not_a_window_early():
         assert abs(error.mean()) < hop_ms, f"gap={gap}: systematic bias {error.mean():.1f} ms"
 
 
+def test_rolloff_is_the_85_percent_point_and_not_the_middle():
+    """85% of the energy sits below `rolloff85_hz`.
+
+    Half the energy sits a long way below that, so a signal with a wide, flat
+    band separates the two: the median of this spectrum is near 4 kHz and its
+    85% point near 7 kHz.
+    """
+    wide = fx.band_limited(seconds=4.0, low=100.0, high=8000.0, seed=4)
+    rolloff = F.spectral_statistics(wide, SR)["rolloff85_hz"]["p50"]
+    assert 5500.0 < rolloff < 9000.0, f"rolloff85 came out at {rolloff} Hz"
+
+
+def test_corner_frequencies_are_the_six_dB_points():
+    """Measured against a curve whose 6 dB and 12 dB points are known by hand.
+
+    A flat top with a 3 dB-per-band skirt puts -6 dB two bands out and -12 dB
+    four bands out, which is far enough apart that reading the wrong one cannot
+    pass. The interpolation lands between band centres, so the assertion is a
+    range bracketing the true crossing rather than a single frequency.
+    """
+    centres = list(F.THIRD_OCTAVE_CENTRES)
+    first, last = centres.index(500.0), centres.index(2000.0)
+    band_db = [
+        0.0 if first <= i <= last else -3.0 * (first - i if i < first else i - last)
+        for i in range(len(centres))
+    ]
+
+    corners = F.corner_frequencies(centres, band_db)
+    # -6 dB lands exactly two bands out: 315 Hz below and 3150 Hz above.
+    # The -12 dB points would be 200 Hz and 5 kHz.
+    assert corners["lf_corner_hz"] == pytest.approx(315.0, rel=1e-6), corners
+    assert corners["hf_corner_hz"] == pytest.approx(3150.0, rel=1e-6), corners
+
+
+def test_tilt_is_fitted_over_the_guitar_range_only():
+    """The fit stops at 10 kHz, so what happens above it cannot move the answer.
+
+    The top and bottom of a third-octave curve are dominated by the source's own
+    filtering rather than by the amp. Here the curve is a clean -6 dB per decade
+    line up to 10 kHz and then climbs steeply; a fit that included the climb
+    would report a shallower slope than the line actually has.
+    """
+    import numpy as np
+
+    centres = [c for c in F.THIRD_OCTAVE_CENTRES if c >= 50.0]
+    band_db = []
+    for centre in centres:
+        if centre <= 10000.0:
+            band_db.append(-6.0 * np.log10(centre / 50.0))
+        else:
+            band_db.append(-6.0 * np.log10(10000.0 / 50.0) + 30.0)
+
+    assert F.spectral_tilt(centres, band_db) == pytest.approx(-6.0, abs=0.5)
+
+
 def test_predelay_recovers_a_known_gap_before_the_tail():
     """A direct sound, a gap, then a decaying tail: the gap is recovered.
 

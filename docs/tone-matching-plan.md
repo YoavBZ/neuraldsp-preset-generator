@@ -1,11 +1,16 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 and M1 are done; M2 onward is not built.** The two spikes ran on
-2026-08-05 and their numbers are in §11 and in
+Status: **M0 and M1 are done and have been audited; M2 is in progress.** The two
+spikes ran on 2026-08-05 and their numbers are in §11 and in
 `docs/measuring-against-the-plugin.md`. The analysis core landed the same day:
-`analysis/` plus `scripts/fingerprint.py` and `scripts/compare_audio.py`, with
-§12 recording where it departed from this document. Nothing else here exists in
-the repository yet.
+`analysis/` plus `scripts/fingerprint.py` and `scripts/compare_audio.py`.
+
+§12 records where both milestones departed from this document — including five
+departures found by auditing them against their own exit criteria before starting
+M2, every one of which had passed a green suite. One M0 item is deliberately
+still open: the `apply_spec.py` → `pedalboard` state round trip is implemented
+and tested without a plugin, but has not been *run* against one, and M5 depends
+on it.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -818,6 +823,60 @@ Recovery against signals built with the answer known:
    could measure, and a dimension with nothing measurable returns `None` and
    drops out of the scalar entirely. Without that, a reference with no
    detectable reverb would score every candidate perfectly on ambience.
+
+### Five more departures, found by auditing M0 and M1 rather than trusting them
+
+The four above were written down as they happened. These came out of going back
+over both milestones against their own exit criteria before starting M2, which is
+the only reason they were found — every one of them passed a green suite.
+
+5. **Three fields were added to `Fingerprint v1` without being recorded.**
+   `harmonic.f0_hz`, `source.source_sample_rate` and `source.source_channels`.
+   Departure 2 above documented `am_confidence` and missed these, which is
+   exactly the drift §3.3 exists to prevent. They are kept — the two `source_*`
+   fields say what the file was before ingest resampled it, and `f0_hz` is the
+   note the harmonic features were measured on, which is what makes their
+   confidence auditable — but `from_dict` only validates section names, so
+   nothing would have caught them.
+
+6. **`compare()` gained a ninth dimension, `residual`.** §6.2 lists eight.
+   `paired-v1` claimed time-domain features "mean what they say" while carrying
+   no waveform term at all: `align.residual_db` existed and nothing consumed it,
+   so the paired profile differed from the unpaired one only in its weights. The
+   caller supplies it, like `prior_deviation` and `complexity`, because a
+   fingerprint keeps no waveform. Weighted zero under `unpaired-v1`, where
+   subtracting a master from a render measures the difference between two
+   performances, and floored at the -17 dB §11 measured between two renders of
+   identical parameters rather than at zero.
+
+7. **`predelay_ms` was in the schema and hardcoded `None`.** Now measured — and
+   finding it exposed a defect underneath it: `onsets()` reported every onset
+   about 30 ms early, because `_frames` is uncentred and a transient raises the
+   spectral flux a whole analysis window before it happens. That bias is larger
+   than the attack times measured against it. Nothing caught it because every
+   feature downstream searches *forward* from an onset and finds the note anyway.
+
+8. **The delay detector was unsafe in both directions on dense material**, which
+   mattered because M3's delay inversion consumes it directly. It missed real
+   echoes once notes overlapped (the envelope veto had nothing to veto with), and
+   reported a repeating four-note phrase as a 1000 ms delay at confidence 0.86 —
+   higher than it ever reports a correct answer. The gate that fixes both is that
+   **an echo gets quieter and a phrase does not**; where the band is combed by
+   pitch the confidence is capped below what `compare._ambience` will use, which
+   is an admission rather than a fix. Two limits are now tested as limits:
+   feedback above about 0.8, and echoes under about 150 ms beneath notes that
+   ring longer than the echo.
+
+9. **Six-channel audio crashed**, against an exit criterion of a valid
+   Fingerprint v1 for *any* input. BS.1770 defines its weights up to five
+   channels and a meter refuses more.
+
+A mutation pass over `analysis/` accompanied this: of 17 mutations, 10 were
+caught by the suite as it stood and 7 survived. Five are now caught. The two that
+remain are recorded at the code rather than papered over with a contrived test —
+half-wave rectifying the spectral flux is the right definition but not
+distinguishable from an absolute value by any signal tried, and `ENVELOPE_RATE`
+has headroom, since halving it leaves every measurement inside its tolerance.
 
 ### What M2 and M3 inherit
 

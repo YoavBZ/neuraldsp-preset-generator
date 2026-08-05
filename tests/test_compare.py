@@ -11,7 +11,7 @@ from analysis import io
 from analysis.compare import (
     DIMENSIONS, ProfileError, band_delta, compare, list_profiles, load_profile, scalar,
 )
-from analysis.fingerprint import fingerprint
+from analysis.fingerprint import Fingerprint, fingerprint
 from tests import fixtures_audio as fx
 
 SR = fx.SAMPLE_RATE
@@ -122,6 +122,67 @@ def test_paired_profile_weights_time_features_higher():
     paired = load_profile("paired-v1")["weights"]
     assert paired["dynamics"] > unpaired["dynamics"]
     assert paired["ambience"] > unpaired["ambience"]
+
+
+def _spectrum(band_db, centres=(125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0)):
+    """A fingerprint carrying nothing but a band curve, built by hand.
+
+    The sections are plain dicts by design, which makes the comparison functions
+    testable against curves whose answer is arithmetic rather than a measurement.
+    """
+    return Fingerprint(
+        source={"channels": 2, "regime": "probe", "lufs_i": -23.0},
+        spectrum={"band_centres_hz": list(centres), "band_db": list(band_db)},
+    )
+
+
+def test_a_pure_level_difference_is_not_a_timbre_difference():
+    """Every band up by 6 dB is the output gain, and `level` already has it.
+
+    Leaving the mean in makes the optimiser chase volume instead of tone: the
+    cheapest way to reduce a band-shape error becomes turning the amp down.
+    """
+    shape = [-4.0, -1.0, 0.0, 1.0, -2.0, -6.0]
+    quiet = _spectrum(shape)
+    loud = _spectrum([db + 6.0 for db in shape])
+
+    objectives = compare(quiet, loud, profile="unpaired-v1")
+    assert objectives.detail["timbre"]["band_shape"] == pytest.approx(0.0, abs=1e-9)
+
+    # And a real shape change is still counted.
+    tilted = _spectrum([db + 6.0 * i for i, db in enumerate(shape)])
+    assert compare(quiet, tilted)["timbre"] > 0.5
+
+
+def test_band_delta_removes_the_same_offset():
+    """The table a person reads agrees with the objective about what a level is."""
+    shape = [-4.0, -1.0, 0.0, 1.0, -2.0, -6.0]
+    rows = band_delta(_spectrum(shape), _spectrum([db + 6.0 for db in shape]))
+    assert all(abs(row["delta_db"]) < 1e-9 for row in rows), rows
+
+
+def test_distortion_character_is_dropped_when_neither_side_could_measure_it():
+    """HNR and odd/even measured across a chord describe the chord.
+
+    The confidence gate is what keeps a search from chasing them. Without it a
+    reference with no sustained monophonic note still produces harmonic numbers,
+    and they move the optimiser as hard as real ones.
+    """
+    def with_harmonic(hnr, confidence):
+        fp = _spectrum([0.0] * 6)
+        fp.harmonic = {"hnr_db": hnr, "odd_even_ratio": 1.0,
+                       "hf_residual_index": 0.1, "confidence": confidence}
+        return fp
+
+    unsure = compare(with_harmonic(20.0, 0.1), with_harmonic(6.0, 0.1))
+    assert unsure["harmonic"] is None, unsure.detail["harmonic"]
+
+    # One side being sure is not enough — the other still cannot support it.
+    half = compare(with_harmonic(20.0, 0.9), with_harmonic(6.0, 0.1))
+    assert half["harmonic"] is None
+
+    confident = compare(with_harmonic(20.0, 0.9), with_harmonic(6.0, 0.9))
+    assert confident["harmonic"] is not None and confident["harmonic"] > 0
 
 
 def test_only_the_paired_profile_counts_the_waveform_residual():

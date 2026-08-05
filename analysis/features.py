@@ -37,7 +37,11 @@ SPECTRUM_FFT = 8192      # 5.9 Hz bins: enough to resolve the lowest bands
 SPECTRUM_HOP = 2048
 FRAME_FFT = 2048         # 43 ms: enough time resolution for per-frame statistics
 FRAME_HOP = 512
-ENVELOPE_RATE = 1000     # Hz, for everything that works on the amplitude envelope
+# Hz, for everything that works on the amplitude envelope. 1 ms resolution is
+# more than the millisecond quantities derived from it need: halving it to 500
+# leaves every measurement inside its tested tolerance, so the value has
+# headroom rather than being load-bearing.
+ENVELOPE_RATE = 1000
 MODULATION_FLOOR = 0.03  # below this an "AM rate" is describing the noise floor
 
 # Note divisions a detected delay time is allowed to be named as. Anything not
@@ -256,6 +260,13 @@ def onsets(mono, sample_rate: int):
     Attack, decay and every reverb estimate below hang off these: an onset is
     where a note begins, and the interesting parts of an envelope are measured
     relative to one.
+
+    The flux is half-wave rectified because an onset is energy *arriving*. Note
+    that this matters less than it reads: any fast amplitude change adds sideband
+    and edge energy at new frequencies, so a sharp cut registers either way, and
+    replacing the rectification with an absolute value does not change what the
+    peak picker returns on any signal tried. The rectification is the correct
+    definition, not a load-bearing threshold.
 
     Positions are the **centre** of the analysis window, not its start. `_frames`
     is uncontented — frame *i* covers samples `[i*hop, i*hop + n_fft)` — so a
