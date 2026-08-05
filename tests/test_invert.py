@@ -132,6 +132,12 @@ def invert_nearest(centre_hz: float) -> float:
     return float(min(THIRD_OCTAVE_CENTRES, key=lambda c: abs(c - centre_hz)))
 
 
+def band_rms(one, other) -> float:
+    """How far apart two fingerprints are across the third-octave bands, in dB."""
+    rows = band_delta(one, other)
+    return float(np.sqrt(np.mean([row["delta_db"] ** 2 for row in rows])))
+
+
 def synthetic(**sections):
     """A Fingerprint assembled by hand, for the cases audio cannot produce.
 
@@ -149,60 +155,246 @@ def synthetic(**sections):
 # --- the filters ------------------------------------------------------------
 
 
-def test_the_high_pass_corner_follows_where_the_deficit_ends():
-    """It used to be a constant. The window edges were hardcoded and the code then
-    took the boundary of its own window, so a deficit reaching 100 Hz, 200 Hz or
-    500 Hz all produced exactly 100.0."""
-    from analysis.features import THIRD_OCTAVE_CENTRES
+def test_a_corner_is_recovered_from_a_real_roll_off():
+    """The end-to-end claim, on renders rather than on hand-drawn curves.
 
-    def deficit_up_to(limit):
-        return {float(f): (-6.0 if f <= limit else 0.0) for f in THIRD_OCTAVE_CENTRES}
+    Two earlier rules failed here. The corner was a constant — 100, 200 and 500 Hz
+    of deficit all gave `EQHpf = 100.0`. Then it was "where the deficit stops",
+    which is not the corner and is not near it: a corner is already down *at* itself
+    and tens of dB down an octave away, so a truth low-pass at 4 kHz came back as
+    6.3 kHz. Fitting `filter_response_db` recovers a low-pass exactly.
+    """
+    flat = measure()
 
+    for truth in (2000.0, 4000.0, 8000.0):
+        target = measure({f"{AMP}EQ/{AMP}EQLpf": truth,
+                          f"{AMP}EQ/{AMP}EQActive": True})
+        rows = band_delta(target, flat)
+        delta = {float(r["centre_hz"]): float(r["delta_db"]) for r in rows}
+        result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
+        assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(truth), truth
+        assert result.detail["filter_fit_db"]["lpf"] < invert.FILTER_MAX_FIT_DB
+
+
+def test_a_high_pass_lands_low_and_the_fit_residual_says_so():
+    """The honest half. A cab's own low-end roll-off is in the same measurement, so
+    above about 200 Hz what is measured is not the shape of a high-pass — and the
+    corner comes out low. The fit residual crosses `FILTER_MAX_FIT_DB` exactly
+    where that starts, so the caveat is driven by a number rather than by a hunch.
+    """
+    flat = measure()
+
+    costs = {}
     corners = {}
-    for limit in (100.0, 200.0, 400.0):
-        result = invert.fit_filters(deficit_up_to(limit), module=AMP, pack_id="morgan")
-        corners[limit] = result.values.get(f"{AMP}EQ/{AMP}EQHpf")
+    for truth in (100.0, 200.0, 400.0):
+        target = measure({f"{AMP}EQ/{AMP}EQHpf": truth,
+                          f"{AMP}EQ/{AMP}EQActive": True})
+        rows = band_delta(target, flat)
+        delta = {float(r["centre_hz"]): float(r["delta_db"]) for r in rows}
+        result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
+        corners[truth] = result.values[f"{AMP}EQ/{AMP}EQHpf"]
+        costs[truth] = result.detail["filter_fit_db"]["hpf"]
+        rough = any("not the shape a corner makes" in c for c in result.caveats)
+        assert rough == (costs[truth] > invert.FILTER_MAX_FIT_DB), (truth, costs)
 
-    assert corners[100.0] == pytest.approx(100.0)
-    assert corners[200.0] == pytest.approx(200.0)
-    assert corners[400.0] == pytest.approx(400.0)
-    assert len(set(corners.values())) == 3, f"the corner is not tracking the data: {corners}"
+    # Not monotonic — 200 Hz and 400 Hz both come back as 125 on this fixture, which
+    # is the point: past 200 Hz the measurement stops being a high-pass at all and
+    # the corner saturates. Asserting an ordering here would be asserting a wish.
+    assert all(corners[t] < t for t in corners), f"lands low, as documented: {corners}"
+    assert costs[100.0] < costs[200.0] < costs[400.0], (
+        f"the residual is what makes the undershoot visible: {costs}"
+    )
+    assert costs[100.0] < invert.FILTER_MAX_FIT_DB, "a real corner fits"
+    assert costs[400.0] > invert.FILTER_MAX_FIT_DB, "and this one does not"
 
 
-def test_a_dip_at_one_frequency_is_not_a_filter():
-    """A wrongly-set corner removes range no band gain can put back, so a single
-    band's worth of deficit must be left to the equaliser."""
+def test_the_bands_close_what_the_corner_left():
+    """The composition, scored through the chain that made the target.
+
+    This is the assertion the whole `fit_filters`/`fit_graphic_eq` split exists for.
+    Deleting the covered bands from the delta instead left the outer bands with
+    nothing to fit and sent one to +10.6 dB on a target 23.7 dB *down* there, for a
+    band RMS of 2.83; subtracting the modelled response gets 0.38.
+    """
+    signal = di()
+    specs = refchain.parameter_specs()
+    flat = measure(signal=signal)
+    target = measure({f"{AMP}EQ/{AMP}EQLpf": 4000.0, f"{AMP}EQ/{AMP}EQActive": True},
+                     signal=signal)
+
+    result = invert.invert(target, flat, amp=AMP)
+    before = band_rms(target, flat)
+    after = band_rms(target, measure(result.as_settings(specs), signal=signal))
+
+    assert before > 8.0, before
+    assert after < 1.0, f"the corner and the bands together: {after:.2f} dB"
+
+    # No band anywhere near a bound. A small boost above the corner is *correct* —
+    # the fitted low-pass slightly over-attenuates and the band takes it back — so
+    # the invariant is not "every top band cuts", which was the shape of the defect
+    # rather than a truth. It is that no band has been driven to the rail for want of
+    # anything to fit against, which is what sent one to +10.6 dB.
+    low, high = invert.EQ_BOUNDS_DB
+    for index in range(1, len(invert._band_centres("morgan", AMP)) + 1):
+        gain = result.values[f"{AMP}EQ/{AMP}EQBand{index}"]
+        assert low + 1.0 < gain < high - 1.0, f"band {index} is at the rail: {gain}"
+
+
+def test_the_bands_do_not_double_correct_what_a_corner_handled():
+    """Both used to run on one delta, so a flat -3.5 dB low end set the corner *and*
+    -4.6 dB on band 1 on top of it."""
     from analysis.features import THIRD_OCTAVE_CENTRES
 
-    one_band = {float(f): (-8.0 if f == 63.0 else 0.0) for f in THIRD_OCTAVE_CENTRES}
-    result = invert.fit_filters(one_band, module=AMP, pack_id="morgan")
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    delta = {f: (-6.0 if f <= 100.0 else 0.0) for f in centres}
+    band_centres = invert._band_centres("morgan", AMP)
+    response = invert.fit_filters(delta, module=AMP,
+                                 pack_id="morgan").detail["filter_response_db"]
+    assert response, "a corner has to fire for this to mean anything"
 
-    assert f"{AMP}EQ/{AMP}EQHpf" not in result.values
-    assert f"{AMP}EQ/{AMP}EQLpf" not in result.values
-    assert result.caveats, "declining has to be reported"
+    deducted = invert.fit_graphic_eq(delta, band_centres, module=AMP,
+                                     pack_id="morgan", accounted_for=response)
+    raw = invert.fit_graphic_eq(delta, band_centres, module=AMP, pack_id="morgan")
+
+    band1 = f"{AMP}EQ/{AMP}EQBand1"
+    assert raw.values[band1] < -3.0, "the un-deducted fit doubles the correction"
+    assert deducted.values[band1] > raw.values[band1] + 2.0, (
+        f"deducting the corner has to pull band 1 back: "
+        f"{raw.values[band1]} -> {deducted.values[band1]}"
+    )
+    # And the two records are kept apart: what was measured, and what is left.
+    assert deducted.detail["eq_measured_db"][25.0] == pytest.approx(-6.0)
+    assert deducted.detail["eq_requested_db"][25.0] > -6.0
 
 
-def test_the_filters_say_which_bands_they_accounted_for():
-    """So the band fit does not correct the same deficit a second time. Both used to
-    run on one delta, and a flat -3.5 dB low end set the corner *and* -4.6 dB on
-    band 1 — which through the chain's own filter is -24.6 dB applied at 25 Hz.
+def test_a_clamped_corner_is_still_the_best_the_plugin_can_do():
+    """`EQHpf` stops at 500 Hz, so a roll-off that wants more cannot be had. The
+    corner has to stay inside the declared range and the bands take the rest."""
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    spec = invert.declared("morgan", f"{AMP}EQ/{AMP}EQHpf")
+    assert (float(spec.min), float(spec.max)) == (20.0, 500.0)
+
+    steep = {f: (invert.filter_response_db([f], hpf_hz=2000.0)[0]) for f in centres}
+    steep = {f: v - sum(steep.values()) / len(steep) for f, v in steep.items()}
+    result = invert.fit_filters(steep, module=AMP, pack_id="morgan")
+
+    corner = result.values[f"{AMP}EQ/{AMP}EQHpf"]
+    assert 20.0 <= corner <= 500.0, corner
+    assert corner == pytest.approx(500.0), "the range's own limit is the best offer"
+    assert any("not the shape a corner makes" in c for c in result.caveats), (
+        result.caveats
+    )
+
+
+def test_a_deficit_everywhere_is_a_level_difference_not_two_corners():
+    """Two maximal runs inward from opposite edges can only meet if every band is
+    short, and taking a corner from each end produced an `HPF 500 / LPF 1000`
+    one-octave slot out of evidence that says only "quieter everywhere"."""
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    everywhere = {float(f): -6.0 for f in THIRD_OCTAVE_CENTRES}
+    result = invert.fit_filters(everywhere, module=AMP, pack_id="morgan")
+
+    assert result.values == {}
+    assert result.detail["filter_response_db"] == {}
+    assert any("whole spectrum" in c for c in result.caveats), result.caveats
+
+    # The three-band version the reviewer found, which came out HPF 160 / LPF 1000.
+    three = invert.fit_filters({100.0: -6.0, 125.0: -6.0, 160.0: -6.0},
+                               module=AMP, pack_id="morgan")
+    assert three.values == {}
+
+
+def test_a_short_run_at_the_very_bottom_is_not_a_filter():
+    """A wrongly-set corner removes range no band gain can put back, so a deficit
+    over fewer than `FILTER_MIN_BANDS` bands must be left to the equaliser.
+
+    The run has to start at the *lowest* centre to exercise the length gate at all.
+    An earlier version put its single-band dip at 63 Hz — the fifth third-octave
+    centre — so `short[0]` was False, the run was 0 bands long before the threshold
+    was ever consulted, and `FILTER_MIN_BANDS = 1` passed.
     """
     from analysis.features import THIRD_OCTAVE_CENTRES
 
-    delta = {float(f): (-6.0 if f <= 100.0 else 0.0) for f in THIRD_OCTAVE_CENTRES}
-    result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    assert invert.FILTER_MIN_BANDS == 3
+    for run in (1, 2):
+        edge = set(centres[:run])
+        delta = {f: (-8.0 if f in edge else 0.0) for f in centres}
+        result = invert.fit_filters(delta, module=AMP, pack_id="morgan")
+        assert f"{AMP}EQ/{AMP}EQHpf" not in result.values, run
+        assert result.detail["filter_deficit_bands"] == (run, 0)
+        assert result.detail["filter_response_db"] == {}
 
-    handled = result.detail["filtered_hz"]
-    assert handled, "a corner was set, so the bands it covers must be named"
-    assert max(handled) == pytest.approx(100.0)
-    assert 125.0 not in handled
+    # And the third band is the one that tips it over.
+    edge = set(centres[:3])
+    delta = {f: (-8.0 if f in edge else 0.0) for f in centres}
+    assert f"{AMP}EQ/{AMP}EQHpf" in invert.fit_filters(
+        delta, module=AMP, pack_id="morgan").values
 
 
-def test_an_empty_difference_still_says_the_filters_were_left_alone():
-    """It was a completely silent no-op, unlike every sibling."""
+def test_a_deficit_of_less_than_the_threshold_is_not_a_filter():
+    """`FILTER_MIN_DEFICIT_DB` is the other half of the gate, and nothing pinned it:
+    a shallow tilt is a band-gain job, and a corner would remove range the bands
+    cannot put back."""
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    assert invert.FILTER_MIN_DEFICIT_DB == 3.0
+    shallow = {f: (-2.0 if f <= 200.0 else 0.0) for f in centres}
+    assert invert.fit_filters(shallow, module=AMP, pack_id="morgan").values == {}
+
+    steep = {f: (-4.0 if f <= 200.0 else 0.0) for f in centres}
+    assert invert.fit_filters(steep, module=AMP, pack_id="morgan").values != {}
+
+
+def test_a_caller_supplied_basis_still_fits_when_a_corner_fires():
+    """`basis` is sized to the full delta, so removing the covered bands made the
+    shape check reject the measured basis M5 will supply — the only reason `basis`
+    is a parameter of `invert()` at all."""
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    delta = {f: (-8.0 if f <= 300.0 else 0.0) for f in centres}
+    band_centres = invert._band_centres("morgan", AMP)
+    basis = invert.bell_basis(band_centres, centres, q=1.4)
+    response = invert.fit_filters(delta, module=AMP,
+                                 pack_id="morgan").detail["filter_response_db"]
+    assert response, "a corner has to fire for this to mean anything"
+
+    result = invert.fit_graphic_eq(delta, band_centres, basis=basis, module=AMP,
+                                   pack_id="morgan", accounted_for=response)
+    assert result.values
+    # A supplied basis is a measurement, so the textbook-shapes caveat must not fire.
+    assert not any("textbook" in c for c in result.caveats), result.caveats
+
+
+def test_the_modelled_corner_response_is_the_order_refchain_builds():
+    """The one assumption this rests on, stated as a number. `filter_response_db` is
+    a Butterworth magnitude of `FILTER_ORDER`, and `refchain._filters` builds
+    `butter(2, ...)`, so the two agree by construction rather than by luck."""
+    assert invert.FILTER_ORDER == 2
+    # A second-order corner is 3 dB down at itself and 12 dB per octave beyond.
+    assert invert.filter_response_db([1000.0], lpf_hz=1000.0)[0] == pytest.approx(
+        -3.0103, abs=1e-3)
+    at_octave = invert.filter_response_db([2000.0], lpf_hz=1000.0)[0]
+    at_two = invert.filter_response_db([4000.0], lpf_hz=1000.0)[0]
+    assert at_two - at_octave == pytest.approx(-12.0, abs=0.3)
+    # And a high-pass is the mirror image.
+    assert invert.filter_response_db([250.0], hpf_hz=1000.0)[0] == pytest.approx(
+        invert.filter_response_db([4000.0], lpf_hz=1000.0)[0], abs=1e-6)
+
+
+def test_an_empty_difference_leaves_the_corners_alone_without_a_caveat():
+    """`invert()` says "no band difference could be measured" once, for both fits.
+    Two sentences meaning the same thing is one too many for a report someone reads,
+    and the `fit_graphic_eq` copy became *false* when both ends rolled off."""
     result = invert.fit_filters({}, module=AMP, pack_id="morgan")
     assert result.values == {}
-    assert result.caveats
+    assert result.caveats == []
+    assert result.detail["filter_response_db"] == {}
 
 
 def test_a_basis_of_the_wrong_shape_is_refused():
@@ -254,7 +446,12 @@ def test_the_delay_is_recovered_from_the_audio_alone():
 
         assert result.values["delay/delayActive"] is True
         assert result.values["delay/delayTime"] == pytest.approx(wanted, abs=20.0)
-        assert 0.0 < result.values["delay/delayFeedback"] <= 100.0
+        # A rotation is a percent, and `0 < x <= 100` accepted the unscaled fraction
+        # 0.45 just as happily — 0.45% of feedback where 45% was measured.
+        feedback = result.values["delay/delayFeedback"]
+        assert feedback == pytest.approx(45.0, abs=25.0), (
+            f"the estimate is a fraction and the control is a percent: {feedback}"
+        )
 
 
 def test_a_dry_target_switches_the_delay_off_rather_than_guessing():
@@ -401,12 +598,17 @@ def test_a_tremolo_is_only_set_when_the_modulation_is_a_clean_sine():
     strummed = measure(signal=fx.plucks(seconds=8.0, gap=0.5))
     assert invert.tremolo_settings(strummed).values["tremolo/tremoloActive"] is False
 
+    # Asserted rather than skipped. A `pytest.skip` here meant the positive half
+    # could vanish on any fixture change without anyone noticing, and the fast suite
+    # reports zero skips so nothing would have shown it.
     modulated = measure(signal=fx.tremolo(fx.noise(seconds=6.0), rate_hz=5.0, depth=0.6))
     result = invert.tremolo_settings(modulated)
-    if result.values["tremolo/tremoloActive"]:
-        assert result.values["tremolo/tremoloRate"] == pytest.approx(5.0, abs=0.5)
-    else:
-        pytest.skip("the chain's own processing lowered the modulation purity")
+    assert result.values["tremolo/tremoloActive"] is True, result.caveats
+    assert result.values["tremolo/tremoloRate"] == pytest.approx(5.0, abs=0.5)
+    # A percent, not the fraction the detector reports. 17.9% for a 0.6 modulation is
+    # the chain's own compression flattening it — the number worth pinning is the
+    # scale, because the unscaled 0.179 would be written just as silently.
+    assert result.values["tremolo/tremoloDepth"] > 5.0
 
 
 # --- M3's exit criterion ----------------------------------------------------
@@ -458,15 +660,17 @@ def test_inversion_alone_closes_an_eq_and_time_effects_gap_with_no_search():
 
     # And the aggregate is not enough on its own. A mutation run showed this test
     # passing with `invert()` doing no level match, no filter fit and no spectral
-    # fit at all: the delay settings alone move the objective from 1.15 to 0.64,
-    # already inside the 0.8 gate above. So each part has to be attributed.
+    # fit at all: the delay settings alone move the objective from 1.15 to 0.61,
+    # already inside the 0.8 gate above. So each part has to be attributed, and by
+    # more than a hair — a bare inequality passed with the whole spectral fit
+    # replaced by zeros.
     delay_only = {path: value for path, value in
                   inverted.as_settings(renderer.parameter_specs()).items()
                   if path.startswith("delay/")}
     with_delay_only = measure(delay_only, signal=probe)
     delay_only_score = scalar(compare(target, with_delay_only))
 
-    assert end < delay_only_score, (
+    assert end < delay_only_score * 0.9, (
         f"the spectral and level fits added nothing: delay alone {delay_only_score:.3f}, "
         f"everything {end:.3f}"
     )
@@ -486,8 +690,12 @@ def test_inversion_alone_closes_an_eq_and_time_effects_gap_with_no_search():
     gap_after = abs(target.source["lufs_i"] - after.source["lufs_i"])
     assert gap_after < gap_before / 2, f"{gap_before:.1f} dB -> {gap_after:.1f} dB"
     assert gap_after < 5.0, f"loudness still {gap_after:.1f} dB apart after inversion"
-    assert any("level" in caveat for caveat in inverted.caveats), (
-        "the leftover level has to be reported, not left for someone to find"
+    # Matched on the sentence, not on the word "level": the delay's own "the delay's
+    # wet level is left for the search" also contains it, so deleting this caveat
+    # entirely used to pass.
+    assert any("the output level was matched before the equaliser" in caveat
+               for caveat in inverted.caveats), (
+        f"the leftover level has to be reported: {inverted.caveats}"
     )
     gains = [value for path, value in inverted.values.items() if "EQBand" in path]
     assert gains, "no band gains were emitted at all"
@@ -625,3 +833,31 @@ def test_the_inversion_can_be_merged_into_a_search_space():
     assert any(d.path == f"{AMP}EQ/{AMP}EQBand4" for d in live), (
         "the EQ the inversion just set should be live in the space"
     )
+
+
+def test_the_fit_is_weighted_towards_the_range_a_guitar_occupies():
+    """A third-octave curve's extremes are the source's own filtering, not the amp's,
+    and letting 25 Hz pull on the fit moves 65 Hz to chase it. Replacing the weights
+    with ones changed no test, so the comment was the only thing saying this.
+    """
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    centres = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    band_centres = invert._band_centres("morgan", AMP)
+    assert centres[1] < 50.0 <= centres[3], "the split has to straddle 50 Hz"
+
+    def band1_for(selected):
+        """The lowest band's gain for a 20 dB deficit over exactly these centres."""
+        delta = {f: (-20.0 if f in selected else 0.0) for f in centres}
+        mean = sum(delta.values()) / len(delta)   # mean-free: the fit reads shape
+        delta = {f: value - mean for f, value in delta.items()}
+        return invert.fit_graphic_eq(delta, band_centres, module=AMP,
+                                     pack_id="morgan").values[f"{AMP}EQ/{AMP}EQBand1"]
+
+    below = band1_for(set(centres[:2]))       # 25 and 31.5 Hz
+    inside = band1_for(set(centres[3:6]))     # 50, 63 and 80 Hz
+
+    assert inside < -6.0, f"a deficit in the guitar's range moves the band: {inside}"
+    # A 20 dB hole at 25 Hz must not pull the 65 Hz band down at all. Unweighted the
+    # same input gives -1.09, so the sign is the discriminator, not a tolerance.
+    assert below > 0.0, f"25-31.5 Hz pulled the lowest band to {below}"

@@ -41,6 +41,11 @@ FALLBACK_Q = 1.1
 # so a fit chasing tenths is fitting noise.
 BAND_NOISE_FLOOR_DB = 0.3
 
+# How close a modulation has to be to a delay's repeat rate before the two stop
+# being distinguishable. A floor rather than a pure percentage because at 2 Hz a
+# 15% window is 0.3 Hz, which is finer than the AM detector's own resolution.
+TREMOLO_RATE_TOLERANCE_HZ = 0.4
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -140,7 +145,9 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
     M5 work (`scripts/measure_eq_basis.py` does not exist yet), which is why using
     this leaves a caveat behind.
     """
-    require_analysis()
+    from analysis import require
+
+    require("building a fallback EQ basis")
     import numpy as np
 
     centres = np.asarray(centres, dtype=np.float64)
@@ -158,7 +165,8 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
 
 def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float],
                    basis=None, bounds_db: Tuple[float, float] = EQ_BOUNDS_DB,
-                   module: str = "", pack_id: Optional[str] = None) -> Inversion:
+                   module: str = "", pack_id: Optional[str] = None,
+                   accounted_for=None) -> Inversion:
     """Solve the nine band gains that best flatten a measured band difference.
 
     `band_delta_db` is what `analysis.compare.band_delta()` produces: signed dB
@@ -167,27 +175,53 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
 
     Bounded least squares, not a search. With nine unknowns, a smooth target and a
     fixed basis there is one answer and `scipy.optimize.lsq_linear` finds it.
+
+    `accounted_for` is dB per frequency that something else in the chain is already
+    contributing — in practice `fit_filters`' `filter_response_db`, so the bands fit
+    what the corners leave rather than the same difference over again. Subtracting a
+    modelled response replaced *deleting* the covered bands, which was wrong in
+    three ways, all measured:
+
+    - **A band whose neighbourhood was deleted went to the rail.** On a target with
+      an LPF at 4 kHz — 23.7 dB short at 16 kHz — the 16 kHz band came out at
+      *+10.59 dB*, a boost, because nothing constrained it any more.
+    - **The residual described a subset.** `eq_residual_db` read 1.34 dB where the
+      emitted gains scored 9.82 against everything measured, and `eq_requested_db`
+      held 24 of 30 bands with nothing saying six were missing.
+    - **A caller's own basis stopped fitting.** `basis` is sized to the full delta,
+      so removing bands first made the shape check reject the measured basis M5 is
+      going to supply — the only reason `basis` is a parameter at all.
+
+    All three go away when every band stays in the fit and the target is the part
+    nothing else is handling. `eq_requested_db` records that remainder and
+    `eq_measured_db` the difference it came from, so a report can show both.
     """
-    require_analysis()
+    from analysis import require
+
+    require("fitting a graphic EQ")
     import numpy as np
     from scipy.optimize import lsq_linear
 
     if not band_delta_db:
-        return Inversion(caveats=["no band difference was measured, so the EQ is untouched"])
+        return Inversion(caveats=[
+            "no band difference was measured, so the equaliser is untouched"
+        ])
 
     frequencies = np.array(sorted(band_delta_db), dtype=np.float64)
-    target = np.array([band_delta_db[f] for f in frequencies], dtype=np.float64)
+    measured = np.array([band_delta_db[f] for f in frequencies], dtype=np.float64)
+    already = np.array([float((accounted_for or {}).get(float(f), 0.0))
+                        for f in frequencies], dtype=np.float64)
+    # What is left for the bands. Only the *shape* of the corner's response is
+    # deducted: it attenuates, so its mean is negative, and subtracting that mean
+    # too would ask the bands to make up a level difference `output_level` already
+    # closed. `measured` arrives mean-free by `band_delta`'s own contract, so this
+    # leaves it that way.
+    target = measured - (already - already.mean())
 
     caveats: List[str] = []
+    supplied_basis = basis is not None
     if basis is None:
         basis = bell_basis(centres, frequencies)
-        where = f"packs/{pack_id}/eq_basis.json" if pack_id else "the pack's eq_basis.json"
-        caveats.append(
-            f"nobody has measured this amp's equaliser yet ({where} does not "
-            f"exist), so the band gains were worked out from textbook filter shapes. "
-            f"The real bands overlap differently, so expect these to be a couple of "
-            f"dB out and to spill into their neighbours."
-        )
     basis = np.asarray(basis, dtype=np.float64)
     if basis.shape != (len(centres), len(frequencies)):
         raise InversionError(
@@ -209,17 +243,23 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
     # eight of nine bands were zeroed it reported 0.077 dB against an actual
     # 0.204, and in the all-zeroed case it reported 0.0 for a correction that had
     # been thrown away entirely — while the plan calls this "the number to watch".
-    emitted = np.where(np.abs(np.asarray(solved.x, dtype=np.float64))
-                       < BAND_NOISE_FLOOR_DB, 0.0,
-                       np.asarray(solved.x, dtype=np.float64))
-    emitted = np.round(emitted, 2)
+    gains = np.asarray(solved.x, dtype=np.float64)
+    emitted = np.round(np.where(np.abs(gains) < BAND_NOISE_FLOOR_DB, 0.0, gains), 2)
 
     values: Dict[str, Any] = {}
     for index, gain in enumerate(emitted, start=1):
         values[f"{module}EQ/{module}EQBand{index}"] = float(gain)
 
-    residual = float(np.sqrt(np.mean((basis.T @ emitted - target) ** 2)))
-    caveats = list(caveats)
+    residual = _rms(basis.T @ emitted - target)
+
+    if not supplied_basis and np.any(emitted):
+        where = f"packs/{pack_id}/eq_basis.json" if pack_id else "the pack's eq_basis.json"
+        caveats.append(
+            f"nobody has measured this amp's equaliser yet ({where} does not "
+            f"exist), so the band gains were worked out from textbook filter shapes. "
+            f"The real bands overlap differently, so expect these to be a couple of "
+            f"dB out and to spill into their neighbours."
+        )
     if not np.any(emitted) and np.any(np.abs(target) > BAND_NOISE_FLOOR_DB):
         caveats.append(
             f"every band solved below {BAND_NOISE_FLOOR_DB} dB, which is the "
@@ -231,88 +271,193 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
         caveats=caveats,
         detail={"eq_residual_db": round(residual, 3),
                 "eq_requested_db": {float(f): round(float(v), 2)
-                                    for f, v in zip(frequencies, target)}},
+                                    for f, v in zip(frequencies, target)},
+                "eq_measured_db": {float(f): round(float(v), 2)
+                                   for f, v in zip(frequencies, measured)}},
     )
+
+
+def _rms(array) -> float:
+    import numpy as np
+
+    return float(np.sqrt(np.mean(np.asarray(array, dtype=np.float64) ** 2)))
 
 
 FILTER_MIN_DEFICIT_DB = 3.0   # how short the target has to be to call it a filter
 FILTER_MIN_BANDS = 3          # over how many consecutive bands
 
+# Above this, the measured roll-off is not the shape a corner makes, so the corner
+# was fitted to something else. Chosen just above the worst fit that still recovers
+# a real corner exactly (1.6 dB at LPF 2 kHz); a mismatched shape scores 3.6 and up.
+FILTER_MAX_FIT_DB = 2.5
+
+# The order this assumes the plugin's corners are. `analysis/refchain.py` builds
+# second-order Butterworth sections, so the synthetic chain and this agree by
+# construction — for the plugin it is the same class of assumption `bell_basis`
+# makes about the bands, and M5's measurement replaces both.
+FILTER_ORDER = 2
+
+
+def filter_response_db(frequencies, hpf_hz: Optional[float] = None,
+                       lpf_hz: Optional[float] = None):
+    """What a corner pair does, in dB per frequency, under `FILTER_ORDER`.
+
+    A Butterworth magnitude, which is where the whole "the corner is not the
+    deficit" business is settled: a second-order high-pass at 100 Hz is 24 dB down
+    at 25 Hz, so a −3.5 dB shortfall at the bottom is *not* evidence for a corner at
+    the frequency the shortfall stops. Having the shape in closed form means the
+    corner can be fitted to it and the remainder handed to the bands, instead of
+    both of them guessing at the same difference.
+    """
+    import numpy as np
+
+    f = np.asarray(frequencies, dtype=np.float64)
+    out = np.zeros(len(f), dtype=np.float64)
+    power = 2 * FILTER_ORDER
+    if hpf_hz:
+        ratio = (f / float(hpf_hz)) ** power
+        out += 10.0 * np.log10(ratio / (1.0 + ratio))
+    if lpf_hz:
+        ratio = (f / float(lpf_hz)) ** power
+        out += 10.0 * np.log10(1.0 / (1.0 + ratio))
+    return out
+
 
 def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
                 pack_id: str = "morgan") -> Inversion:
-    """Corner frequencies for the HPF and LPF, from where the difference runs out.
+    """Corner frequencies for the HPF and LPF, fitted to the measured roll-off.
 
     Only moves a corner when the evidence is one-sided: the target being short of
     low end across the *whole* bottom is a high-pass, whereas a dip at one
     frequency is a band gain and belongs to `fit_graphic_eq`. Anything ambiguous is
     left alone, because a wrongly-set corner removes range no band gain can put
-    back.
+    back. That gate is unchanged. What the corner is *set to* has been wrong twice.
 
-    Two things this got wrong, both measured:
+    **First it was a constant.** The window edges were hardcoded at 100 Hz and
+    6.3 kHz and the code took the boundary of its own window, so a deficit reaching
+    100 Hz, 200 Hz or 500 Hz all produced exactly `EQHpf = 100.0`.
 
-    **The corners were constants.** The window edges were hardcoded at 100 Hz and
-    6.3 kHz and the code then took the boundary of its own window, so a deficit
-    reaching 100 Hz, 200 Hz or 500 Hz all produced exactly `EQHpf = 100.0`. The
-    corner is now where the deficit actually *stops* — the top of the contiguous
-    run of short bands from the bottom — which is what the docstring always claimed.
-    The `hpf_range`/`lpf_range` arguments are gone; the declared range comes from
-    the pack.
+    **Then it was where the deficit stops**, which is not the same thing as the
+    corner and is not close to it. A corner is already several dB down *at* itself
+    and tens of dB down an octave away, so the frequency where a roll-off first
+    becomes visible sits well above the corner that caused it: truth corners of
+    4 kHz and 2 kHz came back as 6.3 kHz and 4 kHz, about an octave out every time.
 
-    **It handed the same difference to the band fit.** Both ran on one delta, so a
-    flat −3.5 dB low end set `EQHpf` *and* `Band1 = −4.6 dB`. Scored through
-    `refchain`'s own filter that is −24.6 dB applied at 25 Hz for −3.5 dB requested
-    — precisely the over-correction the paragraph above warns about.
-    `Inversion.detail["filtered_hz"]` now names the bands this accounted for, and
-    `invert()` removes them from the delta before fitting bands.
+    The corner is now chosen by fitting `filter_response_db` — a Butterworth
+    magnitude — to the measured difference, weighted towards the range a guitar
+    occupies and compared mean-free, because level is `output_level`'s job. On the
+    synthetic chain that recovers a low-pass *exactly*: 2 kHz, 4 kHz and 8 kHz all
+    come back as themselves, against 4 kHz, 6.3 kHz and 12.5 kHz before.
+
+    A high-pass still lands low — 100/200/400 Hz recover as 80/100/125 — and the fit
+    residual says why rather than leaving it to be discovered: the cab's own low-end
+    roll-off is in the same measurement, so above about 200 Hz what is measured is
+    not the shape of a high-pass at all. The residual crosses
+    `FILTER_MAX_FIT_DB` exactly there (0.9 dB at 100 Hz, 2.1 at 200, 3.6 at 400) and
+    a caveat says the corner is a rough placement for the search to improve on.
+
+    Because the response is now in closed form, `invert()` subtracts it from the
+    delta and the bands fit what is left. That replaces deleting the covered bands,
+    which left the bands centred in the deleted region with nothing to fit and sent
+    one to +10.6 dB on a target that was 23.7 dB *down* there.
     """
-    require_analysis()
+    from analysis import require
+
+    require("fitting filter corners")
     import numpy as np
 
     if not band_delta_db:
-        return Inversion(caveats=[
-            "no band difference was measured, so the high-pass and low-pass were "
-            "left alone"
-        ])
+        return Inversion(detail={"filter_response_db": {}})
 
     frequencies = np.array(sorted(band_delta_db), dtype=np.float64)
     delta = np.array([band_delta_db[f] for f in frequencies], dtype=np.float64)
-
-    values: Dict[str, Any] = {}
-    caveats: List[str] = []
-    handled: List[float] = []
+    # The same weighting `fit_graphic_eq` uses, for the same reason: a third-octave
+    # curve's extremes are the source's own filtering, not the amp's.
+    weights = np.where((frequencies >= 50.0) & (frequencies <= 16000.0), 1.0, 0.15)
 
     short = delta < -FILTER_MIN_DEFICIT_DB
 
-    # High pass: the run of short bands starting at the very bottom.
-    run = 0
-    while run < len(short) and short[run]:
-        run += 1
-    if run >= FILTER_MIN_BANDS:
-        spec = declared(pack_id, f"{module}EQ/{module}EQHpf")
-        corner = float(np.clip(frequencies[run - 1], float(spec.min), float(spec.max)))
-        values[f"{module}EQ/{module}EQHpf"] = round(corner, 1)
-        handled.extend(float(f) for f in frequencies[:run])
+    # Both ends of the passband, as counts of short bands inward from each edge.
+    low_run = 0
+    while low_run < len(short) and short[low_run]:
+        low_run += 1
+    high_run = 0
+    while high_run < len(short) and short[len(short) - 1 - high_run]:
+        high_run += 1
 
-    # Low pass: the run of short bands ending at the very top.
-    run = 0
-    while run < len(short) and short[len(short) - 1 - run]:
-        run += 1
-    if run >= FILTER_MIN_BANDS:
-        spec = declared(pack_id, f"{module}EQ/{module}EQLpf")
-        corner = float(np.clip(frequencies[len(short) - run], float(spec.min), float(spec.max)))
-        values[f"{module}EQ/{module}EQLpf"] = round(corner, 1)
-        handled.extend(float(f) for f in frequencies[len(short) - run:])
+    if low_run + high_run >= len(short):
+        # Two maximal runs inward from opposite edges can only meet if every band is
+        # short, so there is no passband to describe. Taking a corner from each end
+        # anyway produced an `HPF 500 / LPF 1000` one-octave slot out of evidence
+        # that says only "quieter everywhere" — a level difference, not a filter.
+        return Inversion(caveats=[
+            f"the target is more than {FILTER_MIN_DEFICIT_DB:.0f} dB short across "
+            f"the whole spectrum, which is a level difference rather than a "
+            f"roll-off, so the high-pass and low-pass were left alone"
+        ], detail={"filter_response_db": {}})
 
-    if not values:
+    def best_corner(path: str, side: str) -> Tuple[Optional[float], float]:
+        """The declared corner whose response best matches what was measured."""
+        spec = declared(pack_id, path)
+        low, high = float(spec.min), float(spec.max)
+        candidates = [float(f) for f in frequencies if low <= f <= high]
+        if not candidates:
+            # The analysis grid has no centre inside the declared range, so there is
+            # nothing to choose between; the ends of the range are the only offer.
+            candidates = [low, high]
+        best, best_cost = None, float("inf")
+        for corner in candidates:
+            modelled = filter_response_db(
+                frequencies, **{f"{side}_hz": corner})
+            error = modelled - delta
+            error = error - np.average(error, weights=weights)
+            cost = float(np.sqrt(np.average(error ** 2, weights=weights)))
+            if cost < best_cost:
+                best, best_cost = corner, cost
+        return best, best_cost
+
+    values: Dict[str, Any] = {}
+    fits: Dict[str, float] = {}
+    hpf = lpf = None
+
+    if low_run >= FILTER_MIN_BANDS:
+        path = f"{module}EQ/{module}EQHpf"
+        hpf, cost = best_corner(path, "hpf")
+        values[path] = round(float(hpf), 1)
+        fits["hpf"] = round(cost, 2)
+
+    if high_run >= FILTER_MIN_BANDS:
+        path = f"{module}EQ/{module}EQLpf"
+        lpf, cost = best_corner(path, "lpf")
+        values[path] = round(float(lpf), 1)
+        fits["lpf"] = round(cost, 2)
+
+    caveats: List[str] = []
+    rough = sorted(name for name, cost in fits.items() if cost > FILTER_MAX_FIT_DB)
+    if rough:
+        spelled = " and ".join("high-pass" if n == "hpf" else "low-pass" for n in rough)
         caveats.append(
-            f"the difference is not a roll-off at either end — no run of "
-            f"{FILTER_MIN_BANDS} bands is more than {FILTER_MIN_DEFICIT_DB:.0f} dB "
-            f"short — so the high-pass and low-pass were left alone and the bands "
-            f"carry the whole correction"
+            f"the measured roll-off is not the shape a corner makes — the best "
+            f"{spelled} fit is still "
+            f"{max(fits[n] for n in rough):.1f} dB out — so the amp's own voicing or "
+            f"the cabinet is part of what was measured. The corner is a rough "
+            f"placement for the search to improve on, not a reading."
         )
-    return Inversion(values=values, caveats=caveats,
-                     detail={"filtered_hz": sorted(set(handled))})
+
+    response = filter_response_db(frequencies, hpf_hz=hpf, lpf_hz=lpf)
+    # Nothing is said when no corner moves. A caveat is for distrusting something
+    # that was written, and "the difference is not a roll-off at either end" is the
+    # ordinary case — it fired on nearly every target, which is how a list of
+    # caveats stops being read. `detail` records it instead.
+    return Inversion(
+        values=values,
+        caveats=caveats,
+        detail={"filter_response_db": {float(f): round(float(r), 2)
+                                       for f, r in zip(frequencies, response)
+                                       if abs(r) >= 0.05},
+                "filter_fit_db": fits,
+                "filter_deficit_bands": (int(low_run), int(high_run))},
+    )
 
 
 # --- time effects -----------------------------------------------------------
@@ -397,7 +542,16 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
     rt60 = time_fx.get("rt60_s")
     confidence = float(time_fx.get("rt60_confidence") or 0.0)
 
-    if rt60 is None or confidence < min_confidence:
+    if rt60 is None:
+        # Not the same thing as an unconfident reading, and it used to get the same
+        # sentence — "the notes decay at different rates" is a finding, and nothing
+        # was found. The module header is explicit that an absent key means the
+        # measurement was not supported, not that it came back zero.
+        return Inversion(
+            values={"reverb/reverbActive": False},
+            caveats=["no decay tail was measured at all, so the reverb is left off"],
+        )
+    if confidence < min_confidence:
         return Inversion(
             values={"reverb/reverbActive": False},
             caveats=[
@@ -460,8 +614,7 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
 
 
 def tremolo_settings(fingerprint, pack_id: str = "morgan",
-                     min_confidence: float = 0.75,
-                     allow_with_delay: bool = False) -> Inversion:
+                     min_confidence: float = 0.75) -> Inversion:
     """Rate and depth from the amplitude-modulation spectrum.
 
     The confidence floor is high on purpose. A part strummed twice a second
@@ -469,38 +622,25 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     from a 2 Hz tremolo — only the *purity* of the modulation does, which is what
     `am_confidence` measures. Switching a tremolo on because someone played in
     time would be an obvious, audible mistake.
+
+    A modulation at a detected delay's own repeat rate is left to the echo, and
+    that decision is deliberately conservative: a real 3 Hz tremolo over a 333 ms
+    echo is indistinguishable by rate alone, and this declines on it. The cost of
+    declining is a tremolo the search has to find; the cost of not declining was a
+    full-depth tremolo written into a target that had none.
     """
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rate = modulation.get("am_rate_hz")
     confidence = float(modulation.get("am_confidence") or 0.0)
 
-    # An echo modulates the envelope at its own repeat rate, and purely enough to
-    # pass the confidence gate. Measured: a 420 ms delay produced a 2.1 Hz
-    # modulation at confidence 0.81 against a 0.75 floor, so `invert()` wrote a
-    # full-depth tremolo into a target that had none — and this was the one
-    # inversion that emitted no caveat when it acted, so nothing said why.
-    #
-    # 1/T of a detected delay is exactly where those repeats land, so a modulation
-    # that coincides with it is attributed to the echo rather than to a tremolo.
-    delay_ms = time_fx.get("delay_ms")
-    delay_confident = float(time_fx.get("delay_confidence") or 0.0) >= 0.15
-    if (rate is not None and delay_ms and delay_confident and not allow_with_delay):
-        repeat_hz = 1000.0 / float(delay_ms)
-        if abs(float(rate) - repeat_hz) <= max(0.4, 0.15 * repeat_hz):
-            return Inversion(
-                values={"tremolo/tremoloActive": False},
-                caveats=[
-                    f"the {float(rate):.1f} Hz amplitude modulation matches the "
-                    f"{float(delay_ms):.0f} ms delay's own repeat rate "
-                    f"({repeat_hz:.1f} Hz), so it is the echo rather than a tremolo; "
-                    f"the tremolo is left off"
-                ],
-                detail={"am_confidence": round(confidence, 3),
-                        "am_attributed_to": "delay repeats"},
-            )
-
-    if rate is None or confidence < min_confidence:
+    if rate is None:
+        return Inversion(
+            values={"tremolo/tremoloActive": False},
+            caveats=["no amplitude modulation was measured at all, so the tremolo "
+                     "is left off"],
+        )
+    if confidence < min_confidence:
         return Inversion(
             values={"tremolo/tremoloActive": False},
             caveats=[
@@ -509,6 +649,36 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
                 f"more likely the rate the notes were played at"
             ],
         )
+
+    # An echo modulates the envelope at its own repeat rate, and purely enough to
+    # pass the confidence gate. Measured: a 420 ms delay produced a 2.1 Hz
+    # modulation at confidence 0.81 against a 0.75 floor, so `invert()` wrote a
+    # full-depth tremolo into a target that had none — and this was the one
+    # inversion that emitted no caveat when it acted, so nothing said why.
+    #
+    # 1/T of a detected delay is exactly where those repeats land. The two cannot be
+    # told apart from the rate, so this says that rather than claiming to know which
+    # one it is; the check runs after the confidence gate so that a modulation which
+    # was never tremolo-like is not attributed to an echo it has nothing to do with.
+    delay_ms = time_fx.get("delay_ms")
+    delay_confident = float(time_fx.get("delay_confidence") or 0.0) >= 0.15
+    if delay_ms and delay_confident:
+        repeat_hz = 1000.0 / float(delay_ms)
+        tolerance = max(TREMOLO_RATE_TOLERANCE_HZ, 0.15 * repeat_hz)
+        if abs(float(rate) - repeat_hz) <= tolerance:
+            return Inversion(
+                values={"tremolo/tremoloActive": False},
+                caveats=[
+                    f"the {float(rate):.1f} Hz amplitude modulation is within "
+                    f"{tolerance:.1f} Hz of the {float(delay_ms):.0f} ms delay's own "
+                    f"repeat rate ({repeat_hz:.1f} Hz). Nothing in the measurement "
+                    f"separates the two, so the tremolo is left off and the echo is "
+                    f"credited with it — if the reference really does have a tremolo "
+                    f"at this rate, the search will have to find it."
+                ],
+                detail={"am_confidence": round(confidence, 3),
+                        "am_indistinguishable_from": "delay repeats"},
+            )
 
     spec = declared(pack_id, "tremolo/tremoloRate")
     low, high = float(spec.min), float(spec.max)
@@ -588,7 +758,9 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     the filters, which decide how much range there is to shape. Then the bands.
     Then the time effects, which are independent of all of it.
     """
-    require_analysis()
+    from analysis import require
+
+    require("inverting a fingerprint")
     from analysis.compare import band_delta
 
     amp = _validated_amp(pack_id, amp)
@@ -604,17 +776,32 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     rows = band_delta(target, candidate)
     delta = {float(row["centre_hz"]): float(row["delta_db"]) for row in rows}
 
-    filters = fit_filters(delta, module=amp, pack_id=pack_id)
-    result.merge(filters)
-
-    # The bands must not re-correct what a filter corner just handled.
-    for centre in filters.detail.get("filtered_hz", []):
-        delta.pop(float(centre), None)
-
     centres = _band_centres(pack_id, amp)
-    if centres:
-        spectral = fit_graphic_eq(delta, centres, basis=basis, module=amp,
-                                  pack_id=pack_id)
+    if not delta:
+        # Said once here rather than twice below. Both `fit_filters` and
+        # `fit_graphic_eq` decline on an empty delta and their two sentences meant
+        # the same thing, which is one sentence too many for a report someone reads.
+        result.caveats.append(
+            "no band difference could be measured between the two fingerprints, so "
+            "the equaliser was left exactly as the template had it"
+        )
+    elif not centres:
+        result.caveats.append(
+            f"{pack_id} declares no graphic-EQ centres for {amp}, so no spectral "
+            f"fit was attempted"
+        )
+    else:
+        filters = fit_filters(delta, module=amp, pack_id=pack_id)
+        result.merge(filters)
+
+        # The bands must not re-correct what a filter corner just handled, so they
+        # fit the difference minus the corners' modelled response. Subtracted rather
+        # than deleted: removing the covered bands from the delta left the bands
+        # centred in the removed region with nothing to fit against, and one came out
+        # at +10.6 dB on a target that was 23.7 dB *down* there.
+        spectral = fit_graphic_eq(
+            delta, centres, basis=basis, module=amp, pack_id=pack_id,
+            accounted_for=filters.detail.get("filter_response_db"))
         result.merge(spectral)
         moved = any(value for value in spectral.values.values())
         if moved or filters.values:
@@ -622,11 +809,6 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
         else:
             # Switching the equaliser on to do nothing is a change with no reason.
             result.values[f"{amp}EQ/{amp}EQActive"] = False
-    else:
-        result.caveats.append(
-            f"{pack_id} declares no graphic-EQ centres for {amp}, so no spectral "
-            f"fit was attempted"
-        )
 
     if any("EQBand" in path and value for path, value in result.values.items()):
         # Level was computed against the candidate as it was, and the band gains
@@ -653,6 +835,11 @@ def _validated_amp(pack_id: str, amp: str) -> str:
     "morgan declares no graphic-EQ centres for SW50R" — for a pack that declares
     them perfectly well. `SW50R` is not a hypothetical typo either: it is the exact
     spelling `amp_modules` is keyed by and that `Space.amp_prefix` accepts.
+
+    A pack with no amps at all gets its own message. Tone King declares none, so
+    the "Accepted:" line came out as "` (or )`" — the first thing anyone trying
+    `invert(pack_id="toneking")` sees, and it named neither the problem nor a
+    next step.
     """
     from packs.loader import load_pack
 
@@ -662,6 +849,13 @@ def _validated_amp(pack_id: str, amp: str) -> str:
         return amp
     if amp in pack.amp_modules:                      # a display name
         return pack.amp_modules[amp]
+    if not prefixes:
+        raise InversionError(
+            f"pack {pack_id!r} declares no amp modules, so there is no amp for "
+            f"{amp!r} to be.\n"
+            f"  These inversions are written against Morgan's parameter names; "
+            f"another pack needs its own mapping, which no manifest field states."
+        )
     raise InversionError(
         f"{amp!r} is not an amp in pack {pack_id!r}.\n"
         f"  Accepted: {', '.join(sorted(prefixes))} "
@@ -691,9 +885,3 @@ def _band_centres(pack_id: str, amp: str) -> List[float]:
             return []
         centres.append(float(spec.centre_hz))
     return centres
-
-
-def require_analysis() -> None:
-    from analysis import require
-
-    require("parameter inversion")

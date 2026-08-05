@@ -1021,10 +1021,11 @@ That claim was worth less than it looked when it was first written, and the
 correction is the more useful thing to record. A mutation pass showed the
 exit-criterion *test* passing with `invert()` performing no level match, no filter
 fit and no spectral fit at all: the delay settings alone move the objective to
-0.635, already inside the "better than 0.8×" gate the test used. An aggregate is
+0.611, already inside the "better than 0.8×" gate the test used. An aggregate is
 not evidence about its parts. The test now attributes the improvement — the
-spectral and level fits have to beat delay-alone, the band gains have to be
-non-trivial, and the loudness gap has to close.
+spectral and level fits have to beat delay-alone by a tenth rather than by any
+margin at all, the band gains have to be non-trivial, and the loudness gap has to
+close.
 
 The space is 126 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
 being its 100 writable ones less its paths and strings, which is the manifest's own
@@ -1053,6 +1054,13 @@ the wrong place.
 winning, with `sectionActive` as the deliberate exception that covers its whole
 module. `gate_map()` derives it, and a test pins the four cases that matter rather
 than the derivation.
+
+Gates also **compose**, which the first version missed: `cabParameters/sectionActive`
+gates `leftCabActive`, which gates `leftCabPan`, and checking only the immediate gate
+reported 15 of Morgan's 21 cab dimensions live behind a switch that silences all 21.
+`Space.active()` walks the chain, and `Space.gate_parents` carries it — kept
+separately from `dimensions` because a gate may be a parameter the space excludes
+(Tone King's page bypasses are `internal`) and it still gates.
 
 **Clamping into range is how "no effect" becomes "minimum effect".** Dry plucks
 measure a *confident* 0.41 s decay — the notes ending, not a room — and the first
@@ -1095,11 +1103,11 @@ Four defects mattered:
    was the one inversion that emitted no caveat when it acted, so nothing said why.
    It now attributes a modulation matching 1/T of a detected delay to the echo.
 3. **`fit_filters` and `fit_graphic_eq` corrected the low end twice.** Both ran on
-   one delta, so a flat −3.5 dB deficit set a corner *and* −4.6 dB on band 1 —
-   −24.6 dB applied at 25 Hz, which is precisely the over-correction that
-   function's own docstring warns about. The corners were also constants: the
-   window edges were hardcoded and the code took the boundary of its own window, so
-   a deficit reaching 100, 200 or 500 Hz all produced 100.0.
+   one delta, so a flat −3.5 dB deficit set a corner *and* −4.6 dB on band 1 on top
+   of it. The corners were also constants: the window edges were hardcoded and the
+   code took the boundary of its own window, so a deficit reaching 100, 200 or
+   500 Hz all produced 100.0. Both halves of this took two more attempts to get
+   right — see the next section.
 4. **`pack_id` was inert.** Called with `toneking`, the inversions wrote Morgan's
    parameter paths clamped to Morgan's ranges — `reverb/reverbDecay` at 30 s against
    Tone King's declared 0.5–8, for a parameter it does not have. Silently. One
@@ -1115,8 +1123,13 @@ Two structural mistakes in the conditioning, both found by checking the second p
   `unmodelled_sections()` and tested rather than hidden.
 - **Tone King's flat namespace inverted the nesting.** Every parameter sits in one
   module, so `/eqActive` matched `/eqSectionActive` as a child — reporting the page
-  bypass dormant and `eqBand1` *active* while the page was bypassed. A switch is now
-  never gated by another switch.
+  bypass dormant and `eqBand1` *active* while the page was bypassed. The first fix
+  ruled out every switch-on-switch gate, which overshot: a `sectionActive` gate is a
+  genuine parent, and the blanket rule cost four correct gates on Morgan
+  (`leftCabActive`, `rightCabActive`, `leftRoomActive`, `rightRoomActive`) while
+  changing nothing on Tone King, whose defect was the prefix match alone. The rule is
+  now the narrow one: no switch is gated by a switch whose stem is a *prefix* of its
+  own name.
 
 And a set of quieter dishonesty: `eq_residual_db` described the pre-floor solution
 rather than the one written; `delayMix` was the detector's correlation height times
@@ -1133,6 +1146,103 @@ as literal `(0.0, 100.0)`, because every expectation used to come from the funct
 under test and changing the range to `0..1` left every knob searching 1% of its
 travel; and switches are turned on *through the vector*, which no test could do
 before, since the fixture set them all `False`.
+
+### What a third review found, mostly in the second round's fixes
+
+Three more reviews on the fixes above. **13 of 56 mutations survived** — up from a
+44% kill rate to 77% — and every one of the four defects that mattered now has a
+test that kills it. But five of the fixes were themselves wrong, and the worst was
+introduced *by* the fix. The pattern to remember is narrower than "code is wrong
+where nothing exercises it": it is that a fix aimed at a named symptom tends to
+close that branch and leave its twin open.
+
+**The corner is not where the deficit stops, and the bands must not be deleted.**
+Both halves of finding 3 above were fixed wrongly.
+
+Deleting the covered bands from the delta left the bands *centred in the deleted
+region* with nothing to fit against, and bounded least squares sent one to the rail:
+on a target with a 4 kHz low-pass — 23.7 dB short at 16 kHz — the 16 kHz band came
+out at **+10.59 dB, a boost**. It also made `eq_residual_db` describe a subset (1.34
+reported against 9.82 actual) and broke `basis=`, which is sized to the full delta
+and is the only reason that parameter exists. All three go away when nothing is
+deleted: `fit_filters` returns the corners' modelled response and `fit_graphic_eq`
+subtracts it, so every band stays constrained and fits what the corners leave.
+
+Having the response in closed form fixed the corner too. "Where the deficit stops"
+is not the corner and is not near it — a corner is 3 dB down *at* itself and 12 dB
+per octave beyond, so the frequency where a roll-off becomes visible sits well above
+what caused it: truth corners of 2 kHz and 4 kHz came back as 4 kHz and 6.3 kHz.
+Fitting a Butterworth magnitude of `FILTER_ORDER` recovers a low-pass **exactly** —
+2 k, 4 k and 8 k all come back as themselves — and end to end on the 4 kHz target the
+band RMS against the reference goes from 8.99 dB to **0.38**, against 2.83 for the
+rail version and 2.35 for a version that pinned the unconstrained bands instead.
+
+A high-pass still lands low (100/200/400 Hz recover as 80/125/125) and the fit
+residual is what makes that visible rather than something to be discovered later: the
+cab's own low-end roll-off is in the same measurement, so past about 200 Hz what is
+measured is not the shape of a high-pass at all. The residual crosses
+`FILTER_MAX_FIT_DB` exactly there — 0.84, 2.43, 3.97 dB — and the caveat is driven by
+that number.
+
+Second, the same "closed the named branch, left the twin" shape, three times over:
+
+- **The silent drop moved one line down.** `to_spec` was made to refuse a missing
+  `selectedAmp`, but `_truthy(None)` is `False`, so an absent `*Active` switch still
+  marked its subtree dormant: `to_spec({"selectedAmp": 2, "sw50rEQ/sw50rEQBand1":
+  6.0})` emitted only `selectedAmp`. Absence is not a measurement of off; the
+  template's own switch decides.
+- **`_truthy` was made to share `format.translate`'s vocabulary**, which fixed the
+  string half and broke the numeric one. `from_binary("switch", x)` matches the
+  literal `"true"` and `"1"` — the two spellings a preset *file* uses — so
+  `_truthy(1.0)` came back False while `to_binary("switch", 1.0)` writes `"true"`:
+  the gate marked a delay's time and mix dormant while the writer turned the delay
+  on, and the preset came out with the template's settings. The recorded rationale
+  was also wrong in both halves — `format.translate` does not accept `on`/`yes` and
+  does not raise.
+- **`_member_index` was made to refuse an unrecognised value** and still truncated a
+  non-integral one, the opposite way from the writer: `1.7` resolved to PR12 here and
+  `"2"` (SW50R) through `pack.to_stored`.
+
+Third, a set of claims made without measurement. The tremolo decline said the
+modulation "is the echo rather than a tremolo" when coincidence is not evidence — a
+real 3 Hz tremolo over a 333 ms echo is genuinely indistinguishable by rate, and the
+check declines on it; it now says so, and runs *after* the confidence gate so a
+modulation that was never tremolo-like is not blamed on an echo. `reverb_settings`
+gave an absent measurement the same sentence as an unconfident one ("the notes decay
+at different rates" — about a recording nothing was measured from), contradicting the
+module's own header. And `−24.6 dB applied at 25 Hz` was attributed to the doubled
+band gain when 24.1 dB of it is the corner's own roll-off, which the fix did not
+touch.
+
+Caveat volume was the other real finding: six per inversion, in a flat list with no
+ranking, five of them still firing on a *perfect* match. Two said the same thing
+whenever the delta was empty, and one of the two became false when both ends rolled
+off. Now: five on the exit-criterion target, three on a perfect match. Two rules came
+out of it — a caveat is for distrusting something that *was written*, so
+`fit_filters` no longer reports the ordinary case of declining, and `invert()` says
+"no band difference could be measured" once for both fits rather than letting each
+say it.
+
+Smaller, all measured: `PackError` was the one error in the repository that is not a
+`ValueError`, so `except ValueError` around an inversion caught four of five types and
+missed the one the loader raises — `scripts/_cli.py` now catches `ValueError` and
+`AnalysisUnavailable` rather than enumerating names that will go stale.
+`_validated_amp`'s "Accepted:" list was empty for Tone King, which declares no amps.
+`to_spec`'s refusal never named the offending value, so an unrecognised amp was
+reported as an absent one. `match/` had invented a module-level `require_analysis`
+wrapper twice with different feature strings, against the house style of a
+per-function `analysis.require()` — and one of them called `import numpy` *before*
+`require`, so the install hint never fired.
+
+Six test weaknesses closed, each a case where the assertion passed through a
+different branch than the docstring claimed: the single-band dip that proved
+`FILTER_MIN_BANDS` was at 63 Hz, the *fifth* third-octave centre, so the run was zero
+bands long before the threshold was consulted; no test asserted a low-pass corner's
+value at all, so hardcoding it survived; `0 < feedback <= 100` accepted the unscaled
+fraction `0.45`; the leftover-level caveat was matched on the word "level", which the
+delay's own caveat also contains; the fit weighting was unasserted; and a
+`pytest.skip` stood in for the tremolo rate assertion, which meant the positive half
+could vanish silently.
 
 ### What M3 deliberately leaves to later milestones
 

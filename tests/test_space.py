@@ -196,7 +196,7 @@ def test_the_gate_of_each_parameter_is_the_most_specific_switch_that_covers_it(s
     assert gates["parameters/inputGain"] is None
 
 
-def test_a_switch_is_never_gated_by_another_switch(space):
+def test_a_switch_is_never_gated_by_a_prefix_sibling(space):
     """Tone King keeps every parameter in one flat module, where `/eqActive` (stem
     `eq`) matches `/eqSectionActive` as though the page bypass were a child of the
     band bypass. That inverted the nesting exactly backwards: it reported the
@@ -205,15 +205,67 @@ def test_a_switch_is_never_gated_by_another_switch(space):
     """
     for pack_id in ("morgan", "toneking"):
         built = S.build(pack_id)
+        stems = {(d.module, d.key[: -len("Active")])
+                 for d in built.dimensions
+                 if d.switch and d.key.endswith("Active")}
         for dimension in built.dimensions:
-            if dimension.switch and dimension.key.endswith("Active"):
-                assert dimension.gate is None, f"{pack_id}: {dimension.path}"
+            if not (dimension.switch and dimension.key.endswith("Active")):
+                continue
+            if dimension.gate is None:
+                continue
+            gate_module, gate_key = dimension.gate
+            stem = gate_key[: -len("Active")]
+            assert stem == "section", (
+                f"{pack_id}: {dimension.path} is gated by {gate_key}, which is a "
+                f"prefix sibling rather than a parent"
+            )
+            assert (gate_module, stem) in stems or stem == "section"
 
     toneking = S.build("toneking")
-    section = toneking.by_gate("", "eqSectionActive")
-    band_bypass = toneking.by_gate("", "eqActive")
+    section = toneking.by_path("", "eqSectionActive")
+    band_bypass = toneking.by_path("", "eqActive")
     assert section.gate is None and band_bypass.gate is None
-    assert toneking.by_gate("", "eqBand1").gate == ("", "eqActive")
+    assert toneking.by_path("", "eqBand1").gate == ("", "eqActive")
+
+
+def test_a_section_switch_does_gate_the_switches_under_it(space):
+    """The narrower rule, which the first fix overshot.
+
+    Ruling out every switch-on-switch gate cost four correct gates on Morgan — the
+    cab section really does bypass `leftCabActive` — for nothing on Tone King, whose
+    defect was the prefix match alone. Asserted by name so widening the rule back
+    out fails here.
+    """
+    morgan = S.build("morgan")
+    for key in ("leftCabActive", "rightCabActive", "leftRoomActive", "rightRoomActive"):
+        assert morgan.by_path("cabParameters", key).gate == (
+            "cabParameters", "sectionActive"), key
+    assert morgan.by_path("cabParameters", "sectionActive").gate is None
+
+
+def test_bypassing_a_section_silences_everything_under_it(space):
+    """Gates compose, and checking only the immediate gate did not.
+
+    `cabParameters/sectionActive` gates `leftCabActive`, which gates `leftCabPan`.
+    With only the immediate gate checked, 15 of Morgan's 21 cab dimensions were
+    reported live behind a switch that silences all 21.
+    """
+    morgan = S.build("morgan")
+    values = {"selectedAmp": 2}
+    for dimension in morgan.dimensions:
+        if dimension.switch:
+            values[(dimension.module, dimension.key)] = True
+
+    cab = [d for d in morgan.dimensions if d.module == "cabParameters"]
+    assert len(cab) == 21
+    live = [d for d in morgan.active(values) if d.module == "cabParameters"]
+    assert len(live) == 21, "with everything on, every cab control is live"
+
+    values[("cabParameters", "sectionActive")] = False
+    live = [d for d in morgan.active(values) if d.module == "cabParameters"]
+    # Only the section switch itself, which has to stay reachable to be turned back
+    # on. Every one of the other 20 is behind it, directly or one level down.
+    assert [d.key for d in live] == ["sectionActive"]
 
 
 def test_the_section_switches_that_gate_nothing_are_named(space):
@@ -462,7 +514,7 @@ def test_the_switches_are_always_written_so_what_is_off_is_explicit(space):
     # is off here. It is dormant, and must still be written, or a reader could not
     # tell ping-pong is off. (Switches named `*Active` are never gated, so they
     # could not exercise this clause; one that is not is needed.)
-    ping_pong = space.by_gate("delay", "delayPingPong")
+    ping_pong = space.by_path("delay", "delayPingPong")
     assert ping_pong.gate == ("delay", "delayActive")
     assert ping_pong.path in {d.path for d in space.dormant(values)}
     assert ping_pong.path in written
@@ -488,3 +540,115 @@ def test_the_dormant_dimensions_can_be_included_when_asked(space):
     lean = space.to_spec(values)
     everything = space.to_spec(values, include_dormant=True)
     assert len(everything["parameters"]) > len(lean["parameters"])
+
+
+# --- value helpers ----------------------------------------------------------
+
+
+def test_a_gate_nobody_mentioned_does_not_drop_what_is_behind_it():
+    """`_truthy(None)` is False, so an absent `*Active` switch marked its whole
+    subtree dormant and `to_spec` silently dropped it — the same class of silent
+    drop the missing-`selectedAmp` refusal exists to prevent, one line lower:
+
+        to_spec({"selectedAmp": 2, "sw50rEQ/sw50rEQBand1": 6.0})
+          -> [{"module": "", "key": "selectedAmp", "value": 2}]
+
+    Absence is not a measurement of off. The template's own switch decides.
+    """
+    built = S.build("morgan")
+    for supplied in ({("sw50rEQ", "sw50rEQBand1"): 6.0},
+                     {("delay", "delayTime"): 400.0},
+                     {("cabParameters", "leftCabPan"): 30.0}):
+        values = {("", "selectedAmp"): 2, **supplied}
+        written = {(p["module"], p["key"]): p["value"]
+                   for p in built.to_spec(values)["parameters"]}
+        (key, value), = supplied.items()
+        assert written.get(key) == value, f"{key} was dropped: {sorted(written)}"
+
+    # And a gate the caller *did* turn off still drops its subtree, so this is not
+    # "gates no longer work".
+    off = {("", "selectedAmp"): 2, ("delay", "delayActive"): False,
+           ("delay", "delayTime"): 400.0}
+    written = {(p["module"], p["key"]) for p in built.to_spec(off)["parameters"]}
+    assert ("delay", "delayActive") in written, "the switch is always written"
+    assert ("delay", "delayTime") not in written, "and what it gates is not"
+
+
+def test_a_switch_reads_a_number_as_a_number():
+    """`from_binary("switch", x)` matches the literal `"true"` and `"1"` — the two
+    spellings a preset file uses — so delegating the numeric test to it read every
+    other number as *off*. `_truthy(1.0)` was False while
+    `to_binary("switch", 1.0)` writes `"true"`: `active()` reported a delay's time
+    and mix dormant, `to_spec` dropped both, and the preset came out with the delay
+    switched on and the template's own settings.
+    """
+    from format.translate import to_binary
+
+    for value in (1, 1.0, 2, 2.0, -1, np.float64(1.0), True, "1", "true", "on",
+                  "yes", "Active", "  ENABLED  "):
+        assert S._truthy(value) is True, repr(value)
+    for value in (0, 0.0, False, None, "0", "false", "off", "Inactive", "",
+                  "maybe", "Bypassed", np.float64(0.0)):
+        assert S._truthy(value) is False, repr(value)
+
+    # And the two ends of the round trip agree about every numeric spelling, which
+    # is the property that was broken.
+    for value in (0, 1, 1.0, 0.0, np.float64(1.0)):
+        written = to_binary("switch", value)
+        assert (written == "true") is S._truthy(value), (value, written)
+
+
+def test_a_selector_refuses_a_value_between_two_members(space):
+    """`_member_index` floored a non-integral value and `pack.to_stored` rounds it,
+    so `1.7` resolved to PR12 at one end of the round trip and SW50R at the other.
+    The docstring says it refuses anything that is not a member."""
+    from packs.loader import load_pack
+
+    selector = space.by_path("", "selectedAmp")
+    members = sorted(selector.members, key=int)
+
+    # Every spelling that does name a member.
+    for value in (2, "2", 2.0, "2.0", "SW50R", "sw50r", "  SW50R  "):
+        assert S._member_index(selector, members, value) == members.index("2"), value
+
+    # And the ones that do not, including the between-two-members case and the
+    # overflow `int(float("inf"))` raises, which `except (ValueError, TypeError)`
+    # did not catch.
+    for value in (1.7, 0.5, 99, "99", -1, "", "Marshall", float("inf"), float("nan")):
+        with pytest.raises(S.SpaceError):
+            S._member_index(selector, members, value)
+
+    # The writer's own opinion of 1.7, which is where the disagreement showed.
+    pack = load_pack("morgan")
+    assert pack.to_stored(pack.parameters["/selectedAmp"], 1.7) == "2"
+
+
+def test_encode_and_decode_ask_for_the_extra_before_using_it():
+    """A bare clone gets one actionable line, not an ImportError from six frames
+    down. Pinned by *call*, not by import: `match.space` imports fine without numpy,
+    so the existing import test could not see these three."""
+    from tests.test_no_dependencies import run_without_analysis
+
+    result = run_without_analysis(
+        """
+        from analysis import AnalysisUnavailable
+        from match import invert, space
+
+        built = space.build("morgan")
+        calls = {
+            "encode": lambda: built.encode({}, missing="floor"),
+            "decode": lambda: built.decode([0.0] * len(built)),
+            "bell_basis": lambda: invert.bell_basis([100.0], [100.0]),
+        }
+        for name, call in calls.items():
+            try:
+                call()
+            except AnalysisUnavailable as e:
+                assert "pip install" in str(e), (name, str(e))
+            else:
+                raise SystemExit(name + " did not ask for the extra")
+        print("ok")
+        """
+    )
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
