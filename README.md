@@ -91,7 +91,10 @@ reference/       — shared detail, loaded on demand (spec format, cab/IRs,
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
                    selectors), au_probe.swift (ask the running plugin directly),
                    au_render.swift + spectrum_diff.py (measure what a control
-                   does to the sound), audit_manifest.py (re-check every
+                   does to the sound), au_render_server.swift (render many
+                   parameter sets from one instance), spike_pedalboard.py
+                   (render through a JUCE host instead),
+                   audit_manifest.py (re-check every
                    declared fact against the plugin), bootstrap_pack.py
                    (support a new plugin),
                    build_observed.py (optional taste anchors)

@@ -13,6 +13,9 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
+# Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
+# macOS-only, like every other plugin-dependent check — never used by CI.
+host = ["pedalboard>=0.9"]
 
 # Without this, a flat layout makes setuptools refuse to build: it sees skills/,
 # reference/, samples/ and docs/ as candidate packages. Only these two are code.

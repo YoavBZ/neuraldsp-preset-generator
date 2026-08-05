@@ -254,7 +254,156 @@ around 28% when the input is three times stronger. Treat breakup positions as
 input-dependent ranges, and check rendered peak level so output clipping is not
 misidentified as plugin distortion.
 
-## Tone King produces no audio in this process
+## What a render costs
+
+Measuring one control takes two renders. Matching a preset against a recording
+would take hundreds, so the cost of a render decides what is affordable.
+`--timings` breaks one down and writes the phases to stderr as JSON:
+
+```bash
+/tmp/au_render aumf NMAS NDSP sw50rAmp/sw50rBright true /tmp/on.wav 0.25 --timings
+```
+
+| Phase | Morgan, 2 s of audio |
+|---|---|
+| process spawn and Swift runtime start | 55 ms |
+| `AUAudioUnit.instantiate` | 1250 ms |
+| build the edited state document | 2 ms |
+| write `fullState` | 176 ms |
+| settle | 205 ms |
+| set formats, `allocateRenderResources` | 5–17 ms |
+| generate the excitation | 0.4 ms |
+| `renderBlock`, all 188 blocks | 306 ms |
+| write and close the wav | 4 ms |
+| **wall clock** | **2030 ms** |
+
+The plugin spends 306 ms processing audio and the harness spends the other
+1.7 seconds getting to the point where it can — 5.6 times the cost of the work
+itself, and instantiating is 62% of a render on its own. Two renders per amp per
+control is fine at this price. A search is not.
+
+### The 200 ms settle is not needed
+
+The `usleep(200000)` after writing state was a guess, and `--settle` measures
+it. The same state rendered at 0, 5, 10, 25, 50, 100, 200 and 400 ms produces
+**byte-identical output at every value** — for a switch, and for a mic change
+that reloads an impulse response:
+
+```bash
+for ms in 0 5 10 25 50 100 200 400; do
+  /tmp/au_render aumf NMAS NDSP sw50rAmp/sw50rBright true /tmp/s_$ms.wav 0.25 --settle $ms
+  /tmp/au_render aumf NMAS NDSP cabParameters/leftMicType 5 /tmp/m_$ms.wav 0.25 --settle $ms
+done
+shasum -a 256 /tmp/s_*.wav   # one hash for all eight
+shasum -a 256 /tmp/m_*.wav   # one hash for all eight, different from the above
+```
+
+Writing `fullState` costs 176 ms and evidently does the work synchronously. The
+default stays at 200 ms, because every measurement above was made with it and
+0.2 s is nothing in a one-shot run; anything rendering in bulk should pass
+`--settle 0`. Measured on Morgan's XML state path only.
+
+## Render many parameter sets from one instance
+
+`scripts/au_render_server.swift` pays the instantiate once. It allocates once,
+then reads render commands as JSON lines on stdin and answers with the peak and
+its own timings:
+
+```bash
+swiftc -swift-version 5 -O scripts/au_render_server.swift -o /tmp/au_render_server
+printf '%s\n' \
+  '{"out":"/tmp/a.wav","edits":[{"module":"sw50rAmp","key":"sw50rBright","value":"true"}],"selectAmp":2,"gateOff":true,"amplitude":0.25}' \
+  '{"quit":true}' | /tmp/au_render_server aumf NMAS NDSP
+```
+
+| | renders/s | per render |
+|---|---|---|
+| `au_render`, one process per render | 0.50 | 2030 ms |
+| `au_render_server`, 20 renders in one process | 2.67 | 375 ms |
+| `au_render_server`, steady state after the first | 3.4 | 291 ms |
+| four servers in parallel (6 performance cores) | 8.8 | — |
+
+Every command re-edits the state the plugin had at startup, so a sequence of
+renders does not depend on the order it was asked for. `edits` writes attributes
+in the live XML state; `state` replaces the whole blob, which is what a
+record-state plugin needs.
+
+Both harnesses also take `--input` / `"input"`, a 48 kHz mono or stereo file
+rendered in place of the generated excitation, with the amplitude argument
+applied to it as a linear gain. Measuring a control still wants noise or a sine
+— a recording only excites the frequencies it happens to contain — but a preset
+can only be judged against a guitar.
+
+### A second render in one instance is not the first
+
+Renders from a **fresh process are exactly reproducible**: two processes, same
+arguments, byte-identical wav files. That is what the measurements above rest
+on, and it still holds.
+
+Renders after the first **in the same instance are not**. Five identical
+commands to one server produce five different files, differing from each other
+by about −17 dB relative to the signal, correlated at 0.99, with no time offset
+between them. None of the obvious explanations survives:
+
+| Tried | Result |
+|---|---|
+| `reset()` before each render | no change |
+| `deallocateRenderResources` and allocate again | no change |
+| writing state to a deallocated instance, as the one-shot does (`"isolate"`) | no change |
+| rendering and discarding 0.5, 1, 2, 4, 8 s first (`"warmup"`) | −17 to −26 dB, not converging |
+| silence in instead of noise | silence out, so nothing is being *added* |
+
+It is the plugin, not the harness: `pedalboard` renders Morgan with the same
+−17.4 dB spread across repeats with `reset=True`. The variation is
+signal-dependent internal state that only a new instance clears.
+
+What it costs in practice is small, because these are broadband waveform
+differences and not tonal ones. Across five repeats, third-octave band levels
+move by at most:
+
+| | 63 | 125 | 250 | 500 | 1k | 2k | 4k | 8k | 16k |
+|---|---|---|---|---|---|---|---|---|---|
+| one process per render | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| one instance, repeated | 0.20 | 0.08 | 0.23 | 0.18 | 0.10 | 0.23 | 0.19 | 0.16 | 0.20 |
+| one instance, `"isolate"` | 0.02 | 0.08 | 0.16 | 0.07 | 0.06 | 0.06 | 0.03 | 0.00 | 0.00 |
+
+against 1–5 dB for the control changes tabulated above. So: **measure published
+facts one process per render**, where the answer is exact and repeatable, and
+use the server where hundreds of renders matter more than the last 0.2 dB.
+Anything reading a difference smaller than about 0.5 dB out of a reused instance
+is reading its own noise.
+
+## Hosting the plugin in-process
+
+`scripts/spike_pedalboard.py` renders through `pedalboard`, which embeds a JUCE
+host. It needs the `host` extra and, like everything else here, an installed and
+licensed plugin:
+
+```bash
+pip install -e '.[host]'
+python scripts/spike_pedalboard.py --plugin "Morgan Amps Suite" --bench 10
+```
+
+```
+loaded 'Morgan Amps Suite' in 1876 ms
+published parameters: 128   raw state: 5449 bytes
+render: 229 ms for 2.0 s of audio, peak 0.5653260
+bench: 10 renders, 232 ms each, 4.31 renders/s
+```
+
+232 ms against the Swift server's 291 ms, with no wav round-trip and no
+subprocess, and parameters arrive named, typed, and carrying their ranges and
+display units instead of as attributes to be edited by regular expression.
+
+The two hosts agree. Fed byte-identical noise — the spike reimplements the
+harness's seeded xorshift exactly — and the same default state, they differ by
+**0.12 dB at worst in any third-octave band**. The waveforms correlate at 0.991
+once a **57-sample (1.19 ms) offset** between them is removed, and what remains
+is −17.8 dB: the same per-render variation the plugin shows against itself. A
+render is portable between the two backends; a *sample-aligned* comparison
+between them is not free.
+
+## Tone King produces no audio in the Swift helpers
 
 `scripts/au_render.swift` gets audio out of Morgan and **exact zeros** out of
 Tone King Imperial MKII. So no acoustic work exists for that plugin — no switch
@@ -286,14 +435,43 @@ why the script exists.
 `auval -v aumf TKI2 NDSP` passes, but that is weaker evidence than it looks: it
 checks for NaNs and malformed output, not for non-silence.
 
-**The cause is unconfirmed.** The remaining suspect is authorization — PACE
-plugins commonly render silence rather than failing when they cannot authorize,
-and a headless CLI process is not an environment vendors test. The next thing to
-try is the same check with the standalone app open, or on a machine where the
-licence is definitely active.
-
 **Do not read the silence as a measurement.** A control that appears to do
 nothing here has not been shown to do nothing.
+
+### It does produce audio in a JUCE host
+
+`pedalboard` loads Audio Units the way a DAW does rather than instantiating one
+from a headless CLI, and Tone King renders through it:
+
+```bash
+pip install -e '.[host]'
+python scripts/spike_pedalboard.py --plugin "Tone King Imperial MKII" --bench 5
+```
+
+```
+loaded 'Tone King Imperial MKII' in 4512 ms
+published parameters: 96   raw state: 12741 bytes
+render: 783 ms for 2.0 s of audio, peak 0.1640197
+```
+
+It is really processing, not passing through. Against the same white noise the
+Swift helper uses, its output shows an amp-and-cab response — −26.6 dB at 8 kHz
+and −51.5 dB at 16 kHz — and moving `rhythm_channel_treble` from 0.0 to 1.0
+tilts the spectrum by about 2 dB across the mids.
+
+The control that makes this worth anything: `au_silence_check` was re-run on the
+same machine in the same session and still reports **peak = 0.0** for Tone King
+and **0.5546125** for Morgan — the identical numbers recorded above. So the
+silence is a property of the bare CLI instantiation, and **authorization is
+ruled out**: a plugin that could not authorize would be silent in both hosts.
+
+That unblocks acoustic work on Tone King, through that host, at a price: it
+renders at about 0.38 renders/s against Morgan's 4.31, roughly eleven times the
+cost per render.
+
+Nothing in `packs/toneking/` has been measured acoustically yet. Its recipes
+still say so, and they should keep saying so until someone actually renders the
+comparisons — what changed is that this is now possible, not that it is done.
 
 ## Method limits
 

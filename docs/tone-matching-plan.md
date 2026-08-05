@@ -1,7 +1,8 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **proposal, not yet built.** Nothing in this document exists in the
-repository yet.
+Status: **M0 is done; M1 onward is not built.** The two spikes ran on 2026-08-05
+and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`.
+Nothing else in this document exists in the repository yet.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -40,10 +41,10 @@ Everything below exists to close that loop.
 | `pyproject.toml` has `dependencies = []`; tests pass on a bare clone | New dependencies go in **optional extras only**. `show.py` and `apply_spec.py` must keep working with stdlib alone. |
 | `spectrum_diff.py` uses hand-written Goertzel to avoid numpy | That constraint applies to *reproducing a published measurement*. New analysis code may use numpy/scipy behind an extra. Do not rewrite `spectrum_diff.py`. |
 | Morgan manifest: 132 parameters — 53 `metered`, 32 `switch`, 31 `rotation`, 8 `enum`, 4 `fraction`, 2 `string`, 2 `path`; 1 non-writable | Continuous search space is ≤ 88 before conditioning; per-amp conditioning cuts it to roughly 35–45. |
-| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100, and its acoustic path is currently blocked (see below). |
+| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, at ~11× Morgan's cost per render (§11). |
 | Each amp has its own module prefix (`ac20*`, `pr12*`, `sw50r*`) and its own 9-band EQ | Search space must be *conditional* on `selectedAmp`. Writing the inactive amp's controls is a silent no-op. |
 | EQ bands are fixed ISO centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already declared in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. |
-| `au_render.swift` renders Morgan fine and gets **exact zeros** from Tone King; cause unconfirmed, PACE authorization suspected | All acoustic work is Morgan-only until a spike resolves this. Do not silently produce Tone King "measurements". |
+| `au_render.swift` renders Morgan fine and gets **exact zeros** from Tone King. M0 resolved the cause: the bare CLI instantiation, not authorization — Tone King renders in a JUCE host | Tone King work goes through the `pedalboard` backend. Nothing about it has been measured acoustically yet; do not silently produce Tone King "measurements". |
 | `apply_spec.py` validates kinds, ranges, selectors, read-only fields, and never overwrites its input | Optimizer output **must** be emitted as a human-valued spec and passed through `apply_spec.py --dry-run`. Never write preset bytes directly from the optimizer. |
 | Plugin-dependent checks are deliberately local, never CI (`audit_manifest.py`) | Same split applies here: plugin-free tests in CI, plugin-dependent checks local. |
 | `NOTICE.md`: no Neural DSP content, no factory presets, no IRs, no audio redistributed | Reference audio, stems, and renders are **never** committed. Store hashes and derived features only. |
@@ -114,6 +115,10 @@ Fixed overhead is plausibly 10–30× the actual DSP cost.
 
 **Therefore the first engineering task is a persistent render process, not a
 better optimizer.** Measure it before designing around it (M0-S1).
+
+*Measured: the conclusion holds, the multiplier was overstated. Fixed overhead
+is 5.6× the DSP cost, not 10–30×, and instantiate alone is 62% of a render.
+See §11.*
 
 ### D4. No PyTorch in milestones 1–4
 
@@ -703,7 +708,66 @@ separate   = ["demucs>=4.0"]
 
 ---
 
-## 11. Reading list, in the order it becomes relevant
+## 11. What M0 measured, and what it changes
+
+Ran 2026-08-05 on macOS 26 with both plugins licensed and installed. Full
+evidence, with the commands that reproduce it, is in
+`docs/measuring-against-the-plugin.md`.
+
+### S1 — throughput
+
+| | renders/s, 2 s of audio |
+|---|---|
+| `au_render.swift`, one process per render | 0.50 |
+| `au_render_server.swift`, one instance | 3.4 steady state |
+| four servers in parallel, 6 performance cores | 8.8 |
+| `pedalboard`, in-process | 4.3 |
+
+D3 is confirmed in direction: 306 ms of a 2030 ms render is DSP, the rest is
+overhead, and `AUAudioUnit.instantiate` alone is 1250 ms of it. A 300-render
+budget goes from 10 minutes to 34 seconds. The 200 ms settle turns out to be
+unnecessary — `fullState` is applied synchronously — which is another 205 ms per
+render.
+
+### S2 — the backend, and Tone King
+
+**Tone King renders audio in `pedalboard`.** Peak 0.164, a real amp-and-cab
+response, and its controls move the spectrum. In the same session
+`au_silence_check` still returned exactly 0.0 for it and 0.5546125 for Morgan,
+so the silence belongs to the bare CLI instantiation and **authorization is
+ruled out**. Risk-register row one is closed. The second pack is unblocked for
+acoustic work, at ~11× Morgan's cost per render.
+
+**Recommended backend: `pedalboard`**, which decides §10.1. It is the fastest,
+it is the only one that renders Tone King, and it exposes named, typed, ranged
+parameters instead of XML attributes to be edited by regular expression — a
+better substrate for `match/space.py`. Keep `au_render.swift` as the reference
+renderer for anything published, and `au_render_server.swift` as the
+no-new-dependency fallback that independently corroborated the numbers.
+
+### Three findings that change the design
+
+1. **Renders are not reproducible within one instance.** A fresh process is
+   bit-exact, but a second render from the same instance differs from the first
+   by about −17 dB relative to the signal — in both hosts, and through `reset`,
+   reallocation and warm-up alike. In third-octave bands that is ≤0.23 dB.
+   - §6.3's content-addressed cache is a **speed optimisation, not an
+     equivalence**: a cached render is one draw from a distribution.
+   - M4's sensitivity screen must **freeze on a threshold above ~0.5 dB**, or it
+     will screen out real parameters and keep noise.
+   - Calibration that gets committed as a measured fact — `eq_basis.json`,
+     `drive_curve.json` — must be rendered **one process per render**.
+2. **`align.py` is not just for the paired regime.** The two backends agree to
+   0.12 dB per band but sit 57 samples apart, so any waveform-domain comparison
+   needs alignment even when both sides are renders.
+3. **Morgan's live state and its preset files are different encodings.** The
+   plugin's `jucePluginState` is XML; its preset files are the `morgan\0` record
+   format that `format/` parses, and nothing converts between them. So the
+   renderer takes parameter edits or a whole blob, `apply_spec.py` writes the
+   preset, and **both must be driven from the same spec** or they will drift.
+   Decision 5 in §3 stands, but it does not come for free.
+
+## 12. Reading list, in the order it becomes relevant
 
 | When | Work | Why |
 |---|---|---|
@@ -719,7 +783,7 @@ separate   = ["demucs>=4.0"]
 
 ---
 
-## 12. First session's opening move
+## 13. First session's opening move
 
 If the implementing session has no plugin: start at **M1**, and read
 `packs/morgan/manifest.json`, `scripts/apply_spec.py`, and
