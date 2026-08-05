@@ -1,6 +1,6 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0, M1 and M2 are done; M3 is next.** The two spikes ran on 2026-08-05
+Status: **M0, M1, M2 and M3 are done; M4 is next.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
@@ -1009,6 +1009,63 @@ has headroom.
 - The cache key covers all eight components §6.3 lists, and each is tested to move
   the hash. It is a speed optimisation and not an equivalence: on a real backend a
   cached render is one draw from a distribution.
+
+## 12b. What M3 built
+
+`match/space.py` and `match/invert.py`. The exit criterion holds: on the synthetic
+chain, one inversion pass and **zero** renders of search cuts the objective against
+an EQ-plus-level-plus-delay target by more than a fifth, and recovers the delay
+time outright rather than approaching it.
+
+The space is 126 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
+being its 100 writable ones less its paths and strings, which is the manifest's own
+arithmetic rather than a number maintained here. What is excluded is excluded by
+category: read-only, `internal`, strings, paths, enums whose member names are
+unknown, and anything whose `kind` is a bootstrap guess.
+
+Three things were worth learning while building it:
+
+**A switch is not a selector.** The first version excluded any switch without
+declared `members`, on the reasoning that applies to enums — and thereby removed
+every effect on/off control from the space, so nothing could turn an effect on. An
+enum's stored integer is meaningless without its table because the plugin never
+displays it; a switch is true or false whatever the plugin labels it, and
+`to_binary` never consults members. Morgan declares members for only some of its
+32 switches, which is why this mattered.
+
+**The gate relationships are spelled but not stated.** No manifest field says
+`leftCabActive` governs `leftCabPan`, but the names do: a switch called
+`<stem>Active` gates the keys in its module that share the stem, longest stem
+winning, with `sectionActive` as the deliberate exception that covers its whole
+module. `gate_map()` derives it, and a test pins the four cases that matter rather
+than the derivation.
+
+**Clamping into range is how "no effect" becomes "minimum effect".** Dry plucks
+measure a *confident* 0.41 s decay — the notes ending, not a room — and the first
+`reverb_settings` clamped that up into the plugin's declared 1–60 s and switched
+the reverb on. A measurement below what the plugin can produce is now evidence
+that the effect is absent, not a value to be rounded up. `delay_settings` and
+`tremolo_settings` decline on the confidence floors `compare` itself uses, so a
+reading the objective would not trust does not reach a preset either.
+
+The EQ fit is a bounded nine-variable least-squares solve, not a search, and it
+carries the caveat the plan asks for: with no `packs/<id>/eq_basis.json` it fits
+idealised bell curves at the declared centres, which leak into neighbouring bands —
+recovering +8/−6/+5 dB as +7.1/−6.0/+4.0 with about 2 dB of spill either side.
+Closing that gap is what M5's eleven renders per amp buy, and the number to watch
+is `eq_residual_db`.
+
+`Inversion.as_settings(supported)` exists because an inversion is computed against
+the *plugin's* parameters while a backend may model fewer: the synthetic chain
+covers 45 and refuses the rest outright, which is correct of it but means the
+caller has to filter. `dropped_for()` says what was left behind so a report can.
+
+### Still to do in M3
+
+- `scripts/measure_eq_basis.py` and the committed `eq_basis.json` are M5 work, but
+  the fit is already written to consume them.
+- Nothing yet quantises against *audible* resolution measured from the plugin;
+  `space.QUANTA` is a set of stated engineering choices, not measurements.
 
 ## 13. Reading list, in the order it becomes relevant
 
