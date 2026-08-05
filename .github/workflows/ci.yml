@@ -30,6 +30,55 @@ jobs:
       - name: Test
         run: python -m pytest -q
 
+  analysis:
+    # The audio analysis has dependencies, so it gets its own job. The bare
+    # clone job below stays exactly as it was: what it proves is that adding
+    # this did not put numpy on the path of anyone reading a preset.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install with the analysis and match extras
+        run: pip install -e ".[dev,analysis,match]"
+
+      - name: Test
+        run: python -m pytest -q
+
+      - name: Fingerprint a signal with no plugin and no audio in the repository
+        run: |
+          python - <<'EOF'
+          import numpy as np, soundfile as sf
+          rng = np.random.default_rng(7)
+          sf.write("/tmp/probe.wav", rng.standard_normal((48000 * 3, 2)) * 0.2, 48000)
+          EOF
+          python scripts/fingerprint.py /tmp/probe.wav --text
+          python scripts/compare_audio.py /tmp/probe.wav /tmp/probe.wav
+
+      - name: Render through the synthetic chain with no plugin installed
+        run: |
+          python - <<'EOF'
+          from analysis import io, refchain
+          from analysis.fingerprint import fingerprint
+          from match.renderer_synth import SyntheticRenderer
+
+          di = io.load("/tmp/probe.wav")
+          result = SyntheticRenderer().render(di.mono(), {"delay/delayActive": True})
+          assert not result.silent, "the synthetic chain rendered silence"
+          assert result.metadata.reproducible
+          print("rendered", result.audio.shape, "peak", round(result.peak, 4))
+          print("delay measured:",
+                fingerprint(io.from_samples(result.audio), regime="probe")
+                .time_fx["delay_ms"], "ms")
+          EOF
+
   fresh-clone:
     # The tools must work with no build step and no preset library of their own:
     # the committed manifest is the contract, and the observed catalog is optional.

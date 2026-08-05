@@ -112,10 +112,11 @@ against the running Audio Unit. The musical settings here are conservative
 starting points supported by the manual and aggregate factory-preset behavior;
 they are not transfer-function or distortion measurements.
 
-**Nor can they be, yet.** This plugin produces no audio at all in a headless
-render — `scripts/au_silence_check.swift` reports a peak of 0.0 for it and
-0.55 for Morgan under identical code — so nothing here has been characterised by
-listening to it. The cause is unconfirmed; see
+**And they have not been.** This plugin produces no audio in a headless render —
+`scripts/au_silence_check.swift` reports a peak of 0.0 for it and 0.55 for
+Morgan under identical code — so none of the Swift measurements that back the
+Morgan pack exist for this one. It does render in a JUCE host, which means the
+gap is now work nobody has done rather than work nobody can do; see
 [docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
-Read that as "not established" rather than "not needed", and audition the result
-with the target guitar, level-matched in context.
+Read all of it as "not established" rather than "not needed", and audition the
+result with the target guitar, level-matched in context.

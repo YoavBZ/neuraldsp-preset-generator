@@ -29,7 +29,14 @@ def guarded(main) -> None:
     PackError carries a message written for the user, so it prints as-is rather
     than as a traceback. BrokenPipeError just means the output was piped into
     something like `head`.
+
+    OSError and a malformed JSON file are here for the same reason: a mistyped
+    path is the most ordinary mistake there is, and a nine-frame
+    `FileNotFoundError` traceback is not a message. These are the mistakes a
+    person makes, not the ones the code makes.
     """
+    import json
+
     from packs.loader import PackError
 
     try:
@@ -41,6 +48,18 @@ def guarded(main) -> None:
         sys.exit(0)
     except KeyboardInterrupt:
         sys.exit(130)
+    except json.JSONDecodeError as e:
+        die(f"that file is not valid JSON: {e}")
+    except IsADirectoryError as e:
+        die(f"{e.filename} is a directory, not a file")
+    except FileNotFoundError as e:
+        die(f"no such file or directory: {e.filename}")
+    except PermissionError as e:
+        die(f"permission denied: {e.filename}")
+    except OSError as e:
+        # Anything else the filesystem refused, named rather than traced.
+        where = f" ({e.filename})" if getattr(e, "filename", None) else ""
+        die(f"{e.strerror or e}{where}")
 
 
 def _data_dir(text: str) -> str:
@@ -55,6 +74,33 @@ def _data_dir(text: str) -> str:
             "cannot be empty; omit --data-dir to use the default"
         )
     return text
+
+
+def positive_float(text: str) -> float:
+    """An argparse type for a duration or amplitude that has to be above zero.
+
+    Caught here rather than downstream, where `--seconds 0` became
+    "zero-size array to reduction operation maximum" and `--seconds -5` became
+    "negative dimensions are not allowed" — numpy's words for the user's mistake.
+    """
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a number") from None
+    if not value > 0.0:
+        raise argparse.ArgumentTypeError(f"must be greater than zero, got {value:g}")
+    return value
+
+
+def positive_int(text: str) -> int:
+    """Same, for counts. `--bench -3` produced a ZeroDivisionError."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {value}")
+    return value
 
 
 def add_data_dir_arg(parser) -> None:

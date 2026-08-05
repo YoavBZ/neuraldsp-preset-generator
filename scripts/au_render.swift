@@ -14,6 +14,20 @@
 // The excitation is seeded white noise, so both states of a switch see
 // byte-identical input and any difference in the output is the switch alone.
 //
+// Three options change how a render is made rather than what is rendered, and
+// all three default to the behavior every published measurement used:
+//
+//   --timings         write per-phase wall time as JSON to stderr
+//   --input di.wav    render a recorded signal instead of noise or a sine
+//   --settle <ms>     wait <ms> after writing state instead of the default 200
+//
+//   /tmp/au_render aumf NMAS NDSP --state prepared.bin out.wav 1.0 \
+//     --input di.wav --timings --settle 50
+//
+// --input takes a 48 kHz file, mono or stereo, and the amplitude argument
+// becomes a linear gain on it. Measuring a control still wants noise or a sine:
+// a recording only excites the frequencies it happens to contain.
+//
 // Offline manual rendering: nothing reaches an output device, and the edited
 // state goes to an instance that dies with the process.
 // See docs/measuring-against-the-plugin.md.
@@ -28,14 +42,90 @@ func fourCC(_ s: String) -> OSType {
     return r
 }
 
-let args = CommandLine.arguments
+// --- phase timing -----------------------------------------------------------
+// One question: how much of a render is the plugin processing audio, and how
+// much is this process getting to the point where it can. The marks are taken on
+// every run -- reading a clock costs nothing against an instantiate -- and only
+// the report at the end is gated on --timings.
+final class Phases {
+    private let started = DispatchTime.now()
+    private var previous = DispatchTime.now()
+    private var marks: [(String, Double)] = []
+
+    /// Record the time since the previous mark under `name`.
+    func mark(_ name: String) {
+        let now = DispatchTime.now()
+        marks.append((name, Self.ms(previous, now)))
+        previous = now
+    }
+
+    /// Record a duration measured separately, e.g. a total accumulated inside a loop.
+    func add(_ name: String, _ milliseconds: Double) {
+        marks.append((name, milliseconds))
+    }
+
+    static func ms(_ from: DispatchTime, _ to: DispatchTime) -> Double {
+        Double(to.uptimeNanoseconds &- from.uptimeNanoseconds) / 1e6
+    }
+
+    /// The process cannot see its own spawn and runtime start: a caller gets
+    /// those by subtracting this total from the wall time it measured itself.
+    func json() -> String {
+        let all = marks + [("total_in_process", Self.ms(started, DispatchTime.now()))]
+        let body = all.map { "\"\($0.0)_ms\":\(String(format: "%.3f", $0.1))" }.joined(separator: ",")
+        return "{" + body + "}"
+    }
+}
+let phases = Phases()
+
+// --- arguments --------------------------------------------------------------
+// Options are stripped before the positional arguments are read, so every
+// invocation in docs/measuring-against-the-plugin.md keeps its exact meaning.
+var args: [String] = []
+var reportTimings = false
+var inputFile: String? = nil
+var settleMicroseconds: UInt32 = 200000
+var argIndex = 0
+let rawArgs = CommandLine.arguments
+while argIndex < rawArgs.count {
+    let arg = rawArgs[argIndex]
+    // --state is positional: it marks how args[5] is read, not how it renders.
+    switch arg {
+    case "--timings":
+        reportTimings = true
+        argIndex += 1
+    case "--input", "--settle":
+        guard argIndex + 1 < rawArgs.count else {
+            FileHandle.standardError.write("\(arg) needs a value\n".data(using: .utf8)!)
+            exit(2)
+        }
+        if arg == "--input" {
+            inputFile = rawArgs[argIndex + 1]
+        } else {
+            guard let ms = Double(rawArgs[argIndex + 1]), ms >= 0 else {
+                FileHandle.standardError.write("--settle needs a non-negative number of milliseconds\n".data(using: .utf8)!)
+                exit(2)
+            }
+            settleMicroseconds = UInt32(ms * 1000.0)
+        }
+        argIndex += 2
+    default:
+        args.append(arg)
+        argIndex += 1
+    }
+}
 guard args.count >= 7 else {
-    FileHandle.standardError.write("usage: render <type> <sub> <manu> <element/key> <value> <out.wav>\n".data(using: .utf8)!)
+    FileHandle.standardError.write(("usage: render <type> <sub> <manu> <element/key> <value> <out.wav>"
+        + " [amplitude] [excitation] [--input di.wav] [--settle ms] [--timings]\n").data(using: .utf8)!)
     exit(2)
 }
+// 0.25 is a level chosen for the generated excitations. A recording arrives at
+// whatever level it was played at, so leave it alone unless asked.
+let defaultAmplitude: Float = inputFile == nil ? 0.25 : 1.0
 let desc = AudioComponentDescription(
     componentType: fourCC(args[1]), componentSubType: fourCC(args[2]),
     componentManufacturer: fourCC(args[3]), componentFlags: 0, componentFlagsMask: 0)
+phases.mark("startup")
 
 let sem = DispatchSemaphore(value: 0)
 var unit: AUAudioUnit!
@@ -45,6 +135,7 @@ AUAudioUnit.instantiate(with: desc, options: []) { au, e in
     sem.signal()
 }
 sem.wait()
+phases.mark("instantiate")
 
 // --- load a prepared record state, or edit one XML-state parameter ----------
 guard let baseState = unit.fullState, let blob = baseState["jucePluginState"] as? Data else { exit(1) }
@@ -56,7 +147,7 @@ let excitation: String
 if args[4] == "--state" {
     st["jucePluginState"] = try! Data(contentsOf: URL(fileURLWithPath: args[5]))
     outPath = args[6]
-    inputAmplitude = args.count > 7 ? (Float(args[7]) ?? 0.25) : 0.25
+    inputAmplitude = args.count > 7 ? (Float(args[7]) ?? 0.25) : defaultAmplitude
     excitation = args.count > 8 ? args[8] : "noise"
 } else {
     let bytes = [UInt8](blob)
@@ -110,11 +201,18 @@ if args[4] == "--state" {
     }
     st["jucePluginState"] = Data(framedHeader) + Data(newDoc.utf8) + Data(trailer)
     outPath = args[6]
-    inputAmplitude = args.count > 7 ? (Float(args[7]) ?? 0.25) : 0.25
+    inputAmplitude = args.count > 7 ? (Float(args[7]) ?? 0.25) : defaultAmplitude
     excitation = args.count > 8 ? args[8] : "noise"
 }
+phases.mark("state_build")
 unit.fullState = st
-usleep(200000)
+phases.mark("state_apply")
+// A state write reaches the plugin's audio thread asynchronously, so rendering
+// immediately can capture the settings this render was meant to replace. Every
+// published measurement used 200 ms; --settle exists to measure what the
+// plugin actually needs rather than keep trusting the guess.
+usleep(settleMicroseconds)
+phases.mark("settle")
 
 // --- offline render --------------------------------------------------------
 let sampleRate = 48000.0
@@ -125,40 +223,78 @@ unit.inputBusses[0].isEnabled = true
 unit.outputBusses[0].isEnabled = true
 unit.maximumFramesToRender = 512
 try! unit.allocateRenderResources()
+phases.mark("prepare")
 
-let total = Int(sampleRate * 2.0)
 let frames: AUAudioFrameCount = 512
 
-// White noise: flat excitation, so the output spectrum is the plugin's
-// response. Seeded, so both states of a switch see byte-identical input and
-// any difference in the output is the switch and nothing else.
-var seed: UInt64 = 0x5eed_1234_abcd_0001
-func nextFloat() -> Float {
-    seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17
-    return Float(Double(seed >> 11) / Double(1 << 53)) * 2.0 - 1.0
-}
-var noise = [Float](repeating: 0, count: total)
-// The optional excitation switches to a sine, e.g. "sine:222.65625". Noise
-// measures what a control does to the spectrum; a sine measures how much
-// distortion the amp is making, which is what "break-up" actually means.
-if excitation.hasPrefix("sine:") {
-    let freq = Double(excitation.dropFirst(5)) ?? 220.0
-    for i in 0..<total {
-        noise[i] = Float(sin(2.0 * Double.pi * freq * Double(i) / sampleRate)) * inputAmplitude
+// The excitation, one array per channel. Generated here by default; read from
+// a file when --input names one, because matching a recorded tone needs the
+// plugin to see a guitar rather than noise.
+var channels: [[Float]] = []
+if let inputFile {
+    guard let file = try? AVAudioFile(forReading: URL(fileURLWithPath: inputFile)) else {
+        FileHandle.standardError.write("could not read \(inputFile)\n".data(using: .utf8)!)
+        exit(2)
+    }
+    let inputFormat = file.processingFormat
+    guard inputFormat.sampleRate == sampleRate else {
+        FileHandle.standardError.write(
+            "--input must be \(Int(sampleRate)) Hz; \(inputFile) is \(Int(inputFormat.sampleRate)) Hz\n"
+                .data(using: .utf8)!)
+        exit(2)
+    }
+    guard let buffer = AVAudioPCMBuffer(pcmFormat: inputFormat,
+                                        frameCapacity: AVAudioFrameCount(file.length)),
+        (try? file.read(into: buffer)) != nil, let samples = buffer.floatChannelData,
+        buffer.frameLength > 0
+    else {
+        FileHandle.standardError.write("could not decode \(inputFile)\n".data(using: .utf8)!)
+        exit(2)
+    }
+    for channel in 0..<Int(inputFormat.channelCount) {
+        var taken = [Float](repeating: 0, count: Int(buffer.frameLength))
+        for f in 0..<Int(buffer.frameLength) { taken[f] = samples[channel][f] * inputAmplitude }
+        channels.append(taken)
     }
 } else {
-    for i in 0..<total { noise[i] = nextFloat() * inputAmplitude }
+    let generated = Int(sampleRate * 2.0)
+    // White noise: flat excitation, so the output spectrum is the plugin's
+    // response. Seeded, so both states of a switch see byte-identical input and
+    // any difference in the output is the switch and nothing else.
+    var seed: UInt64 = 0x5eed_1234_abcd_0001
+    func nextFloat() -> Float {
+        seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17
+        return Float(Double(seed >> 11) / Double(1 << 53)) * 2.0 - 1.0
+    }
+    var noise = [Float](repeating: 0, count: generated)
+    // The optional excitation switches to a sine, e.g. "sine:222.65625". Noise
+    // measures what a control does to the spectrum; a sine measures how much
+    // distortion the amp is making, which is what "break-up" actually means.
+    if excitation.hasPrefix("sine:") {
+        let freq = Double(excitation.dropFirst(5)) ?? 220.0
+        for i in 0..<generated {
+            noise[i] = Float(sin(2.0 * Double.pi * freq * Double(i) / sampleRate)) * inputAmplitude
+        }
+    } else {
+        for i in 0..<generated { noise[i] = nextFloat() * inputAmplitude }
+    }
+    channels.append(noise)
 }
+let total = channels[0].count
+phases.mark("excitation")
 
 var cursor = 0
 var pulls = 0
 let inputBlock: AURenderPullInputBlock = { _, _, frameCount, _, audioBufferList in
     pulls += 1
     let abl = UnsafeMutableAudioBufferListPointer(audioBufferList)
-    for buffer in abl {
+    for (index, buffer) in abl.enumerated() {
+        // A mono excitation feeds both channels, which is what the generated
+        // noise and sine have always done.
+        let source = channels[min(index, channels.count - 1)]
         let ptr = buffer.mData!.assumingMemoryBound(to: Float.self)
         for f in 0..<Int(frameCount) {
-            ptr[f] = (cursor + f) < total ? noise[cursor + f] : 0
+            ptr[f] = (cursor + f) < total ? source[cursor + f] : 0
         }
     }
     cursor += Int(frameCount)
@@ -174,20 +310,38 @@ var flags = AudioUnitRenderActionFlags()
 var timestamp = AudioTimeStamp()
 timestamp.mFlags = .sampleTimeValid
 var rendered = 0
+// Split the loop into the plugin's own time and the file's, because the whole
+// point of measuring is to find out which one a render is actually spending.
+var renderBlockMs = 0.0
+var writeMs = 0.0
 while rendered < total {
     flags = AudioUnitRenderActionFlags()
     outBuffer.frameLength = frames
+    let blockStart = DispatchTime.now()
     let status = unit.renderBlock(&flags, &timestamp, frames, 0,
                                   outBuffer.mutableAudioBufferList, inputBlock)
+    renderBlockMs += Phases.ms(blockStart, DispatchTime.now())
     if status != noErr {
         FileHandle.standardError.write("render failed: \(status)\n".data(using: .utf8)!)
         exit(1)
     }
     timestamp.mSampleTime += Double(frames)
+    let writeStart = DispatchTime.now()
     try! file!.write(from: outBuffer)
+    writeMs += Phases.ms(writeStart, DispatchTime.now())
     rendered += Int(frames)
 }
+phases.mark("render_loop")
+phases.add("render_block", renderBlockMs)
+phases.add("file_write", writeMs)
 // Release it explicitly: this is what patches the RIFF and `data` chunk sizes.
 // Without it the samples are on disk but every reader sees a 0-length file.
 file = nil
+phases.mark("file_close")
 FileHandle.standardError.write("wrote \(outPath) (input pulled \(pulls) times)\n".data(using: .utf8)!)
+if reportTimings {
+    // render_block and file_write are the two halves of render_loop, not extra
+    // phases: adding every field together double-counts the loop.
+    phases.add("audio", Double(total) / sampleRate * 1000.0)
+    FileHandle.standardError.write((phases.json() + "\n").data(using: .utf8)!)
+}

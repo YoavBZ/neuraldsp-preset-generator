@@ -13,11 +13,31 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
+# Measuring audio: analysis/ only. The preset tools above it stay stdlib-only,
+# and tests/test_no_dependencies.py holds that line.
+analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
+# Searching for parameters. The synthetic renderer needs nothing beyond
+# [analysis], which is what lets the whole match stack be tested with no plugin;
+# cma arrives with the optimiser in M4.
+match = ["neuraldsp-preset-generator[analysis]"]
+# Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
+# macOS-only, like every other plugin-dependent check — never used by CI.
+host = ["pedalboard>=0.9"]
 
 # Without this, a flat layout makes setuptools refuse to build: it sees skills/,
-# reference/, samples/ and docs/ as candidate packages. Only these two are code.
+# reference/, samples/ and docs/ as candidate packages. Only these are code.
+# analysis/ ships in the wheel but imports nothing until it is called, so a
+# bare install stays as dependency-free as it has always been.
 [tool.setuptools]
-packages = ["format", "packs"]
+packages = ["format", "packs", "analysis", "match"]
+
+# The wheel used to contain no non-Python files at all, so an installed (rather
+# than editable) copy died on `analysis/loss_profiles.json` with a
+# FileNotFoundError, and `packs/*/manifest.json` — the file the whole project
+# calls its contract — was missing too.
+[tool.setuptools.package-data]
+analysis = ["loss_profiles.json"]
+packs = ["*/manifest.json", "*/recipes.json", "*/tone.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
