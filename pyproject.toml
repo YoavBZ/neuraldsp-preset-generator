@@ -16,6 +16,10 @@ dev = ["pytest>=7.0", "pyyaml>=6.0"]
 # Measuring audio: analysis/ only. The preset tools above it stay stdlib-only,
 # and tests/test_no_dependencies.py holds that line.
 analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
+# Searching for parameters. The synthetic renderer needs nothing beyond
+# [analysis], which is what lets the whole match stack be tested with no plugin;
+# cma arrives with the optimiser in M4.
+match = ["neuraldsp-preset-generator[analysis]"]
 # Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
 # macOS-only, like every other plugin-dependent check — never used by CI.
 host = ["pedalboard>=0.9"]
@@ -25,7 +29,7 @@ host = ["pedalboard>=0.9"]
 # analysis/ ships in the wheel but imports nothing until it is called, so a
 # bare install stays as dependency-free as it has always been.
 [tool.setuptools]
-packages = ["format", "packs", "analysis"]
+packages = ["format", "packs", "analysis", "match"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

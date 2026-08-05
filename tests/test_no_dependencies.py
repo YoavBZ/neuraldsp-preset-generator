@@ -116,7 +116,8 @@ def test_analysis_entry_points_explain_themselves_without_the_extra():
 
 @pytest.mark.parametrize("module", ["analysis", "analysis.io", "analysis.features",
                                     "analysis.align", "analysis.fingerprint",
-                                    "analysis.compare"])
+                                    "analysis.compare", "analysis.refchain",
+                                    "match", "match.renderer", "match.renderer_synth"])
 def test_analysis_modules_import_without_numpy(module):
     """Importing is free; only calling costs a dependency.
 

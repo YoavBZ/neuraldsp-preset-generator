@@ -72,6 +72,11 @@ class ParamSpec:
     min: Optional[float] = None
     max: Optional[float] = None
     range_source: Optional[str] = None
+    # Declared for the graphic-EQ bands, whose centres are fixed ISO frequencies.
+    # Carried through because a band gain means nothing without the frequency it
+    # applies at: it is what the spectral fit in `match/invert.py` solves onto,
+    # and what `analysis/refchain.py` places its filters at.
+    centre_hz: Optional[float] = None
     members: Optional[Dict[str, str]] = None  # stored int (as str) -> display name
     ui: Optional[str] = None
     note: Optional[str] = None
@@ -371,6 +376,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             min=entry.get("min"),
             max=entry.get("max"),
             range_source=entry.get("range_source"),
+            centre_hz=entry.get("centre_hz"),
             members=members,
             ui=entry.get("ui"),
             note=entry.get("note"),

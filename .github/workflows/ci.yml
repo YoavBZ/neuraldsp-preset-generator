@@ -46,8 +46,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install with the analysis extra
-        run: pip install -e ".[dev,analysis]"
+      - name: Install with the analysis and match extras
+        run: pip install -e ".[dev,analysis,match]"
 
       - name: Test
         run: python -m pytest -q
@@ -61,6 +61,23 @@ jobs:
           EOF
           python scripts/fingerprint.py /tmp/probe.wav --text
           python scripts/compare_audio.py /tmp/probe.wav /tmp/probe.wav
+
+      - name: Render through the synthetic chain with no plugin installed
+        run: |
+          python - <<'EOF'
+          from analysis import io, refchain
+          from analysis.fingerprint import fingerprint
+          from match.renderer_synth import SyntheticRenderer
+
+          di = io.load("/tmp/probe.wav")
+          result = SyntheticRenderer().render(di.mono(), {"delay/delayActive": True})
+          assert not result.silent, "the synthetic chain rendered silence"
+          assert result.metadata.reproducible
+          print("rendered", result.audio.shape, "peak", round(result.peak, 4))
+          print("delay measured:",
+                fingerprint(io.from_samples(result.audio), regime="probe")
+                .time_fx["delay_ms"], "ms")
+          EOF
 
   fresh-clone:
     # The tools must work with no build step and no preset library of their own:

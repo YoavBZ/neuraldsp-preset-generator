@@ -1,9 +1,11 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 and M1 are done and have been audited; M2 is in progress.** The two
-spikes ran on 2026-08-05 and their numbers are in §11 and in
-`docs/measuring-against-the-plugin.md`. The analysis core landed the same day:
-`analysis/` plus `scripts/fingerprint.py` and `scripts/compare_audio.py`.
+Status: **M0, M1 and M2 are done; M3 is next.** The two spikes ran on 2026-08-05
+and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
+analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
+`scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
+package — the synthetic chain and the `Renderer` protocol — with §12a recording
+what its sensitivity test caught.
 
 §12 records where both milestones departed from this document — including five
 departures found by auditing them against their own exit criteria before starting
@@ -880,13 +882,74 @@ has headroom, since halving it leaves every measurement inside its tolerance.
 
 ### What M2 and M3 inherit
 
-- `analysis.compare.band_delta()` already emits the signed per-band difference
-  that `match/invert.py` fits onto the plugin's nine fixed-centre bands.
 - `analysis.align` exists and is needed between backends, not only for paired
   audio — see §11, finding 2.
 - Loss profiles are `analysis/loss_profiles.json`. Tuning weights is a data
   change, and M4's sensitivity screen must set its freeze threshold above the
   0.2 dB per-band render noise that §11, finding 1 measured.
+- The signed per-band difference `match/invert.py` fits onto the nine bands comes
+  from `analysis.compare.band_delta()`. See §12a for what M2 then found about
+  mapping those bands onto the analysis ones.
+
+## 12a. What M2 built, and what the sensitivity test caught
+
+`analysis/refchain.py` is the chain, `match/renderer.py` the protocol, and
+`match/renderer_synth.py` the backend that wraps them. Both exit criteria hold: a
+2-second DI renders in 11–16 ms through the default chain and 43–50 ms with every
+effect enabled at a maximal reverb, and 30 tests in `tests/test_refchain.py` show
+each parameter moving the fingerprint field it should.
+
+Two decisions are worth carrying forward.
+
+**The chain names parameters; the manifest owns them.** `PARAMETERS` holds keys and
+default values only — every kind, unit and range is read from
+`packs/morgan/manifest.json` at call time, and settings go through the pack's own
+validation, so the synthetic chain refuses exactly what `apply_spec.py` refuses.
+That is what lets `match/space.py` build a space over it with no special-casing, and
+it means a chain that drifts from the manifest fails a test rather than accepting
+values the plugin would reject. `ParamSpec` gained `centre_hz` to carry it, since a
+band gain means nothing without its frequency.
+
+**Settings are human values, and `to_spec()` emits them.** §11's third finding said
+the renderer and the preset writer must be driven from one source or they will
+drift. They are: the same dict renders and writes.
+
+The sensitivity test earned its place immediately by finding three things:
+
+1. **The compressor was measuring as the opposite of itself.** Its detector had a
+   5 ms attack, which let pluck transients through untouched while ducking the
+   sustain, so turning compression up raised the crest factor from 21.8 to 30.1 dB.
+   Fixed with a 0.2 ms attack — and the test now scores the p90−p10 level spread
+   instead, which is both the term `compare._dynamics` actually consumes and a
+   sturdier observable than a crest built from one surviving transient.
+2. **Morgan's EQ centres are not all third-octave analysis centres.** Its lowest
+   graphic band is labelled 65 Hz and the ISO band beside it is 63; the other eight
+   coincide. `Fingerprint.band_db(65.0)` therefore returns `None`, and **M3's fit
+   must map between the two sets rather than index one with the other.** This is
+   the cheapest possible place to have learned that.
+3. **Two obvious assertions were backwards, both because the spectrum is
+   loudness-normalised.** A bright switch that adds 6 dB at 5 kHz pulls 125 Hz down
+   about 3 dB with no filter touching it, so only differences *between* bands mean
+   anything — the same reason `compare._timbre` removes the mean. And a gate
+   *raises* the measured p10: it does not make quiet parts quieter, it removes
+   them, leaving a louder distribution behind.
+
+The chain is exactly reproducible, which neither real backend is. That is the
+property that makes it a ground truth, and `RenderMetadata.reproducible` is where
+a caller asks — defaulting to `False`, because a real host does not repeat itself.
+
+### What M3 inherits
+
+- `analysis.compare.band_delta()` already emits the signed per-band difference
+  that `match/invert.py` fits onto the plugin's nine fixed-centre bands — modulo
+  the 65-versus-63 mapping above.
+- `SyntheticRenderer` gives ground-truth parameters and free renders, so every
+  inversion can be checked against a known answer.
+- `refchain.parameter_specs()` is the typed, ranged parameter set `match/space.py`
+  builds its conditional space from.
+- The cache key covers all eight components §6.3 lists, and each is tested to move
+  the hash. It is a speed optimisation and not an equivalence: on a real backend a
+  cached render is one draw from a distribution.
 
 ## 13. Reading list, in the order it becomes relevant
 
