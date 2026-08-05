@@ -24,10 +24,16 @@ from format.translate import to_binary
 PACKS_DIR = pathlib.Path(__file__).parent
 
 
-class PackError(Exception):
+class PackError(ValueError):
     """A user-facing problem: unknown parameter, illegal value, missing pack.
 
     Carries a message meant to be printed as-is, without a traceback.
+
+    A `ValueError` like every other error this repository raises — `SpaceError`,
+    `InversionError`, `ChainError`, `ProfileError`, `TimingError`. It was a bare
+    `Exception`, and it escapes `match/`: `invert.declared()`, `_validated_amp()`
+    and `space.build()` all reach the loader, so `except ValueError` around an
+    inversion caught four of the five error types and missed this one.
     """
 
 

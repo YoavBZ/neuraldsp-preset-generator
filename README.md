@@ -105,13 +105,17 @@ format/          — NDSP binary parser + writer (lossless) + value translation
 analysis/        — measure audio into a comparable fingerprint, plus a synthetic
                    amp chain to measure against (optional extra, never needed to
                    read or write a preset)
-match/           — drive a renderer from a parameter vector: the Renderer
-                   protocol and the synthetic backend (optional extra)
+match/           — turn a measured sound into preset parameters: the Renderer
+                   protocol, the synthetic backend, the conditional search space
+                   built from a manifest, and the inversions that calculate what
+                   does not need searching for. Building the space and writing a
+                   spec need no dependencies; rendering and fitting need the
+                   analysis extra
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,
-                   renderer and bare-clone tests
+                   renderer, search-space, inversion and bare-clone tests
 docs/            — maintainer procedures for measuring ranges, selectors,
                    mappings and audible behavior against a plugin, and the
                    design plan for reference-guided tone matching

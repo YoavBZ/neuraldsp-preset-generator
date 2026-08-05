@@ -27,8 +27,16 @@ def guarded(main) -> None:
     """Run a script's main(), turning expected failures into clean exits.
 
     PackError carries a message written for the user, so it prints as-is rather
-    than as a traceback. BrokenPipeError just means the output was piped into
-    something like `head`.
+    than as a traceback. So do its siblings — `SpaceError`, `InversionError`,
+    `ChainError`, `ProfileError`, `TimingError` — which is why this catches
+    `ValueError`: they all derive from it, and enumerating five names here means a
+    sixth module's error escapes as a traceback the day it is added.
+    `AnalysisUnavailable` is caught by name for the same reason — it is the
+    missing-extra install hint, which is a message, not a stack — but it is a
+    `RuntimeError`, because a caller must not confuse "the library is not here" with
+    "your value is wrong" and quietly fall back on a guess.
+
+    BrokenPipeError just means the output was piped into something like `head`.
 
     OSError and a malformed JSON file are here for the same reason: a mistyped
     path is the most ordinary mistake there is, and a nine-frame
@@ -37,12 +45,10 @@ def guarded(main) -> None:
     """
     import json
 
-    from packs.loader import PackError
+    from analysis import AnalysisUnavailable
 
     try:
         main()
-    except PackError as e:
-        die(str(e))
     except BrokenPipeError:
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         sys.exit(0)
@@ -60,6 +66,12 @@ def guarded(main) -> None:
         # Anything else the filesystem refused, named rather than traced.
         where = f" ({e.filename})" if getattr(e, "filename", None) else ""
         die(f"{e.strerror or e}{where}")
+    except ValueError as e:
+        # Last, so `json.JSONDecodeError` — itself a ValueError — still gets its
+        # own sentence above.
+        die(str(e))
+    except AnalysisUnavailable as e:
+        die(str(e))
 
 
 def _data_dir(text: str) -> str:
