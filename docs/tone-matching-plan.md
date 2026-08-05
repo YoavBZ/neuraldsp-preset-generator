@@ -1,8 +1,11 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 is done; M1 onward is not built.** The two spikes ran on 2026-08-05
-and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`.
-Nothing else in this document exists in the repository yet.
+Status: **M0 and M1 are done; M2 onward is not built.** The two spikes ran on
+2026-08-05 and their numbers are in §11 and in
+`docs/measuring-against-the-plugin.md`. The analysis core landed the same day:
+`analysis/` plus `scripts/fingerprint.py` and `scripts/compare_audio.py`, with
+§12 recording where it departed from this document. Nothing else here exists in
+the repository yet.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -767,7 +770,66 @@ no-new-dependency fallback that independently corroborated the numbers.
    preset, and **both must be driven from the same spec** or they will drift.
    Decision 5 in §3 stands, but it does not come for free.
 
-## 12. Reading list, in the order it becomes relevant
+## 12. What M1 built, and where it departed from this plan
+
+`analysis/` is in the repository: `io.py`, `align.py`, `features.py`,
+`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 60
+tests that synthesise every signal they measure. The exit criterion holds —
+`python scripts/fingerprint.py <wav>` prints a valid Fingerprint v1 for any
+input, including one-sample files, digital silence and full-scale DC, each of
+which crashed something before it passed.
+
+Recovery against signals built with the answer known:
+
+| Measurement | Result |
+|---|---|
+| LTAS against a known biquad | within **0.73 dB** across 50 Hz–16 kHz |
+| Delay time and feedback | **420.0 ms** and **0.325** for a 420 ms / 0.35 echo |
+| RT60 | within 15% at 0.6, 1.2 and 2.4 s |
+| Tremolo rate and depth | **5.0 Hz**, depth 0.60, for 5 Hz at 0.6 |
+| Alignment | exact integer offset, fractional to ±0.01 samples, polarity |
+| Level invariance | identical spectrum, cepstrum and crest 14 dB apart |
+
+### Four departures, each forced by a signal that broke the obvious version
+
+1. **Delay detection needs the waveform *and* the envelope, not either one.**
+   §7's note specifies envelope autocorrelation. That returns the *tempo*: on a
+   420 ms echo over notes 900 ms apart it reports 900, because a repeated phrase
+   repeats its envelope. The waveform alone is worse in the other direction — a
+   held 196 Hz note correlates with itself at every multiple of its period, and
+   returns 51 ms. An echo is the only thing that appears in both, so the
+   envelope now vetoes and the waveform ranks. Still fails on dense overlapping
+   material with a strong pulse, and says so.
+2. **`modulation` gained an `am_confidence` field.** A part strummed twice a
+   second modulates its own envelope at 2 Hz, which no analysis of the audio
+   alone can distinguish from a 2 Hz tremolo. What separates them is *purity*: a
+   tremolo is a sine, so its envelope energy sits at one frequency, while a
+   plucked note's envelope is rich in harmonics of the note rate. The rate is
+   still reported; the confidence says whether to believe it. This is a schema
+   addition, consistent with §6.1's stated principle that features carry
+   confidences, and it is why `fingerprint_version` exists.
+3. **`lf_corner_hz` / `hf_corner_hz` are weaker than the schema implies.** They
+   track a cab's bandwidth comparatively, but they carry the *source's* tilt:
+   third-octave bands of white noise rise 3 dB per octave through a flat filter,
+   which moves both corners inward by about 20%. Documented as comparative,
+   used in no loss term.
+4. **The objective vector is built from terms that can abstain.** Rather than
+   one formula per dimension, each is the mean of whatever sub-terms both sides
+   could measure, and a dimension with nothing measurable returns `None` and
+   drops out of the scalar entirely. Without that, a reference with no
+   detectable reverb would score every candidate perfectly on ambience.
+
+### What M2 and M3 inherit
+
+- `analysis.compare.band_delta()` already emits the signed per-band difference
+  that `match/invert.py` fits onto the plugin's nine fixed-centre bands.
+- `analysis.align` exists and is needed between backends, not only for paired
+  audio — see §11, finding 2.
+- Loss profiles are `analysis/loss_profiles.json`. Tuning weights is a data
+  change, and M4's sensitivity screen must set its freeze threshold above the
+  0.2 dB per-band render noise that §11, finding 1 measured.
+
+## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |
 |---|---|---|
@@ -783,7 +845,7 @@ no-new-dependency fallback that independently corroborated the numbers.
 
 ---
 
-## 13. First session's opening move
+## 14. First session's opening move
 
 If the implementing session has no plugin: start at **M1**, and read
 `packs/morgan/manifest.json`, `scripts/apply_spec.py`, and

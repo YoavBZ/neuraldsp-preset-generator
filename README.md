@@ -94,12 +94,16 @@ scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discove
                    does to the sound), au_render_server.swift (render many
                    parameter sets from one instance), spike_pedalboard.py
                    (render through a JUCE host instead),
+                   fingerprint.py + compare_audio.py (measure a recording, and
+                   what a preset would have to change to match it),
                    audit_manifest.py (re-check every
                    declared fact against the plugin), bootstrap_pack.py
                    (support a new plugin),
                    build_observed.py (optional taste anchors)
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
+analysis/        — measure audio into a comparable fingerprint (optional extra,
+                   never needed to read or write a preset)
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
@@ -278,6 +282,33 @@ does this knob usually sit at" context. Nothing requires it. Presets are routed
 to the right pack by the plugin name in their own first bytes, so a mixed library
 sorts itself out.
 
+## Optional: measure a recording
+
+The preset tools never listen to anything — they go from a description to a
+recipe stack to preset bytes, and nothing in that path can tell whether the
+result got closer to the record. `analysis/` is the beginning of closing that
+loop: it measures audio into a **fingerprint**, so two sounds can be compared as
+numbers instead of adjectives.
+
+```bash
+pip install -e '.[analysis]'
+python scripts/fingerprint.py song-excerpt.wav --regime mix --text
+python scripts/compare_audio.py song-excerpt.wav my-render.wav
+```
+
+The comparison prints a per-band difference — what the candidate would have to
+change to match the target — plus named distances for timbre, dynamics,
+ambience, level, harmonic character and stereo width. It reports what it could
+*not* measure just as plainly: a fingerprint of a chord says it found no
+sustained note to judge distortion from, and a match against a full mix says the
+guitar was never isolated.
+
+Nothing above this is affected. `show.py` and `apply_spec.py` still run on a bare
+clone with no dependencies at all, and a test enforces it.
+
+The generate and edit skills do not use any of this yet — see
+[docs/tone-matching-plan.md](docs/tone-matching-plan.md) for what it is for.
+
 ## Fewer permission prompts
 
 The skills run `scripts/show.py` and `scripts/apply_spec.py` through Bash, so
@@ -311,13 +342,16 @@ so the top-level `selectedAmp` key can reach any amp from any template.
 ## Tests
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev]"            # the preset tools
+pip install -e ".[dev,analysis]"   # and the audio measurement
 python -m pytest
 ```
 
-Passes on a bare clone against the bundled example preset, with no skips: the
-IR-stripping check synthesises the preset it needs rather than requiring one of
-yours.
+Passes on a bare clone against the bundled example preset: the IR-stripping
+check synthesises the preset it needs rather than requiring one of yours. The
+audio tests skip without the `analysis` extra and synthesise every signal they
+measure, so no audio is committed either. CI runs both installs, and one test
+asserts that the preset tools still import and run with numpy made unavailable.
 
 ```bash
 claude plugin validate ./.claude-plugin/plugin.json --strict   # manifest + skills

@@ -30,6 +30,38 @@ jobs:
       - name: Test
         run: python -m pytest -q
 
+  analysis:
+    # The audio analysis has dependencies, so it gets its own job. The bare
+    # clone job below stays exactly as it was: what it proves is that adding
+    # this did not put numpy on the path of anyone reading a preset.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install with the analysis extra
+        run: pip install -e ".[dev,analysis]"
+
+      - name: Test
+        run: python -m pytest -q
+
+      - name: Fingerprint a signal with no plugin and no audio in the repository
+        run: |
+          python - <<'EOF'
+          import numpy as np, soundfile as sf
+          rng = np.random.default_rng(7)
+          sf.write("/tmp/probe.wav", rng.standard_normal((48000 * 3, 2)) * 0.2, 48000)
+          EOF
+          python scripts/fingerprint.py /tmp/probe.wav --text
+          python scripts/compare_audio.py /tmp/probe.wav /tmp/probe.wav
+
   fresh-clone:
     # The tools must work with no build step and no preset library of their own:
     # the committed manifest is the contract, and the observed catalog is optional.

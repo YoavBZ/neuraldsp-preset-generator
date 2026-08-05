@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "Loss profiles are data, not code, because there is no single right way to",
+    "weigh 'closer'. Published work on iterative sound-matching finds no loss",
+    "universally best, so the weights that decide which preset wins have to be",
+    "tunable without editing a comparison function. Add a profile; do not add a",
+    "special case to compare.py.",
+    "",
+    "weights: how much each objective dimension counts towards the scalar an",
+    "optimiser minimises. A dimension that cannot be measured from the material",
+    "drops out and the rest are renormalised, so a missing feature never scores",
+    "as a perfect match.",
+    "",
+    "scales: what counts as one unit of wrong, in the field's own units. A 3 dB",
+    "band error and a 20 ms attack error are both 1.0 under 'unpaired-v1'.",
+    "These come from what the plugin's own controls are worth: M0 measured",
+    "single Morgan switches moving bands by 1 to 5 dB."
+  ],
+
+  "unpaired-v1": {
+    "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted.",
+    "weights": {
+      "timbre": 1.0,
+      "dynamics": 0.4,
+      "ambience": 0.5,
+      "level": 0.15,
+      "harmonic": 0.4,
+      "spatial": 0.2,
+      "prior_deviation": 0.15,
+      "complexity": 0.0
+    },
+    "scales": {
+      "band_db": 3.0,
+      "tilt_db_per_decade": 2.0,
+      "centroid_hz": 600.0,
+      "rolloff85_hz": 1500.0,
+      "mfcc": 12.0,
+      "crest_db": 3.0,
+      "attack_ms": 20.0,
+      "decay_db_per_s": 6.0,
+      "lra_lu": 3.0,
+      "rms_spread_db": 4.0,
+      "rt60_s": 0.4,
+      "delay_ms": 40.0,
+      "delay_feedback": 0.2,
+      "am_rate_hz": 0.8,
+      "am_depth": 0.15,
+      "lufs_i": 3.0,
+      "hnr_db": 6.0,
+      "odd_even_ratio": 0.6,
+      "hf_residual_index": 0.05,
+      "width": 0.15,
+      "correlation": 0.3
+    }
+  },
+
+  "paired-v1": {
+    "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up.",
+    "weights": {
+      "timbre": 1.0,
+      "dynamics": 0.8,
+      "ambience": 0.8,
+      "level": 0.3,
+      "harmonic": 0.7,
+      "spatial": 0.3,
+      "prior_deviation": 0.1,
+      "complexity": 0.0
+    },
+    "scales": {
+      "band_db": 2.0,
+      "tilt_db_per_decade": 1.5,
+      "centroid_hz": 400.0,
+      "rolloff85_hz": 1000.0,
+      "mfcc": 8.0,
+      "crest_db": 2.0,
+      "attack_ms": 10.0,
+      "decay_db_per_s": 4.0,
+      "lra_lu": 2.0,
+      "rms_spread_db": 3.0,
+      "rt60_s": 0.25,
+      "delay_ms": 20.0,
+      "delay_feedback": 0.12,
+      "am_rate_hz": 0.4,
+      "am_depth": 0.1,
+      "lufs_i": 2.0,
+      "hnr_db": 4.0,
+      "odd_even_ratio": 0.4,
+      "hf_residual_index": 0.03,
+      "width": 0.1,
+      "correlation": 0.2
+    }
+  }
+}
