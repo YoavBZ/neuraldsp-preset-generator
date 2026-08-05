@@ -287,8 +287,10 @@ FILTER_MIN_DEFICIT_DB = 3.0   # how short the target has to be to call it a filt
 FILTER_MIN_BANDS = 3          # over how many consecutive bands
 
 # Above this, the measured roll-off is not the shape a corner makes, so the corner
-# was fitted to something else. Chosen just above the worst fit that still recovers
-# a real corner exactly (1.6 dB at LPF 2 kHz); a mismatched shape scores 3.6 and up.
+# was fitted to something else. Chosen just above the worst fit that still recovers a
+# real corner exactly on the synthetic chain — 1.51 dB, at a 2 kHz low-pass — and
+# below where the fit visibly stops tracking: a 400 Hz high-pass scores 3.97 and
+# comes back as 125.
 FILTER_MAX_FIT_DB = 2.5
 
 # The order this assumes the plugin's corners are. `analysis/refchain.py` builds
