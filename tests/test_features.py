@@ -73,8 +73,60 @@ def test_delay_is_not_confused_with_the_playing_rate():
 
 def test_delay_is_not_confused_with_pitch_periodicity():
     """A sustained note correlates with itself every period. That is not a delay."""
-    held = fx.harmonic_note(seconds=4.0, f0=196.0)
-    assert F.time_effects(held, SR)["delay_ms"] is None
+    for f0 in (110.0, 196.0, 330.0):
+        held = fx.harmonic_note(seconds=4.0, f0=f0)
+        assert F.time_effects(held, SR)["delay_ms"] is None, f"f0={f0}"
+
+
+def test_delay_is_found_when_notes_ring_into_each_other():
+    """The case the envelope veto used to reject: a real echo on dense material.
+
+    Once notes overlap, the envelope stops dipping between them, so an echo adds
+    nothing an envelope autocorrelation can see — a real 420 ms echo scored 0.348
+    on the waveform against -0.012 on the envelope, and the veto threw it away.
+    The envelope only vetoes where it has note structure to veto with.
+    """
+    for pulse in (0.25, 0.3, 0.5):
+        for delay_s in (0.180, 0.420):
+            wet = fx.with_echo(fx.dense(pulse=pulse), delay_s=delay_s, feedback=0.35)
+            result = F.time_effects(wet, SR)
+            assert result["delay_ms"] == pytest.approx(delay_s * 1000, abs=20.0), (
+                f"pulse={pulse} delay={delay_s}"
+            )
+            assert result["delay_confidence"] > 0.15
+            assert result["delay_feedback_est"] == pytest.approx(0.35, abs=0.08)
+
+
+def test_a_repeated_phrase_is_not_reported_as_a_confident_delay():
+    """Four notes coming round every second repeat in the waveform *and* the
+    envelope, exactly as an echo does.
+
+    This used to be reported as a 1000 ms delay at confidence 0.86 — higher than
+    the detector ever reports a correct answer. Nothing in the audio alone
+    separates a phrase repeat from a tempo-synced delay, so the reading is capped
+    below the confidence `compare._ambience` requires instead of being trusted.
+    """
+    for pulse in (0.25, 0.4):
+        for signal in (fx.dense(pulse=pulse, tonal=True),
+                       fx.with_echo(fx.dense(pulse=pulse, tonal=True), 0.420, 0.35)):
+            result = F.time_effects(signal, SR)
+            assert result["delay_confidence"] < 0.15, (
+                f"pulse={pulse}: reported {result['delay_ms']} ms at "
+                f"{result['delay_confidence']}"
+            )
+
+
+def test_an_echo_that_decays_is_told_from_one_that_does_not():
+    """The gate underneath both cases above: an echo gets quieter, a loop does not.
+
+    Feedback is recovered across the usable range. Above about 0.8 the second
+    repeat is as loud as the first and the detector reports no delay rather than
+    a wrong one — a stated limit, tested so it stays a known one.
+    """
+    for feedback in (0.15, 0.35, 0.55, 0.75):
+        result = F.time_effects(fx.with_echo(fx.plucks(gap=0.9), 0.420, feedback), SR)
+        assert result["delay_ms"] == pytest.approx(420.0, abs=5.0), f"feedback={feedback}"
+        assert result["delay_feedback_est"] == pytest.approx(feedback, abs=0.1)
 
 
 def test_rt60_from_synthetic_decay():

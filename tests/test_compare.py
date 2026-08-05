@@ -122,3 +122,58 @@ def test_paired_profile_weights_time_features_higher():
     paired = load_profile("paired-v1")["weights"]
     assert paired["dynamics"] > unpaired["dynamics"]
     assert paired["ambience"] > unpaired["ambience"]
+
+
+def test_only_the_paired_profile_counts_the_waveform_residual():
+    """What made paired-v1 paired, and was missing.
+
+    The profile claimed time-domain features "mean what they say", but there was
+    no waveform term at all — `align.residual_db` existed and nothing consumed
+    it. Subtracting a commercial master from a render measures the difference
+    between two performances, so the unpaired profile must not count it.
+    """
+    assert load_profile("paired-v1")["weights"]["residual"] > 0.5
+    assert load_profile("unpaired-v1")["weights"]["residual"] == 0.0
+
+
+def test_the_residual_dimension_is_supplied_not_derived():
+    """Two fingerprints cannot produce it: a fingerprint drops the waveform."""
+    a = make(fx.noise(seconds=2.0, seed=1))
+    b = make(fx.noise(seconds=2.0, seed=2))
+
+    assert compare(a, b, profile="paired-v1")["residual"] is None
+
+    supplied = compare(a, b, profile="paired-v1", residual_db=-5.0)["residual"]
+    assert supplied is not None and supplied > 0
+
+
+def test_a_residual_at_the_render_noise_floor_scores_as_a_match():
+    """M0 measured two renders of the *same* parameters differing by -17 dB.
+
+    A paired objective that demanded better than that would rank the plugin's own
+    per-render variation as an error no preset can fix.
+    """
+    a = make(fx.noise(seconds=2.0, seed=1))
+    b = make(fx.noise(seconds=2.0, seed=2))
+
+    assert compare(a, b, profile="paired-v1", residual_db=-17.0)["residual"] == 0.0
+    assert compare(a, b, profile="paired-v1", residual_db=-40.0)["residual"] == 0.0
+    # And worse than the floor is scored, in proportion.
+    near = compare(a, b, profile="paired-v1", residual_db=-11.0)["residual"]
+    far = compare(a, b, profile="paired-v1", residual_db=-5.0)["residual"]
+    assert 0 < near < far
+
+
+def test_the_residual_reaches_the_scalar_only_when_the_profile_wants_it():
+    a = make(fx.noise(seconds=2.0, seed=1))
+    b = make(fx.noise(seconds=2.0, seed=2))
+
+    paired_without = scalar(compare(a, b, profile="paired-v1"))
+    paired_with = scalar(compare(a, b, profile="paired-v1", residual_db=0.0))
+    assert paired_with > paired_without, "a bad residual must cost something"
+
+    unpaired_without = scalar(compare(a, b, profile="unpaired-v1"))
+    unpaired_with = scalar(compare(a, b, profile="unpaired-v1", residual_db=0.0))
+    assert unpaired_with == pytest.approx(unpaired_without), (
+        "weighted zero, so it must not move the unpaired scalar at all"
+    )

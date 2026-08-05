@@ -14,9 +14,16 @@
     "scales: what counts as one unit of wrong, in the field's own units. A 3 dB",
     "band error and a 20 ms attack error are both 1.0 under 'unpaired-v1'.",
     "These come from what the plugin's own controls are worth: M0 measured",
-    "single Morgan switches moving bands by 1 to 5 dB."
+    "single Morgan switches moving bands by 1 to 5 dB.",
+    "",
+    "residual is the one dimension the caller has to supply, from",
+    "analysis.align.residual_db, because a fingerprint does not keep the",
+    "waveform. It is weighted zero under 'unpaired-v1': subtracting a commercial",
+    "master from a render measures the difference between two performances.",
+    "residual_floor_db is where a correct answer bottoms out rather than zero --",
+    "M0 measured two renders of identical parameters differing by about -17 dB,",
+    "so anything below that is the plugin's own per-render variation."
   ],
-
   "unpaired-v1": {
     "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted.",
     "weights": {
@@ -26,6 +33,7 @@
       "level": 0.15,
       "harmonic": 0.4,
       "spatial": 0.2,
+      "residual": 0.0,
       "prior_deviation": 0.15,
       "complexity": 0.0
     },
@@ -50,10 +58,11 @@
       "odd_even_ratio": 0.6,
       "hf_residual_index": 0.05,
       "width": 0.15,
-      "correlation": 0.3
+      "correlation": 0.3,
+      "residual_db": 6.0,
+      "residual_floor_db": -17.0
     }
   },
-
   "paired-v1": {
     "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up.",
     "weights": {
@@ -63,6 +72,7 @@
       "level": 0.3,
       "harmonic": 0.7,
       "spatial": 0.3,
+      "residual": 0.9,
       "prior_deviation": 0.1,
       "complexity": 0.0
     },
@@ -87,7 +97,9 @@
       "odd_even_ratio": 0.4,
       "hf_residual_index": 0.03,
       "width": 0.1,
-      "correlation": 0.2
+      "correlation": 0.2,
+      "residual_db": 6.0,
+      "residual_floor_db": -17.0
     }
   }
 }

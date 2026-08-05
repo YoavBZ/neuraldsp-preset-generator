@@ -580,6 +580,47 @@ DELAY_MAX_SECONDS = 30.0
 DELAY_MIN_PROMINENCE = 0.10   # waveform: below this it is the material, not an effect
 DELAY_MIN_ENVELOPE = 0.05     # envelope: below this the repeat is not audible as one
 
+# An echo's second repeat is quieter than its first by the feedback amount. A
+# phrase played twice, or a note held through two periods, comes back just as
+# loud. Measured: real echoes sit at 0.12-0.71 across feedback 0.15-0.75, a
+# repeating four-note pattern at 0.84, and pitch periodicity at 0.98.
+#
+# The cost of the threshold is stated rather than hidden: because the ratio
+# tracks feedback almost exactly, an echo with feedback above about 0.8 is not
+# distinguished from a repeating phrase and is reported as no delay. That is a
+# near-runaway echo, and a false negative there is much cheaper than setting a
+# delay from the tempo.
+DELAY_MAX_REPEAT_RATIO = 0.80
+
+# When the envelope is not entitled to veto: the band where it is *saturated* by
+# overlapping notes rather than merely quiet. Measured p90/p10 envelope range is
+# 53-229 dB for sparse playing, 11-28 dB once notes ring into each other, and
+# 0-1 dB for a held note or steady noise.
+#
+# Both ends must keep the veto, and for opposite reasons. Above the band the
+# envelope has real note structure and its opinion is worth having. Below it
+# nothing is happening at all — a drone or a steady tone — and there the
+# envelope's refusal to endorse anything is exactly right: a waveform repeat in
+# a held note is its own pitch period. Suspending the veto down there reported a
+# 663 ms delay in a sustained 196 Hz note at confidence 0.83.
+DELAY_ENVELOPE_SATURATED_DB = (8.0, 30.0)
+
+# A pitched signal correlates with itself at *every* multiple of its period, so
+# the search band fills with a comb of equally tall peaks and prominence stops
+# distinguishing anything. An echo adds one peak, and one more per repeat.
+# Measured strong-peak counts in the band: 2 for a real echo (T and 2T), 0 for
+# dry material, and 121-384 once the notes are pitched. Where the band is combed
+# the envelope gets its veto back however saturated it is — otherwise a dense
+# pitched part reports a delay at some multiple of its own note period.
+DELAY_COMB_PEAKS = 12
+
+# What a detection off combed material is worth: a ceiling, not a discount. On a
+# pitched part that repeats a phrase, the phrase period and a tempo-synced delay
+# are the same measurement, so no amount of correlation height earns trust here.
+# Held just under the 0.15 that `compare._ambience` requires, because scaling
+# instead of capping let a strong comb through at 0.27.
+DELAY_COMB_CONFIDENCE_CAP = 0.14
+
 
 def _detect_delay(mono, sample_rate: int):
     """An echo: a lag where both the waveform *and* the envelope repeat.
@@ -598,16 +639,39 @@ def _detect_delay(mono, sample_rate: int):
     On a held 196 Hz chord the waveform alone returns 51 ms, which is ten
     periods of the fundamental and nothing else.
 
-    An echo is the only thing that shows up in both. So the envelope
-    correlation is a veto — a lag it does not endorse is a pitch artefact — and
-    among what survives, the waveform prominence ranks. Both correlations are
-    detrended against their own local median first: a smooth envelope
-    correlates well with itself at *every* short lag, which would otherwise
-    endorse the whole low end of the range.
+    An echo is the only thing that shows up in both. So among lags the waveform
+    ranks by prominence, the envelope may veto, and both correlations are
+    detrended against their own local median first: a smooth envelope correlates
+    well with itself at *every* short lag, which would otherwise endorse the
+    whole low end of the range.
 
-    Fails on dense overlapping material with a strong regular pulse, where the
-    pulse can out-rank the echo. `delay_confidence` is the waveform correlation
-    height, which doubles as an estimate of how loud the repeat is.
+    That much was not enough, in both directions, and the third test is what
+    makes it hold: **an echo gets quieter and a phrase does not.** The
+    correlation at 2T over the correlation at T is the feedback amount for an
+    echo, and about 1 for anything that merely recurs.
+
+    - Without it, a part whose four-note pattern comes round every 1000 ms
+      reported a 1000 ms delay at confidence 0.86 — higher than it ever reports
+      a correct answer — because a literal repeat repeats in the waveform and in
+      the envelope alike. No amount of agreement between those two separates a
+      loop from an echo.
+    - The envelope veto was also rejecting *correct* answers on the same
+      material: once notes ring into each other the envelope barely dips, so a
+      real 420 ms echo scored 0.348 on the waveform and −0.012 on an envelope
+      that endorses nothing anywhere. The veto now applies only where the
+      envelope has note structure to veto with.
+
+    `delay_confidence` is the waveform correlation height, which doubles as an
+    estimate of how loud the repeat is.
+
+    Two limits stand, both reported as *no* delay rather than as a wrong one:
+
+    - Feedback above about 0.8, where the second repeat is as loud as the first
+      and the decay test cannot tell it from a recurrence.
+    - Echoes shorter than roughly 150 ms on material whose notes ring longer than
+      the echo — a 65 ms slapback under 250 ms notes is not found. This predates
+      the work above and is unchanged by it: the repeat lands inside the note that
+      caused it, so neither the envelope nor the prominence separates them.
     """
     import numpy as np
     from scipy import signal
@@ -647,34 +711,83 @@ def _detect_delay(mono, sample_rate: int):
         env_correlation, size=int(0.100 * env_rate) * 2 + 1, mode="nearest"
     )
 
-    best = None
+    # Is the envelope entitled to an opinion? On overlapping material it stays
+    # near-constant, so it endorses nothing anywhere and vetoing on it discards
+    # correct answers -- see DELAY_ENVELOPE_STRUCTURE_DB.
+    positive = env[env > 0]
+    if len(positive) >= 10:
+        p10, p90 = np.percentile(positive, [10, 90])
+        env_range_db = float(20.0 * np.log10(max(p90, 1e-12) / max(p10, 1e-12)))
+    else:
+        env_range_db = 0.0
+    saturated_low, saturated_high = DELAY_ENVELOPE_SATURATED_DB
+    combed = int((prominence_curve[peaks] >= DELAY_MIN_PROMINENCE).sum()) > DELAY_COMB_PEAKS
+    envelope_may_veto = combed or not (saturated_low <= env_range_db < saturated_high)
+
+    def repeat_ratio(lag: int, height: float):
+        """How much of the repeat survives to 2T: the feedback, and the test.
+
+        The window around 2T scales with the lag. A fixed ±2 samples let a
+        repeating phrase through on a peak a few samples off its true period:
+        the candidate at 1004 ms looked for its second repeat at 2008 ms and
+        missed the one at 2000, so the loop read as decaying.
+        """
+        second = 2 * lag
+        window = max(2, int(0.005 * lag))
+        if second + window >= len(correlation) or height <= 0:
+            return None
+        return float(correlation[second - window : second + window + 1].max() / height)
+
+    best, best_ratio = None, None
     for candidate in np.argsort(properties["prominences"])[::-1]:
         index = int(peaks[candidate])
         if prominence_curve[index] < DELAY_MIN_PROMINENCE:
             break  # sorted by prominence: nothing after this passes either
-        position = int((index + low) / rate * env_rate)
-        if position >= len(env_prominence):
+
+        lag = index + low
+        ratio = repeat_ratio(lag, float(band[index]))
+        if ratio is not None and ratio >= DELAY_MAX_REPEAT_RATIO:
+            # It repeats without getting quieter. That is a phrase coming round
+            # again, or a held note correlating with its own period -- not an
+            # echo. This is the gate that makes dense material safe, and it does
+            # not need the envelope to have any dynamics.
             continue
-        if env_prominence[position] < DELAY_MIN_ENVELOPE:
-            continue  # the waveform repeats here but nothing audible does
-        best = index
+
+        position = int(lag / rate * env_rate)
+        if ratio is None:
+            # 2T is past the end of the excerpt, so decay cannot be checked and
+            # the envelope is the only remaining witness.
+            if position >= len(env_prominence) or env_prominence[position] < DELAY_MIN_ENVELOPE:
+                continue
+        elif envelope_may_veto:
+            if position >= len(env_prominence) or env_prominence[position] < DELAY_MIN_ENVELOPE:
+                continue  # the waveform repeats here but nothing audible does
+        best, best_ratio = index, ratio
         break
     if best is None:
         return None, 0.0, None
 
     height = float(band[best])
-    lag = best + low
-    delay_ms = float(round(lag / rate * 1000.0, 2))
+    delay_ms = float(round((best + low) / rate * 1000.0, 2))
 
     # Feedback: an echo with feedback g repeats at 2T with about g times the
-    # correlation it had at T.
+    # correlation it had at T. Same quantity the decay gate just tested.
     feedback = None
-    second = 2 * lag
-    if second + 2 < len(correlation) and height > 0:
-        ratio = float(correlation[second - 2 : second + 3].max() / height)
-        if 0.0 <= ratio < 1.0:
-            feedback = round(ratio, 4)
-    return delay_ms, round(min(height, 1.0), 4), feedback
+    if best_ratio is not None and 0.0 <= best_ratio < 1.0:
+        feedback = round(best_ratio, 4)
+
+    confidence = min(height, 1.0)
+    if combed:
+        # A pitched part that repeats its phrase literally repeats it in the
+        # waveform and the envelope alike, at a lag that is a whole number of
+        # beats — and so does a tempo-synced delay. Nothing in the audio alone
+        # separates those two, which is the same shape of problem as strumming
+        # against tremolo, and it gets the same answer: report the rate, and let
+        # the confidence say whether to believe it. Held below the 0.15 that
+        # `compare._ambience` requires, so a combed reading cannot move the
+        # objective on its own or outrank a clean detection.
+        confidence = min(confidence, DELAY_COMB_CONFIDENCE_CAP)
+    return delay_ms, round(confidence, 4), feedback
 
 
 def _normalised_autocorrelation(signal_1d):

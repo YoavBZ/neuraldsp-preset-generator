@@ -25,7 +25,7 @@ PROFILE_PATH = pathlib.Path(__file__).with_name("loss_profiles.json")
 
 DIMENSIONS = (
     "timbre", "dynamics", "ambience", "level",
-    "harmonic", "spatial", "prior_deviation", "complexity",
+    "harmonic", "spatial", "residual", "prior_deviation", "complexity",
 )
 
 
@@ -226,6 +226,35 @@ def _harmonic(target: Fingerprint, candidate: Fingerprint, scales) -> Dict[str, 
     return {name: value * confidence for name, value in terms.items()}
 
 
+def _residual(residual_db: Optional[float], scales) -> Dict[str, float]:
+    """What is left after subtracting one waveform from the other.
+
+    The only term here that is not computed from two fingerprints, because a
+    fingerprint deliberately throws the waveform away. The caller aligns the two
+    recordings (`align.align`) and passes `align.residual_db`; without alignment
+    this measures the offset between them instead of the sound.
+
+    Meaningful only in the paired regime. Two performances of the same part
+    cancel to nothing, so `unpaired-v1` weights it zero rather than pretending
+    a commercial master can be subtracted from a render.
+
+    `residual_floor_db` is the floor a *correct* answer reaches, not zero: M0
+    measured two renders of identical parameters differing by about -17 dB, so
+    demanding better than that would chase the plugin's own noise.
+    """
+    scale = scales.get("residual_db")
+    if residual_db is None or scale in (None, 0):
+        return {}
+    try:
+        value = float(residual_db)
+    except (TypeError, ValueError):
+        return {}
+    if not math.isfinite(value):
+        return {}
+    floor = float(scales.get("residual_floor_db", -60.0))
+    return {"waveform": max(0.0, value - floor) / float(scale)}
+
+
 def _spatial(target: Fingerprint, candidate: Fingerprint, scales) -> Dict[str, float]:
     if int(target.source.get("channels") or 1) < 2 or int(candidate.source.get("channels") or 1) < 2:
         return {}
@@ -243,13 +272,19 @@ def _spatial(target: Fingerprint, candidate: Fingerprint, scales) -> Dict[str, f
 def compare(target: Fingerprint, candidate: Fingerprint,
             profile: str = "unpaired-v1",
             prior_deviation: Optional[float] = None,
-            complexity: Optional[float] = None) -> Objectives:
+            complexity: Optional[float] = None,
+            residual_db: Optional[float] = None) -> Objectives:
     """Distances per dimension, plus the terms each one was built from.
 
-    `prior_deviation` and `complexity` are not properties of two recordings —
-    they are how far the optimiser wandered from the recipe stack and how many
-    controls it had to move. They are passed in by whoever knows them, and are
+    Three arguments are not properties of two recordings and so cannot be
+    derived here. `prior_deviation` and `complexity` are how far the optimiser
+    wandered from the recipe stack and how many controls it had to move; they are
     part of the vector so the shortlist can prefer the simpler of two equals.
+    `residual_db` is the waveform difference from `align.residual_db`, which
+    needs the audio itself and an alignment — a fingerprint has neither.
+
+    All three default to None and drop out, which is what makes the unpaired
+    regime work: nothing here silently scores an unmeasured dimension as perfect.
     """
     scales = load_profile(profile)["scales"]
     detail = {
@@ -259,6 +294,7 @@ def compare(target: Fingerprint, candidate: Fingerprint,
         "level": _level(target, candidate, scales),
         "harmonic": _harmonic(target, candidate, scales),
         "spatial": _spatial(target, candidate, scales),
+        "residual": _residual(residual_db, scales),
     }
     values: Dict[str, Optional[float]] = {name: _mean(terms) for name, terms in detail.items()}
     values["prior_deviation"] = prior_deviation

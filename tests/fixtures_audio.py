@@ -102,6 +102,40 @@ def decaying_bursts(rt60_s: float = 1.2, seconds: float = 10.0, gap: float = 1.8
     return out
 
 
+def dense(seconds: float = 8.0, pulse: float = 0.25, decay: float = 8.0,
+          length: float = 0.6, tonal: bool = False, seed: int = 5,
+          sample_rate: int = SAMPLE_RATE):
+    """Notes on a strong regular pulse that ring on into each other.
+
+    The material the delay detector is worst at, and the reason: each note lasts
+    `length` while the next arrives after `pulse`, so the amplitude envelope
+    never falls back down. Anything that needs the envelope to dip between notes
+    has nothing to work with.
+
+    `tonal=True` cycles four pitches, which makes it worse in a second way — the
+    part repeats *literally* every four notes, in the waveform as well as the
+    envelope, which is what an echo does.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    out = np.zeros(int(seconds * sample_rate))
+    for index, onset in enumerate(np.arange(0.1, seconds - 0.8, pulse)):
+        start = int(onset * sample_rate)
+        span = min(int(length * sample_rate), len(out) - start)
+        if span <= 0:
+            break
+        shape = np.exp(-np.arange(span) / sample_rate * decay)
+        if tonal:
+            f0 = [196.0, 220.0, 246.9, 261.6][index % 4]
+            t = np.arange(span) / sample_rate
+            note = sum(np.sin(2 * np.pi * f0 * k * t) / k for k in (1, 2, 3))
+        else:
+            note = rng.standard_normal(span)
+        out[start : start + span] += note * shape
+    return out
+
+
 def bursts_with_predelay(predelay_ms: float = 80.0, rt60_s: float = 1.2,
                          seconds: float = 10.0, gap: float = 1.8, tail_level: float = 0.5,
                          seed: int = 7, sample_rate: int = SAMPLE_RATE):
