@@ -29,7 +29,7 @@ only inside the two vector functions.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 Key = Tuple[str, str]
 
@@ -77,7 +77,6 @@ class Dimension:
     # dimension to reach the sound at all.
     gate: Optional[Key] = None
     gate_amp: Optional[str] = None
-    ui: Optional[str] = None
 
     @property
     def path(self) -> str:
@@ -133,17 +132,26 @@ class Space:
 
     # --- lookups ------------------------------------------------------------
 
-    def by_path(self) -> Dict[str, Dimension]:
-        return {dimension.path: dimension for dimension in self.dimensions}
-
     def __len__(self) -> int:
         return len(self.dimensions)
+
+    def by_gate(self, module: str, key: str) -> Dimension:
+        """One dimension by path, for callers that need a specific control."""
+        for dimension in self.dimensions:
+            if dimension.module == module and dimension.key == key:
+                return dimension
+        raise SpaceError(f"{module}/{key} is not a searchable dimension of this pack")
 
     def amp_prefix(self, values: Mapping) -> Optional[str]:
         """The module prefix of the selected amp, e.g. `sw50r`.
 
-        Accepts either the stored integer or the display name, because a spec may
-        legitimately carry `"SW50R"` and a decoded vector carries `2`.
+        Accepts all three spellings that occur in this codebase, which is not
+        indulgence — mixing them up silently emptied a spec of its entire EQ fit:
+
+        - the stored integer a decoded vector carries (`2`)
+        - the display name a spec may carry (`"SW50R"`)
+        - the module prefix `invert(amp=...)` and `fit_graphic_eq(module=...)` use
+          throughout (`"sw50r"`)
         """
         selected = _get(values, ("", "selectedAmp"))
         if selected is None:
@@ -151,7 +159,11 @@ class Space:
         text = str(selected)
         if text in self.amp_by_index:
             return self.amp_by_index[text]
-        return self.amp_modules.get(text)
+        if text in self.amp_modules:
+            return self.amp_modules[text]
+        if text in set(self.amp_modules.values()):
+            return text
+        return None
 
     # --- conditioning -------------------------------------------------------
 
@@ -178,14 +190,40 @@ class Space:
 
     # --- vectors ------------------------------------------------------------
 
-    def encode(self, values: Mapping):
+    def encode(self, values: Mapping, missing: str = "refuse"):
         """Human values to a normalised vector in 0..1, in `dimensions` order.
 
         Fixed length, including the dormant dimensions. An optimiser needs a
         stable vector shape across trials even as switches flip, and dropping a
         dimension mid-run would change what every earlier sample meant.
+
+        A key this space knows and the caller did not supply is **refused** by
+        default. It used to encode as 0.0, which is a legitimate coordinate and
+        therefore indistinguishable from a deliberate minimum: encoding
+        `{"selectedAmp": 2}` alone produced a vector that decoded to a 16 ms delay,
+        a mic 40 dB down and a cab panned hard left, and `to_spec` would have
+        written all of it. Pass `missing="floor"` to opt into the old behaviour
+        when a floor really is what you want.
         """
+        require_analysis()
         import numpy as np
+
+        if missing not in ("refuse", "floor"):
+            raise SpaceError(f"missing must be 'refuse' or 'floor', not {missing!r}")
+
+        absent = [d.path for d in self.dimensions
+                  if _get(values, (d.module, d.key)) is None]
+        if absent and missing == "refuse":
+            shown = ", ".join(absent[:6])
+            more = f" and {len(absent) - 6} more" if len(absent) > 6 else ""
+            raise SpaceError(
+                f"{len(absent)} of {len(self.dimensions)} dimensions have no value: "
+                f"{shown}{more}.\n"
+                f"  Encoding them as zero would put a real coordinate — the bottom "
+                f"of each range — into the vector, and nothing downstream could tell "
+                f"that apart from a deliberate choice. Supply them, or pass "
+                f"missing='floor' if the minimum is what you mean."
+            )
 
         out = np.zeros(len(self.dimensions), dtype=np.float64)
         for index, dimension in enumerate(self.dimensions):
@@ -195,6 +233,7 @@ class Space:
 
     def decode(self, vector) -> Dict[Key, Any]:
         """A normalised vector back to human values, quantised."""
+        require_analysis()
         import numpy as np
 
         array = np.asarray(vector, dtype=np.float64).ravel()
@@ -219,9 +258,28 @@ class Space:
         sampled is noise in a file someone may read. The switches themselves are
         always written, so what is on and off is explicit.
         """
+        prefix = self.amp_prefix(values)
+        if prefix is None:
+            # Refusing rather than dropping. This silently discarded an entire
+            # spectral inversion: `invert()` emits `sw50rEQ/...` keys and no
+            # `selectedAmp`, so every amp-owned dimension was skipped and a
+            # 14-value inversion came out as 4 parameters with no error and no
+            # caveat. A module whose stated principle is "it refuses what it cannot
+            # mean" has to refuse this.
+            owned = sorted(d.path for d in self.dimensions if d.gate_amp is not None)
+            if any(_get(values, (d.rpartition("/")[0], d.rpartition("/")[2])) is not None
+                   for d in owned):
+                legal = ", ".join(sorted(self.amp_by_index) + sorted(self.amp_modules))
+                raise SpaceError(
+                    "these values set amp controls but do not say which amp is "
+                    "selected, and every amp's controls exist in every preset — so "
+                    "there is no way to tell which ones matter.\n"
+                    f"  Add a selectedAmp value. Accepted: {legal}, or a module "
+                    f"prefix ({', '.join(sorted(set(self.amp_modules.values())))})."
+                )
+
         chosen = self.active(values) if not include_dormant else list(self.dimensions)
         paths = {dimension.path for dimension in chosen}
-        prefix = self.amp_prefix(values)
         parameters = []
 
         selected = _get(values, ("", "selectedAmp"))
@@ -306,7 +364,6 @@ def build(pack_id: str = "morgan", include_needs_review: bool = False,
                 quantum=QUANTA.get(spec.unit or spec.kind),
                 gate=gates.get(path),
                 gate_amp=owner,
-                ui=spec.ui,
             )
             if dimension.continuous:
                 # Refuse a metered control with no declared range. Enums and
@@ -356,17 +413,43 @@ def gate_map(pack) -> Dict[str, Key]:
     """Which `*Active` switch each parameter sits behind, derived from the names.
 
     The manifest does not state this relationship, but it spells it: a switch
-    called `<stem>Active` gates the other keys in its module that start with the
-    same stem. `compressorActive` gates `compressorCompression`; `gateActive` gates
-    `gateThreshold` without gating the rest of `parameters`; `leftCabActive` gates
-    `leftCabPan` but not `leftRoomMicLevel`, which has its own switch.
+    called `<stem>Active` gates the other keys **in its own module** that start
+    with the same stem. `compressorActive` gates `compressorCompression`;
+    `gateActive` gates `gateThreshold` without gating the rest of `parameters`;
+    `leftCabActive` gates `leftCabPan` but not `leftRoomMicLevel`, which has its own
+    switch. Longest stem wins, so a key covered by two switches attaches to the more
+    specific one.
 
-    `sectionActive` is the exception and is handled as one: its stem names nothing,
-    and it gates its whole module.
+    **A switch is never gated, by anything.** Not itself, which would make it
+    unreachable the moment it went off, and not another switch either. That second
+    half is not fastidiousness: Tone King keeps every parameter in one flat module,
+    where `/eqActive` (stem `eq`) matches `/eqSectionActive` as though the page
+    bypass were a child of the band bypass. That inverted the nesting exactly
+    backwards — it reported the section bypass dormant, and reported `eqBand1`
+    *active* while the EQ page was bypassed.
 
-    Longest stem wins, so a key covered by two switches is attached to the more
-    specific one. Nothing gates a switch on itself — that would make it
-    unreachable the moment it went off.
+    ### What this deliberately does not model
+
+    Section-level bypasses, beyond the one that happens to work. Morgan has five
+    `sectionActive` switches and four of them — `ampParameters`, `eqParameters`,
+    `pedalParameters`, `fxParameters` — live in modules that contain nothing but
+    themselves, while the controls they bypass live in `sw50rAmp`, `sw50rEQ`,
+    `drive1`, `delay` and so on. Module-scoped gating therefore gates nothing for
+    those four. Only `cabParameters/sectionActive` works, because the cab controls
+    happen to share its module.
+
+    That asymmetry is left in place rather than papered over. Guessing which
+    modules a section covers would be exactly the kind of unmeasured claim this
+    repository refuses: no field states it, and the answer differs per pack. A
+    search will therefore move controls inside a bypassed section on four of
+    Morgan's five sections — wasted budget, not a wrong value, and
+    `unmodelled_sections()` reports it so a caller can say so.
+
+    One narrower limit of name matching, for the same reason: `leftMicType` does not
+    start with `leftCab`, so it attaches to `cabParameters/sectionActive` rather
+    than to `leftCabActive`. With the section on and the left cab off it is
+    reported live. Which switch owns a mic type is genuinely ambiguous from the
+    names, so it is not guessed at.
     """
     switches: List[Tuple[str, str, Key]] = []      # (module, stem, key)
     for path, spec in pack.parameters.items():
@@ -377,8 +460,10 @@ def gate_map(pack) -> Dict[str, Key]:
         switches.append((module, stem, (module, key)))
 
     gates: Dict[str, Key] = {}
-    for path in pack.parameters:
+    for path, spec in pack.parameters.items():
         module, _, key = path.rpartition("/")
+        if spec.kind == "switch" and key.endswith("Active"):
+            continue      # never gate a gate
         best: Optional[Tuple[int, Key]] = None
         for gate_module, stem, gate in switches:
             if gate_module != module or gate[1] == key:
@@ -396,21 +481,114 @@ def gate_map(pack) -> Dict[str, Key]:
     return gates
 
 
+def unmodelled_sections(pack) -> List[str]:
+    """Section switches that gate nothing, so a report can say which.
+
+    See `gate_map`: a `sectionActive` in a module containing only itself has no
+    parameters to gate, and this repository would rather name that than imply the
+    conditioning is complete.
+    """
+    gates = gate_map(pack)
+    in_use = set(gates.values())
+    idle = []
+    for path, spec in pack.parameters.items():
+        module, _, key = path.rpartition("/")
+        if spec.kind != "switch" or "ection" not in key:
+            # Both spellings the two packs use: Morgan's `sectionActive` and Tone
+            # King's `eqSectionActive`, `cabSectionActive`, and so on. Checking for
+            # the literal "sectionActive" found Morgan's four and none of Tone
+            # King's five, which made the report look pack-specific.
+            continue
+        if (module, key) not in in_use:
+            idle.append(path)
+    return sorted(idle)
+
+
 # --- value helpers ----------------------------------------------------------
 
 
 def _get(values: Mapping, key: Key):
-    """Read a value spelled either as a tuple or as "module/key"."""
+    """Read a value however the caller spelled the key.
+
+    Four spellings occur in this codebase and all four have to work, because
+    missing one of them looks like a missing *value*: the tuple form, `module/key`,
+    the bare key for a top-level parameter, and `/key` — which is how
+    `pack.parameters` itself keys top-level parameters, so it is the spelling a
+    caller reading the manifest would naturally use.
+    """
     if key in values:
         return values[key]
-    path = f"{key[0]}/{key[1]}" if key[0] else key[1]
-    return values.get(path)
+    for spelling in _spellings(key):
+        if spelling in values:
+            return values[spelling]
+    return None
+
+
+def _spellings(key: Key) -> Tuple[str, ...]:
+    if key[0]:
+        return (f"{key[0]}/{key[1]}",)
+    return (key[1], f"/{key[1]}")
+
+
+def require_analysis() -> None:
+    """The project's rule: a missing extra prints one actionable line.
+
+    `encode` and `decode` reach for numpy, and used to do it without asking, so a
+    bare clone got a raw `ImportError` from six frames down instead of the install
+    command. Everything else in this module is deliberately stdlib-only — building
+    a space, conditioning it and writing a spec all work with nothing installed.
+    """
+    from analysis import require
+
+    require("encoding a search vector")
 
 
 def _truthy(value) -> bool:
-    if isinstance(value, str):
-        return value.strip().lower() in ("true", "1", "on", "active")
-    return bool(value)
+    """Is this gate on?
+
+    Delegates to the format layer's reader rather than keeping a fourth opinion.
+    A private list here accepted `true/1/on/active` while `format.translate`
+    accepted `true/on/yes/1` and *raised* on anything else, so `"yes"` was False
+    here and True there — and because this one never raised, a gate holding a label
+    it did not recognise silently marked every parameter behind it dormant. Tone
+    King declares display labels on all 21 of its switches, so that was live.
+
+    An unrecognised label is treated as off, but only after the shared reader has
+    had its say, so the two cannot disagree about `"yes"` or `"Active"` again.
+    """
+    from format.translate import from_binary
+
+    if isinstance(value, bool) or value is None:
+        return bool(value)
+    text = str(value).strip()
+    if from_binary("switch", text):
+        return True
+    # The plugin's own labels, which a switch may carry as `members`.
+    return text.lower() in ("on", "yes", "active", "enabled")
+
+
+def _member_index(dimension: Dimension, members: List[str], value) -> int:
+    """Which member this value names, by stored integer or by display name.
+
+    Refuses anything else. Falling back to index 0 meant a display name — the very
+    spelling `amp_prefix` promises to accept — silently became a *different* amp:
+    `encode({"selectedAmp": "SW50R"})` round-tripped to AC20, and so did `99`.
+    """
+    text = str(value).strip()
+    if text in members:
+        return members.index(text)
+    try:
+        return members.index(str(int(float(text))))
+    except (ValueError, TypeError):
+        pass
+    for stored, name in (dimension.members or {}).items():
+        if str(name).strip().lower() == text.lower():
+            return members.index(str(stored))
+    legal = ", ".join(f"{stored}={name}" for stored, name
+                      in sorted((dimension.members or {}).items(), key=lambda kv: int(kv[0])))
+    raise SpaceError(
+        f"{dimension.path}: {value!r} is not one of its members.\n  Accepted: {legal}"
+    )
 
 
 def _to_unit(dimension: Dimension, value) -> float:
@@ -422,10 +600,7 @@ def _to_unit(dimension: Dimension, value) -> float:
         members = sorted((dimension.members or {}), key=lambda k: int(k))
         if not members:
             return 0.0
-        try:  # noqa: SIM105 - the fallback is meaningful, not a swallow
-            index = members.index(str(int(value)))
-        except (ValueError, TypeError):
-            index = 0
+        index = _member_index(dimension, members, value)
         return index / max(1, len(members) - 1)
     low, high = dimension.bounds()
     if high <= low:

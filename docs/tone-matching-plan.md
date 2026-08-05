@@ -1014,8 +1014,17 @@ has headroom.
 
 `match/space.py` and `match/invert.py`. The exit criterion holds: on the synthetic
 chain, one inversion pass and **zero** renders of search cuts the objective against
-an EQ-plus-level-plus-delay target by more than a fifth, and recovers the delay
-time outright rather than approaching it.
+an EQ-plus-level-plus-delay target from 1.151 to 0.394 — 66% — and recovers the
+delay time outright rather than approaching it.
+
+That claim was worth less than it looked when it was first written, and the
+correction is the more useful thing to record. A mutation pass showed the
+exit-criterion *test* passing with `invert()` performing no level match, no filter
+fit and no spectral fit at all: the delay settings alone move the objective to
+0.635, already inside the "better than 0.8×" gate the test used. An aggregate is
+not evidence about its parts. The test now attributes the improvement — the
+spectral and level fits have to beat delay-alone, the band gains have to be
+non-trivial, and the loudness gap has to close.
 
 The space is 126 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
 being its 100 writable ones less its paths and strings, which is the manifest's own
@@ -1064,6 +1073,66 @@ is `eq_residual_db`.
 the *plugin's* parameters while a backend may model fewer: the synthetic chain
 covers 45 and refuses the rest outright, which is correct of it but means the
 caller has to filter. `dropped_for()` says what was left behind so a report can.
+
+### What a four-way review of M3 found
+
+Worth recording in full, because the pattern is now familiar: the code was wrong in
+the places nothing exercised, and the tests were weakest exactly where the
+docstrings were most confident. **31 mutations survived a green suite** — 19 of 38
+in `space.py`, 12 of 31 in `invert.py`.
+
+Four defects mattered:
+
+1. **The advertised composition did not work.** `invert()` emits `sw50rEQ/…` keys
+   and no `selectedAmp`, so `to_spec` could not tell which amp's controls mattered
+   and skipped every one: fourteen values in, four parameters out, no error and no
+   caveat. Both modules' docstrings point at this exact pipeline. `to_spec` now
+   refuses rather than dropping, `amp_prefix` accepts all three spellings that
+   occur in the codebase, and `invert()` names the amp.
+2. **A delay's repeats were read as a tremolo.** A 420 ms echo modulates the
+   envelope at 2.1 Hz purely enough to clear the 0.75 confidence gate, so a
+   full-depth tremolo was written into a target that had none — and `tremolo_settings`
+   was the one inversion that emitted no caveat when it acted, so nothing said why.
+   It now attributes a modulation matching 1/T of a detected delay to the echo.
+3. **`fit_filters` and `fit_graphic_eq` corrected the low end twice.** Both ran on
+   one delta, so a flat −3.5 dB deficit set a corner *and* −4.6 dB on band 1 —
+   −24.6 dB applied at 25 Hz, which is precisely the over-correction that
+   function's own docstring warns about. The corners were also constants: the
+   window edges were hardcoded and the code took the boundary of its own window, so
+   a deficit reaching 100, 200 or 500 Hz all produced 100.0.
+4. **`pack_id` was inert.** Called with `toneking`, the inversions wrote Morgan's
+   parameter paths clamped to Morgan's ranges — `reverb/reverbDecay` at 30 s against
+   Tone King's declared 0.5–8, for a parameter it does not have. Silently. One
+   `declared()` helper now refuses, which also removed five copies of "look up the
+   spec, else a hardcoded fallback", one of which had already drifted.
+
+Two structural mistakes in the conditioning, both found by checking the second pack:
+
+- **Four of Morgan's five section switches gate nothing**, because they live in
+  modules containing only themselves while the controls they bypass live elsewhere.
+  Only `cabParameters` works, by accident of sharing a module. Guessing the mapping
+  would be an unmeasured claim, so the limit is reported by
+  `unmodelled_sections()` and tested rather than hidden.
+- **Tone King's flat namespace inverted the nesting.** Every parameter sits in one
+  module, so `/eqActive` matched `/eqSectionActive` as a child — reporting the page
+  bypass dormant and `eqBand1` *active* while the page was bypassed. A switch is now
+  never gated by another switch.
+
+And a set of quieter dishonesty: `eq_residual_db` described the pre-floor solution
+rather than the one written; `delayMix` was the detector's correlation height times
+100, so a confidence of 0.95 asked for 95% wet; `encode` turned a missing key into
+0.0, which is a real coordinate, inventing a hard-left pan and a 16 ms delay for
+parameters the caller never mentioned; a display name became member index 0, so
+`"SW50R"` round-tripped to AC20; and `encode`/`decode`/`bell_basis` raised bare
+`ImportError` instead of the install hint.
+
+The tests are now built to fail. Notably: `_exclusion_reason` is asserted against
+constructed `ParamSpec`s, because neither shipped pack has a `needs_review`
+parameter and the old comparison was `126 >= 126`; a rotation's bounds are asserted
+as literal `(0.0, 100.0)`, because every expectation used to come from the function
+under test and changing the range to `0..1` left every knob searching 1% of its
+travel; and switches are turned on *through the vector*, which no test could do
+before, since the fixture set them all `False`.
 
 ### What M3 deliberately leaves to later milestones
 
