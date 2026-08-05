@@ -385,8 +385,14 @@ into a scalar happens in the optimizer, from a named **loss profile**
 changes.
 
 ```
-timbre | dynamics | ambience | level | harmonic | spatial | prior_deviation | complexity
+timbre | dynamics | ambience | level | harmonic | spatial | residual |
+prior_deviation | complexity
 ```
+
+`residual` is the paired-DI term and was missing from this list while
+`analysis/compare.py` has carried it since M1 — nine dimensions, not eight. It is
+weighted 0.9 under `paired-v1` and **0.0** under `unpaired-v1`, because a sample-wise
+residual against a different performance measures the performance.
 
 ### 6.3 Cache key
 
