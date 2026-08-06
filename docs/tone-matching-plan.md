@@ -1284,29 +1284,61 @@ end: measure a reference, calculate what can be calculated, search the rest on a
 budget, and write a spec `apply_spec.py` consumes plus a report that leads with what
 not to believe.
 
-**Measured end to end**, against a synthetic reference rendered with the volume,
-treble and bass moved: **1.929 → 0.539 in 64 renders**, eight caveats, and the
-resulting spec applies through `apply_spec.py` and reads back through `show.py`. The
-winner is written by the same validated path as a hand-authored preset, so a search
-cannot produce bytes a person could not have.
+**Measured end to end.** Every number below comes from this, recorded so it can be
+re-run rather than taken on trust:
+
+```sh
+python3 -c "
+from analysis import refchain
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=4.0, gap=0.9, seed=5)
+fx.write_wav('/tmp/ref.wav', refchain.render(di, {
+    'sw50rAmp/sw50rVolume': 82.0, 'sw50rAmp/sw50rTreble': 20.0,
+    'sw50rAmp/sw50rBass': 75.0}))
+fx.write_wav('/tmp/probe.wav', di)"
+
+python3 scripts/match_preset.py --template samples/Example_Clean_PR12.xml \
+  --reference /tmp/ref.wav --reference-mode probe --probe-di /tmp/probe.wav \
+  --amp sw50r --budget 300 --shortlist 3 --seed 0 --out-dir /tmp/run
+```
+
+**1.929 → 0.261 in 292 renders** (0.280 at worst across ±6 dB), 8 caveats, 18
+parameters searched and 6 frozen. The resulting spec applies through `apply_spec.py`
+and reads back through `show.py`: the winner is written by the same validated path as
+a hand-authored preset, so a search cannot produce bytes a person could not have.
+
+An earlier draft of this section quoted numbers from ad-hoc scripts that were never
+recorded, and a review could not reproduce a single one of them. That is worse than
+having no numbers — a figure with no invocation behind it is an assertion wearing a
+decimal point. Anything below that cannot be reproduced from a command in this
+document should be treated the same way.
 
 ### The four stages, and what each one is for
 
 **The screen pays for itself immediately.** Morgan has 126 searchable dimensions and
 CMA-ES over 126 dimensions needs thousands of samples to do anything. Two renders per
-parameter — its own two extremes, everything else at the seed — turned 18 live
-supported dimensions into 14 searched and 4 frozen, for 37 renders. The extremes are
+parameter plus one baseline — 2N + 1, and calling it "2 per parameter" was off by
+exactly that one — turned 24 live supported dimensions into 18 searched and 6 frozen
+for 49 renders on the run above. The extremes are
 the right probe *because* they are extreme: a control that cannot move the objective
 from one end of its range to the other cannot matter in between, whatever the
 interactions. Switches and selectors are not screened, because turning an effect off
 changes what is *reachable* rather than shifting a value.
 
-**The topology loop is exhaustive over what it is given, and is given nothing by
-default.** Interpolating between mic 3 and mic 4 means nothing — the numbers are
+**The topology loop is exhaustive over what it is given, and neither CLI gives it
+anything.** Interpolating between mic 3 and mic 4 means nothing — the numbers are
 labels, and a gradient over labels is a gradient over the order somebody listed them
 in. It is a product, so five two-state switches is 32 whole inner searches; guessing
 which of Morgan's 32 switches are worth that is not something the code can know, so
 the caller says.
+
+**And no caller says.** `topologies()` is written, tested and reachable from Python,
+but neither `match_preset.py` nor the benchmark passes `switches=` or `selectors=`, so
+in the shipped pipeline it always returns the seed alone and the discrete choices are
+whatever the template had. Measured consequence: the `inversion` and `full` arms score
+*identical* selector accuracy in every benchmark run, because the search never changes
+a discrete choice. This is a stage that exists rather than a stage that runs, and it
+should be read that way until a `--enumerate` flag exists or M5 needs it.
 
 **CMA-ES is the textbook (μ/μ_w, λ) with Hansen's constants written out** rather than
 tuned, numpy only, no `cma` dependency (§2, D4). Bounds clip the *evaluated* vector
@@ -1314,20 +1346,21 @@ while the distribution's mean sits where it likes: clipping the mean lets a para
 stick on a bound it was only passing through, which over a gain control means the amp
 is either clean or fully saturated and never anything between.
 
-**The robustness re-rank earns its place on the first run it was tried on.** The best
-match at the reference input level scored 0.702 at worst across ±6 dB against 0.509
-for the candidate that won — so the shortlist order changed, and the caveat says so.
-Ordered by the worst level rather than the mean: a preset that is excellent at one
-input level and unusable at another is not a good match that happens to vary.
+**The robustness re-rank earns its place.** It reorders the shortlist whenever the
+reference-level winner is fragile, and says so when it does — on the run recorded
+above the winner holds up (0.261 at the reference level, 0.280 at worst), which is the
+outcome to hope for rather than the one that demonstrates the stage. It is ordered by
+the worst level rather than the mean: a preset that is excellent at one input level
+and unusable at another is not a good match that happens to vary.
 
 ### Three things this got wrong first
 
-**The screen's probes were thrown away.** Forty renders that had been paid for and
-scored, discarded because they were "measurements" rather than "candidates" — and a
-parameter at an extreme is a perfectly good parameter vector. On the run that found
+**The screen's probes were thrown away.** Nearly fifty renders that had been paid for
+and scored, discarded because they were "measurements" rather than "candidates" — and
+a parameter at an extreme is a perfectly good parameter vector. On the run that found
 it, one probe scored **0.525** while the entire CMA-ES stage found nothing better than
-0.694. Feeding them into the Pareto archive took the run to 0.539 for no extra
-renders. A fifth of the budget was being spent and then binned.
+0.694; feeding them into the Pareto archive took that run to 0.539 for no extra
+renders. A sixth of the budget was being spent and then binned.
 
 **`trials` did not record which DI a render used**, and §6.4 does not list it. That
 omission is an oversight rather than a decision — §6.3's own cache key includes
@@ -1357,22 +1390,31 @@ against inversion's 1.021, and reported **DOES NOT SHIP** against a pipeline tha
 works. A benchmark whose arms are not nested does not measure what each stage adds,
 and it reports its wrong verdict with complete confidence.
 
-Over six targets at a 60-render budget, after the fix:
+Run it with:
 
-| arm | objective | parameter MAE | selector | renders |
-|---|---|---|---|---|
-| recipe | 1.855 | 0.239 | 0.563 | 0 |
-| inversion | 0.820 | 0.244 | 0.583 | 6 |
-| full | **0.531** | 0.251 | 0.583 | 320 |
+```sh
+python3 scripts/benchmark_match.py --targets 50 --budget 300
+```
 
-Each stage improves the sound. **The parameter MAE gets slightly worse at every
-stage**, and that divergence is the actual situation rather than a flaw in the
-measurement: the plugin's controls are not identifiable from its output, so a
-different volume with a compensating EQ curve sounds almost identical. Reporting only
-the MAE would condemn a pipeline that works; reporting only the objective would let a
-real failure through. So both are reported, and `verdict()` states in its own output
-that the MAE is deliberately **not** part of the gate — nobody should have to guess
-whether that was a decision or an omission.
+**What holds across every run made**: each stage improves the objective —
+recipe → inversion → full, monotonically — and the verdict is SHIPS. That is the exit
+criterion and it is met.
+
+**What does not hold**: an earlier draft here bolded "the parameter MAE gets slightly
+worse at every stage" from a single six-target run. Across three runs at different
+seeds and DI lengths the MAE went 0.245 → 0.259 → 0.253, 0.243 → 0.243 → 0.248, and
+0.258 → 0.280 → 0.285 — only the last is monotone. **The MAE does not reliably improve
+and does not reliably worsen**, which is the claim worth making: the objective closes
+while the parameter error stays flat at about a quarter of each control's range.
+
+That is the actual situation rather than a flaw in the measurement. The plugin's
+controls are not identifiable from its output, so a different volume with a
+compensating EQ curve sounds almost identical, and there is no reason recovering the
+sound should recover the numbers. Reporting only the MAE would condemn a pipeline that
+works; reporting only the objective would let a real failure through. Both are
+reported, and `verdict()` states in its own output that the MAE is deliberately **not**
+part of the gate — nobody should have to guess whether that was a decision or an
+omission.
 
 ### Departures from §M4 worth naming
 

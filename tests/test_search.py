@@ -168,7 +168,7 @@ def test_the_screen_costs_two_renders_per_parameter_and_says_which(space, seed,
     """The whole reason it is worth doing: the cost is knowable before it is spent,
     and it turns 126 dimensions into something CMA-ES can work in."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    searched, frozen, probes = S.screen(evaluator, seed)
+    searched, frozen, probes, movement, _ = S.screen(evaluator, seed)
 
     candidates = len(searched) + len(frozen)
     assert candidates > 10, f"only {candidates} parameters were screened"
@@ -178,6 +178,11 @@ def test_the_screen_costs_two_renders_per_parameter_and_says_which(space, seed,
     assert len(probes) == evaluator.renders
     assert searched, "some parameter has to move the objective"
     assert set(searched) & set(frozen) == set()
+    # The movement of every parameter, not only the frozen ones: the report's most
+    # useful column was a dash for every row the screen had kept, because `searched`
+    # was a bare list and the number measured for it was discarded.
+    assert set(movement) == set(searched) | set(frozen)
+    assert all(path in movement for path in searched)
 
 
 def test_the_screens_probes_are_candidates_not_waste(space, seed, target):
@@ -185,7 +190,7 @@ def test_the_screens_probes_are_candidates_not_waste(space, seed, target):
     legitimate parameter vector, and on one measured run a probe scored 0.525 while
     the whole CMA-ES stage found nothing better than 0.694."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    _, _, probes = S.screen(evaluator, seed)
+    _, _, probes, _, _ = S.screen(evaluator, seed)
 
     scored = [p for p in probes if p.objectives]
     assert len(scored) > 10
@@ -199,7 +204,7 @@ def test_the_screen_does_not_screen_switches_or_selectors(space, seed, target):
     value, so the topology loop owns them — and a gradient over a mic-type index is
     a gradient over the order somebody listed them in."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    searched, frozen, _ = S.screen(evaluator, seed)
+    searched, frozen, _, _, _ = S.screen(evaluator, seed)
 
     seen = set(searched) | set(frozen)
     for dimension in space.dimensions:
@@ -222,13 +227,14 @@ def test_a_parameter_that_cannot_be_screened_is_frozen_but_not_called_inert(
     with_gate[("parameters", "gateActive")] = True
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space,
                             recipe=with_gate)
-    searched, frozen, _ = S.screen(evaluator, with_gate,
-                                   only=["parameters/gateThreshold",
-                                         f"{AMP}Amp/{AMP}Volume"])
+    searched, frozen, _, _, silences = S.screen(
+        evaluator, with_gate,
+        only=["parameters/gateThreshold", f"{AMP}Amp/{AMP}Volume"])
 
     assert "parameters/gateThreshold" in frozen
-    assert np.isnan(frozen["parameters/gateThreshold"]), (
-        "one extreme silenced the render, so no movement was measured"
+    assert "parameters/gateThreshold" in silences, (
+        "one extreme silenced the render, and that is a measured fact about the "
+        "control rather than a failure to measure it"
     )
     assert f"{AMP}Amp/{AMP}Volume" in searched, "the control that does work survives"
 
@@ -356,12 +362,14 @@ def test_the_rerank_orders_by_the_worst_input_level(space, seed, target):
     assert isinstance(caveats, list)
 
 
-def test_the_rerank_says_when_it_changed_the_order(space, seed, target):
+def test_the_rerank_says_when_it_changed_the_order(seed):
     """The whole value of the stage is in this caveat: without it a caller reads the
-    reordered list and never learns that the reference-level winner lost."""
-    probe = di()
-    evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space, recipe=seed)
+    reordered list and never learns that the reference-level winner lost.
 
+    Constructed rather than rendered, which is why `_rerank_and_explain` is split out:
+    getting a real search to produce a fragile winner on demand is not something a
+    test can arrange.
+    """
     fragile = S.Candidate(values=dict(seed), objectives={"total": 0.1}, total=0.1)
     fragile.by_level = {0.0: 0.1, -6.0: 9.0, 6.0: 0.2}
     steady = S.Candidate(values=dict(seed), objectives={"total": 0.5}, total=0.5)
@@ -436,3 +444,130 @@ def test_frozen_parameters_keep_their_seed_value_through_the_search(space, seed,
     for path in result.frozen:
         module, _, key = path.rpartition("/")
         assert winner[(module, key)] == seed[(module, key)], path
+
+
+def test_a_second_reference_is_not_served_the_first_ones_score(space, seed):
+    """One store, one directory, two runs — which is the designed workflow, since
+    `open_store` gives every `--out-dir` one `trials.sqlite3`. Keyed on the render
+    address the second run got the first run's objectives against different audio,
+    wrote zero trial rows, and reported a headline scored against the wrong
+    recording."""
+    probe = di()
+    scorer = S.Evaluator(SyntheticRenderer(), printed(probe), probe, space)
+    first = printed(refchain.render(probe, scorer._settings(
+        {**seed, (f"{AMP}Amp", f"{AMP}Volume"): 80.0})))
+    second = printed(refchain.render(probe, scorer._settings(
+        {**seed, (f"{AMP}Amp", f"{AMP}Treble"): 15.0})))
+
+    with Store() as store:
+        store.start_run(Run(run_id="one"))
+        store.start_run(Run(run_id="two"))
+        a = S.Evaluator(SyntheticRenderer(), first, probe, space, store=store,
+                        run_id="one", recipe=seed)
+        b = S.Evaluator(SyntheticRenderer(), second, probe, space, store=store,
+                        run_id="two", recipe=seed)
+        truth = S.Evaluator(SyntheticRenderer(), second, probe, space, recipe=seed)
+
+        a.evaluate(seed)
+        scored = b.evaluate(seed)
+
+        assert b.cache_hits == 0 and b.renders == 1
+        assert scored.total == pytest.approx(truth.evaluate(seed).total)
+        assert store.summary("two")["trials"] == 1, "a real trial, not a phantom hit"
+
+        # And the same profile change is also a different score.
+        paired = S.Evaluator(SyntheticRenderer(), second, probe, space, store=store,
+                            run_id="two", recipe=seed, profile="paired-v1")
+        paired.evaluate(seed)
+        assert paired.cache_hits == 0
+
+        # While a genuine repeat of the same question is still free.
+        a.evaluate(seed)
+        assert a.cache_hits == 1 and a.renders == 1
+
+
+def test_a_seed_value_of_exactly_zero_is_not_read_as_absent(space, seed, target):
+    """`_get(seed, d) or d.bounds()[0]` treated 0.0 as missing, because 0.0 is falsy,
+    so a parameter sitting at zero started the optimiser at the *bottom* of its range.
+    The bundled `Example_Clean_PR12.xml` has 35 continuous dimensions at exactly 0.0,
+    including all nine EQ bands whose range is −12..+12 — so zero is the middle."""
+    band = space.by_path(f"{AMP}EQ", f"{AMP}EQBand1")
+    assert band.bounds() == (-12.0, 12.0), "zero has to be mid-range for this to bite"
+
+    at_zero = dict(seed)
+    at_zero[(f"{AMP}EQ", f"{AMP}EQBand1")] = 0.0
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=at_zero)
+    evaluated, _ = S.refine(evaluator, at_zero, [band.path], 12,
+                            rng=np.random.default_rng(0))
+
+    assert evaluated, "one generation has to run"
+    gains = [c.values[(f"{AMP}EQ", f"{AMP}EQBand1")] for c in evaluated]
+    # Sampling starts at the mean, so the samples straddle zero rather than piling up
+    # against −12. With the bug every one of them sat in the bottom of the range.
+    assert min(gains) < 0.0 < max(gains), gains
+    assert sum(gains) / len(gains) == pytest.approx(0.0, abs=4.0), gains
+
+
+def test_the_budget_reserves_every_fixed_cost(space, seed, target):
+    """The per-variant seed render was not reserved, so a run overspent by exactly the
+    variant count — one with no switches enumerated, thirty-two with five."""
+    for budget in (98, 60):
+        result = S.search(SyntheticRenderer(), target, di(), space, seed,
+                          budget=budget, shortlist=3,
+                          rng=np.random.default_rng(0))
+        assert result.renders <= budget, (
+            f"budget {budget}: spent {result.renders}"
+        )
+
+
+def test_a_frozen_parameter_that_did_move_is_not_called_inert(space, seed, target):
+    """The caveat said four parameters "moved the objective by less than 0.01" when
+    their measured movements were 0.062, 0.062, 0.109 and 0.070 — every one well clear
+    of the floor and cut by the quantile instead. The report repeated the claim in
+    prose next to a table showing 0.109."""
+    result = S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
+                      shortlist=1, rng=np.random.default_rng(0))
+
+    below = [p for p, v in result.frozen.items()
+             if not np.isnan(v) and v < S.SENSITIVITY_FLOOR]
+    weakest = [p for p, v in result.frozen.items()
+               if not np.isnan(v) and v >= S.SENSITIVITY_FLOOR]
+
+    for caveat in result.caveats:
+        if "moved the objective by less than" in caveat:
+            assert below, f"nothing was below the floor, but: {caveat}"
+            assert caveat.startswith(f"{len(below)} of"), caveat
+    if weakest:
+        assert any("weakest" in c for c in result.caveats), (
+            f"{len(weakest)} parameters were cut by the quantile with no caveat: "
+            f"{result.caveats}"
+        )
+
+
+def test_the_optimiser_stops_when_its_step_is_finer_than_the_controls(space, seed,
+                                                                     target):
+    """A step floor was the first attempt and it guaranteed the waste it was meant to
+    prevent: 1e-4 in unit space is 0.0024 dB against an EQ band's 0.25 dB quantum, so
+    once the step reached the floor every render repeated one already made."""
+    paths = [f"{AMP}EQ/{AMP}EQBand{i}" for i in range(1, 5)]
+    dimensions = [S._dimension(space, path) for path in paths]
+    step = S._quantisation_step(dimensions)
+    assert 0.0 < step < 0.01, step
+
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    evaluated, caveats = S.refine(evaluator, seed, paths, 400,
+                                  rng=np.random.default_rng(0))
+    if len(evaluated) < 400:
+        assert any("finer than the smallest change" in c for c in caveats), caveats
+
+
+def test_a_candidate_never_re_rendered_does_not_crash_the_reorder():
+    """`worst_level` is None for it, and formatting that with `:.3f` raised — on
+    exactly the constructed input this function was split out to make testable."""
+    unmeasured = S.Candidate(values={}, objectives={"total": 0.2}, total=0.2)
+    steady = S.Candidate(values={}, objectives={"total": 0.5}, total=0.5)
+    steady.by_level = {0.0: 0.5, -6.0: 0.5, 6.0: 0.5}
+
+    reranked, caveats = S._rerank_and_explain([unmeasured, steady])
+    assert reranked[0] is steady, "a measured candidate outranks an unmeasured one"
+    assert isinstance(caveats, list)

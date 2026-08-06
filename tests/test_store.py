@@ -58,16 +58,17 @@ def test_the_cache_never_returns_a_failure(store):
     """One transient backend error would otherwise become permanent for the life of
     the store — and a failure is a measurement of the backend on that occasion, not
     of the parameters."""
-    store.add_trial("r", Trial(params={"a/b": 1}, cache_key="k", error="timeout"))
+    store.add_trial("r", Trial(params={"a/b": 1}, objective_key="k",
+                               error="timeout"))
     assert store.cached("k") is None
 
-    store.add_trial("r", Trial(params={"a/b": 1}, cache_key="k",
+    store.add_trial("r", Trial(params={"a/b": 1}, objective_key="k",
                                objectives={"total": 0.3}))
     hit = store.cached("k")
     assert hit is not None and hit.objectives == {"total": 0.3}
 
     # The most recent success, so a re-render after a plugin change wins.
-    store.add_trial("r", Trial(params={"a/b": 1}, cache_key="k",
+    store.add_trial("r", Trial(params={"a/b": 1}, objective_key="k",
                                objectives={"total": 0.2}))
     assert store.cached("k").objectives == {"total": 0.2}
     assert store.cached("never-rendered") is None
@@ -156,7 +157,7 @@ def test_a_store_survives_being_reopened(tmp_path):
     lose them — that is the case the cache exists for."""
     first = open_store(str(tmp_path / "runs" / "one"))
     first.start_run(Run(run_id="r"))
-    first.add_trial("r", Trial(params={"a/b": 1}, cache_key="k",
+    first.add_trial("r", Trial(params={"a/b": 1}, objective_key="k",
                                objectives={"total": 0.5}))
     del first                                  # not closed: simulate a hard stop
 
@@ -179,3 +180,49 @@ def test_the_summary_does_not_pretend_to_count_cache_hits(store):
     store.add_trial("r", Trial(params={"a/b": 1}, wall_ms=0.0,
                                objectives={"total": 0.5}))
     assert "cache_hits" not in store.summary("r")
+
+
+def test_the_cache_is_keyed_on_the_score_not_just_the_render(store):
+    """What is cached is a *distance to a reference*, and that is a finer thing than
+    the audio: it also depends on which reference, which loss profile, and which seed
+    the prior terms measure from. Keyed on the render address alone, a second run in
+    the same directory was served the first run's objectives against different audio —
+    silently, with no trial row, so every count in the report was zero."""
+    store.add_trial("r", Trial(params={"a/b": 1}, cache_key="same-render",
+                               objective_key="score-for-reference-A",
+                               objectives={"total": 0.345}))
+
+    assert store.cached("score-for-reference-A").objectives == {"total": 0.345}
+    assert store.cached("score-for-reference-B") is None, (
+        "the same audio against a different reference is a different score"
+    )
+    # And the render address is still recorded, because it is what identifies the
+    # audio for anything that wants to re-render it.
+    read, = list(store.trials("r"))
+    assert read.cache_key == "same-render"
+    assert read.objective_key == "score-for-reference-A"
+
+
+def test_a_file_that_is_not_a_store_says_so(tmp_path):
+    """`sqlite3.connect` succeeds on any readable file — a wav, a preset, a
+    half-written download — and it is the first CREATE TABLE that fails, with a bare
+    `DatabaseError` naming nothing a person can act on."""
+    blocker = tmp_path / "notastore.bin"
+    blocker.write_bytes(b"RIFF" + b"\x00" * 200)
+
+    with pytest.raises(StoreError) as raised:
+        Store(str(blocker))
+    assert "either empty or a store this tool wrote" in str(raised.value)
+
+
+def test_a_trial_cannot_both_fail_and_score():
+    """Stated and unenforced, which held only because M4 has one writer. A row
+    carrying both says the render failed *and* scored, and every reader would have to
+    pick one to believe."""
+    with pytest.raises(StoreError) as raised:
+        Trial(params={}, error="died", objectives={"total": 0.1})
+    assert "cannot both fail and score" in str(raised.value)
+
+    # Either alone is fine.
+    assert Trial(params={}, error="died").failed
+    assert not Trial(params={}, objectives={"total": 0.1}).failed

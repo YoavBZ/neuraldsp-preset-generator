@@ -71,6 +71,23 @@ class BenchmarkResult:
     def by_arm(self, arm: str) -> List[Outcome]:
         return [o for o in self.outcomes if o.arm == arm]
 
+    def paired(self, arm: str, other: str) -> Tuple[List[Outcome], List[Outcome]]:
+        """The two arms' outcomes on the targets where *both* succeeded.
+
+        `summarise` averages each arm over its own successes, which is the right
+        number to report and the wrong one to compare. An arm that failed 49 of 50
+        targets and happened to score 2.0 on the easy one would set a bar the other
+        arm clears by construction — measured, that produced SHIPS from a comparison
+        of 50 targets against 1. The mirror image blocks a working pipeline.
+
+        `compare_baselines` promises "the comparison is only worth anything because it
+        is the same targets", and this is what makes that true after a failure.
+        """
+        mine = {o.target_index: o for o in self.by_arm(arm) if not o.failed}
+        theirs = {o.target_index: o for o in self.by_arm(other) if not o.failed}
+        shared = sorted(set(mine) & set(theirs))
+        return [mine[i] for i in shared], [theirs[i] for i in shared]
+
     def summarise(self, arm: str) -> Dict[str, Any]:
         """One arm's numbers, with the failures counted rather than dropped.
 
@@ -117,23 +134,47 @@ class BenchmarkResult:
                                f"nothing to beat")
                 ships = False
                 continue
-            mine, theirs = full.get("objective"), other.get("objective")
-            if mine is None or theirs is None:
-                reasons.append(f"the {baseline} baseline produced no comparable "
-                               f"objective")
+            ours, theirs = self.paired("full", baseline)
+            if not ours:
+                # Which arm failed matters, and the message used to name the baseline
+                # whatever the cause: with `full` failing every target it reported
+                # "the recipe baseline produced no comparable objective" about a
+                # baseline that had scored 1.0 on all fifty.
+                blamed = ("neither arm succeeded on any target"
+                          if not self.summarise("full").get("objective")
+                          and not other.get("objective") else
+                          "no target was scored by both arms" if other.get("objective")
+                          else f"the {baseline} baseline scored nothing")
+                if full.get("objective") is None:
+                    blamed = "the full pipeline scored nothing on any target"
+                reasons.append(f"cannot compare against {baseline}: {blamed}")
                 ships = False
                 continue
-            if mine < theirs:
-                reasons.append(f"beats {baseline}: {mine:.3f} against {theirs:.3f} "
-                               f"mean objective distance")
+            mine = sum(o.objective for o in ours) / len(ours)
+            against = sum(o.objective for o in theirs) / len(theirs)
+            shared = len(ours)
+            if mine < against:
+                reasons.append(f"beats {baseline}: {mine:.3f} against {against:.3f} "
+                               f"mean objective distance over the {shared} targets "
+                               f"both arms scored")
             else:
                 reasons.append(f"does NOT beat {baseline}: {mine:.3f} against "
-                               f"{theirs:.3f} — the extra renders bought nothing")
+                               f"{against:.3f} over the {shared} targets both arms "
+                               f"scored — the extra renders bought nothing")
                 ships = False
-        if full.get("failure_rate", 0.0) > 0.1:
-            reasons.append(f"and fails {100 * full['failure_rate']:.0f}% of targets, "
-                           f"which is too many to call the mean representative")
-            ships = False
+            if shared < 0.7 * other["targets"]:
+                reasons.append(f"and only {shared} of {other['targets']} targets "
+                               f"were scored by both arms, so that comparison rests "
+                               f"on less than it looks like")
+                ships = False
+        for arm in ("recipe", "inversion", "full"):
+            summary = self.summarise(arm)
+            if summary.get("targets") and summary["failure_rate"] > 0.1:
+                reasons.append(
+                    f"{arm} fails {100 * summary['failure_rate']:.0f}% of targets, "
+                    f"which is too many to call its mean representative"
+                )
+                ships = False
         reasons.append(
             f"parameter MAE is {_show(full.get('parameter_mae'))} and selector "
             f"accuracy {_show(full.get('selector_accuracy'))}; neither is part of "
@@ -255,6 +296,15 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         raise BenchmarkError(f"unknown arm(s) {', '.join(unknown)}; "
                              f"available: {', '.join(ARMS)}")
 
+    # Refused here rather than fifty targets later. `--amp nope` was accepted by
+    # `space.build` — which correctly restricts to a prefix it never finds — and then
+    # failed inside every arm, once per target, with the real cause visible only in
+    # the store.
+    if amp is not None and amp not in set(space.amp_modules.values()):
+        raise BenchmarkError(
+            f"{amp!r} is not an amp in this space.\n"
+            f"  Available: {', '.join(sorted(set(space.amp_modules.values()))) or 'none'}."
+        )
     supported = list(renderer.parameter_specs())
     scorer = search.Evaluator(renderer, fingerprint(
         io.from_samples(probe_di, renderer.metadata().sample_rate),
@@ -289,6 +339,10 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
                 outcome.wall_ms = (time.perf_counter() - started) * 1000.0
+                # An arm that raised may already have spent its whole budget, and
+                # reporting 0 renders for it understates what the failure cost. The
+                # error carries the count when the raiser knows it.
+                outcome.renders = getattr(e, "renders_spent", 0)
                 result.outcomes.append(outcome)
                 continue
             outcome.renders = renders
@@ -348,7 +402,13 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
     outcome = search.search(renderer, target, probe_di, space, inverted,
                             budget=budget, profile=profile, shortlist=1, rng=rng)
     if not outcome.shortlist:
-        raise BenchmarkError("the search returned no candidate")
+        failure = BenchmarkError(
+            f"the search returned no candidate after {outcome.renders} renders: "
+            f"every trial failed or came back silent"
+        )
+        # So the reported cost is what the failure actually cost.
+        failure.renders_spent = outcome.renders + spent
+        raise failure
     return outcome.shortlist[0].values, outcome.renders + spent
 
 
@@ -411,8 +471,8 @@ def _show(value: Optional[float]) -> str:
 
 def format_table(result: BenchmarkResult, arms: Sequence[str] = ARMS) -> str:
     """The four numbers per arm, in a table, never collapsed into a score."""
-    columns = [("arm", 10), ("targets", 8), ("fail%", 7), ("param MAE", 10),
-               ("selector", 9), ("objective", 10), ("median", 8), ("renders", 8),
+    columns = [("arm", 10), ("targets", 8), ("fail%", 7), ("param MAE", 13),
+               ("selector", 13), ("objective", 13), ("median", 13), ("renders", 8),
                ("wall s", 8)]
     lines = ["  ".join(name.ljust(width) for name, width in columns),
              "  ".join("-" * width for _, width in columns)]
@@ -433,6 +493,27 @@ def format_table(result: BenchmarkResult, arms: Sequence[str] = ARMS) -> str:
         ]
         lines.append("  ".join(cell.ljust(width)
                                for cell, (_, width) in zip(cells, columns)))
+    lines.append("")
+    lines.append("param MAE is the mean absolute error over the continuous controls, "
+                 "as a fraction of")
+    lines.append("each one's own range; selector is the share of switches and "
+                 "selectors got right.")
+
+    # The errors, which were recorded and never printed: `--amp nope` produced three
+    # arms of "not measured" and a verdict blaming the wrong one, while the actual
+    # cause — "'nope' is not an amp in pack 'morgan'" — sat in the store, reachable
+    # only through --json.
+    failures = {}
+    for outcome in result.outcomes:
+        if outcome.error:
+            failures.setdefault(outcome.error, []).append(outcome.arm)
+    if failures:
+        lines.append("")
+        lines.append("failures:")
+        for error, arms in sorted(failures.items()):
+            where = ", ".join(sorted(set(arms)))
+            lines.append(f"  {where}: {error}")
+
     ships, reasons = result.verdict()
     lines.append("")
     lines.append("SHIPS" if ships else "DOES NOT SHIP")

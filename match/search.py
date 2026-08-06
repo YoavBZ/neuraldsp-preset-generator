@@ -13,9 +13,10 @@ Four stages, in order, each one narrowing what the next has to consider:
 
 1. **Screen.** Render each candidate parameter at its low and high end and see
    whether the objective moves at all. A parameter that does not move it is frozen
-   for the run. Two renders each, once — and it pays for itself immediately,
-   because Morgan has 126 searchable dimensions and a CMA-ES over 126 dimensions
-   needs thousands of samples to do anything at all.
+   for the run. Two renders each plus one baseline, once — and it pays for itself
+   immediately: Morgan declares 126 searchable dimensions of which **88 are
+   continuous**, and CMA-ES over 88 dimensions needs thousands of samples to do
+   anything at all. (The other 38 are switches and selectors, which stage 2 owns.)
 2. **Enumerate.** Amp, cab, mic and effect on/off are discrete, and interpolating
    between mic 3 and mic 4 means nothing. They are an outer loop, never a
    coordinate.
@@ -37,6 +38,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from match.renderer import canonical_settings
 from match.space import Dimension, Space
 from match.store import Store, Trial
 
@@ -44,6 +46,10 @@ from match.store import Store, Trial
 # searching over. Not a tolerance on the objective itself: the screen renders at a
 # parameter's extremes, which is the largest effect it can have, so anything under
 # this is a control that cannot matter however it is set.
+#
+# A *floor* on the floor. On a backend that does not repeat itself the real limit is
+# whatever that backend's own variation is, and `screen` raises this to match — see
+# `_backend_floor`.
 SENSITIVITY_FLOOR = 0.01
 
 # The fraction of surviving parameters to freeze anyway, weakest first. The plan
@@ -57,10 +63,12 @@ SENSITIVITY_QUANTILE = 0.25
 # step throws that information away.
 INITIAL_SIGMA = 0.15
 
-# Weight on ‖θ − θ_recipe‖. The Gaussian-prior result from §2: a preset that a
-# person would recognise beats one that scores marginally better by moving fourteen
-# controls to places nobody would choose.
-PRIOR_WEIGHT = 0.15
+# The prior's weight is NOT here. `prior_deviation` is a dimension of the objective
+# vector, so how much it counts is a number in `analysis/loss_profiles.json` — 0.15
+# under `unpaired-v1`, 0.1 under `paired-v1`. A `PRIOR_WEIGHT = 0.15` constant used to
+# sit here, wired to an `Evaluator.prior_weight` attribute that was assigned and never
+# read: a maintainer who changed it would have seen no effect and no error, which is
+# the exact trap "no parameter that does nothing" exists to prevent.
 
 # The input-level offsets the shortlist is re-rendered at, in dB.
 ROBUSTNESS_OFFSETS_DB = (-6.0, 6.0)
@@ -118,6 +126,11 @@ class SearchResult:
     shortlist: List[Candidate] = field(default_factory=list)
     frozen: Dict[str, float] = field(default_factory=dict)
     searched: List[str] = field(default_factory=list)
+    # How much each *searched* parameter moved the objective, which the screen
+    # measured and then discarded on the way out: `frozen` carried its numbers and
+    # `searched` was a bare list, so the report's most useful column was a dash for
+    # every row that had been kept, and a reader could not check the freeze decision.
+    movement: Dict[str, float] = field(default_factory=dict)
     renders: int = 0
     cache_hits: int = 0
     wall_ms: float = 0.0
@@ -126,6 +139,7 @@ class SearchResult:
 
     @property
     def best(self) -> Optional[Candidate]:
+        """The recommended candidate, after the ±6 dB re-rank reordered them."""
         return self.shortlist[0] if self.shortlist else None
 
 
@@ -140,8 +154,7 @@ class Evaluator:
     def __init__(self, renderer, target, probe_di, space: Space,
                  profile: str = "unpaired-v1",
                  store: Optional[Store] = None, run_id: Optional[str] = None,
-                 recipe: Optional[Mapping] = None,
-                 prior_weight: float = PRIOR_WEIGHT) -> None:
+                 recipe: Optional[Mapping] = None) -> None:
         from analysis import require
 
         require("searching for a preset")
@@ -153,12 +166,10 @@ class Evaluator:
         self.store = store
         self.run_id = run_id
         self.recipe = dict(recipe or {})
-        self.prior_weight = float(prior_weight)
         self.renders = 0
         self.cache_hits = 0
         self.wall_ms = 0.0
         self._supported = _supported_keys(renderer)
-        self._di_sha = None
 
     # --- the one expensive call ---------------------------------------------
 
@@ -182,9 +193,16 @@ class Evaluator:
         metadata = self.renderer.metadata()
         di_sha = _hash(signal)
         key = cache_key(metadata, di_sha, settings)
+        # What is being cached is a *score*, and a score is not addressed by the
+        # render alone: it also depends on the reference, on how the objective is
+        # weighted, and on the seed the prior terms measure from. Keyed on the render
+        # address alone, a second run in the same directory was served the first
+        # run's objectives against a different recording — no error, no trial row,
+        # and a report whose headline scored a match against somebody else's audio.
+        scoring_key = _scoring_key(key, self.target, self.profile, self.recipe)
 
         if self.store is not None:
-            hit = self.store.cached(key)
+            hit = self.store.cached(scoring_key)
             if hit is not None:
                 self.cache_hits += 1
                 return Candidate(values=dict(values),
@@ -231,6 +249,7 @@ class Evaluator:
             trial = self.store.add_trial(self.run_id, Trial(
                 params=dict(settings),
                 cache_key=key,
+                objective_key=scoring_key,
                 di_sha=di_sha,
                 di_offset_db=float(offset_db),
                 render_sha=None if rendered is None else _hash(rendered.audio),
@@ -323,13 +342,15 @@ def screen(evaluator: Evaluator, seed: Mapping,
            floor: float = SENSITIVITY_FLOOR,
            quantile: float = SENSITIVITY_QUANTILE,
            only: Optional[Sequence[str]] = None
-           ) -> Tuple[List[str], Dict[str, float], List[Candidate]]:
+           ) -> Tuple[List[str], Dict[str, float], List[Candidate],
+                      Dict[str, float], Dict[str, float]]:
     """Which parameters move the objective, and by how much.
 
     Two renders per parameter — its low end and its high end, everything else at the
     seed — so the cost is known before it is spent: 2 × the number of candidates,
     once. Returns the paths worth searching, the ones frozen with the movement that
-    decided each, and **every probe it scored**.
+    decided each, **every probe it scored**, and the movement of every parameter —
+    searched or frozen — so a report can show the decision rather than assert it.
 
     The probes matter. They are renders that were paid for and compared, and a
     parameter at an extreme is a legitimate parameter vector: measured on a target
@@ -348,6 +369,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
     be driven with, because that render measures the backend's silence rather than
     the control.
     """
+    floor = max(float(floor), _backend_floor(evaluator))
     candidates = [d for d in evaluator.space.active(seed)
                   if not d.switch and d.kind != "enum"
                   and (evaluator._supported is None
@@ -364,6 +386,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
         )
 
     probes: List[Candidate] = []
+    silences: Dict[str, float] = {}
     baseline = evaluator.evaluate(seed)
     probes.append(baseline)
     if not baseline.objectives:
@@ -378,6 +401,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
     for dimension in candidates:
         low, high = dimension.bounds()
         scores = []
+        silenced = []
         for value in (low, high):
             probe = dict(seed)
             probe[(dimension.module, dimension.key)] = dimension.quantise(value)
@@ -385,6 +409,20 @@ def screen(evaluator: Evaluator, seed: Mapping,
             probes.append(scored)
             if scored.objectives:
                 scores.append(scored.total)
+            else:
+                silenced.append(value)
+        if len(scores) == 1 and silenced:
+            # One end silenced the render and the other did not, which is a *measured*
+            # fact about the control rather than a failure to measure it: a noise gate
+            # at its threshold mutes the signal, by design. Treated as "unknown" this
+            # produced the same caveat on every run of the tool, two renders spent on
+            # a structural certainty — and the caveat block is where the real warnings
+            # are, so padding it teaches people to skip it. The movement is recorded
+            # against the end that did render, so the control can still be frozen or
+            # searched on evidence.
+            movement[dimension.path] = 0.0
+            silences[dimension.path] = float(silenced[0])
+            continue
         # A parameter whose extremes both failed to render is *unknown*, not inert.
         # Freezing it is still the right call — nothing was learned about it — but
         # the movement is recorded as NaN so a report does not claim it was measured.
@@ -402,7 +440,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
     # Strongest first, which is the order a caller wants to read and the order
     # CMA-ES benefits from when its budget runs out mid-population.
     searched.sort(key=lambda path: above[path], reverse=True)
-    return searched, frozen, probes
+    return searched, frozen, probes, movement, silences
 
 
 # --- stage 2: topology ------------------------------------------------------
@@ -472,11 +510,23 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
     dimensions of bounded continuous parameters, which is squarely what CMA-ES was
     designed for and does not need a framework.
 
-    Bounds are handled by clipping the *evaluated* vector while letting the
-    distribution's mean sit wherever it likes. Clipping the mean instead lets a
-    parameter get stuck on a bound it was only passing through, which on a search
-    over gain controls means the amp is either clean or fully saturated and never
-    anything between.
+    Bounds are handled by clipping the evaluated sample **and** the distribution's
+    mean. An earlier version clipped only the sample, on the reasoning that clipping
+    the mean lets a parameter stick on a bound it was only passing through — which
+    sounds right and is measurably wrong. Clipping the sample makes the fitness a
+    *plateau* outside the box, so selection carries no gradient information back and a
+    mean that wanders out never returns. Measured on a sphere objective, n=8, σ=0.15,
+    600 evaluations, optimum at unit 0.02 — the near-clean end of a gain control,
+    exactly the case the old comment cited:
+
+    | mean | best found | final mean range |
+    |---|---|---|
+    | unclipped | 2.5e-03 | (−4.2, −0.55) |
+    | clipped   | **2.6e-06** | (0.019, 0.021) |
+
+    A thousand times worse, and it also wasted renders: with the optimum near a bound,
+    76% of 600 samples quantised to a vector already tried, and only 10 of the last
+    240 were distinct. Nobody had measured the claim; it was an argument.
     """
     import numpy as np
 
@@ -493,8 +543,20 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
     from match.space import _to_unit
 
-    mean = np.array([_to_unit(d, _get(seed, d) or d.bounds()[0]) for d in dimensions],
-                    dtype=np.float64)
+    # `or d.bounds()[0]` here read a seed value of exactly **0.0** as absent, because
+    # 0.0 is falsy — so a searched parameter sitting at zero started the optimiser at
+    # the *bottom* of its range instead. That is not a corner case: the bundled
+    # `Example_Clean_PR12.xml` has 35 continuous dimensions at exactly 0.0, including
+    # all nine EQ bands (−12..+12 dB, so 0.0 is the middle) and `inputGain`. It also
+    # made `None` and `0.0` indistinguishable, which is the very confusion
+    # `Space.encode` was rewritten to refuse.
+    def start_at(dimension: Dimension) -> float:
+        value = _get(seed, dimension)
+        if value is None:
+            return _to_unit(dimension, dimension.bounds()[0])
+        return _to_unit(dimension, value)
+
+    mean = np.array([start_at(d) for d in dimensions], dtype=np.float64)
 
     # The textbook defaults (Hansen). Written out rather than tuned, so that a
     # future change to them is visible as a change.
@@ -523,21 +585,21 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
             eigenvalues, eigenvectors = np.linalg.eigh(covariance)
         except np.linalg.LinAlgError:
             caveats.append(
-                f"the optimiser's covariance stopped being decomposable after "
-                f"{generations} generations, so it stopped there; the best of "
-                f"{len(evaluated)} candidates so far stands"
+                f"the search lost its bearings after {generations} rounds and "
+                f"stopped early — the best of the {len(evaluated)} settings it had "
+                f"tried by then is what you have. Running it again with a different "
+                f"--seed usually gets further."
             )
             break
         eigenvalues = np.maximum(eigenvalues, 1e-20)
         root = eigenvectors @ np.diag(np.sqrt(eigenvalues))
 
         offsets = rng.standard_normal((lambda_, n))
-        samples = mean + step * (offsets @ root.T)
+        samples = np.clip(mean + step * (offsets @ root.T), 0.0, 1.0)
         scored = []
         for sample in samples:
-            clipped = np.clip(sample, 0.0, 1.0)
             candidate = evaluator.evaluate(_decode(evaluator.space, dimensions,
-                                                   clipped, seed))
+                                                   sample, seed))
             evaluated.append(candidate)
             scored.append((candidate.total, sample))
 
@@ -552,12 +614,10 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
         selected = np.array([pair[1] for pair in scored[:mu]])
         previous = mean.copy()
-        mean = weights @ selected
+        mean = np.clip(weights @ selected, 0.0, 1.0)
 
         # The two evolution paths, and the step-size and covariance updates they
-        # drive. Standard CMA-ES; the only thing worth noting is that `step` is
-        # bounded below, because a run that collapses its step to 1e-12 is spending
-        # renders on numbers the plugin quantises away.
+        # drive. Standard CMA-ES.
         inverse_root = eigenvectors @ np.diag(1 / np.sqrt(eigenvalues)) @ eigenvectors.T
         displacement = (mean - previous) / step
         path_s = ((1 - c_s) * path_s
@@ -574,15 +634,30 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
                                + (0.0 if h_sigma else c_c * (2 - c_c)) * covariance)
                       + c_mu * (spread.T @ (weights[:, None] * spread)))
         covariance = (covariance + covariance.T) / 2.0
-        step = max(step * math.exp((c_s / damps)
-                                  * (np.linalg.norm(path_s) / chi_n - 1)), 1e-4)
+        step *= math.exp((c_s / damps) * (np.linalg.norm(path_s) / chi_n - 1))
         generations += 1
+
+        # Stop when the step is finer than what the plugin can store, rather than
+        # flooring it there. A floor was the first attempt and it guaranteed the
+        # waste it was meant to prevent: 1e-4 in unit space is 0.0024 dB against an EQ
+        # band's 0.25 dB quantum, so once the step reached the floor every remaining
+        # render was a duplicate of one already made. A well-posed run hit it and then
+        # sampled out the rest of its budget.
+        if step < _quantisation_step(dimensions):
+            caveats.append(
+                f"the optimiser stopped after {generations} generations and "
+                f"{len(evaluated)} renders: its step had become finer than the "
+                f"smallest change these controls can store, so every further render "
+                f"would have repeated one already made"
+            )
+            break
 
     if generations == 0 and not caveats:
         caveats.append(
-            f"the budget of {budget} renders is smaller than one generation of "
-            f"{lambda_} for {n} parameters, so the optimiser never ran. Raise "
-            f"--budget or screen harder."
+            f"the budget of {budget} renders is smaller than one round of "
+            f"{lambda_}, which is the smallest step the search can take with "
+            f"{n} parameters to move, so it never ran. Raise --budget to at least "
+            f"{lambda_} more than the fixed costs above."
         )
     return evaluated, caveats
 
@@ -635,6 +710,7 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
         return [], []
 
     caveats: List[str] = []
+    unmeasured: List[float] = []
     levels = [0.0] + [float(offset) for offset in offsets_db]
     for candidate in shortlist:
         for offset in levels:
@@ -645,8 +721,24 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
                 10.0 ** (offset / 20.0))
             scored = evaluator.evaluate(candidate.values, di=scaled,
                                         offset_db=offset)
-            candidate.by_level[offset] = (scored.total if scored.objectives
-                                          else float("inf"))
+            if scored.objectives:
+                candidate.by_level[offset] = scored.total
+            else:
+                # A render that failed or came back silent at a shifted level is not
+                # a robustness measurement. Recording `inf` made the candidate sink
+                # to the bottom of the shortlist *as though it had been measured and
+                # found fragile*, which is the standing rule this repository breaks
+                # least often: silence is not evidence about a control.
+                unmeasured.append(offset)
+    if unmeasured:
+        levels_text = ", ".join(f"{offset:+.0f} dB" for offset
+                                in sorted(set(unmeasured)))
+        caveats.append(
+            f"one or more candidates could not be re-rendered at {levels_text} of "
+            f"input level, so their robustness across playing levels is unknown "
+            f"rather than poor — the shortlist below is ordered on the levels that "
+            f"did measure"
+        )
 
     reranked, ordering_caveats = _rerank_and_explain(shortlist)
     return reranked, caveats + ordering_caveats
@@ -663,8 +755,13 @@ def _rerank_and_explain(shortlist: Sequence[Candidate],
     reranked = sorted(shortlist, key=lambda c: (c.worst_level if c.worst_level
                                                 is not None else float("inf")))
     caveats: List[str] = []
-    if reranked and reranked[0] is not shortlist[0]:
-        was, now = shortlist[0], reranked[0]
+    was, now = shortlist[0], reranked[0] if reranked else None
+    # Both levels have to be known before the reorder can be described. A candidate
+    # that was never re-rendered has `worst_level` of None, and formatting that with
+    # `:.3f` raised a TypeError — on precisely the constructed input this function was
+    # split out to make testable.
+    if (now is not None and now is not was
+            and was.worst_level is not None and now.worst_level is not None):
         caveats.append(
             f"the best match at the reference input level ({was.total:.3f}) is not "
             f"the best across ±6 dB of it ({was.worst_level:.3f} at worst, against "
@@ -688,6 +785,7 @@ def _rerank_and_explain(shortlist: Sequence[Candidate],
 
 def search(renderer, target, probe_di, space: Space, seed: Mapping,
            budget: int = 300, profile: str = "unpaired-v1",
+           fallbacks: Optional[Sequence[Mapping]] = None,
            shortlist: int = 3, store: Optional[Store] = None,
            run_id: Optional[str] = None,
            switches: Optional[Sequence[str]] = None,
@@ -699,10 +797,29 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     the starting point and the prior: `prior_deviation` measures distance from it,
     so a candidate that scores the same by moving less wins.
 
-    The budget is spent in a fixed order and every stage reports what it took. The
-    screen's cost is knowable in advance (2 per candidate parameter), the topology
-    loop multiplies whatever is left, and the re-rank costs 2 per shortlisted
-    candidate. Anything left over after those goes to CMA-ES.
+    `fallbacks` are vectors that must be considered even though the search would not
+    reach them — in practice the *template as it arrived*, before the inversion
+    touched it. Without it a near-perfect template could only get worse: matching the
+    bundled PR12 preset against a render of itself scored 0.069 for the template,
+    0.593 after the inversion, and 0.408 after the search recovered what it could,
+    and the answer handed back was 0.408. The thing you started with has to be on the
+    shortlist, or "improvement" is measured from whatever the previous stage did to
+    it rather than from where you began.
+
+    The budget is spent in a fixed order, every stage reports what it took, and the
+    fixed costs are reserved before the optimiser is offered anything:
+
+    - the screen: **2N + 1** renders for N candidate parameters — the baseline the
+      movements are measured against is a render too, and calling it "2 per
+      parameter" was off by exactly that one
+    - the topology loop: **one render per variant**, for the variant's own seed. This
+      was not reserved, so a run overspent by exactly the variant count — one render
+      with no switches enumerated, thirty-two with five
+    - the re-rank: 2 per shortlisted candidate
+
+    Whatever is left goes to CMA-ES, split across the variants. A run that ends up
+    over or materially under budget says so; the accounting is meant to be checkable
+    rather than plausible.
     """
     from analysis import require
 
@@ -715,19 +832,52 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                           store=store, run_id=run_id, recipe=seed)
     result = SearchResult(run_id=run_id)
 
-    searched, frozen, probes = screen(evaluator, seed)
+    searched, frozen, probes, movement, silences = screen(evaluator, seed)
     result.frozen = frozen
     result.searched = list(searched)
+    result.movement = {path: movement[path] for path in searched if path in movement}
     if frozen:
-        measured = [p for p, v in frozen.items() if not _isnan(v)]
+        # Frozen for three different reasons, and saying "below the floor" about all
+        # of them was false: a caveat claimed four parameters "moved the objective by
+        # less than 0.01" when their measured movements were 0.062, 0.062, 0.109 and
+        # 0.070 — every one of them well clear of the floor and cut by the quantile
+        # instead. The report's table showed 0.109 next to the claim.
+        inert = [p for p, v in frozen.items()
+                 if not _isnan(v) and v < SENSITIVITY_FLOOR]
+        weakest = [p for p, v in frozen.items()
+                   if not _isnan(v) and v >= SENSITIVITY_FLOOR]
         unknown = [p for p, v in frozen.items() if _isnan(v)]
-        if measured:
+        total = len(frozen) + len(searched)
+        # A control that mutes the signal at one end is not inert, however small its
+        # measured movement: it is the one control that matters most and cannot be
+        # scored. Named separately, and only when a caller would act on it.
+        muting = [p for p in inert if p in silences]
+        inert = [p for p in inert if p not in silences]
+        if inert:
             result.caveats.append(
-                f"{len(measured)} of {len(measured) + len(searched)} parameters "
-                f"moved the objective by less than {SENSITIVITY_FLOOR} across their "
-                f"whole range on this material, so they were left at the seed. On "
-                f"different material they might matter."
+                f"{len(inert)} of {total} parameters moved the objective by less "
+                f"than {SENSITIVITY_FLOOR} across their whole range on this "
+                f"material, so they were left at the seed. On different material "
+                f"they might matter."
             )
+        if muting:
+            named = ", ".join(f"{p} at {silences[p]:g}" for p in sorted(muting))
+            result.caveats.append(
+                f"one end of {named} silences the signal entirely, so it was left at "
+                f"the seed. That is what the control is for rather than a problem — "
+                f"but it means the search never tried the loud end either, and a "
+                f"noise gate set too high is the commonest way a preset sounds broken."
+            )
+        if weakest:
+            result.caveats.append(
+                f"{len(weakest)} of {total} parameters did move the objective but "
+                f"were the weakest {int(100 * SENSITIVITY_QUANTILE)}% that did, so "
+                f"they were left at the seed to spend the budget on the rest — the "
+                f"most any of them moved it was "
+                f"{max(frozen[p] for p in weakest):.3f}. A larger budget would "
+                f"search them."
+            )
+        unknown = [p for p in unknown if p not in silences]
         if unknown:
             plural = "s" if len(unknown) > 1 else ""
             result.caveats.append(
@@ -739,16 +889,23 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
 
     variants = topologies(space, seed, switches=switches, selectors=selectors)
     spent = evaluator.renders
-    remaining = budget - spent - 2 * shortlist
+    # Every fixed cost, reserved: the screen has already been paid, the topology loop
+    # will render each variant's own seed, and the re-rank will render each
+    # shortlisted candidate at two more input levels.
+    reserved = len(variants) + 2 * shortlist + len(fallbacks or ())
+    remaining = budget - spent - reserved
     if remaining <= 0:
         result.caveats.append(
-            f"screening used {spent} of the {budget}-render budget and the "
-            f"robustness re-rank needs {2 * shortlist} more, so the optimiser never "
-            f"ran. The seed and the inversion stand. Raise --budget above "
-            f"{spent + 2 * shortlist + 20} for a search worth the name."
+            f"the fixed costs used {spent + reserved} of the {budget}-render "
+            f"budget — {spent} to screen {len(searched) + len(frozen)} parameters, "
+            f"{len(variants)} for the starting point of each topology and "
+            f"{2 * shortlist} for the ±6 dB re-rank — so the optimiser never ran. "
+            f"The seed and the inversion stand. Raise --budget above "
+            f"{spent + reserved + 20} for a search worth the name."
         )
         candidates = list(probes) + [evaluator.evaluate(variant)
                                      for variant in variants]
+        candidates.extend(evaluator.evaluate(dict(v)) for v in fallbacks or ())
     else:
         per_variant = max(1, remaining // len(variants))
         if len(variants) > 1:
@@ -760,6 +917,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
         # The screen's own probes are candidates: each one is a real parameter
         # vector that was rendered and scored, and one of them may be the answer.
         candidates = list(probes)
+        # And so is whatever the caller started from, before anything was done to it.
+        candidates.extend(evaluator.evaluate(dict(v)) for v in fallbacks or ())
         for variant in variants:
             # The variant itself first: it is what the prior is measured from, and
             # a topology whose seed already beats every sample is worth keeping.
@@ -786,9 +945,20 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     if result.renders > budget:
         result.caveats.append(
             f"the search made {result.renders} renders against a budget of "
-            f"{budget}: the stages have fixed costs — screening is two per "
-            f"parameter and the re-rank two per shortlisted candidate — and those "
-            f"are paid before the optimiser gets what is left"
+            f"{budget}. The screen costs 2 per parameter plus one baseline and "
+            f"cannot be part-paid, so a budget below {spent + reserved} is exceeded "
+            f"rather than trimmed"
+        )
+    elif budget - result.renders > max(10, budget // 5):
+        # The other direction, which nothing reported: CMA-ES only spends whole
+        # generations, so a budget that does not divide by λ leaves a remainder, and
+        # a run that quietly used 70% of what it was given should say so rather than
+        # let a caller conclude the budget was the constraint.
+        result.caveats.append(
+            f"only {result.renders} of the {budget}-render budget was spent: the "
+            f"optimiser samples a whole generation at a time, so the remainder is "
+            f"not enough for another one. A budget nearer a multiple of its "
+            f"generation size would use more of it."
         )
     return result
 
@@ -805,6 +975,51 @@ def _get(values: Mapping, dimension: Dimension):
     from match.space import _get as read
 
     return read(values, (dimension.module, dimension.key))
+
+
+def _backend_floor(evaluator: Evaluator) -> float:
+    """The screen's floor, raised to what this backend can resolve.
+
+    `RenderMetadata.band_noise_db` is the per-band spread between two renders of
+    identical parameters — measured, not chosen, and 0.23 dB on a reused Audio Unit
+    instance. The screen's floor is in *objective* units, so the two have to be
+    related, and the loss profile already states the conversion: its `band_db` scale
+    is what the timbre term divides a band difference by. So a noise of 0.23 dB
+    against a 3.0 dB scale is 0.077 of a normalised band unit.
+
+    Being explicit about what this is: a **derivation**, not a measurement of the
+    objective's own repeatability. It is one term of nine, so it overstates — a real
+    measurement would render the seed twice on the backend and take the spread of the
+    scalar directly, which costs one render and is the right thing to do in M5 when
+    there is a backend that varies. Until then this is a defensible bound rather than
+    a number nobody checked, and `renderer.py`'s claim that the screen reads
+    `band_noise_db` is now true, which it was not.
+    """
+    metadata = evaluator.renderer.metadata()
+    noise = float(getattr(metadata, "band_noise_db", 0.0) or 0.0)
+    if noise <= 0.0:
+        return 0.0
+    from analysis.compare import load_profile
+
+    scale = float(load_profile(evaluator.profile)["scales"].get("band_db") or 3.0)
+    return noise / scale if scale > 0 else 0.0
+
+
+def _quantisation_step(dimensions: Sequence[Dimension]) -> float:
+    """The finest step worth taking, in normalised units.
+
+    A quantum is declared in the control's own unit — 0.25 dB on an EQ band, 1 Hz on a
+    corner — so the smallest *normalised* step that still changes a stored value is
+    the quantum over the range. The narrowest one across the searched dimensions is
+    the limit for the search as a whole, halved, so the optimiser stops one step
+    after it stops being able to move anything rather than one step before.
+    """
+    steps = []
+    for dimension in dimensions:
+        low, high = dimension.bounds()
+        if dimension.quantum and high > low:
+            steps.append(float(dimension.quantum) / (high - low))
+    return (min(steps) / 2.0) if steps else 1e-6
 
 
 def _decode(space: Space, dimensions: Sequence[Dimension], vector,
@@ -846,6 +1061,34 @@ def _supported_keys(renderer) -> Optional[set]:
     for key in specs:
         keys.add(key if isinstance(key, str) else "/".join(str(part) for part in key))
     return keys
+
+
+def _scoring_key(render_key: str, target, profile: str, recipe: Mapping) -> str:
+    """The content address for a *score*, which is finer than the render's.
+
+    Two renders of the same parameters through the same DI are the same audio, so
+    §6.3's key addresses them together — correctly. But the number the search caches
+    is not the audio, it is the distance to a reference under a weighting, and that
+    also depends on which reference, which loss profile, and which seed the prior
+    terms measure from. Keying the cache on the render alone was enough to serve one
+    run's objectives to a later run against a different recording.
+
+    The target contributes its `sha256` rather than its whole document: two
+    fingerprints of the same file with different excerpt lengths would otherwise
+    collide, so the excerpt is folded in too.
+    """
+    import hashlib
+
+    source = getattr(target, "source", {}) or {}
+    material = "␟".join([
+        str(render_key),
+        str(source.get("sha256")),
+        str(source.get("excerpt_s")),
+        str(getattr(target, "regime", None)),
+        str(profile),
+        canonical_settings(recipe),
+    ])
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
 def _hash(audio) -> str:

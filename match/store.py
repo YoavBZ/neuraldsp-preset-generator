@@ -17,11 +17,14 @@ after a bad match is what the search *tried*. `verdicts` is for listening tests:
 whatever the objective says, a person deciding by ear is the ground truth this
 project is aiming at, and their choice belongs next to the trial it was about.
 
-sqlite3 from the standard library, no ORM, no dependency. That is not
-minimalism — this file has to open on a bare clone, because `scripts/show.py` and
-`apply_spec.py` do and a store a person cannot inspect is a store they will not
-trust. Audio is **not** stored: a run of 300 renders at 48 kHz is gigabytes, and
-`render_sha` plus the cache key identifies the audio well enough to re-render it.
+sqlite3 from the standard library, no ORM, no dependency. Not minimalism: a store a
+person cannot open is a store they will not trust, and `sqlite3 trials.sqlite3` plus
+one SELECT is a tool everybody already has. (An earlier version of this paragraph
+claimed `show.py` and `apply_spec.py` open the store. They do not — they have nothing
+to do with it, and the reason given for a decision should be the actual reason.)
+
+Audio is **not** stored: a run of 300 renders at 48 kHz is gigabytes, and `render_sha`
+plus the cache key identifies the audio well enough to re-render it.
 """
 
 from __future__ import annotations
@@ -33,6 +36,10 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 SCHEMA_VERSION = 1
+
+# The file a run's trials go in, inside its `--out-dir`. A constant rather than a
+# parameter, because it was a parameter nothing ever passed.
+STORE_NAME = "trials.sqlite3"
 
 # §6.4, with `schema_version` added so a future change can be detected rather than
 # producing a confusing error six frames into a query.
@@ -60,13 +67,18 @@ CREATE TABLE IF NOT EXISTS trials (
     trial_id        INTEGER PRIMARY KEY AUTOINCREMENT,
     run_id          TEXT NOT NULL REFERENCES runs(run_id),
     params_json     TEXT NOT NULL,
+    -- §6.3's content address for the *render*: what audio came out.
     cache_key       TEXT,
-    -- Which DI this was rendered through, and at what level offset in dB. Not in
-    -- §6.4, and the omission there is an oversight rather than a decision: a trial
-    -- is "these parameters through this signal", and §6.3's own cache key includes
-    -- `di_sha256` for exactly that reason. Without it `best()` compared a candidate
-    -- scored at the reference level against the robustness re-rank's own renders of
-    -- the same parameters 6 dB quieter, and picked the quiet one.
+    -- The content address for the *score*, which is a strictly finer thing: an
+    -- objective depends on the target fingerprint, the loss profile and the recipe
+    -- seed as well as on the render. Keyed on `cache_key` alone, the cache served
+    -- run 2's candidate the objective run 1 measured against a different reference —
+    -- 0.345 for a vector whose true distance was 0.634, with zero trial rows written,
+    -- so the report's headline scored a match against somebody else's recording.
+    -- Not in §6.4, and neither is `di_sha`: a trial is "these parameters through this
+    -- signal, against that reference", and §6.3's own render key includes `di_sha256`
+    -- for exactly that reason.
+    objective_key   TEXT,
     di_sha          TEXT,
     di_offset_db    REAL DEFAULT 0.0,
     render_sha      TEXT,
@@ -82,6 +94,7 @@ CREATE INDEX IF NOT EXISTS trials_by_run ON trials(run_id);
 -- Not UNIQUE: the same render legitimately appears in two runs, and the cache
 -- lookup wants the most recent row rather than a constraint violation.
 CREATE INDEX IF NOT EXISTS trials_by_key ON trials(cache_key);
+CREATE INDEX IF NOT EXISTS trials_by_objective ON trials(objective_key);
 
 CREATE TABLE IF NOT EXISTS verdicts (
     trial_id   INTEGER NOT NULL REFERENCES trials(trial_id),
@@ -108,6 +121,7 @@ class Trial:
 
     params: Dict[str, Any]
     cache_key: Optional[str] = None
+    objective_key: Optional[str] = None
     di_sha: Optional[str] = None
     di_offset_db: float = 0.0
     render_sha: Optional[str] = None
@@ -125,6 +139,20 @@ class Trial:
         repository's standing rule is that a silent render is not evidence about a
         control, so scoring one would be scoring the absence of a measurement."""
         return self.error is not None or self.objectives is None or bool(self.silent)
+
+    def __post_init__(self) -> None:
+        # "`error` and `objectives` are exclusive" was stated and unenforced, which
+        # held only because M4 has one writer. A row carrying both says the render
+        # failed *and* scored, and every reader here would have to pick one to
+        # believe — so the writer is refused instead of the readers guessing.
+        if self.error is not None and self.objectives is not None:
+            raise StoreError(
+                f"a trial cannot both fail and score: error is {self.error!r} and "
+                f"objectives is {self.objectives!r}.\n"
+                f"  If the render succeeded and something later went wrong, store the "
+                f"objectives and put the later problem in a caveat; a trial row is "
+                f"about whether audio came back."
+            )
 
 
 @dataclass
@@ -154,16 +182,22 @@ class Store:
 
     def __init__(self, path: str = ":memory:") -> None:
         self.path = str(path)
+        # `executescript` is inside the guard too. `connect` succeeds on any readable
+        # file — a wav, a preset, a half-written download — and it is the first CREATE
+        # TABLE that fails, with a bare `DatabaseError` naming nothing a person can
+        # act on. Pointing `--out-dir` at a directory that already holds something is
+        # an ordinary mistake.
         try:
             self._db = sqlite3.connect(self.path)
+            self._db.row_factory = sqlite3.Row
+            self._db.executescript(SCHEMA)
         except sqlite3.Error as e:
             raise StoreError(
                 f"cannot open the render store at {self.path}: {e}\n"
-                f"  The directory has to exist and be writable. A run writes here "
-                f"after every render, so it is not optional."
+                f"  It has to be a writable path, in a directory that exists, and "
+                f"either empty or a store this tool wrote. A run appends here after "
+                f"every render, so it is not optional."
             ) from e
-        self._db.row_factory = sqlite3.Row
-        self._db.executescript(SCHEMA)
         self._check_version()
 
     def _check_version(self) -> None:
@@ -227,11 +261,12 @@ class Store:
                 f"trial has a header to belong to"
             )
         cursor = self._db.execute(
-            "INSERT INTO trials (run_id, params_json, cache_key, di_sha,"
-            " di_offset_db, render_sha, peak, silent, wall_ms, objectives_json,"
-            " fingerprint_json, error) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-            (run_id, _dump(trial.params), trial.cache_key, trial.di_sha,
-             float(trial.di_offset_db), trial.render_sha,
+            "INSERT INTO trials (run_id, params_json, cache_key, objective_key,"
+            " di_sha, di_offset_db, render_sha, peak, silent, wall_ms,"
+            " objectives_json, fingerprint_json, error)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (run_id, _dump(trial.params), trial.cache_key, trial.objective_key,
+             trial.di_sha, float(trial.di_offset_db), trial.render_sha,
              trial.peak, None if trial.silent is None else int(trial.silent),
              trial.wall_ms, _dump(trial.objectives), _dump(trial.fingerprint),
              trial.error),
@@ -259,8 +294,14 @@ class Store:
 
     # --- the cache -----------------------------------------------------------
 
-    def cached(self, cache_key: str) -> Optional[Trial]:
-        """A previous trial for this content address, if there is one.
+    def cached(self, objective_key: str) -> Optional[Trial]:
+        """A previous trial that scored *this* vector against *this* reference.
+
+        Keyed on `objective_key`, not on the render address, because what is being
+        reused is a score. The two differ by the target fingerprint, the loss profile
+        and the recipe seed, and keying on the render alone served one run's score to
+        another run against a different reference — silently, with no trial row, so
+        every count in the report was a count of zero.
 
         The most recent, and only if it *succeeded*. Returning a failed trial from
         the cache would make one transient error permanent for the life of the
@@ -268,9 +309,9 @@ class Store:
         measurement of the backend on that occasion.
         """
         row = self._db.execute(
-            "SELECT * FROM trials WHERE cache_key = ? AND error IS NULL"
+            "SELECT * FROM trials WHERE objective_key = ? AND error IS NULL"
             " AND objectives_json IS NOT NULL ORDER BY trial_id DESC LIMIT 1",
-            (cache_key,),
+            (objective_key,),
         ).fetchone()
         return _to_trial(row) if row is not None else None
 
@@ -415,6 +456,7 @@ def _to_trial(row: sqlite3.Row) -> Trial:
     return Trial(
         params=_load(row["params_json"]) or {},
         cache_key=row["cache_key"],
+        objective_key=row["objective_key"],
         di_sha=row["di_sha"],
         di_offset_db=float(row["di_offset_db"] or 0.0),
         render_sha=row["render_sha"],
@@ -428,7 +470,7 @@ def _to_trial(row: sqlite3.Row) -> Trial:
     )
 
 
-def open_store(out_dir: str, name: str = "trials.sqlite3") -> Store:
+def open_store(out_dir: str) -> Store:
     """The store for a run directory, creating the directory if it is not there.
 
     A run writes its report next to its store, so the caller has a directory
@@ -440,6 +482,25 @@ def open_store(out_dir: str, name: str = "trials.sqlite3") -> Store:
     directory = pathlib.Path(out_dir)
     try:
         directory.mkdir(parents=True, exist_ok=True)
+    except NotADirectoryError as e:
+        raise StoreError(
+            f"cannot use {out_dir} for the run: part of that path is a file.\n"
+            f"  --out-dir names a directory the run writes its store, spec and report "
+            f"into. Give it a path of its own, one per run."
+        ) from e
+    except FileExistsError as e:
+        raise StoreError(
+            f"cannot use {out_dir} for the run: there is already a file with that "
+            f"name.\n"
+            f"  --out-dir names a directory, not a file. Give it a path of its own, "
+            f"one per run."
+        ) from e
     except OSError as e:
-        raise StoreError(f"cannot create the run directory {out_dir}: {e}") from e
-    return Store(str(directory / name))
+        # `[Errno 2] No such file or directory` is what a caller gets for `/proc/x`,
+        # which is errno rather than an answer.
+        raise StoreError(
+            f"cannot create the run directory {out_dir}: {e.strerror or e}.\n"
+            f"  It has to be somewhere writable — under $NDSP_PRESET_DATA, or "
+            f"anywhere you can create a folder."
+        ) from e
+    return Store(str(directory / STORE_NAME))

@@ -36,6 +36,7 @@ import json
 import pathlib
 import sys
 import time
+from typing import Optional
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
@@ -45,6 +46,14 @@ from _cli import die, guarded, positive_float, positive_int
 
 REGIMES = ("paired_di", "reamp", "isolated", "mix", "probe")
 RENDERERS = ("synthetic", "swift", "pedalboard")
+
+# Below this there is not enough signal for a playing-invariant statistic to mean
+# anything: one note and a gap is not a distribution of onsets.
+MINIMUM_REFERENCE_S = 1.0
+
+# `fingerprint` floors a silent band at -300 dB rather than returning None, so this is
+# how silence is recognised rather than matched.
+SILENCE_FLOOR_DB = -120.0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -97,7 +106,7 @@ def main() -> None:
 
     import numpy as np
 
-    from analysis import SAMPLE_RATE, io
+    from analysis import io
     from analysis.compare import list_profiles, load_profile
     from analysis.fingerprint import fingerprint
     from match import invert, report, search
@@ -112,11 +121,15 @@ def main() -> None:
     renderer = _renderer(args.renderer)
     space = space_module.build(args.pack, amp=args.amp)
     seed, template_name = _seed_from_template(args.template, space, args.pack)
+    template_values = dict(seed)
 
     reference = io.load(str(args.reference))
     target = fingerprint(reference, regime=args.reference_mode,
                          excerpt_s=args.excerpt)
-    probe_di, probe_note = _probe(args.probe_di, SAMPLE_RATE)
+    unmeasurable = _unmeasurable(target, reference)
+    if unmeasurable:
+        die(unmeasurable)
+    probe_di, probe_note = _probe(args.probe_di)
 
     run_id = args.run_id or f"{args.out_dir.name}-{time.strftime('%Y%m%d-%H%M%S')}"
     store = open_store(str(args.out_dir))
@@ -158,21 +171,48 @@ def main() -> None:
                        "search started from the template alone")
         calculated = None
     else:
-        printed = _render_fingerprint(renderer, probe_di, evaluator._settings(seed),
-                                     SAMPLE_RATE)
+        printed = _render_fingerprint(renderer, probe_di,
+                                      evaluator._settings(seed))
         amp = args.amp or space.amp_prefix(seed)
         if amp is None:
+            # Two different problems, and one message told the wrong story for both.
+            # `--pack toneking` with a Morgan template said "the template does not say
+            # which amp is selected" about a template that says PR12, then advised
+            # `--amp sw50r`, which is a Morgan amp and produces a second error.
+            named, from_pack = _template_amp(args.template)
+            if named is not None:
+                belongs = (f" — it is a {from_pack} preset" if from_pack
+                           and from_pack != args.pack else "")
+                die(f"the template selects {named}, which is not an amp in pack "
+                    f"{args.pack!r}{belongs}.\n"
+                    f"  Pass --pack {from_pack or '<the plugin it is from>'}, or give "
+                    f"a template from {args.pack!r}.")
             die("the template does not say which amp is selected, and no --amp was "
                 "given, so there is no way to tell which amp's controls to invert.\n"
-                "  Pass --amp sw50r (or whichever), or use a template with a "
+                "  Pass --amp with one of the pack's amps, or use a template with a "
                 "selectedAmp value.")
         calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack)
         seed = _apply(seed, calculated.as_settings(), space)
         caveats.extend(calculated.caveats)
+        # Values this backend cannot be driven with still reach the output spec, and
+        # nothing said so. With the docstring's own PR12 template and the synthetic
+        # renderer, 12 of the 16 calculated values — the entire nine-band EQ fit and
+        # both its corners — were unsupported: filtered out of every render, so no
+        # score in the report reflects them, and written into the spec regardless.
+        dropped = calculated.dropped_for(renderer.parameter_specs())
+        if dropped:
+            caveats.append(
+                f"{len(dropped)} of the calculated values are for controls this "
+                f"backend does not model, so they were written into the spec but no "
+                f"score here reflects them — they have not been heard, only "
+                f"calculated: {', '.join(dropped[:5])}"
+                + (f" and {len(dropped) - 5} more" if len(dropped) > 5 else "")
+            )
 
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=args.budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
+                           fallbacks=[template_values],
                            rng=np.random.default_rng(args.seed))
     caveats.extend(result.caveats)
 
@@ -180,33 +220,52 @@ def main() -> None:
         die("no candidate produced a comparable render, so there is nothing to "
             f"write. See {args.out_dir / 'trials.sqlite3'} for what was tried.")
 
+    # Nothing checked this, and on a near-perfect template it is the whole story: the
+    # bundled PR12 preset matched against a render of itself scored 0.069, and the
+    # pipeline handed back 0.408 while the report announced "-488% closer".
+    if result.best.total >= start.total:
+        caveats.insert(0, _no_better(result.best.total, start.total, args.budget))
+
     _write_specs(args.out_dir, result, space, template_name)
     prints = {index: _render_fingerprint(renderer, probe_di,
-                                         evaluator._settings(candidate.values),
-                                         SAMPLE_RATE)
+                                         evaluator._settings(candidate.values))
               for index, candidate in enumerate(result.shortlist)}
+    # `seed` is the *post*-inversion vector and `start` the *pre*-inversion score, and
+    # handing both to the report gave "the starting point" two meanings in one
+    # document: the headline improved from the template while the shortlist's diff
+    # column measured against the inverted seed, so a run that changed 16 controls
+    # showed one. Both are the template now, which is what a reader means by it.
     report_path = report.write_report(
         str(args.out_dir / "report.html"), run_id=run_id, target=target,
-        shortlist=result.shortlist, caveats=caveats, seed=seed,
+        shortlist=result.shortlist, caveats=caveats, seed=template_values,
         seed_objectives=start.objectives, fingerprints=prints,
         convergence=report.convergence_from(store, run_id),
         summary=report.summarise(store, run_id, result),
         frozen=result.frozen, searched=result.searched,
+        movement=result.movement,
         profile=args.loss_profile, reference=str(args.reference),
     )
     store.close()
 
     best = result.shortlist[0]
     print(f"run {run_id}")
-    print(f"  {result.renders} renders ({result.cache_hits} from cache), "
-          f"{result.wall_ms / 1000:.0f}s")
-    print(f"  distance {start.total:.3f} -> {best.total:.3f}"
-          + (f" (worst {best.worst_level:.3f} across ±6 dB)"
-             if best.worst_level is not None else ""))
+    print(f"  {result.renders} renders in {result.wall_ms / 1000:.0f}s"
+          + (f", plus {result.cache_hits} answered from the cache"
+             if result.cache_hits else ""))
+    worst = ""
+    if best.worst_level is not None and best.worst_level > best.total + 5e-4:
+        worst = f", {best.worst_level:.3f} at worst across ±6 dB of input level"
+    elif best.worst_level is not None:
+        worst = ", and it holds up across ±6 dB of input level"
+    print(f"  distance to the reference {start.total:.3f} -> {best.total:.3f}{worst}")
     print(f"  {len(result.searched)} parameters searched, "
           f"{len(result.frozen)} frozen by the screen")
     print(f"  spec:   {args.out_dir / 'match-1.json'}")
     print(f"  report: {report_path}")
+    print("\nto hear it:")
+    print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
+    print(f"    --spec {args.out_dir / 'match-1.json'} \\")
+    print(f"    --out {args.out_dir / 'match-1.xml'}")
     if caveats:
         print(f"\n{len(caveats)} caveats — read them before trusting the number "
               f"above:")
@@ -215,6 +274,52 @@ def main() -> None:
 
 
 # --- the pieces -------------------------------------------------------------
+
+
+def _unmeasurable(target, audio) -> Optional[str]:
+    """Why this reference cannot be matched, if it cannot be.
+
+    Nothing checked the reference side, and the asymmetry showed: `Evaluator` is
+    careful about `rendered.silent` while three seconds of digital silence went all
+    the way through to a report headed "2.096 … 42% closer". `fingerprint` returns
+    sentinel floors for silence — every band at −300 dB, every percentile at −240 —
+    rather than `None`, so `timbre` and `dynamics` were "measured" against nothing and
+    the whole run matched a number to a floor.
+
+    The house rule is that a measurement that could not be made says so. Here it has
+    to be checked before the run rather than after it: matching against silence is not
+    a caveat, it is an hour of renders for an answer that means nothing.
+    """
+    seconds = getattr(audio, "duration_s", 0.0)
+    if callable(seconds):
+        seconds = seconds()
+    if float(seconds) < MINIMUM_REFERENCE_S:
+        return (f"the reference is {float(seconds):.2f} s long, and nothing "
+                f"playing-invariant can be measured from less than "
+                f"{MINIMUM_REFERENCE_S:.0f} s.\n"
+                f"  Give it a longer excerpt — a few seconds of the actual part is "
+                f"enough, and --excerpt trims a long file.")
+    bands = (getattr(target, "spectrum", {}) or {}).get("band_db") or []
+    if bands and max(bands) < SILENCE_FLOOR_DB:
+        return (f"the reference measures below {SILENCE_FLOOR_DB:.0f} dB in every "
+                f"band, which means it is silent.\n"
+                f"  Check the file plays, and that it is the guitar rather than an "
+                f"empty channel of the session.")
+    if (getattr(target, "source", {}) or {}).get("lufs_i") is None:
+        return ("the reference has no measurable loudness, so there is nothing to "
+                "match its level against.\n"
+                "  It is probably too short or effectively silent; a few seconds of "
+                "the actual part is enough.")
+    return None
+
+
+def _no_better(found: float, started: float, budget: int) -> str:
+    """The caveat for a run that did not improve on what it was given."""
+    return (f"nothing beat the preset you started from: it scored {started:.3f} and "
+            f"the best candidate {found:.3f}, so the spec below is not an "
+            f"improvement. Either the template is already close and the search is "
+            f"moving inside its own noise, or {budget} renders was not enough to "
+            f"recover from what the calculated step did. Keep your template.")
 
 
 def _renderer(name: str):
@@ -272,7 +377,34 @@ def _seed_from_template(path: pathlib.Path, space, pack_id: str):
     return values, preset.preset_name or path.stem
 
 
-def _probe(path, sample_rate: int):
+def _template_amp(template: pathlib.Path):
+    """The amp this template selects and the pack it belongs to, for the message.
+
+    Named rather than numbered: the raw value is a stored index, and telling somebody
+    their template "selects '1'" is telling them nothing. The template's own file
+    header says which plugin wrote it, so the message can say "it is a morgan preset"
+    rather than leaving them to work out why their amp is not there.
+    """
+    from format.parser import parse_file
+    from format.structured import build as build_preset
+    from packs.loader import detect_pack
+
+    preset = build_preset(parse_file(str(template)))
+    parameter = preset.by_path.get(("", "selectedAmp"))
+    if parameter is None:
+        return None, None
+    own = detect_pack(preset.file_header)
+    if own is not None:
+        spec = own.parameters.get("/selectedAmp")
+        members = (spec.members if spec else None) or {}
+        name = members.get(str(parameter.value))
+        if name:
+            return f"{name!r}", own.pack_id
+        return f"amp {parameter.value!r}", own.pack_id
+    return f"amp {parameter.value!r}", None
+
+
+def _probe(path):
     """The DI every candidate is rendered through, or a synthetic stand-in.
 
     The stand-in is honest about being one. A search's answer is only as
@@ -294,7 +426,7 @@ def _probe(path, sample_rate: int):
             "DI before trusting this on a real part.")
 
 
-def _render_fingerprint(renderer, di, settings, sample_rate: int):
+def _render_fingerprint(renderer, di, settings):
     from analysis import io
     from analysis.fingerprint import fingerprint
 

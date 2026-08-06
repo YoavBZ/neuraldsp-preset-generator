@@ -76,10 +76,11 @@ class RenderMetadata:
     def resolves_band_difference(self, difference_db: float) -> bool:
         """Whether a per-band difference this small means anything on this backend.
 
-        M4's sensitivity screen freezes a parameter that moves the objective too
-        little, and on a reused plugin instance the floor is measured rather than
-        chosen: below `band_noise_db` it would be screening on noise and would
-        discard real controls while keeping imaginary ones.
+        `match.search.screen` reads `band_noise_db` through `_backend_floor` and
+        raises its own floor to match, so on a reused plugin instance the limit is
+        measured rather than chosen: below it the screen would be screening on noise,
+        discarding real controls and keeping imaginary ones. This predicate is the
+        same question asked about a single band rather than about the objective.
         """
         return abs(float(difference_db)) > self.band_noise_db
 

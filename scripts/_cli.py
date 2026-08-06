@@ -72,6 +72,23 @@ def guarded(main) -> None:
         die(str(e))
     except AnalysisUnavailable as e:
         die(str(e))
+    except Exception as e:
+        # A `RuntimeError` from a third-party reader, which is the one remaining way
+        # an ordinary mistake reaches a person as a traceback. `soundfile` raises
+        # `LibsndfileError(RuntimeError)` on a file that is not audio, so
+        # `--reference pyproject.toml` printed fifteen frames ending in "Format not
+        # recognised" — the answer, buried. Named types only: a `KeyError` or an
+        # `AttributeError` is this code being wrong, and that should still be a
+        # traceback, because it is a bug report rather than a user error.
+        if type(e).__name__ in _LIBRARY_ERRORS:
+            die(f"{e}")
+        raise
+
+
+# Third-party exception types that mean "your file is not what you said it was".
+# Matched by name rather than imported, because importing `soundfile` here would put
+# the analysis extra on the bare-clone path, which is the one thing `_cli` must not do.
+_LIBRARY_ERRORS = frozenset({"LibsndfileError", "SoundFileError", "SoundFileRuntimeError"})
 
 
 def _data_dir(text: str) -> str:

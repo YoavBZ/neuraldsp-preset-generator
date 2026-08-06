@@ -72,6 +72,7 @@ def render_report(
     summary: Optional[Mapping[str, Any]] = None,
     frozen: Optional[Mapping[str, float]] = None,
     searched: Sequence[str] = (),
+    movement: Optional[Mapping[str, float]] = None,
     profile: str = "unpaired-v1",
     reference: str = "the reference",
 ) -> str:
@@ -102,7 +103,7 @@ def render_report(
     parts.append(_band_bars(target, fingerprints or {}))
     parts.append(_envelopes(target, fingerprints or {}))
     parts.append(_convergence(convergence))
-    parts.append(_screen(searched, frozen or {}))
+    parts.append(_screen(searched, frozen or {}, movement))
     parts.append(_accounting(summary))
     parts.append("</body></html>")
     return "\n".join(part for part in parts if part)
@@ -213,7 +214,8 @@ def _objectives_table(shortlist: Sequence[Any],
                or name in (seed_objectives or {})]
     if not present:
         return ""
-    header = "".join(f"<th class='n'>{html.escape(name)}</th>" for name in present)
+    header = "".join(f"<th class='n'>{html.escape(_dimension_label(name))}</th>"
+                     for name in present)
     rows = []
     if seed_objectives:
         cells = "".join(f"<td class='n'>{_num(seed_objectives.get(n))}</td>"
@@ -229,6 +231,20 @@ def _objectives_table(shortlist: Sequence[Any],
             f"measuring, not a zero. `prior_deviation` and `complexity` measure "
             f"distance from the starting point rather than from the reference, so "
             f"lower is more conservative rather than more accurate.</p>")
+
+
+# What each objective dimension is called where a person reads it. The raw keys are
+# the schema's, and `prior_deviation` and `complexity` as column headings sent a reader
+# to the caption to find out they are not distances to the reference at all.
+DIMENSION_LABELS = {
+    "prior_deviation": "from the start",
+    "complexity": "controls moved",
+    "residual": "waveform",
+}
+
+
+def _dimension_label(name: str) -> str:
+    return DIMENSION_LABELS.get(name, name)
 
 
 def _spectrum(target, fingerprints: Mapping[int, Any],
@@ -348,24 +364,43 @@ def _convergence(convergence: Sequence[Mapping[str, float]]) -> str:
     )
 
 
-def _screen(searched: Sequence[str], frozen: Mapping[str, float]) -> str:
-    """What the sensitivity screen decided, and on what evidence."""
+def _screen(searched: Sequence[str], frozen: Mapping[str, float],
+            movement: Optional[Mapping[str, float]] = None) -> str:
+    """What the sensitivity screen decided, and on what evidence.
+
+    The movement is shown for the *searched* parameters as well as the frozen ones. It
+    was measured for all of them and only the frozen ones were reported, so the column
+    a reader would use to check the freeze decision was a dash on every row that had
+    been kept — and the same dash meant "measured, not kept" here and "could not be
+    measured" in the objectives table.
+    """
     if not searched and not frozen:
         return ""
-    rows = [f"<tr><td><code>{html.escape(path)}</code></td>"
-            f"<td>searched</td><td class='n'>—</td></tr>" for path in searched]
-    for path, movement in sorted(frozen.items(), key=lambda kv: -_safe(kv[1])):
-        shown = ("not measured" if not math.isfinite(_safe(movement))
-                 else f"{movement:.4f}")
+    movement = dict(movement or {})
+    rows = []
+    for path in searched:
+        shown = _num(movement.get(path), 4) if path in movement else "—"
         rows.append(f"<tr><td><code>{html.escape(path)}</code></td>"
-                    f"<td>frozen</td><td class='n'>{shown}</td></tr>")
+                    f"<td>searched</td><td class='n'>{shown}</td></tr>")
+    for path, moved in sorted(frozen.items(), key=lambda kv: -_safe(kv[1])):
+        if not math.isfinite(_safe(moved)):
+            shown, why = "not measured", "could not be rendered"
+        else:
+            shown = f"{moved:.4f}"
+            why = "too small to matter" if moved < 0.01 else "weakest of those that did"
+        rows.append(f"<tr><td><code>{html.escape(path)}</code></td>"
+                    f"<td>frozen — {html.escape(why)}</td>"
+                    f"<td class='n'>{shown}</td></tr>")
     return ("<h2>Sensitivity screen</h2>"
             "<p>Each parameter was rendered at both ends of its range with "
-            "everything else at the starting point. A parameter that could not "
-            "move the objective from one extreme to the other cannot matter at any "
-            "setting in between, <em>on this material</em>.</p>"
+            "everything else at the starting point, and the number is how far that "
+            "moved the distance to the reference. A parameter that barely moves it "
+            "across its whole range cannot matter at any setting in between, "
+            "<em>on this material</em> — but a parameter frozen as one of the "
+            "weakest that <em>did</em> move it would be searched on a larger "
+            "budget.</p>"
             "<table><tr><th>parameter</th><th>decision</th>"
-            "<th class='n'>objective movement</th></tr>"
+            "<th class='n'>distance moved</th></tr>"
             + "".join(rows) + "</table>")
 
 
@@ -601,15 +636,25 @@ def summarise(store, run_id: str, result=None) -> Dict[str, Any]:
     return summary
 
 
-def convergence_from(store, run_id: str) -> List[Dict[str, float]]:
+def convergence_from(store, run_id: str,
+                     offset_db: Optional[float] = 0.0) -> List[Dict[str, float]]:
     """Every trial's objectives in order, for the convergence chart.
 
     Read from the store rather than accumulated in memory, so a report can be
-    regenerated from a finished run without repeating it — which is the whole
-    reason the objectives are a column.
+    regenerated from a finished run without repeating it — which is the whole reason
+    the objectives are a column.
+
+    Restricted to one input level, and defaulting to the reference one. Without that
+    filter the trace mixed in the robustness re-rank's own renders of the shortlist at
+    ±6 dB, and a quieter DI drives the amp less hard: on one run the chart's
+    best-so-far ended at 0.171 while the headline directly above it read 0.444, and the
+    whole 2.5× gap was the quieter DI. That is the same defect `Store.best` was fixed
+    for, left open in the one reader the pipeline actually calls.
     """
     trace = []
     for trial in store.trials(run_id):
+        if offset_db is not None and abs(trial.di_offset_db - offset_db) > 1e-9:
+            continue
         if trial.objectives:
             trace.append({k: float(v) for k, v in trial.objectives.items()})
     return trace
