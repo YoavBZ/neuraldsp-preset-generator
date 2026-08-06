@@ -458,3 +458,15 @@ def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
                "--enumerate", "sw50rAmp/sw50rBright")
     assert done.returncode == 0, done.stdout + done.stderr
     assert "no switches or selectors were enumerated" not in done.stdout, done.stdout
+
+
+def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):
+    """`enumerated()` tells the reader to run --list-enumerable, and it is shared
+    by both CLIs — so both have to have it, or the advice is a dead end on one."""
+    listed = run("benchmark_match.py", "--list-enumerable")
+    assert listed.returncode == 0, listed.stderr
+    assert "cabParameters/leftMicType" in listed.stdout
+
+    refused = run("benchmark_match.py", "--enumerate", "nope")
+    assert refused.returncode != 0
+    assert "--list-enumerable" in refused.stderr

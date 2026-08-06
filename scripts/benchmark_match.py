@@ -30,7 +30,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import (die, enumerated, guarded, positive_float, positive_int,
-                  probe_di)
+                  print_enumerable, probe_di)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,6 +65,9 @@ def build_parser() -> argparse.ArgumentParser:
                          "position with its own inner search. Repeatable. Without it "
                          "no arm can choose a cabinet, so all three report the same "
                          "selector accuracy and that column measures nothing")
+    ap.add_argument("--list-enumerable", action="store_true",
+                    help="print the switches and selectors --enumerate accepts for "
+                         "this pack and amp, and exit")
     ap.add_argument("--renderer", default="synthetic", choices=("synthetic", "swift"),
                     help="which backend renders a candidate (default: synthetic). "
                          "'swift' is the installed plugin, and is the only one whose "
@@ -130,8 +133,12 @@ def main() -> None:
         die(f"unknown arm(s) {', '.join(unknown)}. "
             f"Available: {', '.join(benchmark.ARMS)}")
 
-    renderer = _renderer(args.renderer, args.pack)
     space = space_module.build(args.pack, amp=args.amp)
+    if args.list_enumerable:
+        print_enumerable(space, args.pack, args.amp)
+        return
+
+    renderer = _renderer(args.renderer, args.pack)
     # The same routing and the same budget arithmetic the match CLI uses, imported
     # rather than repeated: two copies of "is this a switch or a selector" would be
     # two places for the answer to drift.
