@@ -648,8 +648,21 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
             candidate.by_level[offset] = (scored.total if scored.objectives
                                           else float("inf"))
 
+    reranked, ordering_caveats = _rerank_and_explain(shortlist)
+    return reranked, caveats + ordering_caveats
+
+
+def _rerank_and_explain(shortlist: Sequence[Candidate],
+                        ) -> Tuple[List[Candidate], List[str]]:
+    """Order by the worst level, and say so when that changed the answer.
+
+    Split from the rendering so it can be tested on constructed `by_level` values.
+    The whole worth of the stage is in the first caveat: without it a caller reads
+    the reordered list and never learns that the reference-level winner lost.
+    """
     reranked = sorted(shortlist, key=lambda c: (c.worst_level if c.worst_level
                                                 is not None else float("inf")))
+    caveats: List[str] = []
     if reranked and reranked[0] is not shortlist[0]:
         was, now = shortlist[0], reranked[0]
         caveats.append(

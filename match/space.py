@@ -110,12 +110,26 @@ class Dimension:
         return float(self.low), float(self.high)
 
     def quantise(self, value: float) -> float:
+        """The nearest step, kept inside the declared range.
+
+        Clamped *after* stepping, which is the order that matters and was the other
+        way round. `tremoloRate` is declared 0.15–15 Hz with a 1 Hz step, so
+        `_from_unit(dim, 0.0)` clamped 0.15 into range and the step then rounded it to
+        **0.0** — below the plugin's own minimum, in a value the search would go on to
+        write. `apply_spec` refuses it, so the failure surfaced as a search that
+        produced an unusable preset rather than as a wrong number.
+
+        A clamped result may therefore not be on the step grid, and that is correct:
+        the endpoint of a declared range is legal by definition, whether or not it
+        happens to be a whole number of steps from zero.
+        """
         if not self.quantum:
             return value
         stepped = round(float(value) / self.quantum) * self.quantum
+        low, high = self.bounds()
         # Rounding to a step can leave a long float tail; the spec is read by
         # people as well as by apply_spec.py.
-        return round(stepped, 6)
+        return round(min(max(stepped, low), high), 6)
 
 
 @dataclass
