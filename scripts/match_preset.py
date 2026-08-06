@@ -153,7 +153,7 @@ def main() -> None:
             f"Available: {', '.join(list_profiles())}")
     load_profile(args.loss_profile)          # fail here rather than 200 renders in
 
-    renderer = _renderer(args.renderer)
+    renderer = _renderer(args.renderer, args.pack)
     space = space_module.build(args.pack, amp=args.amp)
     seed, template_name = _seed_from_template(args.template, space, args.pack)
     template_values = dict(seed)
@@ -400,11 +400,11 @@ def _no_better(found: float, started: float, budget: int) -> str:
             f"recover from what the calculated step did. Keep your template.")
 
 
-def _renderer(name: str):
-    """The backend, refusing the ones that are not built yet by name.
+def _renderer(name: str, pack_id: str = "morgan"):
+    """The backend, refusing the one that is still not built by name.
 
-    `swift` and `pedalboard` are M5. Accepting the flag and silently substituting
-    the synthetic chain would be the worst of the three options: the run would
+    `pedalboard` remains unbuilt. Accepting the flag and silently substituting the
+    synthetic chain would be the worst of the three options: the run would
     succeed, the report would look right, and every number in it would describe a
     Python approximation rather than the plugin.
     """
@@ -412,11 +412,27 @@ def _renderer(name: str):
         from match.renderer_synth import SyntheticRenderer
 
         return SyntheticRenderer()
+    if name == "swift":
+        from match.renderer_au import AudioUnitError, AudioUnitRenderer
+
+        renderer = AudioUnitRenderer(pack_id)
+        try:
+            # Instantiating here rather than at the first render: the plugin is
+            # the one thing that can be missing, unlicensed or a different
+            # version, and finding that out after the reference has been measured
+            # wastes the part of the run a person is waiting through.
+            renderer.metadata()
+        except AudioUnitError as e:
+            renderer.close()
+            die(f"{e}\n"
+                f"  This backend needs macOS with the plugin licensed and "
+                f"installed, and swiftc from the Xcode command line tools.")
+        return renderer
     die(f"the {name!r} backend is not built yet — it is M5 work, and it needs "
         f"macOS with the plugin licensed and installed.\n"
-        f"  Use --renderer synthetic, which is a Python approximation of the "
-        f"chain's topology and is what every number in this repository's "
-        f"development so far was measured against.")
+        f"  Use --renderer swift for the real plugin, or --renderer synthetic, "
+        f"which is a Python approximation of the chain's topology and is what "
+        f"this repository's numbers through M4 were measured against.")
 
 
 def _seed_from_template(path: pathlib.Path, space, pack_id: str):

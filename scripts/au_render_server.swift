@@ -97,6 +97,16 @@ AUAudioUnit.instantiate(with: desc, options: []) { au, e in
 sem.wait()
 let instantiateMs = ms(startup, DispatchTime.now())
 
+// The component's own version, in the same dotted form `auval` prints. A render
+// is identified by the plugin that made it — `match/renderer.py` puts this in the
+// cache key rather than beside it, so a plugin update invalidates every entry
+// instead of silently serving audio the installed version would not produce.
+var componentVersion = "unknown"
+var rawVersion: UInt32 = 0
+if AudioComponentGetVersion(unit.component, &rawVersion) == noErr {
+    componentVersion = "\((rawVersion >> 16) & 0xffff).\((rawVersion >> 8) & 0xff).\(rawVersion & 0xff)"
+}
+
 guard let baseState = unit.fullState, let baseBlob = baseState["jucePluginState"] as? Data else {
     fail("plugin returned no jucePluginState")
 }
@@ -153,27 +163,46 @@ func generated(_ excitation: String, _ amplitude: Float) -> [[Float]] {
     return [samples]
 }
 
+/// Read a whole file, looping until it is consumed.
+///
+/// `AVAudioFile.read(into:)` fills *up to* the buffer's capacity and routinely
+/// stops short: asked for all 144000 frames of a 3-second file in one call it
+/// returns 143340, and the shortfall varies with the length. Reading once and
+/// trusting `frameLength` therefore truncated every `--input` render by a few
+/// hundred frames — silently, and by a different amount for every DI. That is the
+/// path a search runs on, so the loop is the whole point of this function.
 func fromFile(_ path: String, _ amplitude: Float) -> [[Float]]? {
     guard let file = try? AVAudioFile(forReading: URL(fileURLWithPath: path)) else { return nil }
     let inputFormat = file.processingFormat
-    guard inputFormat.sampleRate == sampleRate,
-        let buffer = AVAudioPCMBuffer(pcmFormat: inputFormat,
-                                      frameCapacity: AVAudioFrameCount(file.length)),
-        (try? file.read(into: buffer)) != nil, let samples = buffer.floatChannelData,
-        buffer.frameLength > 0
+    let channelCount = Int(inputFormat.channelCount)
+    guard inputFormat.sampleRate == sampleRate, file.length > 0, channelCount > 0,
+        let buffer = AVAudioPCMBuffer(pcmFormat: inputFormat, frameCapacity: 8192)
     else { return nil }
-    var channels: [[Float]] = []
-    for channel in 0..<Int(inputFormat.channelCount) {
-        var taken = [Float](repeating: 0, count: Int(buffer.frameLength))
-        for f in 0..<Int(buffer.frameLength) { taken[f] = samples[channel][f] * amplitude }
-        channels.append(taken)
+
+    var channels = [[Float]](repeating: [], count: channelCount)
+    for channel in 0..<channelCount {
+        channels[channel].reserveCapacity(Int(file.length))
     }
+    while file.framePosition < file.length {
+        guard (try? file.read(into: buffer)) != nil, buffer.frameLength > 0,
+            let samples = buffer.floatChannelData
+        else { break }
+        for channel in 0..<channelCount {
+            for f in 0..<Int(buffer.frameLength) {
+                channels[channel].append(samples[channel][f] * amplitude)
+            }
+        }
+    }
+    // A partial read is worse than none: it would render the front of the DI and
+    // report success, and every measurement downstream would be of a signal the
+    // caller did not supply.
+    guard channels[0].count == Int(file.length) else { return nil }
     return channels
 }
 
 // --- command loop -----------------------------------------------------------
 reply(["\"ready\":true", "\"instantiate_ms\":\(String(format: "%.3f", instantiateMs))",
-       "\"xml_state\":\(baseDocument != nil)"])
+       "\"xml_state\":\(baseDocument != nil)", "\"version\":\(quoted(componentVersion))"])
 
 while let line = readLine(strippingNewline: true) {
     if line.trimmingCharacters(in: .whitespaces).isEmpty { continue }

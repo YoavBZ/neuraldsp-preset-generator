@@ -1216,14 +1216,30 @@ def _separation(one: Candidate, other: Candidate,
 
 
 def _supported_keys(renderer) -> Optional[set]:
-    """The paths this backend can be driven with, or None if it accepts anything."""
+    """The paths this backend can be driven with, or None if it accepts anything.
+
+    Spelled the way `Dimension.path` and `ParamSpec.path` both spell it, which for
+    a top-level parameter means no leading slash. A backend keys its specs
+    `(module, key)`, and joining `("", "selectedAmp")` gives `/selectedAmp` while
+    the dimension it has to match is `selectedAmp` — so the key was compared
+    against a spelling it could never equal.
+
+    That is not cosmetic. `_settings` drops a dimension the backend does not
+    claim to support, so `selectedAmp` was dropped from every render on any
+    backend that declares it: the search would move an amp's tone stack while the
+    plugin stayed on whatever amp it booted with, and writing a control on an
+    unselected amp is a silent no-op. Nothing would have failed, and every number
+    would have been about the wrong amp. The synthetic chain models one amp and
+    never declared `selectedAmp`, which is why this survived M3 and M4.
+    """
     try:
         specs = renderer.parameter_specs()
     except NotImplementedError:
         return None
     keys = set()
     for key in specs:
-        keys.add(key if isinstance(key, str) else "/".join(str(part) for part in key))
+        path = key if isinstance(key, str) else "/".join(str(part) for part in key)
+        keys.add(path[1:] if path.startswith("/") else path)
     return keys
 
 
