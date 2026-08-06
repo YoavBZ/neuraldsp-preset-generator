@@ -246,7 +246,8 @@ def main() -> None:
                 "given, so there is no way to tell which amp's controls to invert.\n"
                 "  Pass --amp with one of the pack's amps, or use a template with a "
                 "selectedAmp value.")
-        calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack)
+        calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack,
+                                   renderer=renderer)
         seed = invert.apply_to(seed, calculated.as_settings(), space)
         caveats.extend(calculated.caveats)
         # Values this backend cannot be driven with still reach the output spec, and

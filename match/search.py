@@ -106,6 +106,11 @@ class Candidate:
     trial_id: Optional[int] = None
     # Populated by `robustness_rerank`: the same vector's score at each input level.
     by_level: Dict[float, float] = field(default_factory=dict)
+    # Why this vector scored nothing, when a backend refused it outright. The
+    # store has always recorded this; the candidate did not carry it, so the one
+    # place that reads a failure — the screen's baseline — could only guess
+    # between a silent render and an unmeasurable one, and said both.
+    error: Optional[str] = None
 
     @property
     def worst_level(self) -> Optional[float]:
@@ -295,7 +300,7 @@ class Evaluator:
 
         return Candidate(values=dict(values), objectives=objectives or {},
                          total=float((objectives or {}).get("total", float("inf"))),
-                         trial_id=trial_id)
+                         trial_id=trial_id, error=error)
 
     # --- what the renderer is actually given --------------------------------
 
@@ -441,11 +446,12 @@ def screen(evaluator: Evaluator, seed: Mapping,
     baseline = evaluator.evaluate(seed)
     probes.append(baseline)
     if not baseline.objectives:
+        why = (f"the backend refused it — {baseline.error}" if baseline.error
+               else "a silent render, or no dimension the loss profile weights")
         raise SearchError(
-            "the seed vector produced nothing to compare against — a silent render, "
-            "or no dimension the loss profile weights.\n"
-            "  Every movement below is measured against this, so the screen cannot "
-            "proceed without it."
+            f"the seed vector produced nothing to compare against: {why}.\n"
+            f"  Every movement below is measured against this, so the screen cannot "
+            f"proceed without it."
         )
 
     movement: Dict[str, float] = {}

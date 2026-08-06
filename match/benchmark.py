@@ -495,7 +495,8 @@ def _invert_from(renderer, target, probe_di, space, seed, profile, invert, searc
     printed = fingerprint(io.from_samples(rendered.audio,
                                           rendered.metadata.sample_rate),
                           regime="probe", excerpt_s=None)
-    calculated = invert.invert(target, printed, amp=amp, pack_id=pack_id)
+    calculated = invert.invert(target, printed, amp=amp, pack_id=pack_id,
+                               renderer=renderer)
     return invert.apply_to(seed, calculated.as_settings(), space), 1
 
 

@@ -197,6 +197,17 @@ class AudioUnitRenderer(Renderer):
             if spec.writable
         }
 
+    def eq_basis(self, amp: str, analysis_centres):
+        """This pack's measured equaliser, if `measure_eq_basis.py` has been run.
+
+        The file describes this plugin at this version, which is why the backend
+        is what answers for it: the same question asked of the synthetic chain has
+        a different and equally correct answer.
+        """
+        from match.invert import measured_basis
+
+        return measured_basis(self.pack_id, amp, analysis_centres)
+
     def to_spec(self, settings: Optional[Mapping] = None, name: str = "Matched"):
         """The settings as a spec `apply_spec.py` accepts.
 
@@ -230,12 +241,20 @@ class AudioUnitRenderer(Renderer):
         command: Dict[str, Any] = {}
         for path, value in self._normalised(settings):
             module, key = path
-            if not module and key == "selectedAmp":
-                command["selectAmp"] = int(round(float(value)))
-                continue
             spec = self._spec(pack, module, key)
-            edits.append({"module": module, "key": key,
-                          "value": self._stored(pack, spec, value)})
+            # Through the pack even here. `selectedAmp` is an enum, and an enum
+            # arrives as either a stored index or one of the plugin's own display
+            # names — `match.invert` emits `'SW50R'`, because that is what
+            # `space.to_spec` and `apply_spec.py` consume. Converting it with
+            # `int(float(...))` instead of asking the pack turned every inversion
+            # into a failed render: the search saw an unscorable trial rather than
+            # an error, and reported it as "a silent render, or no dimension the
+            # loss profile weights".
+            stored = self._stored(pack, spec, value)
+            if not module and key == "selectedAmp":
+                command["selectAmp"] = int(float(stored))
+                continue
+            edits.append({"module": module, "key": key, "value": stored})
         command["edits"] = edits
         return command
 

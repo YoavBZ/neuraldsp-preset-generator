@@ -185,6 +185,75 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
     return basis
 
 
+def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float]):
+    """The measured basis for one amp, or `None` if there is not one to use.
+
+    `packs/<pack>/eq_basis.json` is written by `scripts/measure_eq_basis.py` from
+    renders of the real plugin — row *i* is what 1 dB on band *i* does at each
+    third-octave centre. Returned as `(basis, note)` so a caller can say where the
+    numbers came from; the note carries the plugin version, because a basis
+    measured on one version is not a fact about another.
+
+    Returns `None` rather than raising for every ordinary absence — no file, a
+    pack without this amp, a schema this does not understand — because the
+    fallback is a working answer with a caveat attached, and refusing to invert at
+    all would be a worse one. A file that *is* present and does not line up with
+    the analysis frequencies is the exception: that is a stale measurement rather
+    than a missing one, and silently ignoring it would hide the staleness.
+    """
+    import json
+    import pathlib
+
+    import numpy as np
+
+    path = (pathlib.Path(__file__).resolve().parents[1]
+            / "packs" / pack_id / "eq_basis.json")
+    if not path.is_file():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if document.get("schema") != "eq-basis-1":
+        return None
+    rows = (document.get("amps") or {}).get(amp)
+    if not rows:
+        return None
+
+    available = [float(f) for f in document.get("analysis_centres_hz") or []]
+    matrix = np.asarray(rows.get("basis_db_per_db") or [], dtype=np.float64)
+    if matrix.ndim != 2 or matrix.shape[1] != len(available):
+        raise InversionError(
+            f"{path} holds a {matrix.shape} basis for {amp} against "
+            f"{len(available)} analysis centres. Re-run "
+            f"scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+
+    # Select the columns this fit is actually solving over. A fingerprint drops a
+    # band it could not measure, so the requested frequencies are a subset of the
+    # measured ones rather than the same list.
+    index = {frequency: column for column, frequency in enumerate(available)}
+    wanted = [float(f) for f in analysis_centres]
+    missing = [f for f in wanted if f not in index]
+    if missing:
+        raise InversionError(
+            f"{path} has no measurement at "
+            f"{', '.join(f'{f:g}' for f in missing[:5])} Hz"
+            f"{'…' if len(missing) > 5 else ''}, which this fit needs.\n"
+            f"  The file was measured against a different analysis band set. "
+            f"Re-run scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+
+    version = (document.get("renderer") or {}).get("plugin_version", "unknown")
+    note = (f"the band gains were fitted to this amp's *measured* equaliser "
+            f"({path.parent.name}/eq_basis.json, plugin {version}) rather than to "
+            f"textbook filter shapes")
+    if not (document.get("renderer") or {}).get("reproducible", False):
+        note += (", measured on a reused plugin instance that does not repeat "
+                 "itself exactly")
+    return matrix[:, [index[f] for f in wanted]], note
+
+
 def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float],
                    basis=None, bounds_db: Tuple[float, float] = EQ_BOUNDS_DB,
                    module: str = "", pack_id: Optional[str] = None,
@@ -776,7 +845,7 @@ def output_level(target, candidate, pack_id: str = "morgan") -> Inversion:
 
 
 def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
-           basis=None) -> Inversion:
+           basis=None, basis_note: Optional[str] = None, renderer=None) -> Inversion:
     """Every inversion above, in the order they depend on each other.
 
     Level first, because the band fit reads a mean-removed difference and a
@@ -819,6 +888,23 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     else:
         filters = fit_filters(delta, module=amp, pack_id=pack_id)
         result.merge(filters)
+
+        # A measured basis is a property of the *backend*, not of the pack, so the
+        # renderer is what answers for it. `eq_basis.json` describes the plugin;
+        # the synthetic chain builds its own bands from `FALLBACK_Q`, and fitting
+        # the plugin's overlap to the chain's audio makes the fit *worse* — which
+        # is what two of `tests/test_invert.py`'s assertions measured the moment
+        # this module tried to load the file by pack alone.
+        #
+        # Asked here rather than by the caller because the frequencies the basis
+        # has to line up with are `sorted(delta)`, which only exists at this point.
+        if basis is None and renderer is not None:
+            ask = getattr(renderer, "eq_basis", None)
+            found = ask(amp, sorted(delta)) if ask is not None else None
+            if found is not None:
+                basis, basis_note = found
+        if basis is not None and basis_note:
+            result.caveats.append(basis_note)
 
         # The bands must not re-correct what a filter corner just handled, so they
         # fit the difference minus the corners' modelled response. Subtracted rather

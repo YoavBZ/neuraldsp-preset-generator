@@ -58,6 +58,19 @@ def test_selected_amp_becomes_the_servers_own_command(spelling):
     assert command["edits"] == []
 
 
+def test_an_enum_arrives_as_its_stored_index_however_it_was_named():
+    """`match.invert` emits `/selectedAmp` as a display name, not an index.
+
+    That is what `space.to_spec` and `apply_spec.py` consume, so the backend has
+    to accept it. Converting with `int(float(...))` instead of asking the pack
+    made every inversion a failed render, and the search reported it as a silent
+    render rather than as a value it could not translate.
+    """
+    by_name = renderer()._edit_command({"/selectedAmp": "SW50R"})
+    by_index = renderer()._edit_command({"/selectedAmp": 2})
+    assert by_name["selectAmp"] == by_index["selectAmp"] == 2
+
+
 def test_a_parameter_the_pack_does_not_declare_is_refused():
     with pytest.raises(AudioUnitError, match="not a parameter"):
         renderer()._edit_command({"sw50rAmp/sw50rNonesuch": 1.0})
