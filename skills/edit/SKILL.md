@@ -9,7 +9,7 @@ when_to_use: >-
   triggers whenever they point at a .xml preset file and describe a change, or
   ask to fix, adjust, tweak, warm up, tighten or brighten a sound.
 argument-hint: "[preset.xml] [what to change]"
-allowed-tools: Read, Glob, Grep
+allowed-tools: Read, Glob, Grep, Bash
 ---
 
 # Edit a preset
@@ -87,8 +87,12 @@ different `--out` name anyway — an edit the user dislikes should always be
 one step from undo.
 
 Do **not** pass `--strip-irs` on an edit unless the user asks for portability:
-if their preset uses a custom IR, stripping it silently changes the sound and
-cannot be undone. See [cab-and-irs.md](../../reference/cab-and-irs.md).
+if their preset uses a custom IR, stripping it swaps a third-party impulse
+response for an internal mic, which is a real tonal change and an easy one to
+miss. The field itself is reversible and the input preset is never overwritten,
+so the original path is still readable from it — but you have to say what you
+did, or the user hears a change they did not ask for and has nothing to point
+at. See [cab-and-irs.md](../../reference/cab-and-irs.md).
 
 ## 5. Install and report
 

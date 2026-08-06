@@ -59,9 +59,9 @@ Everything below exists to close that loop.
 | `pyproject.toml` has `dependencies = []`; tests pass on a bare clone | New dependencies go in **optional extras only**. `show.py` and `apply_spec.py` must keep working with stdlib alone. |
 | `spectrum_diff.py` uses hand-written Goertzel to avoid numpy | That constraint applies to *reproducing a published measurement*. New analysis code may use numpy/scipy behind an extra. Do not rewrite `spectrum_diff.py`. |
 | Morgan manifest: 132 parameters — 53 `metered`, 32 `switch`, 31 `rotation`, 8 `enum`, 4 `fraction`, 2 `string`, 2 `path`; 1 non-writable | Continuous search space is ≤ 88 before conditioning; per-amp conditioning cuts it to roughly 35–45. |
-| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, at ~11× Morgan's cost per render (§11). |
+| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, and its render cost is **unresolved** — two measurements disagree by more than warm-up explains, so treat "roughly eleven times Morgan's" as the loose upper bound `docs/measuring-against-the-plugin.md` calls it, not a figure to plan a budget on. |
 | Each amp has its own module prefix (`ac20*`, `pr12*`, `sw50r*`) and its own 9-band EQ | Search space must be *conditional* on `selectedAmp`. Writing the inactive amp's controls is a silent no-op. |
-| EQ bands are fixed ISO centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already declared in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. |
+| EQ bands are at fixed declared centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. **These are not all ISO third-octave centres**: the lowest is labelled 65 Hz and the ISO band beside it is 63, so `Fingerprint.band_db(65.0)` returns `None` — see §12a. An earlier version of this row said "fixed ISO centres" and the fit was written against that assumption. |
 | `au_render.swift` renders Morgan fine and gets **exact zeros** from Tone King. M0 resolved the cause: the bare CLI instantiation, not authorization — Tone King renders in a JUCE host | Tone King work goes through the `pedalboard` backend. Nothing about it has been measured acoustically yet; do not silently produce Tone King "measurements". |
 | `apply_spec.py` validates kinds, ranges, selectors, read-only fields, and never overwrites its input | Optimizer output **must** be emitted as a human-valued spec and passed through `apply_spec.py --dry-run`. Never write preset bytes directly from the optimizer. |
 | Plugin-dependent checks are deliberately local, never CI (`audit_manifest.py`) | Same split applies here: plugin-free tests in CI, plugin-dependent checks local. |
@@ -225,9 +225,12 @@ Do not change these without a specific reason; downstream work assumes them.
 5. **The optimizer never writes preset bytes.** It emits a human-valued spec;
    `apply_spec.py` writes. All existing validation stays on the path.
 6. **Dependencies:** core stays stdlib. `[analysis]` = numpy, scipy, soundfile,
-   pyloudnorm. `[match]` = adds cma. `[separate]` = adds demucs. `[host]` =
-   adds pedalboard. Every entry point degrades with a clear message when its
-   extra is absent.
+   pyloudnorm. `[match]` = adds nothing beyond `[analysis]` — this said "adds cma"
+   and D4 below held instead, so CMA-ES is seventy lines of numpy in
+   `match/search.py`. `[host]` = adds pedalboard. There is no `[separate]` extra:
+   nothing imports demucs yet, and declaring it would advertise a capability that
+   does not exist. Every entry point degrades with a clear message when its extra
+   is absent.
 7. **The experiment store is stdlib `sqlite3`.** No pandas/parquet dependency
    for the store itself.
 8. **Plugin-dependent code lives behind the `Renderer` interface** with at least
@@ -415,6 +418,10 @@ sha256(renderer_id ‖ plugin_version ‖ renderer_build ‖ di_sha256 ‖
 budget, renderer_id, plugin_version, notes)`
 `trials(trial_id, run_id, params_json, cache_key, render_sha, peak, silent,
 wall_ms, objectives_json, fingerprint_json, error)`
+
+M4 added **three** columns to `trials` beyond this list, all recorded in §12c:
+`objective_key`, `di_sha` and `di_offset_db`. §12c named two of them and missed
+`objective_key` — in the paragraph whose job was to enumerate the departures.
 `verdicts(trial_id, listener, choice, comment, created_at)`
 
 ---
@@ -804,7 +811,7 @@ no-new-dependency fallback that independently corroborated the numbers.
 ## 12. What M1 built, and where it departed from this plan
 
 `analysis/` is in the repository: `io.py`, `align.py`, `features.py`,
-`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 99
+`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 100
 tests that synthesise every signal they measure. The exit criterion holds —
 `python scripts/fingerprint.py <wav>` prints a valid Fingerprint v1 for any
 input, including one-sample files, digital silence and full-scale DC, each of
@@ -1313,8 +1320,8 @@ python3 scripts/match_preset.py --template samples/Example_Clean_PR12.xml \
   --amp sw50r --budget 300 --shortlist 3 --seed 0 --out-dir /tmp/run
 ```
 
-**1.719 → 0.256 in 298 renders** (0.267 at worst across ±6 dB), 10 caveats, 18
-parameters searched and 6 frozen, 175 s. The resulting spec applies through
+**1.929 → 0.261 in 298 renders** (0.280 at worst across ±6 dB), 12 caveats, 18
+parameters searched and 6 frozen, 110 s. The resulting spec applies through
 `apply_spec.py` and reads back through `show.py`: the winner is written by the same
 validated path as a hand-authored preset, so a search cannot produce bytes a person
 could not have.
@@ -1325,6 +1332,16 @@ candidate for the report's spectrum overlays. An earlier version of this line sa
 "292 renders" — off by one against a count that was itself short by five, two lines
 above a paragraph boasting that calling the screen "2 per parameter" was off by exactly
 one. The CLI now prints both numbers and says which is which.
+
+**And the objectives above were wrong for one commit, in the way this section exists to
+prevent.** A round of review fixes changed enough of the pipeline to need a re-measurement,
+so one was run — with a DI of `seconds=6.0, seed=13` instead of the `seconds=4.0, seed=5`
+printed four lines up. It produced 1.719 → 0.256 in the same 298 renders, which is a
+perfectly good number about a command that appears nowhere. A reader following the block
+above got 1.929 → 0.261 and had no way to tell which of them was lying. The lesson is not
+"check your numbers" — it is that **re-measuring means re-running the recorded invocation,
+not an invocation**, and the failure is invisible precisely because the wrong number is
+real.
 
 An earlier draft of this section quoted numbers from ad-hoc scripts that were never
 recorded, and a review could not reproduce a single one of them. That is worse than
@@ -1386,16 +1403,18 @@ to ones that argue against it.
 
 **The robustness re-rank earns its place.** It reorders the shortlist whenever the
 reference-level winner is fragile, and says so when it does — on the run recorded
-above the winner holds up (0.256 at the reference level, 0.267 at worst), which is the
+above the winner holds up (0.261 at the reference level, 0.280 at worst), which is the
 outcome to hope for rather than the one that demonstrates the stage. It is ordered by
 the worst level rather than the mean: a preset that is excellent at one input level
 and unusable at another is not a good match that happens to vary.
 
 **But most of that ±6 dB spread is loudness, not tone.** Measured per candidate and per
-offset on the run above, the `level` dimension accounts for between 35% and 96% of the
-change in the total, while `timbre` — the term that would actually show breakup — moves
-by about 0.001. Turning the input up makes the render louder, and the level term counts
-that, so "0.267 at worst" is a weaker statement about breakup than it reads as. The
+offset on the run above, the `level` dimension accounts for **84% to 100% of the change
+in the total, 97% on average** — the run's own caveat prints "about 97%" — while `timbre`,
+the term that would actually show breakup, moves by 0.0001 to 0.003. Turning the input up
+makes the render louder and the level term counts that, so "0.280 at worst" is a much
+weaker statement about breakup than it reads as. (An earlier version of this paragraph
+said "35% to 96%", from the same mis-run as the objectives above.) The
 score is left alone rather than having `level` dropped from it, because a preset whose
 compression holds its output steady across playing levels genuinely is more robust and
 that belongs in the number; what was missing was saying so, and a caveat now fires with
@@ -1618,7 +1637,7 @@ printed **SHIPS**.
   `packs/recipes.py`. Picking a recipe needs a genre or a reference, which a random
   target does not have. A recipe-stack seed would make that baseline stronger and the
   comparison more honest; the neutral seed is what a caller with no other information
-  actually starts from, and this is stated in `_centre_seed` rather than left to be
+  actually starts from, and this is stated in `centre_seed` rather than left to be
   discovered.
 - **Sobol is not used** for the topology enumeration. Both packs' discrete spaces are
   small enough to enumerate exhaustively, and a quasi-random sample of 32 points out

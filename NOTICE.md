@@ -1,8 +1,10 @@
 # NOTICE
 
-This project exists for **personal interoperability** with Neural DSP's Morgan
-Amps Suite: it lets someone who has legitimately purchased the plugin generate
-and edit preset files (`.xml`) for their own copy.
+This project exists for **personal interoperability** with Neural DSP plugins —
+production packs currently target **Morgan Amps Suite** and **Tone King Imperial
+MKII**, and any other plugin can be supported by adding a pack. It lets someone
+who has legitimately purchased a plugin generate and edit preset files (`.xml`)
+for their own copy.
 
 ## What is and isn't included here
 

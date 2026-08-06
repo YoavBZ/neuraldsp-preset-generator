@@ -89,11 +89,14 @@ skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), au_probe.swift (ask the running plugin directly),
+                   selectors), probe_state.py (the same, for a plugin whose
+                   live state is a binary record rather than XML),
+                   au_probe.swift (ask the running plugin directly),
                    au_render.swift + spectrum_diff.py (measure what a control
                    does to the sound), au_render_server.swift (render many
-                   parameter sets from one instance), spike_pedalboard.py
-                   (render through a JUCE host instead),
+                   parameter sets from one instance), au_silence_check.swift
+                   (whether a plugin renders at all from the bare CLI),
+                   spike_pedalboard.py (render through a JUCE host instead),
                    fingerprint.py + compare_audio.py (measure a recording, and
                    what a preset would have to change to match it),
                    match_preset.py (match a reference recording with a preset,
@@ -230,8 +233,10 @@ The human value depends on the manifest kind:
 - **Rotation knobs** are **percent of rotation, 0–100** (noon = 50), stored as
   `0.0–1.0`.
 - **Fraction controls** use their normalized value directly, `0.0–1.0`.
-- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose)
-  use their **native unit** (dB / Hz / ms / s / BPM / semitones).
+- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose,
+  cab pans) use their **native unit** (dB / Hz / ms / s / BPM / semitones / pan).
+  **`pan` is signed and its scale differs per pack** — Morgan stores −50..50 and
+  Tone King −1..1, while both *display* a position out of 50. Read the manifest.
 - **Switches** are `true`/`false`, or the plugin's own label where the pack
   declares one (`"Active"`, `"Off"`); **selectors** take a member name
   (`"PR12"`, `"Ribbon 121"`) or an integer.

@@ -785,7 +785,8 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
     # How much of the spread is the `level` term — i.e. the loudness change this stage
     # caused by turning the input up and down — rather than the tone change it exists to
     # detect. Measured per candidate as (change in the weighted level term) / (change in
-    # the total), because on the synthetic chain it turned out to be 35% to 96% of it.
+    # the total), because on the synthetic chain it turned out to be 84% to 100% of it,
+    # 97% on average.
     level_share: List[float] = []
     levels = [0.0] + [float(offset) for offset in offsets_db]
     for candidate in shortlist:
@@ -824,7 +825,8 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
     # What the spread is made of, when it is mostly not tone. The docstring above says
     # this stage exists because "breakup depends strongly on input level" — a claim
     # about *timbre* — and measured on the synthetic chain the `level` term accounted
-    # for between 35% and 96% of the movement while `timbre` shifted by 0.001. So "0.280
+    # for 84% to 100% of the movement — 97% on average — while `timbre` shifted by 0.0001
+    # to 0.003. So "0.280
     # at worst, and it holds up" was largely a statement about output loudness, and the
     # loudness was a consequence of the stage turning the input up. Named rather than
     # dropped from the score: a preset whose compression holds its output level steady
