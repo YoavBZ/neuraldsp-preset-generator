@@ -347,7 +347,9 @@ place where a figure rests on an assumption instead of a measurement.
 
 The backend is a Python approximation of the plugin's topology, not the plugin.
 Every number this produces is a number about that approximation until the real
-backend exists (M5, which needs macOS and a licence).
+backend exists (M5, which needs macOS and a licence). If you have that machine,
+[docs/handoff-to-macos.md](docs/handoff-to-macos.md) is the run-book:
+what to run, in what order, and what should happen.
 
 The generate and edit skills do not use any of this yet — see
 [docs/tone-matching-plan.md](docs/tone-matching-plan.md) for what it is for.

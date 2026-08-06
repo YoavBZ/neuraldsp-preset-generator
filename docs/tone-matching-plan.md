@@ -615,6 +615,10 @@ recipe-only generator, and inversion-only without search.
 
 ### M5 — Real plugin backend and calibration (4–6 days, macOS + licence)
 
+> **`docs/handoff-to-macos.md` is the run-book for this milestone** — the commands in
+> order, the measured render costs the budget arithmetic rests on, and the seven paths
+> that are shaky specifically because no machine so far could exercise them.
+
 Land the backend chosen in M0. Then, per pack, run the one-time calibrations:
 `measure_eq_basis.py` → `eq_basis.json`, `measure_drive_curve.py` →
 `drive_curve.json` (THD across the volume control at 3–4 input levels, extending
