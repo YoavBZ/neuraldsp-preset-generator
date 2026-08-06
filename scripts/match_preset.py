@@ -77,7 +77,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how the objective dimensions are weighted "
                          "(unpaired-v1, paired-v1)")
     ap.add_argument("--budget", type=positive_int, default=300, metavar="RENDERS",
-                    help="how many renders to spend (default: 300)")
+                    help="renders to spend (default: 300). The screen and the ±6 dB "
+                         "re-rank have fixed costs that cannot be part-paid, so a "
+                         "budget below about 60 is exceeded rather than trimmed, and "
+                         "the run says so")
     ap.add_argument("--shortlist", type=positive_int, default=3,
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,

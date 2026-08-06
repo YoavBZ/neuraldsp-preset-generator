@@ -321,3 +321,30 @@ def test_the_screen_table_shows_the_movement_for_searched_parameters_too():
     assert "0.0040" in table
     # And the two reasons for freezing are told apart in the table itself.
     assert "too small to matter" in table
+
+
+def test_a_dimension_that_is_always_zero_is_flagged_as_flattering():
+    """`spatial` reads 0.000 on every run of the synthetic renderer — both sides are
+    dual-mono — and because `scalar` renormalises over the dimensions it *can*
+    measure, that guaranteed zero still counts and pulls the headline down. A real
+    measurement, but not a discrimination, and the difference matters to a reader."""
+    html = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.4, timbre=0.4, spatial=0.0),
+                   candidate(0.5, timbre=0.5, spatial=0.0)])
+
+    assert "reads 0.000 for every candidate" in html
+    assert "a little kinder" in html
+
+    # A dimension that varies is not flagged, and neither is one that means
+    # "unchanged" rather than "identical".
+    varied = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.4, timbre=0.4, spatial=0.1),
+                   candidate(0.5, timbre=0.5, spatial=0.0)])
+    assert "reads 0.000 for every candidate" not in varied
+
+    unchanged = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.4, timbre=0.4, prior_deviation=0.0, complexity=0.0)])
+    assert "reads 0.000 for every candidate" not in unchanged

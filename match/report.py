@@ -225,12 +225,28 @@ def _objectives_table(shortlist: Sequence[Any],
         cells = "".join(f"<td class='n'>{_num(candidate.objectives.get(n))}</td>"
                         for n in present)
         rows.append(f"<tr><td>#{index}</td>{cells}</tr>")
+    note = ""
+    flattering = _always_zero(shortlist, present)
+    if flattering:
+        # A dimension that is exactly zero on every candidate is not being matched
+        # well, it is not distinguishing anything — and because `scalar` renormalises
+        # over the dimensions it *can* measure, it still counts, pulling the headline
+        # down. On the synthetic renderer `spatial` does this on every run: both sides
+        # are dual-mono, so its 0.2 weight — about 8% of the live total — contributes
+        # a guaranteed zero to every score.
+        named = ", ".join(_dimension_label(name) for name in flattering)
+        note = (f"<p class='muted'><strong>{named}</strong> reads 0.000 for every "
+                f"candidate. That is a real measurement rather than a gap, but it "
+                f"means the dimension separates nothing here — most likely neither "
+                f"recording carries the information — and it still counts towards "
+                f"the score above, which is therefore a little kinder than the "
+                f"dimensions that did discriminate.</p>")
     return (f"<h2>Objectives, per dimension</h2>"
             f"<table><tr><th></th>{header}</tr>{''.join(rows)}</table>"
             f"<p class='muted'>A dash is a dimension neither recording supported "
-            f"measuring, not a zero. `prior_deviation` and `complexity` measure "
-            f"distance from the starting point rather than from the reference, so "
-            f"lower is more conservative rather than more accurate.</p>")
+            f"measuring, not a zero. The last two columns measure distance from the "
+            f"starting point rather than from the reference, so lower there is more "
+            f"conservative rather than more accurate.</p>{note}")
 
 
 # What each objective dimension is called where a person reads it. The raw keys are
@@ -245,6 +261,18 @@ DIMENSION_LABELS = {
 
 def _dimension_label(name: str) -> str:
     return DIMENSION_LABELS.get(name, name)
+
+
+def _always_zero(shortlist: Sequence[Any], present: Sequence[str]) -> List[str]:
+    """Dimensions that are exactly 0.000 for every candidate, and weighted anyway."""
+    flat = []
+    for name in present:
+        if name in ("prior_deviation", "complexity"):
+            continue      # zero here means "unchanged", which is meaningful
+        values = [c.objectives.get(name) for c in shortlist]
+        if values and all(v is not None and abs(v) < 5e-4 for v in values):
+            flat.append(name)
+    return flat
 
 
 def _spectrum(target, fingerprints: Mapping[int, Any],
