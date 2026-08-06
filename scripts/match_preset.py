@@ -42,7 +42,8 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import (die, guarded, on_interrupt, positive_float, positive_int,
+from _cli import (die, enumerated as _enumerated, guarded, on_interrupt,
+                  positive_float, positive_int, print_enumerable as _print_enumerable,
                   probe_di as _probe)
 
 # The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
@@ -117,6 +118,19 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,
                     help="which backend renders a candidate (default: synthetic)")
+    ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
+                    metavar="PATH",
+                    help="try every position of this switch or selector, each with "
+                         "its own inner search — the cabinet, the microphone, the "
+                         "amp, an effect on or off. Repeatable, and a product: two "
+                         "two-state switches is four searches sharing the budget. "
+                         "Without it every discrete control stays where the template "
+                         "had it, which is what the run's caveat says. Use "
+                         "--list-enumerable to see the paths")
+    ap.add_argument("--list-enumerable", action="store_true",
+                    help="print the switches and selectors --enumerate accepts for "
+                         "this pack and amp, with how many positions each has, and "
+                         "exit")
     ap.add_argument("--excerpt", type=positive_float, default=None, metavar="SECONDS",
                     help="measure only this much of the reference")
     ap.add_argument("--out-dir", type=pathlib.Path, required=True,
@@ -153,8 +167,14 @@ def main() -> None:
             f"Available: {', '.join(list_profiles())}")
     load_profile(args.loss_profile)          # fail here rather than 200 renders in
 
-    renderer = _renderer(args.renderer, args.pack)
     space = space_module.build(args.pack, amp=args.amp)
+    if args.list_enumerable:
+        _print_enumerable(space, args.pack, args.amp)
+        return
+    switches, selectors = _enumerated(space, args.enumerated, args.budget,
+                                      args.shortlist)
+
+    renderer = _renderer(args.renderer, args.pack)
     seed, template_name = _seed_from_template(args.template, space, args.pack)
     template_values = dict(seed)
 
@@ -270,6 +290,7 @@ def main() -> None:
                            budget=args.budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
                            fallbacks=[template_values],
+                           switches=switches, selectors=selectors,
                            rng=np.random.default_rng(args.seed))
     elapsed_s = time.monotonic() - started_at
     caveats.extend(result.caveats)

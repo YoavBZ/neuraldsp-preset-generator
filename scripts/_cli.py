@@ -231,3 +231,93 @@ def resolve_pack(pack_id: Optional[str], file_header: str, source: pathlib.Path)
             f"  python scripts/bootstrap_pack.py --preset {source}"
         )
     return pack
+
+
+def enumerable(space):
+    """Every discrete dimension of this space, and how many positions it has.
+
+    A switch has two. A selector has one per declared member — and a selector
+    whose members are unknown is not here at all, because `space.build` already
+    excluded it: a stored integer the plugin never displays cannot be chosen on
+    purpose.
+    """
+    found = []
+    for dimension in space.dimensions:
+        if dimension.switch:
+            found.append((dimension.path, 2, "switch"))
+        elif dimension.kind == "enum" and dimension.members:
+            found.append((dimension.path, len(dimension.members), "selector"))
+    return sorted(found)
+
+
+def print_enumerable(space, pack_id: str, amp) -> None:
+    found = enumerable(space)
+    if not found:
+        print(f"{pack_id} declares no switches or selectors that can be enumerated"
+              + (f" for {amp}" if amp else "") + ".")
+        return
+    where = f"{pack_id}/{amp}" if amp else pack_id
+    print(f"{len(found)} enumerable controls in {where} — pass any of these to "
+          f"--enumerate:\n")
+    for path, positions, kind in found:
+        print(f"  {path:<40} {positions:>3} positions  ({kind})")
+    print(f"\nEach one multiplies the number of inner searches, and each search "
+          f"shares the\nbudget. Two two-state switches is four; adding a nine-way "
+          f"microphone is thirty-six.")
+
+
+def enumerated(space, paths, budget: int, shortlist: int):
+    """Split the requested paths into switches and selectors, and refuse the silly.
+
+    Routed by the dimension's own kind rather than by asking the caller to know
+    which flag a control belongs under: `search.topologies` takes the two apart
+    and raises if one is passed as the other, and that is a distinction about this
+    codebase rather than about the plugin.
+
+    The budget check is here rather than inside the search because this is where
+    it can still be acted on. `search()` reports afterwards that each variant got
+    a thin share; a run that cannot afford one CMA-ES round *per variant* should
+    be stopped before it spends an hour proving it.
+    """
+    if not paths:
+        return None, None
+
+    by_path = {path: (positions, kind) for path, positions, kind in enumerable(space)}
+    switches, selectors, variants = [], [], 1
+    for path in paths:
+        found = by_path.get(path)
+        if found is None:
+            die(f"{path!r} is not a switch or selector this search can enumerate.\n"
+                f"  Run the same command with --list-enumerable to see the "
+                f"{len(by_path)} that are.")
+        positions, kind = found
+        (switches if kind == "switch" else selectors).append(path)
+        variants *= positions
+
+    # One render per variant for its own starting point, 2N+1 for the screen, and
+    # 2 per shortlisted candidate for the re-rank. Only what is left is searchable,
+    # and it is split across the variants. `generation_size` is the granularity of
+    # the whole search — below one round the optimiser cannot take a step — and it
+    # is exposed by `match.search` for exactly this arithmetic rather than being
+    # re-derived here.
+    from match.search import generation_size
+
+    screen_cost = 2 * len(space.dimensions) + 1
+    # An upper bound on what the screen leaves searchable: the real count is only
+    # known after screening, and using it here would need the renders this check
+    # exists to avoid spending.
+    round_cost = generation_size(len(space.dimensions))
+    reserved = screen_cost + variants + 2 * shortlist
+    per_variant = (budget - reserved) / max(variants, 1)
+    if per_variant < round_cost:
+        die(f"{variants} topologies do not fit in a {budget}-render budget.\n"
+            f"  {reserved} renders are spent before any searching: {screen_cost} on "
+            f"the screen, {variants} on one starting point per topology, "
+            f"{2 * shortlist} on the ±6 dB re-rank. That leaves "
+            f"{max(budget - reserved, 0)} to split {variants} ways — about "
+            f"{max(per_variant, 0):.0f} each, against the {round_cost} one round "
+            f"of the optimiser costs.\n"
+            f"  Raise --budget to about {int(reserved + variants * round_cost)}, "
+            f"or enumerate fewer controls. A topology with no search behind it is "
+            f"its starting point scored once.")
+    return switches or None, selectors or None

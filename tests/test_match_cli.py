@@ -399,3 +399,62 @@ def test_an_unknown_arm_is_refused_by_name(tmp_path):
     assert done.returncode != 0
     assert "unknown arm(s) magic" in done.stderr
     assert "recipe, inversion, full" in done.stderr
+
+
+# --- --enumerate ------------------------------------------------------------
+# The topology stage was written and tested in M4 and no caller ever reached it,
+# so every run left the cabinet, the microphone and the amp wherever the template
+# had them and said so in a caveat. These cover the wiring, not `topologies()`.
+
+def test_list_enumerable_names_the_paths_and_their_positions(tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", ROOT / "pyproject.toml", "--amp", "sw50r",
+               "--out-dir", tmp_path / "run", "--list-enumerable")
+    assert done.returncode == 0, done.stderr
+    assert "cabParameters/leftMicType" in done.stdout
+    assert "11 positions" in done.stdout, done.stdout
+    assert "(selector)" in done.stdout and "(switch)" in done.stdout
+    # It exits before reading the reference, which here is not audio at all.
+    assert "Format not recognised" not in done.stderr
+
+
+def test_an_unenumerable_path_is_refused_by_name(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--out-dir", tmp_path / "run", "--enumerate", "sw50rAmp/sw50rVolume")
+    assert done.returncode != 0
+    # A continuous control: enumerating a knob is a category error, and the
+    # message has to say where the real list is.
+    assert "not a switch or selector" in done.stderr, done.stderr
+    assert "--list-enumerable" in done.stderr
+
+
+def test_a_topology_product_that_cannot_be_searched_is_refused_with_the_sums(audio, tmp_path):
+    """A topology with no search behind it is its starting point scored once.
+
+    Refused before the renders rather than reported after them: `search()` says
+    afterwards that each variant got a thin share, which is an hour too late.
+    """
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "300", "--out-dir", tmp_path / "run",
+               "--enumerate", "cabParameters/leftMicType")
+    assert done.returncode != 0
+    assert "11 topologies do not fit" in done.stderr, done.stderr
+    assert "Raise --budget to about" in done.stderr
+    assert "Traceback" not in done.stderr
+
+
+def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
+    """The caveat that says nothing was enumerated must stop appearing once
+    something is, or it is the one line a reader would trust and shouldn't."""
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               # 240 rather than a round 100: the screen alone costs 2 per
+               # dimension, so on Morgan the floor for two topologies is 223 and
+               # the guard above says so by name.
+               "--budget", "240", "--shortlist", "1", "--out-dir", tmp_path / "run",
+               "--enumerate", "sw50rAmp/sw50rBright")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "no switches or selectors were enumerated" not in done.stdout, done.stdout

@@ -29,7 +29,8 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded, positive_float, positive_int, probe_di
+from _cli import (die, enumerated, guarded, positive_float, positive_int,
+                  probe_di)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +59,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the sampler's seed, so a run repeats (default: 11)")
     ap.add_argument("--arms", default="recipe,inversion,full",
                     help="which arms to run, comma-separated (default: all three)")
+    ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
+                    metavar="PATH",
+                    help="enumerate this switch or selector in the full arm, each "
+                         "position with its own inner search. Repeatable. Without it "
+                         "no arm can choose a cabinet, so all three report the same "
+                         "selector accuracy and that column measures nothing")
     ap.add_argument("--renderer", default="synthetic", choices=("synthetic", "swift"),
                     help="which backend renders a candidate (default: synthetic). "
                          "'swift' is the installed plugin, and is the only one whose "
@@ -125,6 +132,11 @@ def main() -> None:
 
     renderer = _renderer(args.renderer, args.pack)
     space = space_module.build(args.pack, amp=args.amp)
+    # The same routing and the same budget arithmetic the match CLI uses, imported
+    # rather than repeated: two copies of "is this a switch or a selector" would be
+    # two places for the answer to drift.
+    switches, selectors = enumerated(space, args.enumerated, args.budget,
+                                     shortlist=1)
     di, di_caveat = probe_di(args.probe_di, args.seconds)
     seed = benchmark.centre_seed(space)
 
@@ -141,7 +153,8 @@ def main() -> None:
         result = benchmark.compare_baselines(
             renderer, space, di, seed, targets=args.targets, budget=args.budget,
             profile=args.loss_profile, rng=np.random.default_rng(args.seed), arms=arms,
-            pack_id=args.pack, amp=args.amp, progress=progress,
+            pack_id=args.pack, amp=args.amp, switches=switches, selectors=selectors,
+            progress=progress,
         )
     finally:
         # The plugin instance goes back even if the run raised or was interrupted.

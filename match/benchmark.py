@@ -319,6 +319,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                       arms: Sequence[str] = ARMS,
                       pack_id: str = "morgan",
                       amp: Optional[str] = None,
+                      switches: Optional[Sequence[str]] = None,
+                      selectors: Optional[Sequence[str]] = None,
                       progress=None) -> BenchmarkResult:
     """Run each arm against the same targets, and report them side by side.
 
@@ -326,6 +328,12 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     answer: that baseline is "use the preset you would have used", and its score is
     what the other two have to beat. Same targets, same probe DI, same objective for
     all three — the comparison is worth nothing otherwise.
+
+    `switches` and `selectors` go to the `full` arm's search only, which is the
+    point of them: `recipe` and `inversion` have no way to choose a cabinet, so
+    with nothing enumerated all three arms report the *same* selector accuracy in
+    every run and that column measures nothing. It is the one column that can show
+    the topology stage doing something.
     """
     from analysis import io, require
 
@@ -379,7 +387,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             try:
                 found, renders, arm_caveats = _run_arm(
                     arm, renderer, target, probe_di, space, seed, budget, profile,
-                    invert, search, rng, pack_id, amp)
+                    invert, search, rng, pack_id, amp, switches, selectors)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -436,7 +444,9 @@ def scorer_score(scorer, target, values: Mapping) -> Optional[float]:
 
 
 def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
-             invert, search, rng, pack_id: str, amp: Optional[str]):
+             invert, search, rng, pack_id: str, amp: Optional[str],
+             switches: Optional[Sequence[str]] = None,
+             selectors: Optional[Sequence[str]] = None):
     """One arm's answer for one target, and how many renders it took.
 
     The three arms are **nested**, which is what makes the comparison mean anything:
@@ -461,7 +471,8 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
         return inverted, spent, []
 
     outcome = search.search(renderer, target, probe_di, space, inverted,
-                            budget=budget, profile=profile, shortlist=1, rng=rng)
+                            budget=budget, profile=profile, shortlist=1,
+                            switches=switches, selectors=selectors, rng=rng)
     if not outcome.shortlist:
         failure = BenchmarkError(
             f"the search returned no candidate after {outcome.renders} renders: "
