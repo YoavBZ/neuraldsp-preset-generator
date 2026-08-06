@@ -220,7 +220,10 @@ def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
 @pytest.mark.parametrize("extra,expected", [
     (["--budget", "0"], "must be at least 1"),
     (["--loss-profile", "nope"], "unknown loss profile"),
-    (["--renderer", "swift"], "not built yet"),
+    # `swift` used to belong here. It is M5 and it is built, so on a machine with
+    # the plugin it is a working backend rather than a bad flag; `pedalboard` is
+    # the one still unbuilt and is what this now asserts about.
+    (["--renderer", "pedalboard"], "not built yet"),
     (["--reference-mode", "reamp"], "invalid choice"),
 ])
 def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):

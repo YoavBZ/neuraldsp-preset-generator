@@ -294,8 +294,20 @@ while let line = readLine(strippingNewline: true) {
     let stateStart = DispatchTime.now()
     // scripts/au_render.swift writes state to an unallocated instance and
     // allocates afterwards, and its renders are bit-identical across processes.
-    // "isolate" reproduces that order here, which is the only way found to make
-    // a second render in the same process match the first.
+    // "isolate" reproduces that order here.
+    //
+    // It does *not* make a second render in the same process match the first,
+    // which this comment used to claim: on Morgan 1.1.1 two renders of identical
+    // parameters differ by -15.4 dB relative to the signal without it and
+    // -15.7 dB with it. Only a fresh process is bit-exact.
+    //
+    // What it does do is make Tone King audible at all. That plugin renders exact
+    // zeros on its first allocation of render resources — the silence this project
+    // spent months attributing to bare instantiation — and renders normally once
+    // they have been cycled. "realloc" below works just as well, so it is the
+    // reallocation that matters rather than the order of the state write. See
+    // match/renderer_au.py, which turns this on by itself when a first render
+    // comes back silent.
     let isolate = command["isolate"] as? Bool == true
     if isolate { unit.deallocateRenderResources() }
     unit.fullState = state

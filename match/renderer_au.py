@@ -89,14 +89,15 @@ class AudioUnitRenderer(Renderer):
                  workdir: Optional[pathlib.Path] = None):
         self.pack_id = pack_id
         self.settle_ms = float(settle_ms)
-        # None means "find out". Some plugins render silence when their state is
-        # written to an already-allocated instance: Tone King did exactly that
-        # from the Swift helpers for months, and it was recorded as a property of
-        # bare instantiation. It is not. Deallocating around the state write —
-        # which is the order `scripts/au_render.swift` uses, and what `isolate`
-        # reproduces — makes it render, at 0.153 peak where it had been reporting
-        # exact zeros. Morgan never needs it. Rather than encode a rule from two
-        # plugins, this tries without and reacts to the symptom; see `_render`.
+        # None means "find out". Some plugins render silence on their first
+        # allocation of render resources and render normally after a deallocate/
+        # reallocate cycle. Tone King is one: it returned exact zeros from the
+        # Swift helpers for months, which was recorded as a property of bare
+        # instantiation, and it renders at 0.153 peak once the resources have been
+        # cycled. Measured both ways round — `realloc` after the state write and
+        # `isolate` before it both work, so it is the reallocation that matters
+        # and not the state write. Morgan never needs it. Rather than encode a
+        # rule from two plugins, this tries without and reacts to the symptom.
         self.isolate = bool(isolate) if isolate is not None else False
         self._isolate_decided = isolate is not None
         self.amplitude = float(amplitude)
@@ -178,20 +179,20 @@ class AudioUnitRenderer(Renderer):
 
         # The first render decides how this plugin has to be driven. Silence here
         # is the symptom Tone King showed for months and which was written down as
-        # "a property of the bare instantiation": it is not, it is the state being
-        # written to an allocated instance. One render is spent finding out, and
-        # only on a backend that came back silent — so a plugin that works, like
-        # Morgan, pays nothing.
+        # "a property of the bare instantiation": it is not, it is the plugin's
+        # first allocation of render resources. One render is spent finding out,
+        # and only on a backend that came back silent — so a plugin that works,
+        # like Morgan, pays nothing.
         self._isolate_decided = True
         if not float(np.abs(audio).max() if len(audio) else 0.0) == 0.0:
             return audio
 
         # On a *fresh* instance. Retrying inside the same one does not work:
-        # having once written state to an allocated instance, this plugin stays
-        # silent however the next render is ordered, so the difference only shows
-        # up when isolation is in force from the first write onwards. Measured —
-        # the same retry without the restart comes back silent and would have
-        # concluded that isolating does not help.
+        # once this plugin has rendered silently it stays silent however the next
+        # render is ordered, so the difference only shows up when the resources
+        # are cycled from the first render onwards. Measured — the same retry
+        # without the restart comes back silent, and would have concluded that
+        # isolating does not help.
         self._restart_server()
         self.isolate = True
         retried = self._one_render(di, settings, frames)
@@ -203,9 +204,8 @@ class AudioUnitRenderer(Renderer):
             self.isolate = False
             return audio
         self._isolate_note = (
-            "this plugin rendered silence until its state was written to an "
-            "unallocated instance, so every render deallocates and reallocates "
-            "around the write"
+            "this plugin rendered silence until its render resources were "
+            "deallocated and reallocated, so every render now cycles them"
         )
         return retried
 

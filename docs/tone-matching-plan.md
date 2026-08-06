@@ -1794,20 +1794,99 @@ approximately right.
 dual-mono, and it carries 8% of the weight. Against the plugin, the seed candidate
 of the ground-truth match scores `spatial: 0.0253`. It discriminates.
 
-### The synthetic baseline does not reproduce across machines
+### The exit criterion: what the plugin costs against the approximation
 
-`docs/handoff-to-macos.md` §8 gives a command and says to expect `1.719 -> 0.256`
-in 298 renders with 10 caveats, adding that "the pipeline is deterministic and it
-reproduces bit-for-bit on this machine, so a difference is a finding."
+```
+python3 scripts/benchmark_match.py --targets 50 --budget 300 --json /tmp/bench-synthetic.json
+python3 scripts/benchmark_match.py --targets 50 --budget 300 --renderer swift \
+  --json docs/m5-benchmark-morgan.json
+```
 
-It reproduces `1.717 -> 0.180` in 298 renders with 12 caveats here — and it does
-the same at `ac03d5e`, the commit that shipped those numbers, so nothing in M5
-caused it. The starting distance differs in the third decimal before any search
-runs, which is a numeric-library difference rather than a code one; CMA-ES then
-diverges from there. The pipeline is deterministic *given an environment*, not
-across environments, and a committed synthetic figure is therefore not a
-cross-machine check. This is the fourth time a number in this repository has failed
+Both ship. Every row of both is in `docs/m4-benchmark-50.json` and
+`docs/m5-benchmark-morgan.json`, and the latter carries the backend that made it,
+`reproducible: false` included.
+
+| arm | synthetic mean | **plugin mean** | synthetic median | **plugin median** |
+|---|---|---|---|---|
+| recipe | 3.039 | 2.572 | 2.533 | 2.323 |
+| inversion | 1.514 | 1.551 | 1.309 | 1.501 |
+| full | **0.638** | **0.932** | **0.453** | **0.719** |
+
+| | synthetic | plugin |
+|---|---|---|
+| param MAE (recipe / inversion / full) | 0.247 / 0.257 / 0.258 | 0.253 / 0.271 / 0.271 |
+| selector accuracy | 0.658 | 0.624 |
+| failure rate | 0% | **0%** |
+| renders | 14375 | 14827 |
+| wall clock | 3171 s | 12254 s |
+
+**The honest gap is 46% on the mean and 59% on the median.** The full pipeline
+scores 0.932 against the plugin where it scored 0.638 against the approximation.
+Measured as a share of the distance the recipe stack leaves on the table — which is
+the comparison that survives the two arms having different targets — it closes to
+36% of the recipe baseline against the plugin and to 21% against the synthetic
+chain. Against the inversion alone: 60% against the plugin, 42% synthetic.
+
+So the pipeline works against the real thing, beats both baselines on every one of
+50 targets, and is roughly half as effective as the synthetic numbers implied. That
+is M5's deliverable.
+
+Two predictions in the handoff did not hold:
+
+- **The failure rate is zero.** "A real backend will have some — a silent render,
+  an instantiate that did not come back." In 14827 renders there were none. The
+  gate exists and is worth keeping; it did not fire.
+- **Parameter MAE does not get much worse.** It rises 0.253 → 0.271 across the
+  arms, the same shape as the synthetic run, for the reason `verdict()` already
+  states: the controls are not identifiable from the output.
+
+### The benchmark reproduces across machines; the single-run walkthrough does not
+
+The synthetic arm above reproduces `docs/m4-benchmark-50.json` closely — 0.6385
+against a committed 0.641 on the full arm, 3.0386 against 3.039, the same 14375
+renders — on a different machine and a different numpy. Averaging 50 targets is
+what makes it portable.
+
+One run of `match_preset.py` is not. `docs/handoff-to-macos.md` §8 gives a command
+and says to expect `1.719 -> 0.256` in 298 renders with 10 caveats, adding that
+"the pipeline is deterministic and it reproduces bit-for-bit on this machine, so a
+difference is a finding." It gives `1.717 -> 0.180` in 298 renders with 12 caveats
+here — and gives the same at `ac03d5e`, the commit that shipped those numbers, so
+nothing in M5 caused it. The starting distance differs in the third decimal before
+any search runs, which is a numeric-library difference rather than a code one, and
+CMA-ES diverges from there.
+
+The rule that follows: **a committed aggregate is a cross-machine check and a
+committed single-run figure is not.** §8's numbers should have been recorded as
+one machine's, and this is the fourth time a figure in this repository has failed
 to reproduce from its own command.
+
+### Tone King, end to end for the first time
+
+```
+python3 scripts/match_preset.py --pack toneking --template /tmp/tk_template.xml \
+  --reference /tmp/tk_ref.wav --reference-mode probe --probe-di /tmp/tk_probe.wav \
+  --renderer swift --no-invert --budget 200 --shortlist 2 --seed 0 --out-dir /tmp/tk_run
+```
+
+`1.320 -> 0.819` in 191 renders and 199 s, against a reference rendered through the
+plugin from a known vector. The record-state write path works: each render rebuilds
+the plugin's own blob through `format.structured` and the parameters reach the
+sound.
+
+Two things it exposed, neither of which is a bug in the search:
+
+- **`--no-invert` is not optional for this pack.** `invert()` needs an amp prefix
+  and Tone King has none — `amp_modules` is empty and the whole namespace is flat,
+  so there is no `{amp}EQ/{amp}EQBand{n}` to fit onto. Without `--no-invert` the
+  run dies with "the template does not say which amp is selected". The inversion
+  stack is written for Morgan's topology, and that should be said out loud rather
+  than discovered by a user.
+- **The screen freezes 44 of 61 parameters.** The backend floor is doing most of
+  the work here, and the run says so.
+
+There is still no bundled Tone King template. The one used above is the plugin's
+own boot state written to a file, which parses as a preset because it is one.
 
 ## 13. Reading list, in the order it becomes relevant
 

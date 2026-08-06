@@ -517,6 +517,58 @@ Nothing in `packs/toneking/` has been measured acoustically yet. Its recipes
 still say so, and they should keep saying so until someone actually renders the
 comparisons — what changed is that this is now possible, not that it is done.
 
+### Corrected in M5: it is the first allocation, not the instantiation
+
+The conclusion above — "the silence is a property of the bare CLI instantiation"
+— is wrong, and `pedalboard` was never needed to get audio out of this plugin.
+
+Tone King renders silence on its **first allocation of render resources**, and
+renders normally once they have been deallocated and reallocated. Both orderings
+work, so the state write has nothing to do with it:
+
+```bash
+swiftc -swift-version 5 -O scripts/au_render_server.swift -o /tmp/au_render_server
+python3 - <<'EOF'
+import json, subprocess
+import numpy as np, soundfile as sf
+from tests import fixtures_audio as fx
+sf.write('/tmp/tkdi.wav',
+         np.asarray(fx.plucks(seconds=2.0, gap=0.9, seed=13), dtype=np.float32)[:, None],
+         48000, subtype='FLOAT')
+def run(**extra):
+    cmd = dict(out='/tmp/tko.wav', input='/tmp/tkdi.wav', amplitude=1.0); cmd.update(extra)
+    p = subprocess.run(['/tmp/au_render_server', 'aumf', 'TKI2', 'NDSP', '--settle', '0'],
+                       input=json.dumps(cmd) + '\n{"quit":true}\n',
+                       capture_output=True, text=True)
+    return [json.loads(l) for l in p.stdout.strip().splitlines() if l.startswith('{')][-1]['peak']
+print('plain  ', run())
+print('realloc', run(realloc=True))
+print('isolate', run(isolate=True))
+EOF
+```
+
+```
+plain   0.0
+realloc 0.1525246
+isolate 0.1525423
+```
+
+That is also why `au_silence_check.swift` still reports `peak = 0.0`: it
+instantiates, allocates once and renders, which is exactly the path that is
+silent. It remains correct evidence about that path and was never evidence about
+the plugin.
+
+The cost is one render of about 46 s while the plugin loads its impulse
+responses, and 370 ms per render after that — Morgan's cost. `match/renderer_au.py`
+turns this on by itself: if a first render comes back silent it restarts the
+server with the resources cycled and tries once more, which is load-bearing,
+because retrying inside the same instance stays silent.
+
+Acoustic work on Tone King is therefore possible from the Swift harness, and
+parameter writes measurably move the sound — `/rhythmAmpVolume`, `/cab1Level` and
+`/ampReverb` each move a third-octave band by 11 to 13 dB. The recipes still say
+nothing has been measured, and that is still true.
+
 ## Method limits
 
 - Audio Unit metadata covers only published controls.
