@@ -337,3 +337,80 @@ def test_each_record_render_starts_from_the_plugins_own_state(tmp_path):
     values = {parameter.key: parameter.value for parameter in written.parameters}
     assert values["ampReverb"] == "0.25", "the first render's edit leaked into the second"
     assert values["ampTremoloDepth"] == "0.1", values
+
+
+# --- deciding how the plugin has to be driven -------------------------------
+
+def _silence_decision(monkeypatch, results):
+    """Drive `_render`'s first-render decision with canned audio."""
+    np = pytest.importorskip("numpy")
+
+    made = renderer()
+    made._ensure_server = lambda: None
+    made._restart_server = lambda: made.restarts.append(made.isolate)
+    made.restarts = []
+    made.rendered = []
+
+    def fake(di, settings, frames):
+        made.rendered.append(made.isolate)
+        return np.asarray(results[len(made.rendered) - 1], dtype=np.float32)
+
+    monkeypatch.setattr(made, "_one_render", fake)
+    return made, np
+
+
+def test_a_plugin_that_renders_is_never_charged_for_isolation(monkeypatch):
+    """Morgan works without it, and a deallocation per render is not free."""
+    made, np = _silence_decision(monkeypatch, [np_ones()])
+    made._render(np_ones(), {})
+    assert made.isolate is False
+    assert made.restarts == []
+    assert made.rendered == [False]
+
+
+def test_silence_is_retried_on_a_fresh_instance_with_isolation(monkeypatch):
+    """Tone King rendered exact zeros from the Swift helpers for months, and that
+    was recorded as a property of bare instantiation. It is the state being
+    written to an allocated instance."""
+    made, np = _silence_decision(monkeypatch, [np_zeros(), np_ones()])
+    audio = made._render(np_zeros(), {})
+    assert made.isolate is True
+    assert made.restarts == [False], "the retry has to be a new plugin instance"
+    assert made.rendered == [False, True]
+    assert float(np.abs(audio).max()) > 0.0
+
+
+def test_a_retry_that_is_still_silent_returns_the_silence(monkeypatch):
+    """Silence is a legitimate return value the caller interprets, and isolating
+    every render for nothing is a cost with no benefit."""
+    made, np = _silence_decision(monkeypatch, [np_zeros(), np_zeros()])
+    audio = made._render(np_zeros(), {})
+    assert made.isolate is False
+    assert float(np.abs(audio).max()) == 0.0
+
+
+def test_an_explicit_choice_is_not_second_guessed(monkeypatch):
+    """A caller that said `isolate=False` gets it, silence and all."""
+    np = pytest.importorskip("numpy")
+
+    made = AudioUnitRenderer("morgan", isolate=False)
+    made._xml_state = True
+    made._ensure_server = lambda: None
+    calls = []
+    monkeypatch.setattr(made, "_one_render",
+                        lambda di, s, f: calls.append(1) or np.zeros((4, 2), dtype=np.float32))
+    made._render(np.zeros(4, dtype=np.float32), {})
+    assert calls == [1], "no probing render when the caller has already decided"
+    assert made.isolate is False
+
+
+def np_zeros():
+    import numpy as np
+
+    return np.zeros((512, 2), dtype=np.float32)
+
+
+def np_ones():
+    import numpy as np
+
+    return np.ones((512, 2), dtype=np.float32)

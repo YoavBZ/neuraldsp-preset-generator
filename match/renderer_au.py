@@ -81,7 +81,7 @@ class AudioUnitRenderer(Renderer):
     renderer_id = "swift"
 
     def __init__(self, pack_id: str = "morgan", *, settle_ms: float = 0.0,
-                 isolate: bool = False, amplitude: float = 1.0,
+                 isolate: Optional[bool] = None, amplitude: float = 1.0,
                  warmup_s: float = 0.0, sample_rate: int = 48000,
                  block_size: int = BLOCK_FRAMES, quality_mode: str = "standard",
                  band_noise_db: float = REUSED_INSTANCE_BAND_NOISE_DB,
@@ -89,7 +89,16 @@ class AudioUnitRenderer(Renderer):
                  workdir: Optional[pathlib.Path] = None):
         self.pack_id = pack_id
         self.settle_ms = float(settle_ms)
-        self.isolate = bool(isolate)
+        # None means "find out". Some plugins render silence when their state is
+        # written to an already-allocated instance: Tone King did exactly that
+        # from the Swift helpers for months, and it was recorded as a property of
+        # bare instantiation. It is not. Deallocating around the state write —
+        # which is the order `scripts/au_render.swift` uses, and what `isolate`
+        # reproduces — makes it render, at 0.153 peak where it had been reporting
+        # exact zeros. Morgan never needs it. Rather than encode a rule from two
+        # plugins, this tries without and reacts to the symptom; see `_render`.
+        self.isolate = bool(isolate) if isolate is not None else False
+        self._isolate_decided = isolate is not None
         self.amplitude = float(amplitude)
         self.warmup_s = float(warmup_s)
         self.sample_rate = int(sample_rate)
@@ -109,6 +118,7 @@ class AudioUnitRenderer(Renderer):
         self._di_files: Dict[str, pathlib.Path] = {}
         self._pack_cache = None
         self._render_index = 0
+        self._isolate_note: Optional[str] = None
         # Warnings the pack raised while translating a value — a guessed kind, a
         # selector whose members are unknown. Collected rather than discarded: the
         # pack's own rule is that a note with nowhere to go becomes an error, and a
@@ -136,7 +146,9 @@ class AudioUnitRenderer(Renderer):
                 "no settle after the state write: 0/5/10/25/50/100/200/400 ms "
                 "measured byte-identical on Morgan's XML state path"
             )
-        if self.isolate:
+        if self._isolate_note:
+            notes.append(self._isolate_note)
+        elif self.isolate:
             notes.append(
                 "isolate: render resources are deallocated around the state write, "
                 "which is the ordering scripts/au_render.swift uses"
@@ -160,6 +172,44 @@ class AudioUnitRenderer(Renderer):
 
         self._ensure_server()
         frames = int(np.asarray(di).shape[0])
+        audio = self._one_render(di, settings, frames)
+        if self._isolate_decided:
+            return audio
+
+        # The first render decides how this plugin has to be driven. Silence here
+        # is the symptom Tone King showed for months and which was written down as
+        # "a property of the bare instantiation": it is not, it is the state being
+        # written to an allocated instance. One render is spent finding out, and
+        # only on a backend that came back silent — so a plugin that works, like
+        # Morgan, pays nothing.
+        self._isolate_decided = True
+        if not float(np.abs(audio).max() if len(audio) else 0.0) == 0.0:
+            return audio
+
+        # On a *fresh* instance. Retrying inside the same one does not work:
+        # having once written state to an allocated instance, this plugin stays
+        # silent however the next render is ordered, so the difference only shows
+        # up when isolation is in force from the first write onwards. Measured —
+        # the same retry without the restart comes back silent and would have
+        # concluded that isolating does not help.
+        self._restart_server()
+        self.isolate = True
+        retried = self._one_render(di, settings, frames)
+        if float(np.abs(retried).max() if len(retried) else 0.0) == 0.0:
+            # Still silent, so isolating was not the answer. Put it back rather
+            # than paying for a deallocation on every render for no reason, and
+            # return the silence: it is a legitimate result that the caller has to
+            # interpret, not an error to raise.
+            self.isolate = False
+            return audio
+        self._isolate_note = (
+            "this plugin rendered silence until its state was written to an "
+            "unallocated instance, so every render deallocates and reallocates "
+            "around the write"
+        )
+        return retried
+
+    def _one_render(self, di, settings: Optional[Mapping], frames: int):
         out_path = self._workdir / f"render-{self._render_index}.wav"
         self._render_index += 1
         command: Dict[str, Any] = {
@@ -175,7 +225,7 @@ class AudioUnitRenderer(Renderer):
             command["warmup"] = self.warmup_s
         command.update(self._state_command(settings))
 
-        reply = self._exchange(command)
+        self._exchange(command)
         try:
             return self._read_render(out_path, frames)
         finally:
@@ -387,6 +437,25 @@ class AudioUnitRenderer(Renderer):
             )
         self._plugin_version = ready.get("version") or None
         self._xml_state = bool(ready.get("xml_state"))
+
+    def _restart_server(self) -> None:
+        """A new plugin instance, keeping everything already learned about it.
+
+        The workdir and the base state survive, so the DI does not have to be
+        written again and `au_probe dumpraw` does not have to run again.
+        """
+        process, self._process = self._process, None
+        if process is not None and process.poll() is None:
+            try:
+                if process.stdin is not None:
+                    process.stdin.write('{"quit":true}\n')
+                    process.stdin.flush()
+                    process.stdin.close()
+                process.wait(timeout=10)
+            except (BrokenPipeError, ValueError, subprocess.TimeoutExpired):
+                process.kill()
+                process.wait()
+        self._ensure_server()
 
     def _exchange(self, command: Dict[str, Any]) -> Dict[str, Any]:
         """One command, one reply, with a dead server reported as such."""
