@@ -1964,6 +1964,36 @@ actually wrong in the template. On Morgan the screen alone costs 2 per dimension
 one, and the CLI refuses up front with the arithmetic rather than discovering it
 after an hour.
 
+**The selector column still does not move, and two attempts failed for two
+different reasons.** §6.3 predicted the `inversion` and `full` arms would score
+identical selector accuracy for as long as nothing was enumerated. They still do,
+now that something is:
+
+| enumerated | inversion selector | full selector |
+|---|---|---|
+| `cabParameters/leftCabPhase` | 0.6875 | 0.6875 |
+| `selectedAmp` | 0.6406 | 0.6406 |
+
+Identical target by target, not merely on average. The causes are worth recording
+because each rules out a different explanation:
+
+- **`leftCabPhase` is inaudible here.** Both cabs are dual-mono in the synthetic
+  chain, so inverting one cab's phase does not change the objective, both
+  topologies score the same, and the tie goes to the seed. Enumerating a control
+  the objective cannot hear buys nothing — correctly.
+- **`selectedAmp` is held constant by the benchmark itself.** `random_vector` has
+  `if dimension.key == "selectedAmp": continue`, so no target ever asks for a
+  different amp. Enumerating it searches three topologies for a value that was
+  already right. **The benchmark therefore cannot measure amp selection at all**,
+  and could not have whatever the search did.
+
+So the wiring is demonstrated — the topology count, the budget split and the
+caveat all change — and the *benefit* is not. Showing the column move needs a
+discrete control that is both varied by the targets and audible to the objective;
+`cabParameters/leftMicType` is the obvious candidate at 11 positions, and it needs
+a budget of about 389 on `sw50r`. That run has not been made, and this section
+would be claiming a result it does not have if it said otherwise.
+
 ### Tone King, end to end for the first time
 
 ```
