@@ -226,3 +226,18 @@ def test_a_trial_cannot_both_fail_and_score():
     # Either alone is fine.
     assert Trial(params={}, error="died").failed
     assert not Trial(params={}, objectives={"total": 0.1}).failed
+
+
+def test_a_trial_with_no_objectives_is_a_failure():
+    """`Evaluator.evaluate` stores `objectives=None` on a render that came back but
+    produced nothing the profile could weight — a real row, and not a success. Without
+    that term such a trial reported as fine and could be returned as the best match."""
+    assert Trial(params={}, objectives=None).failed
+    assert Trial(params={}, objectives={"total": 0.4}).failed is False
+
+    with Store() as store:
+        store.start_run(Run(run_id="r"))
+        store.add_trial("r", Trial(params={"a/b": 1}, objectives=None))
+        store.add_trial("r", Trial(params={"a/b": 2}, objectives={"total": 0.9}))
+        assert store.summary("r")["failures"] == 1
+        assert store.best("r").objectives == {"total": 0.9}

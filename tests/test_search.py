@@ -184,6 +184,13 @@ def test_the_screen_costs_two_renders_per_parameter_and_says_which(space, seed,
     assert set(movement) == set(searched) | set(frozen)
     assert all(path in movement for path in searched)
 
+    # Strongest first: the order a caller reads, and the order CMA-ES benefits from
+    # when its budget runs out mid-generation. Weakest-first spends the last renders
+    # on the controls that matter least.
+    moved = [movement[path] for path in searched]
+    assert moved == sorted(moved, reverse=True), dict(zip(searched, moved))
+    assert moved[0] > moved[-1], "the fixture needs a spread to order at all"
+
 
 def test_the_screens_probes_are_candidates_not_waste(space, seed, target):
     """Forty renders that were paid for and scored. A parameter at an extreme is a
@@ -320,15 +327,62 @@ def test_a_dimension_only_one_side_measured_cannot_order_them():
 
 def test_the_archive_thins_to_perceptually_distinct_entries():
     """A shortlist of five presets differing by 0.005 is a shortlist of one that
-    wastes four listening comparisons."""
-    crowd = [make(0.50 + 0.001 * i, timbre=0.5 + 0.001 * i) for i in range(6)]
-    apart = make(0.60, timbre=0.2, ambience=0.9)
-    front = S.pareto(crowd + [apart], ["timbre", "ambience"], limit=5, distinct=0.02)
+    wastes four listening comparisons.
 
-    assert len(front) <= 5
-    totals = [c.total for c in front]
+    The crowd has to be mutually **non-dominated** for the thinning to be what
+    collapses it. An earlier version gave every crowd member the same two dimensions,
+    so they dominated each other and the front was one candidate before any thinning
+    happened — the test passed with `distinct` removed entirely.
+    """
+    # Each trades a little timbre for a little ambience, so none dominates another,
+    # and all five sit within 0.008 of each other in both.
+    crowd = [make(0.50 + 0.001 * i,
+                  timbre=0.50 + 0.002 * i, ambience=0.50 - 0.002 * i)
+             for i in range(5)]
+    apart = make(0.90, timbre=0.90, ambience=0.90)
+
+    front = S.pareto(crowd, ["timbre", "ambience"], limit=5, distinct=0.02)
+    for one in crowd:
+        for other in crowd:
+            if one is not other:
+                assert not one.dominates(other, ["timbre", "ambience"]), (
+                    "the crowd must be non-dominated or this tests domination"
+                )
+    assert len(front) == 1, f"five near-identical candidates are one: {front}"
+
+    # And with the thinning's threshold below their separation, all five are kept —
+    # so the parameter is doing the work rather than the domination check.
+    assert len(S.pareto(crowd, ["timbre", "ambience"], limit=5, distinct=0.0)) == 5
+
+    # A genuinely different candidate survives the thinning.
+    with_apart = S.pareto(crowd + [apart], ["timbre", "ambience"], limit=5,
+                          distinct=0.02)
+    assert len(with_apart) == 1, "apart is dominated, so it is not on the front"
+    totals = [c.total for c in with_apart]
     assert totals == sorted(totals), "kept in score order"
-    assert len(front) < len(crowd), "the near-duplicates must collapse"
+
+
+def test_the_shortlists_first_entry_is_the_recommendation():
+    """`best` is what every caller prints and what the CLI writes as `match-1.json`,
+    so returning the last of the shortlist instead of the first would recommend the
+    worst candidate it found."""
+    result = S.SearchResult(shortlist=[make(0.2, timbre=0.2), make(0.9, timbre=0.9)])
+    assert result.best.total == pytest.approx(0.2)
+    assert S.SearchResult().best is None
+
+
+def test_separation_is_the_largest_gap_not_the_smallest():
+    """Two presets that differ audibly in *one* respect are two presets. Taking the
+    smallest gap instead collapses them: a pair 0.8 apart in timbre and identical in
+    ambience separates by 0.005, so the archive keeps one of them."""
+    # Non-dominated, or the archive drops one before the thinning is consulted: each
+    # is better than the other somewhere.
+    one = make(0.5, timbre=0.10, ambience=0.900)
+    other = make(0.5, timbre=0.90, ambience=0.895)
+
+    assert S._separation(one, other, ["timbre", "ambience"]) == pytest.approx(0.8)
+    kept = S.pareto([one, other], ["timbre", "ambience"], limit=5, distinct=0.02)
+    assert len(kept) == 2, "a big difference in one dimension is a real difference"
 
 
 def test_the_archive_ignores_candidates_that_never_scored():
@@ -571,3 +625,116 @@ def test_a_candidate_never_re_rendered_does_not_crash_the_reorder():
     reranked, caveats = S._rerank_and_explain([unmeasured, steady])
     assert reranked[0] is steady, "a measured candidate outranks an unmeasured one"
     assert isinstance(caveats, list)
+
+
+def test_a_bypassed_section_is_never_sent_to_the_backend(space, seed, target):
+    """`_settings` filters through `active()`, and without it a render is charged for
+    moving controls inside a bypassed section: 26 settings became 45, twelve of them
+    delay parameters sent while `delayActive` was False."""
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space)
+    off = dict(seed)
+    off[("delay", "delayActive")] = False
+    off[("delay", "delayTime")] = 400.0
+    off[("delay", "delayMix")] = 70.0
+
+    sent = evaluator._settings(off)
+    assert "delay/delayActive" in sent, "the switch itself is still stated"
+    assert "delay/delayTime" not in sent, sent
+    assert "delay/delayMix" not in sent, sent
+
+    on = dict(off)
+    on[("delay", "delayActive")] = True
+    with_delay = evaluator._settings(on)
+    assert "delay/delayTime" in with_delay
+    assert len(with_delay) > len(sent), "switching it on reaches more controls"
+
+
+def test_a_control_the_backend_cannot_be_driven_with_is_not_screened(space, seed,
+                                                                    target):
+    """Screening it renders the backend's indifference rather than the control, and
+    reports 0.0000 movement — a measurement of something that was never driven, which
+    the screen's own docstring says it must not do."""
+    renderer = SyntheticRenderer()
+    supported = {"/".join(k) if isinstance(k, tuple) else k
+                 for k in renderer.parameter_specs()}
+    unmodelled = [d.path for d in space.active(seed)
+                  if not d.switch and d.kind != "enum" and d.path not in supported]
+    assert unmodelled, "the fixture is pointless if the backend models everything"
+
+    evaluator = S.Evaluator(renderer, target, di(), space, recipe=seed)
+    searched, frozen, _, movement, _ = S.screen(evaluator, seed)
+
+    for path in unmodelled:
+        assert path not in searched, path
+        assert path not in frozen, f"{path} was reported as measured at 0.0"
+        assert path not in movement, path
+
+
+def test_decoding_a_sample_holds_every_parameter_it_did_not_search(space, seed):
+    """"Frozen" has to mean *held*. Decoding from an empty dict instead left the
+    unsearched dimensions absent, so a CMA-ES winner would have carried two values
+    where the seed had ninety-two — and the end-to-end test could not see it, because
+    the winner is usually a screen probe rather than a decoded vector."""
+    paths = [f"{AMP}Amp/{AMP}Volume", f"{AMP}Amp/{AMP}Treble"]
+    dimensions = [S._dimension(space, path) for path in paths]
+
+    decoded = S._decode(space, dimensions, [1.0, 0.0], seed)
+
+    assert len(decoded) == len(seed), "every key the seed had"
+    assert decoded[(f"{AMP}Amp", f"{AMP}Volume")] == pytest.approx(100.0)
+    assert decoded[(f"{AMP}Amp", f"{AMP}Treble")] == pytest.approx(0.0)
+    # And everything else is exactly what it was.
+    for key, value in seed.items():
+        if key in {(d.module, d.key) for d in dimensions}:
+            continue
+        assert decoded[key] == value, key
+
+
+def test_the_optimisers_first_step_is_the_documented_one(space, seed, target):
+    """`INITIAL_SIGMA` is the width of the first generation, and both directions are
+    wrong in a way no assertion caught: at 0.001 every sample lands on the seed and
+    the search does nothing, at 5.0 they saturate against the bounds."""
+    assert S.INITIAL_SIGMA == 0.15
+    paths = [f"{AMP}Amp/{AMP}Volume"]
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+
+    def volumes(sigma):
+        evaluated, _ = S.refine(evaluator, seed, paths, 12, sigma=sigma,
+                                rng=np.random.default_rng(0))
+        return [c.values[(f"{AMP}Amp", f"{AMP}Volume")] for c in evaluated]
+
+    default = volumes(S.INITIAL_SIGMA)
+    spread = max(default) - min(default)
+    assert 5.0 < spread < 80.0, (
+        f"the first generation has to explore without saturating: {sorted(default)}"
+    )
+    seeded = seed[(f"{AMP}Amp", f"{AMP}Volume")]
+    assert min(default) < seeded < max(default), "and it straddles the seed"
+
+    tiny = volumes(0.001)
+    assert max(tiny) - min(tiny) < 1.0, f"0.001 explores nothing: {sorted(tiny)}"
+    huge = volumes(5.0)
+    assert sum(1 for v in huge if v in (0.0, 100.0)) > len(huge) // 2, (
+        f"5.0 saturates against the bounds: {sorted(huge)}"
+    )
+
+
+def test_a_generation_that_all_failed_stops_rather_than_chasing_it(space, seed,
+                                                                  target):
+    """Moving the mean towards a failure is moving it towards nothing. Without the
+    early stop a backend that fails every render spent 56 of a 60-render budget and
+    emitted no caveat at all."""
+    class Broken(SyntheticRenderer):
+        def _render(self, di, settings):
+            from match.renderer import RenderError
+
+            raise RenderError("this backend is broken")
+
+    evaluator = S.Evaluator(Broken(), target, di(), space, recipe=seed)
+    evaluated, caveats = S.refine(evaluator, seed, [f"{AMP}Amp/{AMP}Volume"], 60,
+                                  rng=np.random.default_rng(0))
+
+    assert evaluator.renders < 20, (
+        f"{evaluator.renders} renders spent on a backend that failed every one"
+    )
+    assert any("failed to render" in c for c in caveats), caveats

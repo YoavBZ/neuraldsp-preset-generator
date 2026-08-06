@@ -118,7 +118,9 @@ def test_analysis_entry_points_explain_themselves_without_the_extra():
                                     "analysis.align", "analysis.fingerprint",
                                     "analysis.compare", "analysis.refchain",
                                     "match", "match.renderer", "match.renderer_synth",
-                                    "match.space", "match.invert"])
+                                    "match.space", "match.invert", "match.search",
+                                    "match.store", "match.report",
+                                    "match.benchmark"])
 def test_analysis_modules_import_without_numpy(module):
     """Importing is free; only calling costs a dependency.
 
@@ -145,3 +147,71 @@ def test_the_analysis_package_imports_without_numpy():
     )
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout
+
+
+def test_the_render_store_works_with_no_third_party_packages():
+    """`match/store.py` is stdlib sqlite3 and its docstring rests on that: a store a
+    person cannot open is a store they will not trust, and a bare clone has to be able
+    to read one. Asserted by *use* rather than by import, because `import` proves
+    nothing about a module whose numpy is all inside functions.
+    """
+    result = run_without_analysis(
+        """
+        import tempfile, pathlib
+        from match.store import Run, Store, Trial, open_store
+
+        with tempfile.TemporaryDirectory() as directory:
+            store = open_store(directory)
+            store.start_run(Run(run_id="bare", pack="morgan", budget=10))
+            store.add_trial("bare", Trial(params={("delay", "delayTime"): 400.0},
+                                          objective_key="k",
+                                          objectives={"total": 0.5}))
+            assert store.cached("k").objectives == {"total": 0.5}
+            assert store.summary("bare")["trials"] == 1
+            assert store.best("bare").params == {"delay/delayTime": 400.0}
+            store.close()
+        print("ok")
+        """
+    )
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+
+
+def test_the_report_needs_no_third_party_packages_either():
+    """Inline SVG and inline CSS, so there is nothing for it to need. Worth pinning:
+    reaching for matplotlib would be the obvious way to add a chart, and it would put
+    the report behind an extra."""
+    result = run_without_analysis(
+        """
+        from match.report import render_report
+        from match.search import Candidate
+
+        html = render_report(
+            run_id="bare", target=None,
+            shortlist=[Candidate(values={}, objectives={"total": 0.4}, total=0.4)],
+            caveats=["something to distrust"],
+            convergence=[{"total": 0.9}, {"total": 0.4}],
+            summary={"trials": 2, "failures": 0},
+        )
+        assert "<svg" in html and "something to distrust" in html
+        print("ok")
+        """
+    )
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+
+
+def test_match_preset_explains_the_missing_extra_rather_than_failing():
+    """It is the first thing a guitarist runs, and on a bare clone it has to say what
+    to install rather than trace."""
+    result = run_without_analysis(
+        """
+        import runpy, sys
+        sys.argv = ["match_preset.py", "--template", "samples/Example_Clean_PR12.xml",
+                    "--reference", "/tmp/none.wav", "--out-dir", "/tmp/none"]
+        runpy.run_path("scripts/match_preset.py", run_name="__main__")
+        """
+    )
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "pip install -e '.[analysis]'" in result.stderr
+    assert "Traceback" not in result.stderr

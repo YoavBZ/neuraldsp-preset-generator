@@ -264,3 +264,60 @@ def test_a_report_cannot_be_written_where_it_cannot_be_written(tmp_path):
     with pytest.raises(R.ReportError):
         R.write_report(str(blocker / "report.html"), run_id="r", target=printed(),
                        shortlist=[candidate(0.4)])
+
+
+def levelled(total: float, by_level, **dimensions) -> Candidate:
+    entry = candidate(total, **dimensions)
+    entry.by_level = dict(by_level)
+    return entry
+
+
+def test_the_headline_reports_the_spread_across_input_levels():
+    """No test populated `by_level`, so the whole ±6 dB half of the report was
+    untested — and deleting the paragraph that carries it changed nothing."""
+    best = levelled(0.394, {0.0: 0.394, -6.0: 0.51, 6.0: 1.87}, timbre=0.4)
+    html = R.render_report(run_id="r", target=printed(), shortlist=[best])
+
+    assert "0.394" in html and "1.870" in html
+    assert "±6 dB of input level" in html
+    assert "ordered by the worse end" in html
+
+
+def test_the_shortlist_shows_the_worst_level_beside_the_score():
+    """Which is what it is ordered by, so a reader who sees only the score cannot tell
+    why #1 is #1."""
+    steady = levelled(0.50, {0.0: 0.50, -6.0: 0.51, 6.0: 0.52}, timbre=0.5)
+    fragile = levelled(0.40, {0.0: 0.40, -6.0: 2.90, 6.0: 0.45}, timbre=0.4)
+    html = R.render_report(run_id="r", target=printed(), shortlist=[steady, fragile])
+
+    table = html.split("Shortlist</h2>")[1].split("</table>")[0]
+    assert "0.520" in table, "the steady candidate's worst level"
+    assert "2.900" in table, "and the fragile one's"
+
+
+def test_a_candidate_never_re_rendered_shows_a_dash_not_a_zero():
+    html = R.render_report(run_id="r", target=printed(),
+                           shortlist=[candidate(0.4, timbre=0.4)])
+    table = html.split("Shortlist</h2>")[1].split("</table>")[0]
+    assert "—" in table
+    assert "±6 dB of input level" not in html.split("Shortlist")[0], (
+        "with nothing measured the headline must not claim a spread"
+    )
+
+
+def test_the_screen_table_shows_the_movement_for_searched_parameters_too():
+    """It was measured for all of them and reported for none of the kept ones, so the
+    column a reader would use to check the freeze decision was a dash on every row
+    that mattered."""
+    html = R.render_report(
+        run_id="r", target=printed(), shortlist=[candidate(0.4, timbre=0.4)],
+        searched=["sw50rAmp/sw50rVolume", "sw50rEQ/sw50rEQLpf"],
+        frozen={"parameters/outputGain": 0.004},
+        movement={"sw50rAmp/sw50rVolume": 1.8531, "sw50rEQ/sw50rEQLpf": 0.4952,
+                  "parameters/outputGain": 0.004},
+    )
+    table = html.split("Sensitivity screen")[1].split("</table>")[0]
+    assert "1.8531" in table and "0.4952" in table
+    assert "0.0040" in table
+    # And the two reasons for freezing are told apart in the table itself.
+    assert "too small to matter" in table

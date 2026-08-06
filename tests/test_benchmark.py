@@ -297,3 +297,119 @@ def test_a_silent_target_is_skipped_rather_than_blamed_on_an_arm(space, seed):
     )
     for caveat in result.caveats:
         assert "silent" in caveat
+
+
+def test_a_sampled_value_lands_on_the_step_grid(space):
+    """"Legal" for `apply_spec` means inside the range *and* on the step. Without the
+    quantise call 2240 of 40 targets' continuous values were off-grid — targets that
+    are not presets the plugin can be given."""
+    rng = np.random.default_rng(1)
+    off_grid = []
+    for _ in range(40):
+        for (module, key), value in B.random_vector(space, rng).items():
+            dimension = space.by_path(module, key)
+            if dimension.switch or dimension.kind == "enum" or not dimension.quantum:
+                continue
+            low, high = dimension.bounds()
+            if value in (low, high):
+                continue      # an endpoint is legal whether or not it is on the grid
+            steps = value / dimension.quantum
+            if abs(steps - round(steps)) > 1e-6:
+                off_grid.append((dimension.path, value))
+    assert not off_grid, f"{len(off_grid)} off-grid values, e.g. {off_grid[:3]}"
+
+
+def test_the_sampler_switches_effects_on_sometimes_and_not_always(space):
+    """At half, the average target has four effects running and the objective is
+    dominated by whether the search found the delay; at zero, every target is
+    effect-free and the switches are never exercised at all."""
+    rng = np.random.default_rng(2)
+    states = []
+    for _ in range(30):
+        for (module, key), value in B.random_vector(space, rng).items():
+            if space.by_path(module, key).switch and not key.endswith("sectionActive"):
+                states.append(bool(value))
+
+    on = sum(states) / len(states)
+    assert 0.2 < on < 0.55, f"{on:.3f} of switches were on"
+
+
+def test_a_failed_outcome_is_not_averaged_into_the_mean():
+    """An arm's mean is over what it measured. A failure carrying a number would drag
+    it — and the failure rate is reported beside the mean precisely so the mean can
+    stay clean."""
+    good = [outcome("full", 0, 0.2), outcome("full", 1, 0.4)]
+    broken = B.Outcome(arm="full", target_index=2, failed=True, error="died",
+                       objective=9.0, parameter_mae=0.9)
+
+    summary = B.BenchmarkResult(outcomes=good + [broken]).summarise("full")
+    assert summary["objective"] == pytest.approx(0.3), (
+        "the mean of the two that ran, not of all three"
+    )
+    assert summary["parameter_mae"] == pytest.approx(0.2)
+    assert summary["failures"] == 1
+
+
+def test_a_tie_is_not_beating():
+    """`<=` would ship a pipeline that spends 300 renders to arrive exactly where the
+    baseline already was."""
+    tied = B.BenchmarkResult(outcomes=[
+        outcome("recipe", 0, 0.5), outcome("inversion", 0, 0.5),
+        outcome("full", 0, 0.5),
+    ])
+    ships, reasons = tied.verdict()
+    assert not ships, reasons
+    assert any("does NOT beat" in r for r in reasons)
+
+
+def test_the_arms_are_nested_structurally_not_only_by_score(space, seed):
+    """The score assertion tolerates the harness bug: with `full` searching from the
+    recipe seed it still came out at 1.649 against inversion's 2.042, so `full <=
+    inversion` held while the arm being measured was search-only. What pins it is that
+    the full arm's answer starts from the inversion's."""
+    probe = fx.plucks(seconds=1.5, gap=0.9, seed=13)
+    renderer = SyntheticRenderer()
+    from match import invert, search
+
+    target_values = dict(seed)
+    target_values[("sw50rAmp", "sw50rVolume")] = 85.0
+    scorer = search.Evaluator(renderer, None, probe, space)
+    rendered = renderer.render(probe, scorer._settings(target_values))
+    from analysis import io
+    from analysis.fingerprint import fingerprint
+
+    target = fingerprint(io.from_samples(rendered.audio, 48000), regime="probe",
+                         excerpt_s=None)
+
+    inverted, spent = B._invert_from(renderer, target, probe, space, seed,
+                                     "unpaired-v1", invert, search, "morgan", AMP)
+    assert spent == 1, "one render, the seed's, so the delta can be measured"
+    assert inverted != dict(seed), "the inversion has to change something"
+
+    # And `full` is that, plus a search. Asserted through the arm itself.
+    found, renders = B._run_arm("full", renderer, target, probe, space, seed, 30,
+                                "unpaired-v1", invert, search,
+                                np.random.default_rng(0), "morgan", AMP)
+    assert renders > spent, "the full arm pays for the inversion as well"
+    # Every value the inversion set and the screen froze is still the inversion's,
+    # which is only true if the search started from it.
+    from match.space import _get
+
+    carried = [path for path in ("parameters/outputGain",)
+               if _get(inverted, tuple(path.split("/")))
+               == _get(found, tuple(path.split("/")))]
+    assert carried, (
+        "the search started from the recipe seed, not from the inversion: "
+        f"outputGain is {_get(found, ('parameters', 'outputGain'))} against the "
+        f"inversion's {_get(inverted, ('parameters', 'outputGain'))}"
+    )
+
+
+def test_an_unknown_amp_is_refused_before_the_first_target(space, seed):
+    """`space.build` accepts any prefix and simply finds nothing, so `--amp nope` used
+    to fail inside every arm once per target, with the cause visible only in --json."""
+    with pytest.raises(B.BenchmarkError) as raised:
+        B.compare_baselines(SyntheticRenderer(), space, fx.plucks(seconds=0.5),
+                            seed, targets=1, budget=10, amp="nope")
+    assert "not an amp in this space" in str(raised.value)
+    assert "sw50r" in str(raised.value), "and it names the ones that are"
