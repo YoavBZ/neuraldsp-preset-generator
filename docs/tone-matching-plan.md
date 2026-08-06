@@ -1933,6 +1933,37 @@ the evaluator — it holds only the fingerprint, and a fingerprint deliberately
 throws the waveform away — which is a change to the evaluator's contract rather
 than a patch, and it should be done deliberately rather than at the end of M5.
 
+### The topology stage now runs, and it is not free
+
+`topologies()` was written and tested in M4 and no caller ever passed `switches=`
+or `selectors=`, so every run left the cabinet, the microphone, the amp and every
+on/off switch wherever the template had them. `--enumerate` on both CLIs reaches
+it. Paths are routed to switches or selectors by the dimension's own kind, and
+`--list-enumerable` prints the 34 Morgan/sw50r accepts.
+
+The same ground-truth match, same template, same seed, same 300-render budget:
+
+| | distance | worst across ±6 dB | searched / frozen |
+|---|---|---|---|
+| textbook basis, nothing enumerated | 1.045 -> 0.488 | 0.590 | 20 / 20 |
+| measured basis, nothing enumerated | 1.045 -> **0.370** | holds up | 25 / 15 |
+| measured basis, one switch enumerated | 1.045 -> 0.438 | 0.458 | 25 / 15 |
+
+**Enumerating made it worse**, and that is the stage working rather than failing.
+Two topologies split one budget, so each got about 107 renders instead of 293, and
+the run says so:
+
+> 2 topologies share the budget, so each got about 107 renders. Enumerating fewer
+> switches gives each remaining one a deeper search.
+
+`sw50rBright` was not part of the target vector, so there was nothing to find and
+the halved search depth is pure loss. That is the trade the flag makes: breadth
+against depth on a fixed budget, and it only pays when the discrete control is
+actually wrong in the template. On Morgan the screen alone costs 2 per dimension —
+185 renders on `sw50r` — so a budget that can afford several topologies is a large
+one, and the CLI refuses up front with the arithmetic rather than discovering it
+after an hour.
+
 ### Tone King, end to end for the first time
 
 ```

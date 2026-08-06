@@ -251,6 +251,12 @@ def enumerable(space):
 
 
 def print_enumerable(space, pack_id: str, amp) -> None:
+    """What `--enumerate` accepts here, and what asking for it costs.
+
+    The cost sentence uses this pack's own widest selector rather than a made-up
+    example, because the number is the whole point: a control with eleven
+    positions is eleven inner searches sharing one budget.
+    """
     found = enumerable(space)
     if not found:
         print(f"{pack_id} declares no switches or selectors that can be enumerated"
@@ -261,9 +267,10 @@ def print_enumerable(space, pack_id: str, amp) -> None:
           f"--enumerate:\n")
     for path, positions, kind in found:
         print(f"  {path:<40} {positions:>3} positions  ({kind})")
-    print(f"\nEach one multiplies the number of inner searches, and each search "
-          f"shares the\nbudget. Two two-state switches is four; adding a nine-way "
-          f"microphone is thirty-six.")
+    widest, positions, _ = max(found, key=lambda row: row[1])
+    print(f"\nEach one multiplies the number of inner searches, and they share one "
+          f"budget.\nTwo two-state switches is four searches; adding {widest} "
+          f"({positions} positions)\nmakes it {4 * positions}.")
 
 
 def enumerated(space, paths, budget: int, shortlist: int):
