@@ -1,18 +1,26 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0, M1, M2 and M3 are done; M4 is next.** The two spikes ran on 2026-08-05
+Status: **M0 through M4 are done and M4's exit criterion is met — 50 targets, 300
+renders each, the full pipeline beating inversion-alone on 49 of 49. M5 is next, and it
+needs macOS with both plugins licensed.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
 package — the synthetic chain and the `Renderer` protocol — with §12a recording
 what its sensitivity test caught.
 
-§12 records where both milestones departed from this document — including five
-departures found by auditing them against their own exit criteria before starting
-M2, every one of which had passed a green suite. One M0 item is deliberately
-still open: the `apply_spec.py` → `pedalboard` state round trip is implemented
-and tested without a plugin, but has not been *run* against one, and M5 depends
-on it.
+M3 added the conditional search space and the inversions (§12b); M4 added the
+search, the store, the report and the exit-criterion benchmark (§12c).
+
+§12, §12a, §12b and §12c record where each milestone departed from this document
+and where it got something wrong before it got it right — including five
+departures found by auditing M0 and M1 against their own exit criteria, and five
+*fixes* from M3's second review that turned out to be wrong in their own way.
+Every one of those had passed a green suite.
+
+One M0 item is deliberately still open: the `apply_spec.py` → `pedalboard` state
+round trip is implemented and tested without a plugin, but has not been *run*
+against one, and M5 depends on it.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -51,9 +59,9 @@ Everything below exists to close that loop.
 | `pyproject.toml` has `dependencies = []`; tests pass on a bare clone | New dependencies go in **optional extras only**. `show.py` and `apply_spec.py` must keep working with stdlib alone. |
 | `spectrum_diff.py` uses hand-written Goertzel to avoid numpy | That constraint applies to *reproducing a published measurement*. New analysis code may use numpy/scipy behind an extra. Do not rewrite `spectrum_diff.py`. |
 | Morgan manifest: 132 parameters — 53 `metered`, 32 `switch`, 31 `rotation`, 8 `enum`, 4 `fraction`, 2 `string`, 2 `path`; 1 non-writable | Continuous search space is ≤ 88 before conditioning; per-amp conditioning cuts it to roughly 35–45. |
-| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, at ~11× Morgan's cost per render (§11). |
+| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, and its render cost is **unresolved** — two measurements disagree by more than warm-up explains, so treat "roughly eleven times Morgan's" as the loose upper bound `docs/measuring-against-the-plugin.md` calls it, not a figure to plan a budget on. |
 | Each amp has its own module prefix (`ac20*`, `pr12*`, `sw50r*`) and its own 9-band EQ | Search space must be *conditional* on `selectedAmp`. Writing the inactive amp's controls is a silent no-op. |
-| EQ bands are fixed ISO centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already declared in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. |
+| EQ bands are at fixed declared centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. **These are not all ISO third-octave centres**: the lowest is labelled 65 Hz and the ISO band beside it is 63, so `Fingerprint.band_db(65.0)` returns `None` — see §12a. An earlier version of this row said "fixed ISO centres" and the fit was written against that assumption. |
 | `au_render.swift` renders Morgan fine and gets **exact zeros** from Tone King. M0 resolved the cause: the bare CLI instantiation, not authorization — Tone King renders in a JUCE host | Tone King work goes through the `pedalboard` backend. Nothing about it has been measured acoustically yet; do not silently produce Tone King "measurements". |
 | `apply_spec.py` validates kinds, ranges, selectors, read-only fields, and never overwrites its input | Optimizer output **must** be emitted as a human-valued spec and passed through `apply_spec.py --dry-run`. Never write preset bytes directly from the optimizer. |
 | Plugin-dependent checks are deliberately local, never CI (`audit_manifest.py`) | Same split applies here: plugin-free tests in CI, plugin-dependent checks local. |
@@ -217,9 +225,12 @@ Do not change these without a specific reason; downstream work assumes them.
 5. **The optimizer never writes preset bytes.** It emits a human-valued spec;
    `apply_spec.py` writes. All existing validation stays on the path.
 6. **Dependencies:** core stays stdlib. `[analysis]` = numpy, scipy, soundfile,
-   pyloudnorm. `[match]` = adds cma. `[separate]` = adds demucs. `[host]` =
-   adds pedalboard. Every entry point degrades with a clear message when its
-   extra is absent.
+   pyloudnorm. `[match]` = adds nothing beyond `[analysis]` — this said "adds cma"
+   and D4 below held instead, so CMA-ES is seventy lines of numpy in
+   `match/search.py`. `[host]` = adds pedalboard. There is no `[separate]` extra:
+   nothing imports demucs yet, and declaring it would advertise a capability that
+   does not exist. Every entry point degrades with a clear message when its extra
+   is absent.
 7. **The experiment store is stdlib `sqlite3`.** No pandas/parquet dependency
    for the store itself.
 8. **Plugin-dependent code lives behind the `Renderer` interface** with at least
@@ -407,6 +418,10 @@ sha256(renderer_id ‖ plugin_version ‖ renderer_build ‖ di_sha256 ‖
 budget, renderer_id, plugin_version, notes)`
 `trials(trial_id, run_id, params_json, cache_key, render_sha, peak, silent,
 wall_ms, objectives_json, fingerprint_json, error)`
+
+M4 added **three** columns to `trials` beyond this list, all recorded in §12c:
+`objective_key`, `di_sha` and `di_offset_db`. §12c named two of them and missed
+`objective_key` — in the paragraph whose job was to enumerate the departures.
 `verdicts(trial_id, listener, choice, comment, created_at)`
 
 ---
@@ -607,6 +622,10 @@ recipe-only generator, and inversion-only without search.
 
 ### M5 — Real plugin backend and calibration (4–6 days, macOS + licence)
 
+> **`docs/handoff-to-macos.md` is the run-book for this milestone** — the commands in
+> order, the measured render costs the budget arithmetic rests on, and the seven paths
+> that are shaky specifically because no machine so far could exercise them.
+
 Land the backend chosen in M0. Then, per pack, run the one-time calibrations:
 `measure_eq_basis.py` → `eq_basis.json`, `measure_drive_curve.py` →
 `drive_curve.json` (THD across the volume control at 3–4 input levels, extending
@@ -674,10 +693,16 @@ In priority order, each independently justifiable:
 [project.optional-dependencies]
 dev        = ["pytest>=7.0", "pyyaml>=6.0"]
 analysis   = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
-match      = ["neuraldsp-preset-generator[analysis]", "cma>=3.3"]
+match      = ["neuraldsp-preset-generator[analysis]"]
 host       = ["pedalboard>=0.9"]
-separate   = ["demucs>=4.0"]
 ```
+
+Two entries this section planned for and `pyproject.toml` does not have. **`cma>=3.3`
+is not there**, because D4 above held: `match/search.py` writes the textbook
+(μ/μ_w, λ) CMA-ES out with Hansen's constants in about seventy lines of numpy. And
+**`separate` is not there** either — nothing imports `demucs` yet, so declaring the
+extra would advertise a capability that does not exist. Both get added when something
+needs them, which is the same rule the rest of this section states.
 
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess
@@ -786,7 +811,7 @@ no-new-dependency fallback that independently corroborated the numbers.
 ## 12. What M1 built, and where it departed from this plan
 
 `analysis/` is in the repository: `io.py`, `align.py`, `features.py`,
-`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 99
+`fingerprint.py`, `compare.py`, `loss_profiles.json`, plus the two CLIs and 100
 tests that synthesise every signal they measure. The exit criterion holds —
 `python scripts/fingerprint.py <wav>` prints a valid Fingerprint v1 for any
 input, including one-sample files, digital silence and full-scale DC, each of
@@ -1268,6 +1293,355 @@ oversights:
   it is working without them.
 - Nothing yet quantises against *audible* resolution measured from the plugin;
   `space.QUANTA` is a set of stated engineering choices, not measurements.
+
+## 12c. What M4 built
+
+`match/search.py`, `match/store.py`, `match/report.py`, `match/benchmark.py`,
+`scripts/match_preset.py` and `scripts/benchmark_match.py`. The pipeline runs end to
+end: measure a reference, calculate what can be calculated, search the rest on a
+budget, and write a spec `apply_spec.py` consumes plus a report that leads with what
+not to believe.
+
+**Measured end to end.** Every number below comes from this, recorded so it can be
+re-run rather than taken on trust:
+
+```sh
+python3 -c "
+from analysis import refchain
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=4.0, gap=0.9, seed=5)
+fx.write_wav('/tmp/ref.wav', refchain.render(di, {
+    'sw50rAmp/sw50rVolume': 82.0, 'sw50rAmp/sw50rTreble': 20.0,
+    'sw50rAmp/sw50rBass': 75.0}))
+fx.write_wav('/tmp/probe.wav', di)"
+
+python3 scripts/match_preset.py --template samples/Example_Clean_PR12.xml \
+  --reference /tmp/ref.wav --reference-mode probe --probe-di /tmp/probe.wav \
+  --amp sw50r --budget 300 --shortlist 3 --seed 0 --out-dir /tmp/run
+```
+
+**1.929 → 0.261 in 298 renders** (0.280 at worst across ±6 dB), 12 caveats, 18
+parameters searched and 6 frozen, 110 s. The resulting spec applies through
+`apply_spec.py` and reads back through `show.py`: the winner is written by the same
+validated path as a hand-authored preset, so a search cannot produce bytes a person
+could not have.
+
+**298, not 293.** 293 is what the search spent against its 300-render budget; the other
+five are the template's own render, the inversion's probe, and one per shortlisted
+candidate for the report's spectrum overlays. An earlier version of this line said
+"292 renders" — off by one against a count that was itself short by five, two lines
+above a paragraph boasting that calling the screen "2 per parameter" was off by exactly
+one. The CLI now prints both numbers and says which is which.
+
+**And the objectives above were wrong for one commit, in the way this section exists to
+prevent.** A round of review fixes changed enough of the pipeline to need a re-measurement,
+so one was run — with a DI of `seconds=6.0, seed=13` instead of the `seconds=4.0, seed=5`
+printed four lines up. It produced 1.719 → 0.256 in the same 298 renders, which is a
+perfectly good number about a command that appears nowhere. A reader following the block
+above got 1.929 → 0.261 and had no way to tell which of them was lying. The lesson is not
+"check your numbers" — it is that **re-measuring means re-running the recorded invocation,
+not an invocation**, and the failure is invisible precisely because the wrong number is
+real.
+
+An earlier draft of this section quoted numbers from ad-hoc scripts that were never
+recorded, and a review could not reproduce a single one of them. That is worse than
+having no numbers — a figure with no invocation behind it is an assertion wearing a
+decimal point. Anything below that cannot be reproduced from a command in this
+document should be treated the same way.
+
+### The four stages, and what each one is for
+
+**The screen pays for itself immediately.** Morgan has 126 searchable dimensions and
+CMA-ES over 126 dimensions needs thousands of samples to do anything. Two renders per
+parameter plus one baseline — 2N + 1, and calling it "2 per parameter" was off by
+exactly that one — turned 24 live supported dimensions into 18 searched and 6 frozen
+for 49 renders on the run above. The extremes are
+the right probe *because* they are extreme: a control that cannot move the objective
+from one end of its range to the other cannot matter in between, whatever the
+interactions. Switches and selectors are not screened, because turning an effect off
+changes what is *reachable* rather than shifting a value.
+
+**The topology loop is exhaustive over what it is given, and neither CLI gives it
+anything.** Interpolating between mic 3 and mic 4 means nothing — the numbers are
+labels, and a gradient over labels is a gradient over the order somebody listed them
+in. It is a product, so five two-state switches is 32 whole inner searches; guessing
+which of Morgan's 32 switches are worth that is not something the code can know, so
+the caller says.
+
+**And no caller says.** `topologies()` is written, tested and reachable from Python,
+but neither `match_preset.py` nor the benchmark passes `switches=` or `selectors=`, so
+in the shipped pipeline it always returns the seed alone and the discrete choices are
+whatever the template had. Measured consequence: the `inversion` and `full` arms score
+*identical* selector accuracy in every benchmark run, because the search never changes
+a discrete choice. This is a stage that exists rather than a stage that runs, and it
+should be read that way until a `--enumerate` flag exists or M5 needs it.
+
+**The run now says so too**, which it did not before. A reader of the report saw
+`delay/delayActive on → off`, `/selectedAmp 1 → SW50R` and `reverb/reverbActive on → off`
+in the shortlist's diff column — all of them from the *inversion* — and had every reason
+to conclude discrete choices were being searched. Naming a limitation only in this
+document is naming it to the wrong audience: a caveat now fires whenever the enumeration
+produces a single variant, saying that the cabinet, the microphone, the amp and every
+on/off switch are whatever the starting point had.
+
+**CMA-ES is the textbook (μ/μ_w, λ) with Hansen's constants written out** rather than
+tuned, numpy only, no `cma` dependency (§2, D4). Bounds clip the *evaluated* vector, and
+that is the whole of it: the new mean is a weighted average of already-clipped samples
+with positive weights summing to one, so it is a convex combination of points inside the
+box and cannot leave it.
+
+This paragraph has now been wrong twice in opposite directions, which is worth recording
+because both versions were arguments rather than measurements. The first said clipping
+the mean lets a parameter stick on a bound it was only passing through. The second said
+the opposite and carried a table — unclipped 2.5e-03 against clipped 2.6e-06, mean range
+(−4.2, −0.55) — that cannot have come from this algorithm: reproduced at four seeds the
+two agree to every digit, and with the optimum placed *outside* the box both pin the mean
+at exactly 0.000. The clip on the mean was dead code all along, and it has been removed.
+The lesson is §12c's own: a figure with no invocation behind it is an assertion wearing a
+decimal point, and that applies to figures that argue *for* the current design as much as
+to ones that argue against it.
+
+**The robustness re-rank earns its place.** It reorders the shortlist whenever the
+reference-level winner is fragile, and says so when it does — on the run recorded
+above the winner holds up (0.261 at the reference level, 0.280 at worst), which is the
+outcome to hope for rather than the one that demonstrates the stage. It is ordered by
+the worst level rather than the mean: a preset that is excellent at one input level
+and unusable at another is not a good match that happens to vary.
+
+**But most of that ±6 dB spread is loudness, not tone.** Measured per candidate and per
+offset on the run above, the `level` dimension accounts for **84% to 100% of the change
+in the total, 97% on average** — the run's own caveat prints "about 97%" — while `timbre`,
+the term that would actually show breakup, moves by 0.0001 to 0.003. Turning the input up
+makes the render louder and the level term counts that, so "0.280 at worst" is a much
+weaker statement about breakup than it reads as. (An earlier version of this paragraph
+said "35% to 96%", from the same mis-run as the objectives above.) The
+score is left alone rather than having `level` dropped from it, because a preset whose
+compression holds its output steady across playing levels genuinely is more robust and
+that belongs in the number; what was missing was saying so, and a caveat now fires with
+the percentage whenever the level term is the majority of the movement.
+
+### Three things this got wrong first
+
+**The screen's probes were thrown away.** Nearly fifty renders that had been paid for
+and scored, discarded because they were "measurements" rather than "candidates" — and
+a parameter at an extreme is a perfectly good parameter vector. On the run that found
+it, one probe scored **0.525** while the entire CMA-ES stage found nothing better than
+0.694; feeding them into the Pareto archive took that run to 0.539 for no extra
+renders. A sixth of the budget was being spent and then binned.
+
+**`trials` did not record which DI a render used**, and §6.4 does not list it. That
+omission is an oversight rather than a decision — §6.3's own cache key includes
+`di_sha256` for exactly this reason. Without it `Store.best` compared a candidate
+scored at the reference level against the robustness re-rank's own renders of the same
+parameters 6 dB quieter, and picked the quiet one: a quieter DI drives the amp less
+hard, so it can look like a better match for a reason that has nothing to do with the
+parameters. `di_sha` and `di_offset_db` are now columns and `best()` defaults to the
+reference level. **This is a departure from §6.4.**
+
+**`Dimension.quantise` could emit an illegal value**, which is M3 code that M4's
+benchmark found. `_from_unit` clamped *before* stepping: `tremoloRate` is declared
+0.15–15 Hz with a 1 Hz step, so the bottom of its range clamped to 0.15 and then
+rounded to **0.0**, below the plugin's own minimum, in a value the search would go on
+to write and `apply_spec` would refuse. Clamping now happens after stepping, so a
+result at an endpoint may not sit on the step grid — which is correct, since the
+endpoint of a declared range is legal by definition.
+
+### The exit criterion, and what it says
+
+`scripts/benchmark_match.py` samples random legal parameter vectors, renders each,
+throws the vector away, and recovers it three ways. The arms are **nested** —
+`inversion` is `recipe` plus the calculated step, `full` is `inversion` plus the
+search — and that is not a detail. The first version searched from the recipe seed
+instead of the inverted one, so the `full` arm measured search-*only* and reported
+**DOES NOT SHIP** against a pipeline that works. Reproduced by patching the nesting
+back out: over six targets it scored 1.211 against inversion's 1.118. A benchmark whose
+arms are not nested does not measure what each stage adds, and it reports its wrong
+verdict with complete confidence.
+
+```sh
+python3 scripts/benchmark_match.py --targets 50 --budget 300 \
+  --json docs/m4-benchmark-50.json
+```
+
+**50 targets, a 300-render budget, zero failures, 95 minutes. It ships.**
+
+(The `--json` is not decoration: without it nothing is written, and the version of this
+line that omitted it could not have produced the committed evidence it cites four
+paragraphs below. Everything else about the invocation checks out — the defaults
+`--pack morgan --amp sw50r --seed 11` match the file's own header, and target 0
+reproduces bit-for-bit — but a reproduction command that does not reproduce the artefact
+is the same failure as a number with no command behind it.)
+
+| arm | mean objective | median | best | worst | param MAE | selector | renders |
+|---|---|---|---|---|---|---|---|
+| recipe | 3.039 | 2.533 | 0.661 | 8.716 | 0.247 | 0.643 | 0 |
+| inversion | 1.514 | 1.309 | 0.418 | 6.231 | 0.257 | 0.658 | 49 |
+| full | **0.641** | **0.461** | **0.084** | 6.089 | 0.266 | 0.658 | 14,375 |
+
+The mean is what the gate uses, and the per-target figures are stronger than it:
+**the full pipeline beats inversion-alone on 49 of 49 targets individually**, and is
+worse than the recipe seed on **none** of them.
+
+That last one is **measured, not guaranteed**, and an earlier version of this paragraph
+claimed otherwise. The mechanism it cited — "the starting point is a candidate, so the
+answer cannot be worse than what was handed in" — is `fallbacks=`, which only
+`match_preset.py` passes; `benchmark.py` calls `search()` without it, so in the `full`
+arm the recipe seed is never evaluated and only the *inverted* seed is. The committed
+data also shows the chain going backwards before the search starts: inversion is worse
+than recipe on 2 of the 49 targets (t6 1.729 against 1.692, t16 0.667 against 0.661). So
+"worse than the recipe on none of them" is an empirical result about these 50 targets,
+like every other number in the table — which is fine, and it must not be sold as a
+property of the design. The property does hold in the CLI, where `fallbacks=[template]`
+is passed, and that is the path a person uses; it was added after a review found the
+pipeline announcing "−488% closer" on a template it had made worse.
+
+**Renders per target: 293 in the mean, 301 at the maximum** (target 46). The budget is
+per *search*, and `_run_arm` adds the inversion's own render on top of it, so an arm can
+exceed 300 by exactly that. An earlier version of this line said "293 renders per target
+against a budget of 300" without the qualifier, which reads as a ceiling it is not.
+
+One target was discarded: a legal parameter vector put the noise gate above the signal
+and rendered silence, which is skipped rather than counted as any arm's failure, because
+it is the sampler's doing.
+
+Every outcome of that run is committed at `docs/m4-benchmark-50.json` — 147 rows, three
+arms by 49 targets — so the table above can be checked without spending the 95 minutes
+again. The command reproduces it; the file is what it produced.
+
+**The parameter MAE gets monotonically worse** — 0.247 → 0.257 → 0.266 in the mean and
+0.243 → 0.257 → 0.269 in the median. Over 50 targets that direction is consistent;
+over six it is not (three small runs gave 0.245 → 0.259 → 0.253, 0.243 → 0.243 → 0.248
+and 0.258 → 0.280 → 0.285), so **the claim worth making is the one at n=50 and the
+small runs should not be read as confirming it.**
+
+Either way the divergence is the actual situation rather than a flaw in the
+measurement. The plugin's controls are not identifiable from its output: a different
+volume with a compensating EQ curve sounds almost identical, so a search that closes
+the objective by four times has no reason to close the parameter error at all. It is
+the pipeline *earning* the objective by moving controls away from where the truth
+vector had them. Reporting only the MAE would condemn something that works; reporting
+only the objective would let a real failure through. Both are reported, and `verdict()`
+states in its own output that the MAE is deliberately **not** part of the gate —
+nobody should have to guess whether that was a decision or an omission.
+
+What the gate does *not* claim: that 0.641 is good. There is no calibration that says
+so, and the worst target still scores 6.089. What it claims is that each stage earns
+its renders, which is the question §M4 asks.
+
+### What a three-way review of M4 found
+
+Three agents — mutation testing, correctness, user experience — against the code as it
+stood after the previous round's fixes. Fourteen surviving mutants, every one applied and
+measured rather than argued for, plus twelve defects. The pattern this repository keeps
+producing held again: **a fix aimed at a named symptom closes that branch and leaves its
+twin open.**
+
+**The twins, this time.**
+
+- `search()` grew a separate branch for a control one end of whose range silences the
+  render, so the caveat block said "one end of `parameters/gateThreshold` silences the
+  signal entirely". Four sections down, in the same document, the screen's table said
+  `frozen — too small to matter`, because `report._screen` kept its two-way
+  `if moved < 0.01`.
+- `screen()` raises its floor to the backend's own render-to-render noise and then
+  discarded that number, so both the caveat and the report classified against the
+  `SENSITIVITY_FLOOR` constant instead. With a backend declaring 0.23 dB of band noise
+  the effective floor is 0.0767, and a parameter cut by the *floor* at 0.0208 was
+  reported as one of "the weakest 25% that did move it — a larger budget would search
+  them". No budget will: the floor is not a budget. `screen` now returns a `Screen`
+  carrying the floor it used.
+- `_unmeasurable` closed the silent-reference branch of "this reference cannot be
+  measured" and left the non-finite one open. A float WAV holding NaN — a corrupt bounce
+  — reached a covariance eigendecomposition and came back as
+  `error: Eigenvalues did not converge`, naming neither the file nor the cause, from
+  inside the handler written to stop tracebacks reaching people. Refused in
+  `analysis.io.load` now, where the file is still in hand.
+
+**A measurement nobody made.** `screen` recorded `movement = 0.0` for a control whose
+other end silenced the render, directly beneath a comment claiming the movement was
+"recorded against the end that did render, so the control can still be frozen or searched
+on evidence" — and 0.0 is below every floor, so it could only ever be frozen. Measured on
+Morgan, `gateThreshold`'s live end scored 0.8438 against a baseline of 0.8025: a movement
+of 0.0413, four times the floor, filed as zero and printed as `0.0000` under a column
+headed "distance moved". It stays frozen — with one extreme unscoreable there is no bound
+on the control's effect, so there is nothing to hand an optimiser — but that is now said
+in `silences` rather than implied by a zero no floor could clear.
+
+**Three mutants that broke the optimiser silently.** Inverting `refine`'s termination test
+to `step > _quantisation_step(...)` ends the search after one generation: 53 renders of a
+120 budget and a score three times worse — and it passed, because the guarding test only
+required the "step became finer" caveat to be *present*, which stopping immediately also
+satisfies. Recombining the worst μ samples instead of the best cost 0.144 → 0.463 and
+nothing noticed, because the end-to-end winner is often one of the screen's probes rather
+than anything CMA-ES found. And `ordered[cut:]` reversed froze the two strongest movers
+while the caveat still said "the weakest 25%". All three now have tests that fail on the
+mutation.
+
+**Two lines the shipped pipeline depends on and no test touched.** `fallbacks=` — the
+template as it arrived — could be deleted entirely and every test passed including the
+CLI's, which is the regression that produced "−488% closer". So could
+`candidates = list(probes)`, the line that recovers the sixth of the budget the screen
+spent.
+
+**A guarantee the bare clone did not have.** `scripts/_cli.py`'s `guarded()` imported
+`analysis` for one exception name, which put the analysis extra on the path of `show.py`,
+`apply_spec.py` and `bootstrap_pack.py` — the three tools `dependencies = []` is a promise
+about. On a checkout without the extra, `bootstrap_pack.py` died with
+`ModuleNotFoundError: No module named 'analysis'`. CI never saw it because CI installs the
+package, which makes `analysis` importable from any working directory, and
+`test_no_dependencies.py` never saw it because blocking numpy leaves `analysis` itself
+importable. Matched by name now, like the sibling `soundfile` clause, and the test blocks
+`analysis` too.
+
+**A store the version guard could not refuse.** `SCHEMA_VERSION` stayed at 1 through two
+column additions in this milestone, and the check ran *after* `executescript` — where
+`CREATE TABLE IF NOT EXISTS` is a no-op on an existing table with the wrong columns but
+`CREATE INDEX ... ON trials(objective_key)` is not. So an `--out-dir` holding a store from
+an earlier commit of this same branch failed inside the schema and reported "either empty
+or a store this tool wrote", about a store this tool had written.
+
+**What the report was not saying.** The headline was the reference-level score in 2 rem
+while the shortlist was *ordered* by the worst-case score in small grey text below it. The
+objectives table put `dynamics 3.440` beside `timbre 0.755` with no weights, so the
+weighted sum above could not be checked against the only breakdown offered — and it let
+a run print "25% closer" while timbre and level, the two dimensions a player notices
+first, both got worse. The `spatial` note hedged "a little kinder" where the source
+comment eight lines up knew the answer exactly (8% of the live weight). The starting
+point's `prior_deviation` and `complexity` read 0.000 against candidates' 0.077 and 0.196
+because they were scored from different origins. And the shortlist listed three EQ bands
+under "changed from the starting point" while a caveat above said those same twelve values
+"have not been heard, only calculated". All five are fixed; none needed information the
+report did not already have.
+
+**The number a person acts on.** `--budget`'s help called 60 the floor, and at exactly 60
+the optimiser cannot take a single step on Morgan — the run then said "raise --budget to
+at least λ more than the fixed costs above", where nothing above had printed a fixed cost.
+Two messages for one fact, and the useless one was the one that fired. There is one now,
+it names the number (66 on the run that provoked it), and it is hoisted above the other
+caveats because it says the headline was not searched for. The help gives the arithmetic
+instead of a round number. And the benchmark, which discarded the search's caveats
+entirely, ran zero optimiser generations at `--budget 60` across every target and still
+printed **SHIPS**.
+
+### Departures from §M4 worth naming
+
+- **The envelope overlay is a table of statistics.** Against a different performance
+  an envelope picture is a picture of the performance, which is why the unpaired
+  profile weights dynamics down in the first place. What survives comparison across
+  performances is the statistics, so those are what the report shows.
+- **`--renderer swift` and `pedalboard` refuse by name.** They are M5. Accepting the
+  flag and substituting the synthetic chain would be the worst option available: the
+  run would succeed, the report would look right, and every number in it would
+  describe a Python approximation rather than the plugin.
+- **The benchmark's `recipe` arm starts from a neutral seed**, not from
+  `packs/recipes.py`. Picking a recipe needs a genre or a reference, which a random
+  target does not have. A recipe-stack seed would make that baseline stronger and the
+  comparison more honest; the neutral seed is what a caller with no other information
+  actually starts from, and this is stated in `centre_seed` rather than left to be
+  discovered.
+- **Sobol is not used** for the topology enumeration. Both packs' discrete spaces are
+  small enough to enumerate exhaustively, and a quasi-random sample of 32 points out
+  of 32 is 32 points with extra machinery.
 
 ## 13. Reading list, in the order it becomes relevant
 

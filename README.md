@@ -89,13 +89,20 @@ skills/          — generate/ and edit/, the two entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), au_probe.swift (ask the running plugin directly),
+                   selectors), probe_state.py (the same, for a plugin whose
+                   live state is a binary record rather than XML),
+                   au_probe.swift (ask the running plugin directly),
                    au_render.swift + spectrum_diff.py (measure what a control
                    does to the sound), au_render_server.swift (render many
-                   parameter sets from one instance), spike_pedalboard.py
-                   (render through a JUCE host instead),
+                   parameter sets from one instance), au_silence_check.swift
+                   (whether a plugin renders at all from the bare CLI),
+                   spike_pedalboard.py (render through a JUCE host instead),
                    fingerprint.py + compare_audio.py (measure a recording, and
                    what a preset would have to change to match it),
+                   match_preset.py (match a reference recording with a preset,
+                   and say what not to believe about it),
+                   benchmark_match.py (recover 50 random parameter vectors
+                   three ways, to check the pipeline beats its baselines),
                    audit_manifest.py (re-check every
                    declared fact against the plugin), bootstrap_pack.py
                    (support a new plugin),
@@ -107,15 +114,20 @@ analysis/        — measure audio into a comparable fingerprint, plus a synthet
                    read or write a preset)
 match/           — turn a measured sound into preset parameters: the Renderer
                    protocol, the synthetic backend, the conditional search space
-                   built from a manifest, and the inversions that calculate what
-                   does not need searching for. Building the space and writing a
-                   spec need no dependencies; rendering and fitting need the
+                   built from a manifest, the inversions that calculate what does
+                   not need searching for, the four-stage search that spends a
+                   render budget on the rest, a sqlite3 store so no render is
+                   paid for twice, a self-contained HTML report, and the
+                   benchmark that decides whether any of it beat the baselines.
+                   Building the space, writing a spec and reading the store need
+                   no dependencies; rendering, fitting and searching need the
                    analysis extra
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,
-                   renderer, search-space, inversion and bare-clone tests
+                   renderer, search-space, inversion, search, store, report,
+                   benchmark and bare-clone tests
 docs/            — maintainer procedures for measuring ranges, selectors,
                    mappings and audible behavior against a plugin, and the
                    design plan for reference-guided tone matching
@@ -221,8 +233,10 @@ The human value depends on the manifest kind:
 - **Rotation knobs** are **percent of rotation, 0–100** (noon = 50), stored as
   `0.0–1.0`.
 - **Fraction controls** use their normalized value directly, `0.0–1.0`.
-- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose)
-  use their **native unit** (dB / Hz / ms / s / BPM / semitones).
+- **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose,
+  cab pans) use their **native unit** (dB / Hz / ms / s / BPM / semitones / pan).
+  **`pan` is signed and its scale differs per pack** — Morgan stores −50..50 and
+  Tone King −1..1, while both *display* a position out of 50. Read the manifest.
 - **Switches** are `true`/`false`, or the plugin's own label where the pack
   declares one (`"Active"`, `"Off"`); **selectors** take a member name
   (`"PR12"`, `"Ribbon 121"`) or an integer.
@@ -314,6 +328,33 @@ guitar was never isolated.
 
 Nothing above this is affected. `show.py` and `apply_spec.py` still run on a bare
 clone with no dependencies at all, and a test enforces it.
+
+## Optional: match a recording
+
+With `[match]` as well, the loop closes: given a recording you like and a preset
+to start from, `match_preset.py` measures the reference, calculates what can be
+calculated, searches the rest on a render budget you set, and writes a spec plus
+a report.
+
+```bash
+pip install -e '.[analysis,match]'
+python scripts/match_preset.py \
+  --template samples/Example_Clean_PR12.xml \
+  --reference song-excerpt.wav --reference-mode mix \
+  --budget 300 --out-dir runs/hotel-california-001
+```
+
+It writes `match-1.json` — a spec `apply_spec.py` turns into a preset, so the
+winner goes through the same validated path as a hand-authored one — and
+`report.html`, one self-contained file. **Read the report before trusting the
+number**: it opens with the caveats rather than the charts, and each one names a
+place where a figure rests on an assumption instead of a measurement.
+
+The backend is a Python approximation of the plugin's topology, not the plugin.
+Every number this produces is a number about that approximation until the real
+backend exists (M5, which needs macOS and a licence). If you have that machine,
+[docs/handoff-to-macos.md](docs/handoff-to-macos.md) is the run-book:
+what to run, in what order, and what should happen.
 
 The generate and edit skills do not use any of this yet — see
 [docs/tone-matching-plan.md](docs/tone-matching-plan.md) for what it is for.

@@ -17,8 +17,12 @@ dev = ["pytest>=7.0", "pyyaml>=6.0"]
 # and tests/test_no_dependencies.py holds that line.
 analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
 # Searching for parameters. The synthetic renderer needs nothing beyond
-# [analysis], which is what lets the whole match stack be tested with no plugin;
-# cma arrives with the optimiser in M4.
+# [analysis], which is what lets the whole match stack be tested with no plugin.
+#
+# No `cma`. An earlier version of this comment said "cma arrives with the optimiser in
+# M4"; M4 arrived and §2's D4 held instead — `match/search.py` writes the textbook
+# (μ/μ_w, λ) CMA-ES out with Hansen's constants in about seventy lines of numpy, which
+# is legible, pinned by tests, and one fewer dependency to age.
 match = ["neuraldsp-preset-generator[analysis]"]
 # Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
 # macOS-only, like every other plugin-dependent check — never used by CI.

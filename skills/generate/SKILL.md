@@ -11,7 +11,7 @@ when_to_use: >-
   a Gilmour-ish lead patch; I need a jangly rhythm sound; set me up for blues
   lead.
 argument-hint: "[song or tone description] [rhythm|lead|clean]"
-allowed-tools: Read, Glob, Grep, WebSearch, WebFetch
+allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 ---
 
 # Generate a preset

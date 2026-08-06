@@ -35,7 +35,15 @@ The plugin's knobs have no numbers on them — a knob is just a rotation. So:
 
 `metered` units: **dB** (gate, input/output, mic levels, EQ bands), **Hz**
 (HPF/LPF/cuts, tremolo rate), **ms** (delay time, pre-delay, doubler spread),
-**seconds** (reverb decay), **BPM** (tempo), **semitones** (transpose).
+**seconds** (reverb decay), **BPM** (tempo), **semitones** (transpose), **pan**
+(the two cab pans).
+
+**`pan` is signed and its scale differs per pack** — Morgan stores −50..50, Tone
+King stores −1..1 — so read the manifest rather than assuming. Both plugins
+*display* a position out of 50 either way, and reading the range off that display
+once gave Tone King's pan a range fifty times too large. See
+[selectors-and-timing.md](selectors-and-timing.md) and
+[cab-and-irs.md](cab-and-irs.md).
 
 Prefer **member names over integers** for selectors — `"value": "SW50R"` reads
 better than `"value": 2` and is checked against the manifest. A `switch` may
@@ -63,8 +71,10 @@ See [selectors-and-timing.md](selectors-and-timing.md).
   values are *typical* — a taste anchor, never a limit. Absent on a fresh
   clone; nothing breaks without it.
 - `packs/<id>/recipes.json` — **composable starting points.** Committed. Tone
-  recipes grouped by layer (amp, compressor, drive1, drive2, tremolo, eq, cab,
-  delay, reverb, output). Stack one per layer, then adapt.
+  recipes grouped by layer, and **the layers differ per pack**: Morgan has amp,
+  compressor, drive1, drive2, tremolo, eq, cab, delay, reverb, output; Tone King
+  has chorus where Morgan has tremolo. Stack one per layer, then adapt. Read the
+  file, or run `apply_spec.py --list-recipes --pack <id>`.
 - `packs/<id>/tone.md` — the decision layer: amps and their character, an
   intent → recipe-stack table, and the "when the user says X" vocabulary.
 
@@ -147,6 +157,9 @@ Other flags:
 - `--pack <id>` — force a pack instead of detecting it from the file header.
 - `--recipe LAYER/ID`, `--bpm N` — see [Stacking recipes](#stacking-recipes).
 - `--name` — set the preset name without putting it in a spec.
+- `--list-recipes` — print every recipe in the pack with its layer and
+  description, and exit. Faster than reading `recipes.json`, and it is the
+  pack's own answer about which layers exist.
 
 `/version` is marked read-only in the manifest and the writer refuses it, with
 or without the `raw` escape hatch.

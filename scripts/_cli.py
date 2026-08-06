@@ -16,6 +16,23 @@ from typing import Optional
 
 EXIT_ERROR = 2
 
+# What to tell the user if they stop the run with Ctrl-C. Empty for a script where
+# stopping costs nothing; set by a script that has written something worth knowing
+# about, which is the case where exiting in total silence is wrong.
+_INTERRUPT_NOTE: Optional[str] = None
+
+
+def on_interrupt(note: str) -> None:
+    """Register the sentence to print if this run is interrupted.
+
+    A long search interrupted at 90% used to print nothing at all and leave a 176 KB
+    store behind with every render in it. Not a traceback, so it cleared the bar the
+    other error paths are held to — and it still left the user believing an hour was
+    gone when the work was on disk and the next run would serve it from the cache.
+    """
+    global _INTERRUPT_NOTE
+    _INTERRUPT_NOTE = note
+
 
 def die(message: str) -> None:
     """Report a user-facing problem and stop. Never raises past the caller."""
@@ -42,10 +59,18 @@ def guarded(main) -> None:
     path is the most ordinary mistake there is, and a nine-frame
     `FileNotFoundError` traceback is not a message. These are the mistakes a
     person makes, not the ones the code makes.
+
+    Nothing here imports `analysis`. It used to, for `AnalysisUnavailable`, and that put
+    the analysis extra on the path of every script that calls `guarded` — including
+    `show.py`, `apply_spec.py` and `bootstrap_pack.py`, which are the three that must run
+    on a bare clone with nothing but the standard library. On a checkout without the
+    extra installed, `bootstrap_pack.py` died with `ModuleNotFoundError: No module named
+    'analysis'` from inside the handler written to stop tracebacks reaching people. CI
+    did not see it because CI installs the package, which makes `analysis` importable
+    from anywhere; matching by name is what the sibling `_LIBRARY_ERRORS` clause already
+    does, and for the same reason.
     """
     import json
-
-    from analysis import AnalysisUnavailable
 
     try:
         main()
@@ -53,6 +78,8 @@ def guarded(main) -> None:
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         sys.exit(0)
     except KeyboardInterrupt:
+        if _INTERRUPT_NOTE:
+            print(f"\nstopped. {_INTERRUPT_NOTE}", file=sys.stderr)
         sys.exit(130)
     except json.JSONDecodeError as e:
         die(f"that file is not valid JSON: {e}")
@@ -70,8 +97,63 @@ def guarded(main) -> None:
         # Last, so `json.JSONDecodeError` — itself a ValueError — still gets its
         # own sentence above.
         die(str(e))
-    except AnalysisUnavailable as e:
-        die(str(e))
+    except Exception as e:
+        # A `RuntimeError` from a third-party reader, which is the one remaining way
+        # an ordinary mistake reaches a person as a traceback. `soundfile` raises
+        # `LibsndfileError(RuntimeError)` on a file that is not audio, so
+        # `--reference pyproject.toml` printed fifteen frames ending in "Format not
+        # recognised" — the answer, buried. Named types only: a `KeyError` or an
+        # `AttributeError` is this code being wrong, and that should still be a
+        # traceback, because it is a bug report rather than a user error.
+        if type(e).__name__ in _LIBRARY_ERRORS:
+            die(f"{e}")
+        raise
+
+
+# Exception types whose message is written for the user rather than for a bug report,
+# and which are not `ValueError` subclasses so the clause above does not reach them.
+#
+# `LibsndfileError` and friends mean "your file is not what you said it was": `soundfile`
+# raises one on a file that is not audio, so `--reference pyproject.toml` printed fifteen
+# frames ending in "Format not recognised" — the answer, buried.
+#
+# `AnalysisUnavailable` is the missing-extra install hint. It is a `RuntimeError` on
+# purpose, so no caller can confuse "the library is not here" with "your value is wrong"
+# and quietly fall back on a guess.
+#
+# Matched by name rather than imported, because importing either one here would put an
+# optional dependency on the bare-clone path — which is the one thing `_cli` must not do,
+# and which importing `analysis` for this list did for months.
+_LIBRARY_ERRORS = frozenset({
+    "LibsndfileError", "SoundFileError", "SoundFileRuntimeError",
+    "AnalysisUnavailable",
+})
+
+
+def probe_di(path, seconds: float = 6.0):
+    """The DI every candidate is rendered through, or a synthetic stand-in.
+
+    Returns the samples and a caveat, which is `None` when a real DI was given. The
+    stand-in is honest about being one: a search's answer is only as representative as
+    the DI it was scored on, and plucks with gaps show attack and decay clearly and show
+    a palm-muted chug not at all, so a preset matched on them may not hold up on the
+    part someone actually plays.
+
+    Shared because `match_preset.py` and `benchmark_match.py` had the same function with
+    the same `gap=0.9, seed=13` constants, and two copies of a fixture's constants is
+    two things to keep in step for no reason.
+    """
+    if path is not None:
+        from analysis import io
+
+        return io.load(str(path)).mono(), None
+    from tests import fixtures_audio
+
+    return (fixtures_audio.plucks(seconds=seconds, gap=0.9, seed=13),
+            "no --probe-di was given, so candidates were rendered through a "
+            "synthetic pluck sequence. It shows attack and decay clearly and shows "
+            "sustained or palm-muted playing not at all — match against your own "
+            "DI before trusting this on a real part.")
 
 
 def _data_dir(text: str) -> str:
