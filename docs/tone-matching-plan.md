@@ -1861,6 +1861,78 @@ committed single-run figure is not.** §8's numbers should have been recorded as
 one machine's, and this is the fourth time a figure in this repository has failed
 to reproduce from its own command.
 
+### The ±6 dB re-rank still measures loudness, on the plugin too
+
+§6.2 of the handoff: the `level` dimension accounted for 35-96% of the change
+across the input offsets on the synthetic chain, while `timbre` moved by about
+0.001, and the question for M5 was whether `timbre` starts moving on a plugin
+whose breakup genuinely depends on how hard it is hit.
+
+It does not. Across the 18 targets of the 50-target run that reported the figure,
+the level term accounts for **50% to 100%** of the change, median **71%** —
+the same range as the synthetic run.
+
+```
+python3 -c "
+import json, re
+d = json.load(open('docs/m5-benchmark-morgan.json'))
+v = [int(m.group(1)) for c in d['caveats']
+     if (m := re.search(r'about (\\d+)% of the change in score across', c))]
+print(sorted(v))"
+```
+
+So the stage needs rethinking, as §6.2 said it would if this came back negative.
+The caveat naming the percentage is doing real work and should stay until the
+re-rank measures something other than how loud the render got.
+
+### `paired-v1` runs, and the term carrying 0.9 of its weight is never computed
+
+§6.7 of the handoff calls `paired-v1` "the highest-confidence path in the whole
+design — regime weight 1.0, and the only profile that weights `residual` (0.9)
+because with a paired DI you can compare waveforms sample-for-sample rather than
+statistically", and asks whether `residual` behaves once it meets a real pair.
+
+It does not behave, because **it never runs.** A paired run against a real reamp
+— a DI rendered through Morgan from a known vector, then recovered from that DI
+and that recording — completes, scores 292 trials, reports `1.454 -> 0.654`, and
+produces these dimensions:
+
+```
+python3 -c "
+import sqlite3, json
+db = sqlite3.connect('runs/paired-001/trials.sqlite3')
+rows = [json.loads(r[0]) for r in db.execute(
+    'select objectives_json from trials where objectives_json is not null')]
+print(sorted({k for r in rows for k in r}))"
+```
+
+```
+['ambience', 'complexity', 'dynamics', 'level', 'prior_deviation', 'spatial',
+ 'timbre', 'total']
+```
+
+No `residual`, in any of the 292. `analysis/align.residual_db` exists and is
+tested; `analysis.compare.compare()` takes a `residual_db=` argument and weights
+it; and **no production caller anywhere passes it** — not
+`match/search.py`'s `Evaluator.evaluate`, not `scripts/match_preset.py`, not
+`scripts/compare_audio.py`. `_residual` returns `{}` for `None`, so the term
+drops out and the total is formed from what is left.
+
+`tests/test_compare.py` has known this since M1: its own comment reads "no
+waveform term at all — `align.residual_db` existed and nothing consumed" it.
+
+So `--loss-profile paired-v1` is, in practice, the unpaired objective with
+different weights on the remaining dimensions. Every claim resting on the paired
+regime being the strongest path rests on a term that has never been computed
+outside a unit test. Nothing in the 14 caveats that run printed said so, which is
+the part that most needs fixing: a profile that weights a dimension the run could
+not measure should say which dimension and how much weight went with it.
+
+This is not fixed here. Wiring it up needs the reference *samples* threaded into
+the evaluator — it holds only the fingerprint, and a fingerprint deliberately
+throws the waveform away — which is a change to the evaluator's contract rather
+than a patch, and it should be done deliberately rather than at the end of M5.
+
 ### Tone King, end to end for the first time
 
 ```

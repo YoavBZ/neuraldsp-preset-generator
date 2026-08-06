@@ -12,8 +12,6 @@ plugin. It is a script rather than a test precisely because CI can never run it.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from match.renderer_au import AudioUnitError, AudioUnitRenderer
