@@ -1,18 +1,25 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0, M1, M2 and M3 are done; M4 is next.** The two spikes ran on 2026-08-05
+Status: **M0 through M4 are done; M5 is next, and it needs macOS with both plugins
+licensed.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
 package — the synthetic chain and the `Renderer` protocol — with §12a recording
 what its sensitivity test caught.
 
-§12 records where both milestones departed from this document — including five
-departures found by auditing them against their own exit criteria before starting
-M2, every one of which had passed a green suite. One M0 item is deliberately
-still open: the `apply_spec.py` → `pedalboard` state round trip is implemented
-and tested without a plugin, but has not been *run* against one, and M5 depends
-on it.
+M3 added the conditional search space and the inversions (§12b); M4 added the
+search, the store, the report and the exit-criterion benchmark (§12c).
+
+§12, §12a, §12b and §12c record where each milestone departed from this document
+and where it got something wrong before it got it right — including five
+departures found by auditing M0 and M1 against their own exit criteria, and five
+*fixes* from M3's second review that turned out to be wrong in their own way.
+Every one of those had passed a green suite.
+
+One M0 item is deliberately still open: the `apply_spec.py` → `pedalboard` state
+round trip is implemented and tested without a plugin, but has not been *run*
+against one, and M5 depends on it.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -1268,6 +1275,124 @@ oversights:
   it is working without them.
 - Nothing yet quantises against *audible* resolution measured from the plugin;
   `space.QUANTA` is a set of stated engineering choices, not measurements.
+
+## 12c. What M4 built
+
+`match/search.py`, `match/store.py`, `match/report.py`, `match/benchmark.py`,
+`scripts/match_preset.py` and `scripts/benchmark_match.py`. The pipeline runs end to
+end: measure a reference, calculate what can be calculated, search the rest on a
+budget, and write a spec `apply_spec.py` consumes plus a report that leads with what
+not to believe.
+
+**Measured end to end**, against a synthetic reference rendered with the volume,
+treble and bass moved: **1.929 → 0.539 in 64 renders**, eight caveats, and the
+resulting spec applies through `apply_spec.py` and reads back through `show.py`. The
+winner is written by the same validated path as a hand-authored preset, so a search
+cannot produce bytes a person could not have.
+
+### The four stages, and what each one is for
+
+**The screen pays for itself immediately.** Morgan has 126 searchable dimensions and
+CMA-ES over 126 dimensions needs thousands of samples to do anything. Two renders per
+parameter — its own two extremes, everything else at the seed — turned 18 live
+supported dimensions into 14 searched and 4 frozen, for 37 renders. The extremes are
+the right probe *because* they are extreme: a control that cannot move the objective
+from one end of its range to the other cannot matter in between, whatever the
+interactions. Switches and selectors are not screened, because turning an effect off
+changes what is *reachable* rather than shifting a value.
+
+**The topology loop is exhaustive over what it is given, and is given nothing by
+default.** Interpolating between mic 3 and mic 4 means nothing — the numbers are
+labels, and a gradient over labels is a gradient over the order somebody listed them
+in. It is a product, so five two-state switches is 32 whole inner searches; guessing
+which of Morgan's 32 switches are worth that is not something the code can know, so
+the caller says.
+
+**CMA-ES is the textbook (μ/μ_w, λ) with Hansen's constants written out** rather than
+tuned, numpy only, no `cma` dependency (§2, D4). Bounds clip the *evaluated* vector
+while the distribution's mean sits where it likes: clipping the mean lets a parameter
+stick on a bound it was only passing through, which over a gain control means the amp
+is either clean or fully saturated and never anything between.
+
+**The robustness re-rank earns its place on the first run it was tried on.** The best
+match at the reference input level scored 0.702 at worst across ±6 dB against 0.509
+for the candidate that won — so the shortlist order changed, and the caveat says so.
+Ordered by the worst level rather than the mean: a preset that is excellent at one
+input level and unusable at another is not a good match that happens to vary.
+
+### Three things this got wrong first
+
+**The screen's probes were thrown away.** Forty renders that had been paid for and
+scored, discarded because they were "measurements" rather than "candidates" — and a
+parameter at an extreme is a perfectly good parameter vector. On the run that found
+it, one probe scored **0.525** while the entire CMA-ES stage found nothing better than
+0.694. Feeding them into the Pareto archive took the run to 0.539 for no extra
+renders. A fifth of the budget was being spent and then binned.
+
+**`trials` did not record which DI a render used**, and §6.4 does not list it. That
+omission is an oversight rather than a decision — §6.3's own cache key includes
+`di_sha256` for exactly this reason. Without it `Store.best` compared a candidate
+scored at the reference level against the robustness re-rank's own renders of the same
+parameters 6 dB quieter, and picked the quiet one: a quieter DI drives the amp less
+hard, so it can look like a better match for a reason that has nothing to do with the
+parameters. `di_sha` and `di_offset_db` are now columns and `best()` defaults to the
+reference level. **This is a departure from §6.4.**
+
+**`Dimension.quantise` could emit an illegal value**, which is M3 code that M4's
+benchmark found. `_from_unit` clamped *before* stepping: `tremoloRate` is declared
+0.15–15 Hz with a 1 Hz step, so the bottom of its range clamped to 0.15 and then
+rounded to **0.0**, below the plugin's own minimum, in a value the search would go on
+to write and `apply_spec` would refuse. Clamping now happens after stepping, so a
+result at an endpoint may not sit on the step grid — which is correct, since the
+endpoint of a declared range is legal by definition.
+
+### The exit criterion, and what it says
+
+`scripts/benchmark_match.py` samples random legal parameter vectors, renders each,
+throws the vector away, and recovers it three ways. The arms are **nested** —
+`inversion` is `recipe` plus the calculated step, `full` is `inversion` plus the
+search — and that is not a detail. The first version searched from the recipe seed
+instead of the inverted one, so the `full` arm measured search-*only*, scored 1.401
+against inversion's 1.021, and reported **DOES NOT SHIP** against a pipeline that
+works. A benchmark whose arms are not nested does not measure what each stage adds,
+and it reports its wrong verdict with complete confidence.
+
+Over six targets at a 60-render budget, after the fix:
+
+| arm | objective | parameter MAE | selector | renders |
+|---|---|---|---|---|
+| recipe | 1.855 | 0.239 | 0.563 | 0 |
+| inversion | 0.820 | 0.244 | 0.583 | 6 |
+| full | **0.531** | 0.251 | 0.583 | 320 |
+
+Each stage improves the sound. **The parameter MAE gets slightly worse at every
+stage**, and that divergence is the actual situation rather than a flaw in the
+measurement: the plugin's controls are not identifiable from its output, so a
+different volume with a compensating EQ curve sounds almost identical. Reporting only
+the MAE would condemn a pipeline that works; reporting only the objective would let a
+real failure through. So both are reported, and `verdict()` states in its own output
+that the MAE is deliberately **not** part of the gate — nobody should have to guess
+whether that was a decision or an omission.
+
+### Departures from §M4 worth naming
+
+- **The envelope overlay is a table of statistics.** Against a different performance
+  an envelope picture is a picture of the performance, which is why the unpaired
+  profile weights dynamics down in the first place. What survives comparison across
+  performances is the statistics, so those are what the report shows.
+- **`--renderer swift` and `pedalboard` refuse by name.** They are M5. Accepting the
+  flag and substituting the synthetic chain would be the worst option available: the
+  run would succeed, the report would look right, and every number in it would
+  describe a Python approximation rather than the plugin.
+- **The benchmark's `recipe` arm starts from a neutral seed**, not from
+  `packs/recipes.py`. Picking a recipe needs a genre or a reference, which a random
+  target does not have. A recipe-stack seed would make that baseline stronger and the
+  comparison more honest; the neutral seed is what a caller with no other information
+  actually starts from, and this is stated in `_centre_seed` rather than left to be
+  discovered.
+- **Sobol is not used** for the topology enumeration. Both packs' discrete spaces are
+  small enough to enumerate exhaustively, and a quasi-random sample of 32 points out
+  of 32 is 32 points with extra machinery.
 
 ## 13. Reading list, in the order it becomes relevant
 

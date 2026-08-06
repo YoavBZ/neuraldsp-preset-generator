@@ -96,6 +96,10 @@ scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discove
                    (render through a JUCE host instead),
                    fingerprint.py + compare_audio.py (measure a recording, and
                    what a preset would have to change to match it),
+                   match_preset.py (match a reference recording with a preset,
+                   and say what not to believe about it),
+                   benchmark_match.py (recover 50 random parameter vectors
+                   three ways, to check the pipeline beats its baselines),
                    audit_manifest.py (re-check every
                    declared fact against the plugin), bootstrap_pack.py
                    (support a new plugin),
@@ -107,15 +111,20 @@ analysis/        — measure audio into a comparable fingerprint, plus a synthet
                    read or write a preset)
 match/           — turn a measured sound into preset parameters: the Renderer
                    protocol, the synthetic backend, the conditional search space
-                   built from a manifest, and the inversions that calculate what
-                   does not need searching for. Building the space and writing a
-                   spec need no dependencies; rendering and fitting need the
+                   built from a manifest, the inversions that calculate what does
+                   not need searching for, the four-stage search that spends a
+                   render budget on the rest, a sqlite3 store so no render is
+                   paid for twice, a self-contained HTML report, and the
+                   benchmark that decides whether any of it beat the baselines.
+                   Building the space, writing a spec and reading the store need
+                   no dependencies; rendering, fitting and searching need the
                    analysis extra
 samples/         — the bundled example preset
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,
-                   renderer, search-space, inversion and bare-clone tests
+                   renderer, search-space, inversion, search, store, report,
+                   benchmark and bare-clone tests
 docs/            — maintainer procedures for measuring ranges, selectors,
                    mappings and audible behavior against a plugin, and the
                    design plan for reference-guided tone matching
