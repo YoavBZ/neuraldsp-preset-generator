@@ -241,15 +241,61 @@ def commands_in(doc: pathlib.Path) -> list:
     return commands
 
 
+@functools.lru_cache(maxsize=None)
+def plugin_is_available() -> bool:
+    """Whether this machine can actually run a plugin command.
+
+    Asked of the machine rather than of the command's spelling. `swiftc` present
+    and at least one pack's Audio Unit installed and instantiable — `auval`
+    exits nonzero for an Audio Unit that is missing or unlicensed, which is
+    exactly the distinction that matters here.
+
+    Cached because `auval` takes a second or two and the answer cannot change
+    inside one run.
+    """
+    if shutil.which("swiftc") is None or shutil.which("auval") is None:
+        return False
+    for pack_dir in sorted((ROOT / "packs").glob("*/manifest.json")):
+        try:
+            unit = json.loads(pack_dir.read_text()).get("audio_unit") or {}
+        except (OSError, json.JSONDecodeError):
+            continue
+        triple = [unit.get("type"), unit.get("subtype"), unit.get("manufacturer")]
+        if not all(triple):
+            continue
+        try:
+            probe = subprocess.run(["auval", "-v", *triple],
+                                   capture_output=True, text=True, timeout=180)
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        if probe.returncode == 0:
+            return True
+    return False
+
+
 def skip_reason(command: str):
     """Why this command cannot run in CI, or None if it can."""
     if any(marker in command for marker in NEEDS_THE_PLUGIN):
-        return "needs the licensed Audio Unit installed on macOS"
+        # By capability, not by spelling. These commands used to skip on the one
+        # machine that could run them — a substring match on `swiftc` or
+        # `/tmp/au_probe` cannot tell "no plugin here" from "the plugin is right
+        # here", so the documented plugin commands were verified nowhere at all.
+        if not plugin_is_available():
+            return "needs the licensed Audio Unit installed on macOS"
     if any(marker in command for marker in NEEDS_A_PRESET_FOLDER):
         return "reads or writes the user's own Neural DSP preset folder"
-    if not re.match(r"python3? +\"?\$\{CLAUDE_PLUGIN_ROOT\}", command):
-        return "not an invocation of a bundled script"
-    return None
+    if re.match(r"python3? +\"?\$\{CLAUDE_PLUGIN_ROOT\}", command):
+        return None
+    # A Swift build, or one of the helpers it produces, is runnable wherever the
+    # plugin is — and those two commands are precisely the ones no machine was
+    # checking, because they skipped on the spelling of `swiftc` before anything
+    # asked whether swiftc was installed.
+    first = command.split()[0]
+    if first == "swiftc" or pathlib.Path(first).name in BUILT_HELPERS:
+        return None if plugin_is_available() else (
+            "needs the licensed Audio Unit installed on macOS"
+        )
+    return "not an invocation of a bundled script"
 
 
 ALL_COMMANDS = [(doc, command) for doc in DOCS for command in commands_in(doc)]
@@ -282,6 +328,26 @@ class Sandbox:
     def out(self) -> pathlib.Path:
         self._runs += 1
         return self.path / f"out{self._runs}.xml"
+
+    def build(self, helper: str) -> pathlib.Path:
+        """Compile one of the documented Swift helpers into this sandbox.
+
+        On demand rather than in order: the documentation builds a helper in one
+        command and uses it in the next, and a test that relied on those two
+        running in that order would pass or fail on pytest's collection order.
+        """
+        import sys as _sys
+
+        _sys.path.insert(0, str(ROOT / "scripts"))
+        from _swift import compile_swift
+
+        binary = self.path / helper
+        if not binary.exists():
+            built, error = compile_swift(ROOT / "scripts" / f"{helper}.swift", binary)
+            assert built is not None and built.returncode == 0, (
+                f"could not build {helper}.swift:\n{error}"
+            )
+        return binary
 
     def run(self, argv) -> subprocess.CompletedProcess:
         env = dict(os.environ)
@@ -316,6 +382,12 @@ def documented_spec() -> dict:
 LEFTOVER = re.compile(r"\$\{|<[a-z ]+>|\b[A-Z][A-Z_]+\.(xml|json)\b")
 
 
+# Helpers the documentation tells the reader to build into /tmp and then run.
+# Redirected into the sandbox: a test must not depend on, or leave behind, a
+# fixed path outside its own directory.
+BUILT_HELPERS = ("au_probe", "au_render_server", "au_render", "au_silence_check")
+
+
 def materialise(command: str, sandbox: Sandbox) -> list:
     """Turn a documented command into an argv the test can actually run."""
     text = command.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
@@ -325,14 +397,30 @@ def materialise(command: str, sandbox: Sandbox) -> list:
     for placeholder in ("NEW.xml", "OUT.xml"):
         if placeholder in text:
             text = text.replace(placeholder, str(sandbox.out()))
+    for helper in BUILT_HELPERS:
+        text = text.replace(f"/tmp/{helper}", str(sandbox.path / helper))
+        # The documented build line is written to be run from the repository
+        # root. The sandbox deliberately is not there, so the source is resolved
+        # the same way `${CLAUDE_PLUGIN_ROOT}` is.
+        text = text.replace(f"scripts/{helper}.swift",
+                            str(ROOT / "scripts" / f"{helper}.swift"))
     argv = shlex.split(text, comments=True)
-    assert argv and argv[0] in ("python", "python3"), command
+    assert argv, command
     leftover = [token for token in argv if LEFTOVER.search(token)]
     assert not leftover, (
         f"unsubstituted placeholder(s) {leftover} — add them to materialise() "
         f"rather than letting the command run against a literal filename"
     )
-    return [sys.executable, *argv[1:]]
+    if argv[0] in ("python", "python3"):
+        return [sys.executable, *argv[1:]]
+    # A Swift build, or one of the helpers it produces. Both are documented
+    # verbatim and both are now run on a machine that has the plugin, which is
+    # the only place they can be checked at all.
+    if argv[0] == "swiftc" or pathlib.Path(argv[0]).parent == sandbox.path:
+        if argv[0] != "swiftc":
+            sandbox.build(pathlib.Path(argv[0]).name)
+        return argv
+    raise AssertionError(f"unrunnable documented command: {command}")
 
 
 @pytest.mark.parametrize(

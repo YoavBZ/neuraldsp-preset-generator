@@ -1643,6 +1643,172 @@ printed **SHIPS**.
   small enough to enumerate exhaustively, and a quasi-random sample of 32 points out
   of 32 is 32 points with extra machinery.
 
+## 12d. What M5 built, and what the plugin said about M1-M4
+
+The first milestone whose numbers are facts about the plugin. Everything before it
+was measured against `analysis/refchain.py`, which shares Morgan's topology and
+models none of its DSP.
+
+Measured on macOS 15 (Darwin 25.5.0), Morgan Amps Suite **1.1.1** (`auval` reports
+`Component Version: 1.1.1 (0x10101)`), Python 3.14.6, numpy 2.5.1, scipy 1.18.0.
+Every figure below has the command that produced it beside it.
+
+### The backend
+
+`match/renderer_au.py` drives `scripts/au_render_server.swift` behind the
+`Renderer` protocol: one plugin instance, one process, commands over stdin.
+`--renderer swift` on `scripts/match_preset.py` and `scripts/benchmark_match.py`.
+
+Throughput, measured rather than assumed:
+
+```
+python3 - <<'EOF'
+import time, numpy as np
+from match.renderer_au import AudioUnitRenderer
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=3.0, gap=0.9, seed=13)
+with AudioUnitRenderer('morgan') as r:
+    r.render(di, {'selectedAmp': 2})
+    t0 = time.time()
+    for v in range(10, 90, 10):
+        r.render(di, {'selectedAmp': 2, 'sw50rAmp/sw50rVolume': float(v)})
+    print('%.0f ms/render' % ((time.time() - t0) / 8 * 1000))
+EOF
+```
+
+431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. §3.2's 291 ms was for a
+2-second excitation, so per second of audio the two agree.
+
+### Two silent defects the first real renders exposed
+
+**`AVAudioFile.read(into:)` returns short.** Asked for all 144000 frames of a
+3-second file in one call it returns 143340, and the shortfall varies with length —
+916, 788, 660, 340 frames at 48000, 96000, 144000 and 200000. `au_render_server`
+read once and trusted `frameLength`, so **every `--input` render was truncated**,
+which is the path a search runs on. It now loops until the file is consumed and
+refuses a partial read rather than rendering the front of a DI and reporting
+success. Nothing had noticed because nothing had rendered through a file at scale.
+
+**`selectedAmp` was dropped from every render.** `match/search._supported_keys`
+flattened a backend's `("", "selectedAmp")` to `/selectedAmp` and compared it
+against `Dimension.path`, which is `selectedAmp`. The amp selector therefore never
+reached the plugin, and writing a control on an amp that is not selected is a
+no-op — so a search would have moved one amp's tone stack while the plugin stayed
+on another, with nothing failing and every number describing the wrong amp. The
+synthetic chain models a single amp and never declared `selectedAmp`, which is why
+M3 and M4 could not have caught it.
+
+A third, in the new code rather than the old: an enum arriving as a display name
+(`'SW50R'`, which is what `invert()` emits and `apply_spec.py` consumes) was
+converted with `int(float(...))` instead of through the pack, so **every inversion
+became a failed render**. The search reported that as "a silent render, or no
+dimension the loss profile weights" — a message that named neither cause.
+`Candidate` now carries the error the store had always recorded.
+
+### The equaliser, measured
+
+`scripts/measure_eq_basis.py` renders each band at +6 and -6 dB against a flat
+reference and writes `packs/<pack>/eq_basis.json`. Both signs rather than one
+against flat, so every even-order term cancels; the flat render is kept as a
+linearity check and the run reports the bend.
+
+```
+python3 scripts/measure_eq_basis.py --pack morgan     # 57 renders, 67 s
+```
+
+What the fallback got wrong, which is what the caveat had been warning about:
+
+| | textbook bell | measured (sw50r, 1.1.1) |
+|---|---|---|
+| 65 Hz band, at 25 Hz | 0.098 dB/dB | **0.977** — it is a shelf, not a bell |
+| 16 kHz band | peaks at 16 kHz | peaks at 20 kHz — also a shelf |
+| 1 kHz band, at 2 kHz | 0.171 dB/dB | **0.453** — 2.6x the assumed overlap |
+
+Measured twice, at excitation RMS 0.1 and 0.03, because the first run peaked above
+full scale on all three amps. The two bases agree to within 0.021 dB/dB, so the
+peaks did not corrupt it; the committed file is the quieter one and `--level`
+exists so the check can be repeated.
+
+**A basis belongs to a backend, not to a pack.** Loading it by pack alone made two
+of `tests/test_invert.py`'s assertions fail, correctly: the synthetic chain builds
+its bands from `FALLBACK_Q` and is not the plugin, so fitting the plugin's overlap
+to the chain's audio makes that fit *worse*. It is a `Renderer.eq_basis()` hook
+that defaults to `None`, answered by `AudioUnitRenderer` and declined by the
+synthetic chain.
+
+What it bought, on a ground-truth match against the real plugin:
+
+```
+# reference: a known parameter vector rendered through Morgan, then discarded
+python3 scripts/match_preset.py --template samples/Example_Clean_PR12.xml \
+  --reference /tmp/ref_real.wav --reference-mode probe --probe-di /tmp/probe_real.wav \
+  --amp sw50r --renderer swift --budget 300 --shortlist 3 --seed 0 --out-dir /tmp/run_real
+```
+
+| | textbook basis | measured basis |
+|---|---|---|
+| distance to the reference | 1.045 -> 0.488 | 1.045 -> **0.370** |
+| across ±6 dB of input | 0.590 at worst | **holds up** |
+| searched / frozen | 20 / 20 | 25 / 15 |
+
+### `_backend_floor` went live, and it costs half the search space
+
+The least-exercised path in M4. With the synthetic renderer `band_noise_db` is 0.0
+and the raise never executed outside a unit test. On the plugin it is 0.23, and the
+screen's floor becomes 0.0767 — which freezes **15 to 20 of 40 parameters** where
+the same run on the synthetic chain froze 6 of 24.
+
+The declared 0.23 dB is slightly optimistic. Measured over 8 renders of identical
+parameters:
+
+```
+python3 - <<'EOF'
+import numpy as np
+from match.renderer_au import AudioUnitRenderer
+from analysis.features import third_octave_bands
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=4.0, gap=0.9, seed=5)
+with AudioUnitRenderer('morgan') as r:
+    rows = [np.array(third_octave_bands(
+        np.asarray(r.render(di, {'selectedAmp': 2, 'sw50rAmp/sw50rVolume': 60.0}).audio,
+                   dtype=np.float64).mean(axis=1), 48000)['band_db']) for _ in range(8)]
+m = np.vstack(rows); print('max spread %.3f dB' % (m.max(0) - m.min(0)).max())
+EOF
+```
+
+0.79 dB overall, **0.30 dB** across 50 Hz-16 kHz, median 0.09. The constant stays at
+0.23 because raising it freezes more controls and that is a decision with
+consequences for every result, not a constant to change in passing — but 0.23 is
+below what this machine measures, so the screen is currently slightly too
+permissive.
+
+`isolate` does **not** fix reproducibility. `au_render_server.swift` calls it "the
+only way found to make a second render in the same process match the first"; on
+1.1.1 two renders differ by -15.4 dB relative to the signal without it and -15.7 dB
+with it, and neither is bit-exact. The comment is wrong and the -17 dB figure is
+approximately right.
+
+### `spatial` is not a guaranteed zero any more
+
+§6.6 of the handoff: it reads 0.000 on every synthetic run because both sides are
+dual-mono, and it carries 8% of the weight. Against the plugin, the seed candidate
+of the ground-truth match scores `spatial: 0.0253`. It discriminates.
+
+### The synthetic baseline does not reproduce across machines
+
+`docs/handoff-to-macos.md` §8 gives a command and says to expect `1.719 -> 0.256`
+in 298 renders with 10 caveats, adding that "the pipeline is deterministic and it
+reproduces bit-for-bit on this machine, so a difference is a finding."
+
+It reproduces `1.717 -> 0.180` in 298 renders with 12 caveats here — and it does
+the same at `ac03d5e`, the commit that shipped those numbers, so nothing in M5
+caused it. The starting distance differs in the third decimal before any search
+runs, which is a numeric-library difference rather than a code one; CMA-ES then
+diverges from there. The pipeline is deterministic *given an environment*, not
+across environments, and a committed synthetic figure is therefore not a
+cross-machine check. This is the fourth time a number in this repository has failed
+to reproduce from its own command.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |
