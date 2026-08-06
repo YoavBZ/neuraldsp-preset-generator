@@ -162,8 +162,16 @@ class Evaluator:
 
     # --- the one expensive call ---------------------------------------------
 
-    def evaluate(self, values: Mapping, di=None) -> Candidate:
-        """Score one parameter vector. Counts against the budget unless cached."""
+    def evaluate(self, values: Mapping, di=None,
+                 offset_db: float = 0.0) -> Candidate:
+        """Score one parameter vector. Counts against the budget unless cached.
+
+        `di` and `offset_db` travel together and both are recorded: a trial is
+        "these parameters through this signal", so the same vector at a different
+        input level is a different trial. Storing the offset is what stops
+        `Store.best` from picking a candidate that only looked good because the DI
+        was quieter.
+        """
         from analysis import io
         from analysis.compare import compare, scalar
         from analysis.fingerprint import fingerprint
@@ -172,7 +180,8 @@ class Evaluator:
         settings = self._settings(values)
         signal = self.probe_di if di is None else di
         metadata = self.renderer.metadata()
-        key = cache_key(metadata, _hash(signal), settings)
+        di_sha = _hash(signal)
+        key = cache_key(metadata, di_sha, settings)
 
         if self.store is not None:
             hit = self.store.cached(key)
@@ -188,7 +197,7 @@ class Evaluator:
         error = None
         rendered = None
         try:
-            rendered = self.renderer.render(signal, settings, di_sha256=_hash(signal))
+            rendered = self.renderer.render(signal, settings, di_sha256=di_sha)
         except (RenderError, ValueError) as e:
             # A backend that cannot render one vector has not invalidated the run.
             # The trial is stored with its error so the failure rate is earned.
@@ -222,6 +231,8 @@ class Evaluator:
             trial = self.store.add_trial(self.run_id, Trial(
                 params=dict(settings),
                 cache_key=key,
+                di_sha=di_sha,
+                di_offset_db=float(offset_db),
                 render_sha=None if rendered is None else _hash(rendered.audio),
                 peak=None if rendered is None else rendered.peak,
                 silent=None if rendered is None else rendered.silent,
@@ -311,13 +322,20 @@ class Evaluator:
 def screen(evaluator: Evaluator, seed: Mapping,
            floor: float = SENSITIVITY_FLOOR,
            quantile: float = SENSITIVITY_QUANTILE,
-           only: Optional[Sequence[str]] = None) -> Tuple[List[str], Dict[str, float]]:
+           only: Optional[Sequence[str]] = None
+           ) -> Tuple[List[str], Dict[str, float], List[Candidate]]:
     """Which parameters move the objective, and by how much.
 
     Two renders per parameter — its low end and its high end, everything else at the
     seed — so the cost is known before it is spent: 2 × the number of candidates,
-    once. Returns the paths worth searching and the ones frozen, each with the
-    movement that decided it, so a report can show the screen rather than assert it.
+    once. Returns the paths worth searching, the ones frozen with the movement that
+    decided each, and **every probe it scored**.
+
+    The probes matter. They are renders that were paid for and compared, and a
+    parameter at an extreme is a legitimate parameter vector: measured on a target
+    differing in volume, treble and bass, one screen probe scored 0.525 while the
+    whole CMA-ES stage found nothing better than 0.694. Discarding them was throwing
+    away a fifth of the budget and, on that run, the best answer in it.
 
     The extremes are the right probe *because* they are extreme. This measures the
     largest effect a control can have on this material; a parameter that cannot
@@ -345,7 +363,9 @@ def screen(evaluator: Evaluator, seed: Mapping,
             "parameter_specs() covers the pack's parameters."
         )
 
+    probes: List[Candidate] = []
     baseline = evaluator.evaluate(seed)
+    probes.append(baseline)
     if not baseline.objectives:
         raise SearchError(
             "the seed vector produced nothing to compare against — a silent render, "
@@ -362,6 +382,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
             probe = dict(seed)
             probe[(dimension.module, dimension.key)] = dimension.quantise(value)
             scored = evaluator.evaluate(probe)
+            probes.append(scored)
             if scored.objectives:
                 scores.append(scored.total)
         # A parameter whose extremes both failed to render is *unknown*, not inert.
@@ -381,7 +402,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
     # Strongest first, which is the order a caller wants to read and the order
     # CMA-ES benefits from when its budget runs out mid-population.
     searched.sort(key=lambda path: above[path], reverse=True)
-    return searched, frozen
+    return searched, frozen, probes
 
 
 # --- stage 2: topology ------------------------------------------------------
@@ -622,7 +643,8 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
                 continue
             scaled = np.asarray(evaluator.probe_di, dtype=np.float64) * (
                 10.0 ** (offset / 20.0))
-            scored = evaluator.evaluate(candidate.values, di=scaled)
+            scored = evaluator.evaluate(candidate.values, di=scaled,
+                                        offset_db=offset)
             candidate.by_level[offset] = (scored.total if scored.objectives
                                           else float("inf"))
 
@@ -680,7 +702,7 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                           store=store, run_id=run_id, recipe=seed)
     result = SearchResult(run_id=run_id)
 
-    searched, frozen = screen(evaluator, seed)
+    searched, frozen, probes = screen(evaluator, seed)
     result.frozen = frozen
     result.searched = list(searched)
     if frozen:
@@ -694,10 +716,12 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                 f"different material they might matter."
             )
         if unknown:
+            plural = "s" if len(unknown) > 1 else ""
             result.caveats.append(
-                f"{len(unknown)} parameters could not be screened at all — the "
-                f"render failed at one or both extremes — so they were left at the "
-                f"seed without being measured: {', '.join(sorted(unknown)[:4])}"
+                f"{len(unknown)} parameter{plural} could not be screened at all — "
+                f"the render failed or came back silent at one or both extremes — so "
+                f"{'they were' if plural else 'it was'} left at the seed without "
+                f"being measured: {', '.join(sorted(unknown)[:4])}"
             )
 
     variants = topologies(space, seed, switches=switches, selectors=selectors)
@@ -710,7 +734,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             f"ran. The seed and the inversion stand. Raise --budget above "
             f"{spent + 2 * shortlist + 20} for a search worth the name."
         )
-        candidates = [evaluator.evaluate(variant) for variant in variants]
+        candidates = list(probes) + [evaluator.evaluate(variant)
+                                     for variant in variants]
     else:
         per_variant = max(1, remaining // len(variants))
         if len(variants) > 1:
@@ -719,7 +744,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                 f"{per_variant} renders. Enumerating fewer switches gives each "
                 f"remaining one a deeper search."
             )
-        candidates = []
+        # The screen's own probes are candidates: each one is a real parameter
+        # vector that was rendered and scored, and one of them may be the answer.
+        candidates = list(probes)
         for variant in variants:
             # The variant itself first: it is what the prior is measured from, and
             # a topology whose seed already beats every sample is worth keeping.

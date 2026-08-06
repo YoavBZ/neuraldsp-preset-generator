@@ -61,6 +61,14 @@ CREATE TABLE IF NOT EXISTS trials (
     run_id          TEXT NOT NULL REFERENCES runs(run_id),
     params_json     TEXT NOT NULL,
     cache_key       TEXT,
+    -- Which DI this was rendered through, and at what level offset in dB. Not in
+    -- §6.4, and the omission there is an oversight rather than a decision: a trial
+    -- is "these parameters through this signal", and §6.3's own cache key includes
+    -- `di_sha256` for exactly that reason. Without it `best()` compared a candidate
+    -- scored at the reference level against the robustness re-rank's own renders of
+    -- the same parameters 6 dB quieter, and picked the quiet one.
+    di_sha          TEXT,
+    di_offset_db    REAL DEFAULT 0.0,
     render_sha      TEXT,
     peak            REAL,
     silent          INTEGER,
@@ -100,6 +108,8 @@ class Trial:
 
     params: Dict[str, Any]
     cache_key: Optional[str] = None
+    di_sha: Optional[str] = None
+    di_offset_db: float = 0.0
     render_sha: Optional[str] = None
     peak: Optional[float] = None
     silent: Optional[bool] = None
@@ -217,10 +227,11 @@ class Store:
                 f"trial has a header to belong to"
             )
         cursor = self._db.execute(
-            "INSERT INTO trials (run_id, params_json, cache_key, render_sha, peak,"
-            " silent, wall_ms, objectives_json, fingerprint_json, error)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (run_id, _dump(trial.params), trial.cache_key, trial.render_sha,
+            "INSERT INTO trials (run_id, params_json, cache_key, di_sha,"
+            " di_offset_db, render_sha, peak, silent, wall_ms, objectives_json,"
+            " fingerprint_json, error) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (run_id, _dump(trial.params), trial.cache_key, trial.di_sha,
+             float(trial.di_offset_db), trial.render_sha,
              trial.peak, None if trial.silent is None else int(trial.silent),
              trial.wall_ms, _dump(trial.objectives), _dump(trial.fingerprint),
              trial.error),
@@ -296,17 +307,27 @@ class Store:
             "SELECT v.* FROM verdicts v JOIN trials t USING (trial_id)"
             " WHERE t.run_id = ? ORDER BY v.created_at", (run_id,))]
 
-    def best(self, run_id: str, key: str = "total") -> Optional[Trial]:
+    def best(self, run_id: str, key: str = "total",
+             offset_db: Optional[float] = 0.0) -> Optional[Trial]:
         """The lowest-scoring successful trial by one objective dimension.
 
         `key` is a dimension name, or `"total"` for the weighted scalar the search
-        was minimising. Failed and silent trials are excluded, so this never
-        returns "the best match" for something that produced no audio.
+        was minimising. Failed and silent trials are excluded, so this never returns
+        "the best match" for something that produced no audio.
+
+        `offset_db` restricts to trials rendered at one input level, and defaults to
+        the reference level rather than to all of them. The robustness re-rank stores
+        its own renders of the same parameters 6 dB up and down, and those score
+        differently for a reason that is nothing to do with the parameters — a
+        quieter DI drives the amp less hard, so it can look like a better match. This
+        picked one of those. Pass `offset_db=None` to compare across every level.
         """
         best: Optional[Trial] = None
         lowest = float("inf")
         for trial in self.trials(run_id):
             if trial.failed:
+                continue
+            if offset_db is not None and abs(trial.di_offset_db - offset_db) > 1e-9:
                 continue
             value = (trial.objectives or {}).get(key)
             if value is None:
@@ -394,6 +415,8 @@ def _to_trial(row: sqlite3.Row) -> Trial:
     return Trial(
         params=_load(row["params_json"]) or {},
         cache_key=row["cache_key"],
+        di_sha=row["di_sha"],
+        di_offset_db=float(row["di_offset_db"] or 0.0),
         render_sha=row["render_sha"],
         peak=row["peak"],
         silent=None if row["silent"] is None else bool(row["silent"]),
