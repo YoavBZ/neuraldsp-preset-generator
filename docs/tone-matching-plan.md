@@ -1,7 +1,8 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 through M4 are done; M5 is next, and it needs macOS with both plugins
-licensed.** The two spikes ran on 2026-08-05
+Status: **M0 through M4 are done and M4's exit criterion is met — 50 targets, 300
+renders each, the full pipeline beating inversion-alone on 49 of 49. M5 is next, and it
+needs macOS with both plugins licensed.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
@@ -1385,36 +1386,58 @@ endpoint of a declared range is legal by definition.
 throws the vector away, and recovers it three ways. The arms are **nested** —
 `inversion` is `recipe` plus the calculated step, `full` is `inversion` plus the
 search — and that is not a detail. The first version searched from the recipe seed
-instead of the inverted one, so the `full` arm measured search-*only*, scored 1.401
-against inversion's 1.021, and reported **DOES NOT SHIP** against a pipeline that
-works. A benchmark whose arms are not nested does not measure what each stage adds,
-and it reports its wrong verdict with complete confidence.
-
-Run it with:
+instead of the inverted one, so the `full` arm measured search-*only* and reported
+**DOES NOT SHIP** against a pipeline that works. Reproduced by patching the nesting
+back out: over six targets it scored 1.211 against inversion's 1.118. A benchmark whose
+arms are not nested does not measure what each stage adds, and it reports its wrong
+verdict with complete confidence.
 
 ```sh
 python3 scripts/benchmark_match.py --targets 50 --budget 300
 ```
 
-**What holds across every run made**: each stage improves the objective —
-recipe → inversion → full, monotonically — and the verdict is SHIPS. That is the exit
-criterion and it is met.
+**50 targets, a 300-render budget, zero failures, 95 minutes. It ships.**
 
-**What does not hold**: an earlier draft here bolded "the parameter MAE gets slightly
-worse at every stage" from a single six-target run. Across three runs at different
-seeds and DI lengths the MAE went 0.245 → 0.259 → 0.253, 0.243 → 0.243 → 0.248, and
-0.258 → 0.280 → 0.285 — only the last is monotone. **The MAE does not reliably improve
-and does not reliably worsen**, which is the claim worth making: the objective closes
-while the parameter error stays flat at about a quarter of each control's range.
+| arm | mean objective | median | best | worst | param MAE | selector | renders |
+|---|---|---|---|---|---|---|---|
+| recipe | 3.039 | 2.533 | 0.661 | 8.716 | 0.247 | 0.643 | 0 |
+| inversion | 1.514 | 1.309 | 0.418 | 6.231 | 0.257 | 0.658 | 49 |
+| full | **0.641** | **0.461** | **0.084** | 6.089 | 0.266 | 0.658 | 14,375 |
 
-That is the actual situation rather than a flaw in the measurement. The plugin's
-controls are not identifiable from its output, so a different volume with a
-compensating EQ curve sounds almost identical, and there is no reason recovering the
-sound should recover the numbers. Reporting only the MAE would condemn a pipeline that
-works; reporting only the objective would let a real failure through. Both are
-reported, and `verdict()` states in its own output that the MAE is deliberately **not**
-part of the gate — nobody should have to guess whether that was a decision or an
-omission.
+The mean is what the gate uses, and the per-target figures are stronger than it:
+**the full pipeline beats inversion-alone on 49 of 49 targets individually**, and is
+worse than the recipe seed on **none** of them. That last one is guaranteed rather than
+lucky — the starting point is a candidate, so the answer cannot be worse than what was
+handed in, which is a property this did not have until a review found it announcing
+"−488% closer" on a template it had made worse.
+
+293 renders per target against a budget of 300, and one target discarded: a legal
+parameter vector put the noise gate above the signal and rendered silence, which is
+skipped rather than counted as any arm's failure, because it is the sampler's doing.
+
+Every outcome of that run is committed at `docs/m4-benchmark-50.json` — 147 rows, three
+arms by 49 targets — so the table above can be checked without spending the 95 minutes
+again. The command reproduces it; the file is what it produced.
+
+**The parameter MAE gets monotonically worse** — 0.247 → 0.257 → 0.266 in the mean and
+0.243 → 0.257 → 0.269 in the median. Over 50 targets that direction is consistent;
+over six it is not (three small runs gave 0.245 → 0.259 → 0.253, 0.243 → 0.243 → 0.248
+and 0.258 → 0.280 → 0.285), so **the claim worth making is the one at n=50 and the
+small runs should not be read as confirming it.**
+
+Either way the divergence is the actual situation rather than a flaw in the
+measurement. The plugin's controls are not identifiable from its output: a different
+volume with a compensating EQ curve sounds almost identical, so a search that closes
+the objective by four times has no reason to close the parameter error at all. It is
+the pipeline *earning* the objective by moving controls away from where the truth
+vector had them. Reporting only the MAE would condemn something that works; reporting
+only the objective would let a real failure through. Both are reported, and `verdict()`
+states in its own output that the MAE is deliberately **not** part of the gate —
+nobody should have to guess whether that was a decision or an omission.
+
+What the gate does *not* claim: that 0.641 is good. There is no calibration that says
+so, and the worst target still scores 6.089. What it claims is that each stage earns
+its renders, which is the question §M4 asks.
 
 ### Departures from §M4 worth naming
 
