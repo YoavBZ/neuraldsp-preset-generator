@@ -682,10 +682,16 @@ In priority order, each independently justifiable:
 [project.optional-dependencies]
 dev        = ["pytest>=7.0", "pyyaml>=6.0"]
 analysis   = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
-match      = ["neuraldsp-preset-generator[analysis]", "cma>=3.3"]
+match      = ["neuraldsp-preset-generator[analysis]"]
 host       = ["pedalboard>=0.9"]
-separate   = ["demucs>=4.0"]
 ```
+
+Two entries this section planned for and `pyproject.toml` does not have. **`cma>=3.3`
+is not there**, because D4 above held: `match/search.py` writes the textbook
+(μ/μ_w, λ) CMA-ES out with Hansen's constants in about seventy lines of numpy. And
+**`separate` is not there** either — nothing imports `demucs` yet, so declaring the
+extra would advertise a capability that does not exist. Both get added when something
+needs them, which is the same rule the rest of this section states.
 
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess

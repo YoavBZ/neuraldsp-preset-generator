@@ -45,7 +45,16 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import (die, guarded, on_interrupt, positive_float, positive_int,
                   probe_di as _probe)
 
-REGIMES = ("paired_di", "reamp", "isolated", "mix", "probe")
+# The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
+# `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
+# `fingerprint()` refuses an unknown regime by name, so `--reference-mode reamp` passed
+# argparse and then died with "unknown regime 'reamp'", and `separated_stem`, which the
+# fingerprint scores at 0.55 confidence, could not be selected at all. Two dead choices
+# and one missing one, in the flag that decides how much the whole run is worth.
+# `tests/test_match_cli.py` asserts this list against the fingerprint's so it cannot
+# drift again; it is not imported from there because `build_parser()` runs before the
+# missing-extra check and must not need numpy to print `--help`.
+REGIMES = ("paired_di", "isolated_stem", "separated_stem", "mix", "probe")
 RENDERERS = ("synthetic", "swift", "pedalboard")
 
 # Below this there is not enough signal for a playing-invariant statistic to mean
@@ -72,13 +81,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the audio to match")
     ap.add_argument("--reference-mode", default="mix", choices=REGIMES,
                     help="how the guitar reaches the reference file (default: mix). "
-                         "This is not a formality — it is recorded in the fingerprint "
-                         "so nothing downstream reads a mastered spectrum as an amp's. "
-                         "paired_di: the reference and its own DI; reamp: your DI "
-                         "through the real rig; isolated: a solo guitar track, no "
-                         "band; mix: a finished mix, so the spectrum includes the "
-                         "band and the master chain; probe: a render of a known "
-                         "chain, which is what the benchmarks use")
+                         "This is not a formality — it sets how much the match is "
+                         "worth, and is recorded in the fingerprint so nothing "
+                         "downstream reads a mastered spectrum as an amp's. "
+                         "paired_di: the reference and its own DI (worth 1.0); "
+                         "isolated_stem: a solo guitar track from the session, no "
+                         "band (0.85); separated_stem: a guitar track pulled out of a "
+                         "mix by source separation, so it carries the separator's "
+                         "artefacts too (0.55); mix: a finished mix, so the spectrum "
+                         "includes the band and whatever the master chain did (0.35); "
+                         "probe: a render of a known chain, which is what the "
+                         "benchmarks use (1.0)")
     ap.add_argument("--probe-di", type=pathlib.Path,
                     help="the DI every candidate is rendered through. Without one a "
                          "synthetic pluck sequence is used, and the report says so")
@@ -173,6 +186,14 @@ def main() -> None:
     ))
 
     caveats = [probe_note] if probe_note else []
+    # What the *measurement of the reference* could not establish. `Fingerprint.caveats()`
+    # docstring is "everything a report has to say out loud about this measurement", and
+    # `fingerprint.py` and `compare_audio.py` both call it — this script, the one that
+    # spends an hour of renders on the answer, reimplemented one of its five clauses by
+    # hand and dropped the other four. So a reference with no sustained note (distortion
+    # character unmeasured), an uncertain reverb decay, or an undetected delay said so
+    # under `compare_audio.py` and said nothing here.
+    caveats.extend(target.caveats())
     if args.reference_mode == "mix":
         caveats.append(
             "the reference is a mix, so the spectrum includes the rest of the band "

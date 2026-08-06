@@ -94,6 +94,38 @@ def test_the_run_reports_its_caveats_and_its_cost(audio, tmp_path):
     assert "parameters searched" in done.stdout
 
 
+def test_what_the_reference_could_not_be_measured_for_is_said(audio, tmp_path):
+    """`Fingerprint.caveats()` is documented as "everything a report has to say out loud
+    about this measurement", and `fingerprint.py` and `compare_audio.py` both call it.
+    This script reimplemented one of its five clauses — the `mix` one — and dropped the
+    rest, so a reference with no sustained note to measure distortion from said so under
+    `compare_audio.py` and said nothing here, after an hour of renders."""
+    out = tmp_path / "run"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "separated_stem",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--budget", "60", "--out-dir", out)
+    assert done.returncode == 0, done.stderr
+
+    from analysis import io
+    from analysis.fingerprint import fingerprint
+
+    target = fingerprint(io.load(str(audio / "ref.wav")), regime="separated_stem",
+                         excerpt_s=None)
+    expected = target.caveats()
+    assert expected, "the fixture has to produce some, or this asserts nothing"
+    for text in expected:
+        assert text in done.stdout, f"dropped: {text}"
+
+    # And no caveat is printed twice: the reference-side list and the inversion's own
+    # overlap in subject (both talk about delay and modulation) and must not in wording.
+    printed = [line.strip()[2:] for line in done.stdout.splitlines()
+               if line.startswith("  - ")]
+    assert len(printed) == len(set(printed)), (
+        f"duplicated: {[c for c in printed if printed.count(c) > 1]}"
+    )
+
+
 def test_a_report_is_self_contained(audio, tmp_path):
     """It has to open a year later next to the store, with no network."""
     out = tmp_path / "run"
@@ -146,10 +178,50 @@ def test_the_store_holds_what_the_run_reported(audio, tmp_path):
 # --- the mistakes a person makes --------------------------------------------
 
 
+def test_every_reference_mode_offered_is_one_the_fingerprint_accepts():
+    """`--reference-mode` had five choices and two of them did not exist. `fingerprint()`
+    refuses an unknown regime by name, so `--reference-mode reamp` passed argparse and
+    died with "unknown regime 'reamp'"; `--reference-mode isolated` did the same; and
+    `separated_stem`, which the fingerprint scores at 0.55, could not be chosen at all.
+
+    Two dead choices and one missing one, in the flag that decides how much the whole run
+    is worth — and the help text glossed all five as though they worked. The list is a
+    literal in `match_preset.py` because `build_parser()` runs before the missing-extra
+    check and must not need numpy to print `--help`, so this is what stops it drifting.
+    """
+    import importlib.util
+
+    from analysis.fingerprint import REGIMES as REAL
+
+    spec = importlib.util.spec_from_file_location(
+        "_match_preset_for_test", ROOT / "scripts" / "match_preset.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert set(module.REGIMES) == set(REAL), (
+        f"offered but not accepted: {sorted(set(module.REGIMES) - set(REAL))}; "
+        f"accepted but not offered: {sorted(set(REAL) - set(module.REGIMES))}"
+    )
+
+
+@pytest.mark.parametrize("mode", ["paired_di", "isolated_stem", "separated_stem",
+                                  "mix", "probe"])
+def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
+    """Not just present in the list: a regime that argparse accepts and the fingerprint
+    then refuses is a flag that fails after the user has committed to a run."""
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", mode,
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--budget", "60", "--out-dir", tmp_path / mode)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "unknown regime" not in done.stderr
+
+
 @pytest.mark.parametrize("extra,expected", [
     (["--budget", "0"], "must be at least 1"),
     (["--loss-profile", "nope"], "unknown loss profile"),
     (["--renderer", "swift"], "not built yet"),
+    (["--reference-mode", "reamp"], "invalid choice"),
 ])
 def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):
     done = run("match_preset.py", "--template", TEMPLATE,
