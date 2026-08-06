@@ -52,6 +52,11 @@ figcaption { color: #6b7280; font-size: 0.88rem; margin-top: 0.3rem; }
 svg { max-width: 100%; height: auto; background: #ffffff08; border-radius: 4px; }
 code { font-size: 0.9em; }
 .pos { fill: #2563eb; } .neg { fill: #dc2626; }
+/* A dimension the winner made worse than the starting point. Underline as well as
+   colour, so it survives being printed and being read by somebody colour-blind. */
+td.worse { color: #b91c1c; text-decoration: underline dotted; }
+@media (prefers-color-scheme: dark) { td.worse { color: #f87171; } }
+.unheard { color: #6b7280; font-size: 0.88em; }
 """
 
 
@@ -73,6 +78,9 @@ def render_report(
     frozen: Optional[Mapping[str, float]] = None,
     searched: Sequence[str] = (),
     movement: Optional[Mapping[str, float]] = None,
+    floor: float = 0.01,
+    silences: Optional[Mapping[str, float]] = None,
+    unheard: Sequence[str] = (),
     profile: str = "unpaired-v1",
     reference: str = "the reference",
 ) -> str:
@@ -82,6 +90,13 @@ def render_report(
     already re-ranked. `fingerprints` maps a candidate's index to its `Fingerprint`
     so the spectrum overlay can be drawn; a candidate without one still appears in
     every table, because leaving it out would misreport the shortlist's length.
+
+    `unheard` are paths written into the output spec that this backend cannot be driven
+    with, so no score here reflects them. There is a caveat for it, and the caveat was
+    contradicted by the shortlist table two sections below: on the bundled PR12
+    template the caveat said twelve calculated values "have not been heard, only
+    calculated" while the table listed three of those EQ bands under "changed from the
+    starting point", unmarked, as though they were part of the match.
     """
     best = shortlist[0] if shortlist else None
     parts: List[str] = [
@@ -97,13 +112,13 @@ def render_report(
 
     parts.append(_headline(best, seed_objectives))
     parts.append(_caveats(caveats))
-    parts.append(_shortlist(shortlist, seed))
-    parts.append(_objectives_table(shortlist, seed_objectives))
+    parts.append(_shortlist(shortlist, seed, unheard))
+    parts.append(_objectives_table(shortlist, seed_objectives, profile))
     parts.append(_spectrum(target, fingerprints or {}, shortlist))
     parts.append(_band_bars(target, fingerprints or {}))
     parts.append(_envelopes(target, fingerprints or {}))
     parts.append(_convergence(convergence))
-    parts.append(_screen(searched, frozen or {}, movement))
+    parts.append(_screen(searched, frozen or {}, movement, floor, silences))
     parts.append(_accounting(summary))
     parts.append("</body></html>")
     return "\n".join(part for part in parts if part)
@@ -142,13 +157,22 @@ def _headline(best, seed_objectives: Optional[Mapping[str, float]]) -> str:
     if before is not None and before > 0:
         change = (f" <span class='muted'>from {before:.3f}, "
                   f"{100.0 * (1.0 - best.total / before):.0f}% closer</span>")
+    # Both numbers at the same size. The big one was the reference-level score while
+    # the shortlist was *ordered* by the worst-case score, which sat below it in small
+    # grey text — so two of the three numbers a reader has to reconcile were not the one
+    # set in 2rem, and the one that was is not the one the ranking used.
+    headline = f"{best.total:.3f}"
     worst = ""
     if best.worst_level is not None and best.by_level:
+        if best.worst_level > best.total + 5e-4:
+            headline = (f"{best.total:.3f} <span class='muted'>at the reference "
+                        f"level</span> · {best.worst_level:.3f} "
+                        f"<span class='muted'>at worst</span>")
         worst = (f"<p class='muted'>Across ±6 dB of input level the same settings "
                  f"score between {min(best.by_level.values()):.3f} and "
                  f"{best.worst_level:.3f}. The shortlist below is ordered by the "
-                 f"worse end of that, not by the number above.</p>")
-    return (f"<h2>Result</h2><p class='headline'>{best.total:.3f}</p>"
+                 f"worse end of that.</p>")
+    return (f"<h2>Result</h2><p class='headline'>{headline}</p>"
             f"<p>Weighted distance to the reference, lower is closer.{change}</p>"
             f"{worst}")
 
@@ -165,10 +189,18 @@ def _caveats(caveats: Sequence[str]) -> str:
             f"measurement.</p>")
 
 
-def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping]) -> str:
-    """Each candidate and what it changed, so the diff is the deliverable."""
+def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping],
+               unheard: Sequence[str] = ()) -> str:
+    """Each candidate and what it changed, so the diff is the deliverable.
+
+    A change this backend could not be driven with is marked as such. It is still a
+    change — it is written into the spec, so it will reach the plugin — but no number in
+    this document was measured with it applied, and listing it unmarked next to the
+    changes that were heard says the opposite of the caveat above.
+    """
     if not shortlist:
         return ""
+    silent_paths = {path.lstrip("/") for path in unheard}
     rows = []
     for index, candidate in enumerate(shortlist, start=1):
         moved = _diff(seed, candidate.values)
@@ -179,6 +211,9 @@ def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping]) -> str:
                    "<br>".join(f"<code>{html.escape(path)}</code> "
                                f"{html.escape(_show(was))} → "
                                f"{html.escape(_show(now))}"
+                               + (" <span class='unheard'>(calculated, not "
+                                  "heard)</span>"
+                                  if path.lstrip("/") in silent_paths else "")
                                for path, was, now in moved[:12]))
         more = (f"<br><span class='muted'>and {len(moved) - 12} more</span>"
                 if len(moved) > 12 else "")
@@ -186,67 +221,135 @@ def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping]) -> str:
             f"<tr><td class='n'>{index}</td><td class='n'>{candidate.total:.3f}</td>"
             f"<td class='n'>{worst}</td><td>{listing}{more}</td></tr>"
         )
+    note = ""
+    if silent_paths:
+        note = ("<p class='muted'>Rows marked <span class='unheard'>(calculated, not "
+                "heard)</span> were worked out from the reference and written into the "
+                "spec, but this backend cannot be driven with them — so no score on "
+                "this page was measured with them applied.</p>")
     return (
         "<h2>Shortlist</h2>"
         "<p>Ordered by the worst score across ±6 dB of input level, which is not "
         "always the same order as the score at the reference level.</p>"
         "<table><tr><th class='n'>#</th><th class='n'>score</th>"
         "<th class='n'>worst ±6 dB</th><th>changed from the starting point</th></tr>"
-        + "".join(rows) + "</table>"
+        + "".join(rows) + "</table>" + note
     )
 
 
 def _objectives_table(shortlist: Sequence[Any],
-                      seed_objectives: Optional[Mapping[str, float]]) -> str:
+                      seed_objectives: Optional[Mapping[str, float]],
+                      profile: str = "unpaired-v1") -> str:
     """Every dimension for every candidate, never collapsed.
 
     §2's D6 and §6.2 both insist on this: the scalar is one weighting, and a
     candidate that wins on it while losing badly on `ambience` is a different
     proposition from one that wins evenly. A dimension neither side could measure
     shows as `—` rather than as zero.
+
+    The weights are a row of the table. Without them the table put `dynamics 3.440`
+    next to `timbre 0.755` with no hint that dynamics counts 0.4 and timbre 1.0, so the
+    headline above — a weighted sum — could not be checked against the only breakdown
+    the report offers. It also turned the note about a guaranteed-zero dimension into a
+    hedge ("a little kinder") where the arithmetic was available: `spatial` is 0.2 of a
+    2.4 total, which is 8%, and a reader with the weights can see that for themselves.
     """
     if not shortlist:
         return ""
-    from analysis.compare import DIMENSIONS
+    from analysis.compare import DIMENSIONS, load_profile
 
     present = [name for name in DIMENSIONS
                if any(name in c.objectives for c in shortlist)
                or name in (seed_objectives or {})]
     if not present:
         return ""
+    weights = load_profile(profile).get("weights", {})
     header = "".join(f"<th class='n'>{html.escape(_dimension_label(name))}</th>"
                      for name in present)
-    rows = []
+    rows = [
+        "<tr class='muted'><td>weight</td>"
+        + "".join(f"<td class='n'>{_num(weights.get(n))}</td>" for n in present)
+        + "</tr>"
+    ]
     if seed_objectives:
-        cells = "".join(f"<td class='n'>{_num(seed_objectives.get(n))}</td>"
-                        for n in present)
+        # `prior_deviation` and `complexity` are distances from whatever the scoring
+        # evaluator was told the recipe was — and for this row that is the template
+        # itself, so they are trivially 0.000, while the candidates' are measured from
+        # the *inverted* seed. Two different origins in one column. Blanked rather than
+        # printed, because 0.000 against 0.077 reads as "the starting point moved
+        # fewer controls", which is not a comparison anybody made.
+        incomparable = {"prior_deviation", "complexity"}
+        cells = "".join(
+            "<td class='n'>—</td>" if n in incomparable
+            else f"<td class='n'>{_num(seed_objectives.get(n))}</td>"
+            for n in present)
         rows.append(f"<tr><td>starting point</td>{cells}</tr>")
     for index, candidate in enumerate(shortlist, start=1):
-        cells = "".join(f"<td class='n'>{_num(candidate.objectives.get(n))}</td>"
+        cells = "".join(_objective_cell(candidate.objectives.get(n),
+                                        (seed_objectives or {}).get(n), n)
                         for n in present)
         rows.append(f"<tr><td>#{index}</td>{cells}</tr>")
+
     note = ""
+    worse = _regressions(shortlist[0], seed_objectives, present)
+    if worse:
+        # The headline is a weighted sum, so it can improve while the two dimensions a
+        # player notices first get worse. Measured on a real run: "25% closer", with
+        # timbre 0.755 → 0.906 and level 0.763 → 1.830, because dynamics and ambience
+        # improved more. Nothing marked those cells and nothing said this in words.
+        named = ", ".join(f"<strong>{html.escape(_dimension_label(n))}</strong>"
+                          for n in worse)
+        note += (f"<p class='muted'>Marked cells are further from the reference than "
+                 f"the starting point was: {named}. The total still improved because "
+                 f"the other dimensions improved by more — which is what a weighted "
+                 f"sum does, and worth hearing for yourself before trusting it.</p>")
     flattering = _always_zero(shortlist, present)
     if flattering:
         # A dimension that is exactly zero on every candidate is not being matched
         # well, it is not distinguishing anything — and because `scalar` renormalises
         # over the dimensions it *can* measure, it still counts, pulling the headline
         # down. On the synthetic renderer `spatial` does this on every run: both sides
-        # are dual-mono, so its 0.2 weight — about 8% of the live total — contributes
-        # a guaranteed zero to every score.
+        # are dual-mono, so its weight contributes a guaranteed zero to every score.
         named = ", ".join(_dimension_label(name) for name in flattering)
-        note = (f"<p class='muted'><strong>{named}</strong> reads 0.000 for every "
-                f"candidate. That is a real measurement rather than a gap, but it "
-                f"means the dimension separates nothing here — most likely neither "
-                f"recording carries the information — and it still counts towards "
-                f"the score above, which is therefore a little kinder than the "
-                f"dimensions that did discriminate.</p>")
+        live = sum(float(weights.get(n, 0.0)) for n in present) or 1.0
+        share = 100.0 * sum(float(weights.get(n, 0.0)) for n in flattering) / live
+        note += (f"<p class='muted'><strong>{named}</strong> reads 0.000 for every "
+                 f"candidate, which is a real measurement rather than a gap — but it "
+                 f"means the dimension separates nothing here, most often because "
+                 f"neither recording carries the information. It still counts, and by "
+                 f"the weights above it is {share:.0f}% of the total, so the headline "
+                 f"is {share:.0f}% a guaranteed zero.</p>")
     return (f"<h2>Objectives, per dimension</h2>"
             f"<table><tr><th></th>{header}</tr>{''.join(rows)}</table>"
             f"<p class='muted'>A dash is a dimension neither recording supported "
             f"measuring, not a zero. The last two columns measure distance from the "
             f"starting point rather than from the reference, so lower there is more "
             f"conservative rather than more accurate.</p>{note}")
+
+
+def _objective_cell(value: Optional[float], before: Optional[float],
+                    name: str) -> str:
+    """One cell, marked when it is further from the reference than the start was."""
+    if (name not in ("prior_deviation", "complexity") and value is not None
+            and before is not None and value > before + 5e-4):
+        return (f"<td class='n worse' title='was {before:.3f}'>"
+                f"{_num(value)}</td>")
+    return f"<td class='n'>{_num(value)}</td>"
+
+
+def _regressions(best, seed_objectives: Optional[Mapping[str, float]],
+                 present: Sequence[str]) -> List[str]:
+    """Dimensions where the recommended candidate is worse than the starting point."""
+    if not seed_objectives:
+        return []
+    worse = []
+    for name in present:
+        if name in ("prior_deviation", "complexity"):
+            continue
+        now, was = best.objectives.get(name), seed_objectives.get(name)
+        if now is not None and was is not None and now > was + 5e-4:
+            worse.append(name)
+    return worse
 
 
 # What each objective dimension is called where a person reads it. The raw keys are
@@ -393,7 +496,9 @@ def _convergence(convergence: Sequence[Mapping[str, float]]) -> str:
 
 
 def _screen(searched: Sequence[str], frozen: Mapping[str, float],
-            movement: Optional[Mapping[str, float]] = None) -> str:
+            movement: Optional[Mapping[str, float]] = None,
+            floor: float = 0.01,
+            silences: Optional[Mapping[str, float]] = None) -> str:
     """What the sensitivity screen decided, and on what evidence.
 
     The movement is shown for the *searched* parameters as well as the frozen ones. It
@@ -401,24 +506,43 @@ def _screen(searched: Sequence[str], frozen: Mapping[str, float],
     a reader would use to check the freeze decision was a dash on every row that had
     been kept — and the same dash meant "measured, not kept" here and "could not be
     measured" in the objectives table.
+
+    `floor` is the floor the screen *actually used*, which is the constant raised to the
+    backend's own band noise; and `silences` names the parameters one end of whose range
+    mutes the render. Both arrived late, and their absence produced the same document
+    contradicting itself: the caveat block said "one end of parameters/gateThreshold
+    silences the signal entirely" while this table, four sections down, said
+    `frozen — too small to matter`. `search()` grew a separate branch for the muting
+    case and the report kept the two-way `if moved < 0.01`.
     """
     if not searched and not frozen:
         return ""
     movement = dict(movement or {})
+    silences = dict(silences or {})
     rows = []
     for path in searched:
         shown = _num(movement.get(path), 4) if path in movement else "—"
         rows.append(f"<tr><td><code>{html.escape(path)}</code></td>"
                     f"<td>searched</td><td class='n'>{shown}</td></tr>")
     for path, moved in sorted(frozen.items(), key=lambda kv: -_safe(kv[1])):
-        if not math.isfinite(_safe(moved)):
+        if path in silences:
+            # The number is real — it is the end that did render — but the *reason* is
+            # not its size, and this is the control a guitarist most needs to know was
+            # left alone.
+            shown = "—" if not math.isfinite(_safe(moved)) else f"{moved:.4f}"
+            why = f"one end silences the signal (at {silences[path]:g})"
+        elif not math.isfinite(_safe(moved)):
             shown, why = "not measured", "could not be rendered"
         else:
             shown = f"{moved:.4f}"
-            why = "too small to matter" if moved < 0.01 else "weakest of those that did"
+            why = ("too small to matter" if moved < floor
+                   else "weakest of those that did")
         rows.append(f"<tr><td><code>{html.escape(path)}</code></td>"
                     f"<td>frozen — {html.escape(why)}</td>"
                     f"<td class='n'>{shown}</td></tr>")
+    threshold = (f" The threshold here was {floor:g}, raised from the default to this "
+                 f"backend's own render-to-render variation." if floor > 0.01 else
+                 f" The threshold here was {floor:g}.")
     return ("<h2>Sensitivity screen</h2>"
             "<p>Each parameter was rendered at both ends of its range with "
             "everything else at the starting point, and the number is how far that "
@@ -426,7 +550,7 @@ def _screen(searched: Sequence[str], frozen: Mapping[str, float],
             "across its whole range cannot matter at any setting in between, "
             "<em>on this material</em> — but a parameter frozen as one of the "
             "weakest that <em>did</em> move it would be searched on a larger "
-            "budget.</p>"
+            f"budget.{threshold}</p>"
             "<table><tr><th>parameter</th><th>decision</th>"
             "<th class='n'>distance moved</th></tr>"
             + "".join(rows) + "</table>")
@@ -664,24 +788,27 @@ def summarise(store, run_id: str, result=None) -> Dict[str, Any]:
     return summary
 
 
-def convergence_from(store, run_id: str,
-                     offset_db: Optional[float] = 0.0) -> List[Dict[str, float]]:
+def convergence_from(store, run_id: str) -> List[Dict[str, float]]:
     """Every trial's objectives in order, for the convergence chart.
 
-    Read from the store rather than accumulated in memory, so a report can be
-    regenerated from a finished run without repeating it — which is the whole reason
-    the objectives are a column.
+    Read from the store rather than accumulated in memory, because the objectives are a
+    column and reading them back is what makes the chart checkable against the same rows
+    a person can query by hand.
 
-    Restricted to one input level, and defaulting to the reference one. Without that
-    filter the trace mixed in the robustness re-rank's own renders of the shortlist at
-    ±6 dB, and a quieter DI drives the amp less hard: on one run the chart's
-    best-so-far ended at 0.171 while the headline directly above it read 0.444, and the
-    whole 2.5× gap was the quieter DI. That is the same defect `Store.best` was fixed
-    for, left open in the one reader the pipeline actually calls.
+    Restricted to the reference input level. Without that filter the trace mixed in the
+    robustness re-rank's own renders of the shortlist at ±6 dB, and a quieter DI drives
+    the amp less hard: on one run the chart's best-so-far ended at 0.171 while the
+    headline directly above it read 0.444, and the whole 2.5× gap was the quieter DI.
+    That is the same defect `Store.best` was fixed for, left open in the one reader the
+    pipeline actually calls.
+
+    Not a parameter. It was `offset_db: Optional[float] = 0.0` with a docstring arguing
+    at length for the default, and no caller ever passed anything else — so the argument
+    offered a choice between the right answer and the bug that had just been fixed.
     """
     trace = []
     for trial in store.trials(run_id):
-        if offset_db is not None and abs(trial.di_offset_db - offset_db) > 1e-9:
+        if abs(trial.di_offset_db) > 1e-9:
             continue
         if trial.objectives:
             trace.append({k: float(v) for k, v in trial.objectives.items()})

@@ -124,11 +124,15 @@ class BenchmarkResult:
         reported and *not* part of the gate, and the reasoning is stated in the
         result so nobody has to guess whether it was forgotten.
         """
-        full = self.summarise("full")
+        # Bound once. `summarise` is a full pass over every outcome and this method used
+        # to call it four times for the same three arms, twice for `full` inside a single
+        # conditional expression.
+        summaries = {arm: self.summarise(arm) for arm in ARMS}
+        full = summaries["full"]
         reasons = []
         ships = True
         for baseline in ("recipe", "inversion"):
-            other = self.summarise(baseline)
+            other = summaries[baseline]
             if other.get("targets", 0) == 0:
                 reasons.append(f"the {baseline} baseline was not run, so there is "
                                f"nothing to beat")
@@ -140,13 +144,18 @@ class BenchmarkResult:
                 # whatever the cause: with `full` failing every target it reported
                 # "the recipe baseline produced no comparable objective" about a
                 # baseline that had scored 1.0 on all fifty.
-                blamed = ("neither arm succeeded on any target"
-                          if not self.summarise("full").get("objective")
-                          and not other.get("objective") else
-                          "no target was scored by both arms" if other.get("objective")
-                          else f"the {baseline} baseline scored nothing")
-                if full.get("objective") is None:
+                #
+                # A flat chain. This was a three-way conditional expression whose result
+                # was then overwritten by an `if` on the next line, so its first branch
+                # was reachable only when the full arm's mean objective was exactly 0.0.
+                if full.get("objective") is None and other.get("objective") is None:
+                    blamed = "neither arm succeeded on any target"
+                elif full.get("objective") is None:
                     blamed = "the full pipeline scored nothing on any target"
+                elif other.get("objective") is None:
+                    blamed = f"the {baseline} baseline scored nothing"
+                else:
+                    blamed = "no target was scored by both arms"
                 reasons.append(f"cannot compare against {baseline}: {blamed}")
                 ships = False
                 continue
@@ -225,6 +234,42 @@ def random_vector(space: Space, rng, supported: Optional[Sequence[str]] = None,
             low, high = dimension.bounds()
             values[(dimension.module, dimension.key)] = dimension.quantise(
                 float(low + rng.random() * (high - low)))
+    return values
+
+
+def centre_seed(space: Space) -> Dict[Any, Any]:
+    """Every control at the middle of its range, effects off, EQ and sections on.
+
+    Not the recipe stack, and the difference matters for reading the `recipe` arm's
+    score: this is a *neutral* starting point rather than a good one, so the number to
+    beat is "the middle of every range", which is easier to beat than a preset someone
+    chose. A recipe-stack seed would make the `recipe` baseline stronger and the
+    comparison more honest — `packs/recipes.py` needs a genre or a reference to pick one,
+    which a random target does not have, so the neutral seed is what a caller with no
+    other information actually starts from.
+
+    Here rather than in `scripts/benchmark_match.py`, next to `random_vector`, which is
+    the same loop over the same three dimension kinds. It is a decision about the
+    benchmark's *design* — the plan documents it by name as one — and it was living in
+    the argument parser.
+    """
+    values: Dict[Any, Any] = {}
+    for dimension in space.dimensions:
+        if dimension.key == "selectedAmp":
+            continue
+        if dimension.switch:
+            values[(dimension.module, dimension.key)] = (
+                dimension.key.endswith("EQActive")
+                or dimension.key.endswith("sectionActive"))
+        elif dimension.kind == "enum":
+            members = sorted((dimension.members or {}), key=int)
+            if members:
+                values[(dimension.module, dimension.key)] = int(members[0])
+        else:
+            low, high = dimension.bounds()
+            values[(dimension.module, dimension.key)] = dimension.quantise(
+                (low + high) / 2.0)
+    values[("", "selectedAmp")] = 2
     return values
 
 
@@ -332,9 +377,9 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             started = time.perf_counter()
             outcome = Outcome(arm=arm, target_index=index)
             try:
-                found, renders = _run_arm(arm, renderer, target, probe_di, space,
-                                          seed, budget, profile, invert, search,
-                                          rng, pack_id, amp)
+                found, renders, arm_caveats = _run_arm(
+                    arm, renderer, target, probe_di, space, seed, budget, profile,
+                    invert, search, rng, pack_id, amp)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -347,6 +392,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 continue
             outcome.renders = renders
             outcome.wall_ms = (time.perf_counter() - started) * 1000.0
+            # Deduped: fifty targets produce fifty copies of the same sentence about
+            # the budget, and a caveat block nobody can read is a caveat block nobody
+            # reads. Prefixed with the arm, because "the optimiser never ran" is a fact
+            # about `full` and would otherwise look like a fact about the benchmark.
+            for text in arm_caveats:
+                tagged = f"{arm}: {text}"
+                if tagged not in result.caveats:
+                    result.caveats.append(tagged)
             scored = scorer_score(scorer, target, found)
             if scored is None:
                 outcome.failed = True
@@ -368,7 +421,15 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
 
 
 def scorer_score(scorer, target, values: Mapping) -> Optional[float]:
-    """One vector's weighted distance to a target, through the shared evaluator."""
+    """One vector's weighted distance to a target, through the shared evaluator.
+
+    Reassigning `scorer.target` is the sharp edge here and the reason this is a named
+    function rather than three inline lines: the evaluator is shared across every arm
+    and every target, so a caller that forgets to set the target scores against the
+    previous one. That is the same class of hidden state as the "a quieter DI looked
+    like a better match" bug §12c records, and the reason it has not bitten is that
+    there is exactly one caller.
+    """
     scorer.target = target
     scored = scorer.evaluate(values)
     return scored.total if scored.objectives else None
@@ -392,12 +453,12 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
     renders buy, so the cost has to travel with the answer.
     """
     if arm == "recipe":
-        return dict(seed), 0
+        return dict(seed), 0, []
 
     inverted, spent = _invert_from(renderer, target, probe_di, space, seed, profile,
                                    invert, search, pack_id, amp)
     if arm == "inversion":
-        return inverted, spent
+        return inverted, spent, []
 
     outcome = search.search(renderer, target, probe_di, space, inverted,
                             budget=budget, profile=profile, shortlist=1, rng=rng)
@@ -409,7 +470,12 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
         # So the reported cost is what the failure actually cost.
         failure.renders_spent = outcome.renders + spent
         raise failure
-    return outcome.shortlist[0].values, outcome.renders + spent
+    # The search's caveats travel with the answer. Dropped, `--budget 60` ran zero
+    # optimiser generations across every target and the table still printed
+    # "SHIPS / beats inversion: 0.997 against 1.203" with nothing said — and `--budget`
+    # is the one knob a maintainer turns to make this fast. `BenchmarkResult.caveats`
+    # already existed and `format_table` already prints it.
+    return outcome.shortlist[0].values, outcome.renders + spent, outcome.caveats
 
 
 def _invert_from(renderer, target, probe_di, space, seed, profile, invert, search,
@@ -430,14 +496,7 @@ def _invert_from(renderer, target, probe_di, space, seed, profile, invert, searc
                                           rendered.metadata.sample_rate),
                           regime="probe", excerpt_s=None)
     calculated = invert.invert(target, printed, amp=amp, pack_id=pack_id)
-    merged = dict(seed)
-    known = {d.path: (d.module, d.key) for d in space.dimensions}
-    known["selectedAmp"] = ("", "selectedAmp")
-    for path, value in calculated.as_settings().items():
-        key = known.get(path) or known.get(path.lstrip("/"))
-        if key is not None:
-            merged[key] = value
-    return merged, 1
+    return invert.apply_to(seed, calculated.as_settings(), space), 1
 
 
 # --- helpers ----------------------------------------------------------------

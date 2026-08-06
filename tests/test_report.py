@@ -323,6 +323,134 @@ def test_the_screen_table_shows_the_movement_for_searched_parameters_too():
     assert "too small to matter" in table
 
 
+def test_the_control_that_silences_the_signal_is_not_called_too_small_to_matter():
+    """The caveat block and this table are in the same document, and they said opposite
+    things about the same parameter: "one end of parameters/gateThreshold silences the
+    signal entirely" above, `frozen — too small to matter` four sections below. `search`
+    grew a separate branch for the muting case and the report kept its two-way `if`.
+    """
+    html = R.render_report(
+        run_id="r", target=printed(), shortlist=[candidate(0.4, timbre=0.4)],
+        searched=["sw50rAmp/sw50rVolume"],
+        frozen={"parameters/gateThreshold": 0.0413, "delay/delayMix": 0.0009},
+        movement={"sw50rAmp/sw50rVolume": 1.2},
+        silences={"parameters/gateThreshold": 0.0},
+    )
+    table = html.split("Sensitivity screen")[1].split("</table>")[0]
+    gate = [row for row in table.split("<tr>") if "gateThreshold" in row][0]
+
+    assert "silences the signal" in gate, gate
+    assert "too small to matter" not in gate, (
+        "it moved the score by 0.0413, four times the floor; its size is not the reason"
+    )
+    # The real movement is still shown, because a reader checking the freeze decision
+    # needs the number that was measured rather than a dash.
+    assert "0.0413" in gate
+    # And the genuinely inert one still gets the size reason.
+    inert = [row for row in table.split("<tr>") if "delayMix" in row][0]
+    assert "too small to matter" in inert
+
+
+def test_the_screen_names_the_floor_it_actually_used():
+    """`screen` raises its floor to the backend's own band noise. Classified against the
+    0.01 constant instead, a parameter cut by the *floor* was reported as one of "the
+    weakest 25% that did move it — a larger budget would search them". No budget will."""
+    html = R.render_report(
+        run_id="r", target=printed(), shortlist=[candidate(0.4, timbre=0.4)],
+        searched=[], frozen={"sw50rEQ/sw50rEQBand8": 0.0208},
+        movement={}, floor=0.0767,
+    )
+    section = html.split("Sensitivity screen")[1]
+    assert "0.0767" in section, "the threshold the decision was made against"
+    row = [r for r in section.split("<tr>") if "EQBand8" in r][0]
+    assert "too small to matter" in row, (
+        "0.0208 is under the floor this run used, however far over the constant it is"
+    )
+
+
+def test_a_value_the_backend_never_heard_is_marked_in_the_shortlist():
+    """The caveat said twelve calculated values "have not been heard, only calculated";
+    the shortlist table listed three of them under "changed from the starting point"
+    with nothing to distinguish them from the changes that were rendered and scored."""
+    html = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[Candidate(values={("pr12EQ", "pr12EQBand1"): 3.12,
+                                     ("sw50rAmp", "sw50rVolume"): 70.0},
+                             objectives={"total": 0.4, "timbre": 0.4}, total=0.4)],
+        seed={("pr12EQ", "pr12EQBand1"): 0.0, ("sw50rAmp", "sw50rVolume"): 50.0},
+        unheard=["pr12EQ/pr12EQBand1"],
+    )
+    table = html.split("Shortlist")[1].split("</table>")[0]
+    band = [row for row in table.split("<br>") if "pr12EQBand1" in row][0]
+    volume = [row for row in table.split("<br>") if "sw50rVolume" in row][0]
+
+    assert "calculated, not heard" in band, band
+    assert "calculated, not heard" not in volume, (
+        "the volume was rendered and scored; marking it would be the opposite lie"
+    )
+
+
+def test_a_dimension_the_winner_made_worse_is_marked_and_named():
+    """A weighted sum can improve while the two dimensions a player notices first get
+    worse. Measured on a real run: "25% closer", with timbre 0.755 → 0.906 and level
+    0.763 → 1.830, because dynamics and ambience improved by more. Nothing marked it."""
+    html = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.853, timbre=0.906, dynamics=2.118,
+                             ambience=0.023, level=1.830)],
+        seed_objectives={"total": 1.130, "timbre": 0.755, "dynamics": 3.440,
+                         "ambience": 0.934, "level": 0.763},
+    )
+    table = html.split("Objectives, per dimension")[1].split("</table>")[0]
+
+    assert table.count("worse") == 2, (
+        f"timbre and level got worse and nothing else did:\n{table}"
+    )
+    assert "further from the reference than the starting point was" in html
+    assert "timbre" in html.split("further from the reference")[1][:200]
+    # The dimensions that improved are not marked.
+    for cell in table.split("<td"):
+        if "2.118" in cell or "0.023" in cell:
+            assert "worse" not in cell, cell
+
+
+def test_the_objectives_table_shows_the_weights_the_headline_used():
+    """`dynamics 3.440` sat next to `timbre 0.755` with no hint that dynamics counts 0.4
+    and timbre 1.0, so the weighted sum above could not be checked against the only
+    breakdown offered."""
+    html = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.4, timbre=0.4, dynamics=1.0)],
+        profile="unpaired-v1")
+    table = html.split("Objectives, per dimension")[1].split("</table>")[0]
+
+    from analysis.compare import load_profile
+
+    weights = load_profile("unpaired-v1")["weights"]
+    assert "weight" in table
+    for name in ("timbre", "dynamics"):
+        assert f"{weights[name]:.3f}" in table, f"{name}'s weight is missing"
+
+
+def test_the_prior_columns_are_blank_for_the_starting_point():
+    """They are distances from whatever the scoring evaluator was told the recipe was,
+    and for the starting point that is the template itself — trivially 0.000 — while the
+    candidates' are measured from the inverted seed. Printing both invites a comparison
+    between two different origins."""
+    html = R.render_report(
+        run_id="r", target=printed(),
+        shortlist=[candidate(0.4, timbre=0.4, prior_deviation=0.077,
+                             complexity=0.196)],
+        seed_objectives={"total": 1.1, "timbre": 0.9, "prior_deviation": 0.0,
+                         "complexity": 0.0})
+    table = html.split("Objectives, per dimension")[1].split("</table>")[0]
+    row = [r for r in table.split("<tr>") if "starting point" in r][0]
+
+    assert "0.000" not in row, f"0.000 against 0.077 is not a comparison:\n{row}"
+    assert row.count("—") == 2
+    assert "0.900" in row, "the dimensions that *are* comparable still show"
+
+
 def test_a_dimension_that_is_always_zero_is_flagged_as_flattering():
     """`spatial` reads 0.000 on every run of the synthetic renderer — both sides are
     dual-mono — and because `scalar` renormalises over the dimensions it *can*
@@ -334,7 +462,12 @@ def test_a_dimension_that_is_always_zero_is_flagged_as_flattering():
                    candidate(0.5, timbre=0.5, spatial=0.0)])
 
     assert "reads 0.000 for every candidate" in html
-    assert "a little kinder" in html
+    # And how much it costs, as a number rather than as "a little kinder". The comment
+    # in the source knew the answer exactly and the sentence the user read hedged it —
+    # `spatial` is weighted 0.2 against `timbre`'s 1.0, so of the 1.2 present here it is
+    # 17%, and on a full run where every dimension measures it is 8% of 2.4.
+    assert "17% of the total" in html, html.split("reads 0.000")[1][:400]
+    assert "a little kinder" not in html, "the arithmetic was available all along"
 
     # A dimension that varies is not flagged, and neither is one that means
     # "unchanged" rather than "identical".

@@ -8,6 +8,9 @@ says it spends, and abstains where abstaining is right.
 
 from __future__ import annotations
 
+import math
+from unittest import mock
+
 import pytest
 
 pytest.importorskip("numpy", reason="needs the analysis extra")
@@ -168,7 +171,8 @@ def test_the_screen_costs_two_renders_per_parameter_and_says_which(space, seed,
     """The whole reason it is worth doing: the cost is knowable before it is spent,
     and it turns 126 dimensions into something CMA-ES can work in."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    searched, frozen, probes, movement, _ = S.screen(evaluator, seed)
+    s = S.screen(evaluator, seed)
+    searched, frozen, probes, movement = s.searched, s.frozen, s.probes, s.movement
 
     candidates = len(searched) + len(frozen)
     assert candidates > 10, f"only {candidates} parameters were screened"
@@ -197,7 +201,7 @@ def test_the_screens_probes_are_candidates_not_waste(space, seed, target):
     legitimate parameter vector, and on one measured run a probe scored 0.525 while
     the whole CMA-ES stage found nothing better than 0.694."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    _, _, probes, _, _ = S.screen(evaluator, seed)
+    probes = S.screen(evaluator, seed).probes
 
     scored = [p for p in probes if p.objectives]
     assert len(scored) > 10
@@ -211,7 +215,8 @@ def test_the_screen_does_not_screen_switches_or_selectors(space, seed, target):
     value, so the topology loop owns them — and a gradient over a mic-type index is
     a gradient over the order somebody listed them in."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
-    searched, frozen, _, _, _ = S.screen(evaluator, seed)
+    s = S.screen(evaluator, seed)
+    searched, frozen = s.searched, s.frozen
 
     seen = set(searched) | set(frozen)
     for dimension in space.dimensions:
@@ -234,9 +239,9 @@ def test_a_parameter_that_cannot_be_screened_is_frozen_but_not_called_inert(
     with_gate[("parameters", "gateActive")] = True
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space,
                             recipe=with_gate)
-    searched, frozen, _, _, silences = S.screen(
-        evaluator, with_gate,
-        only=["parameters/gateThreshold", f"{AMP}Amp/{AMP}Volume"])
+    s = S.screen(evaluator, with_gate,
+                 only=["parameters/gateThreshold", f"{AMP}Amp/{AMP}Volume"])
+    searched, frozen, silences = s.searched, s.frozen, s.silences
 
     assert "parameters/gateThreshold" in frozen
     assert "parameters/gateThreshold" in silences, (
@@ -244,6 +249,37 @@ def test_a_parameter_that_cannot_be_screened_is_frozen_but_not_called_inert(
         "control rather than a failure to measure it"
     )
     assert f"{AMP}Amp/{AMP}Volume" in searched, "the control that does work survives"
+
+    # And the movement recorded for it is the end that *did* render, measured against
+    # the baseline. This was hardcoded to `0.0`, so the report printed `0.0000` under
+    # "distance moved" for a control that had moved the score — on Morgan's own
+    # `gateThreshold`, by four times the floor. A fabricated measurement is worse than
+    # an absent one: a reader checking the freeze decision against it concludes the
+    # screen was right.
+    #
+    # Recomputed here rather than compared against a literal, because a literal is the
+    # same mistake one level up — the first version of this assertion asserted the 0.04
+    # from another fixture's run and failed at 0.0021, which is a real measurement of
+    # *this* target.
+    dimension = next(d for d in space.dimensions
+                     if d.path == "parameters/gateThreshold")
+    low, high = dimension.bounds()
+    live = high if silences["parameters/gateThreshold"] == low else low
+    at_live = dict(with_gate)
+    at_live[("parameters", "gateThreshold")] = dimension.quantise(live)
+    expected = abs(evaluator.evaluate(at_live).total
+                   - evaluator.evaluate(with_gate).total)
+
+    moved = s.movement["parameters/gateThreshold"]
+    assert moved == pytest.approx(expected), (
+        f"recorded {moved:.4f} for a control whose live end moved the score by "
+        f"{expected:.4f}"
+    )
+    assert moved > 0.0, "and it is not the zero the code used to invent"
+    # It is frozen anyway, and for the stated reason rather than by the arithmetic
+    # happening to fall out that way: with one extreme unscoreable the screen has no
+    # bound on the control's effect, so it has nothing to hand an optimiser.
+    assert "parameters/gateThreshold" not in searched
 
 
 def test_the_screen_refuses_a_seed_it_cannot_measure_against(space, seed, target):
@@ -341,7 +377,7 @@ def test_the_archive_thins_to_perceptually_distinct_entries():
              for i in range(5)]
     apart = make(0.90, timbre=0.90, ambience=0.90)
 
-    front = S.pareto(crowd, ["timbre", "ambience"], limit=5, distinct=0.02)
+    front = S.pareto(crowd, ["timbre", "ambience"], limit=5)
     for one in crowd:
         for other in crowd:
             if one is not other:
@@ -350,13 +386,15 @@ def test_the_archive_thins_to_perceptually_distinct_entries():
                 )
     assert len(front) == 1, f"five near-identical candidates are one: {front}"
 
-    # And with the thinning's threshold below their separation, all five are kept —
-    # so the parameter is doing the work rather than the domination check.
-    assert len(S.pareto(crowd, ["timbre", "ambience"], limit=5, distinct=0.0)) == 5
+    # And with the threshold below their separation, all five are kept — so the
+    # thinning is doing the work rather than the domination check. Patched rather than
+    # passed: `distinct` was an argument nothing but this line ever set, which made it
+    # look tunable by callers who had no reason to tune it.
+    with mock.patch.object(S, "DISTINCT_OBJECTIVE", 0.0):
+        assert len(S.pareto(crowd, ["timbre", "ambience"], limit=5)) == 5
 
     # A genuinely different candidate survives the thinning.
-    with_apart = S.pareto(crowd + [apart], ["timbre", "ambience"], limit=5,
-                          distinct=0.02)
+    with_apart = S.pareto(crowd + [apart], ["timbre", "ambience"], limit=5)
     assert len(with_apart) == 1, "apart is dominated, so it is not on the front"
     totals = [c.total for c in with_apart]
     assert totals == sorted(totals), "kept in score order"
@@ -381,7 +419,7 @@ def test_separation_is_the_largest_gap_not_the_smallest():
     other = make(0.5, timbre=0.90, ambience=0.895)
 
     assert S._separation(one, other, ["timbre", "ambience"]) == pytest.approx(0.8)
-    kept = S.pareto([one, other], ["timbre", "ambience"], limit=5, distinct=0.02)
+    kept = S.pareto([one, other], ["timbre", "ambience"], limit=5)
     assert len(kept) == 2, "a big difference in one dimension is a real difference"
 
 
@@ -414,6 +452,37 @@ def test_the_rerank_orders_by_the_worst_input_level(space, seed, target):
     worsts = [c.worst_level for c in reranked]
     assert worsts == sorted(worsts)
     assert isinstance(caveats, list)
+
+
+def test_the_rerank_really_shifts_the_input_by_six_decibels(space, seed, target):
+    """The `by_level` keys are labels. `10 ** (offset / 20)` mutated to `/ 10` makes the
+    gain 3.98× instead of 2.0× — so every "±6 dB of input level" in the report, the CLI
+    and the caveats becomes a statement about ±12 dB, and breakup depends strongly on
+    level. The keys were checked and the signal was not.
+    """
+    probe = np.asarray(di(), dtype=np.float64)
+    reference = float(np.sqrt(np.mean(probe ** 2)))
+    seen = []
+
+    class Watching(SyntheticRenderer):
+        def render(self, di_samples, settings, **kwargs):
+            array = np.asarray(di_samples, dtype=np.float64)
+            seen.append(float(np.sqrt(np.mean(array ** 2))) / reference)
+            return super().render(di_samples, settings, **kwargs)
+
+    evaluator = S.Evaluator(Watching(), target, probe, space, recipe=seed)
+    candidate = evaluator.evaluate(seed)
+    seen.clear()
+    S.robustness_rerank(evaluator, [candidate])
+
+    ratios = sorted(round(value, 4) for value in seen)
+    expected = sorted(round(10.0 ** (offset / 20.0), 4)
+                      for offset in S.ROBUSTNESS_OFFSETS_DB)
+    assert ratios == expected, (
+        f"the DI was scaled by {ratios}, which is "
+        f"{[round(20 * math.log10(r), 1) for r in ratios]} dB, not "
+        f"{list(S.ROBUSTNESS_OFFSETS_DB)}"
+    )
 
 
 def test_the_rerank_says_when_it_changed_the_order(seed):
@@ -535,9 +604,26 @@ def test_a_second_reference_is_not_served_the_first_ones_score(space, seed):
         paired.evaluate(seed)
         assert paired.cache_hits == 0
 
+        # And so is a different *seed*, which is the third component of the key and the
+        # one nothing checked. `prior_deviation` and `complexity` are distances from the
+        # recipe, so the same parameters against the same reference under two seeds are
+        # two different scores — which is exactly what happens when a second run in the
+        # same --out-dir uses another template, or adds --no-invert.
+        moved_seed = {**seed, (f"{AMP}Amp", f"{AMP}Bass"): 90.0}
+        other_recipe = S.Evaluator(SyntheticRenderer(), first, probe, space,
+                                   store=store, run_id="one", recipe=moved_seed)
+        rescored = other_recipe.evaluate(seed)
+        assert other_recipe.cache_hits == 0, (
+            "the seed is part of what a score means, so it has to be part of the key"
+        )
+        assert rescored.total != pytest.approx(a.evaluate(seed).total), (
+            "and the two scores differ, or there would be nothing to get wrong"
+        )
+
         # While a genuine repeat of the same question is still free.
+        before = a.renders
         a.evaluate(seed)
-        assert a.cache_hits == 1 and a.renders == 1
+        assert a.renders == before
 
 
 def test_a_seed_value_of_exactly_zero_is_not_read_as_absent(space, seed, target):
@@ -572,6 +658,101 @@ def test_the_budget_reserves_every_fixed_cost(space, seed, target):
         assert result.renders <= budget, (
             f"budget {budget}: spent {result.renders}"
         )
+
+
+def test_the_vector_the_caller_started_from_is_on_the_shortlist(space, seed):
+    """`fallbacks=` is what stops a near-perfect template only getting worse: matching
+    the bundled PR12 preset against a render of *itself* scored 0.069 for the template,
+    0.593 after the inversion, and 0.408 after the search recovered what it could — and
+    0.408 was the answer handed back. Nothing in the suite passed `fallbacks=` at all,
+    so deleting the line that evaluates them survived every test including the CLI's.
+
+    Constructed the same way the regression was: the target is a render of `seed`, so
+    `seed` is the exact answer and the search cannot beat it. It only appears in the
+    shortlist if it was put there.
+    """
+    probe = di()
+    scorer = S.Evaluator(SyntheticRenderer(), printed(probe), probe, space)
+    perfect = printed(refchain.render(probe, scorer._settings(seed)))
+
+    result = S.search(SyntheticRenderer(), perfect, probe, space,
+                      {**seed, (f"{AMP}Amp", f"{AMP}Volume"): 20.0},
+                      budget=90, shortlist=1, fallbacks=[seed],
+                      rng=np.random.default_rng(0))
+
+    assert result.best is not None
+    assert result.best.total < 0.05, (
+        f"the exact answer was handed in as a fallback and the best was "
+        f"{result.best.total:.4f}; it was not considered"
+    )
+
+
+def test_the_screens_probes_are_used_and_not_only_returned(space, seed, target):
+    """A probe is a real parameter vector that was rendered and scored, and on the run
+    §12c records one of them (0.525) beat everything CMA-ES found (0.694). `screen`
+    returning them was tested; `search` putting them in the candidate pool was not, so
+    `candidates = list(probes)` → `[]` re-binned a third of the budget undetectably.
+
+    Made observable by putting the answer *at an extreme*: the target is a render of the
+    seed with one control at the top of its range, so the screen's probe for that control
+    is nearly the exact answer and CMA-ES starting from mid-range will not beat it. The
+    budget is large enough to reach the optimiser, which is where the mutation lives —
+    an earlier version of this test used a budget so small that the run took the
+    "optimiser never ran" branch, which has its own copy of the line and passed.
+    """
+    probe = di()
+    scorer = S.Evaluator(SyntheticRenderer(), printed(probe), probe, space)
+    extreme = dict(seed)
+    volume = space.by_path(f"{AMP}Amp", f"{AMP}Volume")
+    extreme[(f"{AMP}Amp", f"{AMP}Volume")] = volume.bounds()[1]
+    at_extreme = printed(refchain.render(probe, scorer._settings(extreme)))
+
+    evaluator = S.Evaluator(SyntheticRenderer(), at_extreme, probe, space, recipe=seed)
+    screened = S.screen(evaluator, seed)
+    probe_totals = {round(c.total, 9) for c in screened.probes if c.objectives}
+    assert len(probe_totals) > 5, "the screen has to have scored several vectors"
+
+    result = S.search(SyntheticRenderer(), at_extreme, probe, space, seed,
+                      budget=evaluator.renders + 40, shortlist=3,
+                      rng=np.random.default_rng(0))
+
+    assert result.unsearched is None, "this has to reach the optimiser to be a test"
+    assert result.shortlist, "something has to come back"
+    assert round(result.best.total, 9) in probe_totals, (
+        f"the answer sits at a control's extreme, which the screen rendered and scored, "
+        f"and the best returned was {result.best.total:.4f} — not one of the "
+        f"{len(probe_totals)} probes already paid for"
+    )
+
+
+def test_every_vector_the_optimiser_asks_for_is_inside_the_declared_range():
+    """The property the bounds handling actually has, asserted on the samples rather than
+    on an internal.
+
+    `refine` used to carry a measured table claiming that clipping the distribution's
+    *mean* as well as the sample mattered a thousandfold, and removing the clip survived
+    every test — because the clip was dead. The new mean is `weights @ selected` with
+    positive weights summing to one over rows that were already clipped, so it is a
+    convex combination of points in the box and cannot leave it. Reproducing the table
+    gives identical digits either way, and with the optimum placed outside the box both
+    variants pin the mean at exactly 0.000.
+
+    Which leaves the real invariant: no vector handed to a renderer is out of range. That
+    is what a plugin would reject, and it is checked here on the arithmetic itself so it
+    holds for any weights a future change might use.
+    """
+    for mu in (1, 3, 8):
+        raw = np.array([math.log(mu + 0.5) - math.log(i + 1) for i in range(mu)])
+        weights = raw / raw.sum()
+        assert (weights > 0).all(), "a negative weight would break the convexity"
+        assert weights.sum() == pytest.approx(1.0)
+
+        # Selected rows are always clipped samples, so the extremes are the corners.
+        rng = np.random.default_rng(0)
+        for _ in range(50):
+            selected = np.clip(rng.standard_normal((mu, 6)) * 3.0, 0.0, 1.0)
+            mean = weights @ selected
+            assert mean.min() >= 0.0 and mean.max() <= 1.0, mean
 
 
 def test_a_frozen_parameter_that_did_move_is_not_called_inert(space, seed, target):
@@ -613,6 +794,77 @@ def test_the_optimiser_stops_when_its_step_is_finer_than_the_controls(space, see
                                   rng=np.random.default_rng(0))
     if len(evaluated) < 400:
         assert any("finer than the smallest change" in c for c in caveats), caveats
+
+    # And it does not stop *immediately*, which is what the assertion above allows on
+    # its own: inverting the comparison to `step > quantisation_step` satisfies every
+    # line of it — the caveat is there, the budget is under-spent — while ending the
+    # search after one generation. Measured on this fixture: 53 renders of 120 and a
+    # score three times worse. So the count of generations is the thing to pin.
+    lambda_ = S.generation_size(len(paths))
+    assert len(evaluated) > 2 * lambda_, (
+        f"the optimiser ran {len(evaluated) // lambda_} generation(s) of "
+        f"{lambda_} against a 400-render budget; a well-posed run does not stop there"
+    )
+
+
+def test_the_optimiser_gets_better_within_a_single_refine(space, seed, target):
+    """Recombining the *worst* μ samples instead of the best passed every test in this
+    file: the end-to-end winner is often one of the screen's probes, so nothing checked
+    that CMA-ES itself improves. Measured, that mutation cost 0.144 → 0.463.
+
+    Compared first generation against last rather than best-so-far, because best-so-far
+    is monotone by construction and would pass with the selection reversed.
+    """
+    paths = [f"{AMP}Amp/{AMP}Volume", f"{AMP}Amp/{AMP}Treble", f"{AMP}Amp/{AMP}Bass"]
+    lambda_ = S.generation_size(len(paths))
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    evaluated, _ = S.refine(evaluator, seed, paths, 8 * lambda_,
+                            rng=np.random.default_rng(0))
+    assert len(evaluated) >= 4 * lambda_, "not enough generations to compare"
+
+    totals = [c.total for c in evaluated]
+    first = min(totals[:lambda_])
+    last = min(totals[-lambda_:])
+    assert last < first, (
+        f"the last generation's best was {last:.4f} against the first's {first:.4f} — "
+        f"the distribution is not moving towards better samples"
+    )
+
+
+def test_the_screen_freezes_the_weakest_movers_and_not_the_strongest(space, seed,
+                                                                    target):
+    """`ordered[cut:]` reversed to `ordered[:len(ordered) - cut]` froze the two
+    strongest movers, and every test passed — the caveat still said "the weakest 25%"
+    and the report still printed the numbers under that heading. The invariant is an
+    ordering between the two sets, and nothing asserted it."""
+    s = S.screen(evaluator_for(space, target, seed), seed)
+    frozen_measured = [v for p, v in s.frozen.items()
+                       if not S._isnan(v) and p not in s.silences]
+    searched_measured = [s.movement[p] for p in s.searched if p in s.movement]
+    assert frozen_measured and searched_measured, "both sets have to be non-empty"
+
+    assert min(searched_measured) >= max(frozen_measured) - 1e-12, (
+        f"a frozen parameter moved the score by {max(frozen_measured):.4f} while a "
+        f"searched one moved it by only {min(searched_measured):.4f}"
+    )
+
+
+def test_the_quantile_cut_is_the_documented_fraction():
+    """The constant can be changed to 0.75 and only the caveat's wording follows, so
+    the arithmetic is pinned here instead: the cut is a fraction of what cleared the
+    floor, taken weakest-first."""
+    above = {f"p{i}": 0.1 * (i + 1) for i in range(8)}
+    ordered = sorted(above, key=lambda p: above[p])
+    cut = int(len(ordered) * S.SENSITIVITY_QUANTILE)
+
+    assert cut == 2, f"25% of 8 is 2, not {cut}"
+    kept = ordered[cut:]
+    assert kept == ["p2", "p3", "p4", "p5", "p6", "p7"]
+    assert min(above[p] for p in kept) > max(above[p] for p in ordered[:cut])
+
+
+def evaluator_for(space, target, seed):
+    return S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
 
 
 def test_a_candidate_never_re_rendered_does_not_crash_the_reorder():
@@ -662,7 +914,8 @@ def test_a_control_the_backend_cannot_be_driven_with_is_not_screened(space, seed
     assert unmodelled, "the fixture is pointless if the backend models everything"
 
     evaluator = S.Evaluator(renderer, target, di(), space, recipe=seed)
-    searched, frozen, _, movement, _ = S.screen(evaluator, seed)
+    s = S.screen(evaluator, seed)
+    searched, frozen, movement = s.searched, s.frozen, s.movement
 
     for path in unmodelled:
         assert path not in searched, path

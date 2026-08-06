@@ -42,7 +42,8 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded, positive_float, positive_int
+from _cli import (die, guarded, on_interrupt, positive_float, positive_int,
+                  probe_di as _probe)
 
 REGIMES = ("paired_di", "reamp", "isolated", "mix", "probe")
 RENDERERS = ("synthetic", "swift", "pedalboard")
@@ -57,8 +58,12 @@ SILENCE_FLOOR_DB = -120.0
 
 
 def build_parser() -> argparse.ArgumentParser:
+    # The whole docstring, not its first line. `RawDescriptionHelpFormatter` was set
+    # and then handed one line to preserve the layout of, so the worked invocation,
+    # the four stages and "the output is a spec, not a preset file" were all written
+    # down and none of them reached anybody running `--help`.
     ap = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
+        description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--template", type=pathlib.Path, required=True,
@@ -66,7 +71,14 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--reference", type=pathlib.Path, required=True,
                     help="the audio to match")
     ap.add_argument("--reference-mode", default="mix", choices=REGIMES,
-                    help="how the guitar reaches the reference file (default: mix)")
+                    help="how the guitar reaches the reference file (default: mix). "
+                         "This is not a formality — it is recorded in the fingerprint "
+                         "so nothing downstream reads a mastered spectrum as an amp's. "
+                         "paired_di: the reference and its own DI; reamp: your DI "
+                         "through the real rig; isolated: a solo guitar track, no "
+                         "band; mix: a finished mix, so the spectrum includes the "
+                         "band and the master chain; probe: a render of a known "
+                         "chain, which is what the benchmarks use")
     ap.add_argument("--probe-di", type=pathlib.Path,
                     help="the DI every candidate is rendered through. Without one a "
                          "synthetic pluck sequence is used, and the report says so")
@@ -76,11 +88,18 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--loss-profile", default="unpaired-v1",
                     help="how the objective dimensions are weighted "
                          "(unpaired-v1, paired-v1)")
+    # "about 60" was the wrong shape of answer: it is a number the user cannot check
+    # and, on Morgan with 18 searchable parameters, one that leaves the optimiser
+    # unable to take a single step. The arithmetic is short, so give the arithmetic.
     ap.add_argument("--budget", type=positive_int, default=300, metavar="RENDERS",
-                    help="renders to spend (default: 300). The screen and the ±6 dB "
-                         "re-rank have fixed costs that cannot be part-paid, so a "
-                         "budget below about 60 is exceeded rather than trimmed, and "
-                         "the run says so")
+                    help="renders to spend (default: 300). Some of it is fixed cost "
+                         "that cannot be part-paid: 2 per searchable parameter plus 1 "
+                         "for the screen, 1 for the template as it arrived, 2 per "
+                         "--shortlist entry for the ±6 dB re-rank, and then the "
+                         "optimiser needs at least one whole round (~12) on top. On "
+                         "Morgan that is about 70 before anything is searched, and a "
+                         "run that could not afford a round says so and names the "
+                         "number to raise this to")
     ap.add_argument("--shortlist", type=positive_int, default=3,
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,
@@ -136,6 +155,14 @@ def main() -> None:
 
     run_id = args.run_id or f"{args.out_dir.name}-{time.strftime('%Y%m%d-%H%M%S')}"
     store = open_store(str(args.out_dir))
+    # Every render commits before the next one starts, and the cache is keyed on the
+    # score rather than the clock, so running the same command again re-uses everything
+    # this run paid for. That is the whole reason the store exists and nothing said it.
+    on_interrupt(
+        f"{args.out_dir / 'trials.sqlite3'} has every render made so far. Run the "
+        f"same command again and they are served from the cache rather than rendered "
+        f"twice — you lose the time since the last render, not the run."
+    )
     metadata = renderer.metadata()
     store.start_run(Run(
         run_id=run_id, pack=args.pack, template=str(args.template),
@@ -160,6 +187,9 @@ def main() -> None:
             f"difference"
         )
 
+    # Renders made outside `search`, so the printed total is every render this command
+    # caused rather than only the budgeted ones.
+    extra: list = []
     evaluator = search.Evaluator(renderer, target, probe_di, space,
                                  profile=args.loss_profile, recipe=seed)
     start = evaluator.evaluate(seed)
@@ -169,13 +199,14 @@ def main() -> None:
             "  Check the reference is long enough to measure and that the renderer "
             "produces audio.")
 
+    dropped: list = []
     if args.no_invert:
         caveats.append("--no-invert was given, so nothing was calculated and the "
                        "search started from the template alone")
         calculated = None
     else:
         printed = _render_fingerprint(renderer, probe_di,
-                                      evaluator._settings(seed))
+                                      evaluator._settings(seed), extra)
         amp = args.amp or space.amp_prefix(seed)
         if amp is None:
             # Two different problems, and one message told the wrong story for both.
@@ -195,7 +226,7 @@ def main() -> None:
                 "  Pass --amp with one of the pack's amps, or use a template with a "
                 "selectedAmp value.")
         calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack)
-        seed = _apply(seed, calculated.as_settings(), space)
+        seed = invert.apply_to(seed, calculated.as_settings(), space)
         caveats.extend(calculated.caveats)
         # Values this backend cannot be driven with still reach the output spec, and
         # nothing said so. With the docstring's own PR12 template and the synthetic
@@ -212,11 +243,13 @@ def main() -> None:
                 + (f" and {len(dropped) - 5} more" if len(dropped) > 5 else "")
             )
 
+    started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=args.budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
                            fallbacks=[template_values],
                            rng=np.random.default_rng(args.seed))
+    elapsed_s = time.monotonic() - started_at
     caveats.extend(result.caveats)
 
     if not result.shortlist:
@@ -229,9 +262,15 @@ def main() -> None:
     if result.best.total >= start.total:
         caveats.insert(0, _no_better(result.best.total, start.total, args.budget))
 
+    # The caveat that says the headline was not searched for goes first, not ninth. A
+    # reader who stops after two caveats must not stop above the one that says the
+    # number they are reading came from the inversion and the screen's own probes.
+    if result.unsearched and result.unsearched in caveats:
+        caveats.insert(0, caveats.pop(caveats.index(result.unsearched)))
+
     _write_specs(args.out_dir, result, space, template_name)
     prints = {index: _render_fingerprint(renderer, probe_di,
-                                         evaluator._settings(candidate.values))
+                                         evaluator._settings(candidate.values), extra)
               for index, candidate in enumerate(result.shortlist)}
     # `seed` is the *post*-inversion vector and `start` the *pre*-inversion score, and
     # handing both to the report gave "the starting point" two meanings in one
@@ -245,16 +284,31 @@ def main() -> None:
         convergence=report.convergence_from(store, run_id),
         summary=report.summarise(store, run_id, result),
         frozen=result.frozen, searched=result.searched,
-        movement=result.movement,
+        movement=result.movement, floor=result.floor, silences=result.silences,
+        unheard=dropped,
         profile=args.loss_profile, reference=str(args.reference),
     )
     store.close()
 
     best = result.shortlist[0]
     print(f"run {run_id}")
-    print(f"  {result.renders} renders in {result.wall_ms / 1000:.0f}s"
+    # Wall clock, not `result.wall_ms`, which is render time only — it said "4s" for a
+    # run that took 16, and it is the number a person multiplies to decide whether
+    # --budget 300 is worth starting before lunch. The render share is still shown,
+    # because the gap between them is what says whether more budget or a faster
+    # backend is the thing that would help.
+    # Every render this command caused, not only the budgeted ones. `result.renders`
+    # counts what the search spent; the template's own render, the inversion's probe and
+    # one per shortlisted candidate for the report happen outside it, and a run that
+    # reported 293 had made 298.
+    outside = evaluator.renders + len(extra)
+    print(f"  {result.renders + outside} renders in {elapsed_s:.0f}s "
+          f"({result.wall_ms / 1000:.0f}s of it inside the search)"
           + (f", plus {result.cache_hits} answered from the cache"
              if result.cache_hits else ""))
+    print(f"  {result.renders} of them against the {args.budget}-render budget; "
+          f"{outside} outside it — the template, the inversion's probe and one per "
+          f"shortlisted candidate for the report")
     worst = ""
     if best.worst_level is not None and best.worst_level > best.total + 5e-4:
         worst = f", {best.worst_level:.3f} at worst across ±6 dB of input level"
@@ -351,14 +405,26 @@ def _seed_from_template(path: pathlib.Path, space, pack_id: str):
     is what the preset actually says rather than what a recipe would have set. A
     parameter the template has and the space does not is skipped; the space's
     exclusions are deliberate and re-admitting them here would undo them.
+
+    A file that is not a preset for this pack is refused here rather than tolerated.
+    `parse_file` reads anything and `build_preset` yields zero parameters, so
+    `--template pyproject.toml` used to search from an empty seed, spend the whole
+    budget, write a report with a distance in it, and then print an `apply_spec.py`
+    command that refuses the very file it had just been given. The one downstream tool
+    that checked was the one this run told the user to go and run next.
     """
     from format.parser import parse_file
     from format.structured import build as build_preset
     from format.translate import from_binary
-    from packs.loader import load_pack
+    from packs.loader import detect_pack, list_packs, load_pack
 
     pack = load_pack(pack_id)
     preset = build_preset(parse_file(str(path)))
+    if detect_pack(preset.file_header) is None:
+        die(f"{path} does not look like a plugin preset: it identifies itself as "
+            f"{preset.file_header!r}, which is not a pack this tool knows.\n"
+            f"  Known packs: {', '.join(list_packs()) or 'none'}.\n"
+            f"  --template takes a preset to start from, exported from the plugin.")
     values = {}
     for dimension in space.dimensions:
         parameter = preset.by_path.get((dimension.module, dimension.key))
@@ -407,61 +473,45 @@ def _template_amp(template: pathlib.Path):
     return f"amp {parameter.value!r}", None
 
 
-def _probe(path):
-    """The DI every candidate is rendered through, or a synthetic stand-in.
+def _render_fingerprint(renderer, di, settings, counter=None):
+    """Render and measure, counting the render if the caller is keeping a tally.
 
-    The stand-in is honest about being one. A search's answer is only as
-    representative as the DI it was scored on: plucks with gaps show attack and
-    decay clearly and show a palm-muted chug not at all, so a preset matched on
-    them may not hold up on the part someone actually plays.
+    These renders sit outside the search's budget and outside its accounting: the
+    template's own render, the inversion's probe, and one per shortlisted candidate for
+    the report's overlays. The documented run reported 293 renders and performed 298. On
+    the synthetic chain that is 5 spare seconds; on the M5 backend it is 5 real plugin
+    renders that appear in no number anybody reads.
     """
-    if path is not None:
-        from analysis import io
-
-        audio = io.load(str(path))
-        return audio.mono(), None
-    from tests import fixtures_audio
-
-    return (fixtures_audio.plucks(seconds=6.0, gap=0.9, seed=13),
-            "no --probe-di was given, so candidates were rendered through a "
-            "synthetic pluck sequence. It shows attack and decay clearly and shows "
-            "sustained or palm-muted playing not at all — match against your own "
-            "DI before trusting this on a real part.")
-
-
-def _render_fingerprint(renderer, di, settings):
     from analysis import io
     from analysis.fingerprint import fingerprint
 
     rendered = renderer.render(di, settings)
+    if counter is not None:
+        counter.append(1)
     return fingerprint(io.from_samples(rendered.audio, rendered.metadata.sample_rate),
                        regime="probe", excerpt_s=None)
 
 
-def _apply(seed, calculated, space):
-    """Fold the calculated values into the seed, keyed the way the space reads.
-
-    Only paths the space knows. `invert()` emits `/selectedAmp` and Morgan's own
-    parameter paths, and a path the space excluded — a mic type whose members are
-    unknown, say — must not come back in through here.
-    """
-    known = {dimension.path: (dimension.module, dimension.key)
-             for dimension in space.dimensions}
-    known["selectedAmp"] = ("", "selectedAmp")
-    merged = dict(seed)
-    for path, value in calculated.items():
-        key = known.get(path) or known.get(path.lstrip("/"))
-        if key is not None:
-            merged[key] = value
-    return merged
-
-
 def _write_specs(out_dir: pathlib.Path, result, space, template_name: str) -> None:
-    """One spec per shortlisted candidate, numbered in the order to try them."""
+    """One spec per shortlisted candidate, numbered in the order to try them.
+
+    Any higher-numbered spec from an earlier run in this directory is removed. A
+    second run with a shorter `--shortlist` left the previous run's `match-2.json` and
+    `match-3.json` sitting beside the new `match-1.json` and the new report, with
+    nothing in either file saying which run it came from — so applying the runner-up
+    gave you the *previous* search's runner-up. This tool's own error message for an
+    `--out-dir` that is a file advises "one per run"; it should not then quietly break
+    when a directory is reused.
+    """
+    written = set()
     for index, candidate in enumerate(result.shortlist, start=1):
         spec = space.to_spec(candidate.values, name=f"{template_name} match {index}")
         destination = out_dir / f"match-{index}.json"
         destination.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
+        written.add(destination)
+    for stale in sorted(out_dir.glob("match-*.json")):
+        if stale not in written:
+            stale.unlink()
 
 
 if __name__ == "__main__":

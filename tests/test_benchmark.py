@@ -22,6 +22,7 @@ pytest.importorskip("scipy", reason="needs the analysis extra")
 import numpy as np
 
 from match import benchmark as B
+from match import search as S
 from match import space as SP
 from match.renderer_synth import SyntheticRenderer
 from tests import fixtures_audio as fx
@@ -247,6 +248,107 @@ def test_an_unknown_arm_is_refused_by_name():
     assert "magic" in str(raised.value)
 
 
+def test_paired_compares_only_the_targets_both_arms_scored():
+    """The one thing that makes the comparison mean anything, and it had no direct test:
+    replacing the intersection with "every success in each arm" passed every test in this
+    file and in the CLI's.
+
+    Demonstrated with failure rates *inside* the 10% gate, so nothing else catches it:
+    ten targets, the recipe arm fails one of them, and the full arm scores 3.0 on exactly
+    that one. Unpaired, the verdict flips — and its own sentence then misstates its
+    denominator.
+    """
+    outcomes = [outcome("recipe", i, 0.6) for i in range(9)]
+    outcomes += [B.Outcome(arm="recipe", target_index=9, failed=True, error="died")]
+    outcomes += [outcome("full", i, 0.5) for i in range(9)]
+    outcomes += [outcome("full", 9, 3.0)]
+    outcomes += [outcome("inversion", i, 0.9) for i in range(10)]
+    result = B.BenchmarkResult(outcomes=outcomes)
+
+    ours, theirs = result.paired("full", "recipe")
+    assert len(ours) == len(theirs) == 9, (
+        f"the recipe arm scored 9 targets and the full arm 10; pairing them gives 9, "
+        f"not {len(ours)} and {len(theirs)}"
+    )
+    assert [o.target_index for o in ours] == [o.target_index for o in theirs]
+    assert 9 not in [o.target_index for o in ours], (
+        "target 9 has no recipe score, so the full arm's 3.0 on it is not comparable"
+    )
+
+    ships, reasons = result.verdict()
+    assert ships, reasons
+    beat = [r for r in reasons if "recipe" in r][0]
+    assert "0.500 against 0.600" in beat, beat
+    assert "9 targets" in beat, "and the sentence names the denominator it used"
+
+
+def test_a_recovered_vector_that_scores_nothing_is_a_failure(space, seed):
+    """`outcome.failed = True` in the "produced nothing comparable" branch, flipped to
+    `False`, survived every test: `_mean` skips `None`, so the arm's mean is unchanged,
+    the failure rate under-reports, and the >10% gate never fires on it.
+
+    Run through `compare_baselines` rather than by constructing an `Outcome`, because the
+    line is in `compare_baselines` — a hand-built row asserts the dataclass and not the
+    branch that fills it. The renderer here returns silence for exactly the vector the
+    `recipe` arm hands back, which is the seed, and renders the target normally.
+    """
+    probe = fx.plucks(seconds=1.0, gap=0.9, seed=3)
+    scorer = S.Evaluator(SyntheticRenderer(), None, probe, space)
+    seed_settings = scorer._settings(seed)
+
+    class SilentOnTheSeed(SyntheticRenderer):
+        def render(self, di_samples, settings, **kwargs):
+            rendered = super().render(di_samples, settings, **kwargs)
+            if settings == seed_settings:
+                import dataclasses
+
+                # `silent` and `peak` are derived from the audio, so zeroing it is the
+                # whole of it — there is nothing to set separately.
+                return dataclasses.replace(
+                    rendered, audio=np.zeros_like(np.asarray(rendered.audio)))
+            return rendered
+
+    result = B.compare_baselines(SilentOnTheSeed(), space, probe, seed, targets=1,
+                                 budget=20, arms=("recipe",), amp=AMP)
+    summary = result.summarise("recipe")
+
+    assert summary["targets"] == 1
+    assert summary["failures"] == 1, (
+        "the recovered vector rendered silent, so there is no objective and no success"
+    )
+    assert summary["failure_rate"] == pytest.approx(1.0)
+    row, = result.outcomes
+    assert row.objective is None and "nothing comparable" in (row.error or "")
+
+
+def test_a_verdict_resting_on_few_shared_targets_says_so():
+    """A verdict from 2 shared targets out of 10 reads exactly like one from 10 unless
+    the coverage guard fires, and the guard's threshold can be zeroed with nothing
+    failing."""
+    outcomes = [outcome("recipe", i, 2.0) for i in range(10)]
+    outcomes += [outcome("inversion", i, 2.0) for i in range(10)]
+    # The full arm only reached two of them.
+    outcomes += [outcome("full", i, 0.1) for i in range(2)]
+    outcomes += [B.Outcome(arm="full", target_index=i, failed=True, error="died")
+                 for i in range(2, 10)]
+
+    ships, reasons = B.BenchmarkResult(outcomes=outcomes).verdict()
+    assert not ships
+    assert any("rests on less than it looks like" in r for r in reasons), reasons
+    assert any("only 2 of 10 targets" in r for r in reasons), reasons
+
+
+def test_the_failure_column_is_a_percentage():
+    """It is headed `fail%`. Printing the fraction there shows `0` for an arm failing a
+    quarter of its targets, while a reason line below the table says 25%."""
+    outcomes = [outcome("full", i, 0.5) for i in range(3)]
+    outcomes += [B.Outcome(arm="full", target_index=3, failed=True, error="died")]
+    table = B.format_table(B.BenchmarkResult(outcomes=outcomes), arms=("full",))
+
+    row = [line for line in table.splitlines() if line.strip().startswith("full")][0]
+    assert "25" in row, f"a quarter failed and the fail% column says: {row}"
+
+
 # --- end to end -------------------------------------------------------------
 
 
@@ -387,9 +489,9 @@ def test_the_arms_are_nested_structurally_not_only_by_score(space, seed):
     assert inverted != dict(seed), "the inversion has to change something"
 
     # And `full` is that, plus a search. Asserted through the arm itself.
-    found, renders = B._run_arm("full", renderer, target, probe, space, seed, 30,
-                                "unpaired-v1", invert, search,
-                                np.random.default_rng(0), "morgan", AMP)
+    found, renders, arm_caveats = B._run_arm(
+        "full", renderer, target, probe, space, seed, 30, "unpaired-v1", invert,
+        search, np.random.default_rng(0), "morgan", AMP)
     assert renders > spent, "the full arm pays for the inversion as well"
     # Every value the inversion set and the screen froze is still the inversion's,
     # which is only true if the search started from it.

@@ -324,6 +324,31 @@ guitar was never isolated.
 Nothing above this is affected. `show.py` and `apply_spec.py` still run on a bare
 clone with no dependencies at all, and a test enforces it.
 
+## Optional: match a recording
+
+With `[match]` as well, the loop closes: given a recording you like and a preset
+to start from, `match_preset.py` measures the reference, calculates what can be
+calculated, searches the rest on a render budget you set, and writes a spec plus
+a report.
+
+```bash
+pip install -e '.[analysis,match]'
+python scripts/match_preset.py \
+  --template samples/Example_Clean_PR12.xml \
+  --reference song-excerpt.wav --reference-mode mix \
+  --budget 300 --out-dir runs/hotel-california-001
+```
+
+It writes `match-1.json` — a spec `apply_spec.py` turns into a preset, so the
+winner goes through the same validated path as a hand-authored one — and
+`report.html`, one self-contained file. **Read the report before trusting the
+number**: it opens with the caveats rather than the charts, and each one names a
+place where a figure rests on an assumption instead of a measurement.
+
+The backend is a Python approximation of the plugin's topology, not the plugin.
+Every number this produces is a number about that approximation until the real
+backend exists (M5, which needs macOS and a licence).
+
 The generate and edit skills do not use any of this yet — see
 [docs/tone-matching-plan.md](docs/tone-matching-plan.md) for what it is for.
 

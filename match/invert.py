@@ -132,6 +132,28 @@ class Inversion:
         return sorted(set(self.values) - kept)
 
 
+def apply_to(seed: Mapping, calculated: Mapping[str, Any], space) -> Dict[Any, Any]:
+    """Fold calculated values into a seed vector, keyed the way the space reads.
+
+    Only paths the space knows. `invert()` emits `/selectedAmp` and the pack's own
+    parameter paths, and a path the space excluded — a mic type whose members are
+    unknown, say — must not come back in through here.
+
+    Here rather than in each caller: `scripts/match_preset.py` and `match/benchmark.py`
+    had the same five lines, character for character, which is one place for a fix to be
+    applied and one place for it to be missed.
+    """
+    known = {dimension.path: (dimension.module, dimension.key)
+             for dimension in space.dimensions}
+    known["selectedAmp"] = ("", "selectedAmp")
+    merged = dict(seed)
+    for path, value in calculated.items():
+        key = known.get(path) or known.get(path.lstrip("/"))
+        if key is not None:
+            merged[key] = value
+    return merged
+
+
 # --- spectral ---------------------------------------------------------------
 
 

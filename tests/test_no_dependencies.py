@@ -47,8 +47,8 @@ BLOCKER = textwrap.dedent(
 )
 
 
-def run_without_analysis(code: str):
-    script = BLOCKER.format(blocked=BLOCKED) + textwrap.dedent(code)
+def run_without_analysis(code: str, blocked=BLOCKED):
+    script = BLOCKER.format(blocked=blocked) + textwrap.dedent(code)
     return subprocess.run(
         [sys.executable, "-c", script], capture_output=True, text=True, cwd=ROOT
     )
@@ -98,6 +98,38 @@ def test_apply_spec_runs_with_no_third_party_packages(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert out.exists()
+
+
+@pytest.mark.parametrize("script,argv", [
+    ("show.py", ["samples/Example_Clean_PR12.xml", "--text"]),
+    ("bootstrap_pack.py", ["--help"]),
+])
+def test_the_preset_scripts_do_not_touch_the_analysis_package_at_all(script, argv,
+                                                                    tmp_path):
+    """Stricter than blocking numpy: this blocks `analysis` itself.
+
+    Blocking numpy only proves the *analysis package* degrades gracefully — `analysis`
+    still imports, and `from analysis import AnalysisUnavailable` still succeeds. So a
+    top-level import of `analysis` in shared plumbing passed every test here while
+    breaking the actual bare clone, where the directory may not be present at all.
+
+    That is not hypothetical: `scripts/_cli.py`'s `guarded()` imported `analysis` for one
+    exception name, and `bootstrap_pack.py` — run against a partial tree, which is what
+    `tests/test_skills.py` builds and what a plugin install looks like — died with
+    `ModuleNotFoundError: No module named 'analysis'` from inside the very handler that
+    exists to stop tracebacks reaching people. CI missed it because CI installs the
+    package, which makes `analysis` importable from any working directory.
+    """
+    result = run_without_analysis(
+        f"""
+        import runpy, sys
+        sys.argv = [{script!r}] + {argv!r}
+        runpy.run_path({f"scripts/{script}"!r}, run_name="__main__")
+        """,
+        blocked=BLOCKED + ("analysis",),
+    )
+    assert "No module named 'analysis'" not in result.stderr, result.stderr
+    assert result.returncode == 0, result.stderr
 
 
 def test_analysis_entry_points_explain_themselves_without_the_extra():

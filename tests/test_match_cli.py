@@ -109,22 +109,38 @@ def test_a_report_is_self_contained(audio, tmp_path):
 
 
 def test_the_store_holds_what_the_run_reported(audio, tmp_path):
-    """The store is the record, so its counts have to be the ones printed."""
+    """The store is the record, so its counts have to be the ones printed.
+
+    Two counts, because there are two: the renders the search spent against the budget,
+    which are the rows in the store, and the ones made outside it — the template, the
+    inversion's probe, one per shortlisted candidate for the report's overlays. The
+    headline used to be the first while claiming to be the total, so a run that printed
+    293 had made 298. On the synthetic chain that is 5 spare seconds; on a real plugin
+    backend it is 5 renders nobody is accounting for.
+    """
     out = tmp_path / "run"
     done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--reference-mode", "probe",
                "--probe-di", audio / "probe.wav", "--amp", "sw50r",
-               "--budget", "60", "--out-dir", out)
-    assert done.returncode == 0, done.stderr
+               "--budget", "80", "--shortlist", "2", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
 
     from match.store import Store
 
+    total = int(done.stdout.split(" renders in")[0].split()[-1])
+    budgeted = int(done.stdout.split(" of them against the")[0].split("\n")[-1])
+    outside = int(done.stdout.split("budget; ")[1].split()[0])
+
     with Store(str(out / "trials.sqlite3")) as store:
         run_row, = store.runs()
-        assert run_row.pack == "morgan" and run_row.budget == 60
+        assert run_row.pack == "morgan" and run_row.budget == 80
         assert run_row.regime == "probe"
-        reported = int(done.stdout.split(" renders in")[0].split()[-1])
-        assert store.summary(run_row.run_id)["trials"] == reported
+        # Only the search writes rows, so the store's count is the budgeted one.
+        assert store.summary(run_row.run_id)["trials"] == budgeted
+
+    assert total == budgeted + outside, "the arithmetic has to close"
+    # The template's render, the inversion's probe, and one per shortlisted candidate.
+    assert outside == 2 + len(list(out.glob("match-*.json")))
 
 
 # --- the mistakes a person makes --------------------------------------------
@@ -171,6 +187,79 @@ def test_a_silent_reference_is_refused_before_the_renders(tmp_path):
     assert done.returncode != 0
     assert "silent" in done.stderr, done.stderr
     assert not (tmp_path / "run" / "match-1.json").exists()
+
+
+def test_a_template_that_is_not_a_preset_is_refused_before_the_renders(audio, tmp_path):
+    """`parse_file` reads anything and `build_preset` yields zero parameters, so
+    `--template pyproject.toml` searched from an empty seed, spent the whole budget,
+    wrote a report with a distance in it, and printed an `apply_spec.py` command that
+    refuses the same file — the one downstream tool that checked was the one this run
+    told the user to go and run next."""
+    out = tmp_path / "run"
+    done = run("match_preset.py", "--template", ROOT / "pyproject.toml",
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--amp", "sw50r", "--budget", "60", "--out-dir", out)
+
+    assert done.returncode != 0
+    assert "does not look like a plugin preset" in done.stderr, done.stderr
+    assert "Traceback" not in done.stderr
+    assert not (out / "match-1.json").exists(), "and nothing was written"
+    assert not (out / "report.html").exists()
+
+
+def test_a_budget_that_cannot_afford_a_round_says_so_first_and_names_the_number(
+        audio, tmp_path):
+    """Two messages used to describe this one fact, and the one that fired on Morgan's
+    18 searchable parameters said "raise --budget to at least 12 more than the fixed
+    costs above" — with nothing above having printed a fixed cost. It arrived ninth of
+    eleven caveats, below a note about palm-muted playing, while the headline it
+    invalidates was the second line of the output."""
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--budget", "40", "--out-dir", tmp_path / "run")
+    assert done.returncode == 0, done.stderr
+
+    caveats = [line.strip()[2:] for line in done.stdout.splitlines()
+               if line.startswith("  - ")]
+    assert len(caveats) > 8, "the point is that this one is not buried among the rest"
+    first = caveats[0]
+    assert "the optimiser never ran" in first, (
+        f"it arrived at position {[i for i, c in enumerate(caveats) if 'never ran' in c]}"
+    )
+
+    # And it names a number to raise --budget to, which then works.
+    import re
+
+    target = int(re.search(r"Raise --budget to at least (\d+)", first).group(1))
+    assert target > 40
+    better = run("match_preset.py", "--template", TEMPLATE,
+                 "--reference", audio / "ref.wav", "--reference-mode", "probe",
+                 "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+                 "--budget", str(target), "--out-dir", tmp_path / "again")
+    assert better.returncode == 0, better.stderr
+    assert "the optimiser never ran" not in better.stdout, (
+        f"raising --budget to the {target} it asked for still did not buy a round"
+    )
+
+
+def test_a_reused_out_dir_does_not_leave_the_previous_runs_specs(audio, tmp_path):
+    """A second run with a shorter --shortlist left match-2.json and match-3.json from
+    the first beside the new match-1.json and the new report, with nothing in either
+    file saying which run it came from — so applying the runner-up gave you the
+    *previous* search's runner-up."""
+    out = tmp_path / "run"
+    common = ["--template", TEMPLATE, "--reference", audio / "ref.wav",
+              "--reference-mode", "probe", "--probe-di", audio / "probe.wav",
+              "--amp", "sw50r", "--budget", "60", "--out-dir", out]
+
+    assert run("match_preset.py", *common, "--shortlist", "3").returncode == 0
+    assert (out / "match-3.json").exists()
+
+    assert run("match_preset.py", *common, "--shortlist", "1").returncode == 0
+    assert sorted(p.name for p in out.glob("match-*.json")) == ["match-1.json"], (
+        "the second run's shortlist is one, so one spec is what the directory holds"
+    )
 
 
 def test_a_template_from_another_pack_names_the_pack_it_is_from(audio, tmp_path):

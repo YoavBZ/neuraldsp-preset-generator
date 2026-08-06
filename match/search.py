@@ -73,6 +73,24 @@ INITIAL_SIGMA = 0.15
 # The input-level offsets the shortlist is re-rendered at, in dB.
 ROBUSTNESS_OFFSETS_DB = (-6.0, 6.0)
 
+# The minimum objective-space separation between two shortlist entries. Two presets
+# differing by 0.005 of an objective are the same preset as far as anyone listening is
+# concerned, and a shortlist of five of them wastes four listening comparisons. A
+# constant rather than a `pareto()` argument, which nothing outside tests overrode:
+# a parameter with one call site pretends to be tunable.
+DISTINCT_OBJECTIVE = 0.02
+
+
+def generation_size(parameters: int) -> int:
+    """How many renders one round of CMA-ES costs, for `parameters` of them.
+
+    Hansen's λ. Exposed because it is the *granularity of the whole search* and not
+    an internal of `refine`: below one generation the optimiser cannot take a step at
+    all, so a caller sizing a budget needs this number, and so does the caveat that
+    tells a user what to raise `--budget` to.
+    """
+    return 4 + int(3 * math.log(max(1, parameters)))
+
 
 class SearchError(ValueError):
     """A search that cannot be set up, or a budget that cannot be spent."""
@@ -131,10 +149,23 @@ class SearchResult:
     # `searched` was a bare list, so the report's most useful column was a dash for
     # every row that had been kept, and a reader could not check the freeze decision.
     movement: Dict[str, float] = field(default_factory=dict)
+    # The floor the freeze decisions were actually made against, which is the constant
+    # raised to the backend's own band noise — and which a report has to have if it is
+    # to say *why* a row was frozen rather than guess from a constant.
+    floor: float = SENSITIVITY_FLOOR
+    # Paths where one end of the range silences the render, and the value that does it.
+    # The report called these "too small to matter" while the caveat block, in the same
+    # document, said they silence the signal entirely.
+    silences: Dict[str, float] = field(default_factory=dict)
     renders: int = 0
     cache_hits: int = 0
     wall_ms: float = 0.0
     caveats: List[str] = field(default_factory=list)
+    # The one caveat that invalidates the headline rather than qualifying it: the
+    # optimiser never ran, so "0.853, 25% closer" describes the inversion and the
+    # screen's own probes. Held separately so a caller can put it first — it arrived
+    # ninth of eleven, below the note about palm-muted playing.
+    unsearched: Optional[str] = None
     run_id: Optional[str] = None
 
     @property
@@ -338,19 +369,39 @@ class Evaluator:
 # --- stage 1: the sensitivity screen ----------------------------------------
 
 
+@dataclass
+class Screen:
+    """What the sensitivity screen decided, and what it decided it on.
+
+    A tuple of five before, which is why the sixth value — the floor the screen
+    *actually used* — had nowhere to go. `screen` raises the floor to the backend's own
+    band noise (`_backend_floor`), then threw that number away, so both readers
+    classified against the `SENSITIVITY_FLOOR` constant instead. With a backend
+    declaring 0.23 dB of band noise the effective floor is 0.0767, and a parameter cut
+    by it at 0.0208 was reported as "the weakest 25% that did move it — a larger budget
+    would search them". No budget will search it; the floor is not a budget.
+    """
+
+    searched: List[str] = field(default_factory=list)
+    frozen: Dict[str, float] = field(default_factory=dict)
+    probes: List["Candidate"] = field(default_factory=list)
+    movement: Dict[str, float] = field(default_factory=dict)
+    silences: Dict[str, float] = field(default_factory=dict)
+    floor: float = SENSITIVITY_FLOOR
+
+
 def screen(evaluator: Evaluator, seed: Mapping,
            floor: float = SENSITIVITY_FLOOR,
            quantile: float = SENSITIVITY_QUANTILE,
-           only: Optional[Sequence[str]] = None
-           ) -> Tuple[List[str], Dict[str, float], List[Candidate],
-                      Dict[str, float], Dict[str, float]]:
+           only: Optional[Sequence[str]] = None) -> Screen:
     """Which parameters move the objective, and by how much.
 
     Two renders per parameter — its low end and its high end, everything else at the
     seed — so the cost is known before it is spent: 2 × the number of candidates,
-    once. Returns the paths worth searching, the ones frozen with the movement that
-    decided each, **every probe it scored**, and the movement of every parameter —
-    searched or frozen — so a report can show the decision rather than assert it.
+    once. Returns a `Screen`: the paths worth searching, the ones frozen with the
+    movement that decided each, **every probe it scored**, the movement of every
+    parameter — searched or frozen — so a report can show the decision rather than
+    assert it, and the floor those decisions were actually made against.
 
     The probes matter. They are renders that were paid for and compared, and a
     parameter at an extreme is a legitimate parameter vector: measured on a target
@@ -417,10 +468,23 @@ def screen(evaluator: Evaluator, seed: Mapping,
             # at its threshold mutes the signal, by design. Treated as "unknown" this
             # produced the same caveat on every run of the tool, two renders spent on
             # a structural certainty — and the caveat block is where the real warnings
-            # are, so padding it teaches people to skip it. The movement is recorded
-            # against the end that did render, so the control can still be frozen or
-            # searched on evidence.
-            movement[dimension.path] = 0.0
+            # are, so padding it teaches people to skip it.
+            #
+            # The movement is the end that *did* render, measured against the baseline.
+            # This line said `= 0.0`, and a report then printed `0.0000` under "distance
+            # moved" for a control that had moved it by 0.0413 — four times the floor.
+            # Measured on Morgan: `parameters/gateThreshold`'s live end scored 0.8438
+            # against a baseline of 0.8025. A fabricated measurement, about the one
+            # control the caveat block calls the commonest way a preset sounds broken.
+            #
+            # It stays frozen, and that is now said in `silences` rather than implied by
+            # a zero that no floor could clear. The screen's premise is that the extremes
+            # bound the largest effect a control can have; when one extreme cannot be
+            # scored at all there is no such bound, so handing the control to an
+            # optimiser means handing it a region where half the renders come back
+            # silent. Frozen on the honest ground that it could not be screened, with
+            # its real movement on the record.
+            movement[dimension.path] = abs(scores[0] - baseline.total)
             silences[dimension.path] = float(silenced[0])
             continue
         # A parameter whose extremes both failed to render is *unknown*, not inert.
@@ -429,7 +493,11 @@ def screen(evaluator: Evaluator, seed: Mapping,
         movement[dimension.path] = (max(scores) - min(scores) if len(scores) == 2
                                     else float("nan"))
 
-    measured = {path: value for path, value in movement.items() if not _isnan(value)}
+    # A path where one extreme silenced the render is out of the search regardless of
+    # what its live end measured — see the comment above. Excluded here, explicitly,
+    # rather than by recording a movement of zero and relying on the floor to do it.
+    measured = {path: value for path, value in movement.items()
+                if not _isnan(value) and path not in silences}
     above = {path: value for path, value in measured.items() if value >= floor}
     # Then the quantile, weakest first, over what cleared the floor.
     ordered = sorted(above, key=lambda path: above[path])
@@ -440,7 +508,8 @@ def screen(evaluator: Evaluator, seed: Mapping,
     # Strongest first, which is the order a caller wants to read and the order
     # CMA-ES benefits from when its budget runs out mid-population.
     searched.sort(key=lambda path: above[path], reverse=True)
-    return searched, frozen, probes, movement, silences
+    return Screen(searched=searched, frozen=frozen, probes=probes,
+                  movement=movement, silences=silences, floor=floor)
 
 
 # --- stage 2: topology ------------------------------------------------------
@@ -510,23 +579,23 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
     dimensions of bounded continuous parameters, which is squarely what CMA-ES was
     designed for and does not need a framework.
 
-    Bounds are handled by clipping the evaluated sample **and** the distribution's
-    mean. An earlier version clipped only the sample, on the reasoning that clipping
-    the mean lets a parameter stick on a bound it was only passing through — which
-    sounds right and is measurably wrong. Clipping the sample makes the fitness a
-    *plateau* outside the box, so selection carries no gradient information back and a
-    mean that wanders out never returns. Measured on a sphere objective, n=8, σ=0.15,
-    600 evaluations, optimum at unit 0.02 — the near-clean end of a gain control,
-    exactly the case the old comment cited:
+    Bounds are handled by clipping the evaluated **sample**, and that is sufficient: the
+    new mean is `weights @ selected`, the weights are positive and sum to one, and every
+    row of `selected` was clipped into [0, 1] — so the mean is a convex combination of
+    points in the box and is therefore in the box. It cannot leave, and no separate
+    guard on it can do anything.
 
-    | mean | best found | final mean range |
-    |---|---|---|
-    | unclipped | 2.5e-03 | (−4.2, −0.55) |
-    | clipped   | **2.6e-06** | (0.019, 0.021) |
-
-    A thousand times worse, and it also wasted renders: with the optimum near a bound,
-    76% of 600 samples quantised to a vector already tried, and only 10 of the last
-    240 were distinct. Nobody had measured the claim; it was an argument.
+    This paragraph used to carry a measured table — unclipped 2.5e-03 against clipped
+    2.6e-06 on a sphere at unit 0.02, n=8, σ=0.15, 600 evaluations, with a final mean
+    range of (−4.2, −0.55) — arguing that clipping the mean mattered a thousandfold. It
+    does not, and the table cannot have come from this algorithm: reproduced at four
+    seeds, clipped and unclipped agree to every digit printed (3.677e-06, 6.797e-06,
+    1.856e-06, 4.268e-06), and the mean's range is (0.019, 0.021) either way. Even with
+    the optimum placed *outside* the box at unit −0.30, so that the fitness rewards
+    movement past the bound, both variants pin the mean at exactly 0.000 — because of the
+    convexity above. It replaced an earlier paragraph that argued the opposite case from
+    first principles, and the lesson is the same one twice over: a table with no
+    recorded invocation behind it is an argument wearing decimal points.
     """
     import numpy as np
 
@@ -560,7 +629,7 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
     # The textbook defaults (Hansen). Written out rather than tuned, so that a
     # future change to them is visible as a change.
-    lambda_ = 4 + int(3 * math.log(n))
+    lambda_ = generation_size(n)
     mu = lambda_ // 2
     raw = np.array([math.log(mu + 0.5) - math.log(i + 1) for i in range(mu)])
     weights = raw / raw.sum()
@@ -614,7 +683,11 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
         selected = np.array([pair[1] for pair in scored[:mu]])
         previous = mean.copy()
-        mean = np.clip(weights @ selected, 0.0, 1.0)
+        # No clip. A convex combination of clipped samples is inside the box already —
+        # see the docstring — so `np.clip` here was dead, and dead code that looks like
+        # a safety guard is worse than none: it invites the reader to believe a bound is
+        # being enforced somewhere it is not needed and to stop looking for where it is.
+        mean = weights @ selected
 
         # The two evolution paths, and the step-size and covariance updates they
         # drive. Standard CMA-ES.
@@ -652,13 +725,12 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
             )
             break
 
-    if generations == 0 and not caveats:
-        caveats.append(
-            f"the budget of {budget} renders is smaller than one round of "
-            f"{lambda_}, which is the smallest step the search can take with "
-            f"{n} parameters to move, so it never ran. Raise --budget to at least "
-            f"{lambda_} more than the fixed costs above."
-        )
+    # No "it never ran" caveat here. `search` owns that message, because it is the only
+    # caller that knows what the fixed costs were and can therefore name the number to
+    # raise `--budget` to. The version that lived here said "at least λ more than the
+    # fixed costs above" — and nothing above had printed a fixed cost, so the one
+    # actionable sentence in the run pointed at nothing. Two messages for one fact, and
+    # the one that fired on an 18-parameter Morgan search was the useless one.
     return evaluated, caveats
 
 
@@ -666,14 +738,13 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
 
 def pareto(candidates: Sequence[Candidate], dimensions: Sequence[str],
-           limit: int = 5, distinct: float = 0.02) -> List[Candidate]:
+           limit: int = 5) -> List[Candidate]:
     """The non-dominated candidates, thinned to perceptually distinct ones.
 
-    `distinct` is the minimum objective-space separation between two entries. Two
-    presets differing by 0.005 of an objective are the same preset as far as anyone
-    listening is concerned, and a shortlist of five of them is a shortlist of one
-    that wastes four listening comparisons.
+    Thinned by `DISTINCT_OBJECTIVE`, which used to be a `distinct=` argument that no
+    caller outside the tests ever set.
     """
+    distinct = DISTINCT_OBJECTIVE
     usable = [c for c in candidates if c.objectives and math.isfinite(c.total)]
     front = [c for c in usable
              if not any(other.dominates(c, dimensions) for other in usable)]
@@ -711,6 +782,11 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
 
     caveats: List[str] = []
     unmeasured: List[float] = []
+    # How much of the spread is the `level` term — i.e. the loudness change this stage
+    # caused by turning the input up and down — rather than the tone change it exists to
+    # detect. Measured per candidate as (change in the weighted level term) / (change in
+    # the total), because on the synthetic chain it turned out to be 35% to 96% of it.
+    level_share: List[float] = []
     levels = [0.0] + [float(offset) for offset in offsets_db]
     for candidate in shortlist:
         for offset in levels:
@@ -723,6 +799,9 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
                                         offset_db=offset)
             if scored.objectives:
                 candidate.by_level[offset] = scored.total
+                share = _level_share(evaluator, candidate, scored)
+                if share is not None:
+                    level_share.append(share)
             else:
                 # A render that failed or came back silent at a shifted level is not
                 # a robustness measurement. Recording `inf` made the candidate sink
@@ -741,7 +820,48 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
         )
 
     reranked, ordering_caveats = _rerank_and_explain(shortlist)
-    return reranked, caveats + ordering_caveats
+    caveats.extend(ordering_caveats)
+    # What the spread is made of, when it is mostly not tone. The docstring above says
+    # this stage exists because "breakup depends strongly on input level" — a claim
+    # about *timbre* — and measured on the synthetic chain the `level` term accounted
+    # for between 35% and 96% of the movement while `timbre` shifted by 0.001. So "0.280
+    # at worst, and it holds up" was largely a statement about output loudness, and the
+    # loudness was a consequence of the stage turning the input up. Named rather than
+    # dropped from the score: a preset whose compression holds its output level steady
+    # across playing levels genuinely is more robust, and that belongs in the number.
+    if level_share and (sum(level_share) / len(level_share)) > 0.5:
+        share = 100.0 * sum(level_share) / len(level_share)
+        caveats.append(
+            f"about {share:.0f}% of the change in score across ±6 dB is the output "
+            f"getting louder or quieter rather than the tone changing — turning the "
+            f"input up makes the render louder, and the level term counts that. The "
+            f"±6 dB figures are a weaker statement about breakup than they look."
+        )
+    return reranked, caveats
+
+
+def _level_share(evaluator: Evaluator, candidate: Candidate,
+                 offset_scored: Candidate) -> Optional[float]:
+    """The fraction of a candidate's score change at an offset that is the level term.
+
+    `None` when there is nothing to take a fraction of — either dimension missing, or
+    a total that did not move — rather than a 0.0 that would drag the mean down and
+    read as "the level term is not involved".
+    """
+    from analysis.compare import load_profile
+
+    weights = load_profile(evaluator.profile).get("weights", {})
+    weight = float(weights.get("level", 0.0))
+    if not weight:
+        return None
+    before = (candidate.objectives or {}).get("level")
+    after = (offset_scored.objectives or {}).get("level")
+    if before is None or after is None:
+        return None
+    total_change = abs(offset_scored.total - candidate.total)
+    if total_change < 1e-9:
+        return None
+    return min(1.0, weight * abs(after - before) / total_change)
 
 
 def _rerank_and_explain(shortlist: Sequence[Candidate],
@@ -832,33 +952,45 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                           store=store, run_id=run_id, recipe=seed)
     result = SearchResult(run_id=run_id)
 
-    searched, frozen, probes, movement, silences = screen(evaluator, seed)
+    screened = screen(evaluator, seed)
+    searched, frozen = screened.searched, screened.frozen
+    probes, movement, silences = screened.probes, screened.movement, screened.silences
     result.frozen = frozen
     result.searched = list(searched)
     result.movement = {path: movement[path] for path in searched if path in movement}
+    result.floor = screened.floor
+    result.silences = dict(silences)
     if frozen:
         # Frozen for three different reasons, and saying "below the floor" about all
         # of them was false: a caveat claimed four parameters "moved the objective by
         # less than 0.01" when their measured movements were 0.062, 0.062, 0.109 and
         # 0.070 — every one of them well clear of the floor and cut by the quantile
         # instead. The report's table showed 0.109 next to the claim.
-        inert = [p for p, v in frozen.items()
-                 if not _isnan(v) and v < SENSITIVITY_FLOOR]
-        weakest = [p for p, v in frozen.items()
-                   if not _isnan(v) and v >= SENSITIVITY_FLOOR]
+        #
+        # `screened.floor`, not `SENSITIVITY_FLOOR`: the screen raises its floor to the
+        # backend's own band noise, and classifying against the constant put a
+        # parameter cut by the *floor* into the "weakest 25%, a larger budget would
+        # search them" sentence. No budget will search it.
+        floor = screened.floor
+        inert = [p for p, v in frozen.items() if not _isnan(v) and v < floor]
+        weakest = [p for p, v in frozen.items() if not _isnan(v) and v >= floor]
         unknown = [p for p, v in frozen.items() if _isnan(v)]
         total = len(frozen) + len(searched)
-        # A control that mutes the signal at one end is not inert, however small its
-        # measured movement: it is the one control that matters most and cannot be
-        # scored. Named separately, and only when a caller would act on it.
-        muting = [p for p in inert if p in silences]
+        # A control that mutes the signal at one end gets its own sentence wherever it
+        # ends up, because "one end of this silences the signal" is the fact a person
+        # acts on and neither of the other two sentences carries it.
+        muting = [p for p in silences if p in frozen]
         inert = [p for p in inert if p not in silences]
+        weakest = [p for p in weakest if p not in silences]
         if inert:
+            # "moved the objective" was the one piece of jargon that reached the
+            # terminal. `report._screen` had already found the plain wording for the
+            # same number and this had not borrowed it.
             result.caveats.append(
-                f"{len(inert)} of {total} parameters moved the objective by less "
-                f"than {SENSITIVITY_FLOOR} across their whole range on this "
-                f"material, so they were left at the seed. On different material "
-                f"they might matter."
+                f"{len(inert)} of {total} parameters changed the distance to the "
+                f"reference by less than {floor:g} across their whole range "
+                f"on this material, so they were left at the seed. On different "
+                f"material they might matter."
             )
         if muting:
             named = ", ".join(f"{p} at {silences[p]:g}" for p in sorted(muting))
@@ -870,8 +1002,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             )
         if weakest:
             result.caveats.append(
-                f"{len(weakest)} of {total} parameters did move the objective but "
-                f"were the weakest {int(100 * SENSITIVITY_QUANTILE)}% that did, so "
+                f"{len(weakest)} of {total} parameters did change the distance to the "
+                f"reference but were the weakest "
+                f"{int(100 * SENSITIVITY_QUANTILE)}% that did, so "
                 f"they were left at the seed to spend the budget on the rest — the "
                 f"most any of them moved it was "
                 f"{max(frozen[p] for p in weakest):.3f}. A larger budget would "
@@ -888,21 +1021,44 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             )
 
     variants = topologies(space, seed, switches=switches, selectors=selectors)
+    if len(variants) == 1:
+        # No caller reaches the enumeration. `switches` and `selectors` are `search`'s
+        # own parameters, nothing in the repository outside tests passes them, and the
+        # report's diff column shows switch changes anyway — from the *inversion* — so
+        # it reads as though discrete choices were searched. §12c names this as a stage
+        # that exists rather than a stage that runs; the run has to say so too.
+        result.caveats.append(
+            "no switches or selectors were enumerated, so every on/off, the cabinet, "
+            "the microphone and the amp are whatever the starting point had — only "
+            "continuous controls were searched. Trying a different cab or mic means "
+            "editing the template and running this again."
+        )
     spent = evaluator.renders
     # Every fixed cost, reserved: the screen has already been paid, the topology loop
-    # will render each variant's own seed, and the re-rank will render each
-    # shortlisted candidate at two more input levels.
+    # will render each variant's own seed, the re-rank will render each shortlisted
+    # candidate at two more input levels, and each fallback is one render.
     reserved = len(variants) + 2 * shortlist + len(fallbacks or ())
     remaining = budget - spent - reserved
-    if remaining <= 0:
-        result.caveats.append(
-            f"the fixed costs used {spent + reserved} of the {budget}-render "
-            f"budget — {spent} to screen {len(searched) + len(frozen)} parameters, "
-            f"{len(variants)} for the starting point of each topology and "
-            f"{2 * shortlist} for the ±6 dB re-rank — so the optimiser never ran. "
-            f"The seed and the inversion stand. Raise --budget above "
-            f"{spent + reserved + 20} for a search worth the name."
+    # One whole generation is the granularity of the search, not one render: CMA-ES
+    # samples λ points before it learns anything. A budget leaving 6 renders against a
+    # λ of 12 bought exactly as much search as a budget leaving none, and took the
+    # branch that told the user so only in the second case.
+    generation = generation_size(len(searched)) if searched else 1
+    if remaining < generation:
+        needed = spent + reserved + generation
+        result.unsearched = (
+            f"the optimiser never ran, so nothing below was searched — the seed and "
+            f"the inversion stand. Of the {budget}-render budget, {spent + reserved} "
+            f"goes to costs that cannot be part-paid: {spent} to screen "
+            f"{len(searched) + len(frozen)} parameters, {len(variants)} for the "
+            f"starting point of each topology, {2 * shortlist} for the ±6 dB re-rank"
+            + (f" and {len(fallbacks or ())} for the template as it arrived"
+               if fallbacks else "")
+            + f". That leaves {max(0, remaining)} against the {generation} that one "
+            f"round of search costs with {len(searched)} parameters to move. "
+            f"Raise --budget to at least {needed}."
         )
+        result.caveats.append(result.unsearched)
         candidates = list(probes) + [evaluator.evaluate(variant)
                                      for variant in variants]
         candidates.extend(evaluator.evaluate(dict(v)) for v in fallbacks or ())
@@ -911,8 +1067,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
         if len(variants) > 1:
             result.caveats.append(
                 f"{len(variants)} topologies share the budget, so each got about "
-                f"{per_variant} renders. Enumerating fewer switches gives each "
-                f"remaining one a deeper search."
+                f"{per_variant} render{'' if per_variant == 1 else 's'}. Enumerating "
+                f"fewer switches gives each remaining one a deeper search."
             )
         # The screen's own probes are candidates: each one is a real parameter
         # vector that was rendered and scored, and one of them may be the answer.
@@ -926,7 +1082,13 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             evaluated, caveats = refine(evaluator, variant, searched, per_variant,
                                         rng=rng)
             candidates.extend(evaluated)
-            result.caveats.extend(caveats)
+            # Once each, not once per variant. Every variant runs the same optimiser
+            # over the same parameters with the same budget, so they hit the same
+            # termination and produce the same sentence: three enumerated switches gave
+            # eight identical copies of it, Morgan's five would give thirty-two. This is
+            # the module whose whole argument is that the caveat block stays worth
+            # reading, and padding it teaches people to skip it.
+            result.caveats.extend(c for c in caveats if c not in result.caveats)
 
     from analysis.compare import DIMENSIONS
 

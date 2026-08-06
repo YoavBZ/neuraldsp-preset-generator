@@ -152,6 +152,52 @@ def test_the_schema_version_is_checked_rather_than_assumed(tmp_path):
     assert "schema version 99" in str(raised.value)
 
 
+def test_a_store_from_an_older_schema_is_named_as_one(tmp_path):
+    """The version check ran *after* `executescript`, so it never saw the store it
+    existed for: `CREATE TABLE IF NOT EXISTS` is a no-op on an existing table with the
+    wrong columns, but `CREATE INDEX ... ON trials(objective_key)` is not, and it
+    raised inside the schema. The user got "either empty or a store this tool wrote"
+    about a store this tool had written one commit earlier.
+    """
+    import sqlite3
+
+    path = tmp_path / "trials.sqlite3"
+    db = sqlite3.connect(str(path))
+    db.executescript(
+        "CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+        "CREATE TABLE runs (run_id TEXT PRIMARY KEY, created_at REAL NOT NULL);"
+        "CREATE TABLE trials (trial_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " run_id TEXT NOT NULL, params_json TEXT NOT NULL, cache_key TEXT);"
+        "INSERT INTO meta VALUES ('schema_version', '1');"
+    )
+    db.commit()
+    db.close()
+
+    with pytest.raises(StoreError) as raised:
+        Store(str(path))
+    message = str(raised.value)
+    assert "schema version 1" in message and "version 3" in message
+    assert "store this tool wrote" not in message, (
+        "it was a store this tool wrote; blaming the file is the wrong answer"
+    )
+
+
+def test_a_store_predating_the_meta_table_is_refused(tmp_path):
+    """There is no version to compare, and `SELECT ... FROM meta` is itself the error
+    on such a file — which is why the check reads `sqlite_master` first."""
+    import sqlite3
+
+    path = tmp_path / "old.sqlite3"
+    db = sqlite3.connect(str(path))
+    db.execute("CREATE TABLE trials (trial_id INTEGER PRIMARY KEY)")
+    db.commit()
+    db.close()
+
+    with pytest.raises(StoreError) as raised:
+        Store(str(path))
+    assert "no schema version" in str(raised.value)
+
+
 def test_a_store_survives_being_reopened(tmp_path):
     """Every write commits, because a search interrupted after 200 renders must not
     lose them — that is the case the cache exists for."""

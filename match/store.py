@@ -35,7 +35,13 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
-SCHEMA_VERSION = 1
+# Bumped when the columns change, which is the only thing it is for. It sat at 1
+# through two column additions in this milestone — `di_sha` and `di_offset_db`, then
+# `objective_key` — so the guard written to catch exactly this was inert: an out-dir
+# holding a store from an earlier commit of the same branch failed on
+# `CREATE INDEX ... ON trials(objective_key)` and reported "either empty or a store
+# this tool wrote", about a store this tool had written.
+SCHEMA_VERSION = 3
 
 # The file a run's trials go in, inside its `--out-dir`. A constant rather than a
 # parameter, because it was a parameter nothing ever passed.
@@ -190,6 +196,12 @@ class Store:
         try:
             self._db = sqlite3.connect(self.path)
             self._db.row_factory = sqlite3.Row
+            # Before `executescript`, not after. `CREATE TABLE IF NOT EXISTS` is a
+            # no-op on an existing table with the wrong columns, but the `CREATE INDEX`
+            # on a column that table does not have is not — so an older store raised
+            # inside the schema, was caught below, and got the "this is not a store"
+            # message rather than the version message written for it.
+            self._check_version()
             self._db.executescript(SCHEMA)
         except sqlite3.Error as e:
             raise StoreError(
@@ -198,23 +210,44 @@ class Store:
                 f"either empty or a store this tool wrote. A run appends here after "
                 f"every render, so it is not optional."
             ) from e
-        self._check_version()
+        self._record_version()
 
     def _check_version(self) -> None:
-        row = self._db.execute("SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
-        if row is None:
-            self._db.execute("INSERT INTO meta VALUES ('schema_version', ?)",
-                             (str(SCHEMA_VERSION),))
-            self._db.commit()
-            return
-        found = str(row["value"])
-        if found != str(SCHEMA_VERSION):
+        """Refuse a store whose columns are not the ones the queries here read.
+
+        Read through `sqlite_master` rather than `SELECT ... FROM meta`, because on a
+        store that predates the `meta` table there is nothing to select from and the
+        query itself is the error.
+        """
+        tables = {row["name"] for row in self._db.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'")}
+        if not tables:
+            return                                   # a new file: nothing to disagree
+        if "meta" not in tables:
+            raise StoreError(
+                f"{self.path} holds tables but no schema version, so it predates "
+                f"this store format.\n"
+                f"  Point --out-dir somewhere new: the columns a query reads here "
+                f"may not be the columns that are there."
+            )
+        row = self._db.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
+        found = None if row is None else str(row["value"])
+        if found is not None and found != str(SCHEMA_VERSION):
             raise StoreError(
                 f"{self.path} was written by schema version {found}; this is "
                 f"version {SCHEMA_VERSION}.\n"
                 f"  Point --out-dir somewhere new rather than mixing them: the "
                 f"columns a query reads may not be the columns that are there."
             )
+
+    def _record_version(self) -> None:
+        row = self._db.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
+        if row is None:
+            self._db.execute("INSERT INTO meta VALUES ('schema_version', ?)",
+                             (str(SCHEMA_VERSION),))
+            self._db.commit()
 
     # --- context management --------------------------------------------------
 

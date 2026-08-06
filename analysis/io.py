@@ -88,6 +88,26 @@ def load(path, target_rate: int = SAMPLE_RATE) -> Audio:
     digest = hashlib.sha256(raw).hexdigest()
 
     samples, rate = sf.read(str(path), dtype="float32", always_2d=True)
+    # A float WAV can hold NaN and ±inf — a corrupt bounce, a blown-up plugin in a DAW —
+    # and nothing downstream survives it. `scripts/match_preset.py` grew a guard for a
+    # reference that cannot be measured, and it caught silence and refused it in a
+    # sentence; the non-finite branch went all the way to a covariance eigendecomposition
+    # and came back as `error: Eigenvalues did not converge`, naming neither the file nor
+    # the cause. Refused here, where the file is still in hand, because every caller
+    # downstream would have to repeat the check. (Integer formats cannot express it, so
+    # this only ever fires on float subtypes.)
+    bad = int(np.count_nonzero(~np.isfinite(samples)))
+    if bad:
+        total = samples.size or 1
+        counted = (f"1 sample that is not finite" if bad == 1
+                   else f"{bad} samples that are not finite")
+        raise ValueError(
+            f"{path} contains {counted} "
+            f"({100.0 * bad / total:.2g}% of the file): NaN or infinity, which "
+            f"no measurement here can be made from.\n"
+            f"  That usually means a corrupt export or a plugin that blew up during the "
+            f"bounce. Re-export the file and check it plays."
+        )
     source_rate, source_channels = int(rate), int(samples.shape[1])
     if source_rate != target_rate:
         samples = resample(samples, source_rate, target_rate)
