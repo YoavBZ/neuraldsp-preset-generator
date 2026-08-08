@@ -185,10 +185,36 @@ def test_the_plugin_backend_offers_the_basis_it_measured(path):
     document = _load(path)
     centres = [float(c) for c in document["analysis_centres_hz"]]
     amp = next(iter(document["amps"]))
-    # No server is started: `eq_basis` reads a committed file, not the plugin.
-    found = AudioUnitRenderer(document["pack"]).eq_basis(amp, centres)
+    # The backend checks that the installed plugin is the version this file was
+    # measured against. Supply that authoritative answer without starting a server.
+    renderer = AudioUnitRenderer(document["pack"])
+    renderer._plugin_version = document["renderer"]["plugin_version"]
+    renderer._ensure_server = lambda: None
+    found = renderer.eq_basis(amp, centres)
     assert found is not None
     assert found[0].shape[1] == len(centres)
+
+
+@pytest.mark.parametrize("path", EQ_BASIS, ids=lambda p: p.parent.name)
+def test_a_basis_from_another_plugin_version_is_refused(path):
+    pytest.importorskip("numpy")
+    from match import invert
+
+    document = _load(path)
+    amp = next(iter(document["amps"]))
+    centres = [float(c) for c in document["analysis_centres_hz"]]
+    with pytest.raises(invert.InversionError, match="different plugin versions"):
+        invert.measured_basis(
+            document["pack"], amp, centres,
+            expected_plugin_version="999.0.0",
+        )
+
+
+def test_committed_calibrations_ship_as_package_data():
+    """A non-editable install must not silently lose the measured EQ basis."""
+    project = (PACKS.parent / "pyproject.toml").read_text()
+    package_data = project.split("[tool.setuptools.package-data]", 1)[1]
+    assert '"*/eq_basis.json"' in package_data.split("\n[", 1)[0]
 
 
 def test_an_absent_basis_is_a_fallback_not_an_error():

@@ -33,7 +33,7 @@ host = ["pedalboard>=0.9"]
 # analysis/ ships in the wheel but imports nothing until it is called, so a
 # bare install stays as dependency-free as it has always been.
 [tool.setuptools]
-packages = ["format", "packs", "analysis", "match"]
+packages = ["format", "packs", "analysis", "match", "scripts"]
 
 # The wheel used to contain no non-Python files at all, so an installed (rather
 # than editable) copy died on `analysis/loss_profiles.json` with a
@@ -41,7 +41,8 @@ packages = ["format", "packs", "analysis", "match"]
 # calls its contract — was missing too.
 [tool.setuptools.package-data]
 analysis = ["loss_profiles.json"]
-packs = ["*/manifest.json", "*/recipes.json", "*/tone.md"]
+packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json"]
+scripts = ["au_probe.swift", "au_render_server.swift"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

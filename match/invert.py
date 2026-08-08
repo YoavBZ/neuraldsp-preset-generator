@@ -163,9 +163,9 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
 
     Row *i* is what 1 dB on band *i* does at each analysis frequency, under a
     textbook peaking filter. The real plugin's bands are not textbook — they
-    interact, and their skirts are whatever its designers chose. Measuring them is
-    M5 work (`scripts/measure_eq_basis.py` does not exist yet), which is why using
-    this leaves a caveat behind.
+    interact, and their skirts are whatever its designers chose. This is the
+    fallback used when the backend has no basis from `measure_eq_basis.py`, which
+    is why using it leaves a caveat behind.
     """
     from analysis import require
 
@@ -185,7 +185,8 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
     return basis
 
 
-def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float]):
+def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
+                   expected_plugin_version: Optional[str] = None):
     """The measured basis for one amp, or `None` if there is not one to use.
 
     `packs/<pack>/eq_basis.json` is written by `scripts/measure_eq_basis.py` from
@@ -193,6 +194,10 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float]):
     third-octave centre. Returned as `(basis, note)` so a caller can say where the
     numbers came from; the note carries the plugin version, because a basis
     measured on one version is not a fact about another.
+
+    `expected_plugin_version` is supplied by a real backend. A committed basis
+    measured on another plugin version is refused: using it would merge measured
+    results across versions even though render caches correctly keep them apart.
 
     Returns `None` rather than raising for every ordinary absence — no file, a
     pack without this amp, a schema this does not understand — because the
@@ -220,6 +225,17 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float]):
     if not rows:
         return None
 
+    version = str((document.get("renderer") or {}).get(
+        "plugin_version", "unknown"))
+    if (expected_plugin_version is not None
+            and version != str(expected_plugin_version)):
+        raise InversionError(
+            f"{path} was measured against plugin {version}, but this renderer is "
+            f"running {expected_plugin_version}. Results from different plugin "
+            f"versions must not be merged. Re-run "
+            f"scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+
     available = [float(f) for f in document.get("analysis_centres_hz") or []]
     matrix = np.asarray(rows.get("basis_db_per_db") or [], dtype=np.float64)
     if matrix.ndim != 2 or matrix.shape[1] != len(available):
@@ -244,7 +260,6 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float]):
             f"Re-run scripts/measure_eq_basis.py --pack {pack_id}."
         )
 
-    version = (document.get("renderer") or {}).get("plugin_version", "unknown")
     note = (f"the band gains were fitted to this amp's *measured* equaliser "
             f"({path.parent.name}/eq_basis.json, plugin {version}) rather than to "
             f"textbook filter shapes")

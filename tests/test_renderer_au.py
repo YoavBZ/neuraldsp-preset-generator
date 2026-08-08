@@ -163,6 +163,30 @@ def test_metadata_does_not_claim_to_be_reproducible():
     assert metadata.plugin_version == "1.1.1"
 
 
+@pytest.mark.parametrize("kwargs, expected", [
+    ({"sample_rate": 44100}, "fixed at 48000 Hz"),
+    ({"block_size": 1024}, "fixed 512-frame blocks"),
+])
+def test_the_host_refuses_formats_it_cannot_actually_render(kwargs, expected):
+    """Metadata and cache keys must never claim a format the Swift host ignores."""
+    with pytest.raises(AudioUnitError, match=expected):
+        AudioUnitRenderer("morgan", **kwargs)
+
+
+def test_every_audio_changing_host_option_is_in_the_cache_identity():
+    """The same DI/settings through different host modes is not the same render."""
+    base = renderer().metadata().quality_mode
+    variants = [
+        renderer(amplitude=0.5).metadata().quality_mode,
+        renderer(settle_ms=5).metadata().quality_mode,
+        renderer(warmup_s=0.25).metadata().quality_mode,
+        renderer(isolate=False).metadata().quality_mode,
+        renderer(isolate=True).metadata().quality_mode,
+    ]
+    assert all(value != base for value in variants)
+    assert len(set(variants)) == len(variants)
+
+
 def test_the_plugin_version_is_in_the_cache_key():
     """Results from two plugin versions are never merged."""
     from match.renderer import cache_key
@@ -173,6 +197,19 @@ def test_the_plugin_version_is_in_the_cache_key():
     made._plugin_version = "1.2.0"
     two = cache_key(made.metadata(), "abc", {"sw50rAmp/sw50rVolume": 50.0})
     assert one != two
+
+
+def test_the_swift_host_sources_ship_with_the_renderer():
+    """A wheel containing renderer_au without its compiler inputs cannot render."""
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    project = (root / "pyproject.toml").read_text()
+    packages = project.split("packages =", 1)[1].split("\n", 1)[0]
+    package_data = project.split("[tool.setuptools.package-data]", 1)[1]
+    package_data = package_data.split("\n[", 1)[0]
+    assert '"scripts"' in packages
+    assert 'scripts = ["au_probe.swift", "au_render_server.swift"]' in package_data
 
 
 def test_a_pack_with_no_audio_unit_is_refused_with_a_reason():

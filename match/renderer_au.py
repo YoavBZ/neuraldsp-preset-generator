@@ -48,6 +48,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 from .renderer import REUSED_INSTANCE_BAND_NOISE_DB, RenderError, RenderMetadata, Renderer
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+RENDERER_SOURCE = pathlib.Path(__file__).resolve()
 SERVER_SOURCE = PLUGIN_ROOT / "scripts" / "au_render_server.swift"
 PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 
@@ -57,6 +58,7 @@ PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 # remainder is the plugin's response to the zero padding after the signal ends,
 # never the signal itself.
 BLOCK_FRAMES = 512
+SAMPLE_RATE = 48000
 
 
 class AudioUnitError(RenderError):
@@ -100,11 +102,23 @@ class AudioUnitRenderer(Renderer):
         # rule from two plugins, this tries without and reacts to the symptom.
         self.isolate = bool(isolate) if isolate is not None else False
         self._isolate_decided = isolate is not None
+        self._isolate_mode = "auto" if isolate is None else str(bool(isolate)).lower()
         self.amplitude = float(amplitude)
         self.warmup_s = float(warmup_s)
         self.sample_rate = int(sample_rate)
         self.block_size = int(block_size)
-        self.quality_mode = quality_mode
+        if self.sample_rate != SAMPLE_RATE:
+            raise AudioUnitError(
+                f"the Swift Audio Unit host is fixed at {SAMPLE_RATE} Hz, not "
+                f"{self.sample_rate} Hz. Resample the DI to {SAMPLE_RATE} Hz before "
+                f"rendering."
+            )
+        if self.block_size != BLOCK_FRAMES:
+            raise AudioUnitError(
+                f"the Swift Audio Unit host renders fixed {BLOCK_FRAMES}-frame "
+                f"blocks, not {self.block_size}."
+            )
+        self.quality_mode = str(quality_mode)
         self.band_noise_db = float(band_noise_db)
 
         self._binary = pathlib.Path(binary) if binary else None
@@ -160,7 +174,11 @@ class AudioUnitRenderer(Renderer):
             block_size=self.block_size,
             plugin_version=self._plugin_version or "unknown",
             renderer_build=self._renderer_build(),
-            quality_mode=self.quality_mode,
+            # These options all change the samples while the DI and parameter map
+            # stay the same. They therefore belong in the cache identity, not only
+            # in prose notes. "auto" remains stable before and after the first
+            # render decides whether this plugin needs isolation.
+            quality_mode=self._quality_identity(),
             # A reused instance is not a function of its inputs. Only a fresh
             # process is bit-exact, and this one deliberately is not fresh.
             reproducible=False,
@@ -225,11 +243,17 @@ class AudioUnitRenderer(Renderer):
             command["warmup"] = self.warmup_s
         command.update(self._state_command(settings))
 
-        self._exchange(command)
+        state_path = pathlib.Path(command["state"]) if "state" in command else None
         try:
+            self._exchange(command)
             return self._read_render(out_path, frames)
         finally:
             out_path.unlink(missing_ok=True)
+            # Record-state plugins need one rewritten blob per render. The server
+            # has consumed it before replying, so retaining thousands of them until
+            # close only turns a long search into avoidable temporary-disk growth.
+            if state_path is not None:
+                state_path.unlink(missing_ok=True)
 
     def parameter_specs(self) -> Dict[Tuple[str, str], Any]:
         """Every parameter of this pack the plugin can be written through.
@@ -256,7 +280,10 @@ class AudioUnitRenderer(Renderer):
         """
         from match.invert import measured_basis
 
-        return measured_basis(self.pack_id, amp, analysis_centres)
+        return measured_basis(
+            self.pack_id, amp, analysis_centres,
+            expected_plugin_version=self.metadata().plugin_version,
+        )
 
     def to_spec(self, settings: Optional[Mapping] = None, name: str = "Matched"):
         """The settings as a spec `apply_spec.py` accepts.
@@ -455,6 +482,9 @@ class AudioUnitRenderer(Renderer):
             except (BrokenPipeError, ValueError, subprocess.TimeoutExpired):
                 process.kill()
                 process.wait()
+        if self._log is not None:
+            self._log.close()
+            self._log = None
         self._ensure_server()
 
     def _exchange(self, command: Dict[str, Any]) -> Dict[str, Any]:
@@ -571,12 +601,40 @@ class AudioUnitRenderer(Renderer):
     def _renderer_build(self) -> str:
         """The harness's own identity, so a change to it invalidates the cache.
 
-        The Swift source rather than the compiled binary: the binary is rebuilt
-        into a fresh temporary directory on most runs, so its hash would change
-        without the harness changing and throw away every cache entry.
+        The Python state translation and both Swift helpers can all change what
+        reaches the plugin. Hash their sources for the normal build; a caller that
+        supplies a custom binary gets that binary's bytes in the identity instead
+        of being mislabeled as the repository server.
         """
-        digest = hashlib.sha256(SERVER_SOURCE.read_bytes()).hexdigest()
-        return f"au_render_server-{digest[:12]}"
+        digest = hashlib.sha256()
+        sources = [RENDERER_SOURCE, PROBE_SOURCE]
+        if self._binary is None:
+            sources.append(SERVER_SOURCE)
+        else:
+            sources.append(self._binary)
+        for source in sources:
+            try:
+                payload = source.read_bytes()
+            except OSError as e:
+                raise AudioUnitError(
+                    f"could not identify renderer build from {source}: {e}"
+                ) from e
+            digest.update(source.name.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(payload)
+            digest.update(b"\0")
+        return f"audio-unit-renderer-{digest.hexdigest()[:12]}"
+
+    def _quality_identity(self) -> str:
+        """Every host option that can change samples under the same DI/settings."""
+        number = lambda value: format(float(value), ".12g")
+        return ";".join([
+            self.quality_mode,
+            f"amplitude={number(self.amplitude)}",
+            f"settle_ms={number(self.settle_ms)}",
+            f"warmup_s={number(self.warmup_s)}",
+            f"isolate={self._isolate_mode}",
+        ])
 
     def close(self) -> None:
         """Stop the server and let go of the plugin instance."""
