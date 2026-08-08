@@ -87,6 +87,10 @@ class ParamSpec:
     ui: Optional[str] = None
     note: Optional[str] = None
     writable: bool = True
+    # Writable does not imply suitable for tone matching. Utility controls such
+    # as pitch transpose must round-trip and remain user-settable, but moving them
+    # to imitate the notes in a reference is content matching, not tone matching.
+    searchable: bool = True
     # Two different doubts, and they are not interchangeable. `needs_confirmation`
     # says a selector's member names are unknown; `needs_review` says the *kind*
     # is a bootstrap guess, and the kind is what picks the human→stored mapping.
@@ -387,6 +391,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             ui=entry.get("ui"),
             note=entry.get("note"),
             writable=entry.get("writable", True),
+            searchable=entry.get("searchable", True),
             needs_confirmation=entry.get("needs_confirmation", False),
             needs_review=entry.get("needs_review", False),
             switch_encoding=entry.get("switch_encoding", switch_encoding),

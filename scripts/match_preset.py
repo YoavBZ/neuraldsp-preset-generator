@@ -165,7 +165,17 @@ def main() -> None:
     if args.loss_profile not in list_profiles():
         die(f"unknown loss profile {args.loss_profile!r}. "
             f"Available: {', '.join(list_profiles())}")
-    load_profile(args.loss_profile)          # fail here rather than 200 renders in
+    profile = load_profile(args.loss_profile)  # fail here rather than 200 renders in
+    residual_weighted = float(
+        profile.get("weights", {}).get("residual", 0.0) or 0.0
+    ) > 0.0
+    if residual_weighted and args.reference_mode != "paired_di":
+        die(f"loss profile {args.loss_profile!r} weights a sample-for-sample "
+            "waveform residual, but --reference-mode is "
+            f"{args.reference_mode!r}. That term is only meaningful when "
+            "--reference is a reamp of the exact --probe-di performance.\n"
+            "  Use --reference-mode paired_di with that pair, or use "
+            "--loss-profile unpaired-v1 for a different performance.")
 
     space = space_module.build(args.pack, amp=args.amp)
     renderer = _renderer(args.renderer, args.pack)
@@ -232,7 +242,9 @@ def main() -> None:
     # caused rather than only the budgeted ones.
     extra: list = []
     evaluator = search.Evaluator(renderer, target, probe_di, space,
-                                 profile=args.loss_profile, recipe=seed)
+                                 profile=args.loss_profile, recipe=seed,
+                                 reference_audio=(reference.samples
+                                                  if residual_weighted else None))
     start = evaluator.evaluate(seed)
     if not start.objectives:
         die("the template rendered nothing comparable — a silent render, or no "
@@ -298,7 +310,9 @@ def main() -> None:
                            shortlist=args.shortlist, store=store, run_id=run_id,
                            fallbacks=[template_values],
                            switches=switches, selectors=selectors,
-                           rng=np.random.default_rng(args.seed))
+                           rng=np.random.default_rng(args.seed),
+                           reference_audio=(reference.samples
+                                            if residual_weighted else None))
     elapsed_s = time.monotonic() - started_at
     caveats.extend(result.caveats)
 

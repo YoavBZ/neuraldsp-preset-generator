@@ -90,6 +90,21 @@ def test_compare_two_fingerprints(dark, bright, tmp_path):
     assert document["band_delta"]
 
 
+def test_paired_compare_uses_aligned_waveforms(dark):
+    document = json.loads(run(
+        COMPARE, dark, dark, "--profile", "paired-v1", "--json").stdout)
+    assert document["objectives"]["values"]["residual"] == pytest.approx(0.0)
+    assert document["residual_db"] < -100.0
+    assert document["alignment"]["trustworthy"] is True
+
+
+def test_paired_compare_refuses_fingerprints_without_samples(dark, tmp_path):
+    stored = tmp_path / "dark.json"
+    run(FINGERPRINT, dark, "--out", stored)
+    result = run(COMPARE, stored, stored, "--profile", "paired-v1", expect=2)
+    assert "requires both arguments to be audio files" in result.stderr
+
+
 def test_compare_rejects_an_unknown_profile(dark, bright):
     result = run(COMPARE, dark, bright, "--profile", "vibes-v3", expect=2)
     assert "unknown loss profile" in result.stderr

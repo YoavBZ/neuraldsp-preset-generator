@@ -25,6 +25,10 @@ def renderer(pack_id: str = "morgan", **kwargs) -> AudioUnitRenderer:
     """
     made = AudioUnitRenderer(pack_id, **kwargs)
     made._xml_state = True
+    # `metadata()` now starts the server to learn the authoritative plugin
+    # version. Tests that set that version themselves still went on to launch the
+    # installed Audio Unit, contradicting this helper and failing in CI/sandboxes.
+    made._ensure_server = lambda: None
     return made
 
 

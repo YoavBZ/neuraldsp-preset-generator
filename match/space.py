@@ -455,6 +455,8 @@ def build(pack_id: str = "morgan", include_needs_review: bool = False,
 def _exclusion_reason(spec, include_needs_review: bool) -> Optional[str]:
     if not spec.writable:
         return "read-only in the manifest"
+    if not spec.searchable:
+        return "writable utility control, excluded from tone matching"
     if spec.kind in UNSEARCHABLE_KINDS:
         return f"kind {spec.kind!r} is not a searchable quantity"
     if spec.needs_review and not include_needs_review:

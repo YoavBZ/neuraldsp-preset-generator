@@ -1,7 +1,7 @@
 """Compare two recordings, or two fingerprints, and say how they differ.
 
     python scripts/compare_audio.py reference.wav render.wav
-    python scripts/compare_audio.py target.json candidate.json --profile paired-v1
+    python scripts/compare_audio.py reamp.wav candidate.wav --profile paired-v1
     python scripts/compare_audio.py a.wav b.wav --json
 
 The first argument is the target and the second is the candidate, and the band
@@ -33,16 +33,19 @@ AUDIO_SUFFIXES = {".wav", ".aiff", ".aif", ".flac", ".ogg", ".caf", ".w64"}
 
 def _load_side(path: pathlib.Path, regime: str, excerpt):
     """Accept a fingerprint document or an audio file, and say which it was."""
-    from analysis.fingerprint import Fingerprint, fingerprint_file
+    from analysis import io
+    from analysis.fingerprint import Fingerprint, fingerprint
 
     if path.suffix.lower() == ".json":
-        return Fingerprint.from_json(path.read_text())
+        return Fingerprint.from_json(path.read_text()), None
     if path.suffix.lower() not in AUDIO_SUFFIXES:
         die(f"{path} is neither a .json fingerprint nor an audio file this reads")
-    return fingerprint_file(path, regime=regime, excerpt_s=excerpt)
+    audio = io.load(path)
+    return fingerprint(audio, regime=regime, excerpt_s=excerpt), audio
 
 
-def print_report(target, candidate, objectives, deltas, scalar_value) -> None:
+def print_report(target, candidate, objectives, deltas, scalar_value,
+                 alignment=None, residual_value=None) -> None:
     print(f"profile     {objectives.profile}")
     print(f"target      {target.source.get('regime')} "
           f"({target.regime_confidence:.2f} confidence), "
@@ -59,6 +62,12 @@ def print_report(target, candidate, objectives, deltas, scalar_value) -> None:
             print(f"  {name:16} {value:7.3f}  {bar}")
     print(f"  {'combined':16} {scalar_value:7.3f}" if scalar_value is not None
           else "  combined         —")
+
+    if alignment is not None:
+        trust = "trusted" if alignment.trustworthy else "not trusted; left unshifted"
+        print(f"\npaired waveform residual  {residual_value:.2f} dB")
+        print(f"  alignment {alignment.offset_ms:+.3f} ms, "
+              f"correlation {alignment.correlation:+.3f} ({trust})")
 
     if deltas:
         print("\nband difference, target minus candidate, level offset removed")
@@ -99,14 +108,38 @@ def main() -> None:
             die(f"{path} does not exist")
 
     from analysis import AnalysisUnavailable
-    from analysis.compare import ProfileError, band_delta, compare, scalar
+    from analysis.compare import (ProfileError, band_delta, compare, load_profile,
+                                  scalar)
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError
 
     excerpt = DEFAULT_EXCERPT_S if args.excerpt is None else (args.excerpt or None)
     try:
-        target = _load_side(args.target, args.target_regime, excerpt)
-        candidate = _load_side(args.candidate, args.candidate_regime, excerpt)
-        objectives = compare(target, candidate, profile=args.profile)
+        profile = load_profile(args.profile)
+        target, target_audio = _load_side(args.target, args.target_regime, excerpt)
+        candidate, candidate_audio = _load_side(
+            args.candidate, args.candidate_regime, excerpt)
+        residual_value = None
+        alignment = None
+        residual_weighted = float(
+            profile.get("weights", {}).get("residual", 0.0) or 0.0
+        ) > 0.0
+        if residual_weighted:
+            if target_audio is None or candidate_audio is None:
+                die(f"loss profile {args.profile!r} weights waveform residual, "
+                    "which requires both arguments to be audio files. A stored "
+                    "fingerprint contains no samples; use --profile unpaired-v1 "
+                    "to compare fingerprints.")
+            from analysis.align import align, residual_db
+
+            aligned_target, aligned_candidate, alignment = align(
+                target_audio.samples, candidate_audio.samples,
+                target_audio.sample_rate)
+            residual_value = residual_db(aligned_target, aligned_candidate)
+            if residual_value is None:
+                die("paired waveform residual is not measurable: the aligned target "
+                    "has no usable mono energy")
+        objectives = compare(target, candidate, profile=args.profile,
+                             residual_db=residual_value)
         value = scalar(objectives)
     except ProfileError as e:
         # ProfileError already lists the available profiles; appending them again
@@ -117,10 +150,20 @@ def main() -> None:
 
     deltas = band_delta(target, candidate)
     if args.json:
+        alignment_json = None if alignment is None else {
+            "offset_samples": alignment.offset_samples,
+            "fractional_offset": alignment.fractional_offset,
+            "offset_ms": alignment.offset_ms,
+            "correlation": alignment.correlation,
+            "polarity": alignment.polarity,
+            "trustworthy": alignment.trustworthy,
+        }
         print(json.dumps({"objectives": objectives.to_dict(), "combined": value,
-                          "band_delta": deltas}, indent=2))
+                          "band_delta": deltas, "residual_db": residual_value,
+                          "alignment": alignment_json}, indent=2))
     else:
-        print_report(target, candidate, objectives, deltas, value)
+        print_report(target, candidate, objectives, deltas, value,
+                     alignment=alignment, residual_value=residual_value)
 
 
 if __name__ == "__main__":

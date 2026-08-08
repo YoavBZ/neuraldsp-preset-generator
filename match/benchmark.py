@@ -361,7 +361,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     supported = list(renderer.parameter_specs())
     scorer = search.Evaluator(renderer, fingerprint(
         io.from_samples(probe_di, renderer.metadata().sample_rate),
-        regime="probe", excerpt_s=None), probe_di, space, profile=profile)
+        regime="probe", excerpt_s=None), probe_di, space, profile=profile,
+        reference_audio=probe_di)
     result = BenchmarkResult()
     amp = amp or space.amp_prefix(seed)
 
@@ -387,7 +388,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             try:
                 found, renders, arm_caveats = _run_arm(
                     arm, renderer, target, probe_di, space, seed, budget, profile,
-                    invert, search, rng, pack_id, amp, switches, selectors)
+                    invert, search, rng, pack_id, amp, switches, selectors,
+                    reference_audio=rendered.audio)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -408,7 +410,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 tagged = f"{arm}: {text}"
                 if tagged not in result.caveats:
                     result.caveats.append(tagged)
-            scored = scorer_score(scorer, target, found)
+            scored = scorer_score(scorer, target, found,
+                                  reference_audio=rendered.audio)
             if scored is None:
                 outcome.failed = True
                 outcome.error = "the recovered vector produced nothing comparable"
@@ -428,17 +431,19 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     return result
 
 
-def scorer_score(scorer, target, values: Mapping) -> Optional[float]:
+def scorer_score(scorer, target, values: Mapping,
+                 reference_audio=None) -> Optional[float]:
     """One vector's weighted distance to a target, through the shared evaluator.
 
-    Reassigning `scorer.target` is the sharp edge here and the reason this is a named
+    Updating the reference is the sharp edge here and the reason this is a named
     function rather than three inline lines: the evaluator is shared across every arm
-    and every target, so a caller that forgets to set the target scores against the
-    previous one. That is the same class of hidden state as the "a quieter DI looked
+    and every target, so a caller that forgets either the fingerprint or, for a paired
+    profile, its waveform scores against the previous one. `set_reference` updates the
+    pair together. That is the same class of hidden state as the "a quieter DI looked
     like a better match" bug §12c records, and the reason it has not bitten is that
     there is exactly one caller.
     """
-    scorer.target = target
+    scorer.set_reference(target, reference_audio)
     scored = scorer.evaluate(values)
     return scored.total if scored.objectives else None
 
@@ -446,7 +451,8 @@ def scorer_score(scorer, target, values: Mapping) -> Optional[float]:
 def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
              invert, search, rng, pack_id: str, amp: Optional[str],
              switches: Optional[Sequence[str]] = None,
-             selectors: Optional[Sequence[str]] = None):
+             selectors: Optional[Sequence[str]] = None,
+             reference_audio=None):
     """One arm's answer for one target, and how many renders it took.
 
     The three arms are **nested**, which is what makes the comparison mean anything:
@@ -466,13 +472,15 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
         return dict(seed), 0, []
 
     inverted, spent = _invert_from(renderer, target, probe_di, space, seed, profile,
-                                   invert, search, pack_id, amp)
+                                   invert, search, pack_id, amp,
+                                   reference_audio=reference_audio)
     if arm == "inversion":
         return inverted, spent, []
 
     outcome = search.search(renderer, target, probe_di, space, inverted,
                             budget=budget, profile=profile, shortlist=1,
-                            switches=switches, selectors=selectors, rng=rng)
+                            switches=switches, selectors=selectors, rng=rng,
+                            reference_audio=reference_audio)
     if not outcome.shortlist:
         failure = BenchmarkError(
             f"the search returned no candidate after {outcome.renders} renders: "
@@ -490,7 +498,7 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
 
 
 def _invert_from(renderer, target, probe_di, space, seed, profile, invert, search,
-                 pack_id: str, amp: Optional[str]):
+                 pack_id: str, amp: Optional[str], reference_audio=None):
     """The seed with everything calculable calculated, and the one render it cost."""
     from analysis import io
     from analysis.fingerprint import fingerprint
@@ -501,7 +509,7 @@ def _invert_from(renderer, target, probe_di, space, seed, profile, invert, searc
             "seed with a selectedAmp value"
         )
     evaluator = search.Evaluator(renderer, target, probe_di, space, profile=profile,
-                                 recipe=seed)
+                                 recipe=seed, reference_audio=reference_audio)
     rendered = renderer.render(probe_di, evaluator._settings(seed))
     printed = fingerprint(io.from_samples(rendered.audio,
                                           rendered.metadata.sample_rate),

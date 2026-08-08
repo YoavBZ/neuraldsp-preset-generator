@@ -1,8 +1,9 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 through M4 are done and M4's exit criterion is met — 50 targets, 300
-renders each, the full pipeline beating inversion-alone on 49 of 49. M5 is next, and it
-needs macOS with both plugins licensed.** The two spikes ran on 2026-08-05
+Status: **M0 through M5 are done. M4's synthetic exit criterion was met — 50 targets,
+300 renders each, the full pipeline beating inversion-alone on 49 of 49 — and M5
+measured the honest real-plugin gap: the full objective is 46% worse on the mean and
+59% worse on the median than the synthetic benchmark implied.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
@@ -18,9 +19,9 @@ departures found by auditing M0 and M1 against their own exit criteria, and five
 *fixes* from M3's second review that turned out to be wrong in their own way.
 Every one of those had passed a green suite.
 
-One M0 item is deliberately still open: the `apply_spec.py` → `pedalboard` state
-round trip is implemented and tested without a plugin, but has not been *run*
-against one, and M5 depends on it.
+The real Audio Unit backend, measured EQ bases, Morgan benchmark and Tone King
+end-to-end run are recorded in §12d. The remaining work named there is follow-up
+design work exposed by M5, not a claim that the real backend has yet to land.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -1058,11 +1059,16 @@ spectral and level fits have to beat delay-alone by a tenth rather than by any
 margin at all, the band gains have to be non-trivial, and the loudness gap has to
 close.
 
-The space is 126 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
+The space is 125 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
 being its 100 writable ones less its paths and strings, which is the manifest's own
 arithmetic rather than a number maintained here. What is excluded is excluded by
 category: read-only, `internal`, strings, paths, enums whose member names are
-unknown, and anything whose `kind` is a bootstrap guess.
+unknown, anything whose `kind` is a bootstrap guess, and writable utility controls
+the manifest marks `searchable: false`. Morgan's transpose is the first of the last
+category: a separated-stem run let the optimiser move it to imitate the reference's
+notes, which is content matching rather than tone matching. The control still
+round-trips and can be written deliberately; generated tone searches leave it at
+the template value.
 
 Three things were worth learning while building it:
 
@@ -1351,8 +1357,8 @@ document should be treated the same way.
 
 ### The four stages, and what each one is for
 
-**The screen pays for itself immediately.** Morgan has 126 searchable dimensions and
-CMA-ES over 126 dimensions needs thousands of samples to do anything. Two renders per
+**The screen pays for itself immediately.** Morgan has 125 searchable dimensions and
+CMA-ES over 125 dimensions needs thousands of samples to do anything. Two renders per
 parameter plus one baseline — 2N + 1, and calling it "2 per parameter" was off by
 exactly that one — turned 24 live supported dimensions into 18 searched and 6 frozen
 for 49 renders on the run above. The extremes are
@@ -1885,7 +1891,7 @@ So the stage needs rethinking, as §6.2 said it would if this came back negative
 The caveat naming the percentage is doing real work and should stay until the
 re-rank measures something other than how loud the render got.
 
-### `paired-v1` runs, and the term carrying 0.9 of its weight is never computed
+### The first `paired-v1` run silently omitted the term carrying 0.9 of its weight
 
 §6.7 of the handoff calls `paired-v1` "the highest-confidence path in the whole
 design — regime weight 1.0, and the only profile that weights `residual` (0.9)
@@ -1928,10 +1934,35 @@ outside a unit test. Nothing in the 14 caveats that run printed said so, which i
 the part that most needs fixing: a profile that weights a dimension the run could
 not measure should say which dimension and how much weight went with it.
 
-This is not fixed here. Wiring it up needs the reference *samples* threaded into
-the evaluator — it holds only the fingerprint, and a fingerprint deliberately
-throws the waveform away — which is a change to the evaluator's contract rather
-than a patch, and it should be done deliberately rather than at the end of M5.
+It is fixed after that audit. `Evaluator` now requires `reference_audio` whenever
+the selected profile gives `residual` a non-zero weight, aligns every candidate
+render to those samples, passes the measured dB residual into `compare()`, and
+includes the reference waveform hash in the score-cache key. The benchmark updates
+the fingerprint and waveform together for every generated target. The match CLI
+refuses `paired-v1` outside `--reference-mode paired_di`, and `compare_audio.py`
+refuses to pretend two stored fingerprints contain samples.
+
+Low-correlation alignment is not hidden: below absolute correlation 0.30 the
+signals are compared unshifted rather than moved by an offset inferred from noise,
+and the run reports how often that happened. A paired run also says that the files
+themselves cannot prove the reference is a reamp of the exact DI; the mode flag is a
+declaration, not provenance.
+
+The production path is pinned by these invocations:
+
+```
+python3 -m pytest -q tests/test_search.py tests/test_analysis_cli.py \
+  tests/test_match_cli.py tests/test_benchmark.py -k paired
+
+python3 scripts/compare_audio.py reference.wav reference.wav \
+  --profile paired-v1 --json
+```
+
+The second command must report a residual objective of 0.0 and a trusted
+alignment. A fresh real-plugin DI/reamp calibration is still required before any
+new number is attached to the 0.9 weight; the earlier `1.454 -> 0.654` run omitted
+the term and is not evidence for it. No substitute pair should be used: separated
+stems are different performances and belong to `unpaired-v1`.
 
 ### The topology stage now runs, and it is not free
 

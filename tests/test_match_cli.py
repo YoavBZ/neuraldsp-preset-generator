@@ -217,6 +217,36 @@ def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
     assert "unknown regime" not in done.stderr
 
 
+def test_paired_profile_reaches_the_search_and_records_residual(audio, tmp_path):
+    out = tmp_path / "paired"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--amp", "sw50r", "--budget", "60", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "paired waveform residual was measured" in done.stdout
+
+    import sqlite3
+
+    db = sqlite3.connect(out / "trials.sqlite3")
+    rows = [json.loads(row[0]) for row in db.execute(
+        "select objectives_json from trials where objectives_json is not null")]
+    db.close()
+    assert rows and all("residual" in row for row in rows)
+
+
+def test_paired_profile_refuses_a_different_performance_mode(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--amp", "sw50r", "--budget", "60",
+               "--out-dir", tmp_path / "wrong-mode")
+    assert done.returncode != 0
+    assert "only meaningful" in done.stderr
+    assert "--reference-mode paired_di" in done.stderr
+    assert "Traceback" not in done.stderr
+
+
 @pytest.mark.parametrize("extra,expected", [
     (["--budget", "0"], "must be at least 1"),
     (["--loss-profile", "nope"], "unknown loss profile"),

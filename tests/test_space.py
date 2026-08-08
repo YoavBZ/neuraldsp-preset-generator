@@ -63,6 +63,7 @@ def test_the_space_excludes_what_cannot_be_searched(space):
         assert (
             spec.kind in S.UNSEARCHABLE_KINDS
             or not spec.writable
+            or not spec.searchable
             or (spec.kind in ("enum", "switch") and not spec.members)
             or spec.needs_confirmation
             or spec.needs_review
@@ -108,6 +109,8 @@ def test_every_exclusion_rule_actually_excludes():
 
     cases = [
         ("read-only", ParamSpec(module="", key="v", kind="rotation", writable=False)),
+        ("utility", ParamSpec(module="", key="v", kind="metered",
+                              searchable=False)),
         ("string", ParamSpec(module="", key="v", kind="string")),
         ("path", ParamSpec(module="", key="v", kind="path")),
         ("internal", ParamSpec(module="", key="v", kind="internal")),
@@ -122,6 +125,20 @@ def test_every_exclusion_rule_actually_excludes():
     # test_enums_carry_their_members_and_switches_need_not.
     switch = ParamSpec(module="", key="v", kind="switch")
     assert S._exclusion_reason(switch, include_needs_review=False) is None
+
+
+def test_pitch_transpose_is_writable_but_not_tone_searchable(space):
+    """A different melody must not make the matcher transpose the guitarist.
+
+    The control remains in the pack contract so specs can deliberately write it;
+    only the generated tone-search space excludes it.
+    """
+    pack = load_pack("morgan")
+    transpose = pack.parameters["parameters/transpose"]
+    assert transpose.writable and not transpose.searchable
+    assert "parameters/transpose" in space.excluded
+    with pytest.raises(S.SpaceError):
+        space.by_path("parameters", "transpose")
 
 
 def test_every_continuous_dimension_has_a_range_to_search(space):
