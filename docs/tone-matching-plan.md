@@ -24,6 +24,8 @@ end-to-end run are recorded in §12d. The remaining work named there is follow-u
 design work exposed by M5, not a claim that the real backend has yet to land.
 M6's user-facing match skill, machine-readable run summary, corrected paired-DI
 calibration and two real-stem acceptance runs are recorded in §12e.
+The fresh-process Morgan drive surface that closes M5's remaining calibration
+item is recorded in §12f.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2209,6 +2211,52 @@ Both are Morgan 1.1.1 and **`reproducible=false`**. Each generated a complete
 `summary.json`; each winner then passed the exact `apply_spec.py --dry-run`
 invocation printed by its run. Nothing was written because M6 keeps audition and
 approval between preview and preset creation.
+
+## 12f. The fresh-process drive surface M5 specified
+
+M5 specified `scripts/measure_drive_curve.py` and
+`packs/morgan/drive_curve.json`, but neither existed when M6 landed. The missing
+calibration is now a 10-position volume curve at four input levels for each of
+Morgan's three amps: **120 measured points plus three exact-repeat checks**.
+
+The committed file is reproduced by this exact invocation:
+
+```bash
+.venv/bin/python scripts/measure_drive_curve.py --pack morgan
+```
+
+It took 305 seconds on this machine. Every point used a new `au_render` process
+and therefore a new plugin instance; the 50% volume / 0.05 input point was
+repeated for each amp and all three WAV files were byte-exact. The file therefore
+reports Morgan 1.1.1 and `reproducible=true` for this **one-shot measurement
+policy**. That does not revise the batched backend's `reproducible=false` result:
+the two policies deliberately make different speed/repeatability trades.
+
+The first sampled volume position at or above 5% THD was:
+
+| amp | input 0.015 | input 0.05 | input 0.15 | input 0.30 |
+|---|---:|---:|---:|---:|
+| AC20 | 90% | 60% | 30% | 10% |
+| PR12 | not reached (max 4.68%) | 70% | 30% | 20% |
+| SW50R | not reached (max 2.42%) | 70% | 50% | 30% |
+
+These are grid crossings, not interpolated knees. The useful result is the
+surface rather than any one threshold: the same amp moves from nearly clean to
+heavy breakup at a much lower knob position as input rises.
+
+The first diagnostic pass exposed a measurement error before it could be
+committed: 17 SW50R points exceeded 0 dBFS, peaking at 1.249. Morgan's manifest
+already says to trim `parameters/outputGain` in that situation. The one-shot
+host now accepts `--output-gain`; the calibration records −6 dB and every final
+point stays below full scale (maximum peaks: AC20 0.196, PR12 0.222, SW50R
+0.280). A controlled SW50R repeat at input 0.30 / volume 100% kept THD at
+24.450% while the peak moved from 1.244 to 0.279, confirming that the trim
+supplied output headroom without moving the distortion ratio.
+
+`tests/test_calibration_schema.py` checks the surface shape, manifest control,
+fresh-process provenance, exact repeat hashes, finite THD, non-silence and
+headroom without loading a plugin. `tests/test_drive_curve.py` pins the command's
+grid, bin-centred frequency and one-shot arguments.
 
 ## 13. Reading list, in the order it becomes relevant
 

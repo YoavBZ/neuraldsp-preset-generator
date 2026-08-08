@@ -20,6 +20,7 @@ import pytest
 
 PACKS = pathlib.Path(__file__).resolve().parents[1] / "packs"
 EQ_BASIS = sorted(PACKS.glob("*/eq_basis.json"))
+DRIVE_CURVES = sorted(PACKS.glob("*/drive_curve.json"))
 
 
 def _load(path: pathlib.Path) -> dict:
@@ -215,6 +216,54 @@ def test_committed_calibrations_ship_as_package_data():
     project = (PACKS.parent / "pyproject.toml").read_text()
     package_data = project.split("[tool.setuptools.package-data]", 1)[1]
     assert '"*/eq_basis.json"' in package_data.split("\n[", 1)[0]
+    assert '"*/drive_curve.json"' in package_data.split("\n[", 1)[0]
+
+
+@pytest.mark.parametrize("path", DRIVE_CURVES, ids=lambda p: p.parent.name)
+def test_drive_curve_schema_and_fresh_process_provenance(path):
+    document = _load(path)
+    assert document["schema"] == "drive-curve-1"
+    assert document["process_policy"] == "one fresh plugin process per render"
+    assert -24.0 <= float(document["output_gain_db"]) < 0.0
+    renderer = document["renderer"]
+    assert renderer["renderer_id"] == "swift-one-shot"
+    assert renderer["plugin_version"] not in ("", "n/a", "unknown")
+    assert renderer["reproducible"] is True
+
+
+@pytest.mark.parametrize("path", DRIVE_CURVES, ids=lambda p: p.parent.name)
+def test_drive_curve_is_a_complete_input_level_surface(path):
+    document = _load(path)
+    levels = [float(value) for value in document["input_levels"]]
+    positions = [float(value) for value in document["positions_percent"]]
+    assert 3 <= len(levels) <= 4
+    assert levels == sorted(set(levels)) and all(value > 0 for value in levels)
+    assert positions == sorted(set(positions))
+    assert positions[0] <= 10.0 and positions[-1] == 100.0
+
+    from packs.loader import load_pack
+
+    pack = load_pack(document["pack"])
+    for amp, rows in document["amps"].items():
+        assert rows["control"] == f"{amp}Amp/{amp}Volume"
+        assert rows["control"] in pack.parameters
+        assert [float(curve["input_level"]) for curve in rows["curves"]] == levels
+        for curve in rows["curves"]:
+            points = curve["points"]
+            assert [float(point["position_percent"]) for point in points] == positions
+            for point in points:
+                assert point["silent"] is False
+                assert point["clipped"] is False
+                assert float(point["output_peak"]) > 0.0
+                assert float(point["thd_percent"]) >= 0.0
+
+
+@pytest.mark.parametrize("path", DRIVE_CURVES, ids=lambda p: p.parent.name)
+def test_each_drive_curve_proved_a_fresh_process_repeats(path):
+    for amp, rows in _load(path)["amps"].items():
+        repeat = rows["repeat_verification"]
+        assert repeat["byte_exact"] is True, f"{amp} fresh processes differed"
+        assert repeat["sha256_first"] == repeat["sha256_repeat"]
 
 
 def test_an_absent_basis_is_a_fallback_not_an_error():

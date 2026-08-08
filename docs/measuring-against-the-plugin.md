@@ -254,6 +254,20 @@ around 28% when the input is three times stronger. Treat breakup positions as
 input-dependent ranges, and check rendered peak level so output clipping is not
 misidentified as plugin distortion.
 
+The full Morgan surface is committed in `packs/morgan/drive_curve.json` and is
+reproduced by this exact command:
+
+```bash
+.venv/bin/python scripts/measure_drive_curve.py --pack morgan
+```
+
+It measures AC20, PR12 and SW50R at 10–100% volume and input peaks 0.015, 0.05,
+0.15 and 0.30. Each of its 120 points starts a fresh plugin process; one point
+per amp is then repeated and must be byte-exact before the file is written. A
+−6 dB output trim supplies headroom without changing the measured THD ratio. The
+JSON records that trim, the plugin version, every output peak, and the exact
+repeat hashes.
+
 ## What a render costs
 
 Measuring one control takes two renders. Matching a preset against a recording
