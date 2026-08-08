@@ -87,3 +87,26 @@ def test_resample_uses_the_exact_ratio():
     """44100 to 48000 is 160/147, not a float approximation of it."""
     resampled = io.resample(fx.noise(seconds=1.0, sample_rate=44100)[:, None], 44100, 48000)
     assert len(resampled) == pytest.approx(48000, abs=2)
+
+
+def test_a_compressed_reference_names_the_conversion(tmp_path):
+    """`.m4a` and `.mp3` are what a reference actually arrives as.
+
+    libsndfile decodes WAV, AIFF, FLAC and Ogg and nothing compressed, and its
+    own message — "Format not recognised" — tells the person holding a phone
+    recording or a stem-separation export nothing about what to do next. The
+    bytes here are not a real AAC file; what is being tested is that an
+    unreadable one is refused with the converter named, not that AAC is parsed.
+    """
+    import pytest
+
+    from analysis import io
+
+    path = tmp_path / "reference.m4a"
+    path.write_bytes(b"\x00\x00\x00\x20ftypM4A " + b"\x00" * 512)
+    with pytest.raises(ValueError) as raised:
+        io.load(path)
+    message = str(raised.value)
+    assert "afconvert" in message and "ffmpeg" in message
+    assert "48000" in message, "the conversion has to land at the rate we measure at"
+    assert "reference.m4a" in message

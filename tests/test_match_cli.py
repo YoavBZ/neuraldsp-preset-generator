@@ -217,10 +217,43 @@ def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
     assert "unknown regime" not in done.stderr
 
 
+def test_paired_profile_reaches_the_search_and_records_residual(audio, tmp_path):
+    out = tmp_path / "paired"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--amp", "sw50r", "--budget", "60", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "paired waveform residual was measured" in done.stdout
+
+    import sqlite3
+
+    db = sqlite3.connect(out / "trials.sqlite3")
+    rows = [json.loads(row[0]) for row in db.execute(
+        "select objectives_json from trials where objectives_json is not null")]
+    db.close()
+    assert rows and all("residual" in row for row in rows)
+
+
+def test_paired_profile_refuses_a_different_performance_mode(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--amp", "sw50r", "--budget", "60",
+               "--out-dir", tmp_path / "wrong-mode")
+    assert done.returncode != 0
+    assert "only meaningful" in done.stderr
+    assert "--reference-mode paired_di" in done.stderr
+    assert "Traceback" not in done.stderr
+
+
 @pytest.mark.parametrize("extra,expected", [
     (["--budget", "0"], "must be at least 1"),
     (["--loss-profile", "nope"], "unknown loss profile"),
-    (["--renderer", "swift"], "not built yet"),
+    # `swift` used to belong here. It is M5 and it is built, so on a machine with
+    # the plugin it is a working backend rather than a bad flag; `pedalboard` is
+    # the one still unbuilt and is what this now asserts about.
+    (["--renderer", "pedalboard"], "not built yet"),
     (["--reference-mode", "reamp"], "invalid choice"),
 ])
 def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):
@@ -396,3 +429,107 @@ def test_an_unknown_arm_is_refused_by_name(tmp_path):
     assert done.returncode != 0
     assert "unknown arm(s) magic" in done.stderr
     assert "recipe, inversion, full" in done.stderr
+
+
+# --- --enumerate ------------------------------------------------------------
+# The topology stage was written and tested in M4 and no caller ever reached it,
+# so every run left the cabinet, the microphone and the amp wherever the template
+# had them and said so in a caveat. These cover the wiring, not `topologies()`.
+
+def test_list_enumerable_names_the_paths_and_their_positions(tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", ROOT / "pyproject.toml", "--amp", "sw50r",
+               "--out-dir", tmp_path / "run", "--list-enumerable")
+    assert done.returncode == 0, done.stderr
+    assert "sw50rAmp/sw50rBright" in done.stdout
+    assert "cabParameters/leftMicType" not in done.stdout, (
+        "the synthetic backend does not model microphone type, so listing it "
+        "would advertise several topologies that all render identically"
+    )
+    assert "2 positions" in done.stdout, done.stdout
+    assert "(switch)" in done.stdout
+    # It exits before reading the reference, which here is not audio at all.
+    assert "Format not recognised" not in done.stderr
+
+
+def test_an_unenumerable_path_is_refused_by_name(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--out-dir", tmp_path / "run", "--enumerate", "sw50rAmp/sw50rVolume")
+    assert done.returncode != 0
+    # A continuous control: enumerating a knob is a category error, and the
+    # message has to say where the real list is.
+    assert "not a switch or selector" in done.stderr, done.stderr
+    assert "--list-enumerable" in done.stderr
+
+
+def test_a_discrete_control_the_renderer_does_not_model_is_refused(audio, tmp_path):
+    """A path can be valid for the pack and still be imaginary for the backend.
+
+    Before this guard, eleven microphone values became eleven identical synthetic
+    renders because Evaluator._settings dropped the unsupported selector later.
+    The budget was split eleven ways and the run looked like enumeration worked.
+    """
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "400", "--out-dir", tmp_path / "run",
+               "--enumerate", "cabParameters/leftMicType")
+    assert done.returncode != 0
+    assert "this renderer cannot drive it" in done.stderr, done.stderr
+    assert "real-plugin renderer" in done.stderr
+
+
+def test_enumerating_one_control_twice_is_not_four_topologies(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "300", "--out-dir", tmp_path / "run",
+               "--enumerate", "sw50rAmp/sw50rBright",
+               "--enumerate", "sw50rAmp/sw50rBright")
+    assert done.returncode != 0
+    assert "more than once" in done.stderr, done.stderr
+    assert "duplicates every topology" in done.stderr
+
+
+def test_a_topology_product_that_cannot_be_searched_is_refused_with_the_sums(audio, tmp_path):
+    """A topology with no search behind it is its starting point scored once.
+
+    Refused before the renders rather than reported after them: `search()` says
+    afterwards that each variant got a thin share, which is an hour too late.
+    """
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "300", "--out-dir", tmp_path / "run",
+               "--enumerate", "sw50rAmp/sw50rBright",
+               "--enumerate", "cabParameters/leftCabActive",
+               "--enumerate", "compressor/compressorActive",
+               "--enumerate", "drive1/drive1Active",
+               "--enumerate", "delay/delayActive")
+    assert done.returncode != 0
+    assert "32 topologies do not fit" in done.stderr, done.stderr
+    assert "Raise --budget to about" in done.stderr
+    assert "Traceback" not in done.stderr
+
+
+def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
+    """The caveat that says nothing was enumerated must stop appearing once
+    something is, or it is the one line a reader would trust and shouldn't."""
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--budget", "90", "--shortlist", "1", "--out-dir", tmp_path / "run",
+               "--enumerate", "sw50rAmp/sw50rBright")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert "no switches or selectors were enumerated" not in done.stdout, done.stdout
+
+
+def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):
+    """`enumerated()` tells the reader to run --list-enumerable, and it is shared
+    by both CLIs — so both have to have it, or the advice is a dead end on one."""
+    listed = run("benchmark_match.py", "--list-enumerable")
+    assert listed.returncode == 0, listed.stderr
+    assert "sw50rAmp/sw50rBright" in listed.stdout
+    assert "cabParameters/leftMicType" not in listed.stdout
+
+    refused = run("benchmark_match.py", "--enumerate", "nope")
+    assert refused.returncode != 0
+    assert "--list-enumerable" in refused.stderr

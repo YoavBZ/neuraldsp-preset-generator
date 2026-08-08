@@ -14,7 +14,7 @@ Four stages, in order, each one narrowing what the next has to consider:
 1. **Screen.** Render each candidate parameter at its low and high end and see
    whether the objective moves at all. A parameter that does not move it is frozen
    for the run. Two renders each plus one baseline, once — and it pays for itself
-   immediately: Morgan declares 126 searchable dimensions of which **88 are
+   immediately: Morgan declares 125 searchable dimensions of which **87 are
    continuous**, and CMA-ES over 88 dimensions needs thousands of samples to do
    anything at all. (The other 38 are switches and selectors, which stage 2 owns.)
 2. **Enumerate.** Amp, cab, mic and effect on/off are discrete, and interpolating
@@ -106,6 +106,11 @@ class Candidate:
     trial_id: Optional[int] = None
     # Populated by `robustness_rerank`: the same vector's score at each input level.
     by_level: Dict[float, float] = field(default_factory=dict)
+    # Why this vector scored nothing, when a backend refused it outright. The
+    # store has always recorded this; the candidate did not carry it, so the one
+    # place that reads a failure — the screen's baseline — could only guess
+    # between a silent render and an unmeasurable one, and said both.
+    error: Optional[str] = None
 
     @property
     def worst_level(self) -> Optional[float]:
@@ -185,12 +190,13 @@ class Evaluator:
     def __init__(self, renderer, target, probe_di, space: Space,
                  profile: str = "unpaired-v1",
                  store: Optional[Store] = None, run_id: Optional[str] = None,
-                 recipe: Optional[Mapping] = None) -> None:
+                 recipe: Optional[Mapping] = None,
+                 reference_audio=None) -> None:
         from analysis import require
+        from analysis.compare import load_profile
 
         require("searching for a preset")
         self.renderer = renderer
-        self.target = target
         self.probe_di = probe_di
         self.space = space
         self.profile = profile
@@ -200,7 +206,36 @@ class Evaluator:
         self.renders = 0
         self.cache_hits = 0
         self.wall_ms = 0.0
-        self._supported = _supported_keys(renderer)
+        self._supported = supported_keys(renderer)
+        self.residual_enabled = float(
+            load_profile(profile).get("weights", {}).get("residual", 0.0) or 0.0
+        ) > 0.0
+        self.alignment_attempts = 0
+        self.untrusted_alignments = 0
+        self.weakest_alignment: Optional[float] = None
+        self.set_reference(target, reference_audio)
+
+    def set_reference(self, target, reference_audio=None) -> None:
+        """Set both halves of the reference used by a score.
+
+        A fingerprint is sufficient for every statistical objective. A profile
+        that weights ``residual`` also needs the waveform the fingerprint
+        deliberately discarded. Keeping the two together prevents the benchmark's
+        shared evaluator from updating one target and accidentally subtracting the
+        previous target's audio.
+        """
+        self.target = target
+        self.reference_audio = reference_audio
+        self.reference_audio_sha = (
+            None if not self.residual_enabled or reference_audio is None
+            else _hash(reference_audio)
+        )
+        if self.residual_enabled and reference_audio is None:
+            raise SearchError(
+                f"loss profile {self.profile!r} weights waveform residual, but no "
+                "reference samples were supplied. Pass the reamped recording's "
+                "samples as reference_audio; a fingerprint alone cannot measure it."
+            )
 
     # --- the one expensive call ---------------------------------------------
 
@@ -230,7 +265,8 @@ class Evaluator:
         # address alone, a second run in the same directory was served the first
         # run's objectives against a different recording — no error, no trial row,
         # and a report whose headline scored a match against somebody else's audio.
-        scoring_key = _scoring_key(key, self.target, self.profile, self.recipe)
+        scoring_key = _scoring_key(
+            key, self.target, self.profile, self.recipe, self.reference_audio_sha)
 
         if self.store is not None:
             hit = self.store.cached(scoring_key)
@@ -260,17 +296,42 @@ class Evaluator:
         if rendered is not None and not rendered.silent:
             printed = fingerprint(io.from_samples(rendered.audio, metadata.sample_rate),
                                   regime="probe", excerpt_s=None)
+            waveform_residual = None
+            if self.residual_enabled:
+                from analysis.align import align, residual_db
+
+                reference, candidate, alignment = align(
+                    self.reference_audio, rendered.audio, metadata.sample_rate)
+                self.alignment_attempts += 1
+                correlation = abs(float(alignment.correlation))
+                self.weakest_alignment = (
+                    correlation if self.weakest_alignment is None
+                    else min(self.weakest_alignment, correlation)
+                )
+                if not alignment.trustworthy:
+                    # ``align`` deliberately returns the unshifted signals here.
+                    # The resulting residual is conservative about an unknown
+                    # timing relationship instead of inventing one from noise.
+                    self.untrusted_alignments += 1
+                waveform_residual = residual_db(reference, candidate)
+                if waveform_residual is None:
+                    error = (
+                        "paired waveform residual is not measurable: the aligned "
+                        "reference has no usable mono energy"
+                    )
             vector = compare(
                 self.target, printed, profile=self.profile,
                 prior_deviation=self._prior_deviation(values),
                 complexity=self._complexity(values),
+                residual_db=waveform_residual,
             )
             objectives = {name: float(value) for name, value in vector.values.items()
                           if value is not None}
             total = scalar(vector)
-            if total is None:
-                # Nothing the profile weights was measurable on either side, so
-                # there is no ordering to be had. Not an error, and not a zero.
+            if error is not None or total is None:
+                # A required waveform term failed, or nothing the profile weights
+                # was measurable on both sides. Either way there is no ordering to
+                # be had; it must not become a zero or a silently renormalised score.
                 objectives = None
             else:
                 objectives["total"] = float(total)
@@ -295,7 +356,7 @@ class Evaluator:
 
         return Candidate(values=dict(values), objectives=objectives or {},
                          total=float((objectives or {}).get("total", float("inf"))),
-                         trial_id=trial_id)
+                         trial_id=trial_id, error=error)
 
     # --- what the renderer is actually given --------------------------------
 
@@ -441,11 +502,12 @@ def screen(evaluator: Evaluator, seed: Mapping,
     baseline = evaluator.evaluate(seed)
     probes.append(baseline)
     if not baseline.objectives:
+        why = (f"the backend refused it — {baseline.error}" if baseline.error
+               else "a silent render, or no dimension the loss profile weights")
         raise SearchError(
-            "the seed vector produced nothing to compare against — a silent render, "
-            "or no dimension the loss profile weights.\n"
-            "  Every movement below is measured against this, so the screen cannot "
-            "proceed without it."
+            f"the seed vector produced nothing to compare against: {why}.\n"
+            f"  Every movement below is measured against this, so the screen cannot "
+            f"proceed without it."
         )
 
     movement: Dict[str, float] = {}
@@ -912,7 +974,7 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
            run_id: Optional[str] = None,
            switches: Optional[Sequence[str]] = None,
            selectors: Optional[Sequence[str]] = None,
-           rng=None) -> SearchResult:
+           rng=None, reference_audio=None) -> SearchResult:
     """Screen, enumerate, refine, re-rank — the four stages in order.
 
     `seed` is the recipe stack plus whatever `invert()` calculated, and it is both
@@ -951,7 +1013,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
         raise SearchError(f"budget must be at least 1 render, not {budget}")
 
     evaluator = Evaluator(renderer, target, probe_di, space, profile=profile,
-                          store=store, run_id=run_id, recipe=seed)
+                          store=store, run_id=run_id, recipe=seed,
+                          reference_audio=reference_audio)
     result = SearchResult(run_id=run_id)
 
     screened = screen(evaluator, seed)
@@ -1106,6 +1169,21 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     result.renders = evaluator.renders
     result.cache_hits = evaluator.cache_hits
     result.wall_ms = round(evaluator.wall_ms, 1)
+    if evaluator.residual_enabled:
+        result.caveats.append(
+            "the paired waveform residual was measured from the reference samples "
+            "after aligning every candidate render; unlike the fingerprint terms, "
+            "it is a sample-for-sample comparison. It is meaningful only when the "
+            "reference really is a reamp of the exact probe-DI performance; the "
+            "samples themselves cannot prove that provenance"
+        )
+        if evaluator.untrusted_alignments:
+            result.caveats.append(
+                f"{evaluator.untrusted_alignments} of "
+                f"{evaluator.alignment_attempts} paired comparisons had absolute "
+                "correlation below 0.30, so their waveforms were compared unshifted "
+                "rather than applying an offset inferred from noise"
+            )
     if result.renders > budget:
         result.caveats.append(
             f"the search made {result.renders} renders against a budget of "
@@ -1215,27 +1293,52 @@ def _separation(one: Candidate, other: Candidate,
     return max(gaps) if gaps else 0.0
 
 
-def _supported_keys(renderer) -> Optional[set]:
-    """The paths this backend can be driven with, or None if it accepts anything."""
+def supported_keys(renderer) -> Optional[set]:
+    """The paths this backend can be driven with, or None if it accepts anything.
+
+    Spelled the way `Dimension.path` and `ParamSpec.path` both spell it, which for
+    a top-level parameter means no leading slash. A backend keys its specs
+    `(module, key)`, and joining `("", "selectedAmp")` gives `/selectedAmp` while
+    the dimension it has to match is `selectedAmp` — so the key was compared
+    against a spelling it could never equal.
+
+    That is not cosmetic. `_settings` drops a dimension the backend does not
+    claim to support, so `selectedAmp` was dropped from every render on any
+    backend that declares it: the search would move an amp's tone stack while the
+    plugin stayed on whatever amp it booted with, and writing a control on an
+    unselected amp is a silent no-op. Nothing would have failed, and every number
+    would have been about the wrong amp. The synthetic chain models one amp and
+    never declared `selectedAmp`, which is why this survived M3 and M4.
+    """
     try:
         specs = renderer.parameter_specs()
     except NotImplementedError:
         return None
     keys = set()
     for key in specs:
-        keys.add(key if isinstance(key, str) else "/".join(str(part) for part in key))
+        path = key if isinstance(key, str) else "/".join(str(part) for part in key)
+        keys.add(path[1:] if path.startswith("/") else path)
     return keys
 
 
-def _scoring_key(render_key: str, target, profile: str, recipe: Mapping) -> str:
+# Compatibility for callers and tests written before CLI preflight needed this
+# normalisation too. There remains one implementation, especially for top-level
+# keys where a leading slash changes whether the parameter is ever rendered.
+_supported_keys = supported_keys
+
+
+def _scoring_key(render_key: str, target, profile: str, recipe: Mapping,
+                 reference_audio_sha: Optional[str] = None) -> str:
     """The content address for a *score*, which is finer than the render's.
 
     Two renders of the same parameters through the same DI are the same audio, so
     §6.3's key addresses them together — correctly. But the number the search caches
     is not the audio, it is the distance to a reference under a weighting, and that
     also depends on which reference, which loss profile, and which seed the prior
-    terms measure from. Keying the cache on the render alone was enough to serve one
-    run's objectives to a later run against a different recording.
+    terms measure from. A residual-weighted score additionally depends on the
+    reference samples, not only the fingerprint. Keying the cache on the render
+    alone was enough to serve one run's objectives to a later run against a
+    different recording.
 
     The target contributes its `sha256` rather than its whole document: two
     fingerprints of the same file with different excerpt lengths would otherwise
@@ -1251,6 +1354,7 @@ def _scoring_key(render_key: str, target, profile: str, recipe: Mapping) -> str:
         str(getattr(target, "regime", None)),
         str(profile),
         canonical_settings(recipe),
+        str(reference_audio_sha),
     ])
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 

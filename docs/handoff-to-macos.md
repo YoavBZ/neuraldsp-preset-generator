@@ -1,5 +1,13 @@
 # Handoff: what to run on a Mac with the plugins installed
 
+> **This was written before M5 and is kept as the brief it was.** M5 has since been
+> done and several of the statements below are now false — `--renderer swift`
+> exists, `packs/morgan/eq_basis.json` exists, and Tone King renders. What actually
+> happened, including where this document turned out to be wrong, is
+> `docs/tone-matching-plan.md` §12d. Read this for the reasoning and that for the
+> results.
+
+
 Written at the end of the session that built **M4** (reference-guided tone matching)
 and reviewed it three times. Everything through M4 is done and merged; every number in
 the repository was measured against a **Python approximation** of the plugin, not the

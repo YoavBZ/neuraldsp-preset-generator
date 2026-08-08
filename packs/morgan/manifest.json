@@ -134,7 +134,9 @@
       "min": -12,
       "max": 12,
       "range_source": "docs/measuring-against-the-plugin.md",
-      "ui": "Transpose"
+      "ui": "Transpose",
+      "searchable": false,
+      "note": "Changes musical pitch rather than tone; preserved and writable, but never moved by tone matching."
     },
     "parameters/doublerActive": {
       "kind": "switch",

@@ -1,8 +1,9 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 through M4 are done and M4's exit criterion is met — 50 targets, 300
-renders each, the full pipeline beating inversion-alone on 49 of 49. M5 is next, and it
-needs macOS with both plugins licensed.** The two spikes ran on 2026-08-05
+Status: **M0 through M5 are done. M4's synthetic exit criterion was met — 50 targets,
+300 renders each, the full pipeline beating inversion-alone on 49 of 49 — and M5
+measured the honest real-plugin gap: the full objective is 46% worse on the mean and
+59% worse on the median than the synthetic benchmark implied.** The two spikes ran on 2026-08-05
 and their numbers are in §11 and in `docs/measuring-against-the-plugin.md`. The
 analysis core landed the same day: `analysis/` plus `scripts/fingerprint.py` and
 `scripts/compare_audio.py`. M2 added `analysis/refchain.py` and the `match/`
@@ -18,9 +19,9 @@ departures found by auditing M0 and M1 against their own exit criteria, and five
 *fixes* from M3's second review that turned out to be wrong in their own way.
 Every one of those had passed a green suite.
 
-One M0 item is deliberately still open: the `apply_spec.py` → `pedalboard` state
-round trip is implemented and tested without a plugin, but has not been *run*
-against one, and M5 depends on it.
+The real Audio Unit backend, measured EQ bases, Morgan benchmark and Tone King
+end-to-end run are recorded in §12d. The remaining work named there is follow-up
+design work exposed by M5, not a claim that the real backend has yet to land.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -1058,11 +1059,16 @@ spectral and level fits have to beat delay-alone by a tenth rather than by any
 margin at all, the band gains have to be non-trivial, and the loudness gap has to
 close.
 
-The space is 126 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
+The space is 125 of Morgan's 132 parameters and 94 of Tone King's 259 — the latter
 being its 100 writable ones less its paths and strings, which is the manifest's own
 arithmetic rather than a number maintained here. What is excluded is excluded by
 category: read-only, `internal`, strings, paths, enums whose member names are
-unknown, and anything whose `kind` is a bootstrap guess.
+unknown, anything whose `kind` is a bootstrap guess, and writable utility controls
+the manifest marks `searchable: false`. Morgan's transpose is the first of the last
+category: a separated-stem run let the optimiser move it to imitate the reference's
+notes, which is content matching rather than tone matching. The control still
+round-trips and can be written deliberately; generated tone searches leave it at
+the template value.
 
 Three things were worth learning while building it:
 
@@ -1351,8 +1357,8 @@ document should be treated the same way.
 
 ### The four stages, and what each one is for
 
-**The screen pays for itself immediately.** Morgan has 126 searchable dimensions and
-CMA-ES over 126 dimensions needs thousands of samples to do anything. Two renders per
+**The screen pays for itself immediately.** Morgan has 125 searchable dimensions and
+CMA-ES over 125 dimensions needs thousands of samples to do anything. Two renders per
 parameter plus one baseline — 2N + 1, and calling it "2 per parameter" was off by
 exactly that one — turned 24 live supported dimensions into 18 searched and 6 frozen
 for 49 renders on the run above. The extremes are
@@ -1642,6 +1648,450 @@ printed **SHIPS**.
 - **Sobol is not used** for the topology enumeration. Both packs' discrete spaces are
   small enough to enumerate exhaustively, and a quasi-random sample of 32 points out
   of 32 is 32 points with extra machinery.
+
+## 12d. What M5 built, and what the plugin said about M1-M4
+
+The first milestone whose numbers are facts about the plugin. Everything before it
+was measured against `analysis/refchain.py`, which shares Morgan's topology and
+models none of its DSP.
+
+Measured on macOS 15 (Darwin 25.5.0), Morgan Amps Suite **1.1.1** (`auval` reports
+`Component Version: 1.1.1 (0x10101)`), Python 3.14.6, numpy 2.5.1, scipy 1.18.0.
+Every figure below has the command that produced it beside it.
+
+### The backend
+
+`match/renderer_au.py` drives `scripts/au_render_server.swift` behind the
+`Renderer` protocol: one plugin instance, one process, commands over stdin.
+`--renderer swift` on `scripts/match_preset.py` and `scripts/benchmark_match.py`.
+
+Throughput, measured rather than assumed:
+
+```
+python3 - <<'EOF'
+import time, numpy as np
+from match.renderer_au import AudioUnitRenderer
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=3.0, gap=0.9, seed=13)
+with AudioUnitRenderer('morgan') as r:
+    r.render(di, {'selectedAmp': 2})
+    t0 = time.time()
+    for v in range(10, 90, 10):
+        r.render(di, {'selectedAmp': 2, 'sw50rAmp/sw50rVolume': float(v)})
+    print('%.0f ms/render' % ((time.time() - t0) / 8 * 1000))
+EOF
+```
+
+431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. §3.2's 291 ms was for a
+2-second excitation, so per second of audio the two agree.
+
+### Two silent defects the first real renders exposed
+
+**`AVAudioFile.read(into:)` returns short.** Asked for all 144000 frames of a
+3-second file in one call it returns 143340, and the shortfall varies with length —
+916, 788, 660, 340 frames at 48000, 96000, 144000 and 200000. `au_render_server`
+read once and trusted `frameLength`, so **every `--input` render was truncated**,
+which is the path a search runs on. It now loops until the file is consumed and
+refuses a partial read rather than rendering the front of a DI and reporting
+success. Nothing had noticed because nothing had rendered through a file at scale.
+
+**`selectedAmp` was dropped from every render.** `match/search._supported_keys`
+flattened a backend's `("", "selectedAmp")` to `/selectedAmp` and compared it
+against `Dimension.path`, which is `selectedAmp`. The amp selector therefore never
+reached the plugin, and writing a control on an amp that is not selected is a
+no-op — so a search would have moved one amp's tone stack while the plugin stayed
+on another, with nothing failing and every number describing the wrong amp. The
+synthetic chain models a single amp and never declared `selectedAmp`, which is why
+M3 and M4 could not have caught it.
+
+A third, in the new code rather than the old: an enum arriving as a display name
+(`'SW50R'`, which is what `invert()` emits and `apply_spec.py` consumes) was
+converted with `int(float(...))` instead of through the pack, so **every inversion
+became a failed render**. The search reported that as "a silent render, or no
+dimension the loss profile weights" — a message that named neither cause.
+`Candidate` now carries the error the store had always recorded.
+
+### The equaliser, measured
+
+`scripts/measure_eq_basis.py` renders each band at +6 and -6 dB against a flat
+reference and writes `packs/<pack>/eq_basis.json`. Both signs rather than one
+against flat, so every even-order term cancels; the flat render is kept as a
+linearity check and the run reports the bend.
+
+```
+python3 scripts/measure_eq_basis.py --pack morgan     # 57 renders, 67 s
+```
+
+What the fallback got wrong, which is what the caveat had been warning about:
+
+| | textbook bell | measured (sw50r, 1.1.1) |
+|---|---|---|
+| 65 Hz band, at 25 Hz | 0.098 dB/dB | **0.977** — it is a shelf, not a bell |
+| 16 kHz band | peaks at 16 kHz | peaks at 20 kHz — also a shelf |
+| 1 kHz band, at 2 kHz | 0.171 dB/dB | **0.453** — 2.6x the assumed overlap |
+
+Measured twice, at excitation RMS 0.1 and 0.03, because the first run peaked above
+full scale on all three amps. The two bases agree to within 0.021 dB/dB, so the
+peaks did not corrupt it; the committed file is the quieter one and `--level`
+exists so the check can be repeated.
+
+**A basis belongs to a backend, not to a pack.** Loading it by pack alone made two
+of `tests/test_invert.py`'s assertions fail, correctly: the synthetic chain builds
+its bands from `FALLBACK_Q` and is not the plugin, so fitting the plugin's overlap
+to the chain's audio makes that fit *worse*. It is a `Renderer.eq_basis()` hook
+that defaults to `None`, answered by `AudioUnitRenderer` and declined by the
+synthetic chain.
+
+What it bought, on a ground-truth match against the real plugin:
+
+```
+# reference: a known parameter vector rendered through Morgan, then discarded
+python3 scripts/match_preset.py --template samples/Example_Clean_PR12.xml \
+  --reference /tmp/ref_real.wav --reference-mode probe --probe-di /tmp/probe_real.wav \
+  --amp sw50r --renderer swift --budget 300 --shortlist 3 --seed 0 --out-dir /tmp/run_real
+```
+
+| | textbook basis | measured basis |
+|---|---|---|
+| distance to the reference | 1.045 -> 0.488 | 1.045 -> **0.370** |
+| across ±6 dB of input | 0.590 at worst | **holds up** |
+| searched / frozen | 20 / 20 | 25 / 15 |
+
+### `_backend_floor` went live, and it costs half the search space
+
+The least-exercised path in M4. With the synthetic renderer `band_noise_db` is 0.0
+and the raise never executed outside a unit test. On the plugin it is 0.23, and the
+screen's floor becomes 0.0767 — which freezes **15 to 20 of 40 parameters** where
+the same run on the synthetic chain froze 6 of 24.
+
+The declared 0.23 dB is slightly optimistic. Measured over 8 renders of identical
+parameters:
+
+```
+python3 - <<'EOF'
+import numpy as np
+from match.renderer_au import AudioUnitRenderer
+from analysis.features import third_octave_bands
+from tests import fixtures_audio as fx
+di = fx.plucks(seconds=4.0, gap=0.9, seed=5)
+with AudioUnitRenderer('morgan') as r:
+    rows = [np.array(third_octave_bands(
+        np.asarray(r.render(di, {'selectedAmp': 2, 'sw50rAmp/sw50rVolume': 60.0}).audio,
+                   dtype=np.float64).mean(axis=1), 48000)['band_db']) for _ in range(8)]
+m = np.vstack(rows); print('max spread %.3f dB' % (m.max(0) - m.min(0)).max())
+EOF
+```
+
+0.79 dB overall, **0.30 dB** across 50 Hz-16 kHz, median 0.09. The constant stays at
+0.23 because raising it freezes more controls and that is a decision with
+consequences for every result, not a constant to change in passing — but 0.23 is
+below what this machine measures, so the screen is currently slightly too
+permissive.
+
+`isolate` does **not** fix reproducibility. `au_render_server.swift` calls it "the
+only way found to make a second render in the same process match the first"; on
+1.1.1 two renders differ by -15.4 dB relative to the signal without it and -15.7 dB
+with it, and neither is bit-exact. The comment is wrong and the -17 dB figure is
+approximately right.
+
+### `spatial` is not a guaranteed zero any more
+
+§6.6 of the handoff: it reads 0.000 on every synthetic run because both sides are
+dual-mono, and it carries 8% of the weight. Against the plugin, the seed candidate
+of the ground-truth match scores `spatial: 0.0253`. It discriminates.
+
+### The exit criterion: what the plugin costs against the approximation
+
+```
+python3 scripts/benchmark_match.py --targets 50 --budget 300 --json /tmp/bench-synthetic.json
+python3 scripts/benchmark_match.py --targets 50 --budget 300 --renderer swift \
+  --json docs/m5-benchmark-morgan.json
+```
+
+Both ship. Every row of both is in `docs/m4-benchmark-50.json` and
+`docs/m5-benchmark-morgan.json`, and the latter carries the backend that made it,
+`reproducible: false` included.
+
+| arm | synthetic mean | **plugin mean** | synthetic median | **plugin median** |
+|---|---|---|---|---|
+| recipe | 3.039 | 2.572 | 2.533 | 2.323 |
+| inversion | 1.514 | 1.551 | 1.309 | 1.501 |
+| full | **0.638** | **0.932** | **0.453** | **0.719** |
+
+| | synthetic | plugin |
+|---|---|---|
+| param MAE (recipe / inversion / full) | 0.247 / 0.257 / 0.258 | 0.253 / 0.271 / 0.271 |
+| selector accuracy | 0.658 | 0.624 |
+| failure rate | 0% | **0%** |
+| renders | 14375 | 14827 |
+| wall clock | 3171 s | 12254 s |
+
+**The honest gap is 46% on the mean and 59% on the median.** The full pipeline
+scores 0.932 against the plugin where it scored 0.638 against the approximation.
+Measured as a share of the distance the recipe stack leaves on the table — which is
+the comparison that survives the two arms having different targets — it closes to
+36% of the recipe baseline against the plugin and to 21% against the synthetic
+chain. Against the inversion alone: 60% against the plugin, 42% synthetic.
+
+So the pipeline works against the real thing, beats both baselines on every one of
+50 targets, and is roughly half as effective as the synthetic numbers implied. That
+is M5's deliverable.
+
+Two predictions in the handoff did not hold:
+
+- **The failure rate is zero.** "A real backend will have some — a silent render,
+  an instantiate that did not come back." In 14827 renders there were none. The
+  gate exists and is worth keeping; it did not fire.
+- **Parameter MAE does not get much worse.** It rises 0.253 → 0.271 across the
+  arms, the same shape as the synthetic run, for the reason `verdict()` already
+  states: the controls are not identifiable from the output.
+
+### The benchmark reproduces across machines; the single-run walkthrough does not
+
+The synthetic arm above reproduces `docs/m4-benchmark-50.json` closely — 0.6385
+against a committed 0.641 on the full arm, 3.0386 against 3.039, the same 14375
+renders — on a different machine and a different numpy. Averaging 50 targets is
+what makes it portable.
+
+One run of `match_preset.py` is not. `docs/handoff-to-macos.md` §8 gives a command
+and says to expect `1.719 -> 0.256` in 298 renders with 10 caveats, adding that
+"the pipeline is deterministic and it reproduces bit-for-bit on this machine, so a
+difference is a finding." It gives `1.717 -> 0.180` in 298 renders with 12 caveats
+here — and gives the same at `ac03d5e`, the commit that shipped those numbers, so
+nothing in M5 caused it. The starting distance differs in the third decimal before
+any search runs, which is a numeric-library difference rather than a code one, and
+CMA-ES diverges from there.
+
+The rule that follows: **a committed aggregate is a cross-machine check and a
+committed single-run figure is not.** §8's numbers should have been recorded as
+one machine's, and this is the fourth time a figure in this repository has failed
+to reproduce from its own command.
+
+### The ±6 dB re-rank still measures loudness, on the plugin too
+
+§6.2 of the handoff: the `level` dimension accounted for 35-96% of the change
+across the input offsets on the synthetic chain, while `timbre` moved by about
+0.001, and the question for M5 was whether `timbre` starts moving on a plugin
+whose breakup genuinely depends on how hard it is hit.
+
+It does not. Across the 18 targets of the 50-target run that reported the figure,
+the level term accounts for **50% to 100%** of the change, median **71%** —
+the same range as the synthetic run.
+
+```
+python3 -c "
+import json, re
+d = json.load(open('docs/m5-benchmark-morgan.json'))
+v = [int(m.group(1)) for c in d['caveats']
+     if (m := re.search(r'about (\\d+)% of the change in score across', c))]
+print(sorted(v))"
+```
+
+So the stage needs rethinking, as §6.2 said it would if this came back negative.
+The caveat naming the percentage is doing real work and should stay until the
+re-rank measures something other than how loud the render got.
+
+### The first `paired-v1` run silently omitted the term carrying 0.9 of its weight
+
+§6.7 of the handoff calls `paired-v1` "the highest-confidence path in the whole
+design — regime weight 1.0, and the only profile that weights `residual` (0.9)
+because with a paired DI you can compare waveforms sample-for-sample rather than
+statistically", and asks whether `residual` behaves once it meets a real pair.
+
+It does not behave, because **it never runs.** A paired run against a real reamp
+— a DI rendered through Morgan from a known vector, then recovered from that DI
+and that recording — completes, scores 292 trials, reports `1.454 -> 0.654`, and
+produces these dimensions:
+
+```
+python3 -c "
+import sqlite3, json
+db = sqlite3.connect('runs/paired-001/trials.sqlite3')
+rows = [json.loads(r[0]) for r in db.execute(
+    'select objectives_json from trials where objectives_json is not null')]
+print(sorted({k for r in rows for k in r}))"
+```
+
+```
+['ambience', 'complexity', 'dynamics', 'level', 'prior_deviation', 'spatial',
+ 'timbre', 'total']
+```
+
+No `residual`, in any of the 292. `analysis/align.residual_db` exists and is
+tested; `analysis.compare.compare()` takes a `residual_db=` argument and weights
+it; and **no production caller anywhere passes it** — not
+`match/search.py`'s `Evaluator.evaluate`, not `scripts/match_preset.py`, not
+`scripts/compare_audio.py`. `_residual` returns `{}` for `None`, so the term
+drops out and the total is formed from what is left.
+
+`tests/test_compare.py` has known this since M1: its own comment reads "no
+waveform term at all — `align.residual_db` existed and nothing consumed" it.
+
+So `--loss-profile paired-v1` is, in practice, the unpaired objective with
+different weights on the remaining dimensions. Every claim resting on the paired
+regime being the strongest path rests on a term that has never been computed
+outside a unit test. Nothing in the 14 caveats that run printed said so, which is
+the part that most needs fixing: a profile that weights a dimension the run could
+not measure should say which dimension and how much weight went with it.
+
+It is fixed after that audit. `Evaluator` now requires `reference_audio` whenever
+the selected profile gives `residual` a non-zero weight, aligns every candidate
+render to those samples, passes the measured dB residual into `compare()`, and
+includes the reference waveform hash in the score-cache key. The benchmark updates
+the fingerprint and waveform together for every generated target. The match CLI
+refuses `paired-v1` outside `--reference-mode paired_di`, and `compare_audio.py`
+refuses to pretend two stored fingerprints contain samples.
+
+Low-correlation alignment is not hidden: below absolute correlation 0.30 the
+signals are compared unshifted rather than moved by an offset inferred from noise,
+and the run reports how often that happened. A paired run also says that the files
+themselves cannot prove the reference is a reamp of the exact DI; the mode flag is a
+declaration, not provenance.
+
+The production path is pinned by these invocations:
+
+```
+python3 -m pytest -q tests/test_search.py tests/test_analysis_cli.py \
+  tests/test_match_cli.py tests/test_benchmark.py -k paired
+
+python3 scripts/compare_audio.py reference.wav reference.wav \
+  --profile paired-v1 --json
+```
+
+The second command must report a residual objective of 0.0 and a trusted
+alignment. A fresh real-plugin DI/reamp calibration is still required before any
+new number is attached to the 0.9 weight; the earlier `1.454 -> 0.654` run omitted
+the term and is not evidence for it. No substitute pair should be used: separated
+stems are different performances and belong to `unpaired-v1`.
+
+### The topology stage now runs, and it is not free
+
+`topologies()` was written and tested in M4 and no caller ever passed `switches=`
+or `selectors=`, so every run left the cabinet, the microphone, the amp and every
+on/off switch wherever the template had them. `--enumerate` on both CLIs reaches
+it. Paths are routed to switches or selectors by the dimension's own kind, and
+`--list-enumerable` is renderer-specific: it prints the 8 discrete controls the
+synthetic chain actually models, or the 34 Morgan/sw50r controls the Swift backend
+can drive. The first version printed and accepted all 34 for both backends. Values
+for the other 26 were later dropped by `Evaluator._settings`, so a request such as
+`--enumerate cabParameters/leftMicType` silently created eleven identical
+synthetic topologies and split the budget eleven ways. Those paths now fail before
+the reference is read.
+
+The same ground-truth match, same template, same seed, same 300-render budget:
+
+| | distance | worst across ±6 dB | searched / frozen |
+|---|---|---|---|
+| textbook basis, nothing enumerated | 1.045 -> 0.488 | 0.590 | 20 / 20 |
+| measured basis, nothing enumerated | 1.045 -> **0.370** | holds up | 25 / 15 |
+| measured basis, one switch enumerated | 1.045 -> 0.438 | 0.458 | 25 / 15 |
+
+**Enumerating made it worse**, and that is the stage working rather than failing.
+Two topologies split one budget, so each got about 107 renders instead of 293, and
+the run says so:
+
+> 2 topologies share the budget, so each got about 107 renders. Enumerating fewer
+> switches gives each remaining one a deeper search.
+
+`sw50rBright` was not part of the target vector, so there was nothing to find and
+the halved search depth is pure loss. That is the trade the flag makes: breadth
+against depth on a fixed budget, and it only pays when the discrete control is
+actually wrong in the template. On Morgan the screen alone costs 2 per dimension —
+plus one baseline — so a budget that can afford several topologies is a large one,
+and the CLI refuses up front with the exact active/supported count rather than
+discovering it after an hour.
+
+**Two synthetic selector experiments were invalid, and the boundary now refuses
+them.** §6.3 predicted the `inversion` and `full` arms would score identical
+selector accuracy for as long as nothing was enumerated. Two early experiments
+appeared to reach the topology stage and still scored identically:
+
+| enumerated | inversion selector | full selector |
+|---|---|---|
+| `cabParameters/leftCabPhase` | 0.6875 | 0.6875 |
+| `selectedAmp` | 0.6406 | 0.6406 |
+
+Identical target by target, not merely on average. The immediate cause was simpler
+than either interpretation first given: **the synthetic renderer supports neither
+control.** The topology value remained in the candidate vector — which is why the
+run and selector metric looked plausible — and was removed from every render.
+These figures are evidence about the missing renderer boundary check and nothing
+about whether topology search can recover a selector.
+
+- `leftCabPhase` is not implemented by `analysis/refchain.py`; describing it as
+  merely inaudible was too generous. It was never rendered.
+- `selectedAmp` is not implemented by the one-amp synthetic chain **and** is held
+  constant by the benchmark itself. `random_vector` has
+  `if dimension.key == "selectedAmp": continue`, so no target ever asks for a
+  different amp. **The synthetic benchmark therefore cannot measure amp selection
+  at all**, and could not have whatever the search did.
+
+The preflight budget arithmetic had the same boundary error: it counted all 92
+space dimensions where `screen()` charged only active, continuous dimensions the
+renderer supports. It now derives the exact fixed screen cost from the same
+post-inversion seed and supported-path set the search will see, instead of charging
+for every dormant or unsupported dimension in the pack.
+
+The real-plugin `sw50rBright` run above proves that variants reach distinct plugin
+renders and share the budget. A benchmark target with Bright deliberately wrong
+in the neutral seed supplies the missing selector test:
+
+```
+python3 scripts/benchmark_match.py --targets 1 --budget 300 \
+  --arms inversion,full --renderer swift \
+  --enumerate sw50rAmp/sw50rBright \
+  --json /tmp/bench-real-bright.json
+```
+
+| arm | objective | selector accuracy | renders |
+|---|---:|---:|---:|
+| inversion | 1.611 | 0.4848 | 1 |
+| full | 1.623 | 0.4848 | 278 |
+
+Plugin 1.1.1, `reproducible=false`. The target has Bright on and the neutral seed
+has it off; the full arm kept it off. This is not evidence that the switch is
+inaudible. A direct repeated A/B with every other target parameter held fixed
+prefers the correct setting, while the same A/B on the much less accurate inverted
+candidate prefers the wrong setting: the wrong topology compensates for errors
+elsewhere in the vector. Repeated totals for identical settings also move enough
+that one render is a weak way to rank two nearby topologies.
+
+So enumeration now works operationally, and **its accuracy benefit is not
+demonstrated**. On this target it made the objective slightly worse and did not
+recover the known switch. The next design question is no longer wiring; it is how
+to rank discrete variants under a backend whose full objective is substantially
+noisier than its 0.23 dB per-band metadata suggests. Repeating only the topology
+seed is insufficient because CMA-ES also scores every continuous candidate once,
+and the store currently serves an identical vector from cache instead of rendering
+another sample. That needs an explicit replicated-evaluation design and budget,
+not another flag around the existing one-render comparison.
+
+### Tone King, end to end for the first time
+
+```
+python3 scripts/match_preset.py --pack toneking --template /tmp/tk_template.xml \
+  --reference /tmp/tk_ref.wav --reference-mode probe --probe-di /tmp/tk_probe.wav \
+  --renderer swift --no-invert --budget 200 --shortlist 2 --seed 0 --out-dir /tmp/tk_run
+```
+
+`1.320 -> 0.819` in 191 renders and 199 s, against a reference rendered through the
+plugin from a known vector. The record-state write path works: each render rebuilds
+the plugin's own blob through `format.structured` and the parameters reach the
+sound.
+
+Two things it exposed, neither of which is a bug in the search:
+
+- **`--no-invert` is not optional for this pack.** `invert()` needs an amp prefix
+  and Tone King has none — `amp_modules` is empty and the whole namespace is flat,
+  so there is no `{amp}EQ/{amp}EQBand{n}` to fit onto. Without `--no-invert` the
+  run dies with "the template does not say which amp is selected". The inversion
+  stack is written for Morgan's topology, and that should be said out loud rather
+  than discovered by a user.
+- **The screen freezes 44 of 61 parameters.** The backend floor is doing most of
+  the work here, and the run says so.
+
+There is still no bundled Tone King template. The one used above is the plugin's
+own boot state written to a file, which parses as a preset because it is one.
 
 ## 13. Reading list, in the order it becomes relevant
 

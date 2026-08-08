@@ -112,6 +112,33 @@ def test_a_render_is_only_paid_for_once(space, seed, target):
         assert again.total == pytest.approx(first.total)
 
 
+def test_paired_profile_requires_and_scores_the_reference_waveform(space, seed):
+    """The profile's 0.9 residual weight must reach a real production score.
+
+    A fingerprint cannot supply this term. With the samples supplied, the exact
+    deterministic render reaches the residual floor while a wrong tone does not.
+    """
+    probe = di()
+    renderer = SyntheticRenderer()
+    settings = dict(seed)
+    settings[(f"{AMP}Amp", f"{AMP}Volume")] = 80.0
+    helper = S.Evaluator(renderer, printed(probe), probe, space)
+    reference = renderer.render(probe, helper._settings(settings)).audio
+    target = printed(reference)
+
+    with pytest.raises(S.SearchError, match="reference samples"):
+        S.Evaluator(renderer, target, probe, space, profile="paired-v1")
+
+    evaluator = S.Evaluator(renderer, target, probe, space,
+                            profile="paired-v1", reference_audio=reference)
+    exact = evaluator.evaluate(settings)
+    wrong = evaluator.evaluate(seed)
+
+    assert exact.objectives["residual"] == pytest.approx(0.0)
+    assert wrong.objectives["residual"] > exact.objectives["residual"]
+    assert exact.total < wrong.total
+
+
 def test_the_same_vector_at_another_input_level_is_a_different_trial(space, seed,
                                                                     target):
     """Not a cache hit: a quieter DI drives the amp less hard, so it is a different
@@ -169,7 +196,7 @@ def test_the_prior_terms_abstain_without_a_seed_to_deviate_from(space, seed, tar
 def test_the_screen_costs_two_renders_per_parameter_and_says_which(space, seed,
                                                                   target):
     """The whole reason it is worth doing: the cost is knowable before it is spent,
-    and it turns 126 dimensions into something CMA-ES can work in."""
+    and it turns 125 dimensions into something CMA-ES can work in."""
     evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
     s = S.screen(evaluator, seed)
     searched, frozen, probes, movement = s.searched, s.frozen, s.probes, s.movement
@@ -577,10 +604,12 @@ def test_a_second_reference_is_not_served_the_first_ones_score(space, seed):
     recording."""
     probe = di()
     scorer = S.Evaluator(SyntheticRenderer(), printed(probe), probe, space)
-    first = printed(refchain.render(probe, scorer._settings(
-        {**seed, (f"{AMP}Amp", f"{AMP}Volume"): 80.0})))
-    second = printed(refchain.render(probe, scorer._settings(
-        {**seed, (f"{AMP}Amp", f"{AMP}Treble"): 15.0})))
+    first_audio = refchain.render(probe, scorer._settings(
+        {**seed, (f"{AMP}Amp", f"{AMP}Volume"): 80.0}))
+    second_audio = refchain.render(probe, scorer._settings(
+        {**seed, (f"{AMP}Amp", f"{AMP}Treble"): 15.0}))
+    first = printed(first_audio)
+    second = printed(second_audio)
 
     with Store() as store:
         store.start_run(Run(run_id="one"))
@@ -600,9 +629,20 @@ def test_a_second_reference_is_not_served_the_first_ones_score(space, seed):
 
         # And the same profile change is also a different score.
         paired = S.Evaluator(SyntheticRenderer(), second, probe, space, store=store,
-                            run_id="two", recipe=seed, profile="paired-v1")
+                            run_id="two", recipe=seed, profile="paired-v1",
+                            reference_audio=second_audio)
         paired.evaluate(seed)
         assert paired.cache_hits == 0
+
+        # The waveform is part of a paired score even when the fingerprint object
+        # is unchanged. Otherwise a caller correcting a mismatched DI/reamp pair in
+        # the same out-dir would receive the old residual from cache.
+        other_waveform = S.Evaluator(
+            SyntheticRenderer(), second, probe, space, store=store,
+            run_id="two", recipe=seed, profile="paired-v1",
+            reference_audio=first_audio)
+        other_waveform.evaluate(seed)
+        assert other_waveform.cache_hits == 0
 
         # And so is a different *seed*, which is the third component of the key and the
         # one nothing checked. `prior_deviation` and `complexity` are distances from the

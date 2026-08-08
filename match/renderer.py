@@ -212,6 +212,20 @@ class Renderer:
             "be searched over"
         )
 
+    def eq_basis(self, amp: str, analysis_centres):
+        """What one dB on each graphic-EQ band does to *this backend's* output.
+
+        `(basis, note)` or `None` for "no measurement, use the textbook curves".
+
+        On the protocol rather than loaded from the pack, because a basis belongs
+        to whatever is going to render the candidate. `packs/*/eq_basis.json`
+        describes the plugin; the synthetic chain builds its own bands from a
+        fixed Q and is not the plugin, so handing it the plugin's overlap makes
+        its fit worse rather than better. Defaulting to None keeps every existing
+        backend on the fallback it already had.
+        """
+        return None
+
 
 def _hash_audio(di) -> str:
     import numpy as np

@@ -507,6 +507,20 @@ def test_the_arms_are_nested_structurally_not_only_by_score(space, seed):
     )
 
 
+def test_paired_benchmark_threads_each_targets_waveform_to_every_arm(space, seed):
+    """A paired benchmark is only paired if both recovery and final scoring see
+    the rendered target samples, not merely their fingerprint."""
+    result = B.compare_baselines(
+        SyntheticRenderer(), space, fx.plucks(seconds=1.2, gap=0.7, seed=21),
+        seed, targets=1, budget=30, profile="paired-v1",
+        arms=("recipe", "inversion", "full"), amp=AMP,
+        rng=np.random.default_rng(4),
+    )
+    assert len(result.outcomes) == 3
+    assert all(not item.failed for item in result.outcomes)
+    assert all(item.objective is not None for item in result.outcomes)
+
+
 def test_an_unknown_amp_is_refused_before_the_first_target(space, seed):
     """`space.build` accepts any prefix and simply finds nothing, so `--amp nope` used
     to fail inside every arm once per target, with the cause visible only in --json."""

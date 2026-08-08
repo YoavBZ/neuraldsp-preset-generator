@@ -42,8 +42,9 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import (die, guarded, on_interrupt, positive_float, positive_int,
-                  probe_di as _probe)
+from _cli import (die, enumerated as _enumerated, guarded, on_interrupt,
+                  positive_float, positive_int, print_enumerable as _print_enumerable,
+                  probe_di as _probe, renderer_paths)
 
 # The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
 # `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
@@ -117,6 +118,19 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,
                     help="which backend renders a candidate (default: synthetic)")
+    ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
+                    metavar="PATH",
+                    help="try every position of this switch or selector, each with "
+                         "its own inner search — the cabinet, the microphone, the "
+                         "amp, an effect on or off. Repeatable, and a product: two "
+                         "two-state switches is four searches sharing the budget. "
+                         "Without it every discrete control stays where the template "
+                         "had it, which is what the run's caveat says. Use "
+                         "--list-enumerable to see the paths")
+    ap.add_argument("--list-enumerable", action="store_true",
+                    help="print the switches and selectors --enumerate accepts for "
+                         "this pack and amp, with how many positions each has, and "
+                         "exit")
     ap.add_argument("--excerpt", type=positive_float, default=None, metavar="SECONDS",
                     help="measure only this much of the reference")
     ap.add_argument("--out-dir", type=pathlib.Path, required=True,
@@ -151,10 +165,26 @@ def main() -> None:
     if args.loss_profile not in list_profiles():
         die(f"unknown loss profile {args.loss_profile!r}. "
             f"Available: {', '.join(list_profiles())}")
-    load_profile(args.loss_profile)          # fail here rather than 200 renders in
+    profile = load_profile(args.loss_profile)  # fail here rather than 200 renders in
+    residual_weighted = float(
+        profile.get("weights", {}).get("residual", 0.0) or 0.0
+    ) > 0.0
+    if residual_weighted and args.reference_mode != "paired_di":
+        die(f"loss profile {args.loss_profile!r} weights a sample-for-sample "
+            "waveform residual, but --reference-mode is "
+            f"{args.reference_mode!r}. That term is only meaningful when "
+            "--reference is a reamp of the exact --probe-di performance.\n"
+            "  Use --reference-mode paired_di with that pair, or use "
+            "--loss-profile unpaired-v1 for a different performance.")
 
-    renderer = _renderer(args.renderer)
     space = space_module.build(args.pack, amp=args.amp)
+    renderer = _renderer(args.renderer, args.pack)
+    supported = renderer_paths(renderer)
+    if args.list_enumerable:
+        _print_enumerable(space, args.pack, args.amp, supported=supported)
+        return
+    switches, selectors = _enumerated(
+        space, args.enumerated, None, args.shortlist, supported=supported)
     seed, template_name = _seed_from_template(args.template, space, args.pack)
     template_values = dict(seed)
 
@@ -212,7 +242,9 @@ def main() -> None:
     # caused rather than only the budgeted ones.
     extra: list = []
     evaluator = search.Evaluator(renderer, target, probe_di, space,
-                                 profile=args.loss_profile, recipe=seed)
+                                 profile=args.loss_profile, recipe=seed,
+                                 reference_audio=(reference.samples
+                                                  if residual_weighted else None))
     start = evaluator.evaluate(seed)
     if not start.objectives:
         die("the template rendered nothing comparable — a silent render, or no "
@@ -246,7 +278,8 @@ def main() -> None:
                 "given, so there is no way to tell which amp's controls to invert.\n"
                 "  Pass --amp with one of the pack's amps, or use a template with a "
                 "selectedAmp value.")
-        calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack)
+        calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack,
+                                   renderer=renderer)
         seed = invert.apply_to(seed, calculated.as_settings(), space)
         caveats.extend(calculated.caveats)
         # Values this backend cannot be driven with still reach the output spec, and
@@ -264,12 +297,22 @@ def main() -> None:
                 + (f" and {len(dropped) - 5} more" if len(dropped) > 5 else "")
             )
 
+    # Validate the budget against the seed the screen will really see.  The
+    # inversion can switch whole sections on and select a different amp, so doing
+    # this against the template above overstated or understated the fixed cost.
+    switches, selectors = _enumerated(
+        space, args.enumerated, args.budget, args.shortlist,
+        supported=supported, seed=seed)
+
     started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=args.budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
                            fallbacks=[template_values],
-                           rng=np.random.default_rng(args.seed))
+                           switches=switches, selectors=selectors,
+                           rng=np.random.default_rng(args.seed),
+                           reference_audio=(reference.samples
+                                            if residual_weighted else None))
     elapsed_s = time.monotonic() - started_at
     caveats.extend(result.caveats)
 
@@ -400,11 +443,11 @@ def _no_better(found: float, started: float, budget: int) -> str:
             f"recover from what the calculated step did. Keep your template.")
 
 
-def _renderer(name: str):
-    """The backend, refusing the ones that are not built yet by name.
+def _renderer(name: str, pack_id: str = "morgan"):
+    """The backend, refusing the one that is still not built by name.
 
-    `swift` and `pedalboard` are M5. Accepting the flag and silently substituting
-    the synthetic chain would be the worst of the three options: the run would
+    `pedalboard` remains unbuilt. Accepting the flag and silently substituting the
+    synthetic chain would be the worst of the three options: the run would
     succeed, the report would look right, and every number in it would describe a
     Python approximation rather than the plugin.
     """
@@ -412,11 +455,27 @@ def _renderer(name: str):
         from match.renderer_synth import SyntheticRenderer
 
         return SyntheticRenderer()
+    if name == "swift":
+        from match.renderer_au import AudioUnitError, AudioUnitRenderer
+
+        renderer = AudioUnitRenderer(pack_id)
+        try:
+            # Instantiating here rather than at the first render: the plugin is
+            # the one thing that can be missing, unlicensed or a different
+            # version, and finding that out after the reference has been measured
+            # wastes the part of the run a person is waiting through.
+            renderer.metadata()
+        except AudioUnitError as e:
+            renderer.close()
+            die(f"{e}\n"
+                f"  This backend needs macOS with the plugin licensed and "
+                f"installed, and swiftc from the Xcode command line tools.")
+        return renderer
     die(f"the {name!r} backend is not built yet — it is M5 work, and it needs "
         f"macOS with the plugin licensed and installed.\n"
-        f"  Use --renderer synthetic, which is a Python approximation of the "
-        f"chain's topology and is what every number in this repository's "
-        f"development so far was measured against.")
+        f"  Use --renderer swift for the real plugin, or --renderer synthetic, "
+        f"which is a Python approximation of the chain's topology and is what "
+        f"this repository's numbers through M4 were measured against.")
 
 
 def _seed_from_template(path: pathlib.Path, space, pack_id: str):
