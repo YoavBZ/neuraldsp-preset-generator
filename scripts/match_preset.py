@@ -257,6 +257,7 @@ def main() -> None:
         caveats.append("--no-invert was given, so nothing was calculated and the "
                        "search started from the template alone")
         calculated = None
+        inverted_values = None
     else:
         printed = _render_fingerprint(renderer, probe_di,
                                       evaluator._settings(seed), extra)
@@ -281,6 +282,7 @@ def main() -> None:
         calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack,
                                    renderer=renderer)
         seed = invert.apply_to(seed, calculated.as_settings(), space)
+        inverted_values = dict(seed)
         caveats.extend(calculated.caveats)
         # Values this backend cannot be driven with still reach the output spec, and
         # nothing said so. With the docstring's own PR12 template and the synthetic
@@ -341,16 +343,28 @@ def main() -> None:
     # document: the headline improved from the template while the shortlist's diff
     # column measured against the inverted seed, so a run that changed 16 controls
     # showed one. Both are the template now, which is what a reader means by it.
+    accounting = report.summarise(store, run_id, result)
+    convergence = report.convergence_from(store, run_id)
     report_path = report.write_report(
         str(args.out_dir / "report.html"), run_id=run_id, target=target,
         shortlist=result.shortlist, caveats=caveats, seed=template_values,
         seed_objectives=start.objectives, fingerprints=prints,
-        convergence=report.convergence_from(store, run_id),
-        summary=report.summarise(store, run_id, result),
+        convergence=convergence, summary=accounting,
         frozen=result.frozen, searched=result.searched,
         movement=result.movement, floor=result.floor, silences=result.silences,
         unheard=dropped,
         profile=args.loss_profile, reference=str(args.reference),
+    )
+    summary_path = report.write_summary(
+        str(args.out_dir / "summary.json"), run_id=run_id, target=target,
+        shortlist=result.shortlist, caveats=caveats, seed=template_values,
+        seed_objectives=start.objectives, fingerprints=prints,
+        inverted_seed=inverted_values, unheard=dropped,
+        searched=result.searched, frozen=result.frozen,
+        movement=result.movement, floor=result.floor, silences=result.silences,
+        profile=args.loss_profile, reference=str(args.reference), pack=args.pack,
+        renderer=metadata.as_dict(), budget=args.budget, accounting=accounting,
+        elapsed_s=elapsed_s, out_dir=str(args.out_dir),
     )
     store.close()
 
@@ -383,6 +397,7 @@ def main() -> None:
           f"{len(result.frozen)} frozen by the screen")
     print(f"  spec:   {args.out_dir / 'match-1.json'}")
     print(f"  report: {report_path}")
+    print(f"  summary: {summary_path}")
     print("\nto hear it:")
     print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
     print(f"    --spec {args.out_dir / 'match-1.json'} \\")

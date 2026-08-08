@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    # Feature branches are covered by pull_request below. Limiting push builds
+    # to main prevents every PR commit from starting this workflow twice.
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

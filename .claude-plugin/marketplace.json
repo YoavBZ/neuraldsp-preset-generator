@@ -9,7 +9,7 @@
     {
       "name": "neuraldsp-preset-generator",
       "source": "./",
-      "description": "Generate and edit Neural DSP amp-sim presets from a song and a guitar role, or from a plain-English change to a preset you already have.",
+      "description": "Generate, match, and edit Neural DSP amp-sim presets from a song, reference recording, or plain-English change.",
       "author": {
         "name": "YoavBZ",
         "url": "https://github.com/YoavBZ"

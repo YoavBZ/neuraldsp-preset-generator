@@ -1,0 +1,134 @@
+---
+name: match
+description: >-
+  Match an existing Neural DSP preset to supplied reference audio by measuring
+  the recording, calculating invertible controls, searching the rest, and
+  presenting a shortlist before writing. Use when someone supplies or points to
+  audio and asks to match, copy, recreate, approximate, or get closer to its
+  guitar tone, including a DI/reamp pair, isolated or source-separated stem, or
+  full mix. Use generate instead when there is no audio reference.
+allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
+---
+
+# Match a recording
+
+Measure a recording, match a preset to it, and show the evidence before writing.
+Read [preset-spec.md](../../reference/preset-spec.md) before applying the result.
+
+## 1. Inspect the template and classify the reference
+
+Run `show.py` on the template first. Detect the pack from its header and note the
+live amp or channel, `tone_knowledge`, and `learned_notes` paths.
+
+Choose the most conservative true reference regime:
+
+- `paired_di` (confidence 1.0): the reference is a reamp of the exact
+  `--probe-di` performance. Use `paired-v1` only here.
+- `isolated_stem` (0.85): an original multitrack guitar stem.
+- `separated_stem` (0.55): guitar extracted from a mix by source separation.
+- `mix` (0.35): a finished mix containing other instruments and mastering.
+- `probe` (1.0): a controlled render of a known chain, for validation.
+
+Do not call two different performances paired. If provenance is unclear, choose
+the lower-confidence regime and say why. Prefer a short section with one stable
+tone; `--excerpt` measures the beginning of a longer file, or the user can supply
+a clipped section. A long file does not multiply render cost, but averaging clean,
+rhythm and lead sections together produces a target that is none of them.
+
+Fingerprint the reference before spending a render budget:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
+  --regime separated_stem --text
+```
+
+Report the regime, confidence, duration, channel count, level, spectral tilt and
+roll-off, dynamics, delay/reverb measurements, harmonic confidence, and every
+caveat. A missing measurement is not zero.
+
+## 2. Choose topology from evidence
+
+Measurement moves values; it does not identify an artist's rig. When the request
+names a song or artist, research the recorded amp, cabinet, microphone and effects
+with reliable sources. Use that evidence and the pack's `tone.md` to choose the
+template, amp/channel and discrete topology before matching. Keep source links.
+
+Do not enumerate switches or selectors casually. Enumeration divides the budget
+among complete inner searches, and M5 did not demonstrate an accuracy benefit on
+the real backend. If trying a discrete control is material, run
+`--list-enumerable`, explain the budget product, and name the uncertainty.
+
+## 3. Choose the renderer and probe
+
+Use `--renderer swift` when macOS has the licensed Audio Unit installed. Its
+numbers are facts about that plugin version, but the reused instance reports
+`reproducible=false`; preserve that warning beside every reported number.
+
+Use `--renderer synthetic` when the plugin is unavailable. It completes the full
+workflow without the plugin, but its scores describe a Python approximation of
+the topology, not Neural DSP's processing.
+
+Use the user's own DI as `--probe-di` when available. Without one, omit the flag;
+the tool uses a six-second synthetic pluck sequence and records that limitation.
+For `paired_di`, the exact DI is mandatory. Tone King currently requires
+`--no-invert` because its flat parameter namespace has no Morgan-style amp EQ to
+invert.
+
+## 4. Match and read the compact summary
+
+Use one output directory per run. Start with a 300-render budget unless the user
+asks for a quicker exploratory pass:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
+  --template TEMPLATE.xml \
+  --reference REFERENCE.wav --reference-mode separated_stem \
+  --probe-di PROBE.wav --loss-profile unpaired-v1 \
+  --pack morgan --amp sw50r --renderer synthetic \
+  --budget 300 --shortlist 3 --out-dir RUN_DIR
+```
+
+Read `RUN_DIR/summary.json`, not the SVG-heavy HTML, to prepare the response. Also
+give the user `RUN_DIR/report.html` for the full plots. Surface all of the following:
+
+- reference regime and confidence;
+- renderer, plugin version, and reproducibility;
+- which controls were calculated by inversion, which were searched, and which
+  were frozen by the sensitivity screen;
+- every shortlisted score, worst ±6 dB score, named objective vector, and
+  plain-language differences between candidates;
+- every caveat, especially synthetic probe use, low harmonic confidence,
+  separation artefacts, absent measured EQ data, and unverified pack paths.
+
+Lower distance is evidence, not a listening verdict. Ask the user to audition the
+shortlist, particularly when candidates trade timbre against dynamics or ambience.
+
+## 5. Preview, then write
+
+The winner is a spec, not a preset. Always dry-run it and show the complete change
+list before writing:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+  --template TEMPLATE.xml --spec RUN_DIR/match-1.json \
+  --out MATCHED.xml --dry-run
+```
+
+Only drop `--dry-run` after approval. Do not overwrite the template. Preserve its
+custom IR unless the user explicitly asks for portability; stripping an IR changes
+the matched topology. Verify the written preset with `show.py`, then follow
+[installing.md](../../reference/installing.md).
+
+## 6. Record the listening result
+
+Append to the `learned_notes` path reported by `show.py` after the user auditions a
+candidate. Attach the note to measurements from `summary.json`, not only adjectives:
+
+- reference SHA-256, regime and confidence;
+- renderer, plugin version, loss profile, starting score and chosen objective vector;
+- the chosen candidate's `fingerprint_delta` and parameter changes;
+- which candidate the user preferred and any pushback, such as "#2 is less harsh"
+  or "delay is right but the low mids are too thick".
+
+Keep the entry concise. Never copy the user's audio into the plugin or commit the
+local run database, report, summary, generated preset, or learned notes.

@@ -36,7 +36,22 @@ amp choice. Otherwise pick sensible defaults and say what you assumed.
 
 ## 2. Research the tone
 
-Use WebSearch and WebFetch to find how it was actually recorded. Good sources:
+When the user supplies audio, measure it before choosing values:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
+  --regime separated_stem --text
+```
+
+Classify the reference conservatively: `isolated_stem` only for an original
+multitrack stem, `separated_stem` for source-separated guitar, and `mix` for a
+finished mix. Report the regime and its confidence together with the measured
+level, spectral tilt and roll-off, dynamics, time effects, harmonic confidence,
+and all caveats. Then follow the [match skill](../match/SKILL.md) when a template
+is available. Measurement moves values; it does not identify the recorded rig.
+
+Use WebSearch and WebFetch to find how it was actually recorded and choose the
+topology. Good sources:
 Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
 well-cited forum threads, video lesson notes.
 

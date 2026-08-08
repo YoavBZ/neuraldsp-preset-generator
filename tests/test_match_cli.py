@@ -63,6 +63,16 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
 
     assert (out / "trials.sqlite3").exists()
     assert (out / "report.html").exists()
+    summary = json.loads((out / "summary.json").read_text())
+    assert summary["schema"] == "tone-match-summary-v1"
+    assert summary["reference"]["regime"] == "probe"
+    assert summary["reference"]["regime_confidence"] == 1.0
+    assert summary["renderer"]["renderer_id"] == "synthetic"
+    assert summary["inversion"]["used"] is True
+    assert summary["inversion"]["changes"]
+    assert summary["search"]["searched"]
+    assert summary["shortlist"][0]["fingerprint_delta"]
+    assert summary["caveats"]
     spec = json.loads((out / "match-1.json").read_text())
     assert spec["parameters"], "a spec with no parameters is not a match"
     assert (out / "match-2.json").exists(), "--shortlist 2 means two of them"
@@ -233,6 +243,13 @@ def test_paired_profile_reaches_the_search_and_records_residual(audio, tmp_path)
         "select objectives_json from trials where objectives_json is not null")]
     db.close()
     assert rows and all("residual" in row for row in rows)
+
+    summary = json.loads((out / "summary.json").read_text())
+    assert summary["loss_profile"] == "paired-v1"
+    assert summary["reference"]["regime"] == "paired_di"
+    assert summary["reference"]["regime_confidence"] == 1.0
+    assert all("residual" in candidate["objectives"]
+               for candidate in summary["shortlist"])
 
 
 def test_paired_profile_refuses_a_different_performance_mode(audio, tmp_path):

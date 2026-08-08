@@ -1,0 +1,29 @@
+{
+  "name": "M6 paired calibration target",
+  "parameters": [
+    {"module": "", "key": "selectedAmp", "value": 2},
+    {"module": "parameters", "key": "gateActive", "value": false},
+    {"module": "parameters", "key": "doublerActive", "value": false},
+    {"module": "sw50rAmp", "key": "sw50rVolume", "value": 68.0},
+    {"module": "sw50rAmp", "key": "sw50rLevel", "value": 52.0},
+    {"module": "sw50rAmp", "key": "sw50rTreble", "value": 63.0},
+    {"module": "sw50rAmp", "key": "sw50rMid", "value": 42.0},
+    {"module": "sw50rAmp", "key": "sw50rBass", "value": 58.0},
+    {"module": "sw50rAmp", "key": "sw50rReverb", "value": 18.0},
+    {"module": "sw50rAmp", "key": "sw50rBright", "value": true},
+    {"module": "sw50rAmp", "key": "sw50rTrebleBoost", "value": false},
+    {"module": "sw50rAmp", "key": "sw50rInputMode", "value": false},
+    {"module": "sw50rEQ", "key": "sw50rEQActive", "value": true},
+    {"module": "sw50rEQ", "key": "sw50rEQBand1", "value": 1.5},
+    {"module": "sw50rEQ", "key": "sw50rEQBand2", "value": -0.75},
+    {"module": "sw50rEQ", "key": "sw50rEQBand3", "value": 0.0},
+    {"module": "sw50rEQ", "key": "sw50rEQBand4", "value": 1.25},
+    {"module": "sw50rEQ", "key": "sw50rEQBand5", "value": 2.0},
+    {"module": "sw50rEQ", "key": "sw50rEQBand6", "value": -1.0},
+    {"module": "sw50rEQ", "key": "sw50rEQBand7", "value": 0.75},
+    {"module": "sw50rEQ", "key": "sw50rEQBand8", "value": 1.5},
+    {"module": "sw50rEQ", "key": "sw50rEQBand9", "value": 2.5},
+    {"module": "sw50rEQ", "key": "sw50rEQHpf", "value": 55.0},
+    {"module": "sw50rEQ", "key": "sw50rEQLpf", "value": 16500.0}
+  ]
+}

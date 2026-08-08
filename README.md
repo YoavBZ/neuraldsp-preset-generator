@@ -1,11 +1,11 @@
 # neuraldsp-preset-generator
 
-A Claude Code plugin that generates and edits **Neural DSP** amp-sim preset
+A Claude Code plugin that generates, matches, and edits **Neural DSP** amp-sim preset
 files (`.xml`, binary) — for personal interoperability with your own licensed
 copy of the plugin.
 
-Describe a song and a guitar role and get a preset; or point at a preset,
-describe a change in plain English, and get a new one back.
+Describe a song and a guitar role, supply a reference recording to match, or point
+at a preset and describe a change in plain English.
 
 > **You need your own copy of the plugin.** No Neural DSP code, audio, impulse
 > responses, or factory presets are included here — see [NOTICE.md](NOTICE.md).
@@ -57,21 +57,26 @@ Then:
 
 ```
 /neuraldsp-preset-generator:generate  Hotel California, clean rhythm
+/neuraldsp-preset-generator:match     my-preset.xml  reference-guitar.wav
 /neuraldsp-preset-generator:edit      my-preset.xml  more reverb, tighter low end
 ```
 
 You don't have to use the slash commands — just describing what you want
 ("give me a jangly rhythm tone for Morgan") triggers the right skill.
 
-## The two skills
+## The three skills
 
 - **`generate`** — describe a song, artist, or sound; the skill researches how
-  the tone was recorded, maps it to the plugin's amps and effects, writes a
-  preset, and puts it where the plugin will find it.
+  the tone was recorded, measures supplied audio when present, maps both to the
+  plugin's amps and effects, writes a preset, and puts it where the plugin will
+  find it.
+- **`match`** — supply reference audio and a starting preset; the skill measures
+  the recording, calculates what can be inverted, searches the remaining
+  controls, and presents a measured shortlist before writing.
 - **`edit`** — point at an existing preset, describe the change in plain
   English, get a new preset back. The input is never overwritten.
 
-Both preview their changes before writing:
+All three preview their changes before writing:
 
 ```
 4 change(s) against Example_Clean_PR12.xml:
@@ -340,24 +345,21 @@ a report.
 pip install -e '.[analysis,match]'
 python scripts/match_preset.py \
   --template samples/Example_Clean_PR12.xml \
-  --reference song-excerpt.wav --reference-mode mix \
+  --reference song-excerpt.wav --reference-mode separated_stem \
+  --renderer swift \
   --budget 300 --out-dir runs/hotel-california-001
 ```
 
-It writes `match-1.json` — a spec `apply_spec.py` turns into a preset, so the
-winner goes through the same validated path as a hand-authored one — and
-`report.html`, one self-contained file. **Read the report before trusting the
-number**: it opens with the caveats rather than the charts, and each one names a
-place where a figure rests on an assumption instead of a measurement.
+It writes `match-1.json` — a spec `apply_spec.py` turns into a preset — plus a
+self-contained `report.html` and compact `summary.json`. **Read the caveats before
+trusting the number.** The match skill reads the summary, shows the shortlist and
+dry-run change list, and waits for approval before writing.
 
-The backend is a Python approximation of the plugin's topology, not the plugin.
-Every number this produces is a number about that approximation until the real
-backend exists (M5, which needs macOS and a licence). If you have that machine,
-[docs/handoff-to-macos.md](docs/handoff-to-macos.md) is the run-book:
-what to run, in what order, and what should happen.
-
-The generate and edit skills do not use any of this yet — see
-[docs/tone-matching-plan.md](docs/tone-matching-plan.md) for what it is for.
+`--renderer swift` drives the installed Audio Unit on macOS. It reports the exact
+plugin version and the measured fact that a reused instance is not reproducible.
+`--renderer synthetic` works without the plugin, but its numbers describe a Python
+approximation of the topology rather than Neural DSP's processing. M5's real-plugin
+measurements and caveats are in [the implementation plan](docs/tone-matching-plan.md#12d-what-m5-built-and-what-the-plugin-said-about-m1-m4).
 
 ## Fewer permission prompts
 
