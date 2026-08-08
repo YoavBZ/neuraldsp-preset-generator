@@ -690,6 +690,38 @@ In priority order, each independently justifiable:
 4. **Differentiable proxy chain** (Wiener–Hammerstein + differentiable EQ /
    compressor / FIR cab) for initialization by gradient descent.
 
+#### M7-1 pilot — measured, not the full atlas
+
+The first pilot fixes the bundled PR12 preset's two cabinet and microphone
+choices, bypasses gate/doubler/compressor/drive/tremolo/reverb/delay, and samples
+the 26 continuous amp, EQ, level and cabinet controls. It is deliberately 128
+points rather than the few thousand above: its gate is whether nearest-neighbour
+lookup beats the fixed topology's neutral settings on an independent 24-target
+Latin hypercube before hours are spent scaling it.
+
+The committed measurement is reproduced by this invocation, exactly:
+
+```bash
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp pr12 \
+  --template samples/Example_Clean_PR12.xml --renderer swift --samples 128 \
+  --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
+  --out packs/morgan/response_atlas_pr12_pilot.json
+```
+
+`scripts/query_response_atlas.py` fingerprints a reference and turns the nearest
+stored responses into ordinary specs without opening the plugin. The ranges it
+prints are the finite pilot's observed range on this probe, not mathematical
+limits on the plugin; scaling the atlas is still required before wording such as
+"the darkest this amp and cab reach" is justified.
+
+The renderer is Morgan 1.1.1 through the reused Swift server and reports
+`reproducible=False`: repeated settings vary by up to 0.23 dB per band. Every
+pilot number and the atlas JSON itself carry that qualification. On the exact
+invocation above, nearest-neighbour lookup reduced held-out mean distance from
+**1.640 neutral to 0.814** and beat neutral on **24/24 targets**. This passes the
+pilot gate; it does not make 128 points dense enough to call the observed ranges
+plugin limits.
+
 ---
 
 ## 8. Dependency and CI policy
