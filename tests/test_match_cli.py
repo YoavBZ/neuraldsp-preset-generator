@@ -411,9 +411,13 @@ def test_list_enumerable_names_the_paths_and_their_positions(tmp_path):
                "--reference", ROOT / "pyproject.toml", "--amp", "sw50r",
                "--out-dir", tmp_path / "run", "--list-enumerable")
     assert done.returncode == 0, done.stderr
-    assert "cabParameters/leftMicType" in done.stdout
-    assert "11 positions" in done.stdout, done.stdout
-    assert "(selector)" in done.stdout and "(switch)" in done.stdout
+    assert "sw50rAmp/sw50rBright" in done.stdout
+    assert "cabParameters/leftMicType" not in done.stdout, (
+        "the synthetic backend does not model microphone type, so listing it "
+        "would advertise several topologies that all render identically"
+    )
+    assert "2 positions" in done.stdout, done.stdout
+    assert "(switch)" in done.stdout
     # It exits before reading the reference, which here is not audio at all.
     assert "Format not recognised" not in done.stderr
 
@@ -429,6 +433,33 @@ def test_an_unenumerable_path_is_refused_by_name(audio, tmp_path):
     assert "--list-enumerable" in done.stderr
 
 
+def test_a_discrete_control_the_renderer_does_not_model_is_refused(audio, tmp_path):
+    """A path can be valid for the pack and still be imaginary for the backend.
+
+    Before this guard, eleven microphone values became eleven identical synthetic
+    renders because Evaluator._settings dropped the unsupported selector later.
+    The budget was split eleven ways and the run looked like enumeration worked.
+    """
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "400", "--out-dir", tmp_path / "run",
+               "--enumerate", "cabParameters/leftMicType")
+    assert done.returncode != 0
+    assert "this renderer cannot drive it" in done.stderr, done.stderr
+    assert "real-plugin renderer" in done.stderr
+
+
+def test_enumerating_one_control_twice_is_not_four_topologies(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--amp", "sw50r",
+               "--budget", "300", "--out-dir", tmp_path / "run",
+               "--enumerate", "sw50rAmp/sw50rBright",
+               "--enumerate", "sw50rAmp/sw50rBright")
+    assert done.returncode != 0
+    assert "more than once" in done.stderr, done.stderr
+    assert "duplicates every topology" in done.stderr
+
+
 def test_a_topology_product_that_cannot_be_searched_is_refused_with_the_sums(audio, tmp_path):
     """A topology with no search behind it is its starting point scored once.
 
@@ -438,9 +469,13 @@ def test_a_topology_product_that_cannot_be_searched_is_refused_with_the_sums(aud
     done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--amp", "sw50r",
                "--budget", "300", "--out-dir", tmp_path / "run",
-               "--enumerate", "cabParameters/leftMicType")
+               "--enumerate", "sw50rAmp/sw50rBright",
+               "--enumerate", "cabParameters/leftCabActive",
+               "--enumerate", "compressor/compressorActive",
+               "--enumerate", "drive1/drive1Active",
+               "--enumerate", "delay/delayActive")
     assert done.returncode != 0
-    assert "11 topologies do not fit" in done.stderr, done.stderr
+    assert "32 topologies do not fit" in done.stderr, done.stderr
     assert "Raise --budget to about" in done.stderr
     assert "Traceback" not in done.stderr
 
@@ -451,10 +486,7 @@ def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
     done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--reference-mode", "probe",
                "--probe-di", audio / "probe.wav", "--amp", "sw50r",
-               # 240 rather than a round 100: the screen alone costs 2 per
-               # dimension, so on Morgan the floor for two topologies is 223 and
-               # the guard above says so by name.
-               "--budget", "240", "--shortlist", "1", "--out-dir", tmp_path / "run",
+               "--budget", "90", "--shortlist", "1", "--out-dir", tmp_path / "run",
                "--enumerate", "sw50rAmp/sw50rBright")
     assert done.returncode == 0, done.stdout + done.stderr
     assert "no switches or selectors were enumerated" not in done.stdout, done.stdout
@@ -465,7 +497,8 @@ def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):
     by both CLIs — so both have to have it, or the advice is a dead end on one."""
     listed = run("benchmark_match.py", "--list-enumerable")
     assert listed.returncode == 0, listed.stderr
-    assert "cabParameters/leftMicType" in listed.stdout
+    assert "sw50rAmp/sw50rBright" in listed.stdout
+    assert "cabParameters/leftMicType" not in listed.stdout
 
     refused = run("benchmark_match.py", "--enumerate", "nope")
     assert refused.returncode != 0

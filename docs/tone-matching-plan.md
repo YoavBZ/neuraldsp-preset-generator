@@ -1939,7 +1939,13 @@ than a patch, and it should be done deliberately rather than at the end of M5.
 or `selectors=`, so every run left the cabinet, the microphone, the amp and every
 on/off switch wherever the template had them. `--enumerate` on both CLIs reaches
 it. Paths are routed to switches or selectors by the dimension's own kind, and
-`--list-enumerable` prints the 34 Morgan/sw50r accepts.
+`--list-enumerable` is renderer-specific: it prints the 8 discrete controls the
+synthetic chain actually models, or the 34 Morgan/sw50r controls the Swift backend
+can drive. The first version printed and accepted all 34 for both backends. Values
+for the other 26 were later dropped by `Evaluator._settings`, so a request such as
+`--enumerate cabParameters/leftMicType` silently created eleven identical
+synthetic topologies and split the budget eleven ways. Those paths now fail before
+the reference is read.
 
 The same ground-truth match, same template, same seed, same 300-render budget:
 
@@ -1960,39 +1966,74 @@ the run says so:
 the halved search depth is pure loss. That is the trade the flag makes: breadth
 against depth on a fixed budget, and it only pays when the discrete control is
 actually wrong in the template. On Morgan the screen alone costs 2 per dimension —
-185 renders on `sw50r` — so a budget that can afford several topologies is a large
-one, and the CLI refuses up front with the arithmetic rather than discovering it
-after an hour.
+plus one baseline — so a budget that can afford several topologies is a large one,
+and the CLI refuses up front with the exact active/supported count rather than
+discovering it after an hour.
 
-**The selector column still does not move, and two attempts failed for two
-different reasons.** §6.3 predicted the `inversion` and `full` arms would score
-identical selector accuracy for as long as nothing was enumerated. They still do,
-now that something is:
+**Two synthetic selector experiments were invalid, and the boundary now refuses
+them.** §6.3 predicted the `inversion` and `full` arms would score identical
+selector accuracy for as long as nothing was enumerated. Two early experiments
+appeared to reach the topology stage and still scored identically:
 
 | enumerated | inversion selector | full selector |
 |---|---|---|
 | `cabParameters/leftCabPhase` | 0.6875 | 0.6875 |
 | `selectedAmp` | 0.6406 | 0.6406 |
 
-Identical target by target, not merely on average. The causes are worth recording
-because each rules out a different explanation:
+Identical target by target, not merely on average. The immediate cause was simpler
+than either interpretation first given: **the synthetic renderer supports neither
+control.** The topology value remained in the candidate vector — which is why the
+run and selector metric looked plausible — and was removed from every render.
+These figures are evidence about the missing renderer boundary check and nothing
+about whether topology search can recover a selector.
 
-- **`leftCabPhase` is inaudible here.** Both cabs are dual-mono in the synthetic
-  chain, so inverting one cab's phase does not change the objective, both
-  topologies score the same, and the tie goes to the seed. Enumerating a control
-  the objective cannot hear buys nothing — correctly.
-- **`selectedAmp` is held constant by the benchmark itself.** `random_vector` has
+- `leftCabPhase` is not implemented by `analysis/refchain.py`; describing it as
+  merely inaudible was too generous. It was never rendered.
+- `selectedAmp` is not implemented by the one-amp synthetic chain **and** is held
+  constant by the benchmark itself. `random_vector` has
   `if dimension.key == "selectedAmp": continue`, so no target ever asks for a
-  different amp. Enumerating it searches three topologies for a value that was
-  already right. **The benchmark therefore cannot measure amp selection at all**,
-  and could not have whatever the search did.
+  different amp. **The synthetic benchmark therefore cannot measure amp selection
+  at all**, and could not have whatever the search did.
 
-So the wiring is demonstrated — the topology count, the budget split and the
-caveat all change — and the *benefit* is not. Showing the column move needs a
-discrete control that is both varied by the targets and audible to the objective;
-`cabParameters/leftMicType` is the obvious candidate at 11 positions, and it needs
-a budget of about 389 on `sw50r`. That run has not been made, and this section
-would be claiming a result it does not have if it said otherwise.
+The preflight budget arithmetic had the same boundary error: it counted all 92
+space dimensions where `screen()` charged only active, continuous dimensions the
+renderer supports. It now derives the exact fixed screen cost from the same
+post-inversion seed and supported-path set the search will see, instead of charging
+for every dormant or unsupported dimension in the pack.
+
+The real-plugin `sw50rBright` run above proves that variants reach distinct plugin
+renders and share the budget. A benchmark target with Bright deliberately wrong
+in the neutral seed supplies the missing selector test:
+
+```
+python3 scripts/benchmark_match.py --targets 1 --budget 300 \
+  --arms inversion,full --renderer swift \
+  --enumerate sw50rAmp/sw50rBright \
+  --json /tmp/bench-real-bright.json
+```
+
+| arm | objective | selector accuracy | renders |
+|---|---:|---:|---:|
+| inversion | 1.611 | 0.4848 | 1 |
+| full | 1.623 | 0.4848 | 278 |
+
+Plugin 1.1.1, `reproducible=false`. The target has Bright on and the neutral seed
+has it off; the full arm kept it off. This is not evidence that the switch is
+inaudible. A direct repeated A/B with every other target parameter held fixed
+prefers the correct setting, while the same A/B on the much less accurate inverted
+candidate prefers the wrong setting: the wrong topology compensates for errors
+elsewhere in the vector. Repeated totals for identical settings also move enough
+that one render is a weak way to rank two nearby topologies.
+
+So enumeration now works operationally, and **its accuracy benefit is not
+demonstrated**. On this target it made the objective slightly worse and did not
+recover the known switch. The next design question is no longer wiring; it is how
+to rank discrete variants under a backend whose full objective is substantially
+noisier than its 0.23 dB per-band metadata suggests. Repeating only the topology
+seed is insufficient because CMA-ES also scores every continuous candidate once,
+and the store currently serves an identical vector from cache instead of rendering
+another sample. That needs an explicit replicated-evaluation design and budget,
+not another flag around the existing one-render comparison.
 
 ### Tone King, end to end for the first time
 

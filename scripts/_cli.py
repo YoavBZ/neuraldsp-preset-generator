@@ -233,8 +233,20 @@ def resolve_pack(pack_id: Optional[str], file_header: str, source: pathlib.Path)
     return pack
 
 
-def enumerable(space):
-    """Every discrete dimension of this space, and how many positions it has.
+def renderer_paths(renderer):
+    """The parameter paths a renderer accepts, or ``None`` for unrestricted.
+
+    Enumeration needs this answer before the search starts.  Otherwise a selector
+    the backend later drops becomes several identical topologies that silently
+    divide the budget.
+    """
+    from match.search import supported_keys
+
+    return supported_keys(renderer)
+
+
+def enumerable(space, supported=None):
+    """Every supported discrete dimension, and how many positions it has.
 
     A switch has two. A selector has one per declared member — and a selector
     whose members are unknown is not here at all, because `space.build` already
@@ -243,6 +255,8 @@ def enumerable(space):
     """
     found = []
     for dimension in space.dimensions:
+        if supported is not None and dimension.path not in supported:
+            continue
         if dimension.switch:
             found.append((dimension.path, 2, "switch"))
         elif dimension.kind == "enum" and dimension.members:
@@ -250,14 +264,14 @@ def enumerable(space):
     return sorted(found)
 
 
-def print_enumerable(space, pack_id: str, amp) -> None:
+def print_enumerable(space, pack_id: str, amp, supported=None) -> None:
     """What `--enumerate` accepts here, and what asking for it costs.
 
     The cost sentence uses this pack's own widest selector rather than a made-up
     example, because the number is the whole point: a control with eleven
     positions is eleven inner searches sharing one budget.
     """
-    found = enumerable(space)
+    found = enumerable(space, supported=supported)
     if not found:
         print(f"{pack_id} declares no switches or selectors that can be enumerated"
               + (f" for {amp}" if amp else "") + ".")
@@ -273,7 +287,8 @@ def print_enumerable(space, pack_id: str, amp) -> None:
           f"({positions} positions)\nmakes it {4 * positions}.")
 
 
-def enumerated(space, paths, budget: int, shortlist: int):
+def enumerated(space, paths, budget: Optional[int], shortlist: int,
+               supported=None, seed=None):
     """Split the requested paths into switches and selectors, and refuse the silly.
 
     Routed by the dimension's own kind rather than by asking the caller to know
@@ -289,10 +304,23 @@ def enumerated(space, paths, budget: int, shortlist: int):
     if not paths:
         return None, None
 
-    by_path = {path: (positions, kind) for path, positions, kind in enumerable(space)}
+    all_discrete = {path for path, _, _ in enumerable(space)}
+    by_path = {
+        path: (positions, kind)
+        for path, positions, kind in enumerable(space, supported=supported)
+    }
     switches, selectors, variants = [], [], 1
     for path in paths:
+        if path in switches or path in selectors:
+            die(f"{path!r} was passed to --enumerate more than once.\n"
+                f"  Repeating one control duplicates every topology without "
+                f"adding a choice, so remove the duplicate flag.")
         found = by_path.get(path)
+        if found is None and path in all_discrete:
+            die(f"{path!r} is a switch or selector, but this renderer cannot drive "
+                f"it.\n  Choose a real-plugin renderer for that control, or run "
+                f"the same command with --list-enumerable to see the "
+                f"{len(by_path)} this backend supports.")
         if found is None:
             die(f"{path!r} is not a switch or selector this search can enumerate.\n"
                 f"  Run the same command with --list-enumerable to see the "
@@ -300,6 +328,13 @@ def enumerated(space, paths, budget: int, shortlist: int):
         positions, kind = found
         (switches if kind == "switch" else selectors).append(path)
         variants *= positions
+
+    # A first call can validate and route the paths before the reference is read
+    # or a plugin is rendered.  The match CLI calls again with the post-inversion
+    # seed, because that seed determines which continuous controls the screen will
+    # actually charge for.
+    if budget is None:
+        return switches or None, selectors or None
 
     # One render per variant for its own starting point, 2N+1 for the screen, and
     # 2 per shortlisted candidate for the re-rank. Only what is left is searchable,
@@ -309,11 +344,17 @@ def enumerated(space, paths, budget: int, shortlist: int):
     # re-derived here.
     from match.search import generation_size
 
-    screen_cost = 2 * len(space.dimensions) + 1
+    active = space.active(seed) if seed is not None else space.dimensions
+    screened = [
+        dimension for dimension in active
+        if not dimension.switch and dimension.kind != "enum"
+        and (supported is None or dimension.path in supported)
+    ]
+    screen_cost = 2 * len(screened) + 1
     # An upper bound on what the screen leaves searchable: the real count is only
     # known after screening, and using it here would need the renders this check
     # exists to avoid spending.
-    round_cost = generation_size(len(space.dimensions))
+    round_cost = generation_size(len(screened)) if screened else 1
     reserved = screen_cost + variants + 2 * shortlist
     per_variant = (budget - reserved) / max(variants, 1)
     if per_variant < round_cost:

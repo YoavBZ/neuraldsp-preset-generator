@@ -205,7 +205,7 @@ class Evaluator:
         self.renders = 0
         self.cache_hits = 0
         self.wall_ms = 0.0
-        self._supported = _supported_keys(renderer)
+        self._supported = supported_keys(renderer)
 
     # --- the one expensive call ---------------------------------------------
 
@@ -1221,7 +1221,7 @@ def _separation(one: Candidate, other: Candidate,
     return max(gaps) if gaps else 0.0
 
 
-def _supported_keys(renderer) -> Optional[set]:
+def supported_keys(renderer) -> Optional[set]:
     """The paths this backend can be driven with, or None if it accepts anything.
 
     Spelled the way `Dimension.path` and `ParamSpec.path` both spell it, which for
@@ -1247,6 +1247,12 @@ def _supported_keys(renderer) -> Optional[set]:
         path = key if isinstance(key, str) else "/".join(str(part) for part in key)
         keys.add(path[1:] if path.startswith("/") else path)
     return keys
+
+
+# Compatibility for callers and tests written before CLI preflight needed this
+# normalisation too. There remains one implementation, especially for top-level
+# keys where a leading slash changes whether the parameter is ever rendered.
+_supported_keys = supported_keys
 
 
 def _scoring_key(render_key: str, target, profile: str, recipe: Mapping) -> str:

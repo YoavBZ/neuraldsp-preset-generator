@@ -30,7 +30,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import (die, enumerated, guarded, positive_float, positive_int,
-                  print_enumerable, probe_di)
+                  print_enumerable, probe_di, renderer_paths)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -134,18 +134,20 @@ def main() -> None:
             f"Available: {', '.join(benchmark.ARMS)}")
 
     space = space_module.build(args.pack, amp=args.amp)
+    renderer = _renderer(args.renderer, args.pack)
+    supported = renderer_paths(renderer)
     if args.list_enumerable:
-        print_enumerable(space, args.pack, args.amp)
+        print_enumerable(space, args.pack, args.amp, supported=supported)
         return
 
-    renderer = _renderer(args.renderer, args.pack)
+    seed = benchmark.centre_seed(space)
     # The same routing and the same budget arithmetic the match CLI uses, imported
     # rather than repeated: two copies of "is this a switch or a selector" would be
     # two places for the answer to drift.
-    switches, selectors = enumerated(space, args.enumerated, args.budget,
-                                     shortlist=1)
+    switches, selectors = enumerated(
+        space, args.enumerated, args.budget, shortlist=1, supported=supported,
+        seed=seed)
     di, di_caveat = probe_di(args.probe_di, args.seconds)
-    seed = benchmark.centre_seed(space)
 
     started = time.time()
 

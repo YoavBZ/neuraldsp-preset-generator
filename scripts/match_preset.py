@@ -44,7 +44,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import (die, enumerated as _enumerated, guarded, on_interrupt,
                   positive_float, positive_int, print_enumerable as _print_enumerable,
-                  probe_di as _probe)
+                  probe_di as _probe, renderer_paths)
 
 # The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
 # `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
@@ -168,13 +168,13 @@ def main() -> None:
     load_profile(args.loss_profile)          # fail here rather than 200 renders in
 
     space = space_module.build(args.pack, amp=args.amp)
-    if args.list_enumerable:
-        _print_enumerable(space, args.pack, args.amp)
-        return
-    switches, selectors = _enumerated(space, args.enumerated, args.budget,
-                                      args.shortlist)
-
     renderer = _renderer(args.renderer, args.pack)
+    supported = renderer_paths(renderer)
+    if args.list_enumerable:
+        _print_enumerable(space, args.pack, args.amp, supported=supported)
+        return
+    switches, selectors = _enumerated(
+        space, args.enumerated, None, args.shortlist, supported=supported)
     seed, template_name = _seed_from_template(args.template, space, args.pack)
     template_values = dict(seed)
 
@@ -284,6 +284,13 @@ def main() -> None:
                 f"calculated: {', '.join(dropped[:5])}"
                 + (f" and {len(dropped) - 5} more" if len(dropped) > 5 else "")
             )
+
+    # Validate the budget against the seed the screen will really see.  The
+    # inversion can switch whole sections on and select a different amp, so doing
+    # this against the template above overstated or understated the fixed cost.
+    switches, selectors = _enumerated(
+        space, args.enumerated, args.budget, args.shortlist,
+        supported=supported, seed=seed)
 
     started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
