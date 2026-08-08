@@ -98,6 +98,8 @@ GENERATED_OPTIONAL = {
     "learned-tones.md": "appended by past runs, absent until one has something to say",
 }
 OPTIONAL_PER_PACK = {**COMMITTED_OPTIONAL, **GENERATED_OPTIONAL}
+# Runtime artifacts named by the skills but deliberately absent from a clone.
+GENERATED_OUTPUTS = {"summary.json"}
 
 
 def plugin_paths(text: str) -> set:
@@ -181,6 +183,7 @@ def test_filenames_named_in_prose_exist_somewhere(doc):
     for directory in ("scripts", "packs", "format", "samples", "reference", "docs"):
         known.update(p.name for p in (ROOT / directory).rglob("*") if p.is_file())
     known.update(OPTIONAL_PER_PACK)  # may legitimately not exist yet
+    known.update(GENERATED_OUTPUTS)
     missing = sorted(set(BARE_FILE.findall(doc.read_text())) - known)
     assert not missing, f"{DOC_IDS[doc]} names files that do not exist: {missing}"
 
@@ -224,8 +227,19 @@ NEEDS_A_PRESET_FOLDER = (
     "Audio/Presets",
     "Documents/Neural",
     "<user preset folder>",
-    "--out-dir",
 )
+
+
+@functools.lru_cache(maxsize=None)
+def analysis_is_available() -> bool:
+    """Whether the optional stack needed by documented audio commands exists."""
+    from analysis import AnalysisUnavailable, require
+
+    try:
+        require("testing documented audio commands")
+    except AnalysisUnavailable:
+        return False
+    return True
 
 
 def commands_in(doc: pathlib.Path) -> list:
@@ -284,6 +298,9 @@ def skip_reason(command: str):
             return "needs the licensed Audio Unit installed on macOS"
     if any(marker in command for marker in NEEDS_A_PRESET_FOLDER):
         return "reads or writes the user's own Neural DSP preset folder"
+    if any(name in command for name in ("fingerprint.py", "match_preset.py")):
+        if not analysis_is_available():
+            return "needs the optional analysis and match extras"
     if re.match(r"python3? +\"?\$\{CLAUDE_PLUGIN_ROOT\}", command):
         return None
     # A Swift build, or one of the helpers it produces, is runnable wherever the
@@ -324,10 +341,31 @@ class Sandbox:
         self.template = template
         self.spec = spec
         self._runs = 0
+        self._audio = None
 
     def out(self) -> pathlib.Path:
         self._runs += 1
         return self.path / f"out{self._runs}.xml"
+
+    def audio_pair(self):
+        """Create a deterministic reference and the exact DI behind it lazily."""
+        if self._audio is None:
+            from analysis import refchain
+            from tests import fixtures_audio as fx
+
+            probe = self.path / "probe.wav"
+            reference = self.path / "reference.wav"
+            di = fx.plucks(seconds=2.0, gap=0.9, seed=5)
+            fx.write_wav(probe, di)
+            fx.write_wav(reference, refchain.render(di, {
+                "sw50rAmp/sw50rVolume": 72.0,
+                "sw50rAmp/sw50rTreble": 35.0,
+            }))
+            self._audio = reference, probe
+        return self._audio
+
+    def run_dir(self) -> pathlib.Path:
+        return self.path / "match-run"
 
     def build(self, helper: str) -> pathlib.Path:
         """Compile one of the documented Swift helpers into this sandbox.
@@ -394,7 +432,15 @@ def materialise(command: str, sandbox: Sandbox) -> list:
     for placeholder in ("PRESET.xml", "TEMPLATE.xml"):
         text = text.replace(placeholder, str(sandbox.template))
     text = text.replace("/tmp/spec.json", str(sandbox.spec))
-    for placeholder in ("NEW.xml", "OUT.xml"):
+    if "REFERENCE.wav" in text or "PROBE.wav" in text:
+        reference, probe = sandbox.audio_pair()
+        text = text.replace("REFERENCE.wav", str(reference))
+        text = text.replace("PROBE.wav", str(probe))
+    # Each documented command is tested independently, so the apply preview uses
+    # the known-valid spec instead of depending on the match command running first.
+    text = text.replace("RUN_DIR/match-1.json", str(sandbox.spec))
+    text = text.replace("RUN_DIR", str(sandbox.run_dir()))
+    for placeholder in ("NEW.xml", "OUT.xml", "MATCHED.xml"):
         if placeholder in text:
             text = text.replace(placeholder, str(sandbox.out()))
     for helper in BUILT_HELPERS:
@@ -441,15 +487,30 @@ def test_every_documented_command_runs(doc, command, sandbox):
 def test_the_skills_own_commands_are_all_exercised():
     """Guard on the guard: every skip above is judged by a substring, so a new
     command that happens to match one would vanish from the suite silently.
-    The two skill bodies are the part that must never go unchecked."""
+    The skill bodies are the part that must never go unchecked."""
     from_skills = [(doc, command) for doc, command in ALL_COMMANDS if doc in SKILLS]
     assert from_skills, "no commands extracted from the skill bodies"
     unrun = [
         (DOC_IDS[doc], command, skip_reason(command))
         for doc, command in from_skills
         if skip_reason(command)
+        and skip_reason(command) != "needs the optional analysis and match extras"
     ]
     assert not unrun, f"skill commands are not being run: {unrun}"
+
+
+def test_audio_skill_commands_are_exercised_when_the_extra_is_installed():
+    """The bare job may skip audio; the analysis job must execute those commands."""
+    if not analysis_is_available():
+        pytest.skip("needs the optional analysis and match extras")
+    unrun = [
+        (DOC_IDS[doc], command, skip_reason(command))
+        for doc, command in ALL_COMMANDS
+        if doc in SKILLS
+        and any(name in command for name in ("fingerprint.py", "match_preset.py"))
+        and skip_reason(command)
+    ]
+    assert not unrun, f"audio skill commands are not being run: {unrun}"
 
 
 INLINE_JSON = re.compile(r"`(\{[^`]*\})`")

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Match a Recording"
+  short_description: "Match a Neural DSP preset to reference audio"
+  default_prompt: "Use $match to make this preset sound more like the supplied recording."

@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "neuraldsp-preset-generator",
   "displayName": "Neural DSP Preset Generator",
-  "version": "0.3.0",
-  "description": "Generate and edit Neural DSP amp-sim presets from a song and a guitar role, or from a plain-English change to a preset you already have. Personal interoperability with your own licensed copy of the plugin.",
+  "version": "0.4.0",
+  "description": "Generate, match, and edit Neural DSP amp-sim presets from a song, reference recording, or plain-English change. Personal interoperability with your own licensed copy of the plugin.",
   "author": {
     "name": "YoavBZ",
     "url": "https://github.com/YoavBZ"

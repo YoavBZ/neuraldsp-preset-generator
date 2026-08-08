@@ -21,7 +21,9 @@ font stack — and `[analysis]` is already four packages.
 from __future__ import annotations
 
 import html
+import json
 import math
+import pathlib
 import time
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
@@ -134,6 +136,139 @@ def write_report(path: str, **kwargs) -> str:
         destination.write_text(render_report(**kwargs), encoding="utf-8")
     except OSError as e:
         raise ReportError(f"cannot write the report to {path}: {e}") from e
+    return str(destination)
+
+
+def build_summary(
+    *,
+    run_id: str,
+    target: Any,
+    shortlist: Sequence[Any],
+    caveats: Sequence[str],
+    seed: Mapping,
+    seed_objectives: Mapping[str, float],
+    fingerprints: Mapping[int, Any],
+    inverted_seed: Optional[Mapping],
+    unheard: Sequence[str],
+    searched: Sequence[str],
+    frozen: Mapping[str, float],
+    movement: Mapping[str, float],
+    floor: float,
+    silences: Mapping[str, float],
+    profile: str,
+    reference: str,
+    pack: str,
+    renderer: Mapping[str, Any],
+    budget: int,
+    accounting: Mapping[str, Any],
+    elapsed_s: float,
+    out_dir: str,
+) -> Dict[str, Any]:
+    """The compact, machine-readable counterpart to the HTML report.
+
+    M6's skills need to surface the regime, inversion/search split, shortlist and
+    caveats. Making an agent scrape those facts from an HTML file containing several
+    thousand SVG points is both expensive and fragile, so every fact the skill needs
+    is written once here from the same in-memory objects that produced the report.
+
+    The reference fingerprint and each candidate's signed per-band delta make a
+    learned note about a measured result rather than prose detached from the audio.
+    Audio itself is not copied into the run directory.
+    """
+    from analysis.compare import band_delta
+
+    silent_paths = {path.lstrip("/") for path in unheard}
+
+    def changes(values: Mapping) -> List[Dict[str, Any]]:
+        return [
+            {
+                "path": path,
+                "from": was,
+                "to": now,
+                "heard": path.lstrip("/") not in silent_paths,
+            }
+            for path, was, now in _diff(seed, values)
+        ]
+
+    candidates = []
+    for index, candidate in enumerate(shortlist):
+        printed = fingerprints.get(index)
+        candidates.append({
+            "rank": index + 1,
+            "score": float(candidate.total),
+            "worst_input_level_score": (
+                None if candidate.worst_level is None else float(candidate.worst_level)
+            ),
+            "objectives": {
+                key: float(value) for key, value in candidate.objectives.items()
+            },
+            "input_level_scores": {
+                str(offset): float(value)
+                for offset, value in candidate.by_level.items()
+            },
+            "changes": changes(candidate.values),
+            "fingerprint_delta": (
+                band_delta(target, printed) if printed is not None else []
+            ),
+        })
+
+    destination = pathlib.Path(out_dir)
+    return {
+        "schema": "tone-match-summary-v1",
+        "run_id": run_id,
+        "pack": pack,
+        "reference": {
+            "path": reference,
+            "regime": target.regime,
+            "regime_confidence": float(target.regime_confidence),
+            "fingerprint": target.to_dict(),
+        },
+        "loss_profile": profile,
+        "renderer": dict(renderer),
+        "inversion": {
+            "used": inverted_seed is not None,
+            "changes": changes(inverted_seed) if inverted_seed is not None else [],
+            "calculated_but_unheard": sorted(unheard),
+        },
+        "search": {
+            "budget": int(budget),
+            "searched": list(searched),
+            "frozen": {key: float(value) for key, value in frozen.items()},
+            "movement": {key: float(value) for key, value in movement.items()},
+            "sensitivity_floor": float(floor),
+            "silences": {key: float(value) for key, value in silences.items()},
+            "accounting": dict(accounting),
+            "elapsed_s": float(elapsed_s),
+        },
+        "starting_point": {
+            "score": float(seed_objectives.get("total", float("inf"))),
+            "objectives": {
+                key: float(value) for key, value in seed_objectives.items()
+            },
+        },
+        "shortlist": candidates,
+        "caveats": list(caveats),
+        "outputs": {
+            "report": str(destination / "report.html"),
+            "specs": [
+                str(destination / f"match-{i}.json")
+                for i in range(1, len(candidates) + 1)
+            ],
+        },
+    }
+
+
+def write_summary(path: str, **kwargs) -> str:
+    """Write a tone-match summary and return its path."""
+    destination = pathlib.Path(path)
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(
+            json.dumps(build_summary(**kwargs), indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as e:
+        raise ReportError(f"cannot write the summary to {path}: {e}") from e
     return str(destination)
 
 

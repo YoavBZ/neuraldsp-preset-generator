@@ -42,6 +42,15 @@ def changed_modules(stdout: str, suffix: str) -> set:
     return found
 
 
+def test_the_documented_paired_target_is_a_legal_spec(out):
+    """The command beside M6's real numbers must remain reproducible."""
+    target = REPO_ROOT / "docs" / "m6-paired-target.json"
+    result = run("--spec", str(target), "--out", str(out), "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "selectedAmp" in result.stdout and "SW50R" in result.stdout
+    assert "sw50rEQ/sw50rEQBand9" in result.stdout
+
+
 @pytest.fixture
 def out(tmp_path):
     return tmp_path / "out.xml"

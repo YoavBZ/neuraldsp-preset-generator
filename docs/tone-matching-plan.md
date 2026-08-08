@@ -1,6 +1,6 @@
 # Reference-guided tone matching — implementation plan
 
-Status: **M0 through M5 are done. M4's synthetic exit criterion was met — 50 targets,
+Status: **M0 through M6 are done. M4's synthetic exit criterion was met — 50 targets,
 300 renders each, the full pipeline beating inversion-alone on 49 of 49 — and M5
 measured the honest real-plugin gap: the full objective is 46% worse on the mean and
 59% worse on the median than the synthetic benchmark implied.** The two spikes ran on 2026-08-05
@@ -22,6 +22,8 @@ Every one of those had passed a green suite.
 The real Audio Unit backend, measured EQ bases, Morgan benchmark and Tone King
 end-to-end run are recorded in §12d. The remaining work named there is follow-up
 design work exposed by M5, not a claim that the real backend has yet to land.
+M6's user-facing match skill, machine-readable run summary, corrected paired-DI
+calibration and two real-stem acceptance runs are recorded in §12e.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2092,6 +2094,121 @@ Two things it exposed, neither of which is a bug in the search:
 
 There is still no bundled Tone King template. The one used above is the plugin's
 own boot state written to a file, which parses as a preset because it is one.
+
+## 12e. What M6 built, and the paired calibration M5 still owed
+
+`skills/match/SKILL.md` now owns "make this preset sound more like this
+recording". `skills/generate/SKILL.md` fingerprints supplied audio before choosing
+values, while web research still chooses the topology. The match skill classifies
+the reference regime, selects the renderer and loss profile, reports the
+inversion/search split and shortlist, requires `apply_spec.py --dry-run`, and ties
+the user's listening verdict to a measured fingerprint delta in
+`learned-tones.md`.
+
+### A compact result contract
+
+Every successful `match_preset.py` run now writes `summary.json` beside the spec
+and HTML report. It contains the reference fingerprint and regime confidence,
+renderer identity and reproducibility, inversion changes, searched and frozen
+controls, every candidate's objective vector and signed per-band fingerprint
+delta, and every caveat. This is the agent-facing contract; the self-contained
+HTML remains the human report. The documented synthetic workflow is executed by
+`tests/test_skills.py`, so M6's exit criterion does not need an installed plugin.
+
+### The corrected paired-DI run
+
+The invalid M5 run in §12d omitted the residual term carrying weight 0.9. The
+fresh pair below was generated from one deterministic 6-second DI and one fresh
+Morgan process. The target settings are committed in
+`docs/m6-paired-target.json`; the input peak is 0.150 and the rendered reference
+peak is 0.767.
+
+```
+mkdir -p /tmp/m6-paired
+.venv/bin/python - <<'PY'
+import json
+from pathlib import Path
+import numpy as np
+import soundfile as sf
+from analysis import io
+from match.renderer_au import AudioUnitRenderer
+from tests import fixtures_audio as fx
+
+root = Path('/tmp/m6-paired')
+raw = fx.plucks(seconds=6.0, gap=0.9, seed=13)
+di = raw / np.max(np.abs(raw)) * 0.15
+sf.write(root / 'probe.wav', di, 48000, subtype='PCM_24')
+spec = json.load(open('docs/m6-paired-target.json'))
+settings = {(p['module'], p['key']): p['value'] for p in spec['parameters']}
+with AudioUnitRenderer('morgan') as renderer:
+    result = renderer.render(io.load(root / 'probe.wav').mono(), settings)
+    print(renderer.metadata().as_dict())
+    print('probe peak', float(np.max(np.abs(di))))
+    print('reference peak', result.peak)
+    assert not result.silent and result.peak < 1.0
+    sf.write(root / 'reference.wav', result.audio, 48000, subtype='PCM_24')
+PY
+
+.venv/bin/python scripts/match_preset.py \
+  --template samples/Example_Clean_PR12.xml \
+  --reference /tmp/m6-paired/reference.wav --reference-mode paired_di \
+  --probe-di /tmp/m6-paired/probe.wav --loss-profile paired-v1 \
+  --pack morgan --amp sw50r --renderer swift \
+  --budget 300 --shortlist 3 --seed 0 --out-dir runs/paired-corrected-001
+```
+
+Morgan 1.1.1, `reproducible=false`: the robustly ranked candidate improved the
+reported distance **1.078 → 0.807** in 299 real renders. All 294 scored trials
+contained `residual`; its objective moved from 2.331 on the first trial to a
+minimum of 1.271. Two alignments fell below absolute correlation 0.30 and were
+compared unshifted. The term behaves and supplies information, but the result is
+not evidence that 0.9 is an optimal weight.
+
+The residual figures are reproduced from that exact run with:
+
+```
+.venv/bin/python - <<'PY'
+import json, sqlite3
+db = sqlite3.connect('runs/paired-corrected-001/trials.sqlite3')
+rows = [json.loads(row[0]) for row in db.execute(
+    'select objectives_json from trials where objectives_json is not null order by trial_id')]
+print(len(rows), sum('residual' in row for row in rows))
+print(rows[0]['residual'], min(row['residual'] for row in rows))
+PY
+```
+
+### The two supplied WAVs through the M6 workflow
+
+Both files are source-separated stems, so these runs use confidence 0.55 and
+`unpaired-v1`. The first 30 seconds hold one target fingerprint; the renderer's
+cost still follows the six-second synthetic probe. These are 100-render workflow
+acceptance runs, not replacements for the earlier 300-render listening candidates.
+
+```
+.venv/bin/python scripts/match_preset.py \
+  --template samples/Example_Clean_PR12.xml \
+  --reference 'Hotel California-lead-D major-74bpm-438hz.wav' \
+  --reference-mode separated_stem --loss-profile unpaired-v1 \
+  --pack morgan --amp pr12 --renderer swift --excerpt 30 \
+  --budget 100 --shortlist 3 --seed 0 --out-dir runs/m6-hotel-california-wav
+
+.venv/bin/python scripts/match_preset.py \
+  --template samples/Example_Clean_PR12.xml \
+  --reference 'How Long-lead-C major-140bpm-441hz.wav' \
+  --reference-mode separated_stem --loss-profile unpaired-v1 \
+  --pack morgan --amp pr12 --renderer swift --excerpt 30 \
+  --budget 100 --shortlist 3 --seed 0 --out-dir runs/m6-how-long-wav
+```
+
+| reference | start → selected | worst at ±6 dB | searched / frozen | caveats |
+|---|---:|---:|---:|---:|
+| Hotel California | 2.133 → **1.287** | 1.386 | 18 / 17 | 18 |
+| How Long | 2.215 → **1.424** | 1.443 | 17 / 13 | 15 |
+
+Both are Morgan 1.1.1 and **`reproducible=false`**. Each generated a complete
+`summary.json`; each winner then passed the exact `apply_spec.py --dry-run`
+invocation printed by its run. Nothing was written because M6 keeps audition and
+approval between preview and preset creation.
 
 ## 13. Reading list, in the order it becomes relevant
 

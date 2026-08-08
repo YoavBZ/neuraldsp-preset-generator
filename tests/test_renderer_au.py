@@ -73,6 +73,21 @@ def test_an_enum_arrives_as_its_stored_index_however_it_was_named():
     assert by_name["selectAmp"] == by_index["selectAmp"] == 2
 
 
+def test_the_documented_paired_target_reaches_the_real_backend():
+    """Its spec is also the settings map used to generate M6's reference audio."""
+    import json
+    import pathlib
+
+    target = pathlib.Path(__file__).resolve().parents[1] / "docs" / "m6-paired-target.json"
+    parameters = json.loads(target.read_text())["parameters"]
+    settings = {(item["module"], item["key"]): item["value"] for item in parameters}
+    command = renderer()._edit_command(settings)
+    assert command["selectAmp"] == 2
+    edited = {(item["module"], item["key"]) for item in command["edits"]}
+    assert ("sw50rAmp", "sw50rVolume") in edited
+    assert ("sw50rEQ", "sw50rEQBand9") in edited
+
+
 def test_a_parameter_the_pack_does_not_declare_is_refused():
     with pytest.raises(AudioUnitError, match="not a parameter"):
         renderer()._edit_command({"sw50rAmp/sw50rNonesuch": 1.0})
