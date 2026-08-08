@@ -2,7 +2,7 @@
 
 > **This was written before M5 and is kept as the brief it was.** M5 has since been
 > done and several of the statements below are now false — `--renderer swift`
-> exists, `packs/morgan/eq_basis.json` exists, and Tone King renders. What actually
+> exists, both Morgan calibration files exist, and Tone King renders. What actually
 > happened, including where this document turned out to be wrong, is
 > `docs/tone-matching-plan.md` §12d. Read this for the reasoning and that for the
 > results.
@@ -206,6 +206,9 @@ response shape and its overlap with its neighbours. `match/invert.py`'s `bell_ba
 `fit_graphic_eq()` consume it. Two renders per band per amp — cheap at 291 ms each.
 
 ### 4.2 `scripts/measure_drive_curve.py` → `packs/<pack>/drive_curve.json`
+
+> Implemented after M6. The exact run and measured surface are recorded in
+> `docs/tone-matching-plan.md` §12f; this section remains the original brief.
 
 THD across the volume control at **3–4 input levels**, extending the existing PR12
 measurement into a full surface. The existing spot measurement:

@@ -20,6 +20,7 @@
 //   --timings         write per-phase wall time as JSON to stderr
 //   --input di.wav    render a recorded signal instead of noise or a sine
 //   --settle <ms>     wait <ms> after writing state instead of the default 200
+//   --output-gain <dB> set Morgan's output trim before rendering
 //
 //   /tmp/au_render aumf NMAS NDSP --state prepared.bin out.wav 1.0 \
 //     --input di.wav --timings --settle 50
@@ -85,6 +86,7 @@ var args: [String] = []
 var reportTimings = false
 var inputFile: String? = nil
 var settleMicroseconds: UInt32 = 200000
+var outputGainDB: String? = nil
 var argIndex = 0
 let rawArgs = CommandLine.arguments
 while argIndex < rawArgs.count {
@@ -94,19 +96,25 @@ while argIndex < rawArgs.count {
     case "--timings":
         reportTimings = true
         argIndex += 1
-    case "--input", "--settle":
+    case "--input", "--settle", "--output-gain":
         guard argIndex + 1 < rawArgs.count else {
             FileHandle.standardError.write("\(arg) needs a value\n".data(using: .utf8)!)
             exit(2)
         }
         if arg == "--input" {
             inputFile = rawArgs[argIndex + 1]
-        } else {
+        } else if arg == "--settle" {
             guard let ms = Double(rawArgs[argIndex + 1]), ms >= 0 else {
                 FileHandle.standardError.write("--settle needs a non-negative number of milliseconds\n".data(using: .utf8)!)
                 exit(2)
             }
             settleMicroseconds = UInt32(ms * 1000.0)
+        } else {
+            guard Double(rawArgs[argIndex + 1]) != nil else {
+                FileHandle.standardError.write("--output-gain needs a number in dB\n".data(using: .utf8)!)
+                exit(2)
+            }
+            outputGainDB = rawArgs[argIndex + 1]
         }
         argIndex += 2
     default:
@@ -145,6 +153,11 @@ let inputAmplitude: Float
 let excitation: String
 
 if args[4] == "--state" {
+    if outputGainDB != nil {
+        FileHandle.standardError.write(
+            "--output-gain currently supports XML-state plugins only\n".data(using: .utf8)!)
+        exit(2)
+    }
     st["jucePluginState"] = try! Data(contentsOf: URL(fileURLWithPath: args[5]))
     outPath = args[6]
     inputAmplitude = args.count > 7 ? (Float(args[7]) ?? 0.25) : defaultAmplitude
@@ -192,6 +205,36 @@ if args[4] == "--state" {
     }
     newDoc = newDoc.replacingOccurrences(
         of: "gateActive=\"true\"", with: "gateActive=\"false\"")
+
+    // Drive calibration has to vary the preamp input while keeping the written
+    // float file below full scale. Morgan's outputGain is a linear post-amp trim;
+    // writing it here preserves the volume/input interaction under test and keeps
+    // a downstream over-level output from being mistaken for preamp distortion.
+    if let gain = outputGainDB {
+        let current = newDoc as NSString
+        let parametersRE = try! NSRegularExpression(pattern: "<parameters\\b[^>]*>")
+        guard let parameters = parametersRE.firstMatch(
+            in: newDoc, range: NSRange(location: 0, length: current.length))
+        else {
+            FileHandle.standardError.write(
+                "could not find Morgan's parameters element for --output-gain\n".data(using: .utf8)!)
+            exit(2)
+        }
+        let element = current.substring(with: parameters.range) as NSString
+        let gainRE = try! NSRegularExpression(pattern: "\\boutputGain=\"([^\"]*)\"")
+        guard let match = gainRE.firstMatch(
+            in: element as String,
+            range: NSRange(location: 0, length: element.length))
+        else {
+            FileHandle.standardError.write(
+                "could not find parameters/outputGain for --output-gain\n".data(using: .utf8)!)
+            exit(2)
+        }
+        let valueRange = NSRange(
+            location: parameters.range.location + match.range(at: 1).location,
+            length: match.range(at: 1).length)
+        newDoc = current.replacingCharacters(in: valueRange, with: gain)
+    }
 
     var framedHeader = header
     let n = UInt32(Array(newDoc.utf8).count)
