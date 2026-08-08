@@ -407,12 +407,14 @@ def test_an_explicit_choice_is_not_second_guessed(monkeypatch):
 
 
 def np_zeros():
-    import numpy as np
+    np = pytest.importorskip(
+        "numpy", reason="render-decision tests need the optional analysis extra")
 
     return np.zeros((512, 2), dtype=np.float32)
 
 
 def np_ones():
-    import numpy as np
+    np = pytest.importorskip(
+        "numpy", reason="render-decision tests need the optional analysis extra")
 
     return np.ones((512, 2), dtype=np.float32)
