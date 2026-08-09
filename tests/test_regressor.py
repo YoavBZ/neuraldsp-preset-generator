@@ -82,6 +82,30 @@ def test_blend_zero_is_exact_nearest_and_blend_one_is_the_ridge_proposal():
     assert prediction.clipped_feature_fraction == 0.0
 
 
+def test_a_metered_control_declared_at_one_value_is_named_not_divided_by():
+    """A rotation is 0..100 by kind, but a metered control carries its own min/max.
+
+    `space.build` admits one whose min equals its max — it only excludes a range
+    that is absent — and `_to_unit` guards the same division. Unguarded here it is
+    a NaN column that survives np.clip and dies in quantise() as a rounding error.
+    """
+    import dataclasses
+
+    document = _document()
+    document["dimensions"] = ["parameters/inputGain"]
+    for value, entry in zip((-6.0, 6.0), document["entries"]):
+        entry["settings"] = {"parameters/inputGain": value}
+    space = space_module.build("morgan", amp="pr12")
+    gain = space.by_path("parameters", "inputGain")
+    assert gain.kind == "metered" and gain.bounds() == (-24.0, 24.0)
+    space.dimensions = [dataclasses.replace(gain, high=gain.low)
+                        if dimension is gain else dimension
+                        for dimension in space.dimensions]
+
+    with pytest.raises(atlas.AtlasError, match="no range to normalise"):
+        RidgeWarmStart(document, space)
+
+
 def test_unreliable_controls_can_be_frozen_at_the_measured_nearest_point():
     document = _document()
     space = space_module.build("morgan", amp="pr12")

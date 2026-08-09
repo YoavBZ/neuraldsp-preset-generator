@@ -148,6 +148,25 @@ def test_cli_records_the_database_row_and_measured_learned_note(tmp_path):
     assert "<script>" not in note, "comments must not become rendered HTML"
 
 
+def test_a_long_band_delta_is_trimmed_to_the_bands_that_carry_it(tmp_path):
+    """The skills read this file whole, so the note keeps the signal, not the array."""
+    from match.verdict import NOTE_BANDS, _worst_bands
+
+    delta = [{"centre_hz": 100.0 * (index + 1), "target_db": 0.0,
+              "candidate_db": float(index), "delta_db": float(index)}
+             for index in range(30)]
+
+    bands, label = _worst_bands(delta)
+
+    assert [band["centre_hz"] for band in bands] == [2600.0, 2700.0, 2800.0,
+                                                     2900.0, 3000.0]
+    assert f"worst {NOTE_BANDS} of 30 bands" in label
+    assert "summary.json" in label
+    # A delta no longer than the budget is printed entire, and says nothing about
+    # a subset it did not take.
+    assert _worst_bands(delta[:NOTE_BANDS]) == (delta[:NOTE_BANDS], "")
+
+
 def test_repeating_a_listener_verdict_refuses_instead_of_duplicating(tmp_path):
     run_dir, data_dir = tmp_path / "run", tmp_path / "data"
     _run(run_dir)
