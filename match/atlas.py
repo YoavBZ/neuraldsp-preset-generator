@@ -382,6 +382,77 @@ def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: in
     }
 
 
+def compare_scale(baseline: Mapping[str, Any],
+                  candidate: Mapping[str, Any]) -> Dict[str, Any]:
+    """Compare atlas densities only when their held-out experiment is identical.
+
+    A lower score on a different probe, topology, plugin build, or held-out seed
+    says nothing about scale.  Refusing those comparisons keeps the convenient
+    command-line report from turning two merely similar runs into a learning
+    curve.
+    """
+    validate(baseline)
+    validate(candidate)
+    for field in ("pack", "amp", "dimensions", "fixed_settings", "probe"):
+        if baseline[field] != candidate[field]:
+            raise AtlasError(f"cannot compare atlases with different {field}")
+    for field in ("renderer_id", "plugin_version", "renderer_build",
+                  "sample_rate", "quality_mode"):
+        if baseline["renderer"].get(field) != candidate["renderer"].get(field):
+            raise AtlasError(
+                f"cannot compare atlases from different renderer {field}"
+            )
+
+    baseline_validation = _held_out_validation(baseline, "baseline")
+    candidate_validation = _held_out_validation(candidate, "candidate")
+    for field in ("samples", "seed", "profile"):
+        if baseline_validation[field] != candidate_validation[field]:
+            raise AtlasError(
+                f"cannot compare atlases with different held-out {field}"
+            )
+
+    baseline_rows = baseline_validation["outcomes"]
+    candidate_rows = candidate_validation["outcomes"]
+    if [row["index"] for row in baseline_rows] != [
+            row["index"] for row in candidate_rows]:
+        raise AtlasError("cannot compare atlases with unaligned held-out targets")
+
+    baseline_scores = [float(row["atlas_score"]) for row in baseline_rows]
+    candidate_scores = [float(row["atlas_score"]) for row in candidate_rows]
+    reductions = [
+        (before - after) / before
+        for before, after in zip(baseline_scores, candidate_scores)
+        if before != 0.0
+    ]
+    baseline_mean = statistics.fmean(baseline_scores)
+    candidate_mean = statistics.fmean(candidate_scores)
+    return {
+        "baseline_samples": baseline["sample_count"],
+        "candidate_samples": candidate["sample_count"],
+        "held_out_samples": baseline_validation["samples"],
+        "held_out_seed": baseline_validation["seed"],
+        "profile": baseline_validation["profile"],
+        "baseline_atlas_mean": baseline_mean,
+        "candidate_atlas_mean": candidate_mean,
+        "baseline_atlas_median": statistics.median(baseline_scores),
+        "candidate_atlas_median": statistics.median(candidate_scores),
+        "mean_reduction_fraction": (
+            None if baseline_mean == 0.0
+            else (baseline_mean - candidate_mean) / baseline_mean
+        ),
+        "candidate_better_targets": sum(
+            after < before
+            for before, after in zip(baseline_scores, candidate_scores)
+        ),
+        "median_target_reduction_fraction": (
+            statistics.median(reductions) if reductions else None
+        ),
+        "worst_target_reduction_fraction": min(reductions) if reductions else None,
+        "baseline_measurement_caveat": baseline["measurement_caveat"],
+        "candidate_measurement_caveat": candidate["measurement_caveat"],
+    }
+
+
 def _measurement_caveat(metadata) -> Optional[str]:
     if metadata.reproducible:
         return None
@@ -390,6 +461,65 @@ def _measurement_caveat(metadata) -> Optional[str]:
         f"from its reused plugin instance vary by up to {metadata.band_noise_db:g} dB "
         f"per band. These are sampled observations, not bit-exact facts."
     )
+
+
+def _held_out_validation(document: Mapping[str, Any], label: str) -> Mapping[str, Any]:
+    build = document.get("build")
+    validation = build.get("validation") if isinstance(build, Mapping) else None
+    if not isinstance(validation, Mapping):
+        raise AtlasError(f"{label} atlas has no held-out validation")
+    required = {
+        "samples", "seed", "profile", "neutral_mean", "atlas_mean",
+        "neutral_median", "atlas_median", "atlas_win_rate", "beats_neutral",
+        "outcomes",
+    }
+    if required - set(validation):
+        raise AtlasError(f"{label} atlas has incomplete held-out validation")
+    if (not isinstance(validation["samples"], int)
+            or isinstance(validation["samples"], bool)
+            or validation["samples"] < 1):
+        raise AtlasError(f"{label} atlas has an invalid held-out sample count")
+    if (not isinstance(validation["seed"], int)
+            or isinstance(validation["seed"], bool)):
+        raise AtlasError(f"{label} atlas has an invalid held-out seed")
+    if not isinstance(validation["profile"], str) or not validation["profile"]:
+        raise AtlasError(f"{label} atlas has an invalid held-out profile")
+    rows = validation["outcomes"]
+    if (not isinstance(rows, list) or not rows
+            or len(rows) != validation["samples"]):
+        raise AtlasError(f"{label} atlas has inconsistent held-out outcomes")
+    for expected, row in enumerate(rows):
+        if not isinstance(row, Mapping) or row.get("index") != expected:
+            raise AtlasError(f"{label} atlas has unaligned held-out outcomes")
+        for field in ("neutral_score", "atlas_score"):
+            value = row.get(field)
+            if (not isinstance(value, (int, float))
+                    or not math.isfinite(float(value)) or value < 0):
+                raise AtlasError(
+                    f"{label} atlas held-out {field} is not finite and non-negative"
+                )
+
+    neutral = [float(row["neutral_score"]) for row in rows]
+    scores = [float(row["atlas_score"]) for row in rows]
+    expected_summaries = {
+        "neutral_mean": statistics.fmean(neutral),
+        "atlas_mean": statistics.fmean(scores),
+        "neutral_median": statistics.median(neutral),
+        "atlas_median": statistics.median(scores),
+        "atlas_win_rate": sum(a < n for a, n in zip(scores, neutral)) / len(rows),
+    }
+    for field, expected in expected_summaries.items():
+        actual = validation[field]
+        if (not isinstance(actual, (int, float))
+                or not math.isclose(float(actual), expected,
+                                    rel_tol=1e-12, abs_tol=1e-12)):
+            raise AtlasError(f"{label} atlas held-out {field} is inconsistent")
+    expected_beats = (
+        expected_summaries["atlas_mean"] < expected_summaries["neutral_mean"])
+    if (not isinstance(validation["beats_neutral"], bool)
+            or validation["beats_neutral"] != expected_beats):
+        raise AtlasError(f"{label} atlas held-out beats_neutral is inconsistent")
+    return validation
 
 
 def _supported_paths(supported: Optional[Iterable]) -> Optional[set]:

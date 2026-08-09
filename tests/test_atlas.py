@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shlex
 import subprocess
 import sys
 
@@ -144,6 +145,41 @@ def test_achievability_reports_a_target_outside_the_sampled_range():
     }
 
 
+def test_scale_comparison_requires_one_identical_held_out_experiment():
+    baseline = _document()
+    candidate = _document()
+    baseline["build"] = {"validation": {
+        "samples": 2, "seed": 29, "profile": "unpaired-v1",
+        "neutral_mean": 2.0, "atlas_mean": 1.5,
+        "neutral_median": 2.0, "atlas_median": 1.5,
+        "atlas_win_rate": 0.5, "beats_neutral": True,
+        "outcomes": [
+            {"index": 0, "neutral_score": 2.0, "atlas_score": 1.0},
+            {"index": 1, "neutral_score": 2.0, "atlas_score": 2.0},
+        ],
+    }}
+    candidate["build"] = {"validation": {
+        "samples": 2, "seed": 29, "profile": "unpaired-v1",
+        "neutral_mean": 2.0, "atlas_mean": 1.0,
+        "neutral_median": 2.0, "atlas_median": 1.0,
+        "atlas_win_rate": 1.0, "beats_neutral": True,
+        "outcomes": [
+            {"index": 0, "neutral_score": 2.0, "atlas_score": 0.5},
+            {"index": 1, "neutral_score": 2.0, "atlas_score": 1.5},
+        ],
+    }}
+
+    comparison = atlas.compare_scale(baseline, candidate)
+
+    assert comparison["mean_reduction_fraction"] == pytest.approx(1 / 3)
+    assert comparison["candidate_better_targets"] == 2
+    assert comparison["median_target_reduction_fraction"] == pytest.approx(0.375)
+
+    candidate["build"]["validation"]["seed"] = 30
+    with pytest.raises(atlas.AtlasError, match="different held-out seed"):
+        atlas.compare_scale(baseline, candidate)
+
+
 def test_nonreproducible_measurements_cannot_lose_their_caveat():
     document = _document()
     document["renderer"] = dict(document["renderer"], reproducible=False)
@@ -185,18 +221,33 @@ def test_python_provenance_is_portable_without_rewriting_external_interpreters(
     assert atlas_builder._portable_executable() == str(external)
 
 
-def test_committed_pr12_pilot_is_valid_and_explicitly_nonreproducible():
-    document = atlas.load(
-        ROOT / "packs" / "morgan" / "response_atlas_pr12_pilot.json")
+def test_committed_pr12_atlases_are_valid_qualified_and_record_exact_provenance():
+    expected = {
+        "response_atlas_pr12_pilot.json": 128,
+        "response_atlas_pr12_1024.json": 1024,
+    }
+    documents = {}
+    for filename, samples in expected.items():
+        path = ROOT / "packs" / "morgan" / filename
+        document = atlas.load(path)
+        documents[samples] = document
 
-    assert document["sample_count"] == 128
-    assert len(document["dimensions"]) == 26
-    assert document["renderer"]["plugin_version"] == "1.1.1"
-    assert document["renderer"]["reproducible"] is False
-    assert "reproducible=False" in document["measurement_caveat"]
-    validation = document["build"]["validation"]
-    assert validation["samples"] == 24
-    assert validation["beats_neutral"] is True
+        assert document["sample_count"] == samples
+        assert len(document["dimensions"]) == 26
+        assert document["renderer"]["plugin_version"] == "1.1.1"
+        assert document["renderer"]["reproducible"] is False
+        assert "reproducible=False" in document["measurement_caveat"]
+        validation = document["build"]["validation"]
+        assert validation["samples"] == 24
+        assert validation["beats_neutral"] is True
+        command = shlex.split(document["build"]["command"])
+        assert command[0] == document["build"]["python_executable"]
+        assert document["build"]["python_executable"] == ".venv/bin/python"
+        assert command[command.index("--out") + 1] == str(path.relative_to(ROOT))
+
+    comparison = atlas.compare_scale(documents[128], documents[1024])
+    assert comparison["candidate_better_targets"] == 23
+    assert comparison["mean_reduction_fraction"] == pytest.approx(0.2836220902)
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert '"*/response_atlas_*.json"' in package_data
@@ -215,6 +266,22 @@ def test_dry_run_is_plugin_free_and_names_the_render_arithmetic(tmp_path):
     assert "21 renders total" in result.stdout
     assert "--dry-run" in result.stdout
     assert not (tmp_path / "atlas.json").exists()
+
+
+def test_compare_cli_reproduces_the_committed_scale_result_without_a_plugin():
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "compare_response_atlases.py"),
+         "--baseline", str(ROOT / "packs" / "morgan" /
+                             "response_atlas_pr12_pilot.json"),
+         "--candidate", str(ROOT / "packs" / "morgan" /
+                              "response_atlas_pr12_1024.json")],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "reproducible=False" in result.stdout
+    assert "mean: 0.814 -> 0.583 (28.4% lower)" in result.stdout
+    assert "candidate better on 23/24 targets" in result.stdout
 
 
 def test_query_cli_writes_ranked_specs_without_a_plugin(tmp_path):
