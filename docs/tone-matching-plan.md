@@ -722,6 +722,37 @@ invocation above, nearest-neighbour lookup reduced held-out mean distance from
 pilot gate; it does not make 128 points dense enough to call the observed ranges
 plugin limits.
 
+#### M7-1 scale gate — 1,024 points
+
+The first scale step keeps the topology, probe, held-out count, held-out seed and
+loss profile identical to the pilot. Only the atlas density changes. The
+committed measurement is reproduced by this invocation, exactly:
+
+```bash
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp pr12 \
+  --template samples/Example_Clean_PR12.xml --renderer swift --samples 1024 \
+  --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
+  --out packs/morgan/response_atlas_pr12_1024.json
+```
+
+The comparison command validates that both files describe the same pack,
+topology, probe, renderer build and held-out experiment before printing a scale
+result:
+
+```bash
+.venv/bin/python scripts/compare_response_atlases.py \
+  --baseline packs/morgan/response_atlas_pr12_pilot.json \
+  --candidate packs/morgan/response_atlas_pr12_1024.json
+```
+
+With the same `reproducible=False` and 0.23 dB qualification, the denser atlas
+reduced held-out mean distance from **0.814 to 0.583** (**28.4%**) and median
+distance from **0.724 to 0.583**. It improved **23/24** target settings; the
+median per-target reduction was **29.1%**, while one target regressed **10.4%**.
+That is enough gain to retain the 1,024-point atlas as the current lookup
+artifact. The 128-point pilot remains the scale baseline, and neither file is
+dense enough to turn its finite observed ranges into mathematical plugin limits.
+
 ---
 
 ## 8. Dependency and CI policy
