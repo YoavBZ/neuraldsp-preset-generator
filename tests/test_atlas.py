@@ -174,8 +174,15 @@ def test_build_provenance_is_allowed_and_survives_load(tmp_path):
     assert atlas.load(path)["build"]["command"].startswith("python ")
 
 
-def test_repo_local_python_path_is_recorded_without_the_users_home():
+def test_python_provenance_is_portable_without_rewriting_external_interpreters(
+        monkeypatch):
+    monkeypatch.setattr(
+        atlas_builder.sys, "executable", str(ROOT / ".venv" / "bin" / "python"))
     assert atlas_builder._portable_executable() == ".venv/bin/python"
+
+    external = pathlib.Path("/opt/hostedtoolcache/Python/3.13/bin/python")
+    monkeypatch.setattr(atlas_builder.sys, "executable", str(external))
+    assert atlas_builder._portable_executable() == str(external)
 
 
 def test_committed_pr12_pilot_is_valid_and_explicitly_nonreproducible():
