@@ -753,6 +753,51 @@ That is enough gain to retain the 1,024-point atlas as the current lookup
 artifact. The 128-point pilot remains the scale baseline, and neither file is
 dense enough to turn its finite observed ranges into mathematical plugin limits.
 
+#### M7-2 warm-start regressor — measured negative result
+
+The warm-start experiment fits one standardized multi-output ridge model directly
+from the committed 1,024-point atlas. It has no coefficient artifact that can
+drift away from that atlas. Nearest-neighbour remains an exact fallback: blend
+zero returns the measured nearest settings byte-for-byte, while larger blends
+move toward the regression estimate.
+
+Parameter recovery is not the gate. Several different Morgan settings can produce
+similar output, so a lower parameter error does not establish a closer sound. The
+benchmark therefore selects blend strength on 12 targets and tests it on a
+separate 24-target Latin hypercube. Neither seed is the atlas build seed (17) or
+its scale-validation seed (29). Five-fold atlas-only validation also freezes 17
+poorly identifiable controls at nearest; only Dwell, EQ bands 2–8, and the EQ
+low-pass filter clear the declared out-of-fold R2 threshold of 0.70. Candidate
+render order rotates across targets so reused-instance drift cannot always favor
+the same blend position.
+
+The committed measurement is reproduced by this invocation, exactly:
+
+```bash
+.venv/bin/python scripts/benchmark_warm_start.py \
+  --atlas packs/morgan/response_atlas_pr12_1024.json --renderer swift \
+  --tune-samples 12 --tune-seed 31 --test-samples 24 --test-seed 43 \
+  --seconds 4 --minimum-cv-r2 0.7 --cv-folds 5 \
+  --out packs/morgan/warm_start_benchmark_pr12.json
+```
+
+This renderer is Morgan 1.1.1 through the reused Swift server and reports
+`reproducible=False`; repeated settings vary by up to 0.23 dB per band. Every
+number below and the benchmark JSON carry that qualification.
+
+Nearest scored **0.563 mean / 0.527 median** on the tuning set. The least-bad
+learned candidate, a 0.25 blend, reduced normalized parameter MAE from **0.292 to
+0.271** but worsened fingerprint distance to **0.575 mean**. Larger blends were
+worse still. The tuning rule therefore selected blend zero. On the untouched test
+set nearest scored **0.621 mean / 0.575 median**; no rejected learned candidate
+was evaluated there.
+
+M7-2 consequently does **not** ship a regressor into the matching path. The result
+is still useful: the benchmark and bounded model remain as reproducible research
+infrastructure, while nearest lookup stays the product behavior. Any later model
+must beat this gate on a new tuning seed before it earns a fresh untouched test
+seed; lowering parameter error alone is not sufficient.
+
 ---
 
 ## 8. Dependency and CI policy

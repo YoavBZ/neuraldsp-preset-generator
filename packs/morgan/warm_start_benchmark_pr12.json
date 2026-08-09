@@ -1,0 +1,911 @@
+{
+  "schema": "warm-start-benchmark-1",
+  "atlas": {
+    "path": "packs/morgan/response_atlas_pr12_1024.json",
+    "sha256": "cf6476bb694036ddbcae8c516e43a2d8a095951015dea5365b2d50935fe1e101",
+    "sample_count": 1024,
+    "pack": "morgan",
+    "amp": "pr12"
+  },
+  "renderer": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.1.1",
+    "renderer_build": "audio-unit-renderer-edd93e0965a1",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto",
+    "reproducible": false,
+    "band_noise_db": 0.23,
+    "notes": [
+      "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "measurement_caveat": "rendered by swift (plugin 1.1.1), which reports reproducible=False: two renders of identical parameters from one reused instance differ, and per-band levels move by up to 0.23 dB. Every number below carries that, and none of them may be committed without it",
+  "probe": {
+    "sha256": "88356d6702eb6be49fe04eae1ee414fe87ad1dcb1671d20b8ee5d484846ab529",
+    "sample_rate": 48000,
+    "channels": 1,
+    "duration_s": 4.0
+  },
+  "probe_caveat": "no --probe-di was given, so candidates were rendered through a synthetic pluck sequence. It shows attack and decay clearly and shows sustained or palm-muted playing not at all \u2014 match against your own DI before trusting this on a real part.",
+  "model": {
+    "kind": "standardized-multi-output-ridge",
+    "alpha": 0.01,
+    "feature_count": 153,
+    "parameter_count": 26,
+    "input_clipping": "atlas feature min/max",
+    "output_clipping": "manifest parameter bounds",
+    "cv_folds": 5,
+    "minimum_cv_r2": 0.7,
+    "control_cv_r2": {
+      "parameters/inputGain": 0.6474975178417893,
+      "parameters/outputGain": 0.49234197938837065,
+      "pr12Amp/pr12Volume": 0.45323428966792634,
+      "pr12Amp/pr12Treble": 0.4518173539292678,
+      "pr12Amp/pr12Bass": -0.07698261665162187,
+      "pr12Amp/pr12Reverb": 0.5019167928115744,
+      "pr12Amp/pr12Dwell": 0.7462626678419324,
+      "pr12EQ/pr12EQBand1": 0.2716750431014391,
+      "pr12EQ/pr12EQBand2": 0.7007819631509645,
+      "pr12EQ/pr12EQBand3": 0.8101253115871785,
+      "pr12EQ/pr12EQBand4": 0.809686246925774,
+      "pr12EQ/pr12EQBand5": 0.8589110796459121,
+      "pr12EQ/pr12EQBand6": 0.8540825673127533,
+      "pr12EQ/pr12EQBand7": 0.8433122311737988,
+      "pr12EQ/pr12EQBand8": 0.7892123888648424,
+      "pr12EQ/pr12EQBand9": 0.34549837232711,
+      "pr12EQ/pr12EQHpf": 0.5618389013218629,
+      "pr12EQ/pr12EQLpf": 0.7346615542725818,
+      "cabParameters/leftCabPosition": 0.5148176269385022,
+      "cabParameters/leftCabDistance": 0.24416686494161233,
+      "cabParameters/leftCabMicLevel": 0.42258428219069955,
+      "cabParameters/leftCabPan": -0.24866081110648475,
+      "cabParameters/rightCabPosition": 0.20596088072058139,
+      "cabParameters/rightCabDistance": 0.3845503795237697,
+      "cabParameters/rightCabMicLevel": 0.4760960897746491,
+      "cabParameters/rightCabPan": -0.26835285731362557
+    },
+    "movable_paths": [
+      "pr12Amp/pr12Dwell",
+      "pr12EQ/pr12EQBand2",
+      "pr12EQ/pr12EQBand3",
+      "pr12EQ/pr12EQBand4",
+      "pr12EQ/pr12EQBand5",
+      "pr12EQ/pr12EQBand6",
+      "pr12EQ/pr12EQBand7",
+      "pr12EQ/pr12EQBand8",
+      "pr12EQ/pr12EQLpf"
+    ],
+    "frozen_at_nearest_count": 17
+  },
+  "tuning": {
+    "samples": 12,
+    "seed": 31,
+    "loss_profile": "unpaired-v1",
+    "blends": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "summaries": {
+      "0": {
+        "blend": 0.0,
+        "mean": 0.5629853646970364,
+        "median": 0.5266809812735564,
+        "parameter_mae": 0.2915381670395551,
+        "wins_vs_nearest": 0,
+        "win_rate_vs_nearest": 0.0
+      },
+      "0.25": {
+        "blend": 0.25,
+        "mean": 0.5746641014681205,
+        "median": 0.5168205888691999,
+        "parameter_mae": 0.271028889036856,
+        "wins_vs_nearest": 5,
+        "win_rate_vs_nearest": 0.4166666666666667
+      },
+      "0.5": {
+        "blend": 0.5,
+        "mean": 0.6501542432790479,
+        "median": 0.5892499404983029,
+        "parameter_mae": 0.25163925509623525,
+        "wins_vs_nearest": 4,
+        "win_rate_vs_nearest": 0.3333333333333333
+      },
+      "0.75": {
+        "blend": 0.75,
+        "mean": 0.7082661427000834,
+        "median": 0.6698249640131508,
+        "parameter_mae": 0.23525639690910075,
+        "wins_vs_nearest": 4,
+        "win_rate_vs_nearest": 0.3333333333333333
+      },
+      "1": {
+        "blend": 1.0,
+        "mean": 0.8129061837378654,
+        "median": 0.7756473567812103,
+        "parameter_mae": 0.22568712115561448,
+        "wins_vs_nearest": 3,
+        "win_rate_vs_nearest": 0.25
+      }
+    },
+    "selected_blend": 0.0,
+    "outcomes": [
+      {
+        "index": 0,
+        "nearest_atlas_entry": 734,
+        "nearest_stored_score": 0.5301916427837882,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "scores": {
+          "0": 0.5308891303326028,
+          "0.25": 0.5242083609935779,
+          "0.5": 0.4729083307523191,
+          "0.75": 0.4071139560761114,
+          "1": 0.5251895710677099
+        },
+        "parameter_mae": {
+          "0": 0.3500529337933091,
+          "0.25": 0.32289436429263435,
+          "0.5": 0.29754669222785696,
+          "0.75": 0.27860927657333606,
+          "1": 0.2762904506624049
+        }
+      },
+      {
+        "index": 1,
+        "nearest_atlas_entry": 268,
+        "nearest_stored_score": 0.650650639101729,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.25,
+          0.5,
+          0.75,
+          1.0,
+          0.0
+        ],
+        "scores": {
+          "0.25": 0.4593328453737674,
+          "0.5": 0.4945212095706867,
+          "0.75": 0.42075313404747344,
+          "1": 0.46393304869068047,
+          "0": 0.650602277613314
+        },
+        "parameter_mae": {
+          "0.25": 0.22127782636705107,
+          "0.5": 0.1950352487692103,
+          "0.75": 0.16778305578675418,
+          "1": 0.15769061314167993,
+          "0": 0.24732809627258412
+        }
+      },
+      {
+        "index": 2,
+        "nearest_atlas_entry": 848,
+        "nearest_stored_score": 0.5840246509450794,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.5,
+          0.75,
+          1.0,
+          0.0,
+          0.25
+        ],
+        "scores": {
+          "0.5": 0.8627042590405009,
+          "0.75": 1.0643521655726895,
+          "1": 1.0830749004179732,
+          "0": 0.5846297547577264,
+          "0.25": 0.769215120725065
+        },
+        "parameter_mae": {
+          "0.5": 0.2646045297888909,
+          "0.75": 0.25210554193463985,
+          "1": 0.24050601426932275,
+          "0": 0.29238894274435645,
+          "0.25": 0.27809710738673166
+        }
+      },
+      {
+        "index": 3,
+        "nearest_atlas_entry": 713,
+        "nearest_stored_score": 0.788149765367465,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.75,
+          1.0,
+          0.0,
+          0.25,
+          0.5
+        ],
+        "scores": {
+          "0.75": 1.086127449808543,
+          "1": 1.1385327422679694,
+          "0": 0.789097563301551,
+          "0.25": 0.9978055448887067,
+          "0.5": 1.0520565489148042
+        },
+        "parameter_mae": {
+          "0.75": 0.2580140793399218,
+          "1": 0.24992703480550885,
+          "0": 0.28967501051401084,
+          "0.25": 0.2751777095693415,
+          "0.5": 0.2660990995828368
+        }
+      },
+      {
+        "index": 4,
+        "nearest_atlas_entry": 578,
+        "nearest_stored_score": 0.41618473914180387,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          1.0,
+          0.0,
+          0.25,
+          0.5,
+          0.75
+        ],
+        "scores": {
+          "1": 1.1556282192973688,
+          "0": 0.4160816527279037,
+          "0.25": 0.44866762599181764,
+          "0.5": 0.6254252116579243,
+          "0.75": 0.8802860269760031
+        },
+        "parameter_mae": {
+          "1": 0.2567020517403661,
+          "0": 0.36509813811013664,
+          "0.25": 0.3379515456674916,
+          "0.5": 0.3109952366256562,
+          "0.75": 0.28384864418301115
+        }
+      },
+      {
+        "index": 5,
+        "nearest_atlas_entry": 82,
+        "nearest_stored_score": 0.3357879493506325,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "scores": {
+          "0": 0.33590624359696747,
+          "0.25": 0.31182091399019285,
+          "0.5": 0.30701293815007885,
+          "0.75": 0.33421448720406544,
+          "1": 0.38327743019092475
+        },
+        "parameter_mae": {
+          "0": 0.2808245555054476,
+          "0.25": 0.2724790764231264,
+          "0.5": 0.26293167426388214,
+          "0.75": 0.25578609396698604,
+          "1": 0.25304958924363924
+        }
+      },
+      {
+        "index": 6,
+        "nearest_atlas_entry": 161,
+        "nearest_stored_score": 0.5855299660706845,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.25,
+          0.5,
+          0.75,
+          1.0,
+          0.0
+        ],
+        "scores": {
+          "0.25": 0.3635938134780767,
+          "0.5": 0.5928450612539728,
+          "0.75": 0.6674419913417645,
+          "1": 0.7926659141992396,
+          "0": 0.5854529609940377
+        },
+        "parameter_mae": {
+          "0.25": 0.25835346404792875,
+          "0.5": 0.2241706030492783,
+          "0.75": 0.19658288375103267,
+          "1": 0.17761695932458196,
+          "0": 0.29432343705737546
+        }
+      },
+      {
+        "index": 7,
+        "nearest_atlas_entry": 540,
+        "nearest_stored_score": 0.5072755600407027,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.5,
+          0.75,
+          1.0,
+          0.0,
+          0.25
+        ],
+        "scores": {
+          "0.5": 0.5146520091590753,
+          "0.75": 0.5275195979100659,
+          "1": 0.5411602325309753,
+          "0": 0.5074018186405634,
+          "0.25": 0.4667216049858189
+        },
+        "parameter_mae": {
+          "0.5": 0.2080910271803592,
+          "0.75": 0.1981605278551231,
+          "1": 0.1980377208375792,
+          "0": 0.2425834360872418,
+          "0.25": 0.22483242394149283
+        }
+      },
+      {
+        "index": 8,
+        "nearest_atlas_entry": 893,
+        "nearest_stored_score": 0.5718021693954035,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.75,
+          1.0,
+          0.0,
+          0.25,
+          0.5
+        ],
+        "scores": {
+          "0.75": 0.9953344539592452,
+          "1": 1.1156761159838287,
+          "0": 0.5224728322145102,
+          "0.25": 0.5985037431880639,
+          "0.5": 0.8617956073463132
+        },
+        "parameter_mae": {
+          "0.75": 0.2532678091668522,
+          "1": 0.2453101505973515,
+          "0": 0.2883607578848009,
+          "0.25": 0.2731915608537618,
+          "0.5": 0.2608268510022098
+        }
+      },
+      {
+        "index": 9,
+        "nearest_atlas_entry": 944,
+        "nearest_stored_score": 0.4887539908387072,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          1.0,
+          0.0,
+          0.25,
+          0.5,
+          0.75
+        ],
+        "scores": {
+          "1": 0.7586287993631811,
+          "0": 0.48902552596538,
+          "0.25": 0.5094328167448219,
+          "0.5": 0.5856548197426331,
+          "0.75": 0.6722079366845373
+        },
+        "parameter_mae": {
+          "1": 0.20783154909925086,
+          "0": 0.24926694046227382,
+          "0.25": 0.23489227784419014,
+          "0.5": 0.22131889727738852,
+          "0.75": 0.20996329673757744
+        }
+      },
+      {
+        "index": 10,
+        "nearest_atlas_entry": 855,
+        "nearest_stored_score": 0.8544448738498411,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.006535947712418301,
+        "candidate_order": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "scores": {
+          "0": 0.854734816470815,
+          "0.25": 0.9186409624974514,
+          "0.5": 0.9768263539345856,
+          "0.75": 1.0205388126946378,
+          "1": 1.3786235198063828
+        },
+        "parameter_mae": {
+          "0": 0.2977836216404548,
+          "0.25": 0.27755049073627125,
+          "0.5": 0.257127076431278,
+          "0.75": 0.24121563918431446,
+          "1": 0.22933338547311338
+        }
+      },
+      {
+        "index": 11,
+        "nearest_atlas_entry": 201,
+        "nearest_stored_score": 0.48915301583097176,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.25,
+          0.5,
+          0.75,
+          1.0,
+          0.0
+        ],
+        "scores": {
+          "0.25": 0.5280258647600861,
+          "0.5": 0.45544856982568077,
+          "0.75": 0.42330370012586405,
+          "1": 0.4184837110381512,
+          "0": 0.4895297997490651
+        },
+        "parameter_mae": {
+          "0.25": 0.275648821312251,
+          "0.5": 0.2509241249559757,
+          "0.75": 0.22773991442965993,
+          "1": 0.2159499346725749,
+          "0": 0.30077213440266937
+        }
+      }
+    ]
+  },
+  "testing": {
+    "samples": 24,
+    "seed": 43,
+    "loss_profile": "unpaired-v1",
+    "nearest": {
+      "blend": 0.0,
+      "mean": 0.6213143499191046,
+      "median": 0.5752196831088868,
+      "parameter_mae": 0.2868243918433638,
+      "wins_vs_nearest": 0,
+      "win_rate_vs_nearest": 0.0
+    },
+    "selected": {
+      "blend": 0.0,
+      "mean": 0.6213143499191046,
+      "median": 0.5752196831088868,
+      "parameter_mae": 0.2868243918433638,
+      "wins_vs_nearest": 0,
+      "win_rate_vs_nearest": 0.0
+    },
+    "mean_reduction_fraction": 0.0,
+    "beats_nearest": false,
+    "outcomes": [
+      {
+        "index": 0,
+        "nearest_atlas_entry": 107,
+        "nearest_stored_score": 0.4037438707622033,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.4036075349455939
+        },
+        "parameter_mae": {
+          "0": 0.19469469655190316
+        }
+      },
+      {
+        "index": 1,
+        "nearest_atlas_entry": 652,
+        "nearest_stored_score": 0.7475922421050044,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.013071895424836602,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.7478104659634108
+        },
+        "parameter_mae": {
+          "0": 0.3026520059351659
+        }
+      },
+      {
+        "index": 2,
+        "nearest_atlas_entry": 627,
+        "nearest_stored_score": 0.5158286298232082,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5342606126710693
+        },
+        "parameter_mae": {
+          "0": 0.4506022089689537
+        }
+      },
+      {
+        "index": 3,
+        "nearest_atlas_entry": 991,
+        "nearest_stored_score": 0.9637255566724094,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.9639635118061608
+        },
+        "parameter_mae": {
+          "0": 0.33659902399624253
+        }
+      },
+      {
+        "index": 4,
+        "nearest_atlas_entry": 261,
+        "nearest_stored_score": 0.935653253680192,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.013071895424836602,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.935362017110329
+        },
+        "parameter_mae": {
+          "0": 0.2734716282477736
+        }
+      },
+      {
+        "index": 5,
+        "nearest_atlas_entry": 405,
+        "nearest_stored_score": 0.5278400452053383,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5279386065909046
+        },
+        "parameter_mae": {
+          "0": 0.23053643729597434
+        }
+      },
+      {
+        "index": 6,
+        "nearest_atlas_entry": 129,
+        "nearest_stored_score": 0.49551132675528886,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.4952159927364261
+        },
+        "parameter_mae": {
+          "0": 0.2460808039085523
+        }
+      },
+      {
+        "index": 7,
+        "nearest_atlas_entry": 264,
+        "nearest_stored_score": 0.6713282684135873,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.674796741560128
+        },
+        "parameter_mae": {
+          "0": 0.2605125225135434
+        }
+      },
+      {
+        "index": 8,
+        "nearest_atlas_entry": 193,
+        "nearest_stored_score": 0.5754021608697323,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5747323871122483
+        },
+        "parameter_mae": {
+          "0": 0.29635939961861835
+        }
+      },
+      {
+        "index": 9,
+        "nearest_atlas_entry": 147,
+        "nearest_stored_score": 0.6393046125899979,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.7520040976046651
+        },
+        "parameter_mae": {
+          "0": 0.2532776998498448
+        }
+      },
+      {
+        "index": 10,
+        "nearest_atlas_entry": 570,
+        "nearest_stored_score": 0.5284096586156735,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.006535947712418301,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5275261805234098
+        },
+        "parameter_mae": {
+          "0": 0.33589494913029516
+        }
+      },
+      {
+        "index": 11,
+        "nearest_atlas_entry": 781,
+        "nearest_stored_score": 0.5088110301344799,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5090928147584741
+        },
+        "parameter_mae": {
+          "0": 0.280472510258083
+        }
+      },
+      {
+        "index": 12,
+        "nearest_atlas_entry": 95,
+        "nearest_stored_score": 0.4709088796523755,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.4692441794227736
+        },
+        "parameter_mae": {
+          "0": 0.22212917838798918
+        }
+      },
+      {
+        "index": 13,
+        "nearest_atlas_entry": 27,
+        "nearest_stored_score": 0.5898555109118262,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5910590172798434
+        },
+        "parameter_mae": {
+          "0": 0.2583900394174613
+        }
+      },
+      {
+        "index": 14,
+        "nearest_atlas_entry": 420,
+        "nearest_stored_score": 0.5738386328378484,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5757069791055254
+        },
+        "parameter_mae": {
+          "0": 0.38723556286591393
+        }
+      },
+      {
+        "index": 15,
+        "nearest_atlas_entry": 52,
+        "nearest_stored_score": 0.6168301627502478,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.6165683757820069
+        },
+        "parameter_mae": {
+          "0": 0.2904983612886266
+        }
+      },
+      {
+        "index": 16,
+        "nearest_atlas_entry": 671,
+        "nearest_stored_score": 0.563742540037205,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.006535947712418301,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5653595421307179
+        },
+        "parameter_mae": {
+          "0": 0.3101783270171464
+        }
+      },
+      {
+        "index": 17,
+        "nearest_atlas_entry": 495,
+        "nearest_stored_score": 0.6775075984955308,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.006535947712418301,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.6743975756703571
+        },
+        "parameter_mae": {
+          "0": 0.31176571110871565
+        }
+      },
+      {
+        "index": 18,
+        "nearest_atlas_entry": 843,
+        "nearest_stored_score": 0.39620227713518,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.39574960958637195
+        },
+        "parameter_mae": {
+          "0": 0.26218241868830783
+        }
+      },
+      {
+        "index": 19,
+        "nearest_atlas_entry": 38,
+        "nearest_stored_score": 0.6642011335308813,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.6630993582365226
+        },
+        "parameter_mae": {
+          "0": 0.2611331731914324
+        }
+      },
+      {
+        "index": 20,
+        "nearest_atlas_entry": 371,
+        "nearest_stored_score": 0.5448035216214289,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5416348089825608
+        },
+        "parameter_mae": {
+          "0": 0.23051434000231877
+        }
+      },
+      {
+        "index": 21,
+        "nearest_atlas_entry": 244,
+        "nearest_stored_score": 0.5480334244110175,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.5478287111830047
+        },
+        "parameter_mae": {
+          "0": 0.25834844826143866
+        }
+      },
+      {
+        "index": 22,
+        "nearest_atlas_entry": 254,
+        "nearest_stored_score": 0.9379163313234058,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.9366009138981065
+        },
+        "parameter_mae": {
+          "0": 0.3464010651400711
+        }
+      },
+      {
+        "index": 23,
+        "nearest_atlas_entry": 42,
+        "nearest_stored_score": 0.6876636705632521,
+        "feature_overlap": 1.0,
+        "clipped_feature_fraction": 0.0,
+        "candidate_order": [
+          0.0
+        ],
+        "scores": {
+          "0": 0.6879843633978998
+        },
+        "parameter_mae": {
+          "0": 0.28385489259635877
+        }
+      }
+    ]
+  },
+  "build": {
+    "command": ".venv/bin/python scripts/benchmark_warm_start.py --atlas packs/morgan/response_atlas_pr12_1024.json --renderer swift --tune-samples 12 --tune-seed 31 --test-samples 24 --test-seed 43 --seconds 4 --minimum-cv-r2 0.7 --cv-folds 5 --out packs/morgan/warm_start_benchmark_pr12.json",
+    "python_executable": ".venv/bin/python",
+    "argv": [
+      "scripts/benchmark_warm_start.py",
+      "--atlas",
+      "packs/morgan/response_atlas_pr12_1024.json",
+      "--renderer",
+      "swift",
+      "--tune-samples",
+      "12",
+      "--tune-seed",
+      "31",
+      "--test-samples",
+      "24",
+      "--test-seed",
+      "43",
+      "--seconds",
+      "4",
+      "--minimum-cv-r2",
+      "0.7",
+      "--cv-folds",
+      "5",
+      "--out",
+      "packs/morgan/warm_start_benchmark_pr12.json"
+    ]
+  }
+}
