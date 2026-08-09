@@ -41,7 +41,7 @@ packages = ["format", "packs", "analysis", "match", "scripts"]
 # calls its contract — was missing too.
 [tool.setuptools.package-data]
 analysis = ["loss_profiles.json"]
-packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json", "*/drive_curve.json", "*/response_atlas_*.json"]
+packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json", "*/drive_curve.json", "*/response_atlas_*.json", "*/warm_start_benchmark_*.json"]
 scripts = ["au_probe.swift", "au_render.swift", "au_render_server.swift"]
 
 [tool.pytest.ini_options]
