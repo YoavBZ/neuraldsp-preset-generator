@@ -281,7 +281,7 @@ def achievable_ranges(fingerprints: Iterable[Mapping[str, Any]]) -> Dict[str, Di
     for printed in fingerprints:
         for name, path in _FEATURES.items():
             value = _nested(printed, path)
-            if isinstance(value, (int, float)) and math.isfinite(float(value)):
+            if _finite(value):
                 values[name].append(float(value))
     return {
         name: {"min": min(rows), "max": max(rows)}
@@ -296,7 +296,7 @@ def outside_ranges(document: Mapping[str, Any], target) -> List[Dict[str, Any]]:
     outside = []
     for name, bounds in document["achievable_ranges"].items():
         value = _nested(printed, _FEATURES[name])
-        if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+        if not _finite(value):
             continue
         if value < bounds["min"]:
             outside.append({"feature": name, "direction": "below", "value": float(value),
@@ -305,6 +305,22 @@ def outside_ranges(document: Mapping[str, Any], target) -> List[Dict[str, Any]]:
             outside.append({"feature": name, "direction": "above", "value": float(value),
                             "sampled_min": bounds["min"], "sampled_max": bounds["max"]})
     return outside
+
+
+def uncomparable_features(document: Mapping[str, Any], target) -> List[str]:
+    """Features ``outside_ranges`` had to skip, because one side has no number.
+
+    A feature is skipped when no atlas sample produced it or when the target
+    could not be measured for it — `corner_frequencies` returns None for a
+    spectrum with fewer than six bands, and `achievable_ranges` omits whatever
+    never appeared. Both are silent skips, so "nothing is outside the sample"
+    means nothing until it is read beside this list.
+    """
+    validate(document)
+    printed = target.to_dict()
+    return [name for name in RESPONSE_FEATURES
+            if name not in document["achievable_ranges"]
+            or not _finite(_nested(printed, _FEATURES[name]))]
 
 
 def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: int,
@@ -535,6 +551,12 @@ def _path(key) -> str:
     return f"{module}/{name}" if module else str(name)
 
 
+def _finite(value: Any) -> bool:
+    """A usable response-feature reading. ``True`` is an int in Python, not one."""
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(float(value)))
+
+
 def _nested(document: Mapping[str, Any], path: Sequence[str]):
     value: Any = document
     for part in path:
@@ -552,3 +574,7 @@ _FEATURES = {
     "high_frequency_corner_hz": ("spectrum", "hf_corner_hz"),
     "crest_db": ("dynamics", "crest_db"),
 }
+
+# The names an atlas can report on, for callers that need to say how many of them
+# a comparison actually covered rather than hard-coding the count in a sentence.
+RESPONSE_FEATURES = tuple(sorted(_FEATURES))

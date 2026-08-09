@@ -34,6 +34,14 @@ packs/*/.learned-tones.md.lock
 # --- Generated output -----------------------------------------------------
 out/
 
+# One match run's --out-dir: its render database, report, summary, and the
+# preset written from the winning spec. The README, the plan, and
+# benchmark_warm_start.py all document `runs/...` as the place to put these, so
+# in a clone they land here. Same reason as learned-tones.md above — they are
+# derived from the user's own reference audio and their own plugin, and the
+# match skill says outright never to commit them.
+/runs/
+
 # --- Python ---------------------------------------------------------------
 __pycache__/
 *.pyc

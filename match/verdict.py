@@ -27,6 +27,10 @@ from match.store import STORE_NAME, Store, StoreError, Trial
 from packs.paths import data_root, learned_tones_path
 
 CHOICES = ("candidate", "template", "indistinguishable")
+# How many bands of the fingerprint delta a learned note keeps, and how far below
+# the target's own peak band one still counts as audible. See _worst_bands.
+NOTE_BANDS = 5
+NOTE_FLOOR_DB = 50.0
 _PACK_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _TOLERANCE = 1e-9
 
@@ -141,8 +145,8 @@ def _validate_summary(summary: Mapping[str, Any], rank: int):
         raise VerdictError("the summary has no renderer identity")
     if not isinstance(renderer.get("reproducible"), bool):
         raise VerdictError("the summary does not say whether its renderer is reproducible")
-    if renderer["reproducible"] is False and not _same_number(
-            renderer.get("band_noise_db"), renderer.get("band_noise_db")):
+    if (renderer["reproducible"] is False
+            and not _is_number(renderer.get("band_noise_db"))):
         raise VerdictError(
             "a non-reproducible renderer summary needs its measured band_noise_db"
         )
@@ -328,6 +332,13 @@ def _stored_renderer(run) -> Optional[Mapping[str, Any]]:
     return value["renderer"]
 
 
+def _is_number(value: Any) -> bool:
+    """A finite JSON number, which ``True`` and ``None`` and ``NaN`` are not."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return math.isfinite(float(value))
+
+
 def _same_number(left: Any, right: Any) -> bool:
     if isinstance(left, bool) or isinstance(right, bool):
         return False
@@ -393,7 +404,7 @@ def _valid_band_delta(value: Any, target: Mapping[str, Any]) -> bool:
         return False
     keys = {"centre_hz", "target_db", "candidate_db", "delta_db"}
     if not all(isinstance(item, dict) and set(item) == keys
-               and all(_same_number(item[key], item[key]) for key in keys)
+               and all(_is_number(item[key]) for key in keys)
                for item in value):
         return False
     spectrum = target.get("spectrum") or {}
@@ -459,7 +470,7 @@ def _record_with_intent(store: Store, run_dir: pathlib.Path, notes: pathlib.Path
     if intent_path.exists():
         intent = _read_object(intent_path, "pending verdict intent")
         created_at = intent.get("created_at")
-        if not _same_number(created_at, created_at):
+        if not _is_number(created_at):
             raise VerdictError(f"pending verdict intent {intent_path} has no timestamp")
     else:
         previous = store.verdict(trial.trial_id, listener)
@@ -569,17 +580,56 @@ def _note_entry(summary: Mapping[str, Any], candidate: Mapping[str, Any],
         "candidate_score": (trial.objectives or {}).get("total"),
         "objectives": trial.objectives,
     }
+    bands, label = _worst_bands(candidate.get("fingerprint_delta"))
     return "\n".join([
         f"### {stamp} — run {_json(summary.get('run_id'))}, candidate {rank}",
         f"- Reference: SHA-256 {_json(source_run.reference_sha)}; regime "
         f"{_json(source_run.regime)}; confidence "
         f"{_json(reference.get('regime_confidence'))}",
         f"- Measurement ({qualification}): {_json(measurement)}",
-        f"- Fingerprint delta: {_json(candidate.get('fingerprint_delta'))}",
+        f"- Fingerprint delta{label}: {_json(bands)}",
         f"- Parameter changes: {_json(candidate.get('changes'))}",
         f"- Verdict on trial {trial.trial_id}: {_json(verdict)}",
         f"<!-- verdict:{identity} -->",
     ])
+
+
+def _worst_bands(delta: Any):
+    """The bands that carry the difference, and a label that admits the rest.
+
+    The whole 30-band delta is 3,498 of a 5,649-byte entry — 62% of a file the
+    generate and edit skills read in full before choosing values. Both copies of
+    the array live in the run's summary.json either way, so nothing is lost by
+    naming the subset rather than transcribing it into a file that only grows.
+
+    Deviation alone is the wrong subset, and the M6 Hotel California run shows why:
+    third-octave level falls away 50-80 dB at both ends of the spectrum, the fitted
+    error there is correspondingly large, and ranking on |delta_db| spent two of
+    candidate 1's five slots — and three of candidate 3's — on bands 54 to 81 dB
+    below the target's loudest. Those are the noise floor. Candidate 3 lost 80 Hz
+    entirely, which is the band the listener was describing.
+
+    So the ranking runs over bands within NOTE_FLOOR_DB of the target's own peak
+    band: 50 dB down is 0.3% of the amplitude of the loudest thing in the recording.
+    On that run it leaves 24 of 30 bands eligible for all three candidates and keeps
+    the low mids for each. The label states the window, because a subset chosen by
+    an audibility judgement has to say that is what it is.
+
+    Printed low frequency to high, because that is the order a tone gets described
+    in. The peak band always survives its own window, so the eligible set is never
+    empty for a delta that has entries at all.
+    """
+    if not isinstance(delta, list) or len(delta) <= NOTE_BANDS:
+        return delta, ""
+    peak = max(float(band["target_db"]) for band in delta)
+    eligible = [band for band in delta
+                if float(band["target_db"]) >= peak - NOTE_FLOOR_DB]
+    worst = sorted(eligible, key=lambda band: -abs(float(band["delta_db"])))[:NOTE_BANDS]
+    worst.sort(key=lambda band: float(band["centre_hz"]))
+    return worst, (
+        f" (the {len(worst)} largest deviations among the {len(eligible)} bands "
+        f"within {NOTE_FLOOR_DB:g} dB of the target's peak; all {len(delta)} bands "
+        f"are in this run's summary.json)")
 
 
 def _json(value: Any) -> str:

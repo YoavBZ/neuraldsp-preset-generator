@@ -143,6 +143,20 @@ def test_achievability_reports_a_target_outside_the_sampled_range():
         "sampled_min": -8.0,
         "sampled_max": 8.0,
     }
+    assert atlas.uncomparable_features(document, target) == []
+
+
+def test_a_feature_neither_side_measured_is_named_rather_than_called_inside():
+    """`outside_ranges` skips it silently; the reader has to be told which."""
+    document = _document()
+    del document["achievable_ranges"]["crest_db"]
+    printed = _printed(0)
+    printed["spectrum"]["lf_corner_hz"] = None
+    target = Fingerprint.from_dict(printed)
+
+    assert atlas.outside_ranges(document, target) == []
+    assert atlas.uncomparable_features(document, target) == [
+        "crest_db", "low_frequency_corner_hz"]
 
 
 def test_scale_comparison_requires_one_identical_held_out_experiment():
