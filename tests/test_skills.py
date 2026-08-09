@@ -96,6 +96,7 @@ COMMITTED_OPTIONAL = {
 GENERATED_OPTIONAL = {
     "observed.json": "built from the user's own presets, absent on a fresh clone",
     "learned-tones.md": "appended by past runs, absent until one has something to say",
+    ".learned-tones.md.lock": "serialises local note appends, absent until first use",
 }
 OPTIONAL_PER_PACK = {**COMMITTED_OPTIONAL, **GENERATED_OPTIONAL}
 # Runtime artifacts named by the skills but deliberately absent from a clone.
@@ -342,6 +343,7 @@ class Sandbox:
         self.spec = spec
         self._runs = 0
         self._audio = None
+        self._verdict_run = None
 
     def out(self) -> pathlib.Path:
         self._runs += 1
@@ -366,6 +368,65 @@ class Sandbox:
 
     def run_dir(self) -> pathlib.Path:
         return self.path / "match-run"
+
+    def verdict_run(self) -> pathlib.Path:
+        """A minimal completed match run for the independently tested logger command."""
+        if self._verdict_run is not None:
+            return self._verdict_run
+
+        from match.store import Run, Store, Trial
+
+        directory = self.path / "verdict-run"
+        directory.mkdir()
+        reference_sha = "a" * 64
+        with Store(str(directory / "trials.sqlite3")) as store:
+            store.start_run(Run(
+                run_id="documented-run", pack="morgan",
+                reference_sha=reference_sha, regime="probe",
+                loss_profile="unpaired-v1", renderer_id="synthetic",
+            ))
+            trial = store.add_trial(
+                "documented-run",
+                Trial(
+                    params={"sw50rAmp/sw50rVolume": 62.0},
+                    objectives={"total": 0.4, "timbre": 0.3},
+                    fingerprint={"spectrum": {
+                        "band_centres_hz": [100.0], "band_db": [0.0],
+                    }},
+                ),
+            )
+        summary = {
+            "schema": "tone-match-summary-v1", "run_id": "documented-run",
+            "pack": "morgan", "loss_profile": "unpaired-v1",
+            "reference": {
+                "regime": "probe", "regime_confidence": 1.0,
+                "fingerprint": {
+                    "source": {"sha256": reference_sha},
+                    "spectrum": {"band_centres_hz": [100.0], "band_db": [0.0]},
+                },
+            },
+            "renderer": {"renderer_id": "synthetic", "plugin_version": None,
+                         "renderer_build": "test", "reproducible": True,
+                         "band_noise_db": 0.0},
+            "starting_point": {"score": 0.8, "objectives": {"total": 0.8}},
+            "shortlist": [{
+                "rank": 1, "trial_id": trial.trial_id, "score": 0.4,
+                "objectives": {"total": 0.4, "timbre": 0.3},
+                "fingerprint_delta": [{
+                    "centre_hz": 100.0, "target_db": 0.0,
+                    "candidate_db": 0.0, "delta_db": 0.0,
+                }],
+                "changes": [],
+            }],
+        }
+        (directory / "summary.json").write_text(json.dumps(summary))
+        (directory / "match-1.json").write_text(json.dumps({
+            "name": "match 1", "parameters": [{
+                "module": "sw50rAmp", "key": "sw50rVolume", "value": 62.0,
+            }],
+        }))
+        self._verdict_run = directory
+        return directory
 
     def build(self, helper: str) -> pathlib.Path:
         """Compile one of the documented Swift helpers into this sandbox.
@@ -429,6 +490,10 @@ BUILT_HELPERS = ("au_probe", "au_render_server", "au_render", "au_silence_check"
 def materialise(command: str, sandbox: Sandbox) -> list:
     """Turn a documented command into an argv the test can actually run."""
     text = command.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
+    is_verdict = "log_match_verdict.py" in text
+    if is_verdict:
+        text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
+        text = text.replace("LISTENER", "documentation-test")
     for placeholder in ("PRESET.xml", "TEMPLATE.xml"):
         text = text.replace(placeholder, str(sandbox.template))
     text = text.replace("/tmp/spec.json", str(sandbox.spec))
@@ -458,6 +523,11 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         f"rather than letting the command run against a literal filename"
     )
     if argv[0] in ("python", "python3"):
+        if is_verdict:
+            # The real command intentionally follows the user's configured data
+            # root. This sandbox has cleared those variables, so pin it here instead
+            # of letting a documentation test write into the repository checkout.
+            argv.extend(["--data-dir", str(sandbox.path / "user-data")])
         return [sys.executable, *argv[1:]]
     # A Swift build, or one of the helpers it produces. Both are documented
     # verbatim and both are now run on a machine that has the plugin, which is

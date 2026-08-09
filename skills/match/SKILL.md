@@ -121,8 +121,18 @@ the matched topology. Verify the written preset with `show.py`, then follow
 
 ## 6. Record the listening result
 
-Append to the `learned_notes` path reported by `show.py` after the user auditions a
-candidate. Attach the note to measurements from `summary.json`, not only adjectives:
+After the user auditions one candidate against the starting template, record the
+result with the logger. It attaches the database verdict and learned note to the same
+validated render trial:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
+  --run-dir RUN_DIR --candidate 1 --choice candidate \
+  --listener LISTENER --comment "the low mids are still too thick"
+```
+
+`--choice` is `candidate`, `template`, or `indistinguishable`. Pass the same
+`--data-dir` used for the preset library when one was used. The appended note includes:
 
 - reference SHA-256, regime and confidence;
 - renderer, plugin version, loss profile, starting score and chosen objective vector;

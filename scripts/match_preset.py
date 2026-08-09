@@ -212,7 +212,11 @@ def main() -> None:
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
         loss_profile=args.loss_profile, budget=args.budget,
         renderer_id=metadata.renderer_id, plugin_version=metadata.plugin_version,
-        notes=probe_note,
+        notes=json.dumps({
+            "schema": "tone-match-run-notes-v1",
+            "probe_note": probe_note,
+            "renderer": metadata.as_dict(),
+        }, sort_keys=True, separators=(",", ":")),
     ))
 
     caveats = [probe_note] if probe_note else []

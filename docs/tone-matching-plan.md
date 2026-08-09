@@ -187,6 +187,12 @@ entire budget before a single preset improved.
    channel; the only change is that verdicts now attach to a measured
    fingerprint delta instead of to prose.
 
+Implemented by `scripts/log_match_verdict.py`: new summaries carry durable
+shortlist trial IDs, legacy M6 summaries are resolved only when score and rendered
+parameters identify one exact trial, and one command records both the SQLite verdict
+and the measured learned-tone note. The write is serialised across run directories
+and uses a durable intent so the exact invocation can finish cleanly after a crash.
+
 Scale up to formal listening tests only if and when the objective numbers stop
 correlating with what people say — and keep the report's statistical design on
 the shelf for that day.

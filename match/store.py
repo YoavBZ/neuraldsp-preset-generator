@@ -138,6 +138,7 @@ class Trial:
     fingerprint: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     trial_id: Optional[int] = None
+    run_id: Optional[str] = None
 
     @property
     def failed(self) -> bool:
@@ -306,24 +307,58 @@ class Store:
         )
         self._db.commit()
         trial.trial_id = int(cursor.lastrowid)
+        trial.run_id = run_id
         return trial
 
     def add_verdict(self, trial_id: int, listener: str, choice: str,
-                    comment: Optional[str] = None) -> None:
+                    comment: Optional[str] = None,
+                    created_at: Optional[float] = None) -> float:
         """What a person said about a trial, whatever the objective said.
 
         The verdict is the ground truth this whole apparatus is approximating, so
         it is stored rather than compared: if the objective and the listener
         disagree, the loss profile is what should change, and that argument needs
         both numbers.
+
+        One listener gets one verdict per trial. Re-running the same command is far
+        more likely to be an accidental duplicate than a second independent listen;
+        a changed opinion should be recorded by a deliberately named listener/session
+        rather than silently erasing history.
+
+        ``created_at`` is accepted for the logger's durable intent: after a crash it
+        can replay the exact same row and note rather than inventing a second event.
         """
-        if not self._db.execute("SELECT 1 FROM trials WHERE trial_id = ?",
-                                (trial_id,)).fetchone():
-            raise StoreError(f"no trial {trial_id} in {self.path} to record a "
-                             f"verdict against")
-        self._db.execute("INSERT INTO verdicts VALUES (?,?,?,?,?)",
-                         (trial_id, listener, choice, comment, time.time()))
-        self._db.commit()
+        listener = str(listener).strip()
+        choice = str(choice).strip()
+        if not listener:
+            raise StoreError("a listening verdict needs a non-empty listener name")
+        if not choice:
+            raise StoreError("a listening verdict needs a non-empty choice")
+
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            if not self._db.execute("SELECT 1 FROM trials WHERE trial_id = ?",
+                                    (trial_id,)).fetchone():
+                raise StoreError(f"no trial {trial_id} in {self.path} to record a "
+                                 f"verdict against")
+            previous = self._db.execute(
+                "SELECT choice FROM verdicts WHERE trial_id = ? AND listener = ?",
+                (trial_id, listener),
+            ).fetchone()
+            if previous is not None:
+                raise StoreError(
+                    f"listener {listener!r} already recorded {previous['choice']!r} "
+                    f"for trial {trial_id}; use a distinct listener/session name "
+                    f"for another independent audition"
+                )
+            stamp = time.time() if created_at is None else float(created_at)
+            self._db.execute("INSERT INTO verdicts VALUES (?,?,?,?,?)",
+                             (trial_id, listener, choice, comment, stamp))
+            self._db.commit()
+        except BaseException:
+            self._db.rollback()
+            raise
+        return stamp
 
     # --- the cache -----------------------------------------------------------
 
@@ -361,6 +396,14 @@ class Store:
                              f"  Runs here: {listed}.")
         return Run(**{key: row[key] for key in row.keys()})
 
+    def trial(self, trial_id: int) -> Trial:
+        """One trial by its durable id, including the run it belongs to."""
+        row = self._db.execute("SELECT * FROM trials WHERE trial_id = ?",
+                               (trial_id,)).fetchone()
+        if row is None:
+            raise StoreError(f"no trial {trial_id} in {self.path}")
+        return _to_trial(row)
+
     def runs(self) -> List[Run]:
         return [Run(**{k: row[k] for k in row.keys()}) for row in
                 self._db.execute("SELECT * FROM runs ORDER BY created_at")]
@@ -380,6 +423,14 @@ class Store:
         return [dict(row) for row in self._db.execute(
             "SELECT v.* FROM verdicts v JOIN trials t USING (trial_id)"
             " WHERE t.run_id = ? ORDER BY v.created_at", (run_id,))]
+
+    def verdict(self, trial_id: int, listener: str) -> Optional[Dict[str, Any]]:
+        """One listener's verdict for one trial, for idempotent recovery."""
+        row = self._db.execute(
+            "SELECT * FROM verdicts WHERE trial_id = ? AND listener = ?"
+            " ORDER BY created_at LIMIT 1", (trial_id, listener),
+        ).fetchone()
+        return None if row is None else dict(row)
 
     def best(self, run_id: str, key: str = "total",
              offset_db: Optional[float] = 0.0) -> Optional[Trial]:
@@ -500,6 +551,7 @@ def _to_trial(row: sqlite3.Row) -> Trial:
         fingerprint=_load(row["fingerprint_json"]),
         error=row["error"],
         trial_id=int(row["trial_id"]),
+        run_id=str(row["run_id"]),
     )
 
 

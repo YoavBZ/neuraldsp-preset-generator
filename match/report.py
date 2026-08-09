@@ -195,6 +195,7 @@ def build_summary(
         printed = fingerprints.get(index)
         candidates.append({
             "rank": index + 1,
+            "trial_id": candidate.trial_id,
             "score": float(candidate.total),
             "worst_input_level_score": (
                 None if candidate.worst_level is None else float(candidate.worst_level)
@@ -207,6 +208,7 @@ def build_summary(
                 for offset, value in candidate.by_level.items()
             },
             "changes": changes(candidate.values),
+            "fingerprint": printed.to_dict() if printed is not None else None,
             "fingerprint_delta": (
                 band_delta(target, printed) if printed is not None else []
             ),
