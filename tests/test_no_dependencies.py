@@ -151,7 +151,7 @@ def test_analysis_entry_points_explain_themselves_without_the_extra():
                                     "analysis.compare", "analysis.refchain",
                                     "match", "match.renderer", "match.renderer_synth",
                                     "match.space", "match.invert", "match.search",
-                                    "match.store", "match.report",
+                                    "match.store", "match.report", "match.verdict",
                                     "match.benchmark"])
 def test_analysis_modules_import_without_numpy(module):
     """Importing is free; only calling costs a dependency.

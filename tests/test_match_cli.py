@@ -71,6 +71,10 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
     assert summary["search"]["searched"]
+    assert all(candidate["trial_id"] is not None
+               for candidate in summary["shortlist"])
+    assert all(candidate["fingerprint"] is not None
+               for candidate in summary["shortlist"])
     assert summary["shortlist"][0]["fingerprint_delta"]
     assert summary["caveats"]
     spec = json.loads((out / "match-1.json").read_text())
@@ -87,6 +91,15 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     shown = run("show.py", tmp_path / "matched.xml", "--text")
     assert shown.returncode == 0, shown.stderr
     assert "match 1" in shown.stdout, "the preset carries the name the spec gave it"
+
+    listened = run(
+        "log_match_verdict.py", "--run-dir", out, "--candidate", "1",
+        "--choice", "candidate", "--listener", "end-to-end-test",
+        "--comment", "candidate is closer", "--data-dir", tmp_path / "user-data",
+    )
+    assert listened.returncode == 0, listened.stdout + listened.stderr
+    assert (tmp_path / "user-data" / "packs" / "morgan" /
+            "learned-tones.md").exists()
 
 
 def test_the_run_reports_its_caveats_and_its_cost(audio, tmp_path):
