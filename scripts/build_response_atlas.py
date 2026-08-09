@@ -85,7 +85,6 @@ def main() -> None:
     # A dry run stays plugin-free. The real backend exposes every writable manifest
     # parameter, while the synthetic one intentionally models only a subset.
     supported = None
-    renderer = None
     if args.renderer == "synthetic":
         from match.renderer_synth import SyntheticRenderer
 

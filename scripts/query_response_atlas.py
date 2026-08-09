@@ -101,6 +101,7 @@ def main() -> None:
         print(f"  {rank}. entry {match.index}, distance {match.score:.3f}: {destination}")
 
     outside = atlas.outside_ranges(document, target)
+    skipped = atlas.uncomparable_features(document, target)
     if outside:
         print("\noutside this finite atlas sample:")
         for row in outside:
@@ -110,7 +111,12 @@ def main() -> None:
                 f"({row['direction']})"
             )
     else:
-        print("\nall six reported response features fall inside this finite sample")
+        print("\nevery compared response feature falls inside this finite sample")
+    # A feature nobody could measure is not a feature inside the range, and the
+    # line above used to count all six of them whether or not they were compared.
+    if skipped:
+        print("not compared — the atlas or the reference has no reading for: "
+              + ", ".join(skipped))
     print("these are observed ranges on the atlas probe, not mathematical limits; "
           "a target outside one is evidence to distrust the topology, not proof "
           "that no denser sample can reach it")

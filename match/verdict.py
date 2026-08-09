@@ -141,8 +141,8 @@ def _validate_summary(summary: Mapping[str, Any], rank: int):
         raise VerdictError("the summary has no renderer identity")
     if not isinstance(renderer.get("reproducible"), bool):
         raise VerdictError("the summary does not say whether its renderer is reproducible")
-    if renderer["reproducible"] is False and not _same_number(
-            renderer.get("band_noise_db"), renderer.get("band_noise_db")):
+    if (renderer["reproducible"] is False
+            and not _is_number(renderer.get("band_noise_db"))):
         raise VerdictError(
             "a non-reproducible renderer summary needs its measured band_noise_db"
         )
@@ -328,6 +328,13 @@ def _stored_renderer(run) -> Optional[Mapping[str, Any]]:
     return value["renderer"]
 
 
+def _is_number(value: Any) -> bool:
+    """A finite JSON number, which ``True`` and ``None`` and ``NaN`` are not."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return math.isfinite(float(value))
+
+
 def _same_number(left: Any, right: Any) -> bool:
     if isinstance(left, bool) or isinstance(right, bool):
         return False
@@ -393,7 +400,7 @@ def _valid_band_delta(value: Any, target: Mapping[str, Any]) -> bool:
         return False
     keys = {"centre_hz", "target_db", "candidate_db", "delta_db"}
     if not all(isinstance(item, dict) and set(item) == keys
-               and all(_same_number(item[key], item[key]) for key in keys)
+               and all(_is_number(item[key]) for key in keys)
                for item in value):
         return False
     spectrum = target.get("spectrum") or {}
@@ -459,7 +466,7 @@ def _record_with_intent(store: Store, run_dir: pathlib.Path, notes: pathlib.Path
     if intent_path.exists():
         intent = _read_object(intent_path, "pending verdict intent")
         created_at = intent.get("created_at")
-        if not _same_number(created_at, created_at):
+        if not _is_number(created_at):
             raise VerdictError(f"pending verdict intent {intent_path} has no timestamp")
     else:
         previous = store.verdict(trial.trial_id, listener)
