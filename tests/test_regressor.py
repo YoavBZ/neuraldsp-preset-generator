@@ -102,8 +102,9 @@ def test_a_metered_control_declared_at_one_value_is_named_not_divided_by():
                         if dimension is gain else dimension
                         for dimension in space.dimensions]
 
-    with pytest.raises(atlas.AtlasError, match="no range to normalise"):
+    with pytest.raises(atlas.AtlasError, match="zero-width range") as raised:
         RidgeWarmStart(document, space)
+    assert "parameters/inputGain" in str(raised.value), "name the control"
 
 
 def test_unreliable_controls_can_be_frozen_at_the_measured_nearest_point():

@@ -148,7 +148,7 @@ def test_cli_records_the_database_row_and_measured_learned_note(tmp_path):
     assert "<script>" not in note, "comments must not become rendered HTML"
 
 
-def test_a_long_band_delta_is_trimmed_to_the_bands_that_carry_it(tmp_path):
+def test_a_long_band_delta_is_trimmed_to_the_bands_that_carry_it():
     """The skills read this file whole, so the note keeps the signal, not the array."""
     from match.verdict import NOTE_BANDS, _worst_bands
 
@@ -160,11 +160,64 @@ def test_a_long_band_delta_is_trimmed_to_the_bands_that_carry_it(tmp_path):
 
     assert [band["centre_hz"] for band in bands] == [2600.0, 2700.0, 2800.0,
                                                      2900.0, 3000.0]
-    assert f"worst {NOTE_BANDS} of 30 bands" in label
-    assert "summary.json" in label
+    assert f"the {NOTE_BANDS} largest deviations among the 30 bands" in label
+    assert "all 30 bands are in this run's summary.json" in label
     # A delta no longer than the budget is printed entire, and says nothing about
     # a subset it did not take.
     assert _worst_bands(delta[:NOTE_BANDS]) == (delta[:NOTE_BANDS], "")
+
+
+def test_the_note_itself_carries_the_trimmed_delta_and_says_it_trimmed():
+    """The CLI fixture's delta is two bands, so nothing else exercises the wiring."""
+    from match.verdict import _note_entry
+
+    summary = _summary()
+    candidate = summary["shortlist"][0]
+    candidate["fingerprint_delta"] = [
+        {"centre_hz": 100.0 * (index + 1), "target_db": 0.0,
+         "candidate_db": float(index), "delta_db": float(index)}
+        for index in range(30)
+    ]
+    run = Run(run_id="run-one", created_at=0.0, pack="morgan", template=None,
+              reference_sha=SHA, regime="separated_stem",
+              loss_profile="unpaired-v1", budget=10, renderer_id="swift",
+              plugin_version="1.1.1", notes=None)
+    trial = Trial(params={"amp/gain": 7.0}, objectives={"total": 0.4}, trial_id=1)
+
+    entry = _note_entry(summary, candidate, trial, run, 1, "candidate",
+                        "someone", None, 0.0, "abc123")
+
+    delta_line, = [line for line in entry.splitlines()
+                   if line.startswith("- Fingerprint delta")]
+    assert "largest deviations among the 30 bands" in delta_line
+    assert "all 30 bands are in this run's summary.json" in delta_line
+    assert delta_line.count('"centre_hz"') == 5, "the array itself must be trimmed"
+
+
+def test_a_band_buried_in_the_noise_floor_cannot_outrank_an_audible_one():
+    """Ranking on deviation alone spends the budget where the spectrum has died.
+
+    Third-octave level falls away 50-80 dB at both ends of a real guitar spectrum
+    and the fitted error goes with it, so the loudest *errors* sit where nobody can
+    hear them. Reproduced from M6's Hotel California run, whose top octave really
+    did outrank the low mids the listener was complaining about.
+    """
+    from match.verdict import NOTE_FLOOR_DB, _worst_bands
+
+    audible = [{"centre_hz": 100.0 * (index + 1), "target_db": 0.0,
+                "candidate_db": 4.0, "delta_db": 4.0} for index in range(28)]
+    buried = [{"centre_hz": 16000.0, "target_db": -(NOTE_FLOOR_DB + 10.0),
+               "candidate_db": 0.0, "delta_db": 40.0},
+              {"centre_hz": 20000.0, "target_db": -(NOTE_FLOOR_DB + 20.0),
+               "candidate_db": 0.0, "delta_db": 40.0}]
+
+    bands, label = _worst_bands(audible + buried)
+
+    assert [band["centre_hz"] for band in bands] == [100.0, 200.0, 300.0,
+                                                     400.0, 500.0]
+    assert 16000.0 not in [band["centre_hz"] for band in bands]
+    assert f"among the 28 bands within {NOTE_FLOOR_DB:g} dB" in label
+    assert "all 30 bands" in label
 
 
 def test_repeating_a_listener_verdict_refuses_instead_of_duplicating(tmp_path):

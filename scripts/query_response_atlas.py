@@ -110,8 +110,10 @@ def main() -> None:
                 f"{row['sampled_min']:.3g}..{row['sampled_max']:.3g} "
                 f"({row['direction']})"
             )
-    else:
+    elif len(skipped) < len(atlas.RESPONSE_FEATURES):
         print("\nevery compared response feature falls inside this finite sample")
+    else:
+        print("\nno response feature could be compared at all")
     # A feature nobody could measure is not a feature inside the range, and the
     # line above used to count all six of them whether or not they were compared.
     if skipped:

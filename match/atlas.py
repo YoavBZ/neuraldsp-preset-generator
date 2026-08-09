@@ -318,7 +318,7 @@ def uncomparable_features(document: Mapping[str, Any], target) -> List[str]:
     """
     validate(document)
     printed = target.to_dict()
-    return [name for name in sorted(_FEATURES)
+    return [name for name in RESPONSE_FEATURES
             if name not in document["achievable_ranges"]
             or not _finite(_nested(printed, _FEATURES[name]))]
 
@@ -574,3 +574,7 @@ _FEATURES = {
     "high_frequency_corner_hz": ("spectrum", "hf_corner_hz"),
     "crest_db": ("dynamics", "crest_db"),
 }
+
+# The names an atlas can report on, for callers that need to say how many of them
+# a comparison actually covered rather than hard-coding the count in a sentence.
+RESPONSE_FEATURES = tuple(sorted(_FEATURES))

@@ -93,18 +93,21 @@ class RidgeWarmStart:
         # A rotation is 0..100 and a fraction 0..1 by kind, but a metered control
         # carries its own declared min/max, and `space.build` admits one whose min
         # equals its max — it excludes a range that is *absent*, not one of zero
-        # width. `space._to_unit` guards this same division and `_sensitivity_floor`
-        # skips it, so the case is anticipated elsewhere; unguarded here it is a NaN
-        # column that np.linalg.solve confines to that one control, that np.clip does
-        # not catch, and that finally dies inside Dimension.quantise as "cannot
-        # convert float NaN to integer" — a rounding error, for a manifest problem.
-        # Refusing matches cross_validated_r2, which already refuses the constant
-        # dimension such an atlas necessarily contains.
+        # width. `space._to_unit` guards this same division and
+        # `search._quantisation_step` skips such a dimension, so the case is
+        # anticipated elsewhere; unguarded here it is a NaN column that
+        # np.linalg.solve confines to that one control, that np.clip does not catch,
+        # and that finally dies inside Dimension.quantise as "cannot convert float
+        # NaN to integer" — a rounding error, for a manifest problem. Refusing
+        # matches cross_validated_r2, which already refuses the constant dimension
+        # such an atlas necessarily contains.
         flat = [dimension.path for dimension, low, high
                 in zip(dimensions, lows, highs) if high <= low]
         if flat:
             raise atlas.AtlasError(
-                "atlas dimensions declare no range to normalise: " + ", ".join(flat)
+                # `space.bounds()` says "no declared range" for a range that is
+                # absent; this one is declared and empty, and they are different bugs.
+                "atlas dimensions declare a zero-width range: " + ", ".join(flat)
             )
         targets = (settings - lows) / (highs - lows)
 

@@ -27,8 +27,10 @@ from match.store import STORE_NAME, Store, StoreError, Trial
 from packs.paths import data_root, learned_tones_path
 
 CHOICES = ("candidate", "template", "indistinguishable")
-# How many bands of the fingerprint delta a learned note keeps. See _worst_bands.
+# How many bands of the fingerprint delta a learned note keeps, and how far below
+# the target's own peak band one still counts as audible. See _worst_bands.
 NOTE_BANDS = 5
+NOTE_FLOOR_DB = 50.0
 _PACK_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _TOLERANCE = 1e-9
 
@@ -596,21 +598,38 @@ def _worst_bands(delta: Any):
     """The bands that carry the difference, and a label that admits the rest.
 
     The whole 30-band delta is 3,498 of a 5,649-byte entry — 62% of a file the
-    generate and edit skills read in full before choosing values, and the 62%
-    an agent can act on least. "6.3 kHz is 9.9 dB dark" is guidance; the other
-    twenty-five bands within a decibel of target are arithmetic. Both live in
-    the run's summary.json either way, so nothing is lost by naming the subset
-    rather than transcribing the array into a file that only grows.
+    generate and edit skills read in full before choosing values. Both copies of
+    the array live in the run's summary.json either way, so nothing is lost by
+    naming the subset rather than transcribing it into a file that only grows.
 
-    Selected by absolute deviation, printed low frequency to high, because that
-    is the order the result gets described in.
+    Deviation alone is the wrong subset, and the M6 Hotel California run shows why:
+    third-octave level falls away 50-80 dB at both ends of the spectrum, the fitted
+    error there is correspondingly large, and ranking on |delta_db| spent two of
+    candidate 1's five slots — and three of candidate 3's — on bands 54 to 81 dB
+    below the target's loudest. Those are the noise floor. Candidate 3 lost 80 Hz
+    entirely, which is the band the listener was describing.
+
+    So the ranking runs over bands within NOTE_FLOOR_DB of the target's own peak
+    band: 50 dB down is 0.3% of the amplitude of the loudest thing in the recording.
+    On that run it leaves 24 of 30 bands eligible for all three candidates and keeps
+    the low mids for each. The label states the window, because a subset chosen by
+    an audibility judgement has to say that is what it is.
+
+    Printed low frequency to high, because that is the order a tone gets described
+    in. The peak band always survives its own window, so the eligible set is never
+    empty for a delta that has entries at all.
     """
     if not isinstance(delta, list) or len(delta) <= NOTE_BANDS:
         return delta, ""
-    worst = sorted(delta, key=lambda band: -abs(float(band["delta_db"])))[:NOTE_BANDS]
+    peak = max(float(band["target_db"]) for band in delta)
+    eligible = [band for band in delta
+                if float(band["target_db"]) >= peak - NOTE_FLOOR_DB]
+    worst = sorted(eligible, key=lambda band: -abs(float(band["delta_db"])))[:NOTE_BANDS]
     worst.sort(key=lambda band: float(band["centre_hz"]))
-    return worst, (f" (worst {NOTE_BANDS} of {len(delta)} bands; the full array "
-                   f"is in this run's summary.json)")
+    return worst, (
+        f" (the {len(worst)} largest deviations among the {len(eligible)} bands "
+        f"within {NOTE_FLOOR_DB:g} dB of the target's peak; all {len(delta)} bands "
+        f"are in this run's summary.json)")
 
 
 def _json(value: Any) -> str:

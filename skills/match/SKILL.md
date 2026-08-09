@@ -136,9 +136,11 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
 
 - reference SHA-256, regime and confidence;
 - renderer, plugin version, loss profile, starting score and chosen objective vector;
-- the chosen candidate's parameter changes, and the five bands of its
-  `fingerprint_delta` that carry the difference — the full array stays in the run's
-  `summary.json`, because this file is read whole by the generate and edit skills;
+- the chosen candidate's parameter changes, and up to five bands of its
+  `fingerprint_delta` — the largest deviations among the bands within 50 dB of the
+  target's own peak, so a band buried in the noise floor cannot outrank an audible
+  one. The full array stays in the run's `summary.json`, because this file is read
+  whole by the generate and edit skills;
 - which candidate the user preferred and any pushback, such as "#2 is less harsh"
   or "delay is right but the low mids are too thick".
 
