@@ -229,6 +229,17 @@ NEEDS_A_PRESET_FOLDER = (
     "Documents/Neural",
     "<user preset folder>",
 )
+AUDIO_PLACEHOLDERS = (
+    "REFERENCE.wav",
+    "PROBE.wav",
+    "TEMPLATE_RENDER.wav",
+    "CANDIDATE_RENDER.wav",
+)
+
+
+def needs_audio_fixture(command: str) -> bool:
+    """Whether materialising this command requires the optional audio stack."""
+    return any(placeholder in command for placeholder in AUDIO_PLACEHOLDERS)
 
 
 @functools.lru_cache(maxsize=None)
@@ -299,9 +310,8 @@ def skip_reason(command: str):
             return "needs the licensed Audio Unit installed on macOS"
     if any(marker in command for marker in NEEDS_A_PRESET_FOLDER):
         return "reads or writes the user's own Neural DSP preset folder"
-    if any(name in command for name in ("fingerprint.py", "match_preset.py")):
-        if not analysis_is_available():
-            return "needs the optional analysis and match extras"
+    if needs_audio_fixture(command) and not analysis_is_available():
+        return "needs the optional analysis and match extras"
     if re.match(r"python3? +\"?\$\{CLAUDE_PLUGIN_ROOT\}", command):
         return None
     # A Swift build, or one of the helpers it produces, is runnable wherever the
@@ -579,6 +589,18 @@ def test_the_skills_own_commands_are_all_exercised():
     assert not unrun, f"skill commands are not being run: {unrun}"
 
 
+def test_audio_fixture_commands_skip_cleanly_without_the_extra(monkeypatch):
+    """The lightweight CI matrix must skip before NumPy-backed fixture creation."""
+    monkeypatch.setattr(
+        sys.modules[__name__], "analysis_is_available", lambda: False
+    )
+    commands = [command for _, command in ALL_COMMANDS if needs_audio_fixture(command)]
+    assert commands, "no documented audio commands found"
+    assert {
+        skip_reason(command) for command in commands
+    } == {"needs the optional analysis and match extras"}
+
+
 def test_audio_skill_commands_are_exercised_when_the_extra_is_installed():
     """The bare job may skip audio; the analysis job must execute those commands."""
     if not analysis_is_available():
@@ -587,7 +609,7 @@ def test_audio_skill_commands_are_exercised_when_the_extra_is_installed():
         (DOC_IDS[doc], command, skip_reason(command))
         for doc, command in ALL_COMMANDS
         if doc in SKILLS
-        and any(name in command for name in ("fingerprint.py", "match_preset.py"))
+        and needs_audio_fixture(command)
         and skip_reason(command)
     ]
     assert not unrun, f"audio skill commands are not being run: {unrun}"
