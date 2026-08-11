@@ -50,8 +50,9 @@ def test_fingerprint_prints_valid_json(dark):
 
 def test_fingerprint_text_mode_is_readable(dark):
     out = run(FINGERPRINT, dark, "--text").stdout
-    for heading in ("regime", "spectrum", "dynamics", "harmonic", "stereo"):
+    for heading in ("regime", "excerpt", "spectrum", "dynamics", "harmonic", "stereo"):
         assert heading in out
+    assert "0.000000–4.000000 s of 4.000000 s" in out
 
 
 def test_fingerprint_writes_a_file(dark, tmp_path):
@@ -70,6 +71,16 @@ def test_fingerprint_rejects_a_missing_file(tmp_path):
 def test_fingerprint_rejects_an_unknown_regime(dark):
     result = run(FINGERPRINT, dark, "--regime", "vibes", expect=2)
     assert "regime" in result.stderr
+
+
+def test_fingerprint_rejects_a_negative_excerpt(dark):
+    result = run(FINGERPRINT, dark, "--excerpt", "-1", expect=2)
+    assert "zero or greater" in result.stderr
+
+
+def test_fingerprint_rejects_an_infinite_excerpt(dark):
+    result = run(FINGERPRINT, dark, "--excerpt", "inf", expect=2)
+    assert "finite" in result.stderr
 
 
 def test_compare_two_audio_files(dark, bright):
@@ -103,6 +114,12 @@ def test_paired_compare_refuses_fingerprints_without_samples(dark, tmp_path):
     run(FINGERPRINT, dark, "--out", stored)
     result = run(COMPARE, stored, stored, "--profile", "paired-v1", expect=2)
     assert "requires both arguments to be audio files" in result.stderr
+
+
+def test_paired_compare_refuses_an_excerpt_that_would_not_reach_the_residual(dark):
+    result = run(COMPARE, dark, dark, "--profile", "paired-v1",
+                 "--excerpt", "1", expect=2)
+    assert "complete files" in result.stderr
 
 
 def test_compare_rejects_an_unknown_profile(dark, bright):

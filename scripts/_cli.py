@@ -135,23 +135,24 @@ def probe_di(path, seconds: float = 6.0):
 
     Returns the samples and a caveat, which is `None` when a real DI was given. The
     stand-in is honest about being one: a search's answer is only as representative as
-    the DI it was scored on, and plucks with gaps show attack and decay clearly and show
-    a palm-muted chug not at all, so a preset matched on them may not hold up on the
-    part someone actually plays.
+    the DI it was scored on, and noise bursts with gaps show attack and decay clearly
+    and show a palm-muted chug not at all, so a preset matched on them may not hold up
+    on the part someone actually plays.
 
     Shared because `match_preset.py` and `benchmark_match.py` had the same function with
-    the same `gap=0.9, seed=13` constants, and two copies of a fixture's constants is
-    two things to keep in step for no reason.
+    the same `gap=0.9, seed=13` constants. The production path owns the signal; tests
+    verify that its samples remain identical to the original fixture.
     """
     if path is not None:
         from analysis import io
 
         return io.load(str(path)).mono(), None
-    from tests import fixtures_audio
+    from analysis.probes import decaying_noise_bursts
 
-    return (fixtures_audio.plucks(seconds=seconds, gap=0.9, seed=13),
+    return (decaying_noise_bursts(seconds=seconds, gap=0.9, seed=13),
             "no --probe-di was given, so candidates were rendered through a "
-            "synthetic pluck sequence. It shows attack and decay clearly and shows "
+            "synthetic decaying noise-burst sequence. It shows attack and decay "
+            "clearly and shows "
             "sustained or palm-muted playing not at all — match against your own "
             "DI before trusting this on a real part.")
 
@@ -181,9 +182,41 @@ def positive_float(text: str) -> float:
         value = float(text)
     except ValueError:
         raise argparse.ArgumentTypeError(f"{text!r} is not a number") from None
+    import math
+
+    if not math.isfinite(value):
+        raise argparse.ArgumentTypeError(f"must be finite, got {text!r}")
     if not value > 0.0:
         raise argparse.ArgumentTypeError(f"must be greater than zero, got {value:g}")
     return value
+
+
+def nonnegative_float(text: str) -> float:
+    """An argparse type for durations where zero explicitly means "all"."""
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a number") from None
+    import math
+
+    if not math.isfinite(value):
+        raise argparse.ArgumentTypeError(f"must be finite, got {text!r}")
+    if not value >= 0.0:
+        raise argparse.ArgumentTypeError(f"must be zero or greater, got {value:g}")
+    return value
+
+
+def resolved_excerpt(requested: Optional[float], regime: str,
+                     default: float = 20.0) -> Optional[float]:
+    """One excerpt policy shared by preflight, comparison, and matching.
+
+    A paired DI is sample-for-sample evidence, so its safe default is the complete
+    performance. Other regimes default to a short active window. Explicit zero
+    always means the full source.
+    """
+    if requested is None:
+        return None if regime == "paired_di" else float(default)
+    return None if float(requested) == 0.0 else float(requested)
 
 
 def positive_int(text: str) -> int:

@@ -18,7 +18,7 @@ from match.search import Candidate
 from match.store import Run, Store, Trial
 
 
-def printed(*, bands=None, dynamics=None) -> Fingerprint:
+def printed(*, bands=None, dynamics=None, source=None) -> Fingerprint:
     """A Fingerprint with only the sections a chart reads, built by hand.
 
     Rendering audio for a layout test would make the layout test depend on the
@@ -27,7 +27,7 @@ def printed(*, bands=None, dynamics=None) -> Fingerprint:
     centres = [100.0, 200.0, 400.0, 800.0, 1600.0, 3200.0]
     levels = bands if bands is not None else [-10.0, -8.0, -6.0, -7.0, -9.0, -14.0]
     return Fingerprint(
-        source={"sha256": "a" * 64, "sample_rate": 48000},
+        source=source or {"sha256": "a" * 64, "sample_rate": 48000},
         spectrum={"band_centres_hz": centres, "band_db": levels},
         dynamics=dynamics or {"crest_db": 12.0, "attack_ms": 8.0},
     )
@@ -66,6 +66,27 @@ def test_the_caveats_come_before_the_charts():
     assert html.index("What to distrust") < html.index("<svg")
     assert html.index("What to distrust") < html.index("Shortlist")
     assert "the equaliser basis is not measured" in html
+
+
+def test_the_exact_reference_excerpt_is_above_the_shortlist():
+    target = printed(source={
+        "sha256": "a" * 64,
+        "sample_rate": 48000,
+        "duration_s": 30.0,
+        "source_duration_s": 312.5,
+        "excerpt_start_s": 259.84,
+        "excerpt_end_s": 289.84,
+        "excerpt_requested_s": 30.0,
+        "excerpt_policy": "most_continuously_active",
+    })
+    html = R.render_report(run_id="r", target=target,
+                           shortlist=[candidate(0.4)], caveats=[])
+
+    assert "259.840000–289.840000 s" in html
+    assert "312.500000 s" in html
+    assert "most continuously active" in html
+    assert html.index("Reference excerpt") < html.index("Shortlist")
+    assert R._excerpt_metadata(target)["duration_s"] == 30.0
 
 
 def test_an_unmeasured_dimension_is_a_dash_not_a_zero():

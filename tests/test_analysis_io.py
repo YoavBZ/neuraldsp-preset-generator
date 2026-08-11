@@ -74,13 +74,18 @@ def test_excerpt_picks_the_busy_part():
         np.concatenate([quiet, fx.noise(seconds=2.0), quiet]), SAMPLE_RATE
     )
     chosen = io.excerpt(audio, 2.0)
+    start, end = io.excerpt_bounds(audio, 2.0)
     assert chosen.frames == SAMPLE_RATE * 2
     assert float(np.abs(chosen.samples).mean()) > 0.1
+    assert end - start == chosen.frames
+    assert np.array_equal(chosen.samples, audio.samples[start:end])
+    assert 3.9 < start / SAMPLE_RATE < 4.1
 
 
 def test_excerpt_of_a_short_file_is_the_whole_file():
     audio = io.from_samples(fx.noise(seconds=1.0), SAMPLE_RATE)
     assert io.excerpt(audio, 20.0).frames == audio.frames
+    assert io.excerpt_bounds(audio, 20.0) == (0, audio.frames)
 
 
 def test_resample_uses_the_exact_ratio():

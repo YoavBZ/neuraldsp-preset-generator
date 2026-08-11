@@ -25,7 +25,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded
+from _cli import die, guarded, nonnegative_float, resolved_excerpt
 
 
 def _format(value, digits: int = 2) -> str:
@@ -44,6 +44,11 @@ def print_text(fp) -> None:
           f"{source.get('channels')} ch, {source.get('sample_rate')} Hz"
           + (f" (from {source.get('source_sample_rate')} Hz)"
              if source.get("source_sample_rate") != source.get("sample_rate") else ""))
+    if "excerpt_start_s" in source and "excerpt_end_s" in source:
+        print(f"excerpt     {_format(source.get('excerpt_start_s'), 6)}–"
+              f"{_format(source.get('excerpt_end_s'), 6)} s of "
+              f"{_format(source.get('source_duration_s'), 6)} s "
+              f"({str(source.get('excerpt_policy')).replace('_', ' ')})")
     print(f"level       {_format(source.get('lufs_i'), 1)} LUFS, "
           f"true peak {_format(source.get('true_peak_dbtp'), 1)} dBTP")
     print(f"sha256      {source.get('sha256', '')[:16]}…")
@@ -107,8 +112,10 @@ def main() -> None:
     ap.add_argument("audio", type=pathlib.Path)
     ap.add_argument("--regime", default="probe",
                     help="paired_di | isolated_stem | separated_stem | mix | probe")
-    ap.add_argument("--excerpt", type=float, default=None, metavar="SECONDS",
-                    help="measure the most active excerpt of this length (default 20; 0 for all)")
+    ap.add_argument("--excerpt", type=nonnegative_float, default=None, metavar="SECONDS",
+                    help="measure the most continuously active window of this length "
+                         "and record its exact bounds (default: 20; paired_di "
+                         "defaults to all; 0 for all)")
     ap.add_argument("--out", type=pathlib.Path, help="write the JSON here instead of stdout")
     ap.add_argument("--text", action="store_true", help="print a summary instead of JSON")
     args = ap.parse_args()
@@ -123,7 +130,7 @@ def main() -> None:
     from analysis import AnalysisUnavailable
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError, fingerprint_file
 
-    excerpt = DEFAULT_EXCERPT_S if args.excerpt is None else (args.excerpt or None)
+    excerpt = resolved_excerpt(args.excerpt, args.regime, DEFAULT_EXCERPT_S)
     try:
         fp = fingerprint_file(args.audio, regime=args.regime, excerpt_s=excerpt)
     except (AnalysisUnavailable, FingerprintError) as e:

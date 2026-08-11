@@ -478,7 +478,10 @@ def documented_spec() -> dict:
 # Placeholders the documents use for "a file you supply". Anything left looking
 # like a placeholder after substitution fails the test rather than being run,
 # so a new one cannot slip through as a real filename.
-LEFTOVER = re.compile(r"\$\{|<[a-z ]+>|\b[A-Z][A-Z_]+\.(xml|json)\b")
+LEFTOVER = re.compile(
+    r"\$\{|<[a-z ]+>|\b[A-Z][A-Z_]+\.(xml|json|wav|flac)\b|"
+    r"\b[A-Z][A-Z_]+_SECONDS\b"
+)
 
 
 # Helpers the documentation tells the reader to build into /tmp and then run.
@@ -501,6 +504,13 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         reference, probe = sandbox.audio_pair()
         text = text.replace("REFERENCE.wav", str(reference))
         text = text.replace("PROBE.wav", str(probe))
+        # The audition command needs two already-rendered alternatives. Their tone
+        # is irrelevant to this documentation test; existing deterministic audio
+        # exercises the command and keeps every placeholder explicit.
+        text = text.replace("TEMPLATE_RENDER.wav", str(probe))
+        text = text.replace("CANDIDATE_RENDER.wav", str(reference))
+        text = text.replace("START_SECONDS", "0")
+        text = text.replace("DURATION_SECONDS", "1")
     # Each documented command is tested independently, so the apply preview uses
     # the known-valid spec instead of depending on the match command running first.
     text = text.replace("RUN_DIR/match-1.json", str(sandbox.spec))

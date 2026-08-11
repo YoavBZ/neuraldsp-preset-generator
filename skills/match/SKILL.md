@@ -31,9 +31,10 @@ Choose the most conservative true reference regime:
 
 Do not call two different performances paired. If provenance is unclear, choose
 the lower-confidence regime and say why. Prefer a short section with one stable
-tone; `--excerpt` measures the beginning of a longer file, or the user can supply
-a clipped section. A long file does not multiply render cost, but averaging clean,
-rhythm and lead sections together produces a target that is none of them.
+tone; `--excerpt` selects the most continuously active window of that length from
+a longer file and records its exact start and end, or the user can supply a clipped
+section. A long file does not multiply render cost, but averaging clean, rhythm and
+lead sections together produces a target that is none of them.
 
 Fingerprint the reference before spending a render budget:
 
@@ -69,10 +70,13 @@ workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available. Without one, omit the flag;
-the tool uses a six-second synthetic pluck sequence and records that limitation.
+the tool uses a six-second sequence of decaying white-noise bursts and records that
+limitation. It is transient and aperiodic, not a played or pitched guitar part.
 For `paired_di`, the exact DI is mandatory. Tone King currently requires
 `--no-invert` because its flat parameter namespace has no Morgan-style amp EQ to
-invert.
+invert. A residual-weighted paired run must use the complete DI and reamp: omit
+`--excerpt` or pass `--excerpt 0`; a partial statistical fingerprint cannot be
+combined with a full-performance waveform residual.
 
 ## 4. Match and read the compact summary
 
@@ -92,6 +96,7 @@ Read `RUN_DIR/summary.json`, not the SVG-heavy HTML, to prepare the response. Al
 give the user `RUN_DIR/report.html` for the full plots. Surface all of the following:
 
 - reference regime and confidence;
+- exact measured reference start and end from `reference.excerpt`;
 - renderer, plugin version, and reproducibility;
 - which controls were calculated by inversion, which were searched, and which
   were frozen by the sensitivity screen;
@@ -119,11 +124,35 @@ custom IR unless the user explicitly asks for portability; stripping an IR chang
 the matched topology. Verify the written preset with `show.py`, then follow
 [installing.md](../../reference/installing.md).
 
-## 6. Record the listening result
+## 6. Audition at equal loudness, then record the result
+
+Do not use raw, unequal-level renders to decide which tone is closer. Preserve them
+for the separate question of whether the preset's output level is right. For tone,
+make one blind mobile-friendly file that contains Reference → A → B twice, with one
+static gain per source and no EQ, compression, or limiting:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/build_rab_audition.py" \
+  --reference REFERENCE.wav --reference-start START_SECONDS \
+  --a TEMPLATE_RENDER.wav --b CANDIDATE_RENDER.wav \
+  --duration DURATION_SECONDS --target-lufs -20 \
+  --out RUN_DIR/candidate-1-rab.flac
+```
+
+Take `START_SECONDS` and the duration from `summary.json`'s
+`reference.excerpt`. The tool writes the blind key separately; do not open it until
+the listener answers both questions independently:
+
+1. Which is closer to the reference: A, B, or indistinguishable?
+2. Which do you prefer: A, B, or indistinguishable?
+
+Overall loudness is allowed to affect neither answer here. If output level needs
+judgment, play the untouched raw renders afterward and record that separately.
 
 After the user auditions one candidate against the starting template, record the
-result with the logger. It attaches the database verdict and learned note to the same
-validated render trial:
+closeness result with the logger. Put a different preference, if any, in the comment
+until the verdict schema has a separate preference field. It attaches the database
+verdict and learned note to the same validated render trial:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
@@ -131,7 +160,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
   --listener LISTENER --comment "the low mids are still too thick"
 ```
 
-`--choice` is `candidate`, `template`, or `indistinguishable`. Pass the same
+`--choice` is the closer side: `candidate`, `template`, or `indistinguishable`.
+Pass the same
 `--data-dir` used for the preset library when one was used. The appended note includes:
 
 - reference SHA-256, regime and confidence;
@@ -141,8 +171,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
   target's own peak, so a band buried in the noise floor cannot outrank an audible
   one. The full array stays in the run's `summary.json`, because this file is read
   whole by the generate and edit skills;
-- which candidate the user preferred and any pushback, such as "#2 is less harsh"
-  or "delay is right but the low mids are too thick".
+- which candidate was closer, plus preference and any pushback in the comment, such
+  as "closer candidate; prefer template because it is less harsh" or "delay is right
+  but the low mids are too thick".
 
 Keep the entry concise. Never copy the user's audio into the plugin or commit the
 local run database, report, summary, generated preset, or learned notes.

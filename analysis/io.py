@@ -290,18 +290,33 @@ def excerpt(audio: Audio, seconds: float) -> Audio:
     things. Fingerprinting the loudest sustained stretch is both faster and more
     representative than averaging the whole file, including its fade-out.
     """
+    start, end = excerpt_bounds(audio, seconds)
+    if start == 0 and end == audio.frames:
+        return audio
+    return audio.replace(audio.samples[start:end])
+
+
+def excerpt_bounds(audio: Audio, seconds: float) -> tuple[int, int]:
+    """Frame bounds selected by :func:`excerpt`, without losing provenance.
+
+    The old API returned only the samples. That made a run impossible to reproduce
+    from its report: ``--excerpt 30`` could mean any dense 30-second stretch in a
+    four-minute song, but neither its start nor its end survived fingerprinting.
+    Keeping selection in one function also prevents the reported bounds and the
+    samples actually measured from drifting apart.
+    """
     require("excerpt selection")
     import numpy as np
 
     wanted = int(seconds * audio.sample_rate)
     if wanted <= 0 or audio.frames <= wanted:
-        return audio
+        return 0, audio.frames
 
     active = active_frames(audio.mono()).astype(np.float64)
     span = max(1, wanted // HOP)
     if len(active) <= span:
-        return audio.replace(audio.samples[:wanted])
+        return 0, wanted
     density = np.convolve(active, np.ones(span), mode="valid")
     start = int(np.argmax(density)) * HOP
     start = min(start, audio.frames - wanted)
-    return audio.replace(audio.samples[start : start + wanted])
+    return start, start + wanted

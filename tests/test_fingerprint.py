@@ -127,10 +127,25 @@ def test_any_input_produces_a_valid_fingerprint(name, samples):
 
 
 def test_excerpt_is_applied_before_measuring():
-    """A long file is reduced to its most active window, and says how long."""
+    """A long file records exactly which active window was measured."""
     import numpy as np
 
     padded = np.concatenate([np.zeros(SR * 5), fx.band_limited(seconds=4.0), np.zeros(SR * 5)])
     fp = fingerprint(io.from_samples(padded, SR), excerpt_s=3.0)
     assert fp.source["duration_s"] == pytest.approx(3.0, abs=0.01)
     assert fp.source["lufs_i"] is not None
+    assert fp.source["source_duration_s"] == pytest.approx(14.0)
+    assert fp.source["excerpt_end_s"] - fp.source["excerpt_start_s"] == \
+        pytest.approx(3.0, abs=1 / SR)
+    assert 4.9 < fp.source["excerpt_start_s"] < 6.1
+    assert fp.source["excerpt_requested_s"] == 3.0
+    assert fp.source["excerpt_policy"] == "most_continuously_active"
+
+
+def test_a_short_source_records_that_the_full_file_was_used():
+    fp = fingerprint(io.from_samples(fx.noise(seconds=1.0), SR), excerpt_s=20.0)
+    assert fp.source["excerpt_start_s"] == 0.0
+    assert fp.source["excerpt_end_s"] == pytest.approx(1.0)
+    assert fp.source["source_duration_s"] == pytest.approx(1.0)
+    assert fp.source["excerpt_requested_s"] == 20.0
+    assert fp.source["excerpt_policy"] == "full_source"

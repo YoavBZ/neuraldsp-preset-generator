@@ -114,6 +114,7 @@ def render_report(
 
     parts.append(_headline(best, seed_objectives))
     parts.append(_caveats(caveats))
+    parts.append(_reference_excerpt(target))
     parts.append(_shortlist(shortlist, seed, unheard))
     parts.append(_objectives_table(shortlist, seed_objectives, profile))
     parts.append(_spectrum(target, fingerprints or {}, shortlist))
@@ -215,16 +216,21 @@ def build_summary(
         })
 
     destination = pathlib.Path(out_dir)
+    reference_entry = {
+        "path": reference,
+        "regime": target.regime,
+        "regime_confidence": float(target.regime_confidence),
+        "fingerprint": target.to_dict(),
+    }
+    excerpt = _excerpt_metadata(target)
+    if excerpt is not None:
+        reference_entry["excerpt"] = excerpt
+
     return {
         "schema": "tone-match-summary-v1",
         "run_id": run_id,
         "pack": pack,
-        "reference": {
-            "path": reference,
-            "regime": target.regime,
-            "regime_confidence": float(target.regime_confidence),
-            "fingerprint": target.to_dict(),
-        },
+        "reference": reference_entry,
         "loss_profile": profile,
         "renderer": dict(renderer),
         "inversion": {
@@ -275,6 +281,50 @@ def write_summary(path: str, **kwargs) -> str:
 
 
 # --- sections ---------------------------------------------------------------
+
+
+def _excerpt_metadata(target: Any) -> Optional[Dict[str, Any]]:
+    """Compact provenance for the exact reference samples that were measured."""
+    source = getattr(target, "source", {}) or {}
+    required = ("excerpt_start_s", "excerpt_end_s", "source_duration_s",
+                "excerpt_policy")
+    if any(key not in source for key in required):
+        return None
+    start = float(source["excerpt_start_s"])
+    end = float(source["excerpt_end_s"])
+    return {
+        "start_s": start,
+        "end_s": end,
+        # Derived from frame-accurate bounds rather than source.duration_s, whose
+        # historical four-decimal display rounding can move a short clip by a frame.
+        "duration_s": round(end - start, 6),
+        "source_duration_s": float(source["source_duration_s"]),
+        "requested_s": (
+            None if source.get("excerpt_requested_s") is None
+            else float(source["excerpt_requested_s"])
+        ),
+        "policy": str(source["excerpt_policy"]),
+    }
+
+
+def _reference_excerpt(target: Any) -> str:
+    excerpt = _excerpt_metadata(target)
+    if excerpt is None:
+        return ""
+    start = excerpt["start_s"]
+    end = excerpt["end_s"]
+    source_duration = excerpt["source_duration_s"]
+    policy = excerpt["policy"]
+    if policy == "most_continuously_active":
+        explanation = "the most continuously active window requested by --excerpt"
+    else:
+        explanation = "the full source"
+    return (
+        "<h2>Reference excerpt</h2>"
+        f"<p>Measured <code>{start:.6f}–{end:.6f} s</code> from a "
+        f"<code>{source_duration:.6f} s</code> source: "
+        f"{html.escape(explanation)}.</p>"
+    )
 
 
 def _headline(best, seed_objectives: Optional[Mapping[str, float]]) -> str:

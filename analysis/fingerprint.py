@@ -169,10 +169,17 @@ def fingerprint(audio, regime: str = "probe",
             f"unknown regime {regime!r}. One of: {', '.join(sorted(REGIMES))}"
         )
 
+    source_duration_s = audio.duration_s
+    excerpt_start_frame = 0
+    excerpt_end_frame = audio.frames
+    excerpt_policy = "full_source"
     if excerpt_s:
-        from .io import excerpt as take_excerpt
+        from .io import excerpt_bounds
 
-        audio = take_excerpt(audio, excerpt_s)
+        excerpt_start_frame, excerpt_end_frame = excerpt_bounds(audio, excerpt_s)
+        if excerpt_start_frame != 0 or excerpt_end_frame != audio.frames:
+            excerpt_policy = "most_continuously_active"
+            audio = audio.replace(audio.samples[excerpt_start_frame:excerpt_end_frame])
 
     loudness = loudness_lufs(audio)
     # Measured once. Each call resamples the whole excerpt 4x, which made this the
@@ -188,6 +195,15 @@ def fingerprint(audio, regime: str = "probe",
         "regime": regime,
         "source_sample_rate": audio.source_rate,
         "source_channels": audio.source_channels,
+        # The hash identifies the file; these fields identify the exact samples
+        # measured from it. Both are needed to reproduce --excerpt on a long source.
+        "source_duration_s": round(source_duration_s, 6),
+        "excerpt_start_s": round(excerpt_start_frame / audio.sample_rate, 6),
+        "excerpt_end_s": round(excerpt_end_frame / audio.sample_rate, 6),
+        "excerpt_requested_s": (
+            None if excerpt_s is None else round(float(excerpt_s), 6)
+        ),
+        "excerpt_policy": excerpt_policy,
     }
 
     # Everything below this line sees loudness-normalised audio, which is what
