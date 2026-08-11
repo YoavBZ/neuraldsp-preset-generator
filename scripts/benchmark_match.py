@@ -51,7 +51,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how the objective dimensions are weighted; this is what the "
                          "'objective' column measures (unpaired-v1, paired-v1)")
     ap.add_argument("--probe-di", type=pathlib.Path,
-                    help="the DI to render through; a synthetic pluck sequence "
+                    help="the DI to render through; a synthetic decaying noise-burst "
+                         "sequence is used "
                          "otherwise")
     ap.add_argument("--seconds", type=positive_float, default=4.0,
                     help="length of the synthetic DI, if one is used (default: 4)")

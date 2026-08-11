@@ -1340,18 +1340,22 @@ def _scoring_key(render_key: str, target, profile: str, recipe: Mapping,
     alone was enough to serve one run's objectives to a later run against a
     different recording.
 
-    The target contributes its `sha256` rather than its whole document: two
-    fingerprints of the same file with different excerpt lengths would otherwise
-    collide, so the excerpt is folded in too.
+    The whole target fingerprint is digested. The file hash alone is insufficient:
+    two excerpts of one file are different targets, and naming one optional field
+    here already failed when the provenance schema used different field names.
     """
     import hashlib
 
-    source = getattr(target, "source", {}) or {}
+    import json
+
+    target_document = (target.to_dict() if callable(getattr(target, "to_dict", None))
+                       else target)
+    target_digest = hashlib.sha256(json.dumps(
+        target_document, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
     material = "␟".join([
         str(render_key),
-        str(source.get("sha256")),
-        str(source.get("excerpt_s")),
-        str(getattr(target, "regime", None)),
+        target_digest,
         str(profile),
         canonical_settings(recipe),
         str(reference_audio_sha),

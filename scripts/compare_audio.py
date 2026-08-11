@@ -26,7 +26,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded
+from _cli import die, guarded, nonnegative_float, resolved_excerpt
 
 AUDIO_SUFFIXES = {".wav", ".aiff", ".aif", ".flac", ".ogg", ".caf", ".w64"}
 
@@ -99,7 +99,8 @@ def main() -> None:
     ap.add_argument("--profile", default="unpaired-v1")
     ap.add_argument("--target-regime", default="mix")
     ap.add_argument("--candidate-regime", default="probe")
-    ap.add_argument("--excerpt", type=float, default=None, metavar="SECONDS")
+    ap.add_argument("--excerpt", type=nonnegative_float, default=None,
+                    metavar="SECONDS")
     ap.add_argument("--json", action="store_true", help="emit the objectives as JSON")
     args = ap.parse_args()
 
@@ -112,17 +113,21 @@ def main() -> None:
                                   scalar)
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError
 
-    excerpt = DEFAULT_EXCERPT_S if args.excerpt is None else (args.excerpt or None)
     try:
         profile = load_profile(args.profile)
+        residual_weighted = float(
+            profile.get("weights", {}).get("residual", 0.0) or 0.0
+        ) > 0.0
+        excerpt_regime = "paired_di" if residual_weighted else args.target_regime
+        excerpt = resolved_excerpt(args.excerpt, excerpt_regime, DEFAULT_EXCERPT_S)
+        if residual_weighted and excerpt is not None:
+            die("a paired waveform residual must compare the complete files; "
+                "omit --excerpt or pass --excerpt 0")
         target, target_audio = _load_side(args.target, args.target_regime, excerpt)
         candidate, candidate_audio = _load_side(
             args.candidate, args.candidate_regime, excerpt)
         residual_value = None
         alignment = None
-        residual_weighted = float(
-            profile.get("weights", {}).get("residual", 0.0) or 0.0
-        ) > 0.0
         if residual_weighted:
             if target_audio is None or candidate_audio is None:
                 die(f"loss profile {args.profile!r} weights waveform residual, "

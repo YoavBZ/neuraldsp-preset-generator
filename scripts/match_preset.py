@@ -43,8 +43,9 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import (die, enumerated as _enumerated, guarded, on_interrupt,
-                  positive_float, positive_int, print_enumerable as _print_enumerable,
-                  probe_di as _probe, renderer_paths)
+                  nonnegative_float, positive_float, positive_int,
+                  print_enumerable as _print_enumerable, probe_di as _probe,
+                  renderer_paths, resolved_excerpt)
 
 # The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
 # `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
@@ -95,7 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "benchmarks use (1.0)")
     ap.add_argument("--probe-di", type=pathlib.Path,
                     help="the DI every candidate is rendered through. Without one a "
-                         "synthetic pluck sequence is used, and the report says so")
+                         "synthetic decaying noise-burst sequence is used, and the "
+                         "report says so")
     ap.add_argument("--pack", default="morgan", help="which plugin pack (default: morgan)")
     ap.add_argument("--amp", default=None,
                     help="restrict the search to one amp's controls, e.g. sw50r")
@@ -131,8 +133,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="print the switches and selectors --enumerate accepts for "
                          "this pack and amp, with how many positions each has, and "
                          "exit")
-    ap.add_argument("--excerpt", type=positive_float, default=None, metavar="SECONDS",
-                    help="measure only this much of the reference")
+    ap.add_argument("--excerpt", type=nonnegative_float, default=None,
+                    metavar="SECONDS",
+                    help="measure the most continuously active window of this length; "
+                         "the exact start and end are recorded (default: 20, except "
+                         "paired_di uses all; 0 for all)")
     ap.add_argument("--out-dir", type=pathlib.Path, required=True,
                     help="where the store, the spec and the report are written")
     ap.add_argument("--run-id", default=None,
@@ -176,6 +181,11 @@ def main() -> None:
             "--reference is a reamp of the exact --probe-di performance.\n"
             "  Use --reference-mode paired_di with that pair, or use "
             "--loss-profile unpaired-v1 for a different performance.")
+    excerpt_s = resolved_excerpt(args.excerpt, args.reference_mode)
+    if residual_weighted and excerpt_s is not None:
+        die("a paired waveform residual must compare the complete reamp and DI; "
+            "--excerpt would mix excerpt-level features with a full-performance "
+            "waveform score.\n  Omit --excerpt or pass --excerpt 0.")
 
     space = space_module.build(args.pack, amp=args.amp)
     renderer = _renderer(args.renderer, args.pack)
@@ -190,7 +200,7 @@ def main() -> None:
 
     reference = io.load(str(args.reference))
     target = fingerprint(reference, regime=args.reference_mode,
-                         excerpt_s=args.excerpt)
+                         excerpt_s=excerpt_s)
     unmeasurable = _unmeasurable(target, reference)
     if unmeasurable:
         die(unmeasurable)
@@ -397,6 +407,12 @@ def main() -> None:
     elif best.worst_level is not None:
         worst = ", and it holds up across ±6 dB of input level"
     print(f"  distance to the reference {start.total:.3f} -> {best.total:.3f}{worst}")
+    excerpt = target.source
+    if "excerpt_start_s" in excerpt and "excerpt_end_s" in excerpt:
+        print(f"  reference excerpt {excerpt['excerpt_start_s']:.6f}–"
+              f"{excerpt['excerpt_end_s']:.6f} s of "
+              f"{excerpt['source_duration_s']:.6f} s "
+              f"({excerpt['excerpt_policy'].replace('_', ' ')})")
     print(f"  {len(result.searched)} parameters searched, "
           f"{len(result.frozen)} frozen by the screen")
     print(f"  spec:   {args.out_dir / 'match-1.json'}")
@@ -430,11 +446,18 @@ def _unmeasurable(target, audio) -> Optional[str]:
     to be checked before the run rather than after it: matching against silence is not
     a caveat, it is an hour of renders for an answer that means nothing.
     """
-    seconds = getattr(audio, "duration_s", 0.0)
-    if callable(seconds):
-        seconds = seconds()
+    source = (getattr(target, "source", {}) or {})
+    seconds = source.get("duration_s")
+    if seconds is None:
+        seconds = getattr(audio, "duration_s", 0.0)
+        if callable(seconds):
+            seconds = seconds()
     if float(seconds) < MINIMUM_REFERENCE_S:
-        return (f"the reference is {float(seconds):.2f} s long, and nothing "
+        selected = "selected reference excerpt" if (
+            source.get("source_duration_s") is not None
+            and float(source["source_duration_s"]) > float(seconds)
+        ) else "reference"
+        return (f"the {selected} is {float(seconds):.2f} s long, and nothing "
                 f"playing-invariant can be measured from less than "
                 f"{MINIMUM_REFERENCE_S:.0f} s.\n"
                 f"  Give it a longer excerpt — a few seconds of the actual part is "

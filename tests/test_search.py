@@ -666,6 +666,21 @@ def test_a_second_reference_is_not_served_the_first_ones_score(space, seed):
         assert a.renders == before
 
 
+def test_two_excerpts_of_one_file_have_different_score_keys(seed):
+    """The file hash is the same; the measured samples are not."""
+    import numpy as np
+
+    source = io.from_samples(np.concatenate([
+        fx.band_limited(seconds=2.0, high=1200, seed=3),
+        fx.band_limited(seconds=2.0, low=2500, high=8000, seed=4),
+    ]), SR)
+    short = fingerprint(source, regime="probe", excerpt_s=1.0)
+    long = fingerprint(source, regime="probe", excerpt_s=3.0)
+    assert short.source["sha256"] == long.source["sha256"]
+    assert S._scoring_key("render", short, "unpaired-v1", seed) != \
+        S._scoring_key("render", long, "unpaired-v1", seed)
+
+
 def test_a_seed_value_of_exactly_zero_is_not_read_as_absent(space, seed, target):
     """`_get(seed, d) or d.bounds()[0]` treated 0.0 as missing, because 0.0 is falsy,
     so a parameter sitting at zero started the optimiser at the *bottom* of its range.

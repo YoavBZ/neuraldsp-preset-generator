@@ -67,6 +67,14 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["schema"] == "tone-match-summary-v1"
     assert summary["reference"]["regime"] == "probe"
     assert summary["reference"]["regime_confidence"] == 1.0
+    assert summary["reference"]["excerpt"] == {
+        "start_s": 0.0,
+        "end_s": pytest.approx(2.0, abs=0.01),
+        "duration_s": pytest.approx(2.0, abs=0.01),
+        "source_duration_s": pytest.approx(2.0, abs=0.01),
+        "requested_s": 20.0,
+        "policy": "full_source",
+    }
     assert summary["renderer"]["renderer_id"] == "synthetic"
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
@@ -83,6 +91,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
 
     # The next command, printed rather than left in a docstring the user never sees.
     assert "apply_spec.py" in done.stdout
+    assert "reference excerpt 0.000000–2.000000 s" in done.stdout
 
     applied = run("apply_spec.py", "--template", TEMPLATE,
                   "--spec", out / "match-1.json", "--out", tmp_path / "matched.xml")
@@ -227,6 +236,25 @@ def test_every_reference_mode_offered_is_one_the_fingerprint_accepts():
     )
 
 
+def test_match_and_fingerprint_share_the_same_excerpt_default():
+    """Preflight must measure the target the expensive match will actually use."""
+    import importlib.util
+
+    from analysis.fingerprint import DEFAULT_EXCERPT_S
+
+    spec = importlib.util.spec_from_file_location(
+        "_match_preset_excerpt_test", ROOT / "scripts" / "match_preset.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    common = ["--template", str(TEMPLATE), "--reference", "reference.wav",
+              "--out-dir", "run"]
+    parsed = module.build_parser().parse_args(common)
+    assert module.resolved_excerpt(parsed.excerpt, "mix") == DEFAULT_EXCERPT_S
+    assert module.resolved_excerpt(parsed.excerpt, "paired_di") is None
+    explicit_all = module.build_parser().parse_args([*common, "--excerpt", "0"])
+    assert module.resolved_excerpt(explicit_all.excerpt, "mix") is None
+
+
 @pytest.mark.parametrize("mode", ["paired_di", "isolated_stem", "separated_stem",
                                   "mix", "probe"])
 def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
@@ -277,8 +305,20 @@ def test_paired_profile_refuses_a_different_performance_mode(audio, tmp_path):
     assert "Traceback" not in done.stderr
 
 
+def test_paired_profile_refuses_an_excerpt_instead_of_mixing_scopes(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--excerpt", "1", "--amp", "sw50r", "--budget", "60",
+               "--out-dir", tmp_path / "paired-excerpt")
+    assert done.returncode != 0
+    assert "complete reamp and DI" in done.stderr
+    assert "Traceback" not in done.stderr
+
+
 @pytest.mark.parametrize("extra,expected", [
     (["--budget", "0"], "must be at least 1"),
+    (["--excerpt", "-1"], "must be zero or greater"),
     (["--loss-profile", "nope"], "unknown loss profile"),
     # `swift` used to belong here. It is M5 and it is built, so on a machine with
     # the plugin it is a working backend rather than a bad flag; `pedalboard` is
@@ -322,6 +362,16 @@ def test_a_silent_reference_is_refused_before_the_renders(tmp_path):
     assert done.returncode != 0
     assert "silent" in done.stderr, done.stderr
     assert not (tmp_path / "run" / "match-1.json").exists()
+
+
+def test_an_excerpt_too_short_to_measure_is_refused_before_rendering(audio, tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--excerpt", "0.5", "--amp", "sw50r", "--budget", "60",
+               "--out-dir", tmp_path / "short-excerpt")
+    assert done.returncode != 0
+    assert "selected reference excerpt is 0.50 s" in done.stderr
+    assert not (tmp_path / "short-excerpt" / "trials.sqlite3").exists()
 
 
 def test_a_template_that_is_not_a_preset_is_refused_before_the_renders(audio, tmp_path):
