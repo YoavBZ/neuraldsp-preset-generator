@@ -1265,11 +1265,12 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
         spectral_moves = spectral.detail.get("eq_bands_moved")
         unwritable = _unwritable_bands(signal_path, current_settings, pack_id)
         if unwritable:
+            plural = len(unwritable) > 1
             result.caveats.append(
                 f"the template does not state {', '.join(unwritable)}, so no "
-                f"correction was fitted for {'them' if len(unwritable) > 1 else 'it'} "
-                f"and the search will have to hear "
-                f"{'those bands' if len(unwritable) > 1 else 'that band'} instead"
+                f"correction was fitted for {'them' if plural else 'it'} and this "
+                f"pass leaves {'those bands' if plural else 'that band'} exactly as "
+                f"the template had {'them' if plural else 'it'}"
             )
         moved = any(value for value in spectral.values.values())
         # Enable the EQ only when the inversion actually uses it. If every move is

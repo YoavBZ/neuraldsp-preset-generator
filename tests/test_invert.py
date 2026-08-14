@@ -1040,31 +1040,44 @@ def test_a_band_cut_back_to_neutral_still_warns_about_leftover_level(monkeypatch
 
 def test_a_band_the_template_omits_is_not_solved_for():
     """A correction that cannot be written must not be fitted either, or
-    `eq_residual_db` describes a solution nobody applied."""
+    `eq_residual_db` describes a solution nobody applied.
+
+    The residual is what this pins, not the width of the interval the solve is
+    given: how a band is held at zero is an implementation detail, and that the
+    reported misfit belongs to the correction actually written is not.
+    """
     path = invert._validated_signal_path("morgan", AMP)
     omitted = f"{AMP}EQ/{AMP}EQBand6"
-    current = {
+    target = measure({f"{AMP}EQ/{AMP}EQBand6": 8.0})
+    candidate = measure({f"{AMP}EQ/{AMP}EQActive": True})
+    stated = {
         ("", "selectedAmp"): "2",
         ("parameters", "outputGain"): 0.0,
         (f"{AMP}EQ", f"{AMP}EQActive"): True,
         ("eqParameters", "sectionActive"): True,
     }
     for index in range(1, 10):
-        if index != 6:
-            current[(f"{AMP}EQ", f"{AMP}EQBand{index}")] = 0.0
+        stated[(f"{AMP}EQ", f"{AMP}EQBand{index}")] = 0.0
+    partial = {key: value for key, value in stated.items()
+               if key != (f"{AMP}EQ", f"{AMP}EQBand6")}
 
-    lower, upper = invert._band_correction_bounds(path, current, "morgan")
+    whole = invert.invert(target, candidate, amp=AMP, current_settings=stated)
+    short = invert.invert(target, candidate, amp=AMP, current_settings=partial)
+
     index = list(path.eq_band_controls).index(omitted)
-    result = invert.invert(
-        measure({f"{AMP}EQ/{AMP}EQBand6": 8.0}),
-        measure({f"{AMP}EQ/{AMP}EQActive": True}),
-        amp=AMP, current_settings=current,
-    )
-
-    assert (lower[index], upper[index]) == (-1e-9, 1e-9)
-    assert omitted not in result.values
-    assert any(omitted in caveat and "no correction was fitted" in caveat
-               for caveat in result.caveats)
+    lower, upper = invert._band_correction_bounds(path, partial, "morgan")
+    assert upper[index] - lower[index] < 0.01, "the band gets no usable room"
+    assert omitted not in short.values
+    assert whole.values[omitted] != 0.0, "the band the target needs, when writable"
+    # The target's 8 dB boost sits on the band that cannot be written, so the
+    # honest residual has to be the worse one. Reporting the nine-band fit's
+    # number here was the defect.
+    assert short.detail["eq_residual_db"] > whole.detail["eq_residual_db"]
+    skipped = [caveat for caveat in short.caveats if omitted in caveat]
+    assert len(skipped) == 1 and "no correction was fitted" in skipped[0]
+    # Nothing here promises the search will pick the band up: it may be frozen by
+    # the sensitivity screen, or behind a section this pass just switched on.
+    assert "the search" not in skipped[0]
 
 
 def test_a_dormant_corner_already_open_is_not_written_again():
