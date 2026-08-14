@@ -25,6 +25,22 @@ def test_morgan_exposes_one_volume_control_per_amp():
     ]
 
 
+def test_legacy_output_gain_must_declare_db_units():
+    import dataclasses
+
+    from packs.calibration import CalibrationError, signal_paths
+
+    pack = load_pack("morgan")
+    parameters = dict(pack.parameters)
+    parameters["parameters/outputGain"] = dataclasses.replace(
+        parameters["parameters/outputGain"], unit=None,
+    )
+    clone = dataclasses.replace(pack, parameters=parameters)
+
+    with pytest.raises(CalibrationError, match="unit 'db'"):
+        signal_paths(clone)
+
+
 def test_tone_king_exposes_both_flat_namespace_channels():
     controls = drive._volume_controls(load_pack("toneking"), None)
     assert list(controls) == ["rhythm", "lead"]
@@ -34,12 +50,49 @@ def test_tone_king_exposes_both_flat_namespace_channels():
     ]
     assert controls["rhythm"].settings["/ampType"] == "Rhythm Channel"
     assert controls["lead"].settings["/ampType"] == "Lead Channel"
+    assert controls["rhythm"].selection_settings == {
+        "/ampType": "Rhythm Channel"
+    }
+    assert controls["lead"].selection_settings == {
+        "/ampType": "Lead Channel"
+    }
     for path in controls.values():
         assert path.settings["/delayActive"] == "Inactive"
         assert path.settings["/reverbActive"] == "Inactive"
         assert path.settings["/ampReverb"] == 0.0
         assert path.settings["/ampTremoloDepth"] == 0.0
         assert path.settings["/inputGain"] == 0.0
+        assert load_pack("toneking").parameters[
+            path.output_gain_control
+        ].unit == "db"
+
+
+def test_signal_path_selection_accepts_stored_and_display_values():
+    from packs.calibration import selected_signal_path
+
+    pack = load_pack("toneking")
+    assert selected_signal_path(pack, {"ampType": "Lead Channel"}) == "lead"
+    assert selected_signal_path(pack, {("", "ampType"): "1"}) == "lead"
+    assert selected_signal_path(pack, {"/ampType": 0}) == "rhythm"
+    assert selected_signal_path(pack, {}) is None
+
+
+def test_path_local_calibration_setup_is_not_treated_as_a_selector():
+    import copy
+    import dataclasses
+
+    from packs.calibration import signal_paths
+
+    pack = load_pack("toneking")
+    calibration = copy.deepcopy(pack.calibration)
+    calibration["signal_paths"]["lead"]["settings"] = {
+        "/leadAmpTone": 0.5,
+    }
+    clone = dataclasses.replace(pack, calibration=calibration)
+
+    lead = signal_paths(clone)["lead"]
+    assert lead.settings["/leadAmpTone"] == 0.5
+    assert lead.selection_settings == {"/ampType": "Lead Channel"}
 
 
 def test_the_default_grid_is_the_planned_forty_points_per_amp():

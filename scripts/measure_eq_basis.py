@@ -53,7 +53,13 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded, positive_float
-from _calibration import CalibrationError, signal_paths, spec_for
+from _calibration import (
+    CalibrationError,
+    eq_basis_settings,
+    eq_basis_topology_sha256,
+    signal_paths,
+    spec_for,
+)
 
 # The gain to measure at. Large enough to sit well clear of the plugin's own
 # per-render variation (about 0.23 dB per band), small enough to stay inside the
@@ -74,6 +80,8 @@ DEFAULT_LEVEL = 0.03
 # The schema version of the file this writes. In the file because a consumer has
 # to be able to refuse a shape it does not understand rather than index into it.
 SCHEMA = "eq-basis-1"
+PROVENANCE_SCHEMA = "eq-basis-provenance-1"
+REPEAT_SAMPLES = 5
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -126,7 +134,8 @@ def main() -> None:
               f"packs/{args.pack}/manifest.json.")
 
     out = args.out or PLUGIN_ROOT / "packs" / args.pack / "eq_basis.json"
-    renders = (2 * sum(len(bands) for _, bands in paths.values())) + 2 * len(paths)
+    renders = ((2 * sum(len(bands) for _, bands in paths.values()))
+               + REPEAT_SAMPLES * len(paths))
     print(f"{args.pack}: {len(paths)} signal path(s), "
           f"{sum(len(b) for _, b in paths.values())} bands, {renders} renders")
     for name, (_, bands) in paths.items():
@@ -162,13 +171,19 @@ def main() -> None:
         for rows in measured.values()
     )
     metadata = dataclasses.replace(metadata, band_noise_db=measured_floor)
+    elapsed_s = time.time() - started
     document = {
         "schema": SCHEMA,
+        "provenance_schema": PROVENANCE_SCHEMA,
         "pack": args.pack,
         "gain_db": float(args.gain),
         "excitation": (f"deterministic white noise, {args.seconds:g} s, "
                        f"RMS {args.level:g}, seed 20250806"),
         "level": float(args.level),
+        "measurement": {
+            "renders": renders,
+            "elapsed_s": round(elapsed_s, 3),
+        },
         "analysis_centres_hz": measured[next(iter(measured))]["analysis_centres_hz"],
         # The backend that produced every number below, and whether it repeats
         # itself. It does not: this is a reused plugin instance, and the repository
@@ -180,10 +195,10 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
 
-    print(f"\nwrote {out} in {time.time() - started:.0f}s")
+    print(f"\nwrote {out} in {elapsed_s:.0f}s")
     if not metadata.reproducible:
         print(f"\n  Measured on a reused plugin instance, which does not repeat "
-              f"itself: two\n  renders of identical parameters move a third-octave "
+              f"itself: {REPEAT_SAMPLES}\n  renders of identical parameters move a third-octave "
               f"band by up to\n  {metadata.band_noise_db:g} dB. Rows below that are "
               f"noise, and `renderer.reproducible`\n  in the file records this so a "
               f"reader cannot miss it.")
@@ -261,11 +276,17 @@ def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
                 result.peak)
 
     base = _flat_settings(pack, path, bands)
-    flat_db, centres, flat_peak = render(base)
-    repeated_db, repeated_centres, repeated_peak = render(base)
-    if repeated_centres != centres:
+    flat_observations = [render(base) for _ in range(REPEAT_SAMPLES)]
+    centres = flat_observations[0][1]
+    if any(observed_centres != centres
+           for _, observed_centres, _ in flat_observations[1:]):
         raise SystemExit("error: repeated flat render changed analysis centres")
-    repeat_delta = np.abs(repeated_db - flat_db)
+    flat_matrix = np.stack([spectrum for spectrum, _, _ in flat_observations])
+    # Median is a stable reference for the linearity diagnostic; the basis rows
+    # themselves remain the symmetric +/- gain difference and do not use it.
+    flat_db = np.median(flat_matrix, axis=0)
+    repeat_delta = np.max(flat_matrix, axis=0) - np.min(flat_matrix, axis=0)
+    flat_peak = max(peak for _, _, peak in flat_observations)
     repeat_at = int(np.argmax(repeat_delta))
     repeat_max = float(repeat_delta[repeat_at])
     print(
@@ -273,7 +294,7 @@ def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
         f"floor {repeat_max:.2f} dB at {centres[repeat_at]:g} Hz"
     )
 
-    rows, caveats, peaks = [], [], [flat_peak, repeated_peak]
+    rows, caveats, peaks = [], [], [peak for _, _, peak in flat_observations]
     for index, (control, centre) in enumerate(bands, start=1):
         up, _, up_peak = render({**base, control: gain_db})
         down, _, down_peak = render({**base, control: -gain_db})
@@ -286,8 +307,8 @@ def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
         # And the check that the slope is worth having: on a linear chain the mean
         # of the two renders is the flat one.
         residual = np.abs((up + down) / 2.0 - flat_db)
-        # A reused plugin is not exact. An identical-state repeat gives one
-        # observed floor per analysis band; only curvature above that floor is
+        # A reused plugin is not exact. Five identical-state observations give a
+        # peak-to-peak floor per analysis band; only curvature above that floor is
         # evidence that the EQ response itself is nonlinear.
         excess = np.maximum(0.0, residual - repeat_delta)
         audible = flat_db >= float(flat_db.max()) - 50.0
@@ -324,6 +345,7 @@ def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
         )
 
     return {
+        "signal_path_sha256": eq_basis_topology_sha256(pack, path),
         "band_controls": [control for control, _ in bands],
         "band_centres_hz": [centre for _, centre in bands],
         "analysis_centres_hz": centres,
@@ -332,6 +354,8 @@ def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
         "flat_band_db": [round(float(v), 3) for v in flat_db],
         "peak": round(float(max(peaks)), 4),
         "repeat_verification": {
+            "samples": REPEAT_SAMPLES,
+            "statistic": "peak_to_peak",
             "max_band_difference_db": round(repeat_max, 6),
             "max_at_hz": centres[repeat_at],
             "band_difference_db": [round(float(v), 6) for v in repeat_delta],
@@ -347,21 +371,7 @@ def _flat_settings(pack, path, bands):
     selected, and the gate off — a gate that closes on part of the noise would put
     its own spectrum into the difference.
     """
-    settings = dict(path.settings)
-    for control in path.eq_enable_controls:
-        settings[control] = True
-    for control, _ in bands:
-        settings[control] = 0.0
-    for control, extreme in ((path.eq_hpf_control, "min"),
-                             (path.eq_lpf_control, "max")):
-        if control is None:
-            continue
-        spec = spec_for(pack, control)
-        if spec is not None:
-            value = spec.min if extreme == "min" else spec.max
-            if value is not None:
-                settings[control] = float(value)
-    return settings
+    return eq_basis_settings(pack, path)
 
 
 def _without(mapping, key):

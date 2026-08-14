@@ -1,5 +1,6 @@
 {
   "schema": "eq-basis-1",
+  "provenance_schema": "legacy-morgan-au-render-server-1",
   "pack": "morgan",
   "gain_db": 6.0,
   "excitation": "deterministic white noise, 4 s, RMS 0.03, seed 20250806",

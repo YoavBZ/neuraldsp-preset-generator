@@ -14,7 +14,7 @@ measurement — which is a different thing from a measurement of zero, and the
 difference is the whole reason the fingerprint carries confidences.
 
 The EQ fit wants a **measured** basis: `packs/<id>/eq_basis.json`, produced by
-`scripts/measure_eq_basis.py` in M5 from eleven renders per amp. Until that file
+`scripts/measure_eq_basis.py` from real-plugin renders per signal path. Until that file
 exists the fit falls back to idealised bell curves at the declared `centre_hz`,
 and `Inversion.caveats` says so in as many words. This repository does not
 silently substitute a guess for a measurement.
@@ -50,6 +50,38 @@ TREMOLO_RATE_TOLERANCE_HZ = 0.4
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
     pack that does not declare the parameter being set."""
+
+
+@dataclass(frozen=True)
+class MeasuredBasis:
+    """A two-item basis result with aligned repeat noise as metadata.
+
+    Iteration and indexing retain the historical ``(basis, note)`` contract, so
+    backends and callers do not need a renderer-source change merely to carry the
+    adjacent measurement.
+    """
+
+    basis: Any
+    note: str
+    band_noise_db: Optional[Mapping[float, float]] = None
+    renderer_build: Optional[str] = None
+    quality_mode: Optional[str] = None
+    renderer_id: Optional[str] = None
+    plugin_version: Optional[str] = None
+    sample_rate: Optional[int] = None
+    block_size: Optional[int] = None
+    provenance_schema: Optional[str] = None
+    signal_path_sha256: Optional[str] = None
+
+    def __iter__(self):
+        yield self.basis
+        yield self.note
+
+    def __getitem__(self, index):
+        return (self.basis, self.note)[index]
+
+    def __len__(self):
+        return 2
 
 
 def declared(pack_id: str, path: str):
@@ -185,9 +217,10 @@ def bell_basis(centres: Sequence[float], analysis_centres: Sequence[float],
     return basis
 
 
-def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
+def measured_basis(pack_id: str, signal_path: str,
+                   analysis_centres: Sequence[float],
                    expected_plugin_version: Optional[str] = None):
-    """The measured basis for one amp, or `None` if there is not one to use.
+    """The measured basis for one signal path, or ``None`` if none can be used.
 
     `packs/<pack>/eq_basis.json` is written by `scripts/measure_eq_basis.py` from
     renders of the real plugin — row *i* is what 1 dB on band *i* does at each
@@ -200,13 +233,12 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
     results across versions even though render caches correctly keep them apart.
 
     Returns `None` rather than raising for every ordinary absence — no file, a
-    pack without this amp, a schema this does not understand — because the
+    pack without this signal path, a schema this does not understand — because the
     fallback is a working answer with a caveat attached, and refusing to invert at
     all would be a worse one. A file that *is* present and does not line up with
     the analysis frequencies is the exception: that is a stale measurement rather
     than a missing one, and silently ignoring it would hide the staleness.
     """
-    import json
     import pathlib
 
     import numpy as np
@@ -215,15 +247,90 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
             / "packs" / pack_id / "eq_basis.json")
     if not path.is_file():
         return None
-    try:
-        document = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    document = _read_basis_document(path)
+    if document is None:
         return None
     if document.get("schema") != "eq-basis-1":
         return None
-    rows = (document.get("amps") or {}).get(amp)
+    rows = (document.get("amps") or {}).get(signal_path)
     if not rows:
         return None
+
+    # The matrix row order is the control order. Validate it against the topology
+    # that will receive the solved gains, rather than trusting two independently
+    # editable files to stay aligned. Older Morgan artifacts predate
+    # ``band_controls``; their ordered centres provide the same guard.
+    from packs.calibration import (
+        CalibrationError,
+        eq_basis_topology_sha256,
+        signal_paths,
+    )
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    try:
+        declared_path = signal_paths(pack).get(signal_path)
+    except CalibrationError as error:
+        raise InversionError(str(error)) from error
+    if declared_path is None:
+        return None
+    renderer_record = document.get("renderer") or {}
+    recorded_schema = document.get("provenance_schema")
+    recorded_build = str(renderer_record.get("renderer_build", "") or "")
+    if recorded_schema == "eq-basis-provenance-1":
+        provenance_schema = recorded_schema
+    elif (recorded_schema == "legacy-morgan-au-render-server-1"
+          and pack_id == "morgan"
+          and recorded_build == "au_render_server-9ba52a85ccaf"):
+        # The one committed pre-M5 artifact, named explicitly and tied to its exact
+        # recorded host build. Missing provenance is never interpreted as legacy.
+        provenance_schema = "legacy-morgan-au-render-server-1"
+    else:
+        raise InversionError(
+            f"{path} has missing or unsupported calibration provenance schema "
+            f"{recorded_schema!r}. Re-run scripts/measure_eq_basis.py --pack "
+            f"{pack_id}."
+        )
+
+    current_topology = eq_basis_topology_sha256(pack, declared_path)
+    recorded_topology = rows.get("signal_path_sha256")
+    modern = provenance_schema == "eq-basis-provenance-1"
+    if modern and not recorded_topology:
+        raise InversionError(
+            f"{path} does not record the calibration topology for {signal_path}. "
+            f"Re-run scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+    if recorded_topology and recorded_topology != current_topology:
+        raise InversionError(
+            f"{path} was measured with different {signal_path} calibration "
+            f"settings or signal-path topology. Re-run "
+            f"scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+    declared_controls = tuple(declared_path.eq_band_controls)
+    recorded_controls = tuple(rows.get("band_controls") or ())
+    if recorded_controls and recorded_controls != declared_controls:
+        raise InversionError(
+            f"{path} records {signal_path} EQ rows in a different control order "
+            f"from packs/{pack_id}/manifest.json. Re-run "
+            f"scripts/measure_eq_basis.py --pack {pack_id}."
+        )
+    declared_centres = []
+    for control in declared_controls:
+        centre = pack.parameters[control].centre_hz
+        if centre is None:
+            raise InversionError(
+                f"packs/{pack_id}/manifest.json gives {control} no centre_hz, so "
+                f"the rows in {path} cannot be assigned safely"
+            )
+        declared_centres.append(float(centre))
+    recorded_centres = [float(value)
+                        for value in rows.get("band_centres_hz") or []]
+    if recorded_centres != declared_centres:
+        raise InversionError(
+            f"{path} records {signal_path} EQ rows at {recorded_centres}, but the "
+            f"manifest's ordered controls declare {declared_centres}. Re-run "
+            f"scripts/measure_eq_basis.py --pack {pack_id}."
+        )
 
     version = str((document.get("renderer") or {}).get(
         "plugin_version", "unknown"))
@@ -240,7 +347,7 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
     matrix = np.asarray(rows.get("basis_db_per_db") or [], dtype=np.float64)
     if matrix.ndim != 2 or matrix.shape[1] != len(available):
         raise InversionError(
-            f"{path} holds a {matrix.shape} basis for {amp} against "
+            f"{path} holds a {matrix.shape} basis for {signal_path} against "
             f"{len(available)} analysis centres. Re-run "
             f"scripts/measure_eq_basis.py --pack {pack_id}."
         )
@@ -260,19 +367,70 @@ def measured_basis(pack_id: str, amp: str, analysis_centres: Sequence[float],
             f"Re-run scripts/measure_eq_basis.py --pack {pack_id}."
         )
 
-    note = (f"the band gains were fitted to this amp's *measured* equaliser "
+    note = (f"the band gains were fitted to this signal path's *measured* equaliser "
             f"({path.parent.name}/eq_basis.json, plugin {version}) rather than to "
             f"textbook filter shapes")
     if not (document.get("renderer") or {}).get("reproducible", False):
         note += (", measured on a reused plugin instance that does not repeat "
                  "itself exactly")
-    return matrix[:, [index[f] for f in wanted]], note
+    noise = None
+    repeat = rows.get("repeat_verification") or {}
+    repeated = repeat.get("band_difference_db")
+    if repeated is not None:
+        if len(repeated) != len(available):
+            raise InversionError(
+                f"{path} records {len(repeated)} repeat differences against "
+                f"{len(available)} analysis centres. Re-run "
+                f"scripts/measure_eq_basis.py --pack {pack_id}."
+            )
+        noise = {frequency: max(0.0, float(repeated[index[frequency]]))
+                 for frequency in wanted}
+    return MeasuredBasis(
+        matrix[:, [index[f] for f in wanted]], note, band_noise_db=noise,
+        renderer_build=renderer_record.get("renderer_build"),
+        quality_mode=renderer_record.get("quality_mode"),
+        renderer_id=renderer_record.get("renderer_id"),
+        plugin_version=renderer_record.get("plugin_version"),
+        sample_rate=renderer_record.get("sample_rate"),
+        block_size=renderer_record.get("block_size"),
+        provenance_schema=provenance_schema,
+        signal_path_sha256=recorded_topology,
+    )
+
+
+def measured_band_noise(pack_id: str, signal_path: str,
+                        analysis_centres: Sequence[float],
+                        expected_plugin_version: Optional[str] = None):
+    """The basis run's repeat difference at each requested frequency.
+
+    This deliberately is not ``RenderMetadata.band_noise_db``. That metadata field
+    records the largest movement anywhere for provenance; an EQ decision needs to
+    know *where* it happened. Tone King's five-sample reused-instance maximum is
+    5.23 dB at 25 Hz while its measured 50 Hz-and-up maximum is about 0.065 dB.
+    """
+    found = measured_basis(
+        pack_id, signal_path, analysis_centres,
+        expected_plugin_version=expected_plugin_version,
+    )
+    return None if found is None else found.band_noise_db
+
+
+def _read_basis_document(path):
+    """Read one basis document; separated so stale-topology behavior is testable."""
+    import json
+
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
 
 
 def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float],
-                   basis=None, bounds_db: Tuple[float, float] = EQ_BOUNDS_DB,
+                   basis=None, bounds_db: Any = EQ_BOUNDS_DB,
                    module: str = "", pack_id: Optional[str] = None,
-                   accounted_for=None) -> Inversion:
+                   accounted_for=None,
+                   band_controls: Optional[Sequence[str]] = None,
+                   band_noise_db: Any = BAND_NOISE_FLOOR_DB) -> Inversion:
     """Solve the nine band gains that best flatten a measured band difference.
 
     `band_delta_db` is what `analysis.compare.band_delta()` produces: signed dB
@@ -342,19 +500,51 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
     solved = lsq_linear(basis.T * weights[:, None], target * weights,
                         bounds=bounds_db, method="trf")
 
-    # Zero the bands below what the plugin can resolve between two identical
-    # renders, and do it *in the array*, so the residual below describes the
-    # solution that was actually written. Rebinding the loop variable instead left
-    # `eq_residual_db` measuring the pre-floor fit: on a small difference where
-    # eight of nine bands were zeroed it reported 0.077 dB against an actual
-    # 0.204, and in the all-zeroed case it reported 0.0 for a correction that had
-    # been thrown away entirely — while the plan calls this "the number to watch".
+    # Decide whether the correction *as a whole* rises above what this renderer can
+    # resolve between identical states. Graphic-EQ bands overlap: thresholding each
+    # coefficient independently can throw away two sub-floor moves whose combined
+    # response is audible. Resolution is decided inside 50 Hz..16 kHz, the same
+    # guitar range the solve gives full weight, so one unstable 25 Hz bin cannot
+    # suppress or activate a nine-control correction.
     gains = np.asarray(solved.x, dtype=np.float64)
-    emitted = np.round(np.where(np.abs(gains) < BAND_NOISE_FLOOR_DB, 0.0, gains), 2)
+    if isinstance(band_noise_db, Mapping):
+        missing_noise = [float(f) for f in frequencies
+                         if float(f) not in band_noise_db]
+        if missing_noise:
+            raise InversionError(
+                "the renderer's EQ repeat measurement has no value at "
+                + ", ".join(f"{f:g} Hz" for f in missing_noise[:5])
+            )
+        noise_by_frequency = np.asarray([
+            max(0.0, float(band_noise_db[float(f)])) for f in frequencies
+        ])
+    else:
+        noise_by_frequency = np.full(
+            len(frequencies), max(0.0, float(band_noise_db)), dtype=np.float64
+        )
+    rounded = np.round(gains, 2)
+    combined_effect = basis.T @ rounded
+    guitar = (frequencies >= 50.0) & (frequencies <= 16000.0)
+    compared = guitar if np.any(guitar) else np.ones(len(frequencies), dtype=bool)
+    effect_bins = np.abs(combined_effect[compared])
+    noise_bins = noise_by_frequency[compared]
+    effect = float(np.max(effect_bins))
+    noise = float(np.max(noise_bins))
+    margin = float(np.max(effect_bins - noise_bins))
+    resolvable = margin > 0.0
+    emitted = rounded if resolvable else np.zeros_like(rounded)
 
-    values: Dict[str, Any] = {}
-    for index, gain in enumerate(emitted, start=1):
-        values[f"{module}EQ/{module}EQBand{index}"] = float(gain)
+    if band_controls is None:
+        controls = [f"{module}EQ/{module}EQBand{index}"
+                    for index in range(1, len(emitted) + 1)]
+    else:
+        controls = list(band_controls)
+        if len(controls) != len(emitted):
+            raise InversionError(
+                f"{len(controls)} band controls were supplied for "
+                f"{len(emitted)} solved gains"
+            )
+    values = {control: float(gain) for control, gain in zip(controls, emitted)}
 
     residual = _rms(basis.T @ emitted - target)
 
@@ -366,16 +556,21 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
             f"The real bands overlap differently, so expect these to be a couple of "
             f"dB out and to spill into their neighbours."
         )
-    if not np.any(emitted) and np.any(np.abs(target) > BAND_NOISE_FLOOR_DB):
+    if not np.any(emitted) and np.any(np.abs(target) > 0.0):
         caveats.append(
-            f"every band solved below {BAND_NOISE_FLOOR_DB} dB, which is the "
-            f"plugin's own variation between two identical renders, so the "
-            f"equaliser was left flat and {residual:.2f} dB of difference remains"
+            f"the fitted correction solved at or below this renderer's "
+            f"frequency-aligned identical-state variation in every guitar band "
+            f"(up to {noise:g} dB there), so "
+            f"the equaliser was left unchanged and {residual:.2f} dB of difference "
+            f"remains"
         )
     return Inversion(
         values=values,
         caveats=caveats,
         detail={"eq_residual_db": round(residual, 3),
+                "eq_effect_db": round(effect, 6),
+                "eq_noise_floor_db": round(noise, 6),
+                "eq_noise_margin_db": round(margin, 6),
                 "eq_requested_db": {float(f): round(float(v), 2)
                                     for f, v in zip(frequencies, target)},
                 "eq_measured_db": {float(f): round(float(v), 2)
@@ -432,7 +627,8 @@ def filter_response_db(frequencies, hpf_hz: Optional[float] = None,
 
 
 def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
-                pack_id: str = "morgan") -> Inversion:
+                pack_id: str = "morgan", filter_controls=None,
+                current_filters=(None, None)) -> Inversion:
     """Corner frequencies for the HPF and LPF, fitted to the measured roll-off.
 
     Only moves a corner when the evidence is one-sided: the target being short of
@@ -453,9 +649,12 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
 
     The corner is now chosen by fitting `filter_response_db` — a Butterworth
     magnitude — to the measured difference, weighted towards the range a guitar
-    occupies and compared mean-free, because level is `output_level`'s job. On the
-    synthetic chain that recovers a low-pass *exactly*: 2 kHz, 4 kHz and 8 kHz all
-    come back as themselves, against 4 kHz, 6.3 kHz and 12.5 kHz before.
+    occupies and compared mean-free, because level is `output_level`'s job. When a
+    template already has an audible corner, ``current_filters`` makes the fitted
+    shape ``proposed - current`` rather than pretending the comparison started from
+    an open filter. On the synthetic chain that recovers a low-pass *exactly*: 2 kHz,
+    4 kHz and 8 kHz all come back as themselves, against 4 kHz, 6.3 kHz and 12.5 kHz
+    before.
 
     A high-pass still lands low — 100/200/400 Hz recover as 80/125/125 — and the fit
     residual says why rather than leaving it to be discovered: the cab's own low-end
@@ -484,6 +683,7 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
     weights = np.where((frequencies >= 50.0) & (frequencies <= 16000.0), 1.0, 0.15)
 
     short = delta < -FILTER_MIN_DEFICIT_DB
+    long = delta > FILTER_MIN_DEFICIT_DB
 
     # Both ends of the passband, as counts of short bands inward from each edge.
     low_run = 0
@@ -492,6 +692,12 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
     high_run = 0
     while high_run < len(short) and short[len(short) - 1 - high_run]:
         high_run += 1
+    low_rise = 0
+    while low_rise < len(long) and long[low_rise]:
+        low_rise += 1
+    high_rise = 0
+    while high_rise < len(long) and long[len(long) - 1 - high_rise]:
+        high_rise += 1
 
     if low_run + high_run >= len(short):
         # Two maximal runs inward from opposite edges can only meet if every band is
@@ -504,32 +710,61 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
             f"roll-off, so the high-pass and low-pass were left alone"
         ], detail={"filter_response_db": {}})
 
-    def candidates(path: str) -> List[Optional[float]]:
+    current_hpf, current_lpf = current_filters
+
+    def candidates(path: str, current=None) -> List[Optional[float]]:
         """The corners the pack allows, on the analysis grid."""
         spec = declared(pack_id, path)
         low, high = float(spec.min), float(spec.max)
         inside = [float(f) for f in frequencies if low <= f <= high]
         # If the analysis grid has no centre inside the declared range there is
         # nothing to choose between, so the ends of the range are the only offer.
-        return inside or [low, high]
+        offered = inside or [low, high]
+        if current is not None and low <= float(current) <= high:
+            offered.append(float(current))
+        return sorted(set(offered))
 
     def cost_of(hpf_hz: Optional[float], lpf_hz: Optional[float]) -> float:
-        error = filter_response_db(frequencies, hpf_hz=hpf_hz, lpf_hz=lpf_hz) - delta
+        proposed = filter_response_db(
+            frequencies, hpf_hz=hpf_hz, lpf_hz=lpf_hz
+        )
+        baseline = filter_response_db(
+            frequencies, hpf_hz=current_hpf, lpf_hz=current_lpf
+        )
+        error = (proposed - baseline) - delta
         error = error - np.average(error, weights=weights)
         return float(np.sqrt(np.average(error ** 2, weights=weights)))
 
-    hpf_path = f"{module}EQ/{module}EQHpf"
-    lpf_path = f"{module}EQ/{module}EQLpf"
+    if filter_controls is None:
+        hpf_path, lpf_path = (f"{module}EQ/{module}EQHpf",
+                              f"{module}EQ/{module}EQLpf")
+    else:
+        hpf_path, lpf_path = filter_controls
     # Fitted together, not one at a time. Fitting each against the whole measurement
     # independently makes the *other* corner's roll-off look like unexplained error:
     # a target with a real 200 Hz high-pass and a real 4 kHz low-pass reported 7.6 dB
     # and 5.5 dB of misfit and said "not the shape a corner makes" about a difference
     # that was exactly two corners. Two lists of about fourteen grid points is under
     # 200 vector operations, so there is nothing to save by being clever.
-    hpf_options: List[Optional[float]] = (candidates(hpf_path)
-                                          if low_run >= FILTER_MIN_BANDS else [None])
-    lpf_options: List[Optional[float]] = (candidates(lpf_path)
-                                          if high_run >= FILTER_MIN_BANDS else [None])
+    if hpf_path is None:
+        hpf_options: List[Optional[float]] = [None]
+    elif current_hpf is not None:
+        hpf_options = (candidates(hpf_path, current_hpf)
+                       if max(low_run, low_rise) >= FILTER_MIN_BANDS
+                       else [float(current_hpf)])
+    else:
+        hpf_options = (candidates(hpf_path)
+                       if low_run >= FILTER_MIN_BANDS else [None])
+
+    if lpf_path is None:
+        lpf_options: List[Optional[float]] = [None]
+    elif current_lpf is not None:
+        lpf_options = (candidates(lpf_path, current_lpf)
+                       if max(high_run, high_rise) >= FILTER_MIN_BANDS
+                       else [float(current_lpf)])
+    else:
+        lpf_options = (candidates(lpf_path)
+                       if high_run >= FILTER_MIN_BANDS else [None])
 
     hpf = lpf = None
     best_cost = float("inf")
@@ -540,9 +775,11 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
                 hpf, lpf, best_cost = hpf_try, lpf_try, cost
 
     values: Dict[str, Any] = {}
-    if hpf is not None:
+    if (hpf is not None and hpf_path is not None
+            and (current_hpf is None or abs(hpf - float(current_hpf)) > 1e-9)):
         values[hpf_path] = round(float(hpf), 1)
-    if lpf is not None:
+    if (lpf is not None and lpf_path is not None
+            and (current_lpf is None or abs(lpf - float(current_lpf)) > 1e-9)):
         values[lpf_path] = round(float(lpf), 1)
 
     caveats: List[str] = []
@@ -554,7 +791,12 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
             f"for the search to improve on, not a reading."
         )
 
-    response = filter_response_db(frequencies, hpf_hz=hpf, lpf_hz=lpf)
+    response = (
+        filter_response_db(frequencies, hpf_hz=hpf, lpf_hz=lpf)
+        - filter_response_db(
+            frequencies, hpf_hz=current_hpf, lpf_hz=current_lpf
+        )
+    )
     # Nothing is said when no corner moves. A caveat is for distrusting something
     # that was written, and "the difference is not a roll-off at either end" is the
     # ordinary case — it fired on nearly every target, which is how a list of
@@ -566,7 +808,8 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
                                        for f, r in zip(frequencies, response)
                                        if abs(r) >= 0.05},
                 "filter_fit_db": round(best_cost, 2) if values else None,
-                "filter_deficit_bands": (int(low_run), int(high_run))},
+                "filter_deficit_bands": (int(low_run), int(high_run)),
+                "filter_excess_bands": (int(low_rise), int(high_rise))},
     )
 
 
@@ -822,7 +1065,9 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
 # --- level ------------------------------------------------------------------
 
 
-def output_level(target, candidate, pack_id: str = "morgan") -> Inversion:
+def output_level(target, candidate, pack_id: str = "morgan",
+                 control: str = "parameters/outputGain",
+                 current_value: float = 0.0) -> Inversion:
     """The output gain that closes the loudness difference.
 
     The one inversion with no ambiguity in it at all: both sides report integrated
@@ -839,28 +1084,42 @@ def output_level(target, candidate, pack_id: str = "morgan") -> Inversion:
             "output level was left alone"
         ])
 
-    spec = declared(pack_id, "parameters/outputGain")
+    spec = declared(pack_id, control)
+    if str(spec.unit or "").casefold() != "db":
+        raise InversionError(
+            f"{control} is the output-level control for {pack_id}, but it does not "
+            "declare unit 'db'. A LUFS difference cannot be added to an unknown "
+            "control scale."
+        )
     low, high = float(spec.min), float(spec.max)
 
-    wanted = float(target_lufs) - float(candidate_lufs)
+    difference = float(target_lufs) - float(candidate_lufs)
+    before = float(current_value)
+    wanted = before + difference
     clamped = min(max(wanted, float(low)), float(high))
     caveats: List[str] = []
     if abs(clamped - wanted) > 0.05:
         caveats.append(
-            f"the loudness difference of {wanted:+.1f} dB exceeds the output "
-            f"gain's {low:.0f}..{high:.0f} dB range; it was clamped to "
+            f"adding the {difference:+.1f} dB loudness correction to the current "
+            f"{before:+.1f} dB output asks for {wanted:+.1f} dB, which exceeds the "
+            f"control's {low:.0f}..{high:.0f} dB range; it was clamped to "
             f"{clamped:+.1f} dB and {wanted - clamped:+.1f} dB remains"
         )
-    return Inversion(values={"parameters/outputGain": round(clamped, 2)},
+    return Inversion(values={control: round(clamped, 2)},
                      caveats=caveats,
-                     detail={"lufs_difference_db": round(wanted, 2)})
+                     detail={
+                         "lufs_difference_db": round(difference, 2),
+                         "output_gain_before_db": round(before, 2),
+                         "output_gain_after_db": round(clamped, 2),
+                     })
 
 
 # --- the whole pass ---------------------------------------------------------
 
 
 def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
-           basis=None, basis_note: Optional[str] = None, renderer=None) -> Inversion:
+           basis=None, basis_note: Optional[str] = None, renderer=None,
+           current_settings: Optional[Mapping] = None) -> Inversion:
     """Every inversion above, in the order they depend on each other.
 
     Level first, because the band fit reads a mean-removed difference and a
@@ -873,15 +1132,48 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     require("inverting a fingerprint")
     from analysis.compare import band_delta
 
-    amp = _validated_amp(pack_id, amp)
+    signal_path = _validated_signal_path(pack_id, amp)
+    amp = signal_path.name
 
-    result = Inversion()
-    # Which amp this is for. Without it `space.to_spec` cannot tell which of the
-    # three amps' controls matter and silently dropped every one of them — a
-    # 14-value inversion came out as a 4-parameter spec.
-    result.values["/selectedAmp"] = _amp_display_name(pack_id, amp)
+    result = Inversion(detail={"signal_path": amp})
+    # Which signal path this is for. Without it `space.to_spec` cannot tell which
+    # channel's controls matter and silently drops the calculated values. Preserve
+    # the template's spelling when it already selects this path: stored enum ``1``
+    # and display label ``Lead Channel`` are the same setting, not a change that
+    # should incur prior/complexity cost or appear in the report.
+    for control, value in signal_path.selection_settings.items():
+        current = _setting_value(current_settings, control)
+        if current is None or not _same_stored(pack_id, control, current, value):
+            result.values[control] = value
 
-    result.merge(output_level(target, candidate, pack_id=pack_id))
+    if signal_path.output_gain_control is not None:
+        current_output = _setting_value(
+            current_settings, signal_path.output_gain_control
+        )
+        if current_settings is not None and current_output is None:
+            result.caveats.append(
+                f"the template does not state {signal_path.output_gain_control}, so "
+                "the loudness difference was left for the search instead of "
+                "assuming the output knob starts at zero"
+            )
+        else:
+            result.merge(output_level(
+                target, candidate, pack_id=pack_id,
+                control=signal_path.output_gain_control,
+                current_value=0.0 if current_output is None else current_output,
+            ))
+            result.detail["output_gain"] = {
+                "control": signal_path.output_gain_control,
+                "mode": ("delta_from_template" if current_output is not None
+                         else "delta_from_zero"),
+                "baseline": (None if current_output is None
+                             else float(current_output)),
+            }
+    else:
+        result.caveats.append(
+            f"{pack_id}'s {amp} signal path declares no output-gain control, so "
+            "the measured loudness difference was left for the search"
+        )
 
     rows = band_delta(target, candidate)
     delta = {float(row["centre_hz"]): float(row["delta_db"]) for row in rows}
@@ -901,7 +1193,14 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             f"fit was attempted"
         )
     else:
-        filters = fit_filters(delta, module=amp, pack_id=pack_id)
+        filters = fit_filters(
+            delta, module=amp, pack_id=pack_id,
+            filter_controls=(signal_path.eq_hpf_control,
+                             signal_path.eq_lpf_control),
+            current_filters=_current_filter_values(
+                signal_path, current_settings, pack_id
+            ),
+        )
         result.merge(filters)
 
         # A measured basis is a property of the *backend*, not of the pack, so the
@@ -913,11 +1212,25 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
         #
         # Asked here rather than by the caller because the frequencies the basis
         # has to line up with are `sorted(delta)`, which only exists at this point.
+        basis_noise = None
         if basis is None and renderer is not None:
             ask = getattr(renderer, "eq_basis", None)
             found = ask(amp, sorted(delta)) if ask is not None else None
             if found is not None:
+                _validate_basis_provenance(found, renderer)
                 basis, basis_note = found
+                basis_noise = getattr(found, "band_noise_db", None)
+                result.detail["eq_basis"] = {
+                    "artifact": f"packs/{pack_id}/eq_basis.json",
+                    "signal_path": amp,
+                    "signal_path_sha256": getattr(
+                        found, "signal_path_sha256", None
+                    ),
+                    "provenance_schema": getattr(
+                        found, "provenance_schema", None
+                    ),
+                    "renderer_build": getattr(found, "renderer_build", None),
+                }
         if basis is not None and basis_note:
             result.caveats.append(basis_note)
 
@@ -927,17 +1240,35 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
         # centred in the removed region with nothing to fit against, and one came out
         # at +10.6 dB on a target that was 23.7 dB *down* there.
         spectral = fit_graphic_eq(
-            delta, centres, basis=basis, module=amp, pack_id=pack_id,
-            accounted_for=filters.detail.get("filter_response_db"))
+            delta, centres, basis=basis,
+            bounds_db=_band_correction_bounds(
+                signal_path, current_settings, pack_id
+            ),
+            module=amp, pack_id=pack_id,
+            accounted_for=filters.detail.get("filter_response_db"),
+            band_controls=signal_path.eq_band_controls,
+            band_noise_db=_renderer_band_noise(
+                renderer, measured=basis_noise
+            ))
+        spectral = _apply_band_corrections(
+            spectral, signal_path, current_settings, pack_id,
+            activates_eq=bool(filters.values),
+        )
         result.merge(spectral)
         moved = any(value for value in spectral.values.values())
+        # Enable the EQ only when the inversion actually uses it. If every move is
+        # below the renderer floor, omit the gates: omission preserves whether the
+        # template's flat EQ was active or bypassed. Writing False here changed an
+        # already-enabled Tone King template even though the report said the EQ was
+        # left exactly as it was.
         if moved or filters.values:
-            result.values[f"{amp}EQ/{amp}EQActive"] = True
-        else:
-            # Switching the equaliser on to do nothing is a change with no reason.
-            result.values[f"{amp}EQ/{amp}EQActive"] = False
+            _neutralise_dormant_filters(
+                result, signal_path, current_settings, pack_id
+            )
+            for control in signal_path.eq_enable_controls:
+                result.values[control] = True
 
-    if any("EQBand" in path and value for path, value in result.values.items()):
+    if any(result.values.get(control) for control in signal_path.eq_band_controls):
         # Level was computed against the candidate as it was, and the band gains
         # just changed how loud it will be. One pass cannot close both: the fit
         # needs a mean-removed difference to work on, and the loudness it leaves
@@ -949,65 +1280,351 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             "level left over, which one more pass or the search will take out"
         )
 
-    result.merge(delay_settings(target, pack_id=pack_id))
-    result.merge(reverb_settings(target, pack_id=pack_id))
-    result.merge(tremolo_settings(target, pack_id=pack_id))
+    unsupported = []
+    if _declares_all(pack_id, (
+        "delay/delayActive", "delay/delayTime", "delay/delayFeedback"
+    )):
+        result.merge(delay_settings(target, pack_id=pack_id))
+    else:
+        unsupported.append("delay")
+    if _declares_all(pack_id, (
+        "reverb/reverbActive", "reverb/reverbDecay", "reverb/reverbPreDelay"
+    )):
+        result.merge(reverb_settings(target, pack_id=pack_id))
+    else:
+        unsupported.append("reverb")
+    if _declares_all(pack_id, (
+        "tremolo/tremoloActive", "tremolo/tremoloRate", "tremolo/tremoloDepth"
+    )):
+        result.merge(tremolo_settings(target, pack_id=pack_id))
+    else:
+        unsupported.append("tremolo")
+    if unsupported:
+        result.caveats.append(
+            f"{pack_id} does not map {', '.join(unsupported)} controls to the "
+            "units these direct inversions require, so those sections were left "
+            "exactly as the template had them for the search to hear"
+        )
     return result
 
 
-def _validated_amp(pack_id: str, amp: str) -> str:
-    """The module prefix, refusing anything the pack does not have.
-
-    An unrecognised `amp` used to produce a caveat blaming the manifest —
-    "morgan declares no graphic-EQ centres for SW50R" — for a pack that declares
-    them perfectly well. `SW50R` is not a hypothetical typo either: it is the exact
-    spelling `amp_modules` is keyed by and that `Space.amp_prefix` accepts.
-
-    A pack with no amps at all gets its own message. Tone King declares none, so
-    the "Accepted:" line came out as "` (or )`" — the first thing anyone trying
-    `invert(pack_id="toneking")` sees, and it named neither the problem nor a
-    next step.
-    """
+def _validated_signal_path(pack_id: str, requested: str):
+    """The declared path, accepting its id, amp name, or selector display value."""
+    from packs.calibration import CalibrationError, signal_paths
     from packs.loader import load_pack
 
     pack = load_pack(pack_id)
-    prefixes = set(pack.amp_modules.values())
-    if amp in prefixes:
-        return amp
-    if amp in pack.amp_modules:                      # a display name
-        return pack.amp_modules[amp]
-    if not prefixes:
-        raise InversionError(
-            f"pack {pack_id!r} declares no amp modules, so there is no amp for "
-            f"{amp!r} to be.\n"
-            f"  These inversions are written against Morgan's parameter names; "
-            f"another pack needs its own mapping, which no manifest field states."
-        )
+    try:
+        paths = signal_paths(pack)
+    except CalibrationError as error:
+        raise InversionError(str(error)) from error
+    wanted = str(requested).casefold()
+    for name, path in paths.items():
+        aliases = {name.casefold()}
+        for value in path.selection_settings.values():
+            aliases.add(str(value).casefold())
+        for display, prefix in pack.amp_modules.items():
+            if prefix == name:
+                aliases.add(display.casefold())
+        if wanted in aliases:
+            return path
     raise InversionError(
-        f"{amp!r} is not an amp in pack {pack_id!r}.\n"
-        f"  Accepted: {', '.join(sorted(prefixes))} "
-        f"(or {', '.join(sorted(pack.amp_modules))})."
+        f"{requested!r} is not a signal path in pack {pack_id!r}.\n"
+        f"  Accepted: {', '.join(paths)}."
     )
 
 
-def _amp_display_name(pack_id: str, prefix: str) -> str:
+def selected_signal_path(pack_id: str, values: Mapping) -> Optional[str]:
+    """The path selected in a decoded template vector."""
+    from packs.calibration import selected_signal_path as selected
+    from packs.loader import load_pack
+
+    return selected(load_pack(pack_id), values)
+
+
+def resolve_signal_path(pack_id: str, requested: str) -> str:
+    """Canonical path id for a CLI-supplied id, amp name, or selector label."""
+    return _validated_signal_path(pack_id, requested).name
+
+
+def signal_path_selection(pack_id: str, requested: str) -> Dict[str, Any]:
+    """Settings that select a canonical or aliased path before it is rendered."""
+    return dict(_validated_signal_path(pack_id, requested).selection_settings)
+
+
+def _declares_all(pack_id: str, paths: Sequence[str]) -> bool:
+    from packs.loader import load_pack
+
+    declared_paths = load_pack(pack_id).parameters
+    return all(path in declared_paths for path in paths)
+
+
+def _renderer_band_noise(renderer, measured=None):
+    """Frequency-aligned repeat variation, or a scalar fallback.
+
+    Direct helper calls have no backend and retain the historical 0.3 dB floor.
+    A real renderer is authoritative. A measured EQ basis can locate the variation
+    by frequency; backends without that measurement retain their metadata maximum.
+    """
+    if renderer is None:
+        return BAND_NOISE_FLOOR_DB
+    if measured is not None:
+        return measured
+    metadata = getattr(renderer, "metadata", None)
+    if metadata is None:
+        return BAND_NOISE_FLOOR_DB
+    return max(0.0, float(getattr(metadata(), "band_noise_db", 0.0) or 0.0))
+
+
+def _validate_basis_provenance(found, renderer) -> None:
+    """Refuse a modern calibration measured by another host build or mode.
+
+    Older Morgan artifacts predate the full AudioUnitRenderer identity and retain
+    their existing plugin-version guard. Modern artifacts record the Python/Swift
+    host hash and every quality option that changes samples; both must match the
+    backend asking to use the basis.
+    """
+    schema = getattr(found, "provenance_schema", None)
+    if schema == "legacy-morgan-au-render-server-1":
+        return
+    if schema != "eq-basis-provenance-1":
+        raise InversionError(
+            "the measured EQ basis has missing or unsupported provenance schema "
+            f"{schema!r}. Re-run scripts/measure_eq_basis.py with this renderer."
+        )
+    metadata = renderer.metadata()
+    identity = (
+        ("renderer id", "renderer_id"),
+        ("plugin version", "plugin_version"),
+        ("sample rate", "sample_rate"),
+        ("block size", "block_size"),
+        ("renderer build", "renderer_build"),
+        ("quality mode", "quality_mode"),
+    )
+    missing = []
+    mismatches = []
+    for label, field_name in identity:
+        recorded = getattr(found, field_name, None)
+        current = getattr(metadata, field_name, None)
+        if recorded is None or recorded == "":
+            missing.append(label)
+        elif str(recorded) != str(current):
+            mismatches.append(f"{label} {recorded!r} vs {current!r}")
+    if missing or mismatches:
+        reasons = []
+        if missing:
+            reasons.append("missing " + ", ".join(missing))
+        reasons.extend(mismatches)
+        raise InversionError(
+            "the measured EQ basis does not match this renderer ("
+            + "; ".join(reasons)
+            + "). Re-run scripts/measure_eq_basis.py with this renderer and its "
+              "current options before inverting."
+        )
+
+
+def _setting_value(values: Optional[Mapping], path: str):
+    """Read one human setting from any key spelling accepted by the search space."""
+    if values is None:
+        return None
+    from match.space import _get
+
+    module, _, key = path.rpartition("/")
+    return _get(values, (module, key))
+
+
+def _same_stored(pack_id: str, path: str, left, right) -> bool:
+    """Whether two human/stored spellings represent the same plugin value."""
+    from packs.calibration import spec_for
     from packs.loader import load_pack
 
     pack = load_pack(pack_id)
-    for name, module_prefix in pack.amp_modules.items():
-        if module_prefix == prefix:
-            return name
-    return prefix
+    spec = spec_for(pack, path)
+    try:
+        return str(pack.to_stored(spec, left, warnings=[])) == str(
+            pack.to_stored(spec, right, warnings=[])
+        )
+    except ValueError:
+        return False
+
+
+def _apply_band_corrections(
+    correction: Inversion, signal_path, current_settings: Optional[Mapping],
+    pack_id: str, activates_eq: bool = False,
+) -> Inversion:
+    """Turn fitted EQ deltas into absolute controls relative to the template.
+
+    ``band_delta`` compares the target with the rendered template, so its solved
+    gains are corrections. A +4 dB solve against a template band already at +2 dB
+    means write +6 dB, not +4 dB. Zero means preserve the template and is omitted.
+    Calls without template settings retain the historical absolute-result contract
+    used by the standalone helpers and synthetic tests.
+    """
+    if current_settings is None:
+        return correction
+
+    from packs.calibration import spec_for
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    was_active = _eq_is_active(signal_path, current_settings, pack_id)
+    baselines = _band_baselines(signal_path, current_settings, pack_id)
+    values: Dict[str, Any] = {}
+    caveats = list(correction.caveats)
+    missing = []
+    has_correction = any(float(correction.values.get(control, 0.0) or 0.0) != 0.0
+                         for control in signal_path.eq_band_controls)
+    will_enable = has_correction or activates_eq
+    for control in signal_path.eq_band_controls:
+        change = float(correction.values.get(control, 0.0) or 0.0)
+        # Enabling a bypassed EQ exposes every stored band at once. Emit neutral
+        # zero for untouched bands so dormant template values cannot suddenly color
+        # the sound. With an already-active EQ, zero remains "preserve this band".
+        if change == 0.0 and (was_active or not will_enable):
+            continue
+        before = baselines.get(control)
+        if before is None:
+            missing.append(control)
+            continue
+        spec = spec_for(pack, control)
+        wanted = float(before) + change
+        clamped = min(max(wanted, float(spec.min)), float(spec.max))
+        values[control] = round(clamped, 2)
+        if abs(clamped - wanted) > 0.005:
+            caveats.append(
+                f"adding the {change:+.2f} dB correction to {control}'s current "
+                f"{float(before):+.2f} dB asks for {wanted:+.2f} dB, outside its "
+                f"{float(spec.min):g}..{float(spec.max):g} dB range; it was "
+                f"clamped to {clamped:+.2f} dB"
+            )
+    if missing:
+        caveats.append(
+            f"the template does not state {', '.join(missing)}, so their fitted "
+            f"corrections were left for the search rather than treated as absolute "
+            f"EQ values"
+        )
+    if not was_active and will_enable:
+        caveats.append(
+            "the template's equaliser was bypassed, so its dormant band values "
+            "were reset to neutral before the fitted correction enabled it"
+        )
+    return Inversion(values=values, caveats=caveats,
+                     detail=dict(correction.detail))
+
+
+def _band_correction_bounds(signal_path, current_settings, pack_id: str):
+    """Per-band delta limits after accounting for each audible template value."""
+    if current_settings is None:
+        return EQ_BOUNDS_DB
+
+    from packs.calibration import spec_for
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    baselines = _band_baselines(signal_path, current_settings, pack_id)
+    lower = []
+    upper = []
+    for control in signal_path.eq_band_controls:
+        spec = spec_for(pack, control)
+        baseline = baselines.get(control)
+        baseline = 0.0 if baseline is None else float(baseline)
+        lower.append(float(spec.min) - baseline)
+        upper.append(float(spec.max) - baseline)
+    return lower, upper
+
+
+def _band_baselines(signal_path, current_settings, pack_id: str):
+    """Audible band values: stored values when enabled, otherwise neutral zero."""
+    active = _eq_is_active(signal_path, current_settings, pack_id)
+    return {
+        control: (_setting_value(current_settings, control) if active else 0.0)
+        for control in signal_path.eq_band_controls
+    }
+
+
+def _current_filter_values(signal_path, current_settings, pack_id: str):
+    """Audible HPF/LPF corners, or open filters when the EQ is bypassed.
+
+    A stored corner behind a bypassed section contributes nothing to the candidate
+    render. Treating it as the baseline would fit a transition from a filter that was
+    never heard and can move the requested corner in the wrong direction.
+    """
+    if current_settings is None or not _eq_is_active(
+        signal_path, current_settings, pack_id
+    ):
+        return None, None
+
+    def value(control):
+        if control is None:
+            return None
+        found = _setting_value(current_settings, control)
+        return None if found is None else float(found)
+
+    return value(signal_path.eq_hpf_control), value(signal_path.eq_lpf_control)
+
+
+def _neutralise_dormant_filters(result: Inversion, signal_path,
+                                current_settings, pack_id: str) -> None:
+    """Open untouched corners before enabling a previously bypassed EQ."""
+    if current_settings is None or _eq_is_active(
+        signal_path, current_settings, pack_id
+    ):
+        return
+    from packs.calibration import spec_for
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    reset = []
+    for control, edge in (
+        (signal_path.eq_hpf_control, "min"),
+        (signal_path.eq_lpf_control, "max"),
+    ):
+        if control is None or control in result.values:
+            continue
+        spec = spec_for(pack, control)
+        result.values[control] = float(getattr(spec, edge))
+        reset.append(control)
+    if reset:
+        result.caveats.append(
+            "the template's equaliser was bypassed, so its untouched dormant "
+            f"filter values were opened before enabling it: {', '.join(reset)}"
+        )
+
+
+def _eq_is_active(signal_path, current_settings, pack_id: str) -> bool:
+    """Whether all declared gates currently put the path's EQ in circuit."""
+    if not signal_path.eq_enable_controls:
+        return True
+    from packs.calibration import spec_for
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    for control in signal_path.eq_enable_controls:
+        value = _setting_value(current_settings, control)
+        if value is None:
+            return False
+        spec = spec_for(pack, control)
+        try:
+            stored = str(pack.to_stored(spec, value, warnings=[])).casefold()
+        except ValueError:
+            return False
+        if stored not in {"1", "true"}:
+            return False
+    return True
 
 
 def _band_centres(pack_id: str, amp: str) -> List[float]:
-    """The declared `centre_hz` of one amp's graphic EQ, in band order."""
+    """The declared centres of one signal path's graphic EQ, in band order."""
+    from packs.calibration import signal_paths
     from packs.loader import load_pack
 
     pack = load_pack(pack_id)
+    path = signal_paths(pack).get(amp)
+    if path is None:
+        return []
     centres = []
-    for index in range(1, 10):
-        spec = pack.parameters.get(f"{amp}EQ/{amp}EQBand{index}")
+    for control in path.eq_band_controls:
+        spec = pack.parameters.get(control)
         if spec is None or spec.centre_hz is None:
             return []
         centres.append(float(spec.centre_hz))

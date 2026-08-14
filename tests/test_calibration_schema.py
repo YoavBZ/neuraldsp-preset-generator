@@ -178,6 +178,27 @@ def test_invert_can_read_what_the_measurement_wrote(path):
 
 
 @pytest.mark.parametrize("path", EQ_BASIS, ids=lambda p: p.parent.name)
+def test_modern_basis_records_the_calibration_topology(path):
+    from packs.calibration import eq_basis_topology_sha256, signal_paths
+    from packs.loader import load_pack
+
+    document = _load(path)
+    build = str((document.get("renderer") or {}).get("renderer_build", ""))
+    if not build.startswith("audio-unit-renderer-"):
+        pytest.skip("legacy calibration predates topology provenance")
+    assert document.get("provenance_schema") == "eq-basis-provenance-1"
+    pack = load_pack(document["pack"])
+    declared = signal_paths(pack)
+    for name, rows in document["amps"].items():
+        assert rows.get("signal_path_sha256") == eq_basis_topology_sha256(
+            pack, declared[name]
+        )
+        repeat = rows.get("repeat_verification") or {}
+        assert repeat.get("samples", 0) >= 5
+        assert repeat.get("statistic") == "peak_to_peak"
+
+
+@pytest.mark.parametrize("path", EQ_BASIS, ids=lambda p: p.parent.name)
 def test_a_frequency_that_was_never_measured_is_refused_not_guessed(path):
     """A stale file is a different problem from a missing one.
 
@@ -223,6 +244,13 @@ def test_the_plugin_backend_offers_the_basis_it_measured(path):
     found = renderer.eq_basis(amp, centres)
     assert found is not None
     assert found[0].shape[1] == len(centres)
+    noise = found.band_noise_db
+    repeat = document["amps"][amp].get("repeat_verification") or {}
+    if repeat.get("band_difference_db") is not None:
+        assert noise is not None
+        assert [noise[frequency] for frequency in centres] == pytest.approx(
+            repeat["band_difference_db"]
+        )
 
 
 @pytest.mark.parametrize("path", EQ_BASIS, ids=lambda p: p.parent.name)
@@ -238,6 +266,105 @@ def test_a_basis_from_another_plugin_version_is_refused(path):
             document["pack"], amp, centres,
             expected_plugin_version="999.0.0",
         )
+
+
+def test_a_basis_whose_control_order_drifted_is_refused(monkeypatch):
+    """Matrix row order is control order; a permutation must never look valid."""
+    pytest.importorskip("numpy", reason="reading a measured basis needs analysis")
+    import copy
+
+    from match import invert
+
+    path = PACKS / "toneking" / "eq_basis.json"
+    document = copy.deepcopy(_load(path))
+    row = document["amps"]["lead"]
+    row["band_controls"] = list(reversed(row["band_controls"]))
+    monkeypatch.setattr(invert, "_read_basis_document", lambda _path: document)
+
+    with pytest.raises(invert.InversionError, match="different control order"):
+        invert.measured_basis(
+            "toneking", "lead", document["analysis_centres_hz"]
+        )
+
+
+@pytest.mark.parametrize("topology", [None, "0" * 64])
+def test_a_modern_basis_cannot_bypass_topology_provenance(monkeypatch, topology):
+    pytest.importorskip("numpy", reason="reading a measured basis needs analysis")
+    import copy
+
+    from match import invert
+
+    path = PACKS / "toneking" / "eq_basis.json"
+    document = copy.deepcopy(_load(path))
+    row = document["amps"]["lead"]
+    if topology is None:
+        row.pop("signal_path_sha256", None)
+    else:
+        row["signal_path_sha256"] = topology
+    monkeypatch.setattr(invert, "_read_basis_document", lambda _path: document)
+
+    with pytest.raises(invert.InversionError, match="topology"):
+        invert.measured_basis(
+            "toneking", "lead", document["analysis_centres_hz"]
+        )
+
+
+def test_modern_provenance_cannot_be_downgraded_by_editing_the_build(monkeypatch):
+    pytest.importorskip("numpy", reason="reading a measured basis needs analysis")
+    import copy
+
+    from match import invert
+
+    path = PACKS / "toneking" / "eq_basis.json"
+    document = copy.deepcopy(_load(path))
+    document.pop("provenance_schema", None)
+    document["renderer"]["renderer_build"] = "au_render_server-forged"
+    monkeypatch.setattr(invert, "_read_basis_document", lambda _path: document)
+
+    with pytest.raises(invert.InversionError, match="provenance schema"):
+        invert.measured_basis(
+            "toneking", "lead", document["analysis_centres_hz"]
+        )
+
+
+def test_tone_king_cannot_claim_morgans_explicit_legacy_provenance(monkeypatch):
+    pytest.importorskip("numpy", reason="reading a measured basis needs analysis")
+    import copy
+
+    from match import invert
+
+    path = PACKS / "toneking" / "eq_basis.json"
+    document = copy.deepcopy(_load(path))
+    document["provenance_schema"] = "legacy-morgan-au-render-server-1"
+    document["renderer"]["renderer_build"] = "au_render_server-9ba52a85ccaf"
+    monkeypatch.setattr(invert, "_read_basis_document", lambda _path: document)
+
+    with pytest.raises(invert.InversionError, match="provenance schema"):
+        invert.measured_basis(
+            "toneking", "lead", document["analysis_centres_hz"]
+        )
+
+
+@pytest.mark.parametrize(
+    "build", ["au_render_server-9ba52a85ccaf", "au_render_server-forged"],
+)
+def test_morgan_legacy_provenance_cannot_be_inferred_from_a_build_prefix(
+    monkeypatch, build,
+):
+    pytest.importorskip("numpy", reason="reading a measured basis needs analysis")
+    import copy
+
+    from match import invert
+
+    path = PACKS / "morgan" / "eq_basis.json"
+    document = copy.deepcopy(_load(path))
+    document.pop("provenance_schema", None)
+    document["renderer"]["renderer_build"] = build
+    monkeypatch.setattr(invert, "_read_basis_document", lambda _path: document)
+    amp = next(iter(document["amps"]))
+
+    with pytest.raises(invert.InversionError, match="provenance schema"):
+        invert.measured_basis("morgan", amp, document["analysis_centres_hz"])
 
 
 def test_committed_calibrations_ship_as_package_data():

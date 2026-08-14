@@ -107,13 +107,12 @@ def test_the_eq_fit_leaves_bands_alone_below_the_render_noise():
     centres = refchain.band_centres()
     analysis = sorted({invert_nearest(c) for c in centres} | {100.0, 800.0, 5000.0})
 
-    # Above the floor as a difference, but spread so thinly that every individual
-    # band solves under it — which is the case where a correction really is thrown
-    # away and the report has to say so.
-    tiny = {frequency: 0.35 for frequency in analysis}
+    # A non-zero shape whose complete fitted correction remains below the floor.
+    tiny = {frequency: (0.2 if index % 2 else -0.2)
+            for index, frequency in enumerate(analysis)}
     result = invert.fit_graphic_eq(tiny, centres, module=AMP, pack_id="morgan")
     assert all(value == 0.0 for value in result.values.values()), result.values
-    assert any("solved below" in caveat for caveat in result.caveats), (
+    assert any("solved at or below" in caveat for caveat in result.caveats), (
         "throwing the whole correction away has to be reported"
     )
     # The residual must describe what was written, not the fit that was discarded.
@@ -376,6 +375,30 @@ def test_a_deficit_of_less_than_the_threshold_is_not_a_filter():
     assert invert.fit_filters(steep, module=AMP, pack_id="morgan").values != {}
 
 
+@pytest.mark.parametrize("current,target", [(160.0, 500.0), (500.0, 160.0)])
+def test_a_filter_move_is_fitted_from_the_current_audible_corner(current, target):
+    """The measured delta is a transition, not a response from an open filter."""
+    from analysis.features import THIRD_OCTAVE_CENTRES
+
+    frequencies = sorted(float(f) for f in THIRD_OCTAVE_CENTRES)
+    delta = {
+        frequency: float(
+            invert.filter_response_db([frequency], hpf_hz=target)[0]
+            - invert.filter_response_db([frequency], hpf_hz=current)[0]
+        )
+        for frequency in frequencies
+    }
+
+    result = invert.fit_filters(
+        delta, module=AMP, pack_id="morgan",
+        current_filters=(current, None),
+    )
+
+    assert result.values == {f"{AMP}EQ/{AMP}EQHpf": target}
+    assert f"{AMP}EQ/{AMP}EQLpf" not in result.values
+    assert result.detail["filter_fit_db"] == 0.0
+
+
 def test_a_caller_supplied_basis_still_fits_when_a_corner_fires():
     """`basis` is sized to the full delta, so removing the covered bands made the
     shape check reject the measured basis M5 will supply — the only reason `basis`
@@ -439,6 +462,17 @@ def test_the_output_level_closes_a_known_loudness_difference():
         candidate = measure({"parameters/outputGain": 0.0})
         result = invert.output_level(target, candidate)
         assert result.values["parameters/outputGain"] == pytest.approx(offset, abs=0.5)
+
+
+def test_the_output_level_adds_the_correction_to_the_template_value():
+    target = measure({"parameters/outputGain": 4.0})
+    candidate = measure({"parameters/outputGain": 0.0})
+
+    result = invert.output_level(target, candidate, current_value=-6.0)
+
+    assert result.values["parameters/outputGain"] == pytest.approx(-2.0, abs=0.5)
+    assert result.detail["output_gain_before_db"] == -6.0
+    assert result.detail["lufs_difference_db"] == pytest.approx(4.0, abs=0.5)
 
 
 def test_the_output_level_says_when_the_difference_will_not_fit():
@@ -795,12 +829,159 @@ def test_a_pack_that_does_not_declare_the_parameter_is_refused():
 
 def test_the_equaliser_is_not_switched_on_to_do_nothing():
     """Identical target and candidate: there is nothing to correct, so turning the
-    graphic EQ on would be a change with no reason behind it."""
+    graphic EQ on or off would be a change with no reason behind it."""
     same = measure()
     inverted = invert.invert(same, same, amp=AMP)
     gains = [value for path, value in inverted.values.items() if "EQBand" in path]
     assert all(gain == 0.0 for gain in gains), gains
-    assert inverted.values[f"{AMP}EQ/{AMP}EQActive"] is False
+    assert f"{AMP}EQ/{AMP}EQActive" not in inverted.values
+
+
+def test_zero_eq_correction_preserves_a_non_flat_template():
+    settings = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 4.0,
+    }
+    same = measure({f"{AMP}EQ/{AMP}EQActive": True,
+                    f"{AMP}EQ/{AMP}EQBand5": 4.0})
+
+    calculated = invert.invert(
+        same, same, amp=AMP, current_settings=settings,
+    )
+
+    assert not any(path in calculated.values for path in (
+        f"{AMP}EQ/{AMP}EQBand5", f"{AMP}EQ/{AMP}EQActive"
+    ))
+
+
+def test_eq_correction_is_added_to_the_template_gain():
+    current = 3.0
+    candidate_settings = {
+        f"{AMP}EQ/{AMP}EQActive": True,
+        f"{AMP}EQ/{AMP}EQBand5": current,
+    }
+    target_settings = {
+        f"{AMP}EQ/{AMP}EQActive": True,
+        f"{AMP}EQ/{AMP}EQBand5": 7.0,
+    }
+    seed = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        ("eqParameters", "sectionActive"): True,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): current,
+    }
+
+    calculated = invert.invert(
+        measure(target_settings), measure(candidate_settings), amp=AMP,
+        current_settings=seed,
+    )
+
+    absolute = calculated.values[f"{AMP}EQ/{AMP}EQBand5"]
+    assert absolute == pytest.approx(7.0, abs=2.5)
+    assert absolute > current
+
+
+def test_dormant_eq_values_are_not_used_as_the_audible_baseline():
+    path = invert._validated_signal_path("morgan", AMP)
+    band = f"{AMP}EQ/{AMP}EQBand5"
+    current = {
+        (f"{AMP}EQ", f"{AMP}EQActive"): False,
+        ("eqParameters", "sectionActive"): False,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 8.0,
+    }
+    correction = invert.Inversion(values={band: 4.0})
+
+    applied = invert._apply_band_corrections(
+        correction, path, current, "morgan"
+    )
+
+    assert applied.values[band] == 4.0
+    assert set(applied.values) == set(path.eq_band_controls)
+    assert all(applied.values[control] == 0.0
+               for control in path.eq_band_controls if control != band)
+    assert any("dormant band values" in caveat for caveat in applied.caveats)
+
+
+def test_filter_only_correction_neutralises_dormant_bands_before_enabling_eq(
+    monkeypatch,
+):
+    """A corner also enables the section, exposing every stored band with it."""
+    path = invert._validated_signal_path("morgan", AMP)
+    current = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): False,
+        ("eqParameters", "sectionActive"): False,
+        (f"{AMP}EQ", f"{AMP}EQLpf"): 8000.0,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 8.0,
+    }
+    target = measure({
+        f"{AMP}EQ/{AMP}EQActive": True,
+        f"{AMP}EQ/{AMP}EQLpf": 4000.0,
+    })
+    candidate = measure({
+        f"{AMP}EQ/{AMP}EQActive": False,
+        f"{AMP}EQ/{AMP}EQLpf": 8000.0,
+        f"{AMP}EQ/{AMP}EQBand5": 8.0,
+    })
+
+    def no_band_moves(*args, **kwargs):
+        return invert.Inversion(values={
+            control: 0.0 for control in kwargs["band_controls"]
+        })
+
+    monkeypatch.setattr(invert, "fit_graphic_eq", no_band_moves)
+    result = invert.invert(
+        target, candidate, amp=AMP, current_settings=current,
+    )
+
+    assert f"{AMP}EQ/{AMP}EQLpf" in result.values
+    assert result.values[f"{AMP}EQ/{AMP}EQHpf"] == 20.0
+    assert all(result.values[control] == 0.0
+               for control in path.eq_band_controls)
+    assert all(result.values[control] is True
+               for control in path.eq_enable_controls)
+    assert any("dormant band values" in caveat for caveat in result.caveats)
+    assert any("dormant filter values" in caveat for caveat in result.caveats)
+
+
+def test_band_only_correction_opens_both_dormant_filter_corners():
+    path = invert._validated_signal_path("morgan", AMP)
+    current = {
+        (f"{AMP}EQ", f"{AMP}EQActive"): False,
+        ("eqParameters", "sectionActive"): False,
+        (f"{AMP}EQ", f"{AMP}EQHpf"): 500.0,
+        (f"{AMP}EQ", f"{AMP}EQLpf"): 1000.0,
+    }
+    result = invert.Inversion(values={f"{AMP}EQ/{AMP}EQBand5": 2.0})
+
+    invert._neutralise_dormant_filters(result, path, current, "morgan")
+
+    assert result.values[f"{AMP}EQ/{AMP}EQHpf"] == 20.0
+    assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == 20000.0
+
+
+def test_eq_delta_bounds_reach_the_opposite_control_rail():
+    path = invert._validated_signal_path("morgan", AMP)
+    band = f"{AMP}EQ/{AMP}EQBand5"
+    current = {
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        ("eqParameters", "sectionActive"): True,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 12.0,
+    }
+
+    lower, upper = invert._band_correction_bounds(path, current, "morgan")
+    index = list(path.eq_band_controls).index(band)
+    applied = invert._apply_band_corrections(
+        invert.Inversion(values={band: -24.0}), path, current, "morgan"
+    )
+
+    assert lower[index] == -24.0
+    assert upper[index] == 0.0
+    assert applied.values[band] == -12.0
 
 
 def test_an_inversion_result_is_a_spec_the_pack_accepts():
@@ -816,6 +997,242 @@ def test_an_inversion_result_is_a_spec_the_pack_accepts():
         spec = pack.parameters.get(path)
         assert spec is not None, f"{path} is not a parameter this pack declares"
         pack.to_stored(spec, value, warnings=[])
+
+
+def test_tone_king_inversion_uses_its_selected_path_and_measured_eq():
+    """Flat namespace controls must not be reconstructed as Morgan modules."""
+    from match import space as space_module
+    from match.renderer import RenderMetadata
+    from packs.loader import load_pack
+
+    pack = load_pack("toneking")
+    measured_noise = pack.calibration["reused_instance_band_noise_db"]
+
+    class ToneKingBasis:
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id="swift", sample_rate=48000, block_size=512,
+                plugin_version="1.0.3", reproducible=False,
+                band_noise_db=measured_noise,
+                renderer_build="audio-unit-renderer-2af9432f77c6",
+                quality_mode=("standard;amplitude=1;settle_ms=0;warmup_s=0;"
+                              "isolate=auto;process=reuse"),
+            )
+
+        def eq_basis(self, signal_path, analysis_centres):
+            return invert.measured_basis(
+                "toneking", signal_path, analysis_centres,
+                expected_plugin_version="1.0.3",
+            )
+
+    target = measure({f"{AMP}EQ/{AMP}EQBand4": 6.0,
+                      "parameters/outputGain": -3.0})
+    calculated = invert.invert(
+        target, measure(), amp="Lead Channel", pack_id="toneking",
+        renderer=ToneKingBasis(),
+    )
+
+    assert calculated.values["/ampType"] == "Lead Channel"
+    assert "/outputGain" in calculated.values
+    assert all(f"/eqBand{index}" in calculated.values for index in range(1, 10))
+    assert calculated.values["/eqSectionActive"] is True
+    assert calculated.values["/eqActive"] is True
+    assert not any("sw50r" in path or path.startswith("parameters/")
+                   for path in calculated.values)
+    assert any("measured" in caveat and "does not repeat" in caveat
+               for caveat in calculated.caveats)
+    assert any("delay, reverb, tremolo" in caveat
+               for caveat in calculated.caveats)
+
+    pack = load_pack("toneking")
+    for path, value in calculated.values.items():
+        spec = pack.parameters.get(path)
+        assert spec is not None, f"{path} is not declared by Tone King"
+        pack.to_stored(spec, value, warnings=[])
+
+    # The same values must survive the conditional preset writer. This catches a
+    # selector that is valid in isolation but fails to activate the Lead controls.
+    document = space_module.build("toneking").to_spec(calculated.as_settings())
+    written = {f"/{row['key']}" if not row["module"] else
+               f"{row['module']}/{row['key']}"
+               for row in document["parameters"]}
+    assert "/ampType" in written
+    assert all(f"/eqBand{index}" in written for index in range(1, 10))
+    assert "/eqSectionActive" in written and "/eqActive" in written
+
+
+def test_tone_king_template_selector_resolves_the_inversion_path():
+    assert invert.selected_signal_path(
+        "toneking", {("", "ampType"): "1"}
+    ) == "lead"
+    assert invert.selected_signal_path(
+        "toneking", {"/ampType": "Rhythm Channel"}
+    ) == "rhythm"
+
+
+def test_inversion_does_not_report_a_selector_label_as_a_real_change():
+    calculated = invert.invert(
+        measure(), measure(), amp="lead", pack_id="toneking",
+        current_settings={("", "ampType"): "1"},
+    )
+
+    assert "/ampType" not in calculated.values
+
+
+def test_the_renderer_noise_floor_stops_eq_from_chasing_repeat_variation():
+    """Tone King's floor is measured output variation, not a Morgan constant."""
+    delta = {100.0: 2.0, 1000.0: -2.0}
+    basis = np.eye(2)
+
+    unresolved = invert.fit_graphic_eq(
+        delta, [100.0, 1000.0], basis=basis,
+        band_controls=["/eqBand1", "/eqBand2"], band_noise_db=5.228794,
+    )
+    resolved = invert.fit_graphic_eq(
+        delta, [100.0, 1000.0], basis=basis,
+        band_controls=["/eqBand1", "/eqBand2"], band_noise_db=1.0,
+    )
+
+    assert set(unresolved.values.values()) == {0.0}
+    assert any("5.22879 dB" in caveat for caveat in unresolved.caveats)
+    assert any(value != 0.0 for value in resolved.values.values())
+
+
+def test_an_outlier_below_the_guitar_band_does_not_floor_the_whole_eq():
+    delta = {25.0: 0.0, 100.0: 2.0, 1000.0: -2.0}
+    basis = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    noise = {25.0: 5.228794, 100.0: 0.000415, 1000.0: 0.000024}
+
+    result = invert.fit_graphic_eq(
+        delta, [100.0, 1000.0], basis=basis,
+        band_controls=["/eqBand1", "/eqBand2"], band_noise_db=noise,
+    )
+
+    assert any(value != 0.0 for value in result.values.values())
+    assert result.detail["eq_noise_floor_db"] == pytest.approx(0.000415)
+    assert result.detail["eq_effect_db"] > result.detail["eq_noise_floor_db"]
+
+
+def test_frequency_aligned_noise_is_compared_at_the_same_frequency():
+    delta = {50.0: 0.0, 1000.0: 2.0}
+    basis = np.array([[0.0, 1.0]])
+    noise = {50.0: 3.5, 1000.0: 0.02}
+
+    result = invert.fit_graphic_eq(
+        delta, [1000.0], basis=basis,
+        band_controls=["/eqBand1"], band_noise_db=noise,
+    )
+
+    assert result.values["/eqBand1"] != 0.0
+    assert result.detail["eq_noise_margin_db"] > 0.0
+
+
+def test_a_modern_basis_from_another_renderer_build_is_refused():
+    from match.renderer import RenderMetadata
+
+    found = invert.MeasuredBasis(
+        np.eye(1), "measured", renderer_build="audio-unit-renderer-old",
+        quality_mode="standard", provenance_schema="eq-basis-provenance-1",
+    )
+
+    class Current:
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id="swift", sample_rate=48000, block_size=512,
+                renderer_build="audio-unit-renderer-current",
+                quality_mode="standard",
+            )
+
+    with pytest.raises(invert.InversionError, match="renderer build"):
+        invert._validate_basis_provenance(found, Current())
+
+
+def test_a_modern_basis_from_another_sample_rate_is_refused():
+    from match.renderer import RenderMetadata
+
+    found = invert.MeasuredBasis(
+        np.eye(1), "measured", renderer_build="audio-unit-renderer-current",
+        quality_mode="standard", renderer_id="swift", plugin_version="1.0",
+        sample_rate=48000, block_size=512,
+        provenance_schema="eq-basis-provenance-1",
+    )
+
+    class Current:
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id="swift", sample_rate=44100, block_size=512,
+                plugin_version="1.0",
+                renderer_build="audio-unit-renderer-current",
+                quality_mode="standard",
+            )
+
+    with pytest.raises(invert.InversionError, match="sample rate"):
+        invert._validate_basis_provenance(found, Current())
+
+
+@pytest.mark.parametrize(
+    "field_name,label",
+    [
+        ("renderer_id", "renderer id"),
+        ("plugin_version", "plugin version"),
+        ("sample_rate", "sample rate"),
+        ("block_size", "block size"),
+        ("quality_mode", "quality mode"),
+    ],
+)
+def test_a_modern_basis_missing_renderer_identity_is_refused(field_name, label):
+    from dataclasses import replace
+    from match.renderer import RenderMetadata
+
+    found = invert.MeasuredBasis(
+        np.eye(1), "measured", renderer_build="audio-unit-renderer-current",
+        quality_mode="standard", renderer_id="swift", plugin_version="1.0",
+        sample_rate=48000, block_size=512,
+        provenance_schema="eq-basis-provenance-1",
+    )
+    found = replace(found, **{field_name: None})
+
+    class Current:
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id="swift", sample_rate=48000, block_size=512,
+                plugin_version="1.0",
+                renderer_build="audio-unit-renderer-current",
+                quality_mode="standard",
+            )
+
+    with pytest.raises(invert.InversionError, match=f"missing {label}"):
+        invert._validate_basis_provenance(found, Current())
+
+
+def test_output_level_refuses_a_control_without_db_units(monkeypatch):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        invert, "declared",
+        lambda pack_id, path: SimpleNamespace(min=-24, max=24, unit=None),
+    )
+    with pytest.raises(invert.InversionError, match="unit 'db'"):
+        invert.output_level(measure(), measure())
+
+
+def test_overlapping_eq_moves_are_compared_with_the_floor_together():
+    # A synthetic floor chosen so neither overlapping row clears it alone while
+    # their combined correction does. This is not a Tone King measurement.
+    delta = {100.0: 4.0, 1000.0: -4.0}
+    basis = np.array([[1.0, -1.0], [1.0, -1.0]])
+
+    result = invert.fit_graphic_eq(
+        delta, [100.0, 1000.0], basis=basis,
+        band_controls=["/eqBand1", "/eqBand2"], band_noise_db=3.505611,
+    )
+
+    assert all(value != 0.0 for value in result.values.values())
+
+
+def test_tone_king_unknown_signal_path_names_the_valid_choices():
+    with pytest.raises(invert.InversionError, match="Accepted: rhythm, lead"):
+        invert.invert(measure(), measure(), amp="clean", pack_id="toneking")
 
 
 def test_an_inversion_result_renders_through_the_synthetic_chain():

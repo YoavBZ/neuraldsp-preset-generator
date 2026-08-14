@@ -370,7 +370,10 @@ def test_the_arms_are_nested_so_each_stage_shows_what_it_adds(space, seed):
     full = result.summarise("full")
 
     assert recipe["targets"] == inversion["targets"] == full["targets"] == 2
-    assert inversion["renders"] == 2, "one render per target, the seed's"
+    assert recipe["renders"] == 2, "one final scoring render per target"
+    assert inversion["renders"] == 4, (
+        "one inversion probe and one final scoring render per target"
+    )
     assert full["renders"] > inversion["renders"], (
         "the full arm pays for the inversion too, so it cannot cost less"
     )
@@ -434,6 +437,37 @@ def test_the_sampler_switches_effects_on_sometimes_and_not_always(space):
 
     on = sum(states) / len(states)
     assert 0.2 < on < 0.55, f"{on:.3f} of switches were on"
+
+
+def test_tone_king_structural_bypasses_stay_on_in_seed_and_targets():
+    toneking = SP.build("toneking", amp="lead")
+    seed = B.centre_seed(toneking)
+    structural = {
+        ("", "ampsActive"), ("", "cabSectionActive"),
+        ("", "eqSectionActive"), ("", "pedalSectionActive"),
+        ("", "timeSectionActive"),
+    }
+
+    assert all(seed[key] is True for key in structural)
+    assert seed[("", "eqActive")] is True
+    for index in range(20):
+        sampled = B.random_vector(
+            toneking, np.random.default_rng(index), base=seed,
+        )
+        assert all(sampled[key] is True for key in structural)
+
+
+def test_tone_king_target_sampler_omits_the_unselected_channel():
+    toneking = SP.build("toneking", amp="lead")
+    seed = B.centre_seed(toneking)
+    seed[("", "ampType")] = "Lead Channel"
+
+    sampled = B.random_vector(
+        toneking, np.random.default_rng(3), base=seed,
+    )
+
+    assert ("", "leadAmpVolume") in sampled
+    assert ("", "rhythmAmpVolume") not in sampled
 
 
 def test_a_failed_outcome_is_not_averaged_into_the_mean():
@@ -527,5 +561,98 @@ def test_an_unknown_amp_is_refused_before_the_first_target(space, seed):
     with pytest.raises(B.BenchmarkError) as raised:
         B.compare_baselines(SyntheticRenderer(), space, fx.plucks(seconds=0.5),
                             seed, targets=1, budget=10, amp="nope")
-    assert "not an amp in this space" in str(raised.value)
+    assert "not a signal path" in str(raised.value)
     assert "sw50r" in str(raised.value), "and it names the ones that are"
+
+
+def test_selector_based_signal_path_is_accepted_by_the_benchmark():
+    """Validation must not use Morgan's amp_modules as the universal topology."""
+    from packs.loader import load_pack
+
+    class ToneKingContractRenderer(SyntheticRenderer):
+        def parameter_specs(self):
+            return load_pack("toneking").parameters
+
+    toneking = SP.build("toneking", amp="lead")
+    seed = B.centre_seed(toneking)
+
+    result = B.compare_baselines(
+        ToneKingContractRenderer(), toneking, fx.plucks(seconds=0.5), seed,
+        targets=0, budget=10, arms=("recipe",), pack_id="toneking", amp="lead",
+    )
+
+    assert result.outcomes == []
+
+
+def test_selector_based_seed_resolves_path_when_amp_is_omitted(monkeypatch):
+    from packs.loader import load_pack
+
+    class ToneKingContractRenderer(SyntheticRenderer):
+        def parameter_specs(self):
+            return load_pack("toneking").parameters
+
+    toneking = SP.build("toneking")
+    seed = B.centre_seed(toneking)
+    seed[("", "ampType")] = "Lead Channel"
+    seen = []
+    from match import invert
+    actual = invert.selected_signal_path
+
+    def watching(pack_id, values):
+        selected = actual(pack_id, values)
+        seen.append(selected)
+        return selected
+
+    monkeypatch.setattr(invert, "selected_signal_path", watching)
+    B.compare_baselines(
+        ToneKingContractRenderer(), toneking, fx.plucks(seconds=0.5), seed,
+        targets=0, budget=10, arms=("recipe",), pack_id="toneking",
+    )
+
+    assert seen == ["lead"]
+
+
+def test_inferred_signal_path_is_pinned_when_sampling_targets(monkeypatch):
+    from packs.loader import load_pack
+
+    class ToneKingPassthrough(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.seen = []
+
+        def parameter_specs(self):
+            return load_pack("toneking").parameters
+
+        def _render(self, di, settings):
+            self.seen.append(dict(settings or {}))
+            return di
+
+    toneking = SP.build("toneking")
+    seed = B.centre_seed(toneking)
+    seed[("", "ampType")] = "Lead Channel"
+    monkeypatch.setattr(
+        B, "random_vector",
+        lambda *args, **kwargs: {("", "ampType"): "Rhythm Channel"},
+    )
+    renderer = ToneKingPassthrough()
+
+    B.compare_baselines(
+        renderer, toneking, fx.plucks(seconds=0.5), seed,
+        targets=1, budget=10, arms=("recipe",), pack_id="toneking",
+    )
+
+    assert renderer.seen
+    assert all(settings.get("ampType") == "Lead Channel"
+               for settings in renderer.seen)
+
+
+def test_a_renderer_with_no_pack_dimensions_is_refused_before_sampling():
+    toneking = SP.build("toneking", amp="lead")
+    seed = B.centre_seed(toneking)
+
+    with pytest.raises(B.BenchmarkError, match="no searchable controls"):
+        B.compare_baselines(
+            SyntheticRenderer(), toneking, fx.plucks(seconds=0.5), seed,
+            targets=0, budget=10, arms=("recipe",), pack_id="toneking",
+            amp="lead",
+        )

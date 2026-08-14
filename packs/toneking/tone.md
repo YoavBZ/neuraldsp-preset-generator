@@ -114,14 +114,19 @@ described a hosting defect, not the plugin's sound.
 
 `eq_basis.json` measures both channels' shared nine-band equaliser, and
 `drive_curve.json` measures channel volume against four input levels. Neither
-backend policy is exact for this plugin: identical-state reused renders moved a
-third-octave band by up to 3.505611 dB, and fresh-process drive repeats moved one
-by up to 4.909836 dB. Both files therefore say `reproducible=false`; their rows
-are sampled observations, not deterministic transfer functions. The exact
-commands, plugin version, repeat evidence and known-target result are recorded
+backend policy is exact for this plugin: five identical-state reused renders
+moved a third-octave band peak-to-peak by up to 5.228794 dB, and fresh-process
+drive repeats moved one by up to 4.909836 dB. Both files therefore say
+`reproducible=false`; their rows are sampled observations, not deterministic
+transfer functions. The exact commands, plugin version, repeat evidence and
+known-target result are recorded
 in [the implementation plan](../../docs/tone-matching-plan.md#12g-tone-king-calibration-and-the-corrected-known-target-run).
 
 The recipes above remain conservative musical starting points rather than
-results derived from those two measurements. Production Tone King matching also
-still requires `--no-invert`; audition its result with the target guitar,
-level-matched in context.
+results derived from those two measurements. Direct inversion does now run on
+this pack: `--amp lead` or `--amp rhythm` — or the channel the template already
+selects — writes output gain and the nine shared EQ bands from the measured
+basis above, and every band it moves is compared against that basis's
+frequency-aligned repeat spread. What the backend cannot do is repeat itself
+exactly, so treat one run's score as a sampled observation and audition its
+result with the target guitar, level-matched in context.

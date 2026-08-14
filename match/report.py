@@ -150,11 +150,13 @@ def build_summary(
     seed_objectives: Mapping[str, float],
     fingerprints: Mapping[int, Any],
     inverted_seed: Optional[Mapping],
+    inversion_detail: Optional[Mapping[str, Any]],
     unheard: Sequence[str],
     searched: Sequence[str],
     frozen: Mapping[str, float],
     movement: Mapping[str, float],
     floor: float,
+    floor_observations: int,
     silences: Mapping[str, float],
     profile: str,
     reference: str,
@@ -163,6 +165,7 @@ def build_summary(
     budget: int,
     accounting: Mapping[str, Any],
     elapsed_s: float,
+    command_accounting: Mapping[str, Any],
     out_dir: str,
 ) -> Dict[str, Any]:
     """The compact, machine-readable counterpart to the HTML report.
@@ -237,6 +240,7 @@ def build_summary(
             "used": inverted_seed is not None,
             "changes": changes(inverted_seed) if inverted_seed is not None else [],
             "calculated_but_unheard": sorted(unheard),
+            "detail": dict(inversion_detail or {}),
         },
         "search": {
             "budget": int(budget),
@@ -244,10 +248,12 @@ def build_summary(
             "frozen": {key: float(value) for key, value in frozen.items()},
             "movement": {key: float(value) for key, value in movement.items()},
             "sensitivity_floor": float(floor),
+            "sensitivity_floor_observations": int(floor_observations),
             "silences": {key: float(value) for key, value in silences.items()},
             "accounting": dict(accounting),
             "elapsed_s": float(elapsed_s),
         },
+        "command_accounting": dict(command_accounting),
         "starting_point": {
             "score": float(seed_objectives.get("total", float("inf"))),
             "objectives": {

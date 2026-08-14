@@ -198,7 +198,8 @@ class BenchmarkResult:
 
 
 def random_vector(space: Space, rng, supported: Optional[Sequence[str]] = None,
-                  switch_probability: float = 0.35) -> Dict[Any, Any]:
+                  switch_probability: float = 0.35,
+                  base: Optional[Mapping] = None) -> Dict[Any, Any]:
     """One legal parameter vector, uniform over each dimension's declared range.
 
     Uniform rather than plausible, and that is the point: a benchmark over presets a
@@ -216,13 +217,24 @@ def random_vector(space: Space, rng, supported: Optional[Sequence[str]] = None,
         for key in supported
     }
     values: Dict[Any, Any] = {}
-    for dimension in space.dimensions:
+    dimensions = space.dimensions
+    if base is not None:
+        # Keep every potentially gated control available to the sampler while
+        # respecting selector routing such as Tone King's Lead/Rhythm channel.
+        # Calling ``space.active(base)`` directly would also hide the knobs behind
+        # effects that the sampler is about to switch on.
+        routing = dict(base)
+        for dimension in space.dimensions:
+            if dimension.switch:
+                routing[(dimension.module, dimension.key)] = True
+        dimensions = space.active(routing)
+    for dimension in dimensions:
         if keys is not None and dimension.path not in keys:
             continue
         if dimension.key == "selectedAmp":
             continue
         if dimension.switch:
-            forced = dimension.key.endswith("sectionActive")
+            forced = _structural_enable(dimension)
             values[(dimension.module, dimension.key)] = (
                 True if forced else bool(rng.random() < switch_probability))
         elif dimension.kind == "enum":
@@ -259,8 +271,8 @@ def centre_seed(space: Space) -> Dict[Any, Any]:
             continue
         if dimension.switch:
             values[(dimension.module, dimension.key)] = (
-                dimension.key.endswith("EQActive")
-                or dimension.key.endswith("sectionActive"))
+                dimension.key.casefold().endswith("eqactive")
+                or _structural_enable(dimension))
         elif dimension.kind == "enum":
             members = sorted((dimension.members or {}), key=int)
             if members:
@@ -269,8 +281,21 @@ def centre_seed(space: Space) -> Dict[Any, Any]:
             low, high = dimension.bounds()
             values[(dimension.module, dimension.key)] = dimension.quantise(
                 (low + high) / 2.0)
-    values[("", "selectedAmp")] = 2
+    if any(dimension.key == "selectedAmp" for dimension in space.dimensions):
+        values[("", "selectedAmp")] = 2
     return values
+
+
+def _structural_enable(dimension) -> bool:
+    """A page/section bypass that must stay on in benchmark targets.
+
+    Effect switches remain random. Structural bypasses do not describe a tone;
+    switching one off makes a whole page unreachable and turns the benchmark into
+    a topology lottery. Pack spellings differ in case and Tone King calls its amp
+    page simply ``ampsActive``, so matching is case-insensitive.
+    """
+    key = dimension.key.casefold()
+    return key.endswith("sectionactive") or key == "ampsactive"
 
 
 def parameter_error(space: Space, truth: Mapping, found: Mapping,
@@ -349,27 +374,42 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         raise BenchmarkError(f"unknown arm(s) {', '.join(unknown)}; "
                              f"available: {', '.join(ARMS)}")
 
-    # Refused here rather than fifty targets later. `--amp nope` was accepted by
-    # `space.build` — which correctly restricts to a prefix it never finds — and then
-    # failed inside every arm, once per target, with the real cause visible only in
-    # the store.
-    if amp is not None and amp not in set(space.amp_modules.values()):
+    selection = {}
+    if amp is not None:
+        try:
+            amp = invert.resolve_signal_path(pack_id, amp)
+        except invert.InversionError as error:
+            raise BenchmarkError(str(error)) from error
+    else:
+        amp = (space.amp_prefix(seed)
+               or invert.selected_signal_path(pack_id, seed))
+    if amp is not None:
+        selection = invert.signal_path_selection(pack_id, amp)
+        # The benchmark's requested path is part of both baselines and truth. It
+        # must be selected before target generation, not merely named for inversion.
+        seed = invert.apply_to(seed, selection, space)
+    supported = search.supported_keys(renderer)
+    if supported is not None and not any(
+        dimension.path in supported for dimension in space.dimensions
+    ):
+        path_name = amp or "the selected signal path"
         raise BenchmarkError(
-            f"{amp!r} is not an amp in this space.\n"
-            f"  Available: {', '.join(sorted(set(space.amp_modules.values()))) or 'none'}."
+            f"the renderer supports no searchable controls for {pack_id}/{path_name}; "
+            "a benchmark would sample no target settings"
         )
-    supported = list(renderer.parameter_specs())
     scorer = search.Evaluator(renderer, fingerprint(
         io.from_samples(probe_di, renderer.metadata().sample_rate),
         regime="probe", excerpt_s=None), probe_di, space, profile=profile,
         reference_audio=probe_di)
     result = BenchmarkResult()
-    amp = amp or space.amp_prefix(seed)
 
     for index in range(int(targets)):
         truth = dict(seed)
-        truth.update(random_vector(space, rng, supported=supported))
-        truth[("", "selectedAmp")] = _get_or(seed, ("", "selectedAmp"), 2)
+        truth.update(random_vector(space, rng, supported=supported, base=truth))
+        if selection:
+            truth = invert.apply_to(truth, selection, space)
+        elif any(dimension.key == "selectedAmp" for dimension in space.dimensions):
+            truth[("", "selectedAmp")] = _get_or(seed, ("", "selectedAmp"), 2)
         rendered = renderer.render(probe_di, scorer._settings(truth))
         if rendered.silent:
             result.caveats.append(
@@ -400,8 +440,6 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 outcome.renders = getattr(e, "renders_spent", 0)
                 result.outcomes.append(outcome)
                 continue
-            outcome.renders = renders
-            outcome.wall_ms = (time.perf_counter() - started) * 1000.0
             # Deduped: fifty targets produce fifty copies of the same sentence about
             # the budget, and a caveat block nobody can read is a caveat block nobody
             # reads. Prefixed with the arm, because "the optimiser never ran" is a fact
@@ -410,19 +448,24 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 tagged = f"{arm}: {text}"
                 if tagged not in result.caveats:
                     result.caveats.append(tagged)
+            scoring_renders = scorer.renders
             scored = scorer_score(scorer, target, found,
                                   reference_audio=rendered.audio)
+            outcome.renders = renders + (scorer.renders - scoring_renders)
+            outcome.wall_ms = (time.perf_counter() - started) * 1000.0
             if scored is None:
                 outcome.failed = True
                 outcome.error = "the recovered vector produced nothing comparable"
             else:
                 outcome.objective = scored
+                active = {dimension.path for dimension in space.active(truth)}
                 mae, accuracy = parameter_error(
                     space, truth, found,
-                    only=[d.path for d in space.dimensions
-                          if d.path in {k if isinstance(k, str)
-                                        else "/".join(str(p) for p in k)
-                                        for k in supported}])
+                    only=[
+                        d.path for d in space.dimensions
+                        if d.path in active
+                        and (supported is None or d.path in supported)
+                    ])
                 outcome.parameter_mae = mae
                 outcome.selector_accuracy = accuracy
             result.outcomes.append(outcome)
@@ -463,10 +506,11 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
     rather than in the pipeline. A benchmark whose arms are not nested does not
     measure what each stage adds.
 
-    The render counts are not comparable by design, and the table says so: `recipe`
-    spends none, `inversion` spends one (the seed render its delta is measured
-    against), and `full` spends that plus its budget. The question is what the extra
-    renders buy, so the cost has to travel with the answer.
+    The render counts are not comparable by design, and the table says so: this
+    helper returns zero for `recipe`, one for inversion's delta, and the search
+    budget for `full`; `compare_baselines` then adds the final render that scores
+    each answer. The question is what the extra renders buy, so every cost has to
+    travel with the answer.
     """
     if arm == "recipe":
         return dict(seed), 0, []
@@ -515,7 +559,7 @@ def _invert_from(renderer, target, probe_di, space, seed, profile, invert, searc
                                           rendered.metadata.sample_rate),
                           regime="probe", excerpt_s=None)
     calculated = invert.invert(target, printed, amp=amp, pack_id=pack_id,
-                               renderer=renderer)
+                               renderer=renderer, current_settings=seed)
     return invert.apply_to(seed, calculated.as_settings(), space), 1
 
 

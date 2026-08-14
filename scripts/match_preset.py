@@ -100,7 +100,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "report says so")
     ap.add_argument("--pack", default="morgan", help="which plugin pack (default: morgan)")
     ap.add_argument("--amp", default=None,
-                    help="restrict the search to one amp's controls, e.g. sw50r")
+                    help="signal path to invert, e.g. sw50r or lead (default: read "
+                         "the template's amp/channel selector)")
     ap.add_argument("--loss-profile", default="unpaired-v1",
                     help="how the objective dimensions are weighted "
                          "(unpaired-v1, paired-v1)")
@@ -153,6 +154,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    command_started_at = time.monotonic()
 
     from analysis import require
 
@@ -187,15 +189,54 @@ def main() -> None:
             "--excerpt would mix excerpt-level features with a full-performance "
             "waveform score.\n  Omit --excerpt or pass --excerpt 0.")
 
-    space = space_module.build(args.pack, amp=args.amp)
+    signal_path_arg = None
+    if args.amp is not None:
+        try:
+            signal_path_arg = invert.resolve_signal_path(args.pack, args.amp)
+        except invert.InversionError as error:
+            die(str(error))
+    space = space_module.build(args.pack, amp=signal_path_arg)
+    # Validate and load a real run's template before opening a renderer. Besides
+    # avoiding needless Audio Unit startup, this preserves the more specific error
+    # when a Morgan preset is accidentally paired with the Tone King pack.
+    seed = template_name = None
+    if not args.list_enumerable:
+        seed, template_name = _seed_from_template(args.template, space, args.pack)
     renderer = _renderer(args.renderer, args.pack)
     supported = renderer_paths(renderer)
+    if supported is not None and not any(
+        dimension.path in supported for dimension in space.dimensions
+    ):
+        close = getattr(renderer, "close", None)
+        if close is not None:
+            close()
+        suggestion = (
+            " Use --renderer swift for Tone King."
+            if args.renderer != "swift" else ""
+        )
+        die(
+            f"the {args.renderer} renderer supports no searchable controls for "
+            f"pack {args.pack}; a match would render the same settings repeatedly."
+            f"{suggestion}"
+        )
     if args.list_enumerable:
-        _print_enumerable(space, args.pack, args.amp, supported=supported)
+        _print_enumerable(space, args.pack, signal_path_arg, supported=supported)
+        close = getattr(renderer, "close", None)
+        if close is not None:
+            close()
         return
     switches, selectors = _enumerated(
         space, args.enumerated, None, args.shortlist, supported=supported)
-    seed, template_name = _seed_from_template(args.template, space, args.pack)
+    assert seed is not None and template_name is not None
+    if signal_path_arg is not None:
+        # ``--amp`` selects the path being matched, not merely the basis used after
+        # the first render. Apply it before the template score and inversion probe
+        # so both audio and calibration describe the same path.
+        seed = invert.apply_to(
+            seed,
+            invert.signal_path_selection(args.pack, signal_path_arg),
+            space,
+        )
     template_values = dict(seed)
 
     reference = io.load(str(args.reference))
@@ -208,15 +249,24 @@ def main() -> None:
 
     run_id = args.run_id or f"{args.out_dir.name}-{time.strftime('%Y%m%d-%H%M%S')}"
     store = open_store(str(args.out_dir))
-    # Every render commits before the next one starts, and the cache is keyed on the
-    # score rather than the clock, so running the same command again re-uses everything
-    # this run paid for. That is the whole reason the store exists and nothing said it.
-    on_interrupt(
-        f"{args.out_dir / 'trials.sqlite3'} has every render made so far. Run the "
-        f"same command again and they are served from the cache rather than rendered "
-        f"twice — you lose the time since the last render, not the run."
-    )
     metadata = renderer.metadata()
+    # Every render commits before the next one starts. Deterministic backends can
+    # safely reuse those scores; a stateful backend records them for diagnosis but
+    # must render again because another process/instance need not produce that score.
+    if metadata.reproducible:
+        interrupt_note = (
+            f"Run the same command again and completed renders are served from the "
+            f"cache — you lose the time since the last render, not the run."
+        )
+    else:
+        interrupt_note = (
+            "This renderer reports reproducible=false, so a resumed command must "
+            "render again; the recorded trials remain available for diagnosis only."
+        )
+    on_interrupt(
+        f"{args.out_dir / 'trials.sqlite3'} has every render made so far. "
+        f"{interrupt_note}"
+    )
     store.start_run(Run(
         run_id=run_id, pack=args.pack, template=str(args.template),
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
@@ -246,10 +296,12 @@ def main() -> None:
         )
     if not metadata.reproducible:
         caveats.append(
-            f"this backend does not repeat itself exactly: two renders of identical "
-            f"parameters differ by about {metadata.band_noise_db:.2f} dB per band, so "
-            f"a difference smaller than that between two candidates is not a "
-            f"difference"
+            f"this backend does not repeat itself exactly: identical-state "
+            f"observations have differed by up to {metadata.band_noise_db:.2f} dB in "
+            f"one third-octave band. That maximum is provenance, not a scalar "
+            f"candidate-score floor: the sensitivity screen repeats its own seed in "
+            f"objective units, and a measured EQ basis uses its frequency-aligned "
+            f"repeat spread"
         )
 
     # Renders made outside `search`, so the printed total is every render this command
@@ -267,6 +319,7 @@ def main() -> None:
             "produces audio.")
 
     dropped: list = []
+    inversion_detail = None
     if args.no_invert:
         caveats.append("--no-invert was given, so nothing was calculated and the "
                        "search started from the template alone")
@@ -275,7 +328,8 @@ def main() -> None:
     else:
         printed = _render_fingerprint(renderer, probe_di,
                                       evaluator._settings(seed), extra)
-        amp = args.amp or space.amp_prefix(seed)
+        amp = (signal_path_arg or space.amp_prefix(seed)
+               or invert.selected_signal_path(args.pack, seed))
         if amp is None:
             # Two different problems, and one message told the wrong story for both.
             # `--pack toneking` with a Morgan template said "the template does not say
@@ -289,12 +343,14 @@ def main() -> None:
                     f"{args.pack!r}{belongs}.\n"
                     f"  Pass --pack {from_pack or '<the plugin it is from>'}, or give "
                     f"a template from {args.pack!r}.")
-            die("the template does not say which amp is selected, and no --amp was "
-                "given, so there is no way to tell which amp's controls to invert.\n"
-                "  Pass --amp with one of the pack's amps, or use a template with a "
-                "selectedAmp value.")
+            die("the template does not say which amp or channel is selected, and "
+                "no --amp was given, so there is no way to tell which signal "
+                "path's controls to invert.\n"
+                "  Pass --amp with one of the pack's signal paths, or use a "
+                "template whose selector is mapped by the pack.")
         calculated = invert.invert(target, printed, amp=amp, pack_id=args.pack,
-                                   renderer=renderer)
+                                   renderer=renderer, current_settings=seed)
+        inversion_detail = dict(calculated.detail)
         seed = invert.apply_to(seed, calculated.as_settings(), space)
         inverted_values = dict(seed)
         caveats.extend(calculated.caveats)
@@ -320,7 +376,7 @@ def main() -> None:
         space, args.enumerated, args.budget, args.shortlist,
         supported=supported, seed=seed)
 
-    started_at = time.monotonic()
+    search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=args.budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
@@ -329,7 +385,7 @@ def main() -> None:
                            rng=np.random.default_rng(args.seed),
                            reference_audio=(reference.samples
                                             if residual_weighted else None))
-    elapsed_s = time.monotonic() - started_at
+    search_elapsed_s = time.monotonic() - search_started_at
     caveats.extend(result.caveats)
 
     if not result.shortlist:
@@ -369,16 +425,34 @@ def main() -> None:
         unheard=dropped,
         profile=args.loss_profile, reference=str(args.reference),
     )
+    outside = evaluator.renders + len(extra)
+    outside_sources = {
+        "template": evaluator.renders,
+        "inversion_probe": 0 if args.no_invert else 1,
+        "report_candidates": len(result.shortlist),
+    }
+    command_elapsed_s = time.monotonic() - command_started_at
+    command_accounting = {
+        "total_renders": result.renders + outside,
+        "budgeted_renders": result.renders,
+        "outside_budget_renders": outside,
+        "outside_budget_by_source": outside_sources,
+        "elapsed_s": command_elapsed_s,
+    }
     summary_path = report.write_summary(
         str(args.out_dir / "summary.json"), run_id=run_id, target=target,
         shortlist=result.shortlist, caveats=caveats, seed=template_values,
         seed_objectives=start.objectives, fingerprints=prints,
-        inverted_seed=inverted_values, unheard=dropped,
+        inverted_seed=inverted_values, inversion_detail=inversion_detail,
+        unheard=dropped,
         searched=result.searched, frozen=result.frozen,
-        movement=result.movement, floor=result.floor, silences=result.silences,
+        movement=result.movement, floor=result.floor,
+        floor_observations=result.floor_observations,
+        silences=result.silences,
         profile=args.loss_profile, reference=str(args.reference), pack=args.pack,
         renderer=metadata.as_dict(), budget=args.budget, accounting=accounting,
-        elapsed_s=elapsed_s, out_dir=str(args.out_dir),
+        elapsed_s=search_elapsed_s, command_accounting=command_accounting,
+        out_dir=str(args.out_dir),
     )
     store.close()
 
@@ -390,17 +464,18 @@ def main() -> None:
     # because the gap between them is what says whether more budget or a faster
     # backend is the thing that would help.
     # Every render this command caused, not only the budgeted ones. `result.renders`
-    # counts what the search spent; the template's own render, the inversion's probe and
-    # one per shortlisted candidate for the report happen outside it, and a run that
-    # reported 293 had made 298.
-    outside = evaluator.renders + len(extra)
-    print(f"  {result.renders + outside} renders in {elapsed_s:.0f}s "
+    # counts what the search spent; the template's own render, an optional inversion
+    # probe and one per shortlisted candidate for the report happen outside it.
+    print(f"  {result.renders + outside} renders in {command_elapsed_s:.0f}s "
           f"({result.wall_ms / 1000:.0f}s of it inside the search)"
           + (f", plus {result.cache_hits} answered from the cache"
              if result.cache_hits else ""))
+    outside_sources = "the template, "
+    if not args.no_invert:
+        outside_sources += "the inversion's probe and "
+    outside_sources += "one per shortlisted candidate for the report"
     print(f"  {result.renders} of them against the {args.budget}-render budget; "
-          f"{outside} outside it — the template, the inversion's probe and one per "
-          f"shortlisted candidate for the report")
+          f"{outside} outside it — {outside_sources}")
     worst = ""
     if best.worst_level is not None and best.worst_level > best.total + 5e-4:
         worst = f", {best.worst_level:.3f} at worst across ±6 dB of input level"
@@ -542,11 +617,21 @@ def _seed_from_template(path: pathlib.Path, space, pack_id: str):
 
     pack = load_pack(pack_id)
     preset = build_preset(parse_file(str(path)))
-    if detect_pack(preset.file_header) is None:
+    detected = detect_pack(preset.file_header)
+    if detected is None:
         die(f"{path} does not look like a plugin preset: it identifies itself as "
             f"{preset.file_header!r}, which is not a pack this tool knows.\n"
             f"  Known packs: {', '.join(list_packs()) or 'none'}.\n"
             f"  --template takes a preset to start from, exported from the plugin.")
+    if detected.pack_id != pack_id:
+        named, from_pack = _template_amp(path)
+        selection = f" and selects {named}" if named is not None else ""
+        die(
+            f"{path} is a {detected.pack_id} preset{selection}, not a preset for "
+            f"pack {pack_id!r}.\n"
+            f"  Pass --pack {from_pack or detected.pack_id}, or give a template "
+            f"from {pack_id!r}."
+        )
     values = {}
     for dimension in space.dimensions:
         parameter = preset.by_path.get((dimension.module, dimension.key))
@@ -606,8 +691,8 @@ def _render_fingerprint(renderer, di, settings, counter=None):
     """Render and measure, counting the render if the caller is keeping a tally.
 
     These renders sit outside the search's budget and outside its accounting: the
-    template's own render, the inversion's probe, and one per shortlisted candidate for
-    the report's overlays. The documented run reported 293 renders and performed 298. On
+    template's own render, the optional inversion probe, and one per shortlisted candidate
+    for the report's overlays. The documented run reported 293 renders and performed 298. On
     the synthetic chain that is 5 spare seconds; on the M5 backend it is 5 real plugin
     renders that appear in no number anybody reads.
     """
