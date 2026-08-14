@@ -26,6 +26,8 @@ M6's user-facing match skill, machine-readable run summary, corrected paired-DI
 calibration and two real-stem acceptance runs are recorded in §12e.
 The fresh-process Morgan drive surface that closes M5's remaining calibration
 item is recorded in §12f.
+Tone King's topology-generic calibration, fresh-process repeatability finding and
+corrected known-target run are recorded in §12g.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2186,18 +2188,22 @@ not another flag around the existing one-render comparison.
 
 ### Tone King, end to end for the first time
 
+> **Historical result, invalidated by §12g.** The command completed and the
+> record-state write path worked, but the template seed silently omitted all 94
+> top-level controls. The score below describes a run from the plugin's boot
+> state, not from the stated template, and must not be used as Tone King evidence.
+
 ```
 python3 scripts/match_preset.py --pack toneking --template /tmp/tk_template.xml \
   --reference /tmp/tk_ref.wav --reference-mode probe --probe-di /tmp/tk_probe.wav \
   --renderer swift --no-invert --budget 200 --shortlist 2 --seed 0 --out-dir /tmp/tk_run
 ```
 
-`1.320 -> 0.819` in 191 renders and 199 s, against a reference rendered through the
-plugin from a known vector. The record-state write path works: each render rebuilds
-the plugin's own blob through `format.structured` and the parameters reach the
-sound.
+The invalid run reported `1.320 -> 0.819` in 191 renders and 199 s. It did prove
+that each render can rebuild the plugin's blob through `format.structured`, but
+not that the intended template or channel reached the sound.
 
-Two things it exposed, neither of which is a bug in the search:
+Two limitations from that run remain valid despite the invalid score:
 
 - **`--no-invert` is not optional for this pack.** `invert()` needs an amp prefix
   and Tone King has none — `amp_modules` is empty and the whole namespace is flat,
@@ -2208,8 +2214,8 @@ Two things it exposed, neither of which is a bug in the search:
 - **The screen freezes 44 of 61 parameters.** The backend floor is doing most of
   the work here, and the run says so.
 
-There is still no bundled Tone King template. The one used above is the plugin's
-own boot state written to a file, which parses as a preset because it is one.
+There is still no bundled Tone King factory template. §12g uses the installed
+Factory Default as a base and commits the seed and target as portable specs.
 
 ## 12e. What M6 built, and the paired calibration M5 still owed
 
@@ -2371,6 +2377,155 @@ supplied output headroom without moving the distortion ratio.
 fresh-process provenance, exact repeat hashes, finite THD, non-silence and
 headroom without loading a plugin. `tests/test_drive_curve.py` pins the command's
 grid, bin-centred frequency and one-shot arguments.
+
+## 12g. Tone King calibration and the corrected known-target run
+
+Tone King Imperial MKII **1.0.3** now has the same measured calibration artifacts
+as Morgan, but it does not have Morgan's repeatability. Every number in this
+section comes from one of the exact commands shown below and carries
+`reproducible=false` beside it.
+
+The live gates were run first:
+
+```bash
+auval -v aumf TKI2 NDSP
+.venv/bin/python scripts/audit_manifest.py --pack toneking
+```
+
+`auval` instantiated version 1.0.3. The audit mapped 94 of 255 numeric state
+keys one-to-one, verified 60 ranges and 33 selectors, found no disagreement or
+unchecked declaration, and reached 94 of 96 published Audio Unit controls; only
+Preset Next and Preset Previous were not reached. This is a plugin check, unlike
+the unit suite.
+
+### A topology declaration instead of another naming convention
+
+Morgan's amp prefix tells a calibration command which selector, volume and EQ
+belong together. Tone King has two selectable channels and one shared graphic EQ
+in a flat namespace, so spelling cannot carry that fact. The manifest now
+declares two `calibration.signal_paths`, their neutral common settings, volume
+controls, shared EQ controls and output trim. The nine centre labels — 65, 125,
+250 and 500 Hz, then 1, 2, 4, 8 and 16 kHz — were checked against page 12 of the
+official Tone King Imperial MKII v1.0.0 manual.
+
+The same flat namespace exposed a search defect. A Lead template previously left
+Rhythm bass, treble and volume live too. `search_conditions` now ties each
+channel-specific control to `/ampType`. While proving that, a deeper seed defect
+surfaced: `ParamSpec.path` omits the leading slash for a top-level control, but
+the pack dictionary keys it as `/control`. `_seed_from_template()` used the
+former to query the latter and silently dropped every one of Tone King's 94
+top-level values. The regression test builds a record-state preset and proves
+that the selected channel and both stored channel volumes survive into the seed.
+
+### The shared EQ, measured on both channels
+
+```bash
+.venv/bin/python scripts/measure_eq_basis.py --pack toneking
+```
+
+The command made 40 renders in 72 seconds and wrote
+`packs/toneking/eq_basis.json`. It repeats the flat state once per channel before
+moving a band. Rhythm's largest identical-state third-octave difference was
+1.149284 dB and Lead's was 3.505611 dB, both at 25 Hz, so the file and reused
+renderer report **`reproducible=false`, `band_noise_db=3.505611`**. Curvature is
+only reported above the observed per-band spread and where the slider has an
+audible slope; the remaining warnings are 0.78 dB beyond the floor for Rhythm's
+2 kHz control and 1.04 dB for Lead's 4 kHz control.
+
+This removes textbook filter shapes from the Tone King calibration artifact. It
+does not yet make Tone King inversion operational: `match/invert.py` still
+assumes Morgan's module topology and has no way to select Tone King's Rhythm or
+Lead row. Production runs therefore continue to say `--no-invert`; when that
+topology is generalized, the existing inversion provenance note will preserve
+the basis's `reproducible=false` limitation.
+
+### The drive surface, and a fresh-process result that did not repeat
+
+```bash
+.venv/bin/python scripts/measure_drive_curve.py --pack toneking
+```
+
+The final neutral-chain run made 82 renders in 328 seconds and wrote
+`packs/toneking/drive_curve.json`. Every grid point used a fresh plugin process,
+a 222.65625 Hz two-second sine and -6 dB output trim. No point clipped or rendered
+silence. The first sampled volume position at or above 5% THD was:
+
+| channel | input 0.015 | input 0.05 | input 0.15 | input 0.30 |
+|---|---:|---:|---:|---:|
+| Rhythm | 70% | 40% | 30% | 20% |
+| Lead | 40% | 20% | 10% | 10% |
+
+Those are grid crossings, not interpolated knees, and THD describes the complete
+amp/cab output rather than an isolated preamp. More importantly, neither repeated
+point was exact. Rhythm differed by -39.49 dB relative to the signal and 4.909836
+dB in its noisiest third-octave band; Lead differed by -31.26 dB and 4.406398 dB.
+The artifact therefore reports **`reproducible=false`,
+`band_noise_db=4.909836`** even though it used a fresh process per render. The
+earlier statement that every fresh Audio Unit process is bit-exact was a Morgan
+fact incorrectly generalized into a host fact.
+
+An earlier diagnostic drive run accidentally left the plugin's default delay and
+reverb active. The declarative neutral chain made that visible; the contaminated
+file was replaced and none of its values are committed.
+
+### A reproducible invocation for a known target, and the honest boundary
+
+The committed target and seed specs generate the pair used by the match. The
+invocation is repeatable; its fresh-process reference render is not bit-exact on
+Tone King and therefore carries `reproducible=false`:
+
+```bash
+.venv/bin/python - <<'PY'
+import json
+import pathlib
+import numpy as np
+import soundfile as sf
+from match.renderer_au import AudioUnitRenderer
+from tests import fixtures_audio as fx
+
+root = pathlib.Path('/tmp/m5-toneking')
+root.mkdir(parents=True, exist_ok=True)
+probe = fx.plucks(seconds=4.0, gap=0.9, seed=13)
+probe *= 0.15 / float(np.max(np.abs(probe)))
+target = json.load(open('docs/m5-toneking-target.json'))
+settings = {(row['module'], row['key']): row['value'] for row in target['parameters']}
+sf.write(root / 'probe.wav', probe, 48000, subtype='PCM_24')
+with AudioUnitRenderer('toneking', process_policy='fresh') as renderer:
+    result = renderer.render(probe, settings)
+sf.write(root / 'reference.wav', result.audio, 48000, subtype='PCM_24')
+PY
+
+.venv/bin/python scripts/apply_spec.py \
+  --template "/Library/Audio/Presets/Neural DSP/Tone King Imperial MKII/Default.xml" \
+  --spec docs/m5-toneking-seed.json --out /tmp/m5-toneking/template.xml
+
+.venv/bin/python scripts/match_preset.py \
+  --pack toneking \
+  --template /tmp/m5-toneking/template.xml \
+  --reference /tmp/m5-toneking/reference.wav \
+  --reference-mode probe \
+  --probe-di /tmp/m5-toneking/probe.wav \
+  --renderer swift --no-invert \
+  --budget 200 --shortlist 2 --seed 0 \
+  --out-dir /tmp/m5-toneking/corrected-run
+```
+
+Tone King 1.0.3, **`reproducible=false` with a 3.50561 dB reused-instance band
+floor**: the corrected run improved `0.549 -> 0.353` in 191 search trials and
+149 seconds, with no failed or silent trial. The floor set the sensitivity
+threshold to 1.16854 and froze 23 of 26 active continuous controls. Only gate
+threshold, Lead volume and amp reverb were searched. The robust winner's worst
+score across +/-6 dB input was 0.749, and shortlist scores moved by as much as
+0.43 across that range.
+
+This is valid end-to-end evidence for Tone King's state writer, channel gating,
+template seed and continuous search. It is not a Tone King equivalent of the
+50-target Morgan benchmark. `SyntheticRenderer` models Morgan's topology only,
+so there is no synthetic Tone King score from which to quote an honest percentage
+gap. The honest remaining gap is explicit instead: no inversion, a large measured
+noise floor that freezes most controls, no replicated candidate evaluation, and
+no Tone King aggregate benchmark. The older §12d `1.320 -> 0.819` result is
+invalid because its top-level template values never entered the seed.
 
 ## 13. Reading list, in the order it becomes relevant
 

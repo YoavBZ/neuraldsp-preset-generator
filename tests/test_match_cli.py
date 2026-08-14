@@ -459,6 +459,44 @@ def test_a_template_from_another_pack_names_the_pack_it_is_from(audio, tmp_path)
     assert "Traceback" not in done.stderr
 
 
+def test_tone_king_template_seeds_top_level_controls_and_the_selected_channel(tmp_path):
+    """Tone King's whole writable namespace is top-level.
+
+    Looking ParamSpecs up by Dimension.path omitted the canonical leading slash,
+    so every value was skipped and a run used the plugin's boot state instead of
+    its template. The channel selector was absent too, leaving both channels live.
+    """
+    import struct
+
+    from match import space as space_module
+    from scripts.match_preset import _seed_from_template
+
+    def text(value: str) -> bytes:
+        body = value.encode()
+        return bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+
+    def record(key: str, value: float) -> bytes:
+        return (b"PARAM\x00\x01\x02id\x00" + text(key)
+                + b"value\x00\x01\x09\x04" + struct.pack("<d", value) + b"\x00")
+
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00"
+        + record("ampType", 1.0)
+        + record("leadAmpVolume", 0.72)
+        + record("rhythmAmpVolume", 0.38)
+    )
+    space = space_module.build("toneking")
+    seed, _ = _seed_from_template(template, space, "toneking")
+    live = {dimension.path for dimension in space.active(seed)}
+
+    assert seed[("", "ampType")] == "1"
+    assert seed[("", "leadAmpVolume")] == pytest.approx(0.72)
+    assert seed[("", "rhythmAmpVolume")] == pytest.approx(0.38)
+    assert "leadAmpVolume" in live
+    assert "rhythmAmpVolume" not in live
+
+
 def test_an_out_dir_that_is_a_file_says_which_part_of_the_path(audio, tmp_path):
     blocker = tmp_path / "afile"
     blocker.write_text("not a directory")

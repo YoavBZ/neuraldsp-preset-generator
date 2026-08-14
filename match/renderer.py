@@ -9,11 +9,11 @@ change what callers may assume:
 
 **A cached render is not the same render.** Two renders of identical parameters
 from one plugin instance differ by about -17 dB relative to the signal — in both
-hosts, through `reset`, reallocation and warm-up alike. Only a fresh process is
-bit-exact. So `RenderMetadata.reproducible` says whether this backend's output is
-a function of its inputs at all, and the cache key exists to save time, not to
-assert equivalence. Anything that gets *committed* as a measured fact must come
-from a backend that says it is reproducible.
+hosts, through `reset`, reallocation and warm-up alike. Morgan is bit-exact in a
+fresh process; Tone King is not. So `RenderMetadata.reproducible` says whether
+this backend's output is a function of its inputs at all, and the cache key exists
+to save time, not to assert equivalence. A committed measurement from a backend
+that says it is not reproducible must carry its observed noise beside it.
 
 **The plugin version is part of the identity of a render.** Results from
 different plugin versions are never merged, so the version is in the cache key
@@ -56,8 +56,8 @@ class RenderMetadata:
     """What produced a render, and whether it can be trusted to repeat.
 
     `reproducible=False` is not a defect to be fixed by the caller — it is a
-    measured property of hosting an Audio Unit in a reused instance. It travels
-    with the audio so that a decision to commit a number can check it.
+    measured property of a pack under a particular process policy. It travels
+    with the audio so that a decision to commit a number can qualify it.
     """
 
     renderer_id: str

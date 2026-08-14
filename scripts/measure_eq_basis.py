@@ -42,6 +42,7 @@ for the amp it was measured on.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import pathlib
 import sys
@@ -52,6 +53,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded, positive_float
+from _calibration import CalibrationError, signal_paths, spec_for
 
 # The gain to measure at. Large enough to sit well clear of the plugin's own
 # per-render variation (about 0.23 dB per band), small enough to stay inside the
@@ -113,20 +115,23 @@ def main() -> None:
     from packs.loader import load_pack
 
     pack = load_pack(args.pack)
-    amps = _amps_with_bands(pack, args.amp)
-    if not amps:
+    try:
+        paths = _paths_with_bands(pack, args.amp)
+    except CalibrationError as error:
+        die(str(error))
+    if not paths:
         die(f"packs/{args.pack} declares no graphic-EQ bands"
             + (f" for {args.amp}" if args.amp else "")
             + f".\n  Nothing to measure — check --amp against "
               f"packs/{args.pack}/manifest.json.")
 
     out = args.out or PLUGIN_ROOT / "packs" / args.pack / "eq_basis.json"
-    renders = (2 * sum(len(bands) for bands in amps.values())) + len(amps)
-    print(f"{args.pack}: {len(amps)} amp(s), "
-          f"{sum(len(b) for b in amps.values())} bands, {renders} renders")
-    for amp, bands in amps.items():
-        print(f"  {amp}: {len(bands)} bands at "
-              f"{', '.join(str(int(c)) for c in bands.values())} Hz")
+    renders = (2 * sum(len(bands) for _, bands in paths.values())) + 2 * len(paths)
+    print(f"{args.pack}: {len(paths)} signal path(s), "
+          f"{sum(len(b) for _, b in paths.values())} bands, {renders} renders")
+    for name, (_, bands) in paths.items():
+        print(f"  {name}: {len(bands)} bands at "
+              f"{', '.join(str(int(c)) for _, c in bands)} Hz")
     if args.dry_run:
         print(f"\n--dry-run: would write {out}")
         return
@@ -144,14 +149,19 @@ def main() -> None:
         metadata = renderer.metadata()
         print(f"\nthrough {metadata.renderer_id} {metadata.plugin_version}\n")
         measured = {}
-        for amp, bands in amps.items():
-            measured[amp] = _measure_amp(renderer, pack, amp, bands, di,
-                                         float(args.gain), np)
+        for name, (path, bands) in paths.items():
+            measured[name] = _measure_path(renderer, pack, path, bands, di,
+                                           float(args.gain), np)
     except AudioUnitError as e:
         die(str(e))
     finally:
         renderer.close()
 
+    measured_floor = max(
+        rows["repeat_verification"]["max_band_difference_db"]
+        for rows in measured.values()
+    )
+    metadata = dataclasses.replace(metadata, band_noise_db=measured_floor)
     document = {
         "schema": SCHEMA,
         "pack": args.pack,
@@ -174,7 +184,7 @@ def main() -> None:
     if not metadata.reproducible:
         print(f"\n  Measured on a reused plugin instance, which does not repeat "
               f"itself: two\n  renders of identical parameters move a third-octave "
-              f"band by up to\n  {metadata.band_noise_db} dB. Rows below that are "
+              f"band by up to\n  {metadata.band_noise_db:g} dB. Rows below that are "
               f"noise, and `renderer.reproducible`\n  in the file records this so a "
               f"reader cannot miss it.")
     for amp, rows in measured.items():
@@ -182,23 +192,33 @@ def main() -> None:
             print(f"  {amp}: {note}")
 
 
-def _amps_with_bands(pack, only):
-    """Every amp prefix that declares numbered EQ bands, and their centres.
+def _paths_with_bands(pack, only):
+    """Every declared signal path with an ordered, centred EQ bank.
 
-    Read from the manifest rather than listed here: an amp whose bands were never
-    declared has no centres to solve onto, and one added later should be measured
-    without editing this script.
+    Paths and controls come from pack topology, while frequencies remain facts on
+    each ParamSpec. A path with a partially declared bank is refused rather than
+    silently measured as a smaller equaliser.
     """
     found = {}
-    for prefix in sorted(set(pack.amp_modules.values()) or {""}):
-        bands = {}
-        for index in range(1, 32):
-            spec = pack.parameters.get(f"{prefix}EQ/{prefix}EQBand{index}")
-            if spec is None or spec.centre_hz is None:
-                break
-            bands[index] = float(spec.centre_hz)
-        if bands and (only is None or only == prefix):
-            found[prefix] = bands
+    for name, path in signal_paths(pack).items():
+        if only is not None and only != name:
+            continue
+        bands = []
+        for control in path.eq_band_controls:
+            spec = spec_for(pack, control)
+            if spec.centre_hz is None:
+                raise CalibrationError(
+                    f"{control} is an EQ band on {name} but declares no centre_hz"
+                )
+            bands.append((control, float(spec.centre_hz)))
+        centres = [centre for _, centre in bands]
+        if centres != sorted(centres) or len(centres) != len(set(centres)):
+            raise CalibrationError(
+                f"{name} EQ controls are not ordered at unique increasing centres: "
+                f"{centres}"
+            )
+        if bands:
+            found[name] = (path, bands)
     return found
 
 
@@ -218,8 +238,8 @@ def _excitation(seconds: float, level: float = DEFAULT_LEVEL):
     return (rng.standard_normal(frames) * level).astype(np.float32)
 
 
-def _measure_amp(renderer, pack, amp: str, bands, di, gain_db: float, np):
-    """One amp's basis: a row per band, in dB of output per dB of band gain."""
+def _measure_path(renderer, pack, path, bands, di, gain_db: float, np):
+    """One signal path's basis: output dB per dB of each band gain."""
     from analysis.features import third_octave_bands
 
     def render(settings):
@@ -228,7 +248,7 @@ def _measure_amp(renderer, pack, amp: str, bands, di, gain_db: float, np):
             # Silence is not evidence about a control, and it is certainly not a
             # basis row. Refused here rather than divided by.
             raise SystemExit(
-                f"error: {amp} rendered silence, so nothing about its equaliser "
+                f"error: {path.name} rendered silence, so nothing about its equaliser "
                 f"was measured.\n"
                 f"  The repository's rule is that a silent render is not evidence "
                 f"about a control either way — this is a hosting problem to fix "
@@ -240,33 +260,60 @@ def _measure_amp(renderer, pack, amp: str, bands, di, gain_db: float, np):
                 [float(c) for c in spectrum["band_centres_hz"]],
                 result.peak)
 
-    base = _flat_settings(pack, amp, bands)
+    base = _flat_settings(pack, path, bands)
     flat_db, centres, flat_peak = render(base)
-    print(f"  {amp}: flat reference, peak {flat_peak:.3f}")
+    repeated_db, repeated_centres, repeated_peak = render(base)
+    if repeated_centres != centres:
+        raise SystemExit("error: repeated flat render changed analysis centres")
+    repeat_delta = np.abs(repeated_db - flat_db)
+    repeat_at = int(np.argmax(repeat_delta))
+    repeat_max = float(repeat_delta[repeat_at])
+    print(
+        f"  {path.name}: flat reference, peak {flat_peak:.3f}; identical-state "
+        f"floor {repeat_max:.2f} dB at {centres[repeat_at]:g} Hz"
+    )
 
-    rows, caveats, peaks = [], [], [flat_peak]
-    for index, centre in bands.items():
-        key = f"{amp}EQ/{amp}EQBand{index}"
-        up, _, up_peak = render({**base, key: gain_db})
-        down, _, down_peak = render({**base, key: -gain_db})
+    rows, caveats, peaks = [], [], [flat_peak, repeated_peak]
+    for index, (control, centre) in enumerate(bands, start=1):
+        up, _, up_peak = render({**base, control: gain_db})
+        down, _, down_peak = render({**base, control: -gain_db})
         peaks.extend((up_peak, down_peak))
         # The symmetric estimate. Every even-order term cancels, so this is the
         # band's slope through flat rather than a chord from flat to +g.
-        rows.append((up - down) / (2.0 * gain_db))
+        slope = (up - down) / (2.0 * gain_db)
+        rows.append(slope)
 
         # And the check that the slope is worth having: on a linear chain the mean
         # of the two renders is the flat one.
-        bend = float(np.abs((up + down) / 2.0 - flat_db).max())
-        if bend > LINEARITY_TOLERANCE_DB:
+        residual = np.abs((up + down) / 2.0 - flat_db)
+        # A reused plugin is not exact. An identical-state repeat gives one
+        # observed floor per analysis band; only curvature above that floor is
+        # evidence that the EQ response itself is nonlinear.
+        excess = np.maximum(0.0, residual - repeat_delta)
+        audible = flat_db >= float(flat_db.max()) - 50.0
+        # Curvature where this control moves the output by less than 0.3 dB at
+        # the measured +/-6 dB range cannot make its fitted coefficient wrong;
+        # it is unrelated chain/noise movement. This also prevents every row
+        # being judged by 25 Hz merely because that is the noisiest cab band.
+        influenced = np.abs(slope) >= 0.05
+        relevant = audible & influenced
+        if not bool(relevant.any()):
+            relevant = audible
+        bend_at = int(np.argmax(np.where(relevant, excess, -1.0)))
+        bend = float(residual[bend_at])
+        bend_excess = float(excess[bend_at])
+        if bend_excess > LINEARITY_TOLERANCE_DB:
             caveats.append(
-                f"band {index} at {centre:g} Hz bends {bend:.2f} dB away from "
-                f"linear at +/-{gain_db:g} dB, so its row is a secant through "
+                f"band {index} at {centre:g} Hz bends {bend_excess:.2f} dB "
+                f"beyond the {repeat_delta[bend_at]:.2f} dB identical-state "
+                f"spread at {centres[bend_at]:g} Hz and +/-{gain_db:g} dB, so "
+                f"its row is a secant through "
                 f"that range rather than the band's slope. A fit far from "
                 f"{gain_db:g} dB will be off."
             )
         peak_at = max(up_peak, down_peak)
-        print(f"  {amp}: band {index} at {centre:>6g} Hz, "
-              f"peak {peak_at:.3f}, bend {bend:.2f} dB")
+        print(f"  {path.name}: band {index} at {centre:>6g} Hz, "
+              f"peak {peak_at:.3f}, bend {bend_excess:.2f} dB above floor")
 
     if max(peaks) >= 1.0:
         caveats.append(
@@ -277,53 +324,44 @@ def _measure_amp(renderer, pack, amp: str, bands, di, gain_db: float, np):
         )
 
     return {
-        "band_centres_hz": [bands[i] for i in sorted(bands)],
+        "band_controls": [control for control, _ in bands],
+        "band_centres_hz": [centre for _, centre in bands],
         "analysis_centres_hz": centres,
         # Row i is what 1 dB on band i does at each analysis centre.
         "basis_db_per_db": [[round(float(v), 6) for v in row] for row in rows],
         "flat_band_db": [round(float(v), 3) for v in flat_db],
         "peak": round(float(max(peaks)), 4),
+        "repeat_verification": {
+            "max_band_difference_db": round(repeat_max, 6),
+            "max_at_hz": centres[repeat_at],
+            "band_difference_db": [round(float(v), 6) for v in repeat_delta],
+        },
         "caveats": caveats,
     }
 
 
-def _flat_settings(pack, amp: str, bands):
+def _flat_settings(pack, path, bands):
     """Everything that has to be true for a band to be the only thing moving.
 
     The equaliser on, every band at zero, the corners out of the way, the amp
     selected, and the gate off — a gate that closes on part of the noise would put
     its own spectrum into the difference.
     """
-    settings = {
-        "selectedAmp": _amp_index(pack, amp),
-        f"{amp}EQ/{amp}EQActive": True,
-        "eqParameters/sectionActive": True,
-        "parameters/gateActive": False,
-    }
-    for index in bands:
-        settings[f"{amp}EQ/{amp}EQBand{index}"] = 0.0
-    for key, extreme in ((f"{amp}EQ/{amp}EQHpf", "min"), (f"{amp}EQ/{amp}EQLpf", "max")):
-        spec = pack.parameters.get(key)
+    settings = dict(path.settings)
+    for control in path.eq_enable_controls:
+        settings[control] = True
+    for control, _ in bands:
+        settings[control] = 0.0
+    for control, extreme in ((path.eq_hpf_control, "min"),
+                             (path.eq_lpf_control, "max")):
+        if control is None:
+            continue
+        spec = spec_for(pack, control)
         if spec is not None:
             value = spec.min if extreme == "min" else spec.max
             if value is not None:
-                settings[key] = float(value)
-    return {key: value for key, value in settings.items()
-            if key in {"selectedAmp"} or pack.parameters.get(
-                key if "/" in key else f"/{key}") is not None}
-
-
-def _amp_index(pack, amp: str):
-    """The stored `selectedAmp` value for this amp's module prefix."""
-    selector = pack.parameters.get("/selectedAmp")
-    if selector is not None and selector.members:
-        for stored, name in selector.members.items():
-            if pack.amp_modules.get(name) == amp:
-                return int(stored)
-    die(f"{pack.pack_id} does not say which selectedAmp value selects {amp}, so "
-        f"a measurement of its equaliser could not be aimed at it.\n"
-        f"  Writing a control on an amp that is not selected is a silent no-op, "
-        f"so this would have measured nothing and said it measured a band.")
+                settings[control] = float(value)
+    return settings
 
 
 def _without(mapping, key):

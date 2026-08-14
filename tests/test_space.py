@@ -213,6 +213,24 @@ def test_the_gate_of_each_parameter_is_the_most_specific_switch_that_covers_it(s
     assert gates["parameters/inputGain"] is None
 
 
+def test_tone_king_channel_controls_follow_amp_type():
+    toneking = S.build("toneking")
+    rhythm = {d.path for d in toneking.active({"ampType": "Rhythm Channel"})}
+    lead = {d.path for d in toneking.active({"/ampType": 1})}
+
+    assert "rhythmAmpVolume" in rhythm
+    assert "leadAmpVolume" not in rhythm
+    assert "leadAmpTone" in lead
+    assert "rhythmAmpTreble" not in lead
+
+
+def test_an_absent_tone_king_channel_selector_does_not_guess():
+    toneking = S.build("toneking")
+    live = {d.path for d in toneking.active({})}
+    assert "rhythmAmpVolume" in live
+    assert "leadAmpVolume" in live
+
+
 def test_a_switch_is_never_gated_by_a_prefix_sibling(space):
     """Tone King keeps every parameter in one flat module, where `/eqActive` (stem
     `eq`) matches `/eqSectionActive` as though the page bypass were a child of the

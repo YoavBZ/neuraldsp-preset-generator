@@ -350,9 +350,11 @@ can only be judged against a guitar.
 
 ### A second render in one instance is not the first
 
-Renders from a **fresh process are exactly reproducible**: two processes, same
-arguments, byte-identical wav files. That is what the measurements above rest
-on, and it still holds.
+For Morgan, renders from a **fresh process are exactly reproducible**: two
+processes, same arguments, byte-identical WAV files. Tone King 1.0.3 disproves
+that as a host-wide rule: its fresh-process repeats differ too. Repeatability is
+therefore pack- and process-policy-specific, and each committed drive surface
+records its own repeat hashes and measured difference.
 
 Renders after the first **in the same instance are not**. Five identical
 commands to one server produce five different files, differing from each other

@@ -178,6 +178,42 @@ def test_metadata_does_not_claim_to_be_reproducible():
     assert metadata.plugin_version == "1.1.1"
 
 
+def test_fresh_process_metadata_claims_only_what_the_policy_provides():
+    made = renderer(process_policy="fresh")
+    made._plugin_version = "1.1.1"
+    metadata = made.metadata()
+    assert metadata.reproducible is True
+    assert metadata.band_noise_db == 0.0
+    assert "fresh plugin process" in " ".join(metadata.notes)
+    assert "process=fresh" in metadata.quality_mode
+
+
+def test_tone_king_metadata_carries_both_measured_noise_floors():
+    fresh = renderer(pack_id="toneking", process_policy="fresh")
+    fresh._plugin_version = "1.0.3"
+    reused = renderer(pack_id="toneking")
+    reused._plugin_version = "1.0.3"
+
+    assert fresh.metadata().reproducible is False
+    assert fresh.metadata().band_noise_db == 4.91
+    assert reused.metadata().reproducible is False
+    assert reused.metadata().band_noise_db == 3.50561
+
+
+def test_fresh_policy_restarts_before_a_second_render():
+    pytest.importorskip("numpy")
+    import numpy as np
+
+    made = renderer(process_policy="fresh", isolate=False)
+    made._process_has_rendered = True
+    restarted = []
+    made._restart_server = lambda: restarted.append(True)
+    made._one_render = lambda di, settings, frames: np.ones((frames, 1), dtype=np.float32)
+    audio = made._render(np.zeros(8, dtype=np.float32), {})
+    assert restarted == [True]
+    assert audio.shape == (8, 1)
+
+
 @pytest.mark.parametrize("kwargs, expected", [
     ({"sample_rate": 44100}, "fixed at 48000 Hz"),
     ({"block_size": 1024}, "fixed 512-frame blocks"),
@@ -197,6 +233,7 @@ def test_every_audio_changing_host_option_is_in_the_cache_identity():
         renderer(warmup_s=0.25).metadata().quality_mode,
         renderer(isolate=False).metadata().quality_mode,
         renderer(isolate=True).metadata().quality_mode,
+        renderer(process_policy="fresh").metadata().quality_mode,
     ]
     assert all(value != base for value in variants)
     assert len(set(variants)) == len(variants)
