@@ -111,6 +111,114 @@ def test_a_render_is_only_paid_for_once(space, seed, target):
         assert evaluator.cache_hits == 1
         assert again.total == pytest.approx(first.total)
 
+        evaluator.evaluate(seed, use_cache=False)
+        assert evaluator.renders == 2, "an explicit repeat must bypass the cache"
+        assert evaluator.cache_hits == 1
+
+
+def test_nonreproducible_screen_measures_objective_repeatability(space, seed, target):
+    """A 25 Hz dB outlier is not a scalar-objective floor."""
+    from dataclasses import replace
+
+    class DeterministicButDeclaredVariable(SyntheticRenderer):
+        def metadata(self):
+            return replace(
+                super().metadata(), reproducible=False, band_noise_db=5.228794,
+            )
+
+    evaluator = S.Evaluator(
+        DeterministicButDeclaredVariable(), target, di(), space,
+    )
+    screened = S.screen(
+        evaluator, seed, only=[f"{AMP}Amp/{AMP}Volume"],
+    )
+
+    assert screened.floor == S.SENSITIVITY_FLOOR
+    assert evaluator.renders == 7, "five repeats plus two range endpoints"
+
+
+def test_nonreproducible_screen_uses_the_range_of_several_varying_renders(
+    space, seed, target,
+):
+    from dataclasses import replace
+
+    class AlternatingRenderer(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False)
+
+        def render(self, di, settings=None, **kwargs):
+            result = super().render(di, settings, **kwargs)
+            self.calls += 1
+            # A real non-reproducible backend changes samples under identical
+            # inputs. Alternate a plainly audible level so the scalar score—not
+            # metadata—has an observed range the screen must retain.
+            gain = 0.5 if self.calls == S.NONREPRODUCIBLE_SCREEN_SAMPLES else 1.0
+            return replace(result, audio=result.audio * gain)
+
+    evaluator = S.Evaluator(AlternatingRenderer(), target, di(), space)
+    screened = S.screen(
+        evaluator, seed, only=[f"{AMP}Amp/{AMP}Volume"],
+    )
+
+    assert evaluator.renders == 7
+    assert screened.floor > S.SENSITIVITY_FLOOR
+
+
+def test_incomplete_nonreproducible_floor_uses_metadata_and_is_reported(
+    space, seed, target,
+):
+    from dataclasses import replace
+    from match.renderer import RenderError
+
+    class OneFailedRepeat(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def metadata(self):
+            return replace(
+                super().metadata(), reproducible=False, band_noise_db=0.6,
+            )
+
+        def render(self, di, settings=None, **kwargs):
+            self.calls += 1
+            if self.calls == 3:
+                raise RenderError("deliberate repeat failure")
+            return super().render(di, settings, **kwargs)
+
+    evaluator = S.Evaluator(OneFailedRepeat(), target, di(), space)
+    screened = S.screen(
+        evaluator, seed, only=[f"{AMP}Amp/{AMP}Volume"],
+    )
+
+    assert screened.repeat_failures == 1
+    assert screened.floor == pytest.approx(0.2)  # 0.6 dB / the 3 dB band scale
+
+
+def test_nonreproducible_renderer_never_reads_a_cached_score(space, seed, target):
+    from dataclasses import replace
+
+    class VariableContract(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    with Store() as store:
+        store.start_run(Run(run_id="variable"))
+        evaluator = S.Evaluator(
+            VariableContract(), target, di(), space,
+            store=store, run_id="variable",
+        )
+        evaluator.evaluate(seed)
+        evaluator.evaluate(seed)
+
+        assert evaluator.renders == 2
+        assert evaluator.cache_hits == 0
+
 
 def test_paired_profile_requires_and_scores_the_reference_waveform(space, seed):
     """The profile's 0.9 residual weight must reach a real production score.

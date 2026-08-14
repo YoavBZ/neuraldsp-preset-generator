@@ -4,9 +4,9 @@
 > done and several of the statements below are now false — `--renderer swift`
 > exists, both Morgan calibration files exist, and Tone King renders. What actually
 > happened, including where this document turned out to be wrong, is
-> `docs/tone-matching-plan.md` §12d; Tone King's later calibration and corrected
-> known-target run are in §12g. Read this for the reasoning and those sections for
-> the results.
+> `docs/tone-matching-plan.md` §12d; Tone King's later calibration, direct
+> inversion and corrected known-target runs are in §12g. Read this for the
+> reasoning and those sections for the results.
 
 
 Written at the end of the session that built **M4** (reference-guided tone matching)

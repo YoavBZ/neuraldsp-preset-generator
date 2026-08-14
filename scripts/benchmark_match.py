@@ -110,8 +110,8 @@ def _backend_caveat(metadata) -> str:
         return ""
     return (
         f"rendered by {metadata.renderer_id} (plugin {metadata.plugin_version}), "
-        f"which reports reproducible=False: two renders of identical parameters "
-        f"from one reused instance differ, and per-band levels move by up to "
+        f"which reports reproducible=False: identical-state observations from one "
+        f"reused instance differ, and per-band levels move by up to "
         f"{metadata.band_noise_db} dB. Every number below carries that, and none "
         f"of them may be committed without it"
     )
@@ -126,7 +126,7 @@ def main() -> None:
 
     import numpy as np
 
-    from match import benchmark, space as space_module
+    from match import benchmark, invert, space as space_module
 
     arms = tuple(name.strip() for name in args.arms.split(",") if name.strip())
     unknown = [name for name in arms if name not in benchmark.ARMS]
@@ -134,14 +134,39 @@ def main() -> None:
         die(f"unknown arm(s) {', '.join(unknown)}. "
             f"Available: {', '.join(benchmark.ARMS)}")
 
-    space = space_module.build(args.pack, amp=args.amp)
+    try:
+        signal_path = invert.resolve_signal_path(args.pack, args.amp)
+    except invert.InversionError as error:
+        die(str(error))
+    space = space_module.build(args.pack, amp=signal_path)
     renderer = _renderer(args.renderer, args.pack)
     supported = renderer_paths(renderer)
+    if supported is not None and not any(
+        dimension.path in supported for dimension in space.dimensions
+    ):
+        close = getattr(renderer, "close", None)
+        if close is not None:
+            close()
+        suggestion = (
+            " Use --renderer swift for Tone King."
+            if args.renderer != "swift" else ""
+        )
+        die(
+            f"the {args.renderer} renderer supports no searchable controls for "
+            f"{args.pack}/{signal_path}; a benchmark would sample no target "
+            f"settings.{suggestion}"
+        )
     if args.list_enumerable:
-        print_enumerable(space, args.pack, args.amp, supported=supported)
+        print_enumerable(space, args.pack, signal_path, supported=supported)
+        close = getattr(renderer, "close", None)
+        if close is not None:
+            close()
         return
 
     seed = benchmark.centre_seed(space)
+    seed = invert.apply_to(
+        seed, invert.signal_path_selection(args.pack, signal_path), space
+    )
     # The same routing and the same budget arithmetic the match CLI uses, imported
     # rather than repeated: two copies of "is this a switch or a selector" would be
     # two places for the answer to drift.
@@ -163,7 +188,8 @@ def main() -> None:
         result = benchmark.compare_baselines(
             renderer, space, di, seed, targets=args.targets, budget=args.budget,
             profile=args.loss_profile, rng=np.random.default_rng(args.seed), arms=arms,
-            pack_id=args.pack, amp=args.amp, switches=switches, selectors=selectors,
+            pack_id=args.pack, amp=signal_path,
+            switches=switches, selectors=selectors,
             progress=progress,
         )
     finally:
@@ -179,7 +205,7 @@ def main() -> None:
         result.caveats.insert(0, backend_caveat)
 
     print(f"\n{args.targets} targets, budget {args.budget}, "
-          f"{args.pack}/{args.amp}, {args.loss_profile}, "
+          f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
           f"{time.time() - started:.0f}s total\n")
     print(benchmark.format_table(result, arms=arms))
@@ -190,7 +216,8 @@ def main() -> None:
         rows = [vars(outcome) for outcome in result.outcomes]
         args.json.write_text(json.dumps({
             "targets": args.targets, "budget": args.budget, "pack": args.pack,
-            "amp": args.amp, "loss_profile": args.loss_profile, "seed": args.seed,
+            "amp": signal_path, "loss_profile": args.loss_profile,
+            "seed": args.seed,
             # Which backend, and whether it repeats itself. A table of objectives
             # with no backend beside it is the one thing this project has agreed
             # never to write down.

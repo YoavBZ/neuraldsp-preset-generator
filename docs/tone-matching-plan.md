@@ -27,7 +27,7 @@ calibration and two real-stem acceptance runs are recorded in §12e.
 The fresh-process Morgan drive surface that closes M5's remaining calibration
 item is recorded in §12f.
 Tone King's topology-generic calibration, fresh-process repeatability finding and
-corrected known-target run are recorded in §12g.
+corrected known-target runs, including direct inversion, are recorded in §12g.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -1479,13 +1479,17 @@ document should be treated the same way.
 
 **The screen pays for itself immediately.** Morgan has 125 searchable dimensions and
 CMA-ES over 125 dimensions needs thousands of samples to do anything. Two renders per
-parameter plus one baseline — 2N + 1, and calling it "2 per parameter" was off by
-exactly that one — turned 24 live supported dimensions into 18 searched and 6 frozen
+parameter plus one baseline — 2N + 1 on a reproducible backend — turned 24 live
+supported dimensions into 18 searched and 6 frozen
 for 49 renders on the run above. The extremes are
 the right probe *because* they are extreme: a control that cannot move the objective
 from one end of its range to the other cannot matter in between, whatever the
 interactions. Switches and selectors are not screened, because turning an effect off
 changes what is *reachable* rather than shifting a value.
+On a backend reporting `reproducible=false`, the screen measures five uncached
+observations of the baseline and uses their peak-to-peak scalar spread. That costs
+four additional baseline renders (2N + 5) and avoids treating one accidentally close
+pair as the backend's resolution.
 
 **The topology loop is exhaustive over what it is given, and neither CLI gives it
 anything.** Interpolating between mic 3 and mic 4 means nothing — the numbers are
@@ -1590,6 +1594,18 @@ python3 scripts/benchmark_match.py --targets 50 --budget 300 \
 ```
 
 **50 targets, a 300-render budget, zero failures, 95 minutes. It ships.**
+
+**These numbers predate §12g's benchmark changes and the command no longer
+reproduces them exactly.** Tone King's flat namespace exposed two defects in how a
+target is built and scored, and fixing both changed the Morgan experiment as a
+side effect: `random_vector` now samples only the dimensions the seed's selectors
+leave active — 90 of 125 on Morgan against 124 before, because the two unselected
+amps' controls never reached the sound — and `parameter_error`'s denominator is
+now the active set rather than every supported path. `compare_baselines` also
+folds each arm's final scoring render into its own count, so every per-arm render
+figure below is one lower than the same run would report today. The comparison
+between arms is unaffected: all three arms changed the same way at once. Re-run
+the command above before quoting any of these figures as current.
 
 (The `--json` is not decoration: without it nothing is written, and the version of this
 line that omitted it could not have produced the committed evidence it cites four
@@ -2417,27 +2433,49 @@ former to query the latter and silently dropped every one of Tone King's 94
 top-level values. The regression test builds a record-state preset and proves
 that the selected channel and both stored channel volumes survive into the seed.
 
+The benchmark had the mirror image of the same defect: `random_vector` sampled
+every declared dimension, so a Tone King target carried settings for the channel
+it had not selected, and `parameter_error` scored the recovery of controls that
+never reached the sound. Both now respect the seed's selectors. That is a Morgan
+change as much as a Tone King one — 90 of 125 dimensions sampled where 124 were
+before — so §12c's recorded 50-target figures now carry a note saying they predate
+it. Nothing about the comparison between arms moved: all three arms sample from
+the same generator.
+
 ### The shared EQ, measured on both channels
 
 ```bash
 .venv/bin/python scripts/measure_eq_basis.py --pack toneking
 ```
 
-The command made 40 renders in 72 seconds and wrote
-`packs/toneking/eq_basis.json`. It repeats the flat state once per channel before
+The command made 46 renders in 77 seconds and wrote
+`packs/toneking/eq_basis.json`. It renders the same flat state five times per
+channel and records the peak-to-peak spread at each analysis frequency before
 moving a band. Rhythm's largest identical-state third-octave difference was
-1.149284 dB and Lead's was 3.505611 dB, both at 25 Hz, so the file and reused
-renderer report **`reproducible=false`, `band_noise_db=3.505611`**. Curvature is
-only reported above the observed per-band spread and where the slider has an
-audible slope; the remaining warnings are 0.78 dB beyond the floor for Rhythm's
-2 kHz control and 1.04 dB for Lead's 4 kHz control.
+3.217293 dB and Lead's was 5.228794 dB, both at 25 Hz, so the file and reused
+renderer report **`reproducible=false`, `band_noise_db=5.228794`**. Curvature is
+only reported above the five-sample frequency-aligned spread and where the slider
+has an audible slope; this run produced no remaining curvature caveat. The file
+also records `eq-basis-provenance-1` plus a digest of each complete signal path,
+so changing its selector, neutral state or control topology makes the basis stale.
 
-This removes textbook filter shapes from the Tone King calibration artifact. It
-does not yet make Tone King inversion operational: `match/invert.py` still
-assumes Morgan's module topology and has no way to select Tone King's Rhythm or
-Lead row. Production runs therefore continue to say `--no-invert`; when that
-topology is generalized, the existing inversion provenance note will preserve
-the basis's `reproducible=false` limitation.
+**The recorded provenance includes the host's own source, and that has a price
+worth knowing before it is paid.** `renderer_build` is a hash of
+`match/renderer_au.py`, `scripts/au_render_server.swift` and
+`scripts/au_probe.swift`, so *any* edit to those files — a comment or a parameter
+name is enough — makes both committed Tone King artifacts stale. Inversion then
+refuses the basis by name rather than using it, and the run exits with the
+re-measure command. `tests/test_calibration_schema.py` fails on the same change
+without needing the plugin, so the cost lands in CI rather than in a match, and
+CI cannot pay it: only a Mac with the licence can. A cosmetic rename in that
+file is therefore a request to re-measure on the plugin; one was written during
+this work and reverted rather than measured again.
+
+This removed textbook filter shapes from the Tone King calibration artifact, but
+did not by itself make inversion operational: `match/invert.py` still assumed
+Morgan's module topology and could not select the Rhythm or Lead row. The direct
+inversion run below closes that implementation gap while preserving the basis's
+`reproducible=false` limitation.
 
 ### The drive surface, and a fresh-process result that did not repeat
 
@@ -2510,22 +2548,70 @@ PY
   --out-dir /tmp/m5-toneking/corrected-run
 ```
 
-Tone King 1.0.3, **`reproducible=false` with a 3.50561 dB reused-instance band
-floor**: the corrected run improved `0.549 -> 0.353` in 191 search trials and
-149 seconds, with no failed or silent trial. The floor set the sensitivity
-threshold to 1.16854 and froze 23 of 26 active continuous controls. Only gate
-threshold, Lead volume and amp reverb were searched. The robust winner's worst
-score across +/-6 dB input was 0.749, and shortlist scores moved by as much as
-0.43 across that range.
+Tone King 1.0.3, **`reproducible=false` with a 5.228794 dB five-sample
+reused-instance band maximum**: the corrected run improved
+`0.5593456 -> 0.3780586` in 195 uncached search renders and 210 seconds, with no
+failed or silent trial (198 renders total: the template and two report renders
+sit outside the budget). The 5.228794 dB figure is provenance, not the scalar
+screen threshold: five seed observations measured that threshold directly as
+0.0107899 objective units. The screen searched 18 and froze 8 of 26 active
+continuous controls. The robust winner's worst score across +/-6 dB input was
+0.5808003; its runner-up scored 0.3968052 at the reference level but reached
+0.7017328 at an input extreme. Cache hits were zero, as required for this
+non-reproducible backend.
+
+### Direct inversion through the declared Lead signal path
+
+The comparison below reuses the exact fixture-generating and `apply_spec.py`
+commands above. Its match invocation differs from the recorded search-only run
+only by removing `--no-invert` and using a separate output directory:
+
+```bash
+.venv/bin/python scripts/match_preset.py \
+  --pack toneking \
+  --template /tmp/m5-toneking/template.xml \
+  --reference /tmp/m5-toneking/reference.wav \
+  --reference-mode probe \
+  --probe-di /tmp/m5-toneking/probe.wav \
+  --renderer swift \
+  --budget 200 --shortlist 2 --seed 0 \
+  --out-dir /tmp/m5-toneking/inverted-final-reviewed-run
+```
+
+Tone King 1.0.3, **`reproducible=false` with the same 5.228794 dB five-sample
+band maximum**: the run improved `0.5686985 -> 0.3464464` in 195 uncached search
+renders and 204 seconds, with no failed or silent trial (199 renders total: the
+template, inversion probe and two report renders are outside the budget).
+Inversion read the stored Lead selector without reporting its equivalent display
+label as a change, moved output gain from -6.00 to -2.04 dB, and applied measured
+EQ corrections of `+1.32, -1.96, -0.13, -0.01, +0.79, +1.22, +1.23, -0.81,
+-1.48 dB`. Those moves clear the basis artifact's frequency-aligned 50 Hz-and-up
+repeat spread even though the unrelated 25 Hz provenance maximum is large. Five
+seed observations left this run at the minimum 0.01 scalar screen threshold; the
+screen again searched 18 and froze 8 controls. The robust winner's worst score
+across +/-6 dB input was 0.4450984. The runner-up was nominally much closer at
+0.2508698 but reached 0.6438999 at an input extreme, so robust re-ranking kept it
+out of first place. Cache hits were zero.
+
+The search-only run ended at 0.3780586 with a 0.5808003 worst-input score; this
+run ended at 0.3464464 and 0.4450984. The observed gaps are 0.0316121 nominally
+and 0.1357019 at the worst input level. They are **not evidence that inversion is
+causally better**: the backend is explicitly non-reproducible, the starting
+score itself differed by 0.0093529 between sequential runs, their independently
+measured scalar floors differed, and candidate evaluations were not replicated.
+They are evidence that Tone King inversion is operational
+end to end, uses the selected channel's measured basis, applies a level delta to
+the template's existing output value rather than treating it as an absolute
+knob position, and compares each EQ move with frequency-aligned repeat evidence.
 
 This is valid end-to-end evidence for Tone King's state writer, channel gating,
-template seed and continuous search. It is not a Tone King equivalent of the
-50-target Morgan benchmark. `SyntheticRenderer` models Morgan's topology only,
-so there is no synthetic Tone King score from which to quote an honest percentage
-gap. The honest remaining gap is explicit instead: no inversion, a large measured
-noise floor that freezes most controls, no replicated candidate evaluation, and
-no Tone King aggregate benchmark. The older §12d `1.320 -> 0.819` result is
-invalid because its top-level template values never entered the seed.
+template seed, direct inversion and continuous search. It is not a Tone King
+equivalent of the 50-target Morgan benchmark. `SyntheticRenderer` models Morgan's
+topology only, so there is no synthetic Tone King score from which to quote an
+honest percentage gap. The remaining gap is explicit instead: a large measured
+non-reproducible backend, no replicated candidate evaluation and no
+Tone King aggregate benchmark. The older §12d `1.320 -> 0.819` result is invalid
+because its top-level template values never entered the seed.
 
 ## 13. Reading list, in the order it becomes relevant
 

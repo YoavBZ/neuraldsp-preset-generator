@@ -67,7 +67,7 @@ class RenderMetadata:
     renderer_build: str = "n/a"
     quality_mode: str = "standard"
     reproducible: bool = False
-    # The per-band spread between two renders of identical parameters on this
+    # The measured per-band spread across identical-state observations on this
     # backend. Zero for a reproducible one. `resolves_band_difference()` is what
     # reads it, so a caller can ask instead of hardcoding a threshold.
     band_noise_db: float = 0.0
@@ -76,11 +76,10 @@ class RenderMetadata:
     def resolves_band_difference(self, difference_db: float) -> bool:
         """Whether a per-band difference this small means anything on this backend.
 
-        `match.search.screen` reads `band_noise_db` through `_backend_floor` and
-        raises its own floor to match, so on a reused plugin instance the limit is
-        measured rather than chosen: below it the screen would be screening on noise,
-        discarding real controls and keeping imaginary ones. This predicate is the
-        same question asked about a single band rather than about the objective.
+        `match.search.screen` measures scalar-objective repeatability directly on a
+        non-reproducible backend; it uses this maximum only if that repeated score
+        cannot be measured. This predicate answers the narrower question for one
+        band when no frequency-aligned basis measurement is available.
         """
         return abs(float(difference_db)) > self.band_noise_db
 
@@ -212,7 +211,7 @@ class Renderer:
             "be searched over"
         )
 
-    def eq_basis(self, amp: str, analysis_centres):
+    def eq_basis(self, signal_path: str, analysis_centres):
         """What one dB on each graphic-EQ band does to *this backend's* output.
 
         `(basis, note)` or `None` for "no measurement, use the textbook curves".

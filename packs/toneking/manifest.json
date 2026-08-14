@@ -15,7 +15,7 @@
     "eq_band_centres_source": "Tone King Imperial MKII User's Guide v1.0.0, page 12 (official installed manual and https://downloads.neuraldsp.com/file/toneking-imperial/Tone%20King%20Imperial%20MKII%20v1.0.0.pdf)",
     "fresh_process_reproducible": false,
     "fresh_process_band_noise_db": 4.91,
-    "reused_instance_band_noise_db": 3.50561,
+    "reused_instance_band_noise_db": 5.228794,
     "output_gain_control": "/outputGain",
     "settings": {
       "/ampsActive": "Active",
@@ -41,7 +41,7 @@
     },
     "signal_paths": {
       "rhythm": {
-        "settings": {
+        "selection_settings": {
           "/ampType": "Rhythm Channel"
         },
         "volume_control": "/rhythmAmpVolume",
@@ -62,7 +62,7 @@
         ]
       },
       "lead": {
-        "settings": {
+        "selection_settings": {
           "/ampType": "Lead Channel"
         },
         "volume_control": "/leadAmpVolume",
@@ -1106,6 +1106,7 @@
     },
     "/outputGain": {
       "kind": "metered",
+      "unit": "db",
       "min": -24.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",

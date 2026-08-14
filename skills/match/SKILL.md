@@ -72,11 +72,10 @@ the topology, not Neural DSP's processing.
 Use the user's own DI as `--probe-di` when available. Without one, omit the flag;
 the tool uses a six-second sequence of decaying white-noise bursts and records that
 limitation. It is transient and aperiodic, not a played or pitched guitar part.
-For `paired_di`, the exact DI is mandatory. Tone King currently requires
-`--no-invert` because its flat parameter namespace has no Morgan-style amp EQ to
-invert. A residual-weighted paired run must use the complete DI and reamp: omit
-`--excerpt` or pass `--excerpt 0`; a partial statistical fingerprint cannot be
-combined with a full-performance waveform residual.
+For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
+use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
+statistical fingerprint cannot be combined with a full-performance waveform
+residual.
 
 ## 4. Match and read the compact summary
 
@@ -92,6 +91,13 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
   --budget 300 --shortlist 3 --out-dir RUN_DIR
 ```
 
+`--amp` names the signal path being matched: a Morgan amp (`sw50r`) or a Tone
+King channel (`lead`, `rhythm`), with the plugin's own display label accepted
+too. It is applied to the template before the first render, so the path it names
+is the one measured, inverted and searched. Omit it and the template's selector
+decides. Both packs invert; use `--no-invert` only to measure what the search
+alone does from the template.
+
 Read `RUN_DIR/summary.json`, not the SVG-heavy HTML, to prepare the response. Also
 give the user `RUN_DIR/report.html` for the full plots. Surface all of the following:
 
@@ -99,7 +105,9 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
 - exact measured reference start and end from `reference.excerpt`;
 - renderer, plugin version, and reproducibility;
 - which controls were calculated by inversion, which were searched, and which
-  were frozen by the sensitivity screen;
+  were frozen by the sensitivity screen — with `sensitivity_floor_observations`,
+  because a floor measured from repeated seed renders on a non-reproducible
+  backend is evidence and a single-render floor is the default;
 - every shortlisted score, worst ±6 dB score, named objective vector, and
   plain-language differences between candidates;
 - every caveat, especially synthetic probe use, low harmonic confidence,

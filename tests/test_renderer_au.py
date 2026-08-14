@@ -197,7 +197,7 @@ def test_tone_king_metadata_carries_both_measured_noise_floors():
     assert fresh.metadata().reproducible is False
     assert fresh.metadata().band_noise_db == 4.91
     assert reused.metadata().reproducible is False
-    assert reused.metadata().band_noise_db == 3.50561
+    assert reused.metadata().band_noise_db == 5.228794
 
 
 def test_fresh_policy_restarts_before_a_second_render():

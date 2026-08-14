@@ -78,7 +78,22 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["renderer"]["renderer_id"] == "synthetic"
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
+    assert summary["inversion"]["detail"]["signal_path"] == "sw50r"
+    assert not any(change["path"] == "/selectedAmp"
+                   for change in summary["inversion"]["changes"]), (
+        "explicit --amp must select SW50R before the inversion probe is rendered"
+    )
     assert summary["search"]["searched"]
+    assert summary["search"]["sensitivity_floor_observations"] == 1
+    command = summary["command_accounting"]
+    assert command["total_renders"] == (
+        command["budgeted_renders"] + command["outside_budget_renders"]
+    )
+    assert command["outside_budget_by_source"] == {
+        "template": 1,
+        "inversion_probe": 1,
+        "report_candidates": 2,
+    }
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
     assert all(candidate["fingerprint"] is not None
@@ -568,6 +583,45 @@ def test_list_enumerable_names_the_paths_and_their_positions(tmp_path):
     assert "(switch)" in done.stdout
     # It exits before reading the reference, which here is not audio at all.
     assert "Format not recognised" not in done.stderr
+
+
+def test_amp_display_alias_is_normalised_before_building_the_space(tmp_path):
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", ROOT / "pyproject.toml", "--amp", "SW50R",
+               "--out-dir", tmp_path / "run", "--list-enumerable")
+
+    assert done.returncode == 0, done.stderr
+    assert "sw50rAmp/sw50rBright" in done.stdout
+
+
+def test_benchmark_amp_display_alias_is_normalised_before_the_space():
+    done = run("benchmark_match.py", "--amp", "SW50R", "--list-enumerable")
+
+    assert done.returncode == 0, done.stderr
+    assert "sw50rAmp/sw50rBright" in done.stdout
+
+
+def test_benchmark_refuses_a_renderer_that_cannot_search_the_pack():
+    done = run(
+        "benchmark_match.py", "--pack", "toneking", "--amp", "lead",
+        "--renderer", "synthetic", "--list-enumerable",
+    )
+
+    assert done.returncode != 0
+    assert "supports no searchable controls for toneking/lead" in done.stderr
+    assert "--renderer swift" in done.stderr
+
+
+def test_match_refuses_a_renderer_that_cannot_search_the_pack(tmp_path):
+    done = run(
+        "match_preset.py", "--pack", "toneking", "--renderer", "synthetic",
+        "--template", TEMPLATE, "--reference", ROOT / "pyproject.toml",
+        "--out-dir", tmp_path / "run", "--list-enumerable",
+    )
+
+    assert done.returncode != 0
+    assert "supports no searchable controls for pack toneking" in done.stderr
+    assert "--renderer swift" in done.stderr
 
 
 def test_an_unenumerable_path_is_refused_by_name(audio, tmp_path):

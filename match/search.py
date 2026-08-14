@@ -51,6 +51,10 @@ from match.store import Store, Trial
 # whatever that backend's own variation is, and `screen` raises this to match — see
 # `_backend_floor`.
 SENSITIVITY_FLOOR = 0.01
+# A non-reproducible backend gets five observations of the same scalar score.
+# Their peak-to-peak spread is deliberately conservative; two observations can
+# accidentally agree even when the process has meaningful state variation.
+NONREPRODUCIBLE_SCREEN_SAMPLES = 5
 
 # The fraction of surviving parameters to freeze anyway, weakest first. The plan
 # says "freeze the bottom quantile", and the reason it is a quantile as well as a
@@ -158,6 +162,7 @@ class SearchResult:
     # raised to the backend's own band noise — and which a report has to have if it is
     # to say *why* a row was frozen rather than guess from a constant.
     floor: float = SENSITIVITY_FLOOR
+    floor_observations: int = 1
     # Paths where one end of the range silences the render, and the value that does it.
     # The report called these "too small to matter" while the caveat block, in the same
     # document, said they silence the signal entirely.
@@ -240,7 +245,7 @@ class Evaluator:
     # --- the one expensive call ---------------------------------------------
 
     def evaluate(self, values: Mapping, di=None,
-                 offset_db: float = 0.0) -> Candidate:
+                 offset_db: float = 0.0, use_cache: bool = True) -> Candidate:
         """Score one parameter vector. Counts against the budget unless cached.
 
         `di` and `offset_db` travel together and both are recorded: a trial is
@@ -268,7 +273,10 @@ class Evaluator:
         scoring_key = _scoring_key(
             key, self.target, self.profile, self.recipe, self.reference_audio_sha)
 
-        if self.store is not None:
+        # A cached score is valid only when the backend is a function of its inputs.
+        # Reused Audio Unit instances explicitly are not: reading an earlier score
+        # would mix one plugin instance's endpoint with another instance's baseline.
+        if use_cache and metadata.reproducible and self.store is not None:
             hit = self.store.cached(scoring_key)
             if hit is not None:
                 self.cache_hits += 1
@@ -449,6 +457,8 @@ class Screen:
     movement: Dict[str, float] = field(default_factory=dict)
     silences: Dict[str, float] = field(default_factory=dict)
     floor: float = SENSITIVITY_FLOOR
+    repeat_failures: int = 0
+    repeat_observations: int = 1
 
 
 def screen(evaluator: Evaluator, seed: Mapping,
@@ -458,11 +468,15 @@ def screen(evaluator: Evaluator, seed: Mapping,
     """Which parameters move the objective, and by how much.
 
     Two renders per parameter — its low end and its high end, everything else at the
-    seed — so the cost is known before it is spent: 2 × the number of candidates,
-    once. Returns a `Screen`: the paths worth searching, the ones frozen with the
-    movement that decided each, **every probe it scored**, the movement of every
-    parameter — searched or frozen — so a report can show the decision rather than
-    assert it, and the floor those decisions were actually made against.
+    seed — so the cost is known before it is spent: 2N + 1 on a reproducible
+    backend, and 2N + 5 on one that is not, where the four extra renders measure
+    the seed's own scalar spread. Returns a `Screen`: the paths worth searching,
+    the ones frozen with the movement that decided each, **every probe worth
+    reusing** — the baseline and both extremes of every candidate, but not the
+    repeat observations, which are the seed again and offer the shortlist
+    nothing — the movement of every parameter, searched or frozen, so a report can
+    show the decision rather than assert it, and the floor those decisions were
+    actually made against.
 
     The probes matter. They are renders that were paid for and compared, and a
     parameter at an extreme is a legitimate parameter vector: measured on a target
@@ -481,7 +495,7 @@ def screen(evaluator: Evaluator, seed: Mapping,
     be driven with, because that render measures the backend's silence rather than
     the control.
     """
-    floor = max(float(floor), _backend_floor(evaluator))
+    floor = float(floor)
     candidates = [d for d in evaluator.space.active(seed)
                   if not d.switch and d.kind != "enum"
                   and (evaluator._supported is None
@@ -499,7 +513,12 @@ def screen(evaluator: Evaluator, seed: Mapping,
 
     probes: List[Candidate] = []
     silences: Dict[str, float] = {}
-    baseline = evaluator.evaluate(seed)
+    reproducible = bool(evaluator.renderer.metadata().reproducible)
+    # A reused plugin instance is not a function of its inputs. Several actual seed
+    # renders measure the scalar objective's own peak-to-peak spread; a cached score
+    # from an earlier process cannot answer that question. Reproducible backends keep
+    # the old one-render path.
+    baseline = evaluator.evaluate(seed, use_cache=reproducible)
     probes.append(baseline)
     if not baseline.objectives:
         why = (f"the backend refused it — {baseline.error}" if baseline.error
@@ -509,6 +528,16 @@ def screen(evaluator: Evaluator, seed: Mapping,
             f"  Every movement below is measured against this, so the screen cannot "
             f"proceed without it."
         )
+    repeats = [baseline]
+    if not reproducible:
+        repeats.extend(
+            evaluator.evaluate(seed, use_cache=False)
+            for _ in range(NONREPRODUCIBLE_SCREEN_SAMPLES - 1)
+        )
+    repeat_failures = sum(not candidate.objectives for candidate in repeats)
+    floor = max(floor, _backend_floor(
+        evaluator, repeats, expected=NONREPRODUCIBLE_SCREEN_SAMPLES,
+    ))
 
     movement: Dict[str, float] = {}
     for dimension in candidates:
@@ -571,7 +600,9 @@ def screen(evaluator: Evaluator, seed: Mapping,
     # CMA-ES benefits from when its budget runs out mid-population.
     searched.sort(key=lambda path: above[path], reverse=True)
     return Screen(searched=searched, frozen=frozen, probes=probes,
-                  movement=movement, silences=silences, floor=floor)
+                  movement=movement, silences=silences, floor=floor,
+                  repeat_failures=repeat_failures,
+                  repeat_observations=len(repeats))
 
 
 # --- stage 2: topology ------------------------------------------------------
@@ -993,9 +1024,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     The budget is spent in a fixed order, every stage reports what it took, and the
     fixed costs are reserved before the optimiser is offered anything:
 
-    - the screen: **2N + 1** renders for N candidate parameters — the baseline the
-      movements are measured against is a render too, and calling it "2 per
-      parameter" was off by exactly that one
+    - the screen: **2N + 1** renders for N candidate parameters on a reproducible
+      backend, or **2N + 5** when a non-reproducible backend needs five uncached
+      observations of the baseline's scalar-objective variation
     - the topology loop: **one render per variant**, for the variant's own seed. This
       was not reserved, so a run overspent by exactly the variant count — one render
       with no switches enumerated, thirty-two with five
@@ -1024,7 +1055,16 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     result.searched = list(searched)
     result.movement = {path: movement[path] for path in searched if path in movement}
     result.floor = screened.floor
+    result.floor_observations = screened.repeat_observations
     result.silences = dict(silences)
+    if screened.repeat_failures:
+        result.caveats.append(
+            f"{screened.repeat_failures} of "
+            f"{NONREPRODUCIBLE_SCREEN_SAMPLES} identical-state observations could "
+            "not be scored, so the sensitivity floor conservatively used the "
+            "larger of the observed scalar spread and the renderer's metadata "
+            "fallback"
+        )
     if frozen:
         # Frozen for three different reasons, and saying "below the floor" about all
         # of them was false: a caveat claimed four parameters "moved the objective by
@@ -1185,9 +1225,15 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                 "rather than applying an offset inferred from noise"
             )
     if result.renders > budget:
+        screen_fixed = "2 per parameter plus one baseline"
+        if not evaluator.renderer.metadata().reproducible:
+            screen_fixed += (
+                f" plus {NONREPRODUCIBLE_SCREEN_SAMPLES - 1} repeats used to "
+                "measure backend variation"
+            )
         result.caveats.append(
             f"the search made {result.renders} renders against a budget of "
-            f"{budget}. The screen costs 2 per parameter plus one baseline and "
+            f"{budget}. The screen costs {screen_fixed} and "
             f"cannot be part-paid, so a budget below {spent + reserved} is exceeded "
             f"rather than trimmed"
         )
@@ -1219,32 +1265,34 @@ def _get(values: Mapping, dimension: Dimension):
     return read(values, (dimension.module, dimension.key))
 
 
-def _backend_floor(evaluator: Evaluator) -> float:
-    """The screen's floor, raised to what this backend can resolve.
+def _backend_floor(evaluator: Evaluator,
+                   repeated: Optional[Sequence[Candidate]] = None,
+                   expected: int = NONREPRODUCIBLE_SCREEN_SAMPLES) -> float:
+    """The screen's measured scalar-objective repeat spread.
 
-    `RenderMetadata.band_noise_db` is the per-band spread between two renders of
-    identical parameters — measured, not chosen, and 0.23 dB on a reused Audio Unit
-    instance. The screen's floor is in *objective* units, so the two have to be
-    related, and the loss profile already states the conversion: its `band_db` scale
-    is what the timbre term divides a band difference by. So a noise of 0.23 dB
-    against a 3.0 dB scale is 0.077 of a normalised band unit.
+    ``screen`` supplies five uncached evaluations for a non-reproducible backend.
+    Their peak-to-peak scalar spread is already in the same units as the movement
+    being screened, unlike a third-octave dB maximum divided by one loss scale.
 
-    Being explicit about what this is: a **derivation**, not a measurement of the
-    objective's own repeatability. It is one term of nine, so it overstates — a real
-    measurement would render the seed twice on the backend and take the spread of the
-    scalar directly, which costs one render and is the right thing to do in M5 when
-    there is a backend that varies. Until then this is a defensible bound rather than
-    a number nobody checked, and `renderer.py`'s claim that the screen reads
-    `band_noise_db` is now true, which it was not.
+    The metadata derivation remains only as a fallback when either repeat render
+    could not be scored. It is conservative and keeps a broken repeat from silently
+    lowering the floor to zero.
     """
+    candidates = list(repeated or ())
+    totals = [float(candidate.total) for candidate in candidates
+              if candidate.objectives]
+    observed = max(totals) - min(totals) if len(totals) >= 2 else 0.0
     metadata = evaluator.renderer.metadata()
     noise = float(getattr(metadata, "band_noise_db", 0.0) or 0.0)
+    if len(candidates) >= expected and len(totals) == len(candidates):
+        return observed
     if noise <= 0.0:
-        return 0.0
+        return observed
     from analysis.compare import load_profile
 
     scale = float(load_profile(evaluator.profile)["scales"].get("band_db") or 3.0)
-    return noise / scale if scale > 0 else 0.0
+    fallback = noise / scale if scale > 0 else 0.0
+    return max(observed, fallback)
 
 
 def _quantisation_step(dimensions: Sequence[Dimension]) -> float:
