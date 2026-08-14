@@ -107,16 +107,21 @@ large ambience sources can obscure the pick attack quickly.
 
 ## Verification boundary
 
-The manifest establishes writable mappings, kinds, ranges, and selector labels
-against the running Audio Unit. The musical settings here are conservative
-starting points supported by the manual and aggregate factory-preset behavior;
-they are not transfer-function or distortion measurements.
+The manifest's 94 writable mappings, kinds, ranges, selectors and switch
+directions were re-audited against Tone King 1.0.3. The Swift host now renders
+the plugin after cycling its render resources; the earlier exact-silence result
+described a hosting defect, not the plugin's sound.
 
-**And they have not been.** This plugin produces no audio in a headless render —
-`scripts/au_silence_check.swift` reports a peak of 0.0 for it and 0.55 for
-Morgan under identical code — so none of the Swift measurements that back the
-Morgan pack exist for this one. It does render in a JUCE host, which means the
-gap is now work nobody has done rather than work nobody can do; see
-[docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
-Read all of it as "not established" rather than "not needed", and audition the
-result with the target guitar, level-matched in context.
+`eq_basis.json` measures both channels' shared nine-band equaliser, and
+`drive_curve.json` measures channel volume against four input levels. Neither
+backend policy is exact for this plugin: identical-state reused renders moved a
+third-octave band by up to 3.505611 dB, and fresh-process drive repeats moved one
+by up to 4.909836 dB. Both files therefore say `reproducible=false`; their rows
+are sampled observations, not deterministic transfer functions. The exact
+commands, plugin version, repeat evidence and known-target result are recorded
+in [the implementation plan](../../docs/tone-matching-plan.md#12g-tone-king-calibration-and-the-corrected-known-target-run).
+
+The recipes above remain conservative musical starting points rather than
+results derived from those two measurements. Production Tone King matching also
+still requires `--no-invert`; audition its result with the target guitar,
+level-matched in context.

@@ -62,6 +62,14 @@ class SpaceError(ValueError):
 
 
 @dataclass(frozen=True)
+class SelectorCondition:
+    """A selector has to hold one of these canonical members for a control to act."""
+
+    selector: Key
+    members: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Dimension:
     """One thing a search may move, and the condition under which it matters."""
 
@@ -77,6 +85,7 @@ class Dimension:
     # dimension to reach the sound at all.
     gate: Optional[Key] = None
     gate_amp: Optional[str] = None
+    selector_condition: Optional[SelectorCondition] = None
 
     @property
     def path(self) -> str:
@@ -210,6 +219,11 @@ class Space:
         for dimension in self.dimensions:
             if dimension.gate_amp is not None and dimension.gate_amp != prefix:
                 continue
+            condition = dimension.selector_condition
+            if condition is not None:
+                selected = _get(values, condition.selector)
+                if selected is not None and _selector_token(selected) not in condition.members:
+                    continue
             if self._gated_off(dimension, values) is None:
                 live.append(dimension)
         return live
@@ -392,6 +406,7 @@ def build(pack_id: str = "morgan", include_needs_review: bool = False,
     amp_modules = dict(pack.amp_modules)
     prefixes = set(amp_modules.values())
     gates = gate_map(pack)
+    conditions = selector_conditions(pack)
 
     # `selectedAmp` stores an integer and `amp_modules` is keyed by display name,
     # so going from a preset value to a module prefix needs both tables.
@@ -430,6 +445,7 @@ def build(pack_id: str = "morgan", include_needs_review: bool = False,
                 quantum=QUANTA.get(spec.unit or spec.kind),
                 gate=gates.get(path),
                 gate_amp=owner,
+                selector_condition=conditions.get(path),
             )
             if dimension.continuous:
                 # Refuse a metered control with no declared range. Enums and
@@ -568,6 +584,52 @@ def gate_map(pack) -> Dict[str, Key]:
     return gates
 
 
+def selector_conditions(pack) -> Dict[str, SelectorCondition]:
+    """Explicit selector ownership for controls a flat namespace cannot imply.
+
+    Module prefixes express Morgan's amp ownership. Tone King's Rhythm and Lead
+    controls all live at the top level, so their spelling alone cannot tell the
+    search which channel is audible. The manifest states those few relationships
+    explicitly; this resolves labels to stored members once and refuses stale
+    paths or impossible member names while building the space.
+    """
+    from packs.loader import PackError
+
+    found: Dict[str, SelectorCondition] = {}
+    for path, row in pack.search_conditions.items():
+        if path not in pack.parameters:
+            raise SpaceError(
+                f"search condition names unknown parameter {path!r} in "
+                f"packs/{pack.pack_id}/manifest.json"
+            )
+        if not isinstance(row, dict):
+            raise SpaceError(f"search condition for {path} must be an object")
+        raw_selector = row.get("selector")
+        if not isinstance(raw_selector, str):
+            raise SpaceError(f"search condition for {path} needs a selector path")
+        selector_path = raw_selector if "/" in raw_selector else f"/{raw_selector}"
+        selector = pack.parameters.get(selector_path)
+        if selector is None or selector.kind != "enum" or not selector.members:
+            raise SpaceError(
+                f"search condition for {path} names {raw_selector!r}, which is not "
+                "a declared selector with members"
+            )
+        raw_members = row.get("members")
+        if not isinstance(raw_members, list) or not raw_members:
+            raise SpaceError(f"search condition for {path} needs a non-empty members list")
+        accepted = []
+        for member in raw_members:
+            try:
+                stored = pack.to_stored(selector, member, warnings=[])
+            except PackError as error:
+                raise SpaceError(f"search condition for {path}: {error}") from error
+            accepted.append(_selector_token(stored))
+            accepted.append(_selector_token(member))
+        module, _, key = selector_path.rpartition("/")
+        found[path] = SelectorCondition((module, key), tuple(sorted(set(accepted))))
+    return found
+
+
 def unmodelled_sections(pack) -> List[str]:
     """Section switches that gate nothing, so a report can say which.
 
@@ -659,6 +721,16 @@ def _truthy(value) -> bool:
         return float(text) != 0.0
     except (TypeError, ValueError):
         return False
+
+
+def _selector_token(value) -> str:
+    """Canonical stored-member spelling for an enum value already in a vector."""
+    text = str(value).strip()
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return text.casefold()
+    return str(int(number)) if number.is_integer() else format(number, ".12g")
 
 
 def _member_index(dimension: Dimension, members: List[str], value) -> int:

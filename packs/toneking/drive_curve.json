@@ -1,0 +1,773 @@
+{
+  "schema": "drive-curve-1",
+  "pack": "toneking",
+  "fundamental_hz": 222.65625,
+  "harmonic_count": 8,
+  "input_levels": [
+    0.015,
+    0.05,
+    0.15,
+    0.3
+  ],
+  "positions_percent": [
+    10.0,
+    20.0,
+    30.0,
+    40.0,
+    50.0,
+    60.0,
+    70.0,
+    80.0,
+    90.0,
+    100.0
+  ],
+  "excitation": "2 s sine at 222.656 Hz, a 4096-point analysis-bin centre at 48000 Hz",
+  "process_policy": "one fresh plugin process per render",
+  "output_gain_db": -6.0,
+  "renderer": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.0.3",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=200;warmup_s=0;isolate=auto;process=fresh",
+    "reproducible": false,
+    "band_noise_db": 4.909836,
+    "notes": [
+      "toneking through aumf TKI2 NDSP, one fresh plugin process per render",
+      "fresh processes are not sample-exact for this pack; band_noise_db records the largest identical-state third-octave movement observed",
+      "fresh-process repeats in this run moved a third-octave band by up to 4.90984 dB",
+      "one repeated point per signal path was checked; at least one differed, so renderer.reproducible is false"
+    ]
+  },
+  "amps": {
+    "rhythm": {
+      "control": "/rhythmAmpVolume",
+      "curves": [
+        {
+          "input_level": 0.015,
+          "input_peak_dbfs": -36.478,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 1.564454,
+              "output_peak": 0.01224,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 0.45768,
+              "output_peak": 0.011978,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 1.040841,
+              "output_peak": 0.01698,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 1.715753,
+              "output_peak": 0.022767,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 2.378334,
+              "output_peak": 0.02801,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 3.415156,
+              "output_peak": 0.036218,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 5.564407,
+              "output_peak": 0.051967,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 10.774535,
+              "output_peak": 0.058339,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 15.953966,
+              "output_peak": 0.060915,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 16.055133,
+              "output_peak": 0.059537,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.05,
+          "input_peak_dbfs": -26.021,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 1.003043,
+              "output_peak": 0.012239,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 1.463245,
+              "output_peak": 0.028904,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 4.036565,
+              "output_peak": 0.04643,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 5.505607,
+              "output_peak": 0.054119,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 6.806758,
+              "output_peak": 0.056648,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 10.114872,
+              "output_peak": 0.058546,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 16.946163,
+              "output_peak": 0.061734,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 25.958966,
+              "output_peak": 0.061547,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 29.28428,
+              "output_peak": 0.060987,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 29.268063,
+              "output_peak": 0.060821,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.15,
+          "input_peak_dbfs": -16.478,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 2.177981,
+              "output_peak": 0.022308,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 4.557984,
+              "output_peak": 0.055199,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 12.805348,
+              "output_peak": 0.060726,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 17.070974,
+              "output_peak": 0.061564,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 20.119438,
+              "output_peak": 0.061329,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 24.048551,
+              "output_peak": 0.061515,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 29.23469,
+              "output_peak": 0.060803,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 32.74093,
+              "output_peak": 0.062915,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 33.486695,
+              "output_peak": 0.063042,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 33.666041,
+              "output_peak": 0.06255,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.3,
+          "input_peak_dbfs": -10.458,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 3.973153,
+              "output_peak": 0.037878,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 13.59006,
+              "output_peak": 0.061922,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 21.935501,
+              "output_peak": 0.061421,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 25.56941,
+              "output_peak": 0.06094,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 27.849813,
+              "output_peak": 0.060115,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 30.346574,
+              "output_peak": 0.060507,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 32.958542,
+              "output_peak": 0.063609,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 34.174639,
+              "output_peak": 0.064799,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 34.16871,
+              "output_peak": 0.06579,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 34.188432,
+              "output_peak": 0.065253,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        }
+      ],
+      "repeat_verification": {
+        "input_level": 0.05,
+        "position_percent": 50.0,
+        "sha256_first": "4e60c5713dba95a238900fa28f31c0e733da8e0425a605d92f5f83c3dcfb586c",
+        "sha256_repeat": "51f2371b5961cfcb5a734d69f554b46f555ad126677c0dd1b2315759233c62b3",
+        "byte_exact": false,
+        "relative_error_db": -39.487683,
+        "max_abs_difference": 0.00405325,
+        "max_band_difference_db": 4.909836,
+        "max_band_difference_hz": 40.0
+      },
+      "caveats": [
+        "THD describes the complete amp/cab output at -6 dB output trim, not an isolated preamp stage.",
+        "fresh processes were not sample-exact at the repeated point: -39.49 dB relative waveform error and 4.91 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
+      ]
+    },
+    "lead": {
+      "control": "/leadAmpVolume",
+      "curves": [
+        {
+          "input_level": 0.015,
+          "input_peak_dbfs": -36.478,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 1.162644,
+              "output_peak": 0.014812,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 3.297902,
+              "output_peak": 0.039409,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 4.598699,
+              "output_peak": 0.050045,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 5.104602,
+              "output_peak": 0.054056,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 5.623827,
+              "output_peak": 0.055612,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 6.924347,
+              "output_peak": 0.056226,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 9.774022,
+              "output_peak": 0.056855,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 13.747164,
+              "output_peak": 0.058909,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 17.305429,
+              "output_peak": 0.060617,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 19.308533,
+              "output_peak": 0.062343,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.05,
+          "input_peak_dbfs": -26.021,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 4.225164,
+              "output_peak": 0.042104,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 11.379319,
+              "output_peak": 0.057504,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 15.700917,
+              "output_peak": 0.059253,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 18.151571,
+              "output_peak": 0.060863,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 20.164605,
+              "output_peak": 0.060794,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 22.170267,
+              "output_peak": 0.060662,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 23.813858,
+              "output_peak": 0.061904,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 24.518659,
+              "output_peak": 0.060944,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 26.074874,
+              "output_peak": 0.061081,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 29.172697,
+              "output_peak": 0.06131,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.15,
+          "input_peak_dbfs": -16.478,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 11.605766,
+              "output_peak": 0.057169,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 22.817143,
+              "output_peak": 0.06332,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 24.858768,
+              "output_peak": 0.062872,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 25.748607,
+              "output_peak": 0.063048,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 26.534549,
+              "output_peak": 0.061659,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 27.829033,
+              "output_peak": 0.059991,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 32.306257,
+              "output_peak": 0.06269,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 44.601739,
+              "output_peak": 0.066114,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 63.225858,
+              "output_peak": 0.067999,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 77.215885,
+              "output_peak": 0.068525,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        },
+        {
+          "input_level": 0.3,
+          "input_peak_dbfs": -10.458,
+          "points": [
+            {
+              "position_percent": 10.0,
+              "stored_value": "0.1",
+              "thd_percent": 19.688518,
+              "output_peak": 0.061662,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 20.0,
+              "stored_value": "0.2",
+              "thd_percent": 26.088453,
+              "output_peak": 0.065221,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 30.0,
+              "stored_value": "0.3",
+              "thd_percent": 27.845577,
+              "output_peak": 0.063213,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 40.0,
+              "stored_value": "0.4",
+              "thd_percent": 29.566616,
+              "output_peak": 0.062062,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 50.0,
+              "stored_value": "0.5",
+              "thd_percent": 31.895497,
+              "output_peak": 0.063423,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 60.0,
+              "stored_value": "0.6",
+              "thd_percent": 36.622744,
+              "output_peak": 0.065152,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 70.0,
+              "stored_value": "0.7",
+              "thd_percent": 47.62358,
+              "output_peak": 0.066955,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 80.0,
+              "stored_value": "0.8",
+              "thd_percent": 68.817739,
+              "output_peak": 0.067773,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 90.0,
+              "stored_value": "0.9",
+              "thd_percent": 91.497291,
+              "output_peak": 0.067799,
+              "silent": false,
+              "clipped": false
+            },
+            {
+              "position_percent": 100.0,
+              "stored_value": "1",
+              "thd_percent": 106.87881,
+              "output_peak": 0.069627,
+              "silent": false,
+              "clipped": false
+            }
+          ]
+        }
+      ],
+      "repeat_verification": {
+        "input_level": 0.05,
+        "position_percent": 50.0,
+        "sha256_first": "47c88f83b308b5f220724436e5abf8fc22472e866d273531edfa0d2960e0a8b7",
+        "sha256_repeat": "5484ca25a683647444b32cca4384c9a3ca95f94c577e8d024bbcfa6b34d1decc",
+        "byte_exact": false,
+        "relative_error_db": -31.25567,
+        "max_abs_difference": 0.0086512,
+        "max_band_difference_db": 4.406398,
+        "max_band_difference_hz": 315.0
+      },
+      "caveats": [
+        "THD describes the complete amp/cab output at -6 dB output trim, not an isolated preamp stage.",
+        "fresh processes were not sample-exact at the repeated point: -31.26 dB relative waveform error and 4.41 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
+      ]
+    }
+  }
+}

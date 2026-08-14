@@ -11,6 +11,105 @@
     "manufacturer": "NDSP",
     "note": "`scripts/audit_manifest.py --pack toneking` adaptively writes multiple observed and synthetic values through the record-state format. It maps 94 of 255 numeric preset keys to 94 of the 96 published controls; the other two published parameters are host-only Preset Previous/Next actions. Of the remaining numeric keys, 158 retain alternate state without moving a published control and `tempo` rejects every observed alternate."
   },
+  "calibration": {
+    "eq_band_centres_source": "Tone King Imperial MKII User's Guide v1.0.0, page 12 (official installed manual and https://downloads.neuraldsp.com/file/toneking-imperial/Tone%20King%20Imperial%20MKII%20v1.0.0.pdf)",
+    "fresh_process_reproducible": false,
+    "fresh_process_band_noise_db": 4.91,
+    "reused_instance_band_noise_db": 3.50561,
+    "output_gain_control": "/outputGain",
+    "settings": {
+      "/ampsActive": "Active",
+      "/inputGain": 0.0,
+      "/gateThreshold": -96.0,
+      "/ampAttenuation": "0 dB",
+      "/ampHfc": "NORMAL",
+      "/ampReverb": 0.0,
+      "/ampTremoloDepth": 0.0,
+      "/pedalSectionActive": "Inactive",
+      "/wahActive": "Inactive",
+      "/compActive": "Inactive",
+      "/drive1Active": "Inactive",
+      "/drive2Active": "Inactive",
+      "/eqSectionActive": "Inactive",
+      "/eqActive": "Inactive",
+      "/timeSectionActive": "Inactive",
+      "/chorusActive": "Inactive",
+      "/delayActive": "Inactive",
+      "/reverbActive": "Inactive",
+      "/cab1RoomActive": "Inactive",
+      "/cab2RoomActive": "Inactive"
+    },
+    "signal_paths": {
+      "rhythm": {
+        "settings": {
+          "/ampType": "Rhythm Channel"
+        },
+        "volume_control": "/rhythmAmpVolume",
+        "eq_enable_controls": [
+          "/eqSectionActive",
+          "/eqActive"
+        ],
+        "eq_band_controls": [
+          "/eqBand1",
+          "/eqBand2",
+          "/eqBand3",
+          "/eqBand4",
+          "/eqBand5",
+          "/eqBand6",
+          "/eqBand7",
+          "/eqBand8",
+          "/eqBand9"
+        ]
+      },
+      "lead": {
+        "settings": {
+          "/ampType": "Lead Channel"
+        },
+        "volume_control": "/leadAmpVolume",
+        "eq_enable_controls": [
+          "/eqSectionActive",
+          "/eqActive"
+        ],
+        "eq_band_controls": [
+          "/eqBand1",
+          "/eqBand2",
+          "/eqBand3",
+          "/eqBand4",
+          "/eqBand5",
+          "/eqBand6",
+          "/eqBand7",
+          "/eqBand8",
+          "/eqBand9"
+        ]
+      }
+    }
+  },
+  "search_conditions": {
+    "/rhythmAmpBass": {
+      "selector": "/ampType",
+      "members": ["Rhythm Channel"]
+    },
+    "/rhythmAmpTreble": {
+      "selector": "/ampType",
+      "members": ["Rhythm Channel"]
+    },
+    "/rhythmAmpVolume": {
+      "selector": "/ampType",
+      "members": ["Rhythm Channel"]
+    },
+    "/leadAmpMidBite": {
+      "selector": "/ampType",
+      "members": ["Lead Channel"]
+    },
+    "/leadAmpTone": {
+      "selector": "/ampType",
+      "members": ["Lead Channel"]
+    },
+    "/leadAmpVolume": {
+      "selector": "/ampType",
+      "members": ["Lead Channel"]
+    }
+  },
   "description": "Production pack for Tone King Imperial MKII presets, which store 8-byte binary doubles inside PARAM records. Its 94 control-bearing writable keys are mapped to published Audio Unit controls with verified kinds, display names, ranges, and selector tables where applicable. Recipes and tone guidance cover the two amp channels, pedals, cabinet section, EQ, modulation, delay, reverb, and gain staging. Accounting for the 255 numeric live-state keys: 94 map one-to-one onto a published Audio Unit control, 158 move none and are `internal`, `tempo` is overwritten by the host, and 2 (`/5`, `/6`) are bulk-recall flags that move dozens of controls at once \u2014 they are deliberately not declared here and cannot be written. A saved preset carries 253 of these; `/5` and `/6` exist only in the live state.",
   "internal_state": "The 159 parameters marked `internal` are retained for inspection and lossless state round-trip but are read-only. Adaptive multi-value probing showed that 158 preserve alternate state without moving a published Audio Unit control; `tempo` rejects every observed alternate. Generated specs use the 94 mapped writable controls instead.",
   "enums": {
@@ -780,6 +879,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 65,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 1"
     },
@@ -787,6 +887,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 125,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 2"
     },
@@ -794,6 +895,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 250,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 3"
     },
@@ -801,6 +903,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 500,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 4"
     },
@@ -808,6 +911,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 1000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 5"
     },
@@ -815,6 +919,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 2000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 6"
     },
@@ -822,6 +927,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 4000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 7"
     },
@@ -829,6 +935,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 8000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 8"
     },
@@ -836,6 +943,7 @@
       "kind": "metered",
       "min": -12.0,
       "max": 12.0,
+      "centre_hz": 16000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "EQ Band 9"
     },

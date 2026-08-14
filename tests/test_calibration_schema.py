@@ -57,10 +57,14 @@ def test_each_band_declares_the_centre_its_pack_declares(path):
     document = _load(path)
     pack = load_pack(document["pack"])
     for amp, rows in document["amps"].items():
+        controls = rows.get("band_controls") or [
+            f"{amp}EQ/{amp}EQBand{index}"
+            for index in range(1, len(rows["band_centres_hz"]) + 1)
+        ]
         declared = []
-        for index in range(1, len(rows["band_centres_hz"]) + 1):
-            spec = pack.parameters.get(f"{amp}EQ/{amp}EQBand{index}")
-            assert spec is not None, f"{amp}EQ/{amp}EQBand{index} is not declared"
+        for control in controls:
+            spec = pack.parameters.get(control)
+            assert spec is not None, f"{control} is not declared"
             declared.append(float(spec.centre_hz))
         assert [float(c) for c in rows["band_centres_hz"]] == declared
 
@@ -110,6 +114,30 @@ def test_the_file_says_what_measured_it_and_whether_that_repeats(path):
         assert renderer["band_noise_db"] > 0.0, (
             "a backend that does not repeat itself has to say by how much"
         )
+        measured = [
+            float(rows["repeat_verification"]["max_band_difference_db"])
+            for rows in _load(path)["amps"].values()
+            if "repeat_verification" in rows
+        ]
+        if measured:
+            assert float(renderer["band_noise_db"]) == max(measured)
+
+
+@pytest.mark.parametrize("path", EQ_BASIS + DRIVE_CURVES, ids=lambda p: p.parent.name)
+def test_current_batched_renderer_still_matches_its_measured_build(path):
+    """A host edit changes provenance even if the plugin version stays put."""
+    document = _load(path)
+    recorded = document["renderer"].get("renderer_build", "")
+    if not recorded.startswith("audio-unit-renderer-"):
+        pytest.skip("legacy calibration predates AudioUnitRenderer build identities")
+
+    from match.renderer_au import AudioUnitRenderer
+
+    renderer = AudioUnitRenderer(document["pack"])
+    try:
+        assert renderer._renderer_build() == recorded
+    finally:
+        renderer.close()
 
 
 @pytest.mark.parametrize("path", EQ_BASIS, ids=lambda p: p.parent.name)
@@ -120,8 +148,9 @@ def test_the_gain_it_was_measured_at_is_inside_the_declared_range(path):
     pack = load_pack(document["pack"])
     gain = float(document["gain_db"])
     assert gain > 0.0
-    for amp in document["amps"]:
-        spec = pack.parameters[f"{amp}EQ/{amp}EQBand1"]
+    for amp, rows in document["amps"].items():
+        control = (rows.get("band_controls") or [f"{amp}EQ/{amp}EQBand1"])[0]
+        spec = pack.parameters[control]
         assert spec.min is not None and spec.max is not None
         assert spec.min <= -gain and gain <= spec.max, (
             f"{amp} was measured at ±{gain} dB, outside its declared "
@@ -226,9 +255,11 @@ def test_drive_curve_schema_and_fresh_process_provenance(path):
     assert document["process_policy"] == "one fresh plugin process per render"
     assert -24.0 <= float(document["output_gain_db"]) < 0.0
     renderer = document["renderer"]
-    assert renderer["renderer_id"] == "swift-one-shot"
+    assert renderer["renderer_id"] in {"swift-one-shot", "swift"}
     assert renderer["plugin_version"] not in ("", "n/a", "unknown")
-    assert renderer["reproducible"] is True
+    assert isinstance(renderer["reproducible"], bool)
+    if not renderer["reproducible"]:
+        assert float(renderer["band_noise_db"]) > 0.0
 
 
 @pytest.mark.parametrize("path", DRIVE_CURVES, ids=lambda p: p.parent.name)
@@ -245,7 +276,6 @@ def test_drive_curve_is_a_complete_input_level_surface(path):
 
     pack = load_pack(document["pack"])
     for amp, rows in document["amps"].items():
-        assert rows["control"] == f"{amp}Amp/{amp}Volume"
         assert rows["control"] in pack.parameters
         assert [float(curve["input_level"]) for curve in rows["curves"]] == levels
         for curve in rows["curves"]:
@@ -260,10 +290,22 @@ def test_drive_curve_is_a_complete_input_level_surface(path):
 
 @pytest.mark.parametrize("path", DRIVE_CURVES, ids=lambda p: p.parent.name)
 def test_each_drive_curve_proved_a_fresh_process_repeats(path):
-    for amp, rows in _load(path)["amps"].items():
+    document = _load(path)
+    exact_backend = document["renderer"]["reproducible"]
+    repeats = []
+    for amp, rows in document["amps"].items():
         repeat = rows["repeat_verification"]
-        assert repeat["byte_exact"] is True, f"{amp} fresh processes differed"
-        assert repeat["sha256_first"] == repeat["sha256_repeat"]
+        repeats.append(repeat)
+        if exact_backend:
+            assert repeat["byte_exact"] is True, f"{amp} fresh processes differed"
+            assert repeat["sha256_first"] == repeat["sha256_repeat"]
+        elif not repeat["byte_exact"]:
+            assert repeat["sha256_first"] != repeat["sha256_repeat"]
+            assert float(repeat["max_band_difference_db"]) > 0.0
+    if not exact_backend:
+        assert any(not repeat["byte_exact"] for repeat in repeats), (
+            "reproducible=False has no differing repeat beside it"
+        )
 
 
 def test_an_absent_basis_is_a_fallback_not_an_error():

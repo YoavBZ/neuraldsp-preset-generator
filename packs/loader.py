@@ -133,6 +133,14 @@ class Pack:
     # Amp display name -> module prefix, so an {amp}-templated recipe can be
     # resolved to the live amp's own EQ module.
     amp_modules: Dict[str, str] = field(default_factory=dict)
+    # Optional, declarative signal paths for measurements that need to know how
+    # a plugin's controls are wired. Morgan predates this field and can derive
+    # its paths from amp_modules; flat-namespace plugins such as Tone King cannot.
+    calibration: Dict[str, Any] = field(default_factory=dict)
+    # Optional selector conditions for flat namespaces. Maps a parameter path to
+    # the selector and members that put that control in circuit; Morgan encodes
+    # the same ownership in module prefixes instead.
+    search_conditions: Dict[str, Any] = field(default_factory=dict)
 
     def get(self, module: str, key: str) -> Optional[ParamSpec]:
         return self.parameters.get(f"{module}/{key}")
@@ -406,6 +414,8 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             k: v for k, v in raw.get("audio_unit", {}).items() if k != "note"
         },
         amp_modules=raw.get("amp_modules", {}),
+        calibration=raw.get("calibration", {}),
+        search_conditions=raw.get("search_conditions", {}),
     )
 
 

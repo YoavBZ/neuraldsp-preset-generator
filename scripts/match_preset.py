@@ -552,7 +552,14 @@ def _seed_from_template(path: pathlib.Path, space, pack_id: str):
         parameter = preset.by_path.get((dimension.module, dimension.key))
         if parameter is None:
             continue
-        spec = pack.parameters.get(dimension.path)
+        # ParamSpec.path omits the leading slash for top-level controls, while
+        # Pack.parameters uses `/key` as its canonical key. Morgan hid this bug:
+        # most of its controls are module-scoped and selectedAmp has a fallback
+        # below. Tone King's whole writable surface is top-level, so its template
+        # seed was empty and every run rendered the plugin's boot state instead.
+        canonical = (f"{dimension.module}/{dimension.key}"
+                     if dimension.module else f"/{dimension.key}")
+        spec = pack.parameters.get(canonical)
         if spec is None:
             continue
         try:

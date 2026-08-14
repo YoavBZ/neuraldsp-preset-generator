@@ -86,7 +86,8 @@ class AudioUnitRenderer(Renderer):
                  isolate: Optional[bool] = None, amplitude: float = 1.0,
                  warmup_s: float = 0.0, sample_rate: int = 48000,
                  block_size: int = BLOCK_FRAMES, quality_mode: str = "standard",
-                 band_noise_db: float = REUSED_INSTANCE_BAND_NOISE_DB,
+                 band_noise_db: Optional[float] = None,
+                 process_policy: str = "reuse",
                  binary: Optional[pathlib.Path] = None,
                  workdir: Optional[pathlib.Path] = None):
         self.pack_id = pack_id
@@ -119,7 +120,32 @@ class AudioUnitRenderer(Renderer):
                 f"blocks, not {self.block_size}."
             )
         self.quality_mode = str(quality_mode)
-        self.band_noise_db = float(band_noise_db)
+        if process_policy not in ("reuse", "fresh"):
+            raise AudioUnitError(
+                f"unknown process_policy {process_policy!r}; expected 'reuse' or 'fresh'"
+            )
+        self.process_policy = process_policy
+        self._process_has_rendered = False
+        self._pack_cache = None
+        calibration = self._pack().calibration
+        if process_policy == "fresh":
+            self.reproducible = bool(
+                calibration.get("fresh_process_reproducible", True)
+            )
+            default_noise = float(calibration.get("fresh_process_band_noise_db", 0.0))
+        else:
+            self.reproducible = False
+            default_noise = float(calibration.get(
+                "reused_instance_band_noise_db", REUSED_INSTANCE_BAND_NOISE_DB
+            ))
+        self.band_noise_db = float(
+            default_noise if band_noise_db is None else band_noise_db
+        )
+        if not self.reproducible and self.band_noise_db <= 0.0:
+            raise AudioUnitError(
+                f"{pack_id}'s {process_policy} process policy is non-reproducible "
+                "but declares no positive band-noise floor"
+            )
 
         self._binary = pathlib.Path(binary) if binary else None
         self._owns_workdir = workdir is None
@@ -131,7 +157,6 @@ class AudioUnitRenderer(Renderer):
         self._xml_state: Optional[bool] = None
         self._base_state: Optional[bytes] = None
         self._di_files: Dict[str, pathlib.Path] = {}
-        self._pack_cache = None
         self._render_index = 0
         self._isolate_note: Optional[str] = None
         # Warnings the pack raised while translating a value — a guessed kind, a
@@ -153,8 +178,9 @@ class AudioUnitRenderer(Renderer):
         """
         self._ensure_server()
         notes = [
-            f"{self.pack_id} through {self._au_triple_text()}, one reused plugin "
-            f"instance in a batched server",
+            f"{self.pack_id} through {self._au_triple_text()}, "
+            + ("one fresh plugin process per render" if self.process_policy == "fresh"
+               else "one reused plugin instance in a batched server"),
         ]
         if self.settle_ms == 0.0:
             notes.append(
@@ -168,6 +194,11 @@ class AudioUnitRenderer(Renderer):
                 "isolate: render resources are deallocated around the state write, "
                 "which is the ordering scripts/au_render.swift uses"
             )
+        if self.process_policy == "fresh" and not self.reproducible:
+            notes.append(
+                "fresh processes are not sample-exact for this pack; band_noise_db "
+                "records the largest identical-state third-octave movement observed"
+            )
         return RenderMetadata(
             renderer_id=self.renderer_id,
             sample_rate=self.sample_rate,
@@ -179,9 +210,10 @@ class AudioUnitRenderer(Renderer):
             # in prose notes. "auto" remains stable before and after the first
             # render decides whether this plugin needs isolation.
             quality_mode=self._quality_identity(),
-            # A reused instance is not a function of its inputs. Only a fresh
-            # process is bit-exact, and this one deliberately is not fresh.
-            reproducible=False,
+            # Reused instances are not functions of their inputs. Fresh plugin
+            # processes are bit-exact; committing tools still verify a repeated
+            # point before trusting that property for a calibration run.
+            reproducible=self.reproducible,
             band_noise_db=self.band_noise_db,
             notes=tuple(notes),
         )
@@ -190,6 +222,9 @@ class AudioUnitRenderer(Renderer):
         import numpy as np
 
         self._ensure_server()
+        if self.process_policy == "fresh" and self._process_has_rendered:
+            self._restart_server()
+        self._process_has_rendered = True
         frames = int(np.asarray(di).shape[0])
         audio = self._one_render(di, settings, frames)
         if self._isolate_decided:
@@ -634,6 +669,7 @@ class AudioUnitRenderer(Renderer):
             f"settle_ms={number(self.settle_ms)}",
             f"warmup_s={number(self.warmup_s)}",
             f"isolate={self._isolate_mode}",
+            f"process={self.process_policy}",
         ])
 
     def close(self) -> None:

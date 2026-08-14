@@ -22,9 +22,10 @@
 //   {"ok":true,"out":"/tmp/a.wav","peak":0.5546125,"frames":96000,"ms":{…}}
 //
 // Every command starts from the state the plugin had at startup, so a sequence
-// of renders is order-independent and repeatable. `edits` writes attributes in
-// the plugin's live XML state; `state` replaces the whole blob, which is what a
-// record-state plugin like Tone King needs. The two are mutually exclusive.
+// is order-independent. It is not necessarily sample-repeatable: that is a
+// measured property reported by the Python renderer. `edits` writes attributes
+// in the plugin's live XML state; `state` replaces the whole blob, which is what
+// a record-state plugin like Tone King needs. The two are mutually exclusive.
 //
 // Offline manual rendering: nothing reaches an output device, and the edited
 // state goes to an instance that dies with the process.
@@ -32,6 +33,7 @@
 
 import AVFoundation
 import AudioToolbox
+import Darwin
 import Foundation
 
 func fourCC(_ s: String) -> OSType {
@@ -214,7 +216,15 @@ while let line = readLine(strippingNewline: true) {
         reply(["\"ok\":false", "\"error\":\"line is not a JSON object\""])
         continue
     }
-    if command["quit"] as? Bool == true { break }
+    if command["quit"] as? Bool == true {
+        // Some Audio Units block for seconds while Swift tears the instance down
+        // after this loop returns. The process owns no persistent state and the
+        // caller has already received every render reply, so explicit process
+        // termination is both the intended lifetime boundary and much faster.
+        // `_exit` deliberately skips process-wide teardown handlers. `exit`
+        // still ran the Audio Unit's slow teardown path on these plugins.
+        _exit(0)
+    }
     guard let outPath = command["out"] as? String else {
         reply(["\"ok\":false", "\"error\":\"command needs an out path\""])
         continue
