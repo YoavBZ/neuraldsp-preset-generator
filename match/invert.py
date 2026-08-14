@@ -560,16 +560,20 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
         caveats.append(
             f"the fitted correction solved at or below this renderer's "
             f"frequency-aligned identical-state variation in every guitar band "
-            f"(up to {noise:g} dB there), so "
-            f"the equaliser was left unchanged and {residual:.2f} dB of difference "
-            f"remains"
+            f"(up to {noise:g} dB there), so no band correction was written and "
+            f"{residual:.2f} dB of difference remains"
         )
     return Inversion(
         values=values,
         caveats=caveats,
+        # Three separate maxima over the guitar bands, not three terms of one
+        # subtraction: the loudest part of the correction and the noisiest band
+        # need not be the same band, which is the whole reason the comparison is
+        # frequency-aligned. `eq_noise_margin_db` is the decision — the largest
+        # effect-minus-noise at a single frequency — and it is what > 0 means.
         detail={"eq_residual_db": round(residual, 3),
-                "eq_effect_db": round(effect, 6),
-                "eq_noise_floor_db": round(noise, 6),
+                "eq_effect_max_db": round(effect, 6),
+                "eq_noise_max_db": round(noise, 6),
                 "eq_noise_margin_db": round(margin, 6),
                 "eq_requested_db": {float(f): round(float(v), 2)
                                     for f, v in zip(frequencies, target)},
@@ -1175,6 +1179,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             "the measured loudness difference was left for the search"
         )
 
+    spectral_moves: Optional[List[str]] = None
     rows = band_delta(target, candidate)
     delta = {float(row["centre_hz"]): float(row["delta_db"]) for row in rows}
 
@@ -1255,6 +1260,17 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             activates_eq=bool(filters.values),
         )
         result.merge(spectral)
+        # `None` when the template was not supplied: the standalone-helper contract
+        # writes absolute gains, where a non-zero value *is* the move.
+        spectral_moves = spectral.detail.get("eq_bands_moved")
+        unwritable = _unwritable_bands(signal_path, current_settings, pack_id)
+        if unwritable:
+            result.caveats.append(
+                f"the template does not state {', '.join(unwritable)}, so no "
+                f"correction was fitted for {'them' if len(unwritable) > 1 else 'it'} "
+                f"and the search will have to hear "
+                f"{'those bands' if len(unwritable) > 1 else 'that band'} instead"
+            )
         moved = any(value for value in spectral.values.values())
         # Enable the EQ only when the inversion actually uses it. If every move is
         # below the renderer floor, omit the gates: omission preserves whether the
@@ -1268,7 +1284,11 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             for control in signal_path.eq_enable_controls:
                 result.values[control] = True
 
-    if any(result.values.get(control) for control in signal_path.eq_band_controls):
+    band_moves = spectral_moves if spectral_moves is not None else [
+        control for control in signal_path.eq_band_controls
+        if result.values.get(control)
+    ]
+    if band_moves:
         # Level was computed against the candidate as it was, and the band gains
         # just changed how loud it will be. One pass cannot close both: the fit
         # needs a mean-removed difference to work on, and the loudness it leaves
@@ -1472,6 +1492,7 @@ def _apply_band_corrections(
     values: Dict[str, Any] = {}
     caveats = list(correction.caveats)
     missing = []
+    moved: List[str] = []
     has_correction = any(float(correction.values.get(control, 0.0) or 0.0) != 0.0
                          for control in signal_path.eq_band_controls)
     will_enable = has_correction or activates_eq
@@ -1490,6 +1511,8 @@ def _apply_band_corrections(
         wanted = float(before) + change
         clamped = min(max(wanted, float(spec.min)), float(spec.max))
         values[control] = round(clamped, 2)
+        if values[control] != round(float(before), 2):
+            moved.append(control)
         if abs(clamped - wanted) > 0.005:
             caveats.append(
                 f"adding the {change:+.2f} dB correction to {control}'s current "
@@ -1501,19 +1524,28 @@ def _apply_band_corrections(
         caveats.append(
             f"the template does not state {', '.join(missing)}, so their fitted "
             f"corrections were left for the search rather than treated as absolute "
-            f"EQ values"
+            f"EQ values. The fit residual describes the solution before they were "
+            f"dropped"
         )
     if not was_active and will_enable:
         caveats.append(
             "the template's equaliser was bypassed, so its dormant band values "
             "were reset to neutral before the fitted correction enabled it"
         )
-    return Inversion(values=values, caveats=caveats,
-                     detail=dict(correction.detail))
+    detail = dict(correction.detail)
+    detail["eq_bands_moved"] = list(moved)
+    return Inversion(values=values, caveats=caveats, detail=detail)
 
 
 def _band_correction_bounds(signal_path, current_settings, pack_id: str):
-    """Per-band delta limits after accounting for each audible template value."""
+    """Per-band delta limits after accounting for each audible template value.
+
+    A band whose audible value the template does not state gets no room at all.
+    Solving for a correction that cannot then be written left `eq_residual_db`
+    describing a solution nobody applied — the same class of defect as measuring
+    the fit before the noise floor zeroed it. `lsq_linear` requires a strictly
+    positive interval, and anything inside this one rounds to 0.00 dB.
+    """
     if current_settings is None:
         return EQ_BOUNDS_DB
 
@@ -1522,15 +1554,33 @@ def _band_correction_bounds(signal_path, current_settings, pack_id: str):
 
     pack = load_pack(pack_id)
     baselines = _band_baselines(signal_path, current_settings, pack_id)
+    unwritable = _unwritable_bands(signal_path, current_settings, pack_id)
     lower = []
     upper = []
     for control in signal_path.eq_band_controls:
+        if control in unwritable:
+            lower.append(-1e-9)
+            upper.append(1e-9)
+            continue
         spec = spec_for(pack, control)
         baseline = baselines.get(control)
         baseline = 0.0 if baseline is None else float(baseline)
         lower.append(float(spec.min) - baseline)
         upper.append(float(spec.max) - baseline)
     return lower, upper
+
+
+def _unwritable_bands(signal_path, current_settings, pack_id: str) -> Tuple[str, ...]:
+    """Bands with no audible value to add a correction to.
+
+    Only reachable with an audible equaliser: a bypassed one contributes nothing,
+    so its baseline is a known zero rather than an unknown.
+    """
+    if current_settings is None:
+        return ()
+    baselines = _band_baselines(signal_path, current_settings, pack_id)
+    return tuple(control for control in signal_path.eq_band_controls
+                 if baselines.get(control) is None)
 
 
 def _band_baselines(signal_path, current_settings, pack_id: str):
@@ -1582,7 +1632,11 @@ def _neutralise_dormant_filters(result: Inversion, signal_path,
         if control is None or control in result.values:
             continue
         spec = spec_for(pack, control)
-        result.values[control] = float(getattr(spec, edge))
+        opened = float(getattr(spec, edge))
+        current = _setting_value(current_settings, control)
+        if current is not None and abs(float(current) - opened) <= 1e-9:
+            continue
+        result.values[control] = opened
         reset.append(control)
     if reset:
         result.caveats.append(

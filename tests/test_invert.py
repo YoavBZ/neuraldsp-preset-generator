@@ -964,6 +964,126 @@ def test_band_only_correction_opens_both_dormant_filter_corners():
     assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == 20000.0
 
 
+def test_a_floored_correction_does_not_claim_the_equaliser_was_untouched():
+    """The band fit is floored, but enabling the section still rewrites nine
+    controls. Saying the equaliser was left unchanged beside that is a false
+    statement about a run, which this repository treats as a defect."""
+    from match.renderer import RenderMetadata
+
+    class DeafBackend:
+        """Everything is noise, so nothing the fit solves can clear the floor."""
+
+        def metadata(self):
+            return RenderMetadata(renderer_id="synthetic", sample_rate=48000,
+                                  block_size=512, reproducible=False,
+                                  band_noise_db=50.0)
+
+    path = invert._validated_signal_path("morgan", AMP)
+    current = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): False,
+        ("eqParameters", "sectionActive"): False,
+        (f"{AMP}EQ", f"{AMP}EQLpf"): 8000.0,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 8.0,
+    }
+    target = measure({f"{AMP}EQ/{AMP}EQActive": True,
+                      f"{AMP}EQ/{AMP}EQLpf": 4000.0})
+    candidate = measure({f"{AMP}EQ/{AMP}EQActive": False,
+                         f"{AMP}EQ/{AMP}EQLpf": 8000.0,
+                         f"{AMP}EQ/{AMP}EQBand5": 8.0})
+
+    result = invert.invert(target, candidate, amp=AMP,
+                           current_settings=current, renderer=DeafBackend())
+
+    assert all(result.values[control] == 0.0
+               for control in path.eq_band_controls), (
+        "the dormant +8 dB band still has to be neutralised before the section "
+        "is switched on"
+    )
+    assert not any("left unchanged" in caveat for caveat in result.caveats)
+    assert any("no band correction was written" in caveat
+               for caveat in result.caveats)
+    assert any("dormant band values" in caveat for caveat in result.caveats)
+
+
+def test_a_band_cut_back_to_neutral_still_warns_about_leftover_level(monkeypatch):
+    """Under delta arithmetic a written 0.00 dB can be a 6 dB cut, and it changes
+    the loudness exactly as much as a 6 dB boost does. Asking whether the final
+    value is non-zero asked the wrong question and said nothing about one."""
+    band = f"{AMP}EQ/{AMP}EQBand5"
+    current = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        ("eqParameters", "sectionActive"): True,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 6.0,
+    }
+
+    def cancel_the_template(*args, **kwargs):
+        return invert.Inversion(values={
+            control: (-6.0 if control == band else 0.0)
+            for control in kwargs["band_controls"]
+        })
+
+    monkeypatch.setattr(invert, "fit_graphic_eq", cancel_the_template)
+    result = invert.invert(
+        measure({f"{AMP}EQ/{AMP}EQActive": True}),
+        measure({f"{AMP}EQ/{AMP}EQActive": True,
+                 f"{AMP}EQ/{AMP}EQBand5": 6.0}),
+        amp=AMP, current_settings=current,
+    )
+
+    assert result.values[band] == 0.0, "a 6 dB cut, written as an absolute"
+    assert any("level left over" in caveat for caveat in result.caveats)
+
+
+def test_a_band_the_template_omits_is_not_solved_for():
+    """A correction that cannot be written must not be fitted either, or
+    `eq_residual_db` describes a solution nobody applied."""
+    path = invert._validated_signal_path("morgan", AMP)
+    omitted = f"{AMP}EQ/{AMP}EQBand6"
+    current = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        ("eqParameters", "sectionActive"): True,
+    }
+    for index in range(1, 10):
+        if index != 6:
+            current[(f"{AMP}EQ", f"{AMP}EQBand{index}")] = 0.0
+
+    lower, upper = invert._band_correction_bounds(path, current, "morgan")
+    index = list(path.eq_band_controls).index(omitted)
+    result = invert.invert(
+        measure({f"{AMP}EQ/{AMP}EQBand6": 8.0}),
+        measure({f"{AMP}EQ/{AMP}EQActive": True}),
+        amp=AMP, current_settings=current,
+    )
+
+    assert (lower[index], upper[index]) == (-1e-9, 1e-9)
+    assert omitted not in result.values
+    assert any(omitted in caveat and "no correction was fitted" in caveat
+               for caveat in result.caveats)
+
+
+def test_a_dormant_corner_already_open_is_not_written_again():
+    path = invert._validated_signal_path("morgan", AMP)
+    current = {
+        (f"{AMP}EQ", f"{AMP}EQActive"): False,
+        ("eqParameters", "sectionActive"): False,
+        (f"{AMP}EQ", f"{AMP}EQHpf"): 20.0,
+        (f"{AMP}EQ", f"{AMP}EQLpf"): 1000.0,
+    }
+    result = invert.Inversion(values={f"{AMP}EQ/{AMP}EQBand5": 2.0})
+
+    invert._neutralise_dormant_filters(result, path, current, "morgan")
+
+    assert f"{AMP}EQ/{AMP}EQHpf" not in result.values
+    assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == 20000.0
+    assert all(f"{AMP}EQ/{AMP}EQHpf" not in caveat for caveat in result.caveats)
+
+
 def test_eq_delta_bounds_reach_the_opposite_control_rail():
     path = invert._validated_signal_path("morgan", AMP)
     band = f"{AMP}EQ/{AMP}EQBand5"
@@ -1109,8 +1229,8 @@ def test_an_outlier_below_the_guitar_band_does_not_floor_the_whole_eq():
     )
 
     assert any(value != 0.0 for value in result.values.values())
-    assert result.detail["eq_noise_floor_db"] == pytest.approx(0.000415)
-    assert result.detail["eq_effect_db"] > result.detail["eq_noise_floor_db"]
+    assert result.detail["eq_noise_max_db"] == pytest.approx(0.000415)
+    assert result.detail["eq_effect_max_db"] > result.detail["eq_noise_max_db"]
 
 
 def test_frequency_aligned_noise_is_compared_at_the_same_frequency():

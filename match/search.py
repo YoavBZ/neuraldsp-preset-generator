@@ -468,11 +468,15 @@ def screen(evaluator: Evaluator, seed: Mapping,
     """Which parameters move the objective, and by how much.
 
     Two renders per parameter — its low end and its high end, everything else at the
-    seed — so the cost is known before it is spent: 2 × the number of candidates,
-    once. Returns a `Screen`: the paths worth searching, the ones frozen with the
-    movement that decided each, **every probe it scored**, the movement of every
-    parameter — searched or frozen — so a report can show the decision rather than
-    assert it, and the floor those decisions were actually made against.
+    seed — so the cost is known before it is spent: 2N + 1 on a reproducible
+    backend, and 2N + 5 on one that is not, where the four extra renders measure
+    the seed's own scalar spread. Returns a `Screen`: the paths worth searching,
+    the ones frozen with the movement that decided each, **every probe worth
+    reusing** — the baseline and both extremes of every candidate, but not the
+    repeat observations, which are the seed again and offer the shortlist
+    nothing — the movement of every parameter, searched or frozen, so a report can
+    show the decision rather than assert it, and the floor those decisions were
+    actually made against.
 
     The probes matter. They are renders that were paid for and compared, and a
     parameter at an extreme is a legitimate parameter vector: measured on a target

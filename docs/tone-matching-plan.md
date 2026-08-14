@@ -1595,6 +1595,18 @@ python3 scripts/benchmark_match.py --targets 50 --budget 300 \
 
 **50 targets, a 300-render budget, zero failures, 95 minutes. It ships.**
 
+**These numbers predate §12g's benchmark changes and the command no longer
+reproduces them exactly.** Tone King's flat namespace exposed two defects in how a
+target is built and scored, and fixing both changed the Morgan experiment as a
+side effect: `random_vector` now samples only the dimensions the seed's selectors
+leave active — 90 of 125 on Morgan against 124 before, because the two unselected
+amps' controls never reached the sound — and `parameter_error`'s denominator is
+now the active set rather than every supported path. `compare_baselines` also
+folds each arm's final scoring render into its own count, so every per-arm render
+figure below is one lower than the same run would report today. The comparison
+between arms is unaffected: all three arms changed the same way at once. Re-run
+the command above before quoting any of these figures as current.
+
 (The `--json` is not decoration: without it nothing is written, and the version of this
 line that omitted it could not have produced the committed evidence it cites four
 paragraphs below. Everything else about the invocation checks out — the defaults
@@ -2420,6 +2432,15 @@ the pack dictionary keys it as `/control`. `_seed_from_template()` used the
 former to query the latter and silently dropped every one of Tone King's 94
 top-level values. The regression test builds a record-state preset and proves
 that the selected channel and both stored channel volumes survive into the seed.
+
+The benchmark had the mirror image of the same defect: `random_vector` sampled
+every declared dimension, so a Tone King target carried settings for the channel
+it had not selected, and `parameter_error` scored the recovery of controls that
+never reached the sound. Both now respect the seed's selectors. That is a Morgan
+change as much as a Tone King one — 90 of 125 dimensions sampled where 124 were
+before — so §12c's recorded 50-target figures now carry a note saying they predate
+it. Nothing about the comparison between arms moved: all three arms sample from
+the same generator.
 
 ### The shared EQ, measured on both channels
 
