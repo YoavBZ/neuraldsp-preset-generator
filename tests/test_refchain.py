@@ -124,12 +124,30 @@ EVERYTHING_ON = {
 
 
 def best_of(settings, signal, runs: int = 5) -> float:
+    """CPU time for one render, best of `runs`.
+
+    `process_time`, not `perf_counter`, and the difference is the whole reason
+    these three tests are not flaky. They all compare two measurements, and a
+    ratio of two wall-clock minima is not protected by taking minima: with
+    pytest-xdist running eight workers, the longer of the two operations has more
+    chances for every one of its samples to lose its core, so the ratio inflates
+    even though neither render got slower. Measured here: the everything-on render
+    came back at 35 ms against a 3.5 ms dry render — 9.9x, through a bound of 8 —
+    on run 14 of 15, having passed the other 14. CPU time counts only this
+    process's work, which is exactly what "has a stage become pathologically
+    expensive" is asking about, and it does not move when a neighbour is busy.
+
+    Measured side by side under eight competing processes, six samples each: the
+    wall-clock ratio ranged 3.5 to 6.6 while the CPU-time ratio ranged 3.3 to 3.5.
+    The real ratio is about 3.4 and the bound is 8, so this was never a marginal
+    threshold — it was a measurement that stopped describing the code.
+    """
     refchain.render(signal, settings)        # warm the scipy and IR caches
     times = []
     for _ in range(runs):
-        started = time.perf_counter()
+        started = time.process_time()
         refchain.render(signal, settings)
-        times.append(time.perf_counter() - started)
+        times.append(time.process_time() - started)
     return min(times)
 
 
@@ -140,8 +158,9 @@ def test_a_di_renders_fast_enough_to_search_with():
     16 ms delay at 95% feedback.
 
     The absolute bound is deliberately loose: this runs on shared CI runners, and
-    a tight wall-clock assertion there is a flake, not a check. The *ratio* below
-    is the part that means something, because it holds on any machine.
+    a tight assertion there is a flake, not a check. The *ratio* below is the part
+    that means something, because it holds on any machine. Both are CPU time — see
+    `best_of` for why that matters once the suite runs in parallel.
     """
     signal = di(seconds=2.0)
     assert best_of(None, signal) < 1.0, "a render should not take a second"
