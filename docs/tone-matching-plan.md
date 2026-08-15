@@ -29,7 +29,9 @@ item is recorded in §12f.
 Tone King's topology-generic calibration, fresh-process repeatability finding and
 corrected known-target runs, including direct inversion, are recorded in §12g.
 §12h replicates shortlist scoring on backends that do not repeat themselves,
-which is the design §12d asked for and §12g's runs did without.
+which is the design §12d asked for and §12g's runs did without. §12i is the
+eight-target Tone King benchmark §12g named as missing: the arms nest on the real
+plugin as they did on the synthetic chain.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2700,7 +2702,8 @@ template seed, direct inversion and continuous search. It is not a Tone King
 equivalent of the 50-target Morgan benchmark. `SyntheticRenderer` models Morgan's
 topology only, so there is no synthetic Tone King score from which to quote an
 honest percentage gap. The remaining gap is explicit instead: a large measured
-non-reproducible backend and no Tone King aggregate benchmark. Candidate
+non-reproducible backend and, at the time these runs were made, no Tone King
+aggregate benchmark — §12i has since measured one. Candidate
 evaluations were not replicated when these runs were made; §12h has since built
 that, and re-running the pair under it would be the way to ask whether the
 difference above survives. The older §12d `1.320 -> 0.819` result is invalid
@@ -2803,6 +2806,57 @@ other than a max of point estimates, which is a larger change than this one.
 None of this would have worked before §12g: the store served an identical vector
 from cache, so the second and third observations would have been copies of the
 first. The cache is now bypassed on exactly the backends that need replicating.
+
+## 12i. The Tone King benchmark §12g said was missing
+
+§12g could call its Tone King runs valid end-to-end evidence and nothing more:
+`SyntheticRenderer` models Morgan's topology only, so there was no aggregate
+against which one run's `0.5686985 -> 0.3464464` meant anything. This is that
+aggregate, measured on the real plugin rather than on an approximation of a
+different one.
+
+It is a **pilot**, sized the way M7-1's was: eight targets before anybody spends
+the five and a half hours the fifty-target version extrapolates to.
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 8 --budget 200 --seed 0 --seconds 2.0 \
+  --json docs/toneking-benchmark-8.json
+```
+
+Tone King 1.0.3 through the reused Swift server, `unpaired-v1`, 2865 seconds,
+**zero failed targets**:
+
+| arm | mean objective | median | param MAE | selector | renders |
+|---|---:|---:|---:|---:|---:|
+| recipe | 1.6564 | 1.2722 | 0.2564 | 0.6739 | 8 |
+| inversion | 1.0942 | 0.9088 | 0.2545 | 0.6739 | 16 |
+| **full** | **0.8109** | **0.7375** | 0.2641 | 0.6739 | 1567 |
+
+The arms nest, and they order the way M4's Morgan benchmark said they should:
+inversion beats the recipe stack, and the search beats inversion. That ordering
+had never been demonstrated on a real plugin — M4's fifty targets were
+`SyntheticRenderer`, and M5 measured the gap between that and Morgan rather than
+re-running the shape against a plugin.
+
+**Three things it does not say.** Parameter MAE is *worse* on the full arm
+(0.2641) than on the recipe stack (0.2564), and that is not a defect: the plugin's
+controls are not identifiable from its output, a match that sounds right with
+different numbers is still a match, and the gate is the objective column — the
+benchmark prints that reasoning itself rather than leaving it to be inferred.
+Selector accuracy is identical across all three arms because nothing enumerates
+switches, so all three inherit the seed's topology; the run says so in a caveat.
+And the whole table carries `reproducible=false` with the 5.228794 dB band figure.
+Candidate evaluations inside each run were replicated (§12h); the eight targets
+themselves were not, so this is eight sampled observations rather than eight
+settled ones.
+
+The probe was the synthetic decaying noise-burst sequence, not a played DI — it
+shows attack and decay clearly and sustained or palm-muted playing not at all.
+That is the standing caveat on every unpaired run and it applies here too.
+
+`docs/toneking-benchmark-8.json` is the committed evidence, and it records the
+renderer build and `reproducible=false` alongside the numbers.
 
 ## 13. Reading list, in the order it becomes relevant
 
