@@ -62,7 +62,7 @@ tube reverb. 50W.
 
 > Described against
 > [Morgan's own copy](https://www.sweetwater.com/store/detail/SW50RHead--morgan-amps-sw50r-50-watt-high-headroom-tube-head-with-reverb).
-> It is not a Vox-style chime amp, whatever the shape of the cabinet suggests.
+> It is a high-headroom Dumble-flavoured amp, not a Vox-style chime amp.
 
 ## Intent → which recipes to stack
 
@@ -151,26 +151,23 @@ for when they mean "brighter". See
 | `ac20BassTreble` | **Bass Cut**, a two-position voicing switch | the `Treble` position: −15.6 dB @ 60 Hz. A big cut |
 | `compressorRelease` | fast/slow release | Fast |
 
-`sw50rTrebleBoost` is the cautionary one, and it took two measurements to get
-right. The stored key says *treble boost*. The control the plugin publishes says
-*Bass Emphasis* — the opposite — and reading that name alone led this repo to
-document it as "ON thickens the low end", which is wrong. Rendering audio
-through it settles it: ON **removes** low end and lifts the mids. The key name
-happened to describe the sound better than the plugin's own control name did.
+`sw50rTrebleBoost` is the one to be careful with. The stored key says *treble
+boost*; the control the plugin publishes says *Bass Emphasis* — the opposite.
+Rendered audio settles it: ON **removes** low end and lifts the mids, so here
+the key name describes the sound better than the plugin's own control name does.
 
-The lesson generalises past this switch: a name is a hypothesis. Two names
-disagreeing is a signal to measure, not to pick the more authoritative-looking
-one. Nothing shipped wrong for the four that were in doubt, because the recipes
-deliberately left them alone rather than guess. (`sw50rBright` *is* set by three
-amp recipes — but it was never ambiguous, and the measurement confirms it.)
+`ac20Cut` is the other. It is named after the Vox power-amp Cut, so the config
+reference, the control name and Morgan's description of the original circuit all
+point the same way: higher = darker. Rendered through the plugin, higher is
+**brighter** — monotonically, +11 dB at 2.5 kHz and +19 dB at 6.3 kHz across the
+sweep. It behaves like a presence control.
 
-**`ac20Cut` went the same way, and worse.** It was "settled by reasoning": it is
-the Vox power-amp Cut, so higher = darker, agreed on by the config reference,
-the control's name, and Morgan's description of the original circuit. Rendered
-through the plugin, higher is **brighter** — monotonically, +11 dB at 2.5 kHz
-and +19 dB at 6.3 kHz across the sweep. It behaves like a presence control. Three
-independent-looking arguments were three restatements of the same name, and the
-five-second confirmation nobody ran would have caught it.
+Both are the same lesson, and it is worth carrying to the next pack: **a name is
+a hypothesis.** Two names disagreeing is a signal to measure rather than to pick
+the more authoritative-looking one — and three arguments that all rest on the
+same name are one argument. Where a control was in doubt, the recipes left it
+alone rather than guess. (`sw50rBright` *is* set by three amp recipes; it was
+never ambiguous, and the measurement confirms it.)
 
 ## Mapped tones
 

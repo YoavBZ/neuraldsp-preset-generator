@@ -35,6 +35,10 @@ swiftc -swift-version 5 -O scripts/au_probe.swift -o /tmp/au_probe
 /tmp/au_probe aumf NMAS NDSP params
 ```
 
+An `auval` pass is weaker evidence than it looks: it checks for NaNs and
+malformed output, not for non-silence. A plugin that renders exact zeros passes
+it.
+
 Morgan Amps Suite uses component `aumf NMAS NDSP`. Tone King Imperial MKII uses
 `aumf TKI2 NDSP`. The pack's `audio_unit` object is the authoritative component
 identifier.
@@ -461,8 +465,9 @@ between them is not free.
 
 Tone King Imperial MKII renders **exact zeros on its first allocation of render
 resources**, and renders normally once they have been deallocated and
-reallocated. Morgan never needs this. Both orderings of the cycle work, so the
-state write has nothing to do with it:
+reallocated. Morgan never needs this. The cycle works either side of the state
+write — `isolate` cycles around it, `realloc` after it — so the state write is
+not what makes the difference:
 
 ```bash
 swiftc -swift-version 5 -O scripts/au_render_server.swift -o /tmp/au_render_server
@@ -497,10 +502,19 @@ inside the same instance stays silent, so the restart is load-bearing. The cost
 is one render of about 46 s while the plugin loads its impulse responses, then
 370 ms per render — Morgan's cost.
 
-`scripts/au_silence_check.swift` reports `peak = 0.0` for Tone King and
-`0.5546125` for Morgan, and both numbers are correct: it instantiates, allocates
-once and renders, which is exactly the silent path. It is evidence about that
-path and never was evidence about the plugin.
+```bash
+swiftc -swift-version 5 -O scripts/au_silence_check.swift -o /tmp/silence
+/tmp/silence aumf NMAS NDSP     # Morgan    -> peak = 0.5546125
+/tmp/silence aumf TKI2 NDSP     # Tone King -> peak = 0.0
+```
+
+Both numbers are correct, and the script is deliberately separate from the render
+harness so the harness cannot be the variable: it sets no state, edits no
+document, touches no parameter. It instantiates, allocates once and renders,
+which is exactly the silent path — so it is evidence about that path and never
+was evidence about the plugin. It also prints bypass and latency, both 0 for both
+plugins, which removes the two properties that would otherwise be the obvious
+explanation.
 
 **Do not read silence as a measurement.** A control that appears to do nothing
 on a silent render has not been shown to do nothing.

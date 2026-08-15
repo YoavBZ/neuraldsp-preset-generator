@@ -68,10 +68,10 @@ Everything below exists to close that loop.
 | `pyproject.toml` has `dependencies = []`; tests pass on a bare clone | New dependencies go in **optional extras only**. `show.py` and `apply_spec.py` must keep working with stdlib alone. |
 | `spectrum_diff.py` uses hand-written Goertzel to avoid numpy | That constraint applies to *reproducing a published measurement*. New analysis code may use numpy/scipy behind an extra. Do not rewrite `spectrum_diff.py`. |
 | Morgan manifest: 132 parameters — 53 `metered`, 32 `switch`, 31 `rotation`, 8 `enum`, 4 `fraction`, 2 `string`, 2 `path`; 1 non-writable | Continuous search space is ≤ 88 before conditioning; per-amp conditioning cuts it to roughly 35–45. |
-| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. Its acoustic path is open through `pedalboard` only, and its render cost is **unresolved** — two measurements disagree by more than warm-up explains, so treat "roughly eleven times Morgan's" as the loose upper bound `docs/measuring-against-the-plugin.md` calls it, not a figure to plan a budget on. |
+| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. The "roughly eleven times Morgan's cost" in §11 was the `pedalboard` path and is superseded: through the Swift host it renders at Morgan's cost, 370 ms, after one ~46 s load — §12d. |
 | Each amp has its own module prefix (`ac20*`, `pr12*`, `sw50r*`) and its own 9-band EQ | Search space must be *conditional* on `selectedAmp`. Writing the inactive amp's controls is a silent no-op. |
 | EQ bands are at fixed declared centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. **These are not all ISO third-octave centres**: the lowest is labelled 65 Hz and the ISO band beside it is 63, so `Fingerprint.band_db(65.0)` returns `None` — see §12a. An earlier version of this row said "fixed ISO centres" and the fit was written against that assumption. |
-| `au_render.swift` renders Morgan fine and gets **exact zeros** from Tone King. M0 resolved the cause: the bare CLI instantiation, not authorization — Tone King renders in a JUCE host | Tone King work goes through the `pedalboard` backend. Nothing about it has been measured acoustically yet; do not silently produce Tone King "measurements". |
+| `au_render.swift` gets **exact zeros** from Tone King on a first render | M0 blamed the bare CLI instantiation and routed Tone King through `pedalboard`; §12d found the real cause — the first allocation of render resources — and `match/renderer_au.py` cycles them itself. Tone King goes through the Swift host like Morgan. |
 | `apply_spec.py` validates kinds, ranges, selectors, read-only fields, and never overwrites its input | Optimizer output **must** be emitted as a human-valued spec and passed through `apply_spec.py --dry-run`. Never write preset bytes directly from the optimizer. |
 | Plugin-dependent checks are deliberately local, never CI (`audit_manifest.py`) | Same split applies here: plugin-free tests in CI, plugin-dependent checks local. |
 | `NOTICE.md`: no Neural DSP content, no factory presets, no IRs, no audio redistributed | Reference audio, stems, and renders are **never** committed. Store hashes and derived features only. |
@@ -258,18 +258,19 @@ Do not change these without a specific reason; downstream work assumes them.
     under the data root (`$NDSP_PRESET_DATA`), not the plugin directory —
     same rule as `observed.json` and `learned-tones.md`.
 
-### 3.1 Working agreements
+### Working agreements
 
-Load-bearing, and each learned the hard way. These were the one part of the
-pre-M5 macOS run-book worth keeping when the rest of it was deleted as
-superseded steps.
+Load-bearing, and each learned the hard way. These are the one part of
+`docs/handoff-to-macos.md` worth keeping; the rest of that pre-M5 run-book was
+deleted as superseded steps, and it is in git history if a citation below needs
+chasing.
 
 - **A measurement that could not be made says so.** Absence is never zero. Every
   optional field carries a confidence; `None` and `0.0` are different answers.
 - **Silence is not evidence about a control.** Neither for it nor against it.
 - **A figure with no invocation behind it is an assertion wearing a decimal
   point.** Every number in the docs must be reproducible from a command in the
-  docs. This has been violated and caught repeatedly, most memorably by a table
+  docs. This has been violated and caught four times, most memorably by a table
   that argued *for* the current design and could not be reproduced at all.
 - **A fix aimed at a named symptom closes that branch and leaves its twin
   open.** This has happened in every review round. When you fix something, go
@@ -1905,7 +1906,8 @@ with AudioUnitRenderer('morgan') as r:
 EOF
 ```
 
-431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. §3.2's 291 ms was for a
+431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. The deleted run-book's
+291 ms was for a
 2-second excitation, so per second of audio the two agree.
 
 ### Two silent defects the first real renders exposed
@@ -2019,7 +2021,7 @@ approximately right.
 
 ### `spatial` is not a guaranteed zero any more
 
-§6.6 of the handoff: it reads 0.000 on every synthetic run because both sides are
+The deleted run-book predicted this: it reads 0.000 on every synthetic run because both sides are
 dual-mono, and it carries 8% of the weight. Against the plugin, the seed candidate
 of the ground-truth match scores `spatial: 0.0253`. It discriminates.
 
@@ -2060,7 +2062,7 @@ So the pipeline works against the real thing, beats both baselines on every one 
 50 targets, and is roughly half as effective as the synthetic numbers implied. That
 is M5's deliverable.
 
-Two predictions in the handoff did not hold:
+Two predictions in the deleted run-book did not hold:
 
 - **The failure rate is zero.** "A real backend will have some — a silent render,
   an instantiate that did not come back." In 14827 renders there were none. The
@@ -2086,13 +2088,13 @@ any search runs, which is a numeric-library difference rather than a code one, a
 CMA-ES diverges from there.
 
 The rule that follows: **a committed aggregate is a cross-machine check and a
-committed single-run figure is not.** §8's numbers should have been recorded as
+committed single-run figure is not.** The run-book's numbers should have been recorded as
 one machine's, and this is the fourth time a figure in this repository has failed
 to reproduce from its own command.
 
 ### The ±6 dB re-rank still measures loudness, on the plugin too
 
-§6.2 of the handoff: the `level` dimension accounted for 35-96% of the change
+The deleted run-book warned of this: the `level` dimension accounted for 35-96% of the change
 across the input offsets on the synthetic chain, while `timbre` moved by about
 0.001, and the question for M5 was whether `timbre` starts moving on a plugin
 whose breakup genuinely depends on how hard it is hit.
@@ -2110,13 +2112,13 @@ v = [int(m.group(1)) for c in d['caveats']
 print(sorted(v))"
 ```
 
-So the stage needs rethinking, as §6.2 said it would if this came back negative.
+So the stage needs rethinking, as the run-book said it would if this came back negative.
 The caveat naming the percentage is doing real work and should stay until the
 re-rank measures something other than how loud the render got.
 
 ### The first `paired-v1` run silently omitted the term carrying 0.9 of its weight
 
-§6.7 of the handoff calls `paired-v1` "the highest-confidence path in the whole
+The deleted run-book called `paired-v1` "the highest-confidence path in the whole
 design — regime weight 1.0, and the only profile that weights `residual` (0.9)
 because with a paired DI you can compare waveforms sample-for-sample rather than
 statistically", and asks whether `residual` behaves once it meets a real pair.
@@ -2225,7 +2227,7 @@ and the CLI refuses up front with the exact active/supported count rather than
 discovering it after an hour.
 
 **Two synthetic selector experiments were invalid, and the boundary now refuses
-them.** §6.3 predicted the `inversion` and `full` arms would score identical
+them.** The deleted run-book predicted the `inversion` and `full` arms would score identical
 selector accuracy for as long as nothing was enumerated. Two early experiments
 appeared to reach the topology stage and still scored identically:
 
