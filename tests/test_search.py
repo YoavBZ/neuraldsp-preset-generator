@@ -620,6 +620,99 @@ def test_the_rerank_really_shifts_the_input_by_six_decibels(space, seed, target)
     )
 
 
+def test_a_stateful_backend_scores_each_shortlist_level_more_than_once(
+    space, seed, target,
+):
+    """One render is a sample when the backend is not a function of its inputs, and
+    a shortlist ordered on samples publishes an ordering it cannot support."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    evaluator = S.Evaluator(Stateful(), target, di(), space, recipe=seed)
+    louder = dict(seed)
+    louder[(f"{AMP}Amp", f"{AMP}Volume")] = 95.0
+    shortlist = [evaluator.evaluate(seed), evaluator.evaluate(louder)]
+    before = evaluator.renders
+
+    reranked, _ = S.robustness_rerank(evaluator, shortlist)
+
+    # Three observations of each of three levels, less the one the search already
+    # paid for at the reference level.
+    per_candidate = 2 * S.SHORTLIST_REPLICATES + (S.SHORTLIST_REPLICATES - 1)
+    assert evaluator.renders == before + per_candidate * len(shortlist)
+    for candidate in reranked:
+        assert candidate.replicates == S.SHORTLIST_REPLICATES
+        assert set(candidate.by_level) == {-6.0, 0.0, 6.0}
+        assert set(candidate.by_level_spread) == {-6.0, 0.0, 6.0}
+
+
+def test_a_reproducible_backend_is_not_made_to_render_the_same_thing_twice(
+    space, seed, target,
+):
+    """A second render of a deterministic backend is a copy of the first."""
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    candidate = evaluator.evaluate(seed)
+    before = evaluator.renders
+
+    S.robustness_rerank(evaluator, [candidate])
+
+    assert evaluator.renders == before + len(S.ROBUSTNESS_OFFSETS_DB)
+    assert candidate.replicates == 1
+    assert candidate.by_level_spread == {}
+
+
+def test_replicates_are_averaged_while_levels_are_still_taken_at_their_worst():
+    """The two words are the design: variation between renders of the same settings
+    is the backend's and gets averaged, variation across input level is the preset's
+    and gets the worst case. Taking the worst of both would rank presets by which
+    one drew the unluckiest render."""
+    import itertools
+
+    from match.renderer import RenderMetadata
+
+    scores = itertools.chain([0.40, 0.60], itertools.repeat(0.50))
+
+    class Drifting(SyntheticRenderer):
+        def metadata(self):
+            return RenderMetadata(renderer_id="synthetic", sample_rate=48000,
+                                  block_size=512, reproducible=False,
+                                  band_noise_db=0.2)
+
+    evaluator = S.Evaluator(Drifting(), None, di(), S.Space([], {}), recipe={})
+    evaluator.evaluate = lambda *args, **kwargs: S.Candidate(  # type: ignore
+        values={}, objectives={"total": 1.0}, total=next(scores))
+    candidate = S.Candidate(values={}, objectives={"total": 0.5}, total=0.50)
+
+    S.robustness_rerank(evaluator, [candidate], offsets_db=())
+
+    assert candidate.by_level[0.0] == pytest.approx(0.50), (
+        "0.50 handed in, 0.40 and 0.60 rendered: the mean, not the worst"
+    )
+    assert candidate.by_level_spread[0.0] == pytest.approx(0.20)
+
+
+def test_two_candidates_inside_the_backends_own_variation_are_not_ranked():
+    """Something has to come first, but a reader choosing what to audition is
+    entitled to know the gap is smaller than the backend's own noise."""
+    best = S.Candidate(values={}, objectives={}, total=0.50)
+    best.by_level = {0.0: 0.50, -6.0: 0.52, 6.0: 0.55}
+    best.by_level_spread = {0.0: 0.09}
+    second = S.Candidate(values={}, objectives={}, total=0.56)
+    second.by_level = {0.0: 0.56, -6.0: 0.57, 6.0: 0.58}
+    second.by_level_spread = {0.0: 0.08}
+
+    inside = S._indistinguishable([best, second], S.SHORTLIST_REPLICATES)
+    outside = S._indistinguishable([best, second], 1)
+
+    assert any("not evidence" in caveat for caveat in inside)
+    assert any("0.030 apart" in caveat for caveat in inside)
+    assert outside == [], "a backend that repeats itself has no such doubt"
+
+
 def test_the_rerank_says_when_it_changed_the_order(seed):
     """The whole value of the stage is in this caveat: without it a caller reads the
     reordered list and never learns that the reference-level winner lost.

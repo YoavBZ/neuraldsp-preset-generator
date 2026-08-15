@@ -109,7 +109,10 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
   because a floor measured from repeated seed renders on a non-reproducible
   backend is evidence and a single-render floor is the default;
 - every shortlisted score, worst ±6 dB score, named objective vector, and
-  plain-language differences between candidates;
+  plain-language differences between candidates — with `input_level_observations`,
+  since a score that averages three renders and a score from one are different
+  kinds of number, and the run says outright when two candidates are closer
+  together than the backend's own variation;
 - every caveat, especially synthetic probe use, low harmonic confidence,
   separation artefacts, absent measured EQ data, and unverified pack paths.
 

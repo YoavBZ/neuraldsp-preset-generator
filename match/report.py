@@ -211,6 +211,14 @@ def build_summary(
                 str(offset): float(value)
                 for offset, value in candidate.by_level.items()
             },
+            # What each of those scores is made of. A mean of three observations
+            # and a single render are different kinds of number, and a reader
+            # comparing two candidates 0.01 apart needs to know which one this is.
+            "input_level_observations": int(candidate.replicates),
+            "input_level_spread": {
+                str(offset): float(value)
+                for offset, value in candidate.by_level_spread.items()
+            },
             "changes": changes(candidate.values),
             "fingerprint": printed.to_dict() if printed is not None else None,
             "fingerprint_delta": (

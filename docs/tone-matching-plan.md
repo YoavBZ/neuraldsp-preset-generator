@@ -28,6 +28,8 @@ The fresh-process Morgan drive surface that closes M5's remaining calibration
 item is recorded in §12f.
 Tone King's topology-generic calibration, fresh-process repeatability finding and
 corrected known-target runs, including direct inversion, are recorded in §12g.
+§12h replicates shortlist scoring on backends that do not repeat themselves,
+which is the design §12d asked for and §12g's runs did without.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2200,7 +2202,8 @@ noisier than its 0.23 dB per-band metadata suggests. Repeating only the topology
 seed is insufficient because CMA-ES also scores every continuous candidate once,
 and the store currently serves an identical vector from cache instead of rendering
 another sample. That needs an explicit replicated-evaluation design and budget,
-not another flag around the existing one-render comparison.
+not another flag around the existing one-render comparison. §12h is that design
+for the shortlist; ranking topology variants under noise is still open.
 
 ### Tone King, end to end for the first time
 
@@ -2609,9 +2612,59 @@ template seed, direct inversion and continuous search. It is not a Tone King
 equivalent of the 50-target Morgan benchmark. `SyntheticRenderer` models Morgan's
 topology only, so there is no synthetic Tone King score from which to quote an
 honest percentage gap. The remaining gap is explicit instead: a large measured
-non-reproducible backend, no replicated candidate evaluation and no
-Tone King aggregate benchmark. The older §12d `1.320 -> 0.819` result is invalid
+non-reproducible backend and no Tone King aggregate benchmark. Candidate
+evaluations were not replicated when these runs were made; §12h has since built
+that, and re-running the pair under it would be the way to ask whether the
+difference above survives. The older §12d `1.320 -> 0.819` result is invalid
 because its top-level template values never entered the seed.
+
+## 12h. Replicated shortlist evaluation
+
+§12d asked for "an explicit replicated-evaluation design and budget, not another
+flag around the existing one-render comparison", and §12g's Tone King runs could
+not claim inversion was causally better partly because "candidate evaluations
+were not replicated". This is that design. It is a code change measured on the
+synthetic chain; **no plugin run has been made with it yet**, and its cost below
+is arithmetic rather than a stopwatch.
+
+**Worst across levels, mean across replicates.** The two words carry the whole
+idea. A preset that falls apart when the amp is hit harder is fragile, and the
+fragility belongs to the preset — so the ±6 dB stage keeps ordering by the worst
+level, as it always has. The variation between two renders of the *same* settings
+at the *same* level belongs to the backend, and taking the worst of those would
+rank presets by which one drew the unluckiest render. Each level is therefore
+measured `SHORTLIST_REPLICATES = 3` times on a backend reporting
+`reproducible=false`, averaged, and the peak-to-peak spread recorded beside it.
+
+**Only where the decision is final and few.** Replication is applied to the
+shortlist, which is what a report publishes and a person auditions. It is not
+applied inside CMA-ES: three renders per sampled point buys a third of a search,
+and a lucky point there is caught by the shortlist scoring anyway. It is not
+applied to the topology loop either, so ranking discrete variants on one render
+each — the specific weakness §12d named — **remains open**.
+
+**Three rather than the screen's five.** The screen measures a spread and wants
+the conservative end of one; this estimates a score, where the third observation
+is worth far more than the fifth.
+
+**The budget reserves it.** `shortlist × (2R + (R − 1))` — eight renders per
+shortlisted candidate at R = 3, against two on a reproducible backend. The
+reference level costs one fewer because the search already scored that vector
+there and that render is an observation of exactly those settings. The
+`--budget` shortfall message names the figure, so the arithmetic stays checkable
+rather than plausible.
+
+**What it says when it cannot tell two candidates apart.** When the top two
+worst-level scores differ by less than the largest spread either of them showed
+between identical renders, the run says so in as many words: the order between
+them is not evidence, listen to both. `summary.json` carries
+`input_level_observations` and `input_level_spread` per candidate, because a mean
+of three and a single render are different kinds of number and a reader comparing
+two scores 0.01 apart has to know which one is in front of them.
+
+None of this would have worked before §12g: the store served an identical vector
+from cache, so the second and third observations would have been copies of the
+first. The cache is now bypassed on exactly the backends that need replicating.
 
 ## 13. Reading list, in the order it becomes relevant
 
