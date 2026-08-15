@@ -68,10 +68,10 @@ Everything below exists to close that loop.
 | `pyproject.toml` has `dependencies = []`; tests pass on a bare clone | New dependencies go in **optional extras only**. `show.py` and `apply_spec.py` must keep working with stdlib alone. |
 | `spectrum_diff.py` uses hand-written Goertzel to avoid numpy | That constraint applies to *reproducing a published measurement*. New analysis code may use numpy/scipy behind an extra. Do not rewrite `spectrum_diff.py`. |
 | Morgan manifest: 132 parameters — 53 `metered`, 32 `switch`, 31 `rotation`, 8 `enum`, 4 `fraction`, 2 `string`, 2 `path`; 1 non-writable | Continuous search space is ≤ 88 before conditioning; per-amp conditioning cuts it to roughly 35–45. |
-| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. The "roughly eleven times Morgan's cost" in §11 was the `pedalboard` path and is superseded: through the Swift host it renders at Morgan's cost, 370 ms, after one ~46 s load — §12d. |
+| Tone King manifest: 259 parameters, **159 marked `internal` / non-writable** | Its writable space is ~100. §11's ~11× Morgan's cost per render was the `pedalboard` path and is superseded: through the Swift host it renders at Morgan's cost, 370 ms, after one ~46 s load — see `docs/measuring-against-the-plugin.md`. |
 | Each amp has its own module prefix (`ac20*`, `pr12*`, `sw50r*`) and its own 9-band EQ | Search space must be *conditional* on `selectedAmp`. Writing the inactive amp's controls is a silent no-op. |
 | EQ bands are at fixed declared centres (65/125/250/500/1k/2k/4k/8k/16k), ±12 dB, plus HPF (20–500 Hz) and LPF (1k–20k), with `centre_hz` already in the manifest | Spectral matching is a **bounded 9-variable least-squares fit**, not a search. See D2. **These are not all ISO third-octave centres**: the lowest is labelled 65 Hz and the ISO band beside it is 63, so `Fingerprint.band_db(65.0)` returns `None` — see §12a. An earlier version of this row said "fixed ISO centres" and the fit was written against that assumption. |
-| `au_render.swift` gets **exact zeros** from Tone King on a first render | M0 blamed the bare CLI instantiation and routed Tone King through `pedalboard`; §12d found the real cause — the first allocation of render resources — and `match/renderer_au.py` cycles them itself. Tone King goes through the Swift host like Morgan. |
+| `au_render.swift` gets **exact zeros** from Tone King on a first render | M0 blamed the bare CLI instantiation and routed Tone King through `pedalboard`; the real cause is the first allocation of render resources, and `match/renderer_au.py` cycles them itself — see `docs/measuring-against-the-plugin.md`. Tone King goes through the Swift host like Morgan. |
 | `apply_spec.py` validates kinds, ranges, selectors, read-only fields, and never overwrites its input | Optimizer output **must** be emitted as a human-valued spec and passed through `apply_spec.py --dry-run`. Never write preset bytes directly from the optimizer. |
 | Plugin-dependent checks are deliberately local, never CI (`audit_manifest.py`) | Same split applies here: plugin-free tests in CI, plugin-dependent checks local. |
 | `NOTICE.md`: no Neural DSP content, no factory presets, no IRs, no audio redistributed | Reference audio, stems, and renders are **never** committed. Store hashes and derived features only. |
@@ -1906,8 +1906,8 @@ with AudioUnitRenderer('morgan') as r:
 EOF
 ```
 
-431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. The deleted run-book's
-291 ms was for a
+431 ms for a 3-second DI, against 1.1-1.3 s to instantiate. The 291 ms in
+`docs/measuring-against-the-plugin.md`'s throughput table was for a
 2-second excitation, so per second of audio the two agree.
 
 ### Two silent defects the first real renders exposed
@@ -2021,7 +2021,8 @@ approximately right.
 
 ### `spatial` is not a guaranteed zero any more
 
-The deleted run-book predicted this: it reads 0.000 on every synthetic run because both sides are
+The deleted run-book — `docs/handoff-to-macos.md`, in git history — predicted this:
+it reads 0.000 on every synthetic run because both sides are
 dual-mono, and it carries 8% of the weight. Against the plugin, the seed candidate
 of the ground-truth match scores `spatial: 0.0253`. It discriminates.
 
