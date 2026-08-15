@@ -68,9 +68,9 @@ of their names. They are not:
   the plugin displays -25 as `25 L`.
 
 A name ending in `Pan`, `Power` or `Mode` is a hint, not a fact.
-`scripts/bootstrap_pack.py` no longer guesses `Pan` or `Power` as selectors for
-this reason — guessing "selector" is the expensive way to be wrong, because it
-turns a legible number into an opaque index.
+`scripts/bootstrap_pack.py` does not guess `Pan` or `Power` as selectors for this
+reason — guessing "selector" is the expensive way to be wrong, because it turns a
+legible number into an opaque index.
 
 ## Selectors whose member names are still unknown
 
@@ -81,12 +81,13 @@ two mics and a Room Send level, nothing else. So there is no screen to read them
 off either. Treat them as vestigial and leave them at whatever the template
 holds.
 
-These were previously declared against `enums.internalMic`, the eleven-entry
-close-mic catalog (ten mics plus `Custom IR`). That was wrong in the dangerous direction: writing
-`"Ribbon 121"` (8) to a room mic passed validation and landed on 0.
+They are deliberately **not** declared against `enums.internalMic`, the
+eleven-entry close-mic catalog (ten mics plus `Custom IR`). Doing so is wrong in
+the dangerous direction: it lets `"Ribbon 121"` (8) pass validation on a room mic
+and land on 0.
 
-Writing one of these still works — the tool validates it as an integer and warns
-that the value is unverified.
+Writing one of these works — the tool validates it as an integer and warns that
+the value is unverified.
 
 ## Discovering a selector's members
 

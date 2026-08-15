@@ -59,10 +59,11 @@ on any machine. Verified to produce byte-identical encoding to an IR-free
 preset's empty field.
 
 It also moves any mic selector sitting on `Custom IR` (10) back to that side's
-plugin default — Dynamic 57 on the left, Condenser 184 on the right. Clearing
-the path alone used to leave the selector pointing at a file that was no longer
-named, so the plugin showed `Custom IR / No File`: a preset in a worse state
-than before it was stripped, and silently so.
+plugin default — Dynamic 57 on the left, Condenser 184 on the right. Both halves
+are needed: clearing the path while leaving the selector on `Custom IR` gives the
+plugin a selector pointing at a file that is no longer named, and it shows
+`Custom IR / No File` — a preset in a worse state than before it was stripped,
+and silently so.
 
 ### Stripping changes the sound
 

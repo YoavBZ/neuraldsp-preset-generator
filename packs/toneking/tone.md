@@ -108,9 +108,10 @@ large ambience sources can obscure the pick attack quickly.
 ## Verification boundary
 
 The manifest's 94 writable mappings, kinds, ranges, selectors and switch
-directions were re-audited against Tone King 1.0.3. The Swift host now renders
-the plugin after cycling its render resources; the earlier exact-silence result
-described a hosting defect, not the plugin's sound.
+directions were audited against Tone King 1.0.3. The Swift host renders this
+plugin only after cycling its render resources, which `match/renderer_au.py`
+does by itself — see
+[docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
 
 `eq_basis.json` measures both channels' shared nine-band equaliser, and
 `drive_curve.json` measures channel volume against four input levels. Neither
@@ -123,10 +124,11 @@ known-target result are recorded
 in [the implementation plan](../../docs/tone-matching-plan.md#12g-tone-king-calibration-and-the-corrected-known-target-run).
 
 The recipes above remain conservative musical starting points rather than
-results derived from those two measurements. Direct inversion does now run on
-this pack: `--amp lead` or `--amp rhythm` — or the channel the template already
-selects — writes output gain and the nine shared EQ bands from the measured
-basis above, and every band it moves is compared against that basis's
-frequency-aligned repeat spread. What the backend cannot do is repeat itself
-exactly, so treat one run's score as a sampled observation and audition its
+results derived from those two measurements.
+
+Direct inversion runs on this pack. `--amp lead` or `--amp rhythm` — or the
+channel the template already selects — writes output gain and the nine shared EQ
+bands from the measured basis above, and every band it moves is compared against
+that basis's frequency-aligned repeat spread. The backend cannot repeat itself
+exactly, so treat one run's score as a sampled observation and audition the
 result with the target guitar, level-matched in context.
