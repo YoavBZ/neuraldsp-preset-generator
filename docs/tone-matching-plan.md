@@ -857,20 +857,24 @@ between plugin calls. Inside it the work is real rather than wasteful: per-frame
 autocorrelation ~39 ms, `resample_poly` ~25 ms, `sosfilt` and `lfilter` ~34 ms,
 loudness ~26 ms.
 
-Only **13.1 ms** of it is *duplicated*, measured on a four-second synthetic render by
-counting calls per argument group rather than per function: `_power_frames` is called
-seven times in three groups — one at 8192/2048, two at 2048/512, four more at
-2048/512 with `gated=False` — which is 9.7 ms of repeats, and `integrated_loudness`
-four times in three groups, another 3.4 ms. That is 11.7% of a 112 ms fingerprint,
-and **2.6 s of a 200-render plugin run, which is 1.3% of the run** — the figure that
-decides it, since a run is what anybody waits for.
+Only **27.6 ms** of it is *duplicated*, counted per argument group rather than per
+function on a four-second stereo render — stereo because that is what every renderer
+in this repository returns, and the count depends on it: `_power_frames` runs nine
+times on two channels and seven on one, because the 8192/2048 group is per channel
+plus the mix. Nine calls in three groups is 19.9 ms of repeats; `integrated_loudness`
+runs four times for two distinct inputs, another 7.8 ms. That is 16.4% of a 169 ms
+fingerprint, and **5.5 s of a 200-render plugin run, which is 2.8% of the run** — the
+figure that decides it, since a run is what anybody waits for. (An earlier version of
+this paragraph said 13.1 ms, measured on a mono signal no renderer produces.)
 
 The larger prize is the 39 ms of autocorrelation, and an FFT would take a real bite
 out of it. It is also not bit-identical, and every `response_atlas_*.json`,
 `eq_basis.json` and benchmark number in this document encodes fingerprint output, so
-a change in the last decimal place quietly invalidates all of them. Neither 1.3% nor
+a change in the last decimal place quietly invalidates all of them. Neither 2.8% nor
 the roughly 4% an FFT might buy is worth re-measuring the committed corpus for. This
-paragraph exists so the next person does not re-derive it.
+paragraph exists so the next person does not re-derive it — and the mono-versus-stereo
+correction above is why it states its input, since the same profile run on the wrong
+signal is off by a factor of two.
 
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess

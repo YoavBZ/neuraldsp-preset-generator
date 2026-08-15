@@ -168,7 +168,8 @@ def drafted_pack(tmp_path):
 
     root = tmp_path / "plugin"
     skip = shutil.ignore_patterns("templates", "__pycache__", "*.xml",
-                                  "observed.json", "response_atlas_*.json")
+                                  "observed.json", "response_atlas_*.json",
+                                  "learned-tones.md*")
     for name in ("scripts", "packs", "format"):
         shutil.copytree(REPO_ROOT / name, root / name, ignore=skip)
 

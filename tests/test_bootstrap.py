@@ -19,7 +19,6 @@ import sys
 import pytest
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent
-BOOTSTRAP = REPO_ROOT / "scripts" / "bootstrap_pack.py"
 EXAMPLE = REPO_ROOT / "samples" / "Example_Clean_PR12.xml"
 
 from format.parser import parse_file
@@ -61,10 +60,16 @@ def plugin_root(tmp_path, monkeypatch):
     another was still reading, and a third found it already drafted.
 
     The in-process loader is pointed at the copy too, because several tests
-    below check that what the script wrote is loadable.
+    below check that what the script wrote is loadable. That redirection covers
+    `packs.loader.PACKS_DIR` and nothing else: `packs/recipes.py` binds the name
+    at import, and `packs/paths.py` derives `PLUGIN_ROOT` separately, so a test
+    added here that reads `recipes.json` or `tone.md` would quietly read the real
+    packs. Neither can write, so neither is a race — but neither follows the
+    patch either.
     """
     skip = shutil.ignore_patterns("templates", "__pycache__", "*.xml",
-                                  "observed.json", "response_atlas_*.json")
+                                  "observed.json", "response_atlas_*.json",
+                                  "learned-tones.md*")
     for name in ("scripts", "packs", "format"):
         shutil.copytree(REPO_ROOT / name, tmp_path / name, ignore=skip)
     monkeypatch.setattr(loader, "PACKS_DIR", tmp_path / "packs")

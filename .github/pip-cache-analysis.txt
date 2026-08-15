@@ -1,0 +1,14 @@
+# Cache key for the analysis job's pip download, and nothing else.
+#
+# setup-python keys its cache on the OS, the Python version and a hash of
+# cache-dependency-path — not on the job, and not on the extras being installed.
+# Point two jobs at the same file and they share a key: the bare `test` job
+# installs three small pure-Python wheels, finishes first, saves that as the
+# cache, and the analysis job then gets an exact-key hit and never saves its own.
+# The job that downloads numpy, scipy, soundfile and pyloudnorm would keep
+# downloading them every run.
+#
+# This file exists so that key changes when the analysis dependency set changes
+# and at no other time. Keying on ci.yml instead busted the cache on every
+# unrelated CI edit, including edits to this comment's predecessor.
+dev,analysis,match
