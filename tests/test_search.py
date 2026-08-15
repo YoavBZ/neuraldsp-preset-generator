@@ -687,23 +687,35 @@ def test_replicates_are_averaged_while_levels_are_still_taken_at_their_worst():
         values={}, objectives={"total": 1.0}, total=next(scores))
     candidate = S.Candidate(values={}, objectives={"total": 0.5}, total=0.50)
 
-    S.robustness_rerank(evaluator, [candidate], offsets_db=())
+    S.robustness_rerank(evaluator, [candidate], offsets_db=(6.0,))
 
     assert candidate.by_level[0.0] == pytest.approx(0.50), (
         "0.50 handed in, 0.40 and 0.60 rendered: the mean, not the worst"
     )
     assert candidate.by_level_spread[0.0] == pytest.approx(0.20)
+    # +6 dB drew 0.50 three times, so it is the quieter level — and the candidate's
+    # worst is still the max across levels rather than the max across renders.
+    assert candidate.by_level[6.0] == pytest.approx(0.50)
+    assert candidate.worst_level == pytest.approx(0.50), (
+        "0.60 was observed, but at a level whose mean is 0.50: worst across "
+        "levels, mean across replicates"
+    )
+
+
+def _ranked(worst: float, spread: float, observations: int = 3) -> "S.Candidate":
+    """A candidate whose worst level is `worst`, measured with `spread` there."""
+    candidate = S.Candidate(values={}, objectives={}, total=worst)
+    candidate.by_level = {0.0: worst - 0.05, 6.0: worst}
+    candidate.by_level_spread = {6.0: spread}
+    candidate.by_level_observations = {0.0: observations, 6.0: observations}
+    candidate.replicates = observations
+    return candidate
 
 
 def test_two_candidates_inside_the_backends_own_variation_are_not_ranked():
     """Something has to come first, but a reader choosing what to audition is
-    entitled to know the gap is smaller than the backend's own noise."""
-    best = S.Candidate(values={}, objectives={}, total=0.50)
-    best.by_level = {0.0: 0.50, -6.0: 0.52, 6.0: 0.55}
-    best.by_level_spread = {0.0: 0.09}
-    second = S.Candidate(values={}, objectives={}, total=0.56)
-    second.by_level = {0.0: 0.56, -6.0: 0.57, 6.0: 0.58}
-    second.by_level_spread = {0.0: 0.08}
+    entitled to know the gap is smaller than the evidence can resolve."""
+    best, second = _ranked(0.500, 0.09), _ranked(0.530, 0.08)
 
     inside = S._indistinguishable([best, second], S.SHORTLIST_REPLICATES)
     outside = S._indistinguishable([best, second], 1)
@@ -711,6 +723,99 @@ def test_two_candidates_inside_the_backends_own_variation_are_not_ranked():
     assert any("not evidence" in caveat for caveat in inside)
     assert any("0.030 apart" in caveat for caveat in inside)
     assert outside == [], "a backend that repeats itself has no such doubt"
+
+
+def test_a_wobble_at_a_level_that_decides_nothing_does_not_blur_the_ranking():
+    """Pooling every level's spread let a −6 dB wobble call two candidates a coin
+    toss when both worst levels were measured with no spread at all."""
+    best, second = _ranked(1.0, 0.0), _ranked(3.0, 0.0)
+    for candidate in (best, second):
+        candidate.by_level[-6.0] = 0.2
+        candidate.by_level_spread[-6.0] = 0.5
+
+    assert S._indistinguishable([best, second], S.SHORTLIST_REPLICATES) == []
+
+
+def test_the_threshold_is_the_error_of_the_means_not_the_spread_of_renders():
+    """Averaging three observations is most of the point of replicating them. A
+    rule that compared the gap against a raw single-render spread called a
+    three-sigma separation indistinguishable two times in five."""
+    spread = 0.30                       # peak-to-peak of three renders
+    sigma = spread / S._RANGE_TO_SIGMA[3]
+    resolution = math.sqrt(2) * sigma / math.sqrt(3)
+
+    inside = S._indistinguishable(
+        [_ranked(0.50, spread), _ranked(0.50 + resolution * 0.8, spread)],
+        S.SHORTLIST_REPLICATES,
+    )
+    outside = S._indistinguishable(
+        [_ranked(0.50, spread), _ranked(0.50 + resolution * 1.5, spread)],
+        S.SHORTLIST_REPLICATES,
+    )
+
+    assert inside and not outside
+    assert resolution < spread, (
+        "the point of the fix: the means resolve better than one render does"
+    )
+
+
+def test_a_level_that_loses_a_render_says_so_and_counts_what_it_got(
+    space, seed, target,
+):
+    """Three asked for, two obtained, and the report has to say two — the field
+    exists because a mean of three and a single render differ, so a field that
+    says three and means one is worse than not having it."""
+    from dataclasses import replace
+
+    from match.renderer import RenderError
+
+    class OneBadRender(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+        def render(self, di_samples, settings=None, **kwargs):
+            self.calls += 1
+            if self.calls == 2:
+                raise RenderError("deliberate failure")
+            return super().render(di_samples, settings, **kwargs)
+
+    evaluator = S.Evaluator(OneBadRender(), target, di(), space, recipe=seed)
+    candidate = evaluator.evaluate(seed)
+
+    _, caveats = S.robustness_rerank(evaluator, [candidate])
+
+    assert candidate.by_level_observations[0.0] < S.SHORTLIST_REPLICATES
+    assert set(candidate.by_level) == {-6.0, 0.0, 6.0}, (
+        "a level that lost one render of three is measured, not unknown"
+    )
+    assert any("thinner evidence" in caveat for caveat in caveats)
+
+
+def test_the_budget_reserves_what_a_stateful_rerank_actually_spends(space, seed,
+                                                                    target):
+    """The reserve is a promise about the fixed costs, and replication made the
+    re-rank four times what the promise said."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    with Store() as store:
+        store.start_run(Run(run_id="reserve"))
+        result = S.search(Stateful(), target, di(), space, seed, budget=120,
+                          shortlist=2, store=store, run_id="reserve",
+                          rng=np.random.default_rng(0))
+
+    assert result.renders <= 120, result.caveats
+    assert all(candidate.by_level_observations.get(0.0) == S.SHORTLIST_REPLICATES
+               for candidate in result.shortlist)
 
 
 def test_the_rerank_says_when_it_changed_the_order(seed):

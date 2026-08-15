@@ -2652,15 +2652,47 @@ shortlisted candidate at R = 3, against two on a reproducible backend. The
 reference level costs one fewer because the search already scored that vector
 there and that render is an observation of exactly those settings. The
 `--budget` shortfall message names the figure, so the arithmetic stays checkable
-rather than plausible.
+rather than plausible — and so does `scripts/_cli.enumerated`'s pre-flight gate,
+which is the one a person meets *before* spending an hour. That gate still assumed
+two renders per candidate until a review caught it waving through a budget the
+search would then exceed, and `--budget`'s own help text still described the
+reproducible cost.
 
-**What it says when it cannot tell two candidates apart.** When the top two
-worst-level scores differ by less than the largest spread either of them showed
-between identical renders, the run says so in as many words: the order between
-them is not evidence, listen to both. `summary.json` carries
-`input_level_observations` and `input_level_spread` per candidate, because a mean
-of three and a single render are different kinds of number and a reader comparing
-two scores 0.01 apart has to know which one is in front of them.
+**What it says when it cannot tell two candidates apart.** The first rule written
+here compared the gap between two candidates against the raw peak-to-peak spread of
+single renders, pooled across every level. Two things were wrong with that, and a
+review measured both: pooling let a wobble at −6 dB — a level that decides nothing —
+call two candidates 0.38 apart at their worst levels a coin toss, and comparing a
+gap between *means* against the spread of individual renders threw away the whole
+`√n` that averaging buys, so a genuine three-sigma separation was declared
+indistinguishable two times in five. The rule now uses each candidate's spread at
+its own worst level — the score the ranking is made on — converts peak-to-peak to a
+standard deviation through the control-chart `d2` constant for that many
+observations, and compares the gap against the standard error of the two means. The
+caveat text says that is what it did.
+
+**Every number a person reads is the replicated one.** `Candidate.total` stays the
+single render the store recorded, because `match/verdict.py` cross-checks a summary
+against exactly that trial — but the HTML headline, the "% closer" figure, the
+shortlist table, the "it holds up across ±6 dB" line and the re-rank's own caveat
+now all use `reference_score`, the mean at the reference level. Before that they
+printed `total`, so a 2rem headline could sit outside the range the sentence under
+it gave for the same settings, and a run could say "it holds up" while the
+replicated mean was worse than the render it was compared against. `summary.json`
+carries both, plus `input_level_spread` and a *per-level* `input_level_observations`
+— per level because a level that loses a render to a failure averages fewer, and it
+can be the very level that sets the worst-case score.
+
+**What the two rules do when composed, which is not nothing.** Ranking on the worst
+of three means is a max over noisy estimates, so it is biased upward, and the bias
+falls on the candidate whose levels are closest together. Measured over 100k
+simulated pairs with identical true worst levels, the flat candidate loses to the
+peaky one about three times in four, and its reported worst level is inflated by
+about half a per-render sigma. Replication *reduces* that — the inflation was around
+0.85 sigma on one render per level and is around 0.49 on three — but it does not
+remove it, and "worst across levels, mean across replicates" should not be read as
+saying the composition is settled. Fixing it properly means ranking on something
+other than a max of point estimates, which is a larger change than this one.
 
 None of this would have worked before §12g: the store served an identical vector
 from cache, so the second and third observations would have been copies of the

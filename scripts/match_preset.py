@@ -113,7 +113,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "that cannot be part-paid: 2 per searchable parameter plus 1 "
                          "for the screen, 1 for the template as it arrived, 2 per "
                          "--shortlist entry for the ±6 dB re-rank, and then the "
-                         "optimiser needs at least one whole round (~12) on top. On "
+                         "optimiser needs at least one whole round (~12) on top. A "
+                         "backend that does not repeat itself costs more: 4 more on "
+                         "the screen and 8 rather than 2 per --shortlist entry, "
+                         "because each score is the mean of 3 renders. On "
                          "Morgan that is about 70 before anything is searched, and a "
                          "run that could not afford a round says so and names the "
                          "number to raise this to")
@@ -226,7 +229,8 @@ def main() -> None:
             close()
         return
     switches, selectors = _enumerated(
-        space, args.enumerated, None, args.shortlist, supported=supported)
+        space, args.enumerated, None, args.shortlist, supported=supported,
+        replicates=search.shortlist_replicates(renderer.metadata()))
     assert seed is not None and template_name is not None
     if signal_path_arg is not None:
         # ``--amp`` selects the path being matched, not merely the basis used after
@@ -374,7 +378,8 @@ def main() -> None:
     # this against the template above overstated or understated the fixed cost.
     switches, selectors = _enumerated(
         space, args.enumerated, args.budget, args.shortlist,
-        supported=supported, seed=seed)
+        supported=supported, seed=seed,
+        replicates=search.shortlist_replicates(metadata))
 
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
@@ -477,11 +482,18 @@ def main() -> None:
     print(f"  {result.renders} of them against the {args.budget}-render budget; "
           f"{outside} outside it — {outside_sources}")
     worst = ""
-    if best.worst_level is not None and best.worst_level > best.total + 5e-4:
+    # The reference-level estimate rather than the one render the search made: on a
+    # stateful backend "it holds up" was decided by comparing a mean against a single
+    # observation of the same settings, and could say so while the mean was worse.
+    reached = best.reference_score
+    if best.worst_level is not None and best.worst_level > reached + 5e-4:
         worst = f", {best.worst_level:.3f} at worst across ±6 dB of input level"
     elif best.worst_level is not None:
         worst = ", and it holds up across ±6 dB of input level"
-    print(f"  distance to the reference {start.total:.3f} -> {best.total:.3f}{worst}")
+    averaged = best.by_level_observations.get(0.0, 1)
+    if averaged > 1:
+        worst += f" (each score the mean of {averaged} renders)"
+    print(f"  distance to the reference {start.total:.3f} -> {reached:.3f}{worst}")
     excerpt = target.source
     if "excerpt_start_s" in excerpt and "excerpt_end_s" in excerpt:
         print(f"  reference excerpt {excerpt['excerpt_start_s']:.6f}–"

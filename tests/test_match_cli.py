@@ -96,6 +96,17 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     }
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
+    for candidate in summary["shortlist"]:
+        # A deterministic backend measures each level once, and the reference-level
+        # score a reader is shown is that one render. The fields still have to be
+        # there and agree, because the report and the skill read them either way.
+        assert candidate["input_level_observations"] == {
+            "0.0": 1, "-6.0": 1, "6.0": 1
+        }
+        assert candidate["reference_level_score"] == pytest.approx(
+            candidate["score"]
+        )
+        assert candidate["input_level_spread"] == {}
     assert all(candidate["fingerprint"] is not None
                for candidate in summary["shortlist"])
     assert summary["shortlist"][0]["fingerprint_delta"]

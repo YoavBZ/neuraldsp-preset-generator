@@ -122,14 +122,33 @@ class Candidate:
     # far apart they were.
     by_level: Dict[float, float] = field(default_factory=dict)
     by_level_spread: Dict[float, float] = field(default_factory=dict)
-    # How many observations each `by_level` entry averages. 1 is "measured once",
-    # which is the only honest thing to call a single render on a stateful backend.
+    # How many observations each `by_level` entry actually averages, per level. Not
+    # one number for the candidate: a level that lost a render to a failure averages
+    # fewer, and it can be the very level that sets `worst_level`. Reporting the
+    # figure that was *asked for* there would say three and mean one.
+    by_level_observations: Dict[float, int] = field(default_factory=dict)
+    # How many were asked for. `by_level_observations` is what was obtained.
     replicates: int = 1
     # Why this vector scored nothing, when a backend refused it outright. The
     # store has always recorded this; the candidate did not carry it, so the one
     # place that reads a failure — the screen's baseline — could only guess
     # between a silent render and an unmeasurable one, and said both.
     error: Optional[str] = None
+
+    @property
+    def reference_score(self) -> float:
+        """The reference-level score on the best evidence this run has.
+
+        `total` is one render — the one the search made and the store recorded, and
+        `match/verdict.py` cross-checks a summary against exactly that trial, which
+        is why it is never overwritten. On a backend that does not repeat itself the
+        re-rank then measures the same settings at the same level two more times,
+        and the mean of the three is a better estimate of what these settings score.
+        Everything a person reads should be that estimate; printing `total` beside a
+        range built from means is how a headline ends up outside the range quoted
+        under it.
+        """
+        return self.by_level.get(0.0, self.total)
 
     @property
     def worst_level(self) -> Optional[float]:
@@ -943,6 +962,7 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
                 # one observation as though it were three.
                 thin.append(offset)
             candidate.by_level[offset] = float(np.mean(observations))
+            candidate.by_level_observations[offset] = len(observations)
             if len(observations) > 1:
                 candidate.by_level_spread[offset] = float(
                     max(observations) - min(observations))
@@ -993,44 +1013,77 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
     return reranked, caveats
 
 
-def _shortlist_replicates(evaluator: Evaluator) -> int:
+def shortlist_replicates(metadata) -> int:
     """How many observations each shortlist score should average.
 
     One on a backend that is a function of its inputs, where a second render is a
     copy of the first and buys nothing. `SHORTLIST_REPLICATES` on one that is not,
     where a single render is a sample and ranking on samples is how a run comes to
     publish an ordering it cannot support.
+
+    Takes metadata rather than an evaluator because the CLI has to reserve this
+    cost before it builds one: `scripts/_cli.enumerated` gates a run on whether the
+    budget can afford its fixed costs, and it was quoting the reproducible figure.
     """
-    return (1 if evaluator.renderer.metadata().reproducible
-            else SHORTLIST_REPLICATES)
+    return 1 if metadata.reproducible else SHORTLIST_REPLICATES
+
+
+def _shortlist_replicates(evaluator: Evaluator) -> int:
+    return shortlist_replicates(evaluator.renderer.metadata())
+
+
+# Expected range of n samples from a unit normal — the control-chart d2 constants.
+# A peak-to-peak of three observations is not a standard deviation, and dividing by
+# the right number is the difference between a threshold that means something and a
+# number that looks like statistics.
+_RANGE_TO_SIGMA = {2: 1.128, 3: 1.693, 4: 2.059, 5: 2.326}
 
 
 def _indistinguishable(reranked: Sequence[Candidate],
                        replicates: int) -> List[str]:
-    """Say when the top two are inside the backend's own variation.
+    """Say when the top two are inside the uncertainty of their own means.
 
     The ordering is still reported — something has to come first — but a reader
-    deciding which preset to audition is entitled to know that the gap between the
-    first two is smaller than the distance between two renders of either one.
+    deciding which preset to audition is entitled to know when the gap is smaller
+    than the evidence can resolve.
+
+    Compared like with like, which took two corrections. The gap is between two
+    *means* of `replicates` renders, so the threshold is the standard error of those
+    means and not the raw spread of single renders: averaging three observations is
+    most of the point, and a rule that ignored the ``√n`` still called a three-sigma
+    separation indistinguishable two times in five. And the spread used is the one at
+    each candidate's *own worst level* — the score the ranking is made on — because
+    pooling every level let a wobble at −6 dB, which decides nothing, declare two
+    candidates 0.38 apart at their worst levels to be a coin toss.
     """
     if replicates < 2 or len(reranked) < 2:
         return []
     best, second = reranked[0], reranked[1]
-    if best.worst_level is None or second.worst_level is None:
-        return []
-    spreads = [spread for candidate in (best, second)
-               for spread in candidate.by_level_spread.values()]
-    if not spreads:
-        return []
-    spread = max(spreads)
+    errors = []
+    spreads = []
+    for candidate in (best, second):
+        worst = candidate.worst_level
+        if worst is None or not math.isfinite(worst):
+            return []
+        level = next((offset for offset, score in candidate.by_level.items()
+                      if score == worst), None)
+        spread = candidate.by_level_spread.get(level) if level is not None else None
+        observations = candidate.by_level_observations.get(level, replicates)
+        divisor = _RANGE_TO_SIGMA.get(observations)
+        if spread is None or divisor is None:
+            return []
+        spreads.append(float(spread))
+        errors.append((float(spread) / divisor) / math.sqrt(observations))
+    resolution = math.sqrt(sum(error ** 2 for error in errors))
     gap = float(second.worst_level) - float(best.worst_level)
-    if gap > spread:
+    if gap > resolution:
         return []
     return [
-        f"the first two candidates are {gap:.3f} apart, inside the {spread:.3f} "
-        f"this backend moved between identical renders of one of them. Each score "
-        f"is the mean of {replicates} observations and they are still this close, "
-        f"so the order between these two is not evidence — listen to both"
+        f"the first two candidates are {gap:.3f} apart at the levels they are "
+        f"ranked on, inside the {resolution:.3f} those two scores can resolve — "
+        f"each is a mean of {replicates} renders that themselves moved by up to "
+        f"{max(spreads):.3f}. The order between these two is not evidence; listen "
+        f"to both"
     ]
 
 
@@ -1077,7 +1130,8 @@ def _rerank_and_explain(shortlist: Sequence[Candidate],
     if (now is not None and now is not was
             and was.worst_level is not None and now.worst_level is not None):
         caveats.append(
-            f"the best match at the reference input level ({was.total:.3f}) is not "
+            f"the best match at the reference input level "
+            f"({was.reference_score:.3f}) is not "
             f"the best across ±6 dB of it ({was.worst_level:.3f} at worst, against "
             f"{now.worst_level:.3f}), so the shortlist is ordered by the worse "
             f"case. A preset that only works at one input level is a preset that "

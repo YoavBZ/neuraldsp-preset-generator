@@ -200,7 +200,12 @@ def build_summary(
         candidates.append({
             "rank": index + 1,
             "trial_id": candidate.trial_id,
+            # The trial the store recorded, which `match/verdict.py` cross-checks
+            # against this file. `reference_level_score` is the same settings at the
+            # same level on all the evidence the run has, and is what the report and
+            # the CLI show.
             "score": float(candidate.total),
+            "reference_level_score": float(candidate.reference_score),
             "worst_input_level_score": (
                 None if candidate.worst_level is None else float(candidate.worst_level)
             ),
@@ -214,7 +219,10 @@ def build_summary(
             # What each of those scores is made of. A mean of three observations
             # and a single render are different kinds of number, and a reader
             # comparing two candidates 0.01 apart needs to know which one this is.
-            "input_level_observations": int(candidate.replicates),
+            "input_level_observations": {
+                str(offset): int(count)
+                for offset, count in candidate.by_level_observations.items()
+            },
             "input_level_spread": {
                 str(offset): float(value)
                 for offset, value in candidate.by_level_spread.items()
@@ -355,24 +363,32 @@ def _headline(best, seed_objectives: Optional[Mapping[str, float]]) -> str:
                 "back silent — see the accounting at the foot of this page.</p>")
     before = (seed_objectives or {}).get("total")
     change = ""
+    # The reference-level estimate, not the single render the search happened to
+    # make: on a backend that does not repeat itself those differ, and "33% closer"
+    # computed off one unlucky render is a number nobody can reproduce.
+    reference = best.reference_score
     if before is not None and before > 0:
         change = (f" <span class='muted'>from {before:.3f}, "
-                  f"{100.0 * (1.0 - best.total / before):.0f}% closer</span>")
+                  f"{100.0 * (1.0 - reference / before):.0f}% closer</span>")
     # Both numbers at the same size. The big one was the reference-level score while
     # the shortlist was *ordered* by the worst-case score, which sat below it in small
     # grey text — so two of the three numbers a reader has to reconcile were not the one
     # set in 2rem, and the one that was is not the one the ranking used.
-    headline = f"{best.total:.3f}"
+    headline = f"{reference:.3f}"
     worst = ""
     if best.worst_level is not None and best.by_level:
-        if best.worst_level > best.total + 5e-4:
-            headline = (f"{best.total:.3f} <span class='muted'>at the reference "
+        if best.worst_level > reference + 5e-4:
+            headline = (f"{reference:.3f} <span class='muted'>at the reference "
                         f"level</span> · {best.worst_level:.3f} "
                         f"<span class='muted'>at worst</span>")
+        observations = best.by_level_observations.get(0.0, 1)
+        averaged = (f" Each figure is the mean of {observations} renders of the "
+                    f"same settings, because this backend does not repeat itself."
+                    if observations > 1 else "")
         worst = (f"<p class='muted'>Across ±6 dB of input level the same settings "
                  f"score between {min(best.by_level.values()):.3f} and "
                  f"{best.worst_level:.3f}. The shortlist below is ordered by the "
-                 f"worse end of that.</p>")
+                 f"worse end of that.{averaged}</p>")
     return (f"<h2>Result</h2><p class='headline'>{headline}</p>"
             f"<p>Weighted distance to the reference, lower is closer.{change}</p>"
             f"{worst}")
@@ -419,7 +435,8 @@ def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping],
         more = (f"<br><span class='muted'>and {len(moved) - 12} more</span>"
                 if len(moved) > 12 else "")
         rows.append(
-            f"<tr><td class='n'>{index}</td><td class='n'>{candidate.total:.3f}</td>"
+            f"<tr><td class='n'>{index}</td>"
+            f"<td class='n'>{candidate.reference_score:.3f}</td>"
             f"<td class='n'>{worst}</td><td>{listing}{more}</td></tr>"
         )
     note = ""
