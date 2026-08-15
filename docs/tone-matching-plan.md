@@ -814,7 +814,7 @@ seed; lowering parameter error alone is not sufficient.
 
 ```toml
 [project.optional-dependencies]
-dev        = ["pytest>=7.0", "pyyaml>=6.0"]
+dev        = ["pytest>=7.0", "pytest-xdist>=3.5", "pyyaml>=6.0"]
 analysis   = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
 match      = ["neuraldsp-preset-generator[analysis]"]
 host       = ["pedalboard>=0.9"]
@@ -827,12 +827,64 @@ is not there**, because D4 above held: `match/search.py` writes the textbook
 extra would advertise a capability that does not exist. Both get added when something
 needs them, which is the same rule the rest of this section states.
 
+`pytest-xdist` was added to `dev` after the suite reached 7m26s for 999 tests, and
+it is the only entry here that exists for wall-clock rather than capability. It buys
+a lot: measured on eight cores, 7m26s sequential, 2m52s at `--dist loadfile`, 2m10s
+at `--dist load`, **1m46s at `--dist worksteal`**, which `pyproject.toml` now passes
+by default. The spread between the three modes is balance alone — a handful of tests
+dominate, and `loadfile` pins `test_search.py`'s 167s to a single worker.
+
+Per-test distribution took two fixtures to make safe, and the first version of this
+paragraph claimed it was free. `tests/test_bootstrap.py` and
+`tests/test_apply_spec_cli.py` drafted packs into the repository's own `packs/`
+directory — ten tests sharing one pack id — which is invisible when pytest runs them
+one at a time and is four to seven failures a run when it does not. Both now draft
+into a copied plugin tree, which `tests/test_skills.py` was already doing. The rest
+of the suite was ready: `tmp_path` everywhere, environment changes through
+`monkeypatch`, and the documented commands redirected into a per-test sandbox.
+
+**How that survived is worth more than the defect.** The full suite passed 18 times
+across six worker counts and distribution modes, because all twelve of those tests
+land on one worker when 999 are spread over eight — so the whole-suite run, the only
+one anybody actually runs, is the single configuration that cannot see it. Running
+that file by itself fails every time. "The suite is green under four different
+orderings" was offered here as the order-dependence check, and it is not one.
+
+**The per-render hot path was profiled at the same time and deliberately left
+alone.** A warm synthetic render is 7 ms; the `fingerprint()` that follows it is
+114 ms, so the analysis, not the rendering, is what a search spends its time on
+between plugin calls. Inside it the work is real rather than wasteful: per-frame
+autocorrelation ~39 ms, `resample_poly` ~25 ms, `sosfilt` and `lfilter` ~34 ms,
+loudness ~26 ms.
+
+Only **27.6 ms** of it is *duplicated*, counted per argument group rather than per
+function on a four-second stereo render — stereo because that is what every renderer
+in this repository returns, and the count depends on it: `_power_frames` runs nine
+times on two channels and seven on one, because the 8192/2048 group is per channel
+plus the mix. Nine calls in three groups is 19.9 ms of repeats; `integrated_loudness`
+runs four times for two distinct inputs, another 7.8 ms. That is 16.4% of a 169 ms
+fingerprint, and **5.5 s of a 200-render plugin run, which is 2.8% of the run** — the
+figure that decides it, since a run is what anybody waits for. (An earlier version of
+this paragraph said 13.1 ms, measured on a mono signal no renderer produces.)
+
+The larger prize is the 39 ms of autocorrelation, and an FFT would take a real bite
+out of it. It is also not bit-identical, and every `response_atlas_*.json`,
+`eq_basis.json` and benchmark number in this document encodes fingerprint output, so
+a change in the last decimal place quietly invalidates all of them. Neither 2.8% nor
+the roughly 4% an FFT might buy is worth re-measuring the committed corpus for. This
+paragraph exists so the next person does not re-derive it — and the mono-versus-stereo
+correction above is why it states its input, since the same profile run on the wrong
+signal is off by a factor of two.
+
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess
   with numpy hidden).
 - CI (`.github/workflows/ci.yml`) grows a second job installing `[analysis,match]`
   and running the analysis + synthetic-chain + optimizer tests. The bare-clone
-  job stays exactly as it is.
+  job stays exactly as it is. Every `setup-python` step caches pip against
+  `pyproject.toml`, and the workflow cancels a superseded run on any ref but
+  `main`, because a second push to a pull request makes the first run's answer
+  irrelevant while it is still holding a runner.
 - Plugin-dependent scripts are never run in CI, matching `audit_manifest.py`.
 - Every entry point that needs an extra must fail with the install command, not
   an ImportError traceback.

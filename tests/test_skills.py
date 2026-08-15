@@ -898,7 +898,8 @@ def drafted_plugin_root(tmp_path_factory):
     root = tmp_path_factory.mktemp("plugin")
     # Skip a developer's own preset library and generated catalog: they can be
     # thousands of files, and none of them is what is being tested.
-    skip = shutil.ignore_patterns("templates", "__pycache__", "*.xml", "observed.json")
+    skip = shutil.ignore_patterns("templates", "__pycache__", "*.xml",
+                                   "observed.json", "learned-tones.md*")
     for name in ("scripts", "packs", "format"):
         shutil.copytree(ROOT / name, root / name, ignore=skip)
     # bootstrap_pack.py refuses to redraft a reviewed pack, and rightly so; the
