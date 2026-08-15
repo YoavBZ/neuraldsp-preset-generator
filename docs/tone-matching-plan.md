@@ -814,7 +814,7 @@ seed; lowering parameter error alone is not sufficient.
 
 ```toml
 [project.optional-dependencies]
-dev        = ["pytest>=7.0", "pyyaml>=6.0"]
+dev        = ["pytest>=7.0", "pytest-xdist>=3.5", "pyyaml>=6.0"]
 analysis   = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
 match      = ["neuraldsp-preset-generator[analysis]"]
 host       = ["pedalboard>=0.9"]
@@ -827,12 +827,39 @@ is not there**, because D4 above held: `match/search.py` writes the textbook
 extra would advertise a capability that does not exist. Both get added when something
 needs them, which is the same rule the rest of this section states.
 
+`pytest-xdist` was added to `dev` after the suite reached 7m26s for 999 tests, and
+it is the only entry here that exists for wall-clock rather than capability. It buys
+a lot: measured on eight cores, 7m26s sequential, 2m52s at `--dist loadfile`, 2m10s
+at `--dist load`, **1m46s at `--dist worksteal`**, which `pyproject.toml` now passes
+by default. The spread between the three modes is balance alone — a handful of tests
+dominate, and `loadfile` pins `test_search.py`'s 167s to a single worker. Per-test
+distribution is safe because the suite was already written for it: every test takes
+its own `tmp_path`, and `tests/test_skills.py` redirects the fixed paths its
+documented commands mention into a per-test sandbox.
+
+**The per-render hot path was profiled at the same time and deliberately left
+alone.** A warm synthetic render is 7 ms; the `fingerprint()` that follows it is
+114 ms, so the analysis, not the rendering, is what a search spends its time on
+between plugin calls. Inside it the work is real rather than wasteful: per-frame
+autocorrelation ~39 ms, `resample_poly` ~25 ms, `sosfilt` and `lfilter` ~34 ms,
+loudness ~26 ms. Only 15.4 ms of it is *duplicated* — `_power_frames` computed four
+times over with identical arguments and one repeated `integrated_loudness` — which
+is 13.5% of a fingerprint and 3.1 s of a 200-render run. An FFT autocorrelation
+would take a real bite out of the 39 ms, and it is not bit-identical: every
+`response_atlas_*.json`, `eq_basis.json` and benchmark number in this document
+encodes fingerprint output, so a change that alters the last decimal place quietly
+invalidates all of them. The measured 1.6% was not worth that, and this paragraph
+exists so the next person does not re-derive it.
+
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess
   with numpy hidden).
 - CI (`.github/workflows/ci.yml`) grows a second job installing `[analysis,match]`
   and running the analysis + synthetic-chain + optimizer tests. The bare-clone
-  job stays exactly as it is.
+  job stays exactly as it is. Every `setup-python` step caches pip against
+  `pyproject.toml`, and the workflow cancels a superseded run on any ref but
+  `main`, because a second push to a pull request makes the first run's answer
+  irrelevant while it is still holding a runner.
 - Plugin-dependent scripts are never run in CI, matching `audit_manifest.py`.
 - Every entry point that needs an extra must fail with the install command, not
   an ImportError traceback.

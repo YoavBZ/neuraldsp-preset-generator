@@ -12,7 +12,12 @@ license-files = ["LICENSE"]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pyyaml>=6.0"]
+# `pytest-xdist` is here for wall-clock, not for coverage: the suite renders audio
+# and runs the real optimiser rather than mocking either, so it is genuinely 7.5
+# minutes of work on one core and about a minute spread across eight. Dev-only —
+# `tests/test_no_dependencies.py` still holds the line that the tools themselves
+# import nothing.
+dev = ["pytest>=7.0", "pytest-xdist>=3.5", "pyyaml>=6.0"]
 # Measuring audio: analysis/ only. The preset tools above it stay stdlib-only,
 # and tests/test_no_dependencies.py holds that line.
 analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
@@ -47,3 +52,16 @@ scripts = ["au_probe.swift", "au_render.swift", "au_render_server.swift"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Parallel by default. Measured on an 8-core machine, 999 tests: 7m26s
+# sequential, 2m52s with `--dist loadfile`, 2m10s with `--dist load`, and
+# **1m46s with `--dist worksteal`**, which is what this uses. The spread between
+# the three is entirely balance — a handful of tests dominate (the longest is 45s)
+# and `loadfile` pins all of `test_search.py`'s 167s to one worker.
+#
+# Per-test distribution is safe here because the suite was already written to be:
+# every test takes its own `tmp_path`, and `tests/test_skills.py` deliberately
+# redirects the fixed paths its documented commands mention — `/tmp/spec.json`,
+# `/tmp/au_probe` — into a per-test sandbox, saying so in as many words.
+#
+# Pass `-n0` to turn this off — needed for `pdb`, which xdist cannot forward.
+addopts = "-n auto --dist worksteal"
