@@ -832,24 +832,45 @@ it is the only entry here that exists for wall-clock rather than capability. It 
 a lot: measured on eight cores, 7m26s sequential, 2m52s at `--dist loadfile`, 2m10s
 at `--dist load`, **1m46s at `--dist worksteal`**, which `pyproject.toml` now passes
 by default. The spread between the three modes is balance alone — a handful of tests
-dominate, and `loadfile` pins `test_search.py`'s 167s to a single worker. Per-test
-distribution is safe because the suite was already written for it: every test takes
-its own `tmp_path`, and `tests/test_skills.py` redirects the fixed paths its
-documented commands mention into a per-test sandbox.
+dominate, and `loadfile` pins `test_search.py`'s 167s to a single worker.
+
+Per-test distribution took two fixtures to make safe, and the first version of this
+paragraph claimed it was free. `tests/test_bootstrap.py` and
+`tests/test_apply_spec_cli.py` drafted packs into the repository's own `packs/`
+directory — ten tests sharing one pack id — which is invisible when pytest runs them
+one at a time and is four to seven failures a run when it does not. Both now draft
+into a copied plugin tree, which `tests/test_skills.py` was already doing. The rest
+of the suite was ready: `tmp_path` everywhere, environment changes through
+`monkeypatch`, and the documented commands redirected into a per-test sandbox.
+
+**How that survived is worth more than the defect.** The full suite passed 18 times
+across six worker counts and distribution modes, because all twelve of those tests
+land on one worker when 999 are spread over eight — so the whole-suite run, the only
+one anybody actually runs, is the single configuration that cannot see it. Running
+that file by itself fails every time. "The suite is green under four different
+orderings" was offered here as the order-dependence check, and it is not one.
 
 **The per-render hot path was profiled at the same time and deliberately left
 alone.** A warm synthetic render is 7 ms; the `fingerprint()` that follows it is
 114 ms, so the analysis, not the rendering, is what a search spends its time on
 between plugin calls. Inside it the work is real rather than wasteful: per-frame
 autocorrelation ~39 ms, `resample_poly` ~25 ms, `sosfilt` and `lfilter` ~34 ms,
-loudness ~26 ms. Only 15.4 ms of it is *duplicated* — `_power_frames` computed four
-times over with identical arguments and one repeated `integrated_loudness` — which
-is 13.5% of a fingerprint and 3.1 s of a 200-render run. An FFT autocorrelation
-would take a real bite out of the 39 ms, and it is not bit-identical: every
-`response_atlas_*.json`, `eq_basis.json` and benchmark number in this document
-encodes fingerprint output, so a change that alters the last decimal place quietly
-invalidates all of them. The measured 1.6% was not worth that, and this paragraph
-exists so the next person does not re-derive it.
+loudness ~26 ms.
+
+Only **13.1 ms** of it is *duplicated*, measured on a four-second synthetic render by
+counting calls per argument group rather than per function: `_power_frames` is called
+seven times in three groups — one at 8192/2048, two at 2048/512, four more at
+2048/512 with `gated=False` — which is 9.7 ms of repeats, and `integrated_loudness`
+four times in three groups, another 3.4 ms. That is 11.7% of a 112 ms fingerprint,
+and **2.6 s of a 200-render plugin run, which is 1.3% of the run** — the figure that
+decides it, since a run is what anybody waits for.
+
+The larger prize is the 39 ms of autocorrelation, and an FFT would take a real bite
+out of it. It is also not bit-identical, and every `response_atlas_*.json`,
+`eq_basis.json` and benchmark number in this document encodes fingerprint output, so
+a change in the last decimal place quietly invalidates all of them. Neither 1.3% nor
+the roughly 4% an FFT might buy is worth re-measuring the committed corpus for. This
+paragraph exists so the next person does not re-derive it.
 
 - `show.py`, `apply_spec.py`, `probe.py`, `bootstrap_pack.py` keep working with
   **zero** dependencies. A test must assert this (import them in a subprocess

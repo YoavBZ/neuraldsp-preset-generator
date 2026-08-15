@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 
@@ -151,11 +152,25 @@ def drafted_pack(tmp_path):
     by hand-writing a manifest, so this covers the producer of the flag as well
     as the consumer. The committed packs cannot stand in: Morgan is reviewed, and
     Tone King has no preset in the repo to use as a template.
+
+    Drafted into a throwaway copy of the plugin, not into the repository's own
+    `packs/`. The scripts derive their root from `__file__`, so a copy is a
+    working installation. Writing into the repo was invisible while pytest ran
+    one test at a time and is a race the moment pytest-xdist distributes per
+    test — `tests/test_bootstrap.py` was drafting into the same tree.
+
+    Returns the copy and the preset, because the command under test has to run
+    from the copy for the drafted pack to be the one it loads.
     """
     from format.parser import parse_file
     from format.structured import Token, build
     from format.writer import write_file
-    from packs.loader import PACKS_DIR
+
+    root = tmp_path / "plugin"
+    skip = shutil.ignore_patterns("templates", "__pycache__", "*.xml",
+                                  "observed.json", "response_atlas_*.json")
+    for name in ("scripts", "packs", "format"):
+        shutil.copytree(REPO_ROOT / name, root / name, ignore=skip)
 
     preset = build(parse_file(str(EXAMPLE)))
     preset.tokens[0] = Token(raw_prefix=b"", value="draftplugin", terminator=b"\x00")
@@ -163,30 +178,25 @@ def drafted_pack(tmp_path):
     write_file(str(path), preset.tokens)
 
     bootstrap = subprocess.run(
-        [sys.executable, str(REPO_ROOT / "scripts" / "bootstrap_pack.py"),
+        [sys.executable, str(root / "scripts" / "bootstrap_pack.py"),
          "--preset", str(path)],
-        capture_output=True, text=True, cwd=str(REPO_ROOT),
+        capture_output=True, text=True, cwd=str(root),
     )
     assert bootstrap.returncode == 0, bootstrap.stderr
-
-    yield path
-
-    directory = PACKS_DIR / "draftplugin"
-    if directory.exists():
-        for child in directory.iterdir():
-            child.unlink()
-        directory.rmdir()
+    return root, path
 
 
 def test_guessed_kind_warns_on_the_command_line(drafted_pack, tmp_path, out):
+    root, template = drafted_pack
     spec = tmp_path / "spec.json"
     spec.write_text(json.dumps(
         {"parameters": [{"module": "pr12Amp", "key": "pr12Volume", "value": 62}]}
     ))
     result = subprocess.run(
-        [sys.executable, str(APPLY), "--template", str(drafted_pack),
+        [sys.executable, str(root / "scripts" / "apply_spec.py"),
+         "--template", str(template),
          "--spec", str(spec), "--out", str(out)],
-        capture_output=True, text=True, cwd=str(REPO_ROOT),
+        capture_output=True, text=True, cwd=str(root),
     )
     assert result.returncode == 0, result.stderr
     assert "warning:" in result.stderr

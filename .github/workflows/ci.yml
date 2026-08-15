@@ -12,10 +12,15 @@ permissions:
   contents: read
 
 # A second push to a PR makes the first run's answer irrelevant. Cancelling it
-# frees the runner and gets the answer that matters back sooner. Keyed on the ref
-# so main's runs, which nothing supersedes, are never cancelled by a PR.
+# frees the runner and gets the answer that matters back sooner.
+#
+# Every push to main gets its own group, keyed on the commit rather than the ref.
+# `cancel-in-progress: false` would not have been enough: GitHub also drops a
+# *queued* run when a newer one joins the same group, so three merges inside one
+# CI window would have left the middle commit with a cancelled badge and no
+# evidence. A per-commit group cannot collide, so main is always tested.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
@@ -57,7 +62,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: pyproject.toml
+          # Not `pyproject.toml` alone. setup-python keys the cache on the OS, the
+          # Python version and a hash of this path — not on the job or the extras —
+          # so this job and the bare `test` job computed the same key. The bare job
+          # installs three small pure-Python wheels and finishes first, saves that
+          # as the cache, and then this job gets an exact-key hit and never saves
+          # its own: numpy, scipy, soundfile and pyloudnorm would be downloaded
+          # again on every run, by the one job that needs them.
+          cache-dependency-path: |
+            pyproject.toml
+            .github/workflows/ci.yml
 
       - name: Install with the analysis and match extras
         run: pip install -e ".[dev,analysis,match]"
