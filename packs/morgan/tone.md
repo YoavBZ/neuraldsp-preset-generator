@@ -38,7 +38,7 @@ ice-pick top end. 20W.
 - **Knobs:** `ac20Volume`, `ac20Cut`, `ac20Bright`, `ac20BassTreble`, `ac20Power`.
 - **`ac20Cut` is a presence control: higher = BRIGHTER.** Measured, not reasoned:
   +11 dB at 2.5 kHz and +19 dB at 6.3 kHz from 0% to 100%. It is named after the
-  Vox power-amp Cut, which works the other way, and this file used to say so.
+  Vox power-amp Cut, which works the other way round — expect to be caught by that.
 
 ### SW50R (`sw50rAmp`, `selectedAmp: "SW50R"`)
 The **Dumble Small Special** — a mid-60s blackface-flavoured voice with unusual
@@ -54,18 +54,15 @@ tube reverb. 50W.
   `sw50rReverb`, `sw50rBright`, `sw50rTrebleBoost`, `sw50rInputMode`.
 - **`sw50rMid` is mostly a level control.** Measured end to end it lifts the
   whole spectrum ~7.5 dB with only ~2 dB of extra emphasis at 1.6–2.5 kHz — not
-  a mid band. This file used to claim the lead voice lived at 60–68%; the
-  endpoint measurement gives no reason to believe that window is special, though
-  only the endpoints were measured, so it does not disprove a feature between
-  them either. Turning it up mostly makes the amp louder and more driven, which is a
-  real way to get a singing lead — just not the reason previously given. Use
-  `sw50rTreble` (a genuine tilt: −3.4 dB at 59 Hz, +7.2 dB at 2.5 kHz) or the
-  graphic EQ to change voicing.
+  a mid band. Turning it up makes the amp louder and more driven, which is a real
+  way to get a singing lead, so treat it as gain rather than voicing. Only the
+  endpoints were measured, so a feature somewhere in between is not ruled out —
+  it is just not evidenced. To change voicing use `sw50rTreble` (a genuine tilt:
+  −3.4 dB at 59 Hz, +7.2 dB at 2.5 kHz) or the graphic EQ.
 
-> Earlier notes in this repo called SW50R a Vox-style chime amp in AC30
-> territory, good for Brian May and AC/DC. That was wrong, and it mattered — it
-> pointed lead requests at the wrong amp. Corrected against
-> [Morgan's own description](https://www.sweetwater.com/store/detail/SW50RHead--morgan-amps-sw50r-50-watt-high-headroom-tube-head-with-reverb).
+> Described against
+> [Morgan's own copy](https://www.sweetwater.com/store/detail/SW50RHead--morgan-amps-sw50r-50-watt-high-headroom-tube-head-with-reverb).
+> It is not a Vox-style chime amp, whatever the shape of the cabinet suggests.
 
 ## Intent → which recipes to stack
 
@@ -107,7 +104,7 @@ through `EQBand9`, in dB. Naming the frequency beats naming the band number.
   `EQBand6`) rather than raising treble globally. That's what `lead-focus` does.
 - **"harsh" / "brittle"** → cut 4 kHz or 8 kHz (`EQBand7`, `EQBand8`), or lower
   `EQLpf`. On AC20, *lower* `ac20Cut` — it adds presence, so raising it makes
-  harshness worse. (This line used to say raise.)
+  harshness worse.
 - **"warmer"** → drop treble, lower `reverbHighCut` and `delayHighCut`.
 - **"muddy" / "woolly"** → cut 125/250 Hz, raise `EQHpf` to 80–90 Hz, and check
   you haven't got amp bass above ~55%.
@@ -137,14 +134,13 @@ but not the universal case.
   adds presence exactly where a Tele bridge is already sharp.
 - **Either way**, clean rhythm needs enough treble/presence not to go woolly.
 
-## Settled: the switches that used to be guesses
+## The switches, read off the running plugin
 
-Four of these were unresolved because the source doc and the stored key name
-disagreed about what they do. They are now read off the running plugin — each
-key was written into a preset document and handed to the plugin to see which
-control it moved, and audio was rendered through it to hear which way the sound
-goes. `sw50rBright` was never in doubt and is listed for comparison, because it
-is the control people reach for when they mean "brighter". See
+Each key was written into a preset document and handed to the plugin to see
+which control it moved, and audio was rendered through it to hear which way the
+sound goes — a stored key name is a hint about its control, not a fact.
+`sw50rBright` is listed for comparison, because it is the control people reach
+for when they mean "brighter". See
 [docs/measuring-against-the-plugin.md](../../docs/measuring-against-the-plugin.md).
 
 | Control | What it actually is | `true` means |

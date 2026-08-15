@@ -457,90 +457,12 @@ is −17.8 dB: the same per-render variation the plugin shows against itself. A
 render is portable between the two backends; a *sample-aligned* comparison
 between them is not free.
 
-## Tone King produces no audio in the Swift helpers
+## Tone King needs its render resources cycled before it makes sound
 
-`scripts/au_render.swift` gets audio out of Morgan and **exact zeros** out of
-Tone King Imperial MKII. So no acoustic work exists for that plugin — no switch
-directions, no break-up curves, and not the EQ band ordering three of its
-recipes assume. Those recipes say so rather than guessing.
-
-`scripts/au_silence_check.swift` is the evidence, and it is deliberately
-separate from the render harness so the harness cannot be the variable. It sets
-no state, edits no document, touches no parameter: it instantiates, feeds noise
-through the v2 `AudioUnitRender` path that `auval` uses, and reports the peak.
-
-```bash
-swiftc -swift-version 5 -O scripts/au_silence_check.swift -o /tmp/silence
-/tmp/silence aumf NMAS NDSP     # Morgan    -> peak = 0.5546125
-/tmp/silence aumf TKI2 NDSP     # Tone King -> peak = 0.0
-```
-
-Same code, same process, same input: one plugin makes sound and the other makes
-none. It also prints bypass and latency (both 0 for both plugins), which
-removes the two properties that would otherwise be the obvious explanation.
-
-Beyond what that script reproduces, the silence also survived every variation
-tried against the render harness: input amplitudes from 0.005 to 0.9, the AUv3
-`renderBlock` path as well as the v2 one, mono and stereo stream formats, and
-with and without a state blob applied. Those runs used throwaway instrumentation
-rather than committed code — take them as weaker than the script above, which is
-why the script exists.
-
-`auval -v aumf TKI2 NDSP` passes, but that is weaker evidence than it looks: it
-checks for NaNs and malformed output, not for non-silence.
-
-**Do not read the silence as a measurement.** A control that appears to do
-nothing here has not been shown to do nothing.
-
-### It does produce audio in a JUCE host
-
-`pedalboard` loads Audio Units the way a DAW does rather than instantiating one
-from a headless CLI, and Tone King renders through it:
-
-```bash
-pip install -e '.[host]'
-python scripts/spike_pedalboard.py --plugin "Tone King Imperial MKII" --bench 5
-```
-
-```
-loaded 'Tone King Imperial MKII' in 4512 ms
-published parameters: 96   raw state: 12741 bytes
-render: 783 ms for 2.0 s of audio, peak 0.1640197
-```
-
-It is really processing, not passing through. Against the same white noise the
-Swift helper uses, its output shows an amp-and-cab response — −26.6 dB at 8 kHz
-and −51.5 dB at 16 kHz — and moving `rhythm_channel_treble` from 0.0 to 1.0
-tilts the spectrum by about 2 dB across the mids.
-
-The control that makes this worth anything: `au_silence_check` was re-run on the
-same machine in the same session and still reports **peak = 0.0** for Tone King
-and **0.5546125** for Morgan — the identical numbers recorded above. So the
-silence is a property of the bare CLI instantiation, and **authorization is
-ruled out**: a plugin that could not authorize would be silent in both hosts.
-
-That unblocks acoustic work on Tone King, through that host, at a price — but
-**the size of that price is unresolved and needs re-measuring.** The two figures
-recorded from that session disagree, and not in the direction warm-up would
-explain: the single render above took 783 ms, which is 1.28 renders/s, while the
-`--bench 5` steady state was written down as about 0.38 renders/s. A steady state
-slower than the first render is not something a warm cache does, so one of the two
-is wrong and the notes do not say which. Treat "roughly eleven times Morgan's cost"
-as the loose upper bound it is, and re-run `--bench` before any budget depends on
-it.
-
-Nothing in `packs/toneking/` has been measured acoustically yet. Its recipes
-still say so, and they should keep saying so until someone actually renders the
-comparisons — what changed is that this is now possible, not that it is done.
-
-### Corrected in M5: it is the first allocation, not the instantiation
-
-The conclusion above — "the silence is a property of the bare CLI instantiation"
-— is wrong, and `pedalboard` was never needed to get audio out of this plugin.
-
-Tone King renders silence on its **first allocation of render resources**, and
-renders normally once they have been deallocated and reallocated. Both orderings
-work, so the state write has nothing to do with it:
+Tone King Imperial MKII renders **exact zeros on its first allocation of render
+resources**, and renders normally once they have been deallocated and
+reallocated. Morgan never needs this. Both orderings of the cycle work, so the
+state write has nothing to do with it:
 
 ```bash
 swiftc -swift-version 5 -O scripts/au_render_server.swift -o /tmp/au_render_server
@@ -569,21 +491,19 @@ realloc 0.1525246
 isolate 0.1525423
 ```
 
-That is also why `au_silence_check.swift` still reports `peak = 0.0`: it
-instantiates, allocates once and renders, which is exactly the path that is
-silent. It remains correct evidence about that path and was never evidence about
-the plugin.
+`match/renderer_au.py` turns this on by itself: a first render that comes back
+silent restarts the server with the resources cycled and tries again. Retrying
+inside the same instance stays silent, so the restart is load-bearing. The cost
+is one render of about 46 s while the plugin loads its impulse responses, then
+370 ms per render — Morgan's cost.
 
-The cost is one render of about 46 s while the plugin loads its impulse
-responses, and 370 ms per render after that — Morgan's cost. `match/renderer_au.py`
-turns this on by itself: if a first render comes back silent it restarts the
-server with the resources cycled and tries once more, which is load-bearing,
-because retrying inside the same instance stays silent.
+`scripts/au_silence_check.swift` reports `peak = 0.0` for Tone King and
+`0.5546125` for Morgan, and both numbers are correct: it instantiates, allocates
+once and renders, which is exactly the silent path. It is evidence about that
+path and never was evidence about the plugin.
 
-Acoustic work on Tone King is therefore possible from the Swift harness, and
-parameter writes measurably move the sound — `/rhythmAmpVolume`, `/cab1Level` and
-`/ampReverb` each move a third-octave band by 11 to 13 dB. The recipes still say
-nothing has been measured, and that is still true.
+**Do not read silence as a measurement.** A control that appears to do nothing
+on a silent render has not been shown to do nothing.
 
 ## Method limits
 

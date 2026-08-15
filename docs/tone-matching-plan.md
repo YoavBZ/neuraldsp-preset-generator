@@ -258,6 +258,39 @@ Do not change these without a specific reason; downstream work assumes them.
     under the data root (`$NDSP_PRESET_DATA`), not the plugin directory —
     same rule as `observed.json` and `learned-tones.md`.
 
+### 3.1 Working agreements
+
+Load-bearing, and each learned the hard way. These were the one part of the
+pre-M5 macOS run-book worth keeping when the rest of it was deleted as
+superseded steps.
+
+- **A measurement that could not be made says so.** Absence is never zero. Every
+  optional field carries a confidence; `None` and `0.0` are different answers.
+- **Silence is not evidence about a control.** Neither for it nor against it.
+- **A figure with no invocation behind it is an assertion wearing a decimal
+  point.** Every number in the docs must be reproducible from a command in the
+  docs. This has been violated and caught repeatedly, most memorably by a table
+  that argued *for* the current design and could not be reproduced at all.
+- **A fix aimed at a named symptom closes that branch and leaves its twin
+  open.** This has happened in every review round. When you fix something, go
+  looking for the other caller, the other branch, the symmetric case.
+- **The bare clone must keep working.** `dependencies = []` is a promise. Do not
+  import `analysis` — let alone numpy — from `scripts/_cli.py`, `show.py`,
+  `apply_spec.py`, `probe.py` or `bootstrap_pack.py`.
+  `tests/test_no_dependencies.py` blocks both numpy *and* `analysis` itself and
+  runs the scripts in a subprocess. CI installs the package, which hides this
+  class of break, so trust the test rather than CI.
+- **Mutation testing is the standard.** A test that cannot fail proves nothing.
+  When you add a behaviour, break it deliberately and check something goes red.
+- **A green suite is not a correct suite.** It says the configuration you ran
+  is clean, which is not the same claim. §8 records the case that made this
+  explicit: a shared-directory race that failed a file every single time it was
+  run alone, and passed 18 whole-suite runs across six worker configurations,
+  because the tests that collide land on one worker when a thousand are spread
+  over eight.
+- **Never commit a number from a backend that reports `reproducible=False`**
+  without saying so next to it.
+
 ---
 
 ## 4. Non-goals
@@ -637,9 +670,9 @@ recipe-only generator, and inversion-only without search.
 
 ### M5 — Real plugin backend and calibration (4–6 days, macOS + licence)
 
-> **`docs/handoff-to-macos.md` is the run-book for this milestone** — the commands in
-> order, the measured render costs the budget arithmetic rests on, and the seven paths
-> that are shaky specifically because no machine so far could exercise them.
+> **What M5 actually did is §12d**, and Tone King's later calibration and inversion
+> are §12g. This section is the specification it was built against; where the two
+> disagree, the §12 sections are the record.
 
 Land the backend chosen in M0. Then, per pack, run the one-time calibrations:
 `measure_eq_basis.py` → `eq_basis.json`, `measure_drive_curve.py` →
@@ -2043,8 +2076,8 @@ against a committed 0.641 on the full arm, 3.0386 against 3.039, the same 14375
 renders — on a different machine and a different numpy. Averaging 50 targets is
 what makes it portable.
 
-One run of `match_preset.py` is not. `docs/handoff-to-macos.md` §8 gives a command
-and says to expect `1.719 -> 0.256` in 298 renders with 10 caveats, adding that
+One run of `match_preset.py` is not. The pre-M5 run-book gave a command and said to
+expect `1.719 -> 0.256` in 298 renders with 10 caveats, adding that
 "the pipeline is deterministic and it reproduces bit-for-bit on this machine, so a
 difference is a finding." It gives `1.717 -> 0.180` in 298 renders with 12 caveats
 here — and gives the same at `ac03d5e`, the commit that shipped those numbers, so
