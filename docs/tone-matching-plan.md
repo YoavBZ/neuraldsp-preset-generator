@@ -2671,6 +2671,18 @@ standard deviation through the control-chart `d2` constant for that many
 observations, and compares the gap against the standard error of the two means. The
 caveat text says that is what it did.
 
+**Two standard errors, and why the number is written down.** The first fix left the
+line at one standard error without ever saying so, and a second Monte Carlo caught
+what that costs: 20k simulated pairs at R = 3 went quiet on 21% of genuine ties, and
+on 58% of pairs whose printed order was wrong one time in twenty. The errors here are
+not symmetric — the caveat only ever advises listening to both, which costs a reader
+one audition, while silence lets a published order pass for a finding — so
+`INDISTINGUISHABLE_ERRORS = 2.0`: it warns on 96% of true ties and still goes quiet on
+92% of three-sigma separations. A level scored once, or with more observations than
+there is a `d2` constant for, no longer returns nothing at all: that was the pair with
+the least evidence behind its order getting the least warning, and it now says the
+deciding level was measured once.
+
 **Every number a person reads is the replicated one.** `Candidate.total` stays the
 single render the store recorded, because `match/verdict.py` cross-checks a summary
 against exactly that trial — but the HTML headline, the "% closer" figure, the
@@ -2681,7 +2693,13 @@ it gave for the same settings, and a run could say "it holds up" while the
 replicated mean was worse than the render it was compared against. `summary.json`
 carries both, plus `input_level_spread` and a *per-level* `input_level_observations`
 — per level because a level that loses a render to a failure averages fewer, and it
-can be the very level that sets the worst-case score.
+can be the very level that sets the worst-case score. The "nothing beat the preset you
+started from" verdict is decided on the same estimate it prints, which it was not:
+one run said nothing had beaten the template beside a line showing the template's
+0.550 against the candidate's 0.480. The template's own score is still a single
+render, so that caveat now names the asymmetry instead of implying a dead heat was
+measured on both sides. Replicating the template as well is the obvious next step and
+is not done here.
 
 **What the two rules do when composed, which is not nothing.** Ranking on the worst
 of three means is a max over noisy estimates, so it is biased upward, and the bias

@@ -400,8 +400,11 @@ def main() -> None:
     # Nothing checked this, and on a near-perfect template it is the whole story: the
     # bundled PR12 preset matched against a render of itself scored 0.069, and the
     # pipeline handed back 0.408 while the report announced "-488% closer".
-    if result.best.total >= start.total:
-        caveats.insert(0, _no_better(result.best.total, start.total, args.budget))
+    if result.best.reference_score >= start.total:
+        caveats.insert(0, _no_better(
+            result.best.reference_score, start.total, args.budget,
+            observations=result.best.by_level_observations.get(0.0, 1),
+        ))
 
     # The caveat that says the headline was not searched for goes first, not ninth. A
     # reader who stops after two caveats must not stop above the one that says the
@@ -563,13 +566,30 @@ def _unmeasurable(target, audio) -> Optional[str]:
     return None
 
 
-def _no_better(found: float, started: float, budget: int) -> str:
-    """The caveat for a run that did not improve on what it was given."""
+def _no_better(found: float, started: float, budget: int,
+               observations: int = 1) -> str:
+    """The caveat for a run that did not improve on what it was given.
+
+    Decided on the same number the rest of the run reports — the candidate's
+    reference-level estimate. Deciding on the single search render while the summary
+    line printed the replicated mean let one run say "nothing beat the preset you
+    started from" beside a line showing it had, which is worse than either number
+    alone.
+
+    The template's own score is still one render. On a backend that repeats itself
+    that is the same kind of number; on one that does not, the comparison is a mean
+    against a sample, and the caveat says so rather than implying a dead heat was
+    measured twice over.
+    """
+    against = (f" The template's {started:.3f} is a single render, against a mean of "
+               f"{observations}, so a difference this size may be the backend rather "
+               f"than the preset." if observations > 1 else "")
     return (f"nothing beat the preset you started from: it scored {started:.3f} and "
             f"the best candidate {found:.3f}, so the spec below is not an "
             f"improvement. Either the template is already close and the search is "
             f"moving inside its own noise, or {budget} renders was not enough to "
-            f"recover from what the calculated step did. Keep your template.")
+            f"recover from what the calculated step did. Keep your template."
+            + against)
 
 
 def _renderer(name: str, pack_id: str = "morgan"):

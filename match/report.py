@@ -509,6 +509,18 @@ def _objectives_table(shortlist: Sequence[Any],
         rows.append(f"<tr><td>#{index}</td>{cells}</tr>")
 
     note = ""
+    # C: on a stateful backend the headline is a mean of several renders while these
+    # cells are the one render the search scored. The table is here so the headline
+    # can be checked against it, so when it cannot be, the table has to say so rather
+    # than let a reader conclude the weighted sum does not add up.
+    replicated = getattr(shortlist[0], "by_level_observations", {}).get(0.0, 1)
+    if replicated > 1:
+        note += (f"<p class='muted'>These dimensions come from the single render the "
+                 f"search scored, while the headline above is the mean of "
+                 f"{replicated} renders of the same settings. On a backend that does "
+                 f"not repeat itself the weighted sum of this row will not reproduce "
+                 f"the headline exactly, and the difference is the backend rather "
+                 f"than an error in either.</p>")
     worse = _regressions(shortlist[0], seed_objectives, present)
     if worse:
         # The headline is a weighted sum, so it can improve while the two dimensions a

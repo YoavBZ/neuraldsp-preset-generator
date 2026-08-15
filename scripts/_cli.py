@@ -395,7 +395,9 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
     # known after screening, and using it here would need the renders this check
     # exists to avoid spending.
     round_cost = generation_size(len(screened)) if screened else 1
-    reserved = screen_cost + variants + rerank_cost
+    # `match_preset.py` always hands `search()` the template as a fallback, and that
+    # is one more render the gate never counted.
+    reserved = screen_cost + variants + rerank_cost + 1
     per_variant = (budget - reserved) / max(variants, 1)
     if per_variant < round_cost:
         die(f"{variants} topologies do not fit in a {budget}-render budget.\n"

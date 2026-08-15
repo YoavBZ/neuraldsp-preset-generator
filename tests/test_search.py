@@ -742,7 +742,8 @@ def test_the_threshold_is_the_error_of_the_means_not_the_spread_of_renders():
     three-sigma separation indistinguishable two times in five."""
     spread = 0.30                       # peak-to-peak of three renders
     sigma = spread / S._RANGE_TO_SIGMA[3]
-    resolution = math.sqrt(2) * sigma / math.sqrt(3)
+    error = math.sqrt(2) * sigma / math.sqrt(3)
+    resolution = S.INDISTINGUISHABLE_ERRORS * error
 
     inside = S._indistinguishable(
         [_ranked(0.50, spread), _ranked(0.50 + resolution * 0.8, spread)],
@@ -754,9 +755,35 @@ def test_the_threshold_is_the_error_of_the_means_not_the_spread_of_renders():
     )
 
     assert inside and not outside
-    assert resolution < spread, (
+    assert error < spread, (
         "the point of the fix: the means resolve better than one render does"
     )
+
+
+def test_a_level_scored_once_cannot_order_two_candidates_and_says_so():
+    """The silent path was backwards: the pair with the least evidence behind its
+    ordering got no warning at all, because no spread had been recorded to compare
+    against."""
+    best, second = _ranked(0.50, 0.09), _ranked(0.90, 0.08)
+    best.by_level_spread.pop(6.0)
+    best.by_level_observations[6.0] = 1
+
+    caveats = S._indistinguishable([best, second], S.SHORTLIST_REPLICATES)
+
+    assert any("scored once rather than repeatedly" in caveat
+               for caveat in caveats), caveats
+    assert any("Listen to both" in caveat for caveat in caveats)
+
+
+def test_the_resolution_threshold_is_named_rather_than_implied():
+    """A one-sigma line went quiet on a fifth of genuine ties. Whatever the number
+    is, it has to be a decision someone can find and change."""
+    assert S.INDISTINGUISHABLE_ERRORS == 2.0
+    caveats = S._indistinguishable(
+        [_ranked(0.50, 0.09), _ranked(0.51, 0.08)], S.SHORTLIST_REPLICATES,
+    )
+
+    assert any("standard errors" in caveat for caveat in caveats)
 
 
 def test_a_level_that_loses_a_render_says_so_and_counts_what_it_got(
