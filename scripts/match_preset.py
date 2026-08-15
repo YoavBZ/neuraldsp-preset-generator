@@ -113,7 +113,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "that cannot be part-paid: 2 per searchable parameter plus 1 "
                          "for the screen, 1 for the template as it arrived, 2 per "
                          "--shortlist entry for the ±6 dB re-rank, and then the "
-                         "optimiser needs at least one whole round (~12) on top. On "
+                         "optimiser needs at least one whole round (~12) on top. A "
+                         "backend that does not repeat itself costs more: 4 more on "
+                         "the screen and 8 rather than 2 per --shortlist entry, "
+                         "because each score is the mean of 3 renders. On "
                          "Morgan that is about 70 before anything is searched, and a "
                          "run that could not afford a round says so and names the "
                          "number to raise this to")
@@ -226,7 +229,8 @@ def main() -> None:
             close()
         return
     switches, selectors = _enumerated(
-        space, args.enumerated, None, args.shortlist, supported=supported)
+        space, args.enumerated, None, args.shortlist, supported=supported,
+        replicates=search.shortlist_replicates(renderer.metadata()))
     assert seed is not None and template_name is not None
     if signal_path_arg is not None:
         # ``--amp`` selects the path being matched, not merely the basis used after
@@ -374,7 +378,8 @@ def main() -> None:
     # this against the template above overstated or understated the fixed cost.
     switches, selectors = _enumerated(
         space, args.enumerated, args.budget, args.shortlist,
-        supported=supported, seed=seed)
+        supported=supported, seed=seed,
+        replicates=search.shortlist_replicates(metadata))
 
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
@@ -395,8 +400,11 @@ def main() -> None:
     # Nothing checked this, and on a near-perfect template it is the whole story: the
     # bundled PR12 preset matched against a render of itself scored 0.069, and the
     # pipeline handed back 0.408 while the report announced "-488% closer".
-    if result.best.total >= start.total:
-        caveats.insert(0, _no_better(result.best.total, start.total, args.budget))
+    if result.best.reference_score >= start.total:
+        caveats.insert(0, _no_better(
+            result.best.reference_score, start.total, args.budget,
+            observations=result.best.by_level_observations.get(0.0, 1),
+        ))
 
     # The caveat that says the headline was not searched for goes first, not ninth. A
     # reader who stops after two caveats must not stop above the one that says the
@@ -477,11 +485,18 @@ def main() -> None:
     print(f"  {result.renders} of them against the {args.budget}-render budget; "
           f"{outside} outside it — {outside_sources}")
     worst = ""
-    if best.worst_level is not None and best.worst_level > best.total + 5e-4:
+    # The reference-level estimate rather than the one render the search made: on a
+    # stateful backend "it holds up" was decided by comparing a mean against a single
+    # observation of the same settings, and could say so while the mean was worse.
+    reached = best.reference_score
+    if best.worst_level is not None and best.worst_level > reached + 5e-4:
         worst = f", {best.worst_level:.3f} at worst across ±6 dB of input level"
     elif best.worst_level is not None:
         worst = ", and it holds up across ±6 dB of input level"
-    print(f"  distance to the reference {start.total:.3f} -> {best.total:.3f}{worst}")
+    averaged = best.by_level_observations.get(0.0, 1)
+    if averaged > 1:
+        worst += f" (each score the mean of {averaged} renders)"
+    print(f"  distance to the reference {start.total:.3f} -> {reached:.3f}{worst}")
     excerpt = target.source
     if "excerpt_start_s" in excerpt and "excerpt_end_s" in excerpt:
         print(f"  reference excerpt {excerpt['excerpt_start_s']:.6f}–"
@@ -551,13 +566,30 @@ def _unmeasurable(target, audio) -> Optional[str]:
     return None
 
 
-def _no_better(found: float, started: float, budget: int) -> str:
-    """The caveat for a run that did not improve on what it was given."""
+def _no_better(found: float, started: float, budget: int,
+               observations: int = 1) -> str:
+    """The caveat for a run that did not improve on what it was given.
+
+    Decided on the same number the rest of the run reports — the candidate's
+    reference-level estimate. Deciding on the single search render while the summary
+    line printed the replicated mean let one run say "nothing beat the preset you
+    started from" beside a line showing it had, which is worse than either number
+    alone.
+
+    The template's own score is still one render. On a backend that repeats itself
+    that is the same kind of number; on one that does not, the comparison is a mean
+    against a sample, and the caveat says so rather than implying a dead heat was
+    measured twice over.
+    """
+    against = (f" The template's {started:.3f} is a single render, against a mean of "
+               f"{observations}, so a difference this size may be the backend rather "
+               f"than the preset." if observations > 1 else "")
     return (f"nothing beat the preset you started from: it scored {started:.3f} and "
             f"the best candidate {found:.3f}, so the spec below is not an "
             f"improvement. Either the template is already close and the search is "
             f"moving inside its own noise, or {budget} renders was not enough to "
-            f"recover from what the calculated step did. Keep your template.")
+            f"recover from what the calculated step did. Keep your template."
+            + against)
 
 
 def _renderer(name: str, pack_id: str = "morgan"):

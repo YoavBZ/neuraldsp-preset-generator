@@ -126,7 +126,7 @@ def main() -> None:
 
     import numpy as np
 
-    from match import benchmark, invert, space as space_module
+    from match import benchmark, invert, search, space as space_module
 
     arms = tuple(name.strip() for name in args.arms.split(",") if name.strip())
     unknown = [name for name in arms if name not in benchmark.ARMS]
@@ -172,7 +172,7 @@ def main() -> None:
     # two places for the answer to drift.
     switches, selectors = enumerated(
         space, args.enumerated, args.budget, shortlist=1, supported=supported,
-        seed=seed)
+        seed=seed, replicates=search.shortlist_replicates(renderer.metadata()))
     di, di_caveat = probe_di(args.probe_di, args.seconds)
 
     started = time.time()

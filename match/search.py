@@ -51,6 +51,14 @@ from match.store import Store, Trial
 # whatever that backend's own variation is, and `screen` raises this to match — see
 # `_backend_floor`.
 SENSITIVITY_FLOOR = 0.01
+# How many times a *shortlisted* candidate is scored at each input level on a
+# backend that does not repeat itself. Three rather than the screen's five: the
+# screen measures a spread and wants the conservative end of it, while this
+# estimates a candidate's score, where the third observation is worth much more
+# than the fifth. It is deliberately not applied inside CMA-ES — multiplying every
+# sampled point by three buys a third of a search — nor to the topology loop,
+# which §12h names as the ranking still made on one render each.
+SHORTLIST_REPLICATES = 3
 # A non-reproducible backend gets five observations of the same scalar score.
 # Their peak-to-peak spread is deliberately conservative; two observations can
 # accidentally agree even when the process has meaningful state variation.
@@ -109,12 +117,38 @@ class Candidate:
     total: float = float("inf")
     trial_id: Optional[int] = None
     # Populated by `robustness_rerank`: the same vector's score at each input level.
+    # On a backend that repeats itself each entry is one render; on one that does
+    # not it is the mean of `replicates` of them, and `by_level_spread` records how
+    # far apart they were.
     by_level: Dict[float, float] = field(default_factory=dict)
+    by_level_spread: Dict[float, float] = field(default_factory=dict)
+    # How many observations each `by_level` entry actually averages, per level. Not
+    # one number for the candidate: a level that lost a render to a failure averages
+    # fewer, and it can be the very level that sets `worst_level`. Reporting the
+    # figure that was *asked for* there would say three and mean one.
+    by_level_observations: Dict[float, int] = field(default_factory=dict)
+    # How many were asked for. `by_level_observations` is what was obtained.
+    replicates: int = 1
     # Why this vector scored nothing, when a backend refused it outright. The
     # store has always recorded this; the candidate did not carry it, so the one
     # place that reads a failure — the screen's baseline — could only guess
     # between a silent render and an unmeasurable one, and said both.
     error: Optional[str] = None
+
+    @property
+    def reference_score(self) -> float:
+        """The reference-level score on the best evidence this run has.
+
+        `total` is one render — the one the search made and the store recorded, and
+        `match/verdict.py` cross-checks a summary against exactly that trial, which
+        is why it is never overwritten. On a backend that does not repeat itself the
+        re-rank then measures the same settings at the same level two more times,
+        and the mean of the three is a better estimate of what these settings score.
+        Everything a person reads should be that estimate; printing `total` beside a
+        range built from means is how a headline ends up outside the range quoted
+        under it.
+        """
+        return self.by_level.get(0.0, self.total)
 
     @property
     def worst_level(self) -> Optional[float]:
@@ -867,6 +901,15 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
 
     Ordered by the *worst* level rather than the mean, and the ranking a caller
     reads is the one that survived this rather than the one that was handed in.
+
+    Worst across levels, **mean across replicates**, and the difference between
+    those two words is the whole of §12h. A preset that falls apart when the amp
+    is hit harder is fragile, and that fragility belongs to the preset: the worst
+    level is the honest summary of it. The variation between two renders of the
+    *same* settings at the *same* level belongs to the backend instead, and taking
+    the worst of those would rank presets by which one drew the unluckiest render.
+    So each level is measured `SHORTLIST_REPLICATES` times on a backend that does
+    not repeat itself, averaged, and the spread recorded beside it.
     """
     import numpy as np
 
@@ -875,6 +918,8 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
 
     caveats: List[str] = []
     unmeasured: List[float] = []
+    thin: List[float] = []
+    replicates = _shortlist_replicates(evaluator)
     # How much of the spread is the `level` term — i.e. the loudness change this stage
     # caused by turning the input up and down — rather than the tone change it exists to
     # detect. Measured per candidate as (change in the weighted level term) / (change in
@@ -883,26 +928,44 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
     level_share: List[float] = []
     levels = [0.0] + [float(offset) for offset in offsets_db]
     for candidate in shortlist:
+        candidate.replicates = replicates
         for offset in levels:
-            if offset == 0.0:
-                candidate.by_level[0.0] = candidate.total
-                continue
-            scaled = np.asarray(evaluator.probe_di, dtype=np.float64) * (
-                10.0 ** (offset / 20.0))
-            scored = evaluator.evaluate(candidate.values, di=scaled,
-                                        offset_db=offset)
-            if scored.objectives:
-                candidate.by_level[offset] = scored.total
-                share = _level_share(evaluator, candidate, scored)
-                if share is not None:
-                    level_share.append(share)
-            else:
-                # A render that failed or came back silent at a shifted level is not
-                # a robustness measurement. Recording `inf` made the candidate sink
-                # to the bottom of the shortlist *as though it had been measured and
-                # found fragile*, which is the standing rule this repository breaks
-                # least often: silence is not evidence about a control.
+            # The search already scored this vector at the reference level, and that
+            # render is an observation of exactly these settings — so it counts as
+            # one, and only the balance is bought here.
+            observations = [candidate.total] if offset == 0.0 else []
+            scaled = None if offset == 0.0 else (
+                np.asarray(evaluator.probe_di, dtype=np.float64)
+                * (10.0 ** (offset / 20.0)))
+            while len(observations) < replicates:
+                scored = evaluator.evaluate(candidate.values, di=scaled,
+                                            offset_db=offset)
+                if not scored.objectives:
+                    # A render that failed or came back silent at a shifted level is
+                    # not a robustness measurement. Recording `inf` made the candidate
+                    # sink to the bottom of the shortlist *as though it had been
+                    # measured and found fragile*, which is the standing rule this
+                    # repository breaks least often: silence is not evidence about a
+                    # control.
+                    break
+                observations.append(scored.total)
+                if offset != 0.0:
+                    share = _level_share(evaluator, candidate, scored)
+                    if share is not None:
+                        level_share.append(share)
+            if not observations:
                 unmeasured.append(offset)
+                continue
+            if len(observations) < replicates:
+                # Measured, just on thinner evidence than asked for. Saying this
+                # level is unknown would be false, and saying nothing would present
+                # one observation as though it were three.
+                thin.append(offset)
+            candidate.by_level[offset] = float(np.mean(observations))
+            candidate.by_level_observations[offset] = len(observations)
+            if len(observations) > 1:
+                candidate.by_level_spread[offset] = float(
+                    max(observations) - min(observations))
     if unmeasured:
         levels_text = ", ".join(f"{offset:+.0f} dB" for offset
                                 in sorted(set(unmeasured)))
@@ -912,9 +975,24 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
             f"rather than poor — the shortlist below is ordered on the levels that "
             f"did measure"
         )
+    if thin:
+        levels_text = ", ".join(f"{offset:+.0f} dB" for offset in sorted(set(thin)))
+        caveats.append(
+            f"at {levels_text} of input level some candidate was scored on fewer "
+            f"than the {replicates} observations this backend's variation calls "
+            f"for, because a render failed; those levels are measured on thinner "
+            f"evidence than the rest"
+        )
 
+    if replicates > 1:
+        # The reference-level winner is now decided on the replicated mean, so the
+        # order handed to the explanation below has to be that one. Left alone, the
+        # "best at the reference level" the caveat names would be whichever candidate
+        # CMA-ES happened to score best on a single render.
+        shortlist = sorted(shortlist, key=lambda c: c.by_level.get(0.0, c.total))
     reranked, ordering_caveats = _rerank_and_explain(shortlist)
     caveats.extend(ordering_caveats)
+    caveats.extend(_indistinguishable(reranked, replicates))
     # What the spread is made of, when it is mostly not tone. The docstring above says
     # this stage exists because "breakup depends strongly on input level" — a claim
     # about *timbre* — and measured on the synthetic chain the `level` term accounted
@@ -933,6 +1011,106 @@ def robustness_rerank(evaluator: Evaluator, shortlist: Sequence[Candidate],
             f"±6 dB figures are a weaker statement about breakup than they look."
         )
     return reranked, caveats
+
+
+def shortlist_replicates(metadata) -> int:
+    """How many observations each shortlist score should average.
+
+    One on a backend that is a function of its inputs, where a second render is a
+    copy of the first and buys nothing. `SHORTLIST_REPLICATES` on one that is not,
+    where a single render is a sample and ranking on samples is how a run comes to
+    publish an ordering it cannot support.
+
+    Takes metadata rather than an evaluator because the CLI has to reserve this
+    cost before it builds one: `scripts/_cli.enumerated` gates a run on whether the
+    budget can afford its fixed costs, and it was quoting the reproducible figure.
+    """
+    return 1 if metadata.reproducible else SHORTLIST_REPLICATES
+
+
+def _shortlist_replicates(evaluator: Evaluator) -> int:
+    return shortlist_replicates(evaluator.renderer.metadata())
+
+
+# Expected range of n samples from a unit normal — the control-chart d2 constants.
+# A peak-to-peak of three observations is not a standard deviation, and dividing by
+# the right number is the difference between a threshold that means something and a
+# number that looks like statistics.
+_RANGE_TO_SIGMA = {2: 1.128, 3: 1.693, 4: 2.059, 5: 2.326, 6: 2.534, 7: 2.704,
+                   8: 2.847, 9: 2.970, 10: 3.078}
+
+# How many standard errors apart two candidates have to be before the run stops
+# saying it cannot tell them apart. Two, and the asymmetry is the reason: the caveat
+# only ever advises listening to both, which costs a reader one audition, while
+# staying silent lets a published order pass for a finding. Measured over 20k
+# simulated pairs at R = 3, a one-sigma line went quiet on 21% of genuine ties and on
+# 58% of pairs whose printed order was wrong one time in twenty; at two it warns on
+# 96% of ties, and still goes quiet on 92% of three-sigma separations.
+INDISTINGUISHABLE_ERRORS = 2.0
+
+
+def _indistinguishable(reranked: Sequence[Candidate],
+                       replicates: int) -> List[str]:
+    """Say when the top two are inside the uncertainty of their own means.
+
+    The ordering is still reported — something has to come first — but a reader
+    deciding which preset to audition is entitled to know when the gap is smaller
+    than the evidence can resolve.
+
+    Compared like with like, which took two corrections. The gap is between two
+    *means* of `replicates` renders, so the threshold is the standard error of those
+    means and not the raw spread of single renders: averaging three observations is
+    most of the point, and a rule that ignored the ``√n`` still called a three-sigma
+    separation indistinguishable two times in five. And the spread used is the one at
+    each candidate's *own worst level* — the score the ranking is made on — because
+    pooling every level let a wobble at −6 dB, which decides nothing, declare two
+    candidates 0.38 apart at their worst levels to be a coin toss.
+    """
+    if replicates < 2 or len(reranked) < 2:
+        return []
+    best, second = reranked[0], reranked[1]
+    errors = []
+    spreads = []
+    unresolvable = []
+    for candidate in (best, second):
+        worst = candidate.worst_level
+        if worst is None or not math.isfinite(worst):
+            return []
+        level = next((offset for offset, score in candidate.by_level.items()
+                      if score == worst), None)
+        spread = candidate.by_level_spread.get(level) if level is not None else None
+        observations = candidate.by_level_observations.get(level, replicates)
+        divisor = _RANGE_TO_SIGMA.get(observations)
+        if spread is None or divisor is None:
+            # The level this candidate is ranked on was measured once, or with more
+            # observations than there is a constant for. Either way the resolution
+            # cannot be estimated — and returning nothing here gave the *least*
+            # measured case the *least* warning, which is backwards.
+            unresolvable.append(level)
+            continue
+        spreads.append(float(spread))
+        errors.append((float(spread) / divisor) / math.sqrt(observations))
+    if unresolvable:
+        levels_text = ", ".join(f"{offset:+.0f} dB" for offset in sorted(
+            {offset for offset in unresolvable if offset is not None}))
+        where = f" at {levels_text}" if levels_text else ""
+        return [
+            f"the level that decides the order between the first two candidates"
+            f"{where} was scored once rather than repeatedly, so on this backend "
+            f"there is no way to say whether they differ. Listen to both"
+        ]
+    resolution = INDISTINGUISHABLE_ERRORS * math.sqrt(
+        sum(error ** 2 for error in errors))
+    gap = float(second.worst_level) - float(best.worst_level)
+    if gap > resolution:
+        return []
+    return [
+        f"the first two candidates are {gap:.3f} apart at the levels they are "
+        f"ranked on, inside the {resolution:.3f} those two scores can resolve "
+        f"({INDISTINGUISHABLE_ERRORS:g} standard errors) — each is a mean of "
+        f"{replicates} renders that themselves moved by up to {max(spreads):.3f}. "
+        f"The order between these two is not evidence; listen to both"
+    ]
 
 
 def _level_share(evaluator: Evaluator, candidate: Candidate,
@@ -978,7 +1156,8 @@ def _rerank_and_explain(shortlist: Sequence[Candidate],
     if (now is not None and now is not was
             and was.worst_level is not None and now.worst_level is not None):
         caveats.append(
-            f"the best match at the reference input level ({was.total:.3f}) is not "
+            f"the best match at the reference input level "
+            f"({was.reference_score:.3f}) is not "
             f"the best across ±6 dB of it ({was.worst_level:.3f} at worst, against "
             f"{now.worst_level:.3f}), so the shortlist is ordered by the worse "
             f"case. A preset that only works at one input level is a preset that "
@@ -1030,7 +1209,10 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     - the topology loop: **one render per variant**, for the variant's own seed. This
       was not reserved, so a run overspent by exactly the variant count — one render
       with no switches enumerated, thirty-two with five
-    - the re-rank: 2 per shortlisted candidate
+    - the re-rank: 2 per shortlisted candidate on a reproducible backend, and
+      **3 observations of each of the three levels** on one that is not — 8 per
+      candidate, because the search's own reference-level render counts as the
+      first of the three there
 
     Whatever is left goes to CMA-ES, split across the variants. A run that ends up
     over or materially under budget says so; the accounting is meant to be checkable
@@ -1141,8 +1323,14 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     spent = evaluator.renders
     # Every fixed cost, reserved: the screen has already been paid, the topology loop
     # will render each variant's own seed, the re-rank will render each shortlisted
-    # candidate at two more input levels, and each fallback is one render.
-    reserved = len(variants) + 2 * shortlist + len(fallbacks or ())
+    # candidate at two more input levels, and each fallback is one render. On a
+    # backend that does not repeat itself every one of those level scores is the mean
+    # of `SHORTLIST_REPLICATES` renders, and the reference level — already scored once
+    # by the search — buys the balance. Reserved rather than discovered: a stage that
+    # spends more than the arithmetic says is the defect §12c's topology loop was.
+    replicates = _shortlist_replicates(evaluator)
+    rerank_cost = shortlist * (2 * replicates + (replicates - 1))
+    reserved = len(variants) + rerank_cost + len(fallbacks or ())
     remaining = budget - spent - reserved
     # One whole generation is the granularity of the search, not one render: CMA-ES
     # samples λ points before it learns anything. A budget leaving 6 renders against a
@@ -1156,7 +1344,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             f"the inversion stand. Of the {budget}-render budget, {spent + reserved} "
             f"goes to costs that cannot be part-paid: {spent} to screen "
             f"{len(searched) + len(frozen)} parameters, {len(variants)} for the "
-            f"starting point of each topology, {2 * shortlist} for the ±6 dB re-rank"
+            f"starting point of each topology, {rerank_cost} for the ±6 dB re-rank"
+            + (f" at {replicates} observations each" if replicates > 1 else "")
             + (f" and {len(fallbacks or ())} for the template as it arrived"
                if fallbacks else "")
             + f". That leaves {max(0, remaining)} against the {generation} that one "

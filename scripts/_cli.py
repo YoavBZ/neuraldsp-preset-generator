@@ -321,7 +321,7 @@ def print_enumerable(space, pack_id: str, amp, supported=None) -> None:
 
 
 def enumerated(space, paths, budget: Optional[int], shortlist: int,
-               supported=None, seed=None):
+               supported=None, seed=None, replicates: int = 1):
     """Split the requested paths into switches and selectors, and refuse the silly.
 
     Routed by the dimension's own kind rather than by asking the caller to know
@@ -333,6 +333,12 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
     it can still be acted on. `search()` reports afterwards that each variant got
     a thin share; a run that cannot afford one CMA-ES round *per variant* should
     be stopped before it spends an hour proving it.
+
+    `replicates` is what `match.search.shortlist_replicates` says about the backend
+    that is going to run: on one that does not repeat itself the screen takes four
+    more renders and the re-rank takes eight per candidate rather than two. A gate
+    that assumed two waved through budgets the search then exceeded, while printing
+    arithmetic wrong by a factor of four on exactly the backend that needed it.
     """
     if not paths:
         return None, None
@@ -383,18 +389,21 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
         if not dimension.switch and dimension.kind != "enum"
         and (supported is None or dimension.path in supported)
     ]
-    screen_cost = 2 * len(screened) + 1
+    screen_cost = 2 * len(screened) + 1 + (4 if replicates > 1 else 0)
+    rerank_cost = shortlist * (2 * replicates + (replicates - 1))
     # An upper bound on what the screen leaves searchable: the real count is only
     # known after screening, and using it here would need the renders this check
     # exists to avoid spending.
     round_cost = generation_size(len(screened)) if screened else 1
-    reserved = screen_cost + variants + 2 * shortlist
+    # `match_preset.py` always hands `search()` the template as a fallback, and that
+    # is one more render the gate never counted.
+    reserved = screen_cost + variants + rerank_cost + 1
     per_variant = (budget - reserved) / max(variants, 1)
     if per_variant < round_cost:
         die(f"{variants} topologies do not fit in a {budget}-render budget.\n"
             f"  {reserved} renders are spent before any searching: {screen_cost} on "
             f"the screen, {variants} on one starting point per topology, "
-            f"{2 * shortlist} on the ±6 dB re-rank. That leaves "
+            f"{rerank_cost} on the ±6 dB re-rank. That leaves "
             f"{max(budget - reserved, 0)} to split {variants} ways — about "
             f"{max(per_variant, 0):.0f} each, against the {round_cost} one round "
             f"of the optimiser costs.\n"

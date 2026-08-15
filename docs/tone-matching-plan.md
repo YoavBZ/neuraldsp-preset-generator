@@ -28,6 +28,8 @@ The fresh-process Morgan drive surface that closes M5's remaining calibration
 item is recorded in §12f.
 Tone King's topology-generic calibration, fresh-process repeatability finding and
 corrected known-target runs, including direct inversion, are recorded in §12g.
+§12h replicates shortlist scoring on backends that do not repeat themselves,
+which is the design §12d asked for and §12g's runs did without.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2200,7 +2202,8 @@ noisier than its 0.23 dB per-band metadata suggests. Repeating only the topology
 seed is insufficient because CMA-ES also scores every continuous candidate once,
 and the store currently serves an identical vector from cache instead of rendering
 another sample. That needs an explicit replicated-evaluation design and budget,
-not another flag around the existing one-render comparison.
+not another flag around the existing one-render comparison. §12h is that design
+for the shortlist; ranking topology variants under noise is still open.
 
 ### Tone King, end to end for the first time
 
@@ -2609,9 +2612,109 @@ template seed, direct inversion and continuous search. It is not a Tone King
 equivalent of the 50-target Morgan benchmark. `SyntheticRenderer` models Morgan's
 topology only, so there is no synthetic Tone King score from which to quote an
 honest percentage gap. The remaining gap is explicit instead: a large measured
-non-reproducible backend, no replicated candidate evaluation and no
-Tone King aggregate benchmark. The older §12d `1.320 -> 0.819` result is invalid
+non-reproducible backend and no Tone King aggregate benchmark. Candidate
+evaluations were not replicated when these runs were made; §12h has since built
+that, and re-running the pair under it would be the way to ask whether the
+difference above survives. The older §12d `1.320 -> 0.819` result is invalid
 because its top-level template values never entered the seed.
+
+## 12h. Replicated shortlist evaluation
+
+§12d asked for "an explicit replicated-evaluation design and budget, not another
+flag around the existing one-render comparison", and §12g's Tone King runs could
+not claim inversion was causally better partly because "candidate evaluations
+were not replicated". This is that design. It is a code change measured on the
+synthetic chain; **no plugin run has been made with it yet**, and its cost below
+is arithmetic rather than a stopwatch.
+
+**Worst across levels, mean across replicates.** The two words carry the whole
+idea. A preset that falls apart when the amp is hit harder is fragile, and the
+fragility belongs to the preset — so the ±6 dB stage keeps ordering by the worst
+level, as it always has. The variation between two renders of the *same* settings
+at the *same* level belongs to the backend, and taking the worst of those would
+rank presets by which one drew the unluckiest render. Each level is therefore
+measured `SHORTLIST_REPLICATES = 3` times on a backend reporting
+`reproducible=false`, averaged, and the peak-to-peak spread recorded beside it.
+
+**Only where the decision is final and few.** Replication is applied to the
+shortlist, which is what a report publishes and a person auditions. It is not
+applied inside CMA-ES: three renders per sampled point buys a third of a search,
+and a lucky point there is caught by the shortlist scoring anyway. It is not
+applied to the topology loop either, so ranking discrete variants on one render
+each — the specific weakness §12d named — **remains open**.
+
+**Three rather than the screen's five.** The screen measures a spread and wants
+the conservative end of one; this estimates a score, where the third observation
+is worth far more than the fifth.
+
+**The budget reserves it.** `shortlist × (2R + (R − 1))` — eight renders per
+shortlisted candidate at R = 3, against two on a reproducible backend. The
+reference level costs one fewer because the search already scored that vector
+there and that render is an observation of exactly those settings. The
+`--budget` shortfall message names the figure, so the arithmetic stays checkable
+rather than plausible — and so does `scripts/_cli.enumerated`'s pre-flight gate,
+which is the one a person meets *before* spending an hour. That gate still assumed
+two renders per candidate until a review caught it waving through a budget the
+search would then exceed, and `--budget`'s own help text still described the
+reproducible cost.
+
+**What it says when it cannot tell two candidates apart.** The first rule written
+here compared the gap between two candidates against the raw peak-to-peak spread of
+single renders, pooled across every level. Two things were wrong with that, and a
+review measured both: pooling let a wobble at −6 dB — a level that decides nothing —
+call two candidates 0.38 apart at their worst levels a coin toss, and comparing a
+gap between *means* against the spread of individual renders threw away the whole
+`√n` that averaging buys, so a genuine three-sigma separation was declared
+indistinguishable two times in five. The rule now uses each candidate's spread at
+its own worst level — the score the ranking is made on — converts peak-to-peak to a
+standard deviation through the control-chart `d2` constant for that many
+observations, and compares the gap against the standard error of the two means. The
+caveat text says that is what it did.
+
+**Two standard errors, and why the number is written down.** The first fix left the
+line at one standard error without ever saying so, and a second Monte Carlo caught
+what that costs: 20k simulated pairs at R = 3 went quiet on 21% of genuine ties, and
+on 58% of pairs whose printed order was wrong one time in twenty. The errors here are
+not symmetric — the caveat only ever advises listening to both, which costs a reader
+one audition, while silence lets a published order pass for a finding — so
+`INDISTINGUISHABLE_ERRORS = 2.0`: it warns on 96% of true ties and still goes quiet on
+92% of three-sigma separations. A level scored once, or with more observations than
+there is a `d2` constant for, no longer returns nothing at all: that was the pair with
+the least evidence behind its order getting the least warning, and it now says the
+deciding level was measured once.
+
+**Every number a person reads is the replicated one.** `Candidate.total` stays the
+single render the store recorded, because `match/verdict.py` cross-checks a summary
+against exactly that trial — but the HTML headline, the "% closer" figure, the
+shortlist table, the "it holds up across ±6 dB" line and the re-rank's own caveat
+now all use `reference_score`, the mean at the reference level. Before that they
+printed `total`, so a 2rem headline could sit outside the range the sentence under
+it gave for the same settings, and a run could say "it holds up" while the
+replicated mean was worse than the render it was compared against. `summary.json`
+carries both, plus `input_level_spread` and a *per-level* `input_level_observations`
+— per level because a level that loses a render to a failure averages fewer, and it
+can be the very level that sets the worst-case score. The "nothing beat the preset you
+started from" verdict is decided on the same estimate it prints, which it was not:
+one run said nothing had beaten the template beside a line showing the template's
+0.550 against the candidate's 0.480. The template's own score is still a single
+render, so that caveat now names the asymmetry instead of implying a dead heat was
+measured on both sides. Replicating the template as well is the obvious next step and
+is not done here.
+
+**What the two rules do when composed, which is not nothing.** Ranking on the worst
+of three means is a max over noisy estimates, so it is biased upward, and the bias
+falls on the candidate whose levels are closest together. Measured over 100k
+simulated pairs with identical true worst levels, the flat candidate loses to the
+peaky one about three times in four, and its reported worst level is inflated by
+about half a per-render sigma. Replication *reduces* that — the inflation was around
+0.85 sigma on one render per level and is around 0.49 on three — but it does not
+remove it, and "worst across levels, mean across replicates" should not be read as
+saying the composition is settled. Fixing it properly means ranking on something
+other than a max of point estimates, which is a larger change than this one.
+
+None of this would have worked before §12g: the store served an identical vector
+from cache, so the second and third observations would have been copies of the
+first. The cache is now bypassed on exactly the backends that need replicating.
 
 ## 13. Reading list, in the order it becomes relevant
 
