@@ -2807,6 +2807,29 @@ None of this would have worked before §12g: the store served an identical vecto
 from cache, so the second and third observations would have been copies of the
 first. The cache is now bypassed on exactly the backends that need replicating.
 
+**A postscript on absence, from the same review.** `_eq_is_active` read a gate the
+template does not state as a gate that is *off*, which is the opposite of the rule
+`Space.active` states and the plan repeats in §3's working agreements. It decided
+nine controls: "bypassed" makes every stored band dormant, which licenses
+overwriting all of them with neutral zero and switching the section on — so an
+audible equaliser could be discarded and the run would report it as a tidy-up. The
+gate is three-valued now, and a gate nobody can read means the whole section is
+left alone: not the bands, not the corners, not the gates.
+
+Getting the trigger right took a second pass. The first version asked a helper
+whether any gate was *unreadable*, which is a different question from whether the
+state is *unknown*: a template stating one gate off and omitting the other is
+fully decided — the section was out of circuit — and it was being declined with a
+caveat claiming otherwise, trading a correct inversion for a false statement. The
+gate scan also returned on the first control it could settle, so `(off, absent)`
+answered "bypassed" and `(absent, off)` answered "unknown" about the same
+amplifier, decided by the order the manifest happens to list them in. A readable
+open gate now beats an unreadable sibling, and the branch reads the answer rather
+than a second helper that could disagree with it.
+
+Neither committed pack can reach any of this — Morgan and Tone King both declare
+their gates and both appear in any real preset — which is why it survived as long
+as it did.
 ## 12i. A Tone King aggregate, and what eight targets can carry
 
 §12g could call its Tone King runs valid end-to-end evidence and nothing more,

@@ -1197,6 +1197,38 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             f"{pack_id} declares no graphic-EQ centres for {amp}, so no spectral "
             f"fit was attempted"
         )
+    elif (current_settings is not None
+          and _eq_is_active(signal_path, current_settings, pack_id) is None):
+        # Nothing in the section is decidable without its gate. Whether a stored
+        # band value was audible, whether a corner contributed, whether switching
+        # the section on would expose values the render never contained — every one
+        # of those turns on a control the template does not state. The alternative
+        # is to guess "bypassed", overwrite nine bands with neutral zero and call it
+        # a tidy-up, which is what this used to do.
+        unstated, untranslatable = _unreadable_eq_gates(
+            signal_path, current_settings, pack_id
+        )
+        why = []
+        if unstated:
+            why.append(f"the template does not state {', '.join(unstated)}")
+        if untranslatable:
+            why.append(
+                "the template gives "
+                + ", ".join(f"{control} the value {value!r}, which "
+                            f"packs/{pack_id} cannot read as a switch position"
+                            for control, value in untranslatable)
+            )
+        plural = len(unstated) + len(untranslatable) > 1
+        result.caveats.append(
+            f"{'; and '.join(why)} — so there is no way to know whether the "
+            f"equaliser was in circuit for the render this was measured against. "
+            f"Nothing in that section was touched: not the bands, not the corners, "
+            f"not the {'gates' if plural else 'gate'} "
+            f"{'themselves' if plural else 'itself'}, because every one of those "
+            f"decisions needs an answer this template does not give. Fix "
+            f"{'those values' if plural else 'that value'} and run again to have "
+            f"the equaliser inverted"
+        )
     else:
         filters = fit_filters(
             delta, module=amp, pack_id=pack_id,
@@ -1488,7 +1520,7 @@ def _apply_band_corrections(
     from packs.loader import load_pack
 
     pack = load_pack(pack_id)
-    was_active = _eq_is_active(signal_path, current_settings, pack_id)
+    was_active = _eq_is_active(signal_path, current_settings, pack_id) is True
     baselines = _band_baselines(signal_path, current_settings, pack_id)
     values: Dict[str, Any] = {}
     caveats = list(correction.caveats)
@@ -1574,8 +1606,10 @@ def _band_correction_bounds(signal_path, current_settings, pack_id: str):
 def _unwritable_bands(signal_path, current_settings, pack_id: str) -> Tuple[str, ...]:
     """Bands with no audible value to add a correction to.
 
-    Only reachable with an audible equaliser: a bypassed one contributes nothing,
-    so its baseline is a known zero rather than an unknown.
+    Reachable with an audible equaliser, whose stored values the template may not
+    give. A bypassed one contributes nothing, so its baseline is a known zero; a
+    gate nobody could read never reaches here, because `invert()` declines the
+    whole section first.
     """
     if current_settings is None:
         return ()
@@ -1585,8 +1619,14 @@ def _unwritable_bands(signal_path, current_settings, pack_id: str) -> Tuple[str,
 
 
 def _band_baselines(signal_path, current_settings, pack_id: str):
-    """Audible band values: stored values when enabled, otherwise neutral zero."""
+    """Audible band values: stored when enabled, neutral zero when bypassed.
+
+    `None` for every band when the gate cannot be read, which makes them
+    unwritable — a correction added to an unknown baseline is an unknown value.
+    """
     active = _eq_is_active(signal_path, current_settings, pack_id)
+    if active is None:
+        return {control: None for control in signal_path.eq_band_controls}
     return {
         control: (_setting_value(current_settings, control) if active else 0.0)
         for control in signal_path.eq_band_controls
@@ -1600,9 +1640,11 @@ def _current_filter_values(signal_path, current_settings, pack_id: str):
     render. Treating it as the baseline would fit a transition from a filter that was
     never heard and can move the requested corner in the wrong direction.
     """
-    if current_settings is None or not _eq_is_active(
+    # An unreadable gate means the corners' contribution is unknown too, so the fit
+    # gets no baseline rather than a guessed-open one.
+    if current_settings is None or _eq_is_active(
         signal_path, current_settings, pack_id
-    ):
+    ) is not True:
         return None, None
 
     def value(control):
@@ -1617,9 +1659,10 @@ def _current_filter_values(signal_path, current_settings, pack_id: str):
 def _neutralise_dormant_filters(result: Inversion, signal_path,
                                 current_settings, pack_id: str) -> None:
     """Open untouched corners before enabling a previously bypassed EQ."""
+    # Only a gate that is known to be off leaves dormant corners to neutralise.
     if current_settings is None or _eq_is_active(
         signal_path, current_settings, pack_id
-    ):
+    ) is not False:
         return
     from packs.calibration import spec_for
     from packs.loader import load_pack
@@ -1646,26 +1689,78 @@ def _neutralise_dormant_filters(result: Inversion, signal_path,
         )
 
 
-def _eq_is_active(signal_path, current_settings, pack_id: str) -> bool:
-    """Whether all declared gates currently put the path's EQ in circuit."""
+def _eq_is_active(signal_path, current_settings, pack_id: str) -> Optional[bool]:
+    """Whether the path's declared gates put its EQ in circuit — or `None`.
+
+    Three-valued on purpose. A gate the template does not state is *unknown*, not
+    off, and the difference decides nine controls: reading absence as "bypassed"
+    makes every stored band value a dormant one, which licenses overwriting all of
+    them with neutral zero and switching the section on. If the equaliser was in
+    fact audible, that silently discards the tone the template was carrying and
+    reports it as a tidy-up.
+
+    `Space.active` states the same rule for the same reason — a value nobody
+    supplied is a value nobody knows — and this helper used to take the opposite
+    reading of it. Neither committed pack can produce the case: Morgan and Tone
+    King both declare their gates and both appear in any real preset. A pack that
+    excludes one from the search space, or a preset that omits it, can.
+    """
     if not signal_path.eq_enable_controls:
         return True
     from packs.calibration import spec_for
     from packs.loader import load_pack
 
     pack = load_pack(pack_id)
+    unreadable = False
     for control in signal_path.eq_enable_controls:
         value = _setting_value(current_settings, control)
         if value is None:
-            return False
+            unreadable = True
+            continue
         spec = spec_for(pack, control)
         try:
             stored = str(pack.to_stored(spec, value, warnings=[])).casefold()
         except ValueError:
-            return False
+            # A value that will not translate is not a reading either.
+            unreadable = True
+            continue
         if stored not in {"1", "true"}:
+            # One gate known to be open settles it: the section was out of circuit
+            # for that render whatever the others say, so this must not be
+            # overridden by a sibling nobody stated. Returning on the first gate
+            # instead made the answer depend on the order the manifest happens to
+            # declare them in — (off, absent) said "bypassed" and (absent, off)
+            # said "unknown" about the same amplifier.
             return False
-    return True
+    return None if unreadable else True
+
+
+def _unreadable_eq_gates(signal_path, current_settings, pack_id: str):
+    """The gates `_eq_is_active` could not read, split by why.
+
+    Two causes, and a user can only act on one of them if the caveat keeps them
+    apart: a gate the template never states, and a gate it states with a value the
+    pack cannot translate. Merging them told someone whose value was untranslatable
+    to "set it in the template and run again", which is a no-op — they had set it,
+    and the caveat named the wrong problem.
+    """
+    if current_settings is None:
+        return [], []
+    from packs.calibration import spec_for
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    unstated, untranslatable = [], []
+    for control in signal_path.eq_enable_controls:
+        value = _setting_value(current_settings, control)
+        if value is None:
+            unstated.append(control)
+            continue
+        try:
+            pack.to_stored(spec_for(pack, control), value, warnings=[])
+        except ValueError:
+            untranslatable.append((control, value))
+    return unstated, untranslatable
 
 
 def _band_centres(pack_id: str, amp: str) -> List[float]:

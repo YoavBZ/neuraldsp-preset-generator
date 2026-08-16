@@ -34,7 +34,6 @@ caller's, and every stage reports what it used so the arithmetic is checkable.
 from __future__ import annotations
 
 import math
-import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -253,14 +252,6 @@ class Evaluator:
         self.alignment_attempts = 0
         self.untrusted_alignments = 0
         self.weakest_alignment: Optional[float] = None
-        # Held while the three counters above are updated. `evaluate_many` scores
-        # inside its worker threads, and a summary statistic that loses an
-        # increment is a wrong number in a report even though no score depends
-        # on it.
-        self._counters = threading.Lock()
-        # Set by a caller that has several renderers to spend. `evaluate` is
-        # unaffected either way: one vector is one render.
-        self.pool = None
         self.set_reference(target, reference_audio)
 
     def set_reference(self, target, reference_audio=None) -> None:
@@ -342,48 +333,6 @@ class Evaluator:
         self.renders += 1
         self.wall_ms += elapsed
 
-        objectives, printed, error = self._measure(rendered, values, error)
-
-        trial_id = None
-        if self.store is not None and self.run_id is not None:
-            trial = self.store.add_trial(self.run_id, Trial(
-                params=dict(settings),
-                cache_key=key,
-                objective_key=scoring_key,
-                di_sha=di_sha,
-                di_offset_db=float(offset_db),
-                render_sha=None if rendered is None else _hash(rendered.audio),
-                peak=None if rendered is None else rendered.peak,
-                silent=None if rendered is None else rendered.silent,
-                wall_ms=round(elapsed, 2),
-                objectives=objectives,
-                fingerprint=None if printed is None else printed.to_dict(),
-                error=error,
-            ))
-            trial_id = trial.trial_id
-
-        return Candidate(values=dict(values), objectives=objectives or {},
-                         total=float((objectives or {}).get("total", float("inf"))),
-                         trial_id=trial_id, error=error)
-
-    def _measure(self, rendered, values: Mapping, error):
-        """Turn one render into an objective vector, or into a reason there is none.
-
-        Split out of `evaluate` so `evaluate_many` can run it inside the worker
-        thread that produced the render rather than serially afterwards: the
-        fingerprint is ~150 ms against a plugin render of ~370 ms, so scoring on
-        the calling thread would give back a third of what the pool buys.
-
-        The three alignment counters are the only shared state here, and they are
-        summary statistics for a caveat rather than anything a score depends on —
-        but a lost increment is still a wrong number in a report, so they take a
-        lock.
-        """
-        from analysis import io
-        from analysis.compare import compare, scalar
-        from analysis.fingerprint import fingerprint
-
-        metadata = self.renderer.metadata()
         objectives: Optional[Dict[str, float]] = None
         printed = None
         if rendered is not None and not rendered.silent:
@@ -395,18 +344,17 @@ class Evaluator:
 
                 reference, candidate, alignment = align(
                     self.reference_audio, rendered.audio, metadata.sample_rate)
+                self.alignment_attempts += 1
                 correlation = abs(float(alignment.correlation))
-                with self._counters:
-                    self.alignment_attempts += 1
-                    self.weakest_alignment = (
-                        correlation if self.weakest_alignment is None
-                        else min(self.weakest_alignment, correlation)
-                    )
-                    if not alignment.trustworthy:
-                        # ``align`` deliberately returns the unshifted signals here.
-                        # The resulting residual is conservative about an unknown
-                        # timing relationship instead of inventing one from noise.
-                        self.untrusted_alignments += 1
+                self.weakest_alignment = (
+                    correlation if self.weakest_alignment is None
+                    else min(self.weakest_alignment, correlation)
+                )
+                if not alignment.trustworthy:
+                    # ``align`` deliberately returns the unshifted signals here.
+                    # The resulting residual is conservative about an unknown
+                    # timing relationship instead of inventing one from noise.
+                    self.untrusted_alignments += 1
                 waveform_residual = residual_db(reference, candidate)
                 if waveform_residual is None:
                     error = (
@@ -429,7 +377,28 @@ class Evaluator:
                 objectives = None
             else:
                 objectives["total"] = float(total)
-        return objectives, printed, error
+
+        trial_id = None
+        if self.store is not None and self.run_id is not None:
+            trial = self.store.add_trial(self.run_id, Trial(
+                params=dict(settings),
+                cache_key=key,
+                objective_key=scoring_key,
+                di_sha=di_sha,
+                di_offset_db=float(offset_db),
+                render_sha=None if rendered is None else _hash(rendered.audio),
+                peak=None if rendered is None else rendered.peak,
+                silent=None if rendered is None else rendered.silent,
+                wall_ms=round(elapsed, 2),
+                objectives=objectives,
+                fingerprint=None if printed is None else printed.to_dict(),
+                error=error,
+            ))
+            trial_id = trial.trial_id
+
+        return Candidate(values=dict(values), objectives=objectives or {},
+                         total=float((objectives or {}).get("total", float("inf"))),
+                         trial_id=trial_id, error=error)
 
     # --- what the renderer is actually given --------------------------------
 
