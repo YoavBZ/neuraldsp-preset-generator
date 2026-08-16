@@ -2839,14 +2839,28 @@ timing; 2813 is the figure the artifact holds.)
 strong.** Inversion beat the recipe stack on **8 of 8** targets and the search beat
 inversion on **8 of 8**. Those two counts do not deserve the same weight:
 
-- *Recipe → inversion* is robust. Every margin lies between **0.3223 and 1.2224**,
-  which is one to two orders above anything this run measured as noise.
-- *Inversion → full* is not. Its margins run **0.0235 to 0.6715**, and three of the
-  eight — 0.0235, 0.0418, 0.1151 — sit inside the range of screen thresholds the
-  run measured for itself on the same material (0.01, 0.0296, 0.0547, 0.1092,
-  0.1320, each the peak-to-peak of five uncached observations of one seed). Those
-  three targets are ties as far as this run can tell. Read as 5 of 8 with three
-  undecided, which a sign test does not distinguish from a coin.
+- *Recipe → inversion* is robust. Every margin lies between **0.3223 and 1.2224**
+  — at least 2.4× the largest noise figure this run measured anywhere, and mostly
+  3× to 9×.
+- *Inversion → full* is not. Its margins run **0.0235 to 0.6715**, and the three
+  smallest — 0.0235, 0.0418 and, more marginally, 0.1151 — are the size of the
+  variation this backend shows between renders of one unchanged vector.
+
+**The benchmark never replicates the objective it reports**, and that is the honest
+form of the second point. `compare_baselines` scores each arm's answer with a single
+`evaluate()`; §12h's replication lives inside `search()`'s re-rank and never reaches
+the number in this table. So margins of roughly 0.1 and below cannot be resolved
+from this run — not "are ties", which would need a per-target noise estimate the
+artifact cannot supply, since its screen thresholds are measured at the seed rather
+than at the candidates and its caveats are deduped by text so none can be tied to a
+target. Whether 5, 6 or 8 of the eight comparisons survive depends on a measurement
+nobody made. Replicating the final scoring render on a non-reproducible backend is
+the change that would make these counts load-bearing, and it is not done.
+
+One point in the leg's favour: the full arm's reported score is a fresh render of
+the selected vector rather than the search's own best score, so it carries no
+winner's-curse bias. Selection on noisy scores can pick a slightly suboptimal
+vector, and this number honestly reflects whatever vector was picked.
 
 §12c's 49 of 49 is the *full-versus-inversion* leg, and Morgan's other leg was 47
 of 49 — so Tone King is stronger where Morgan was weaker and weaker where Morgan
@@ -2883,7 +2897,7 @@ table reports. The screen froze controls two ways, and both count: between 1 and
 of 18 as insensitive, plus 2 to 4 more as the weakest surviving quartile, so
 roughly 2 to 11 were frozen per target and the search moved roughly **7 to 16** of
 18 — never all of them. And no switches were enumerated, which is the caveat
-behind the selector column above. The remaining three are in
+behind the selector column above. The remaining two are in
 `docs/toneking-benchmark-8.json`, which also records the renderer build, the
 plugin version and `reproducible=false` beside every number.
 
