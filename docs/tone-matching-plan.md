@@ -2810,10 +2810,23 @@ template does not state as a gate that is *off*, which is the opposite of the ru
 nine controls: "bypassed" makes every stored band dormant, which licenses
 overwriting all of them with neutral zero and switching the section on — so an
 audible equaliser could be discarded and the run would report it as a tidy-up. The
-gate is three-valued now, and an unreadable one means the whole section is left
-alone: not the bands, not the corners, not the gates. Neither committed pack can
-reach it — Morgan and Tone King both declare their gates and both appear in any
-real preset — which is why it survived as long as it did.
+gate is three-valued now, and a gate nobody can read means the whole section is
+left alone: not the bands, not the corners, not the gates.
+
+Getting the trigger right took a second pass. The first version asked a helper
+whether any gate was *unreadable*, which is a different question from whether the
+state is *unknown*: a template stating one gate off and omitting the other is
+fully decided — the section was out of circuit — and it was being declined with a
+caveat claiming otherwise, trading a correct inversion for a false statement. The
+gate scan also returned on the first control it could settle, so `(off, absent)`
+answered "bypassed" and `(absent, off)` answered "unknown" about the same
+amplifier, decided by the order the manifest happens to list them in. A readable
+open gate now beats an unreadable sibling, and the branch reads the answer rather
+than a second helper that could disagree with it.
+
+Neither committed pack can reach any of this — Morgan and Tone King both declare
+their gates and both appear in any real preset — which is why it survived as long
+as it did.
 
 ## 13. Reading list, in the order it becomes relevant
 

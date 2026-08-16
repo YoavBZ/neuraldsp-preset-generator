@@ -1136,8 +1136,10 @@ def test_an_unstated_eq_gate_is_unknown_rather_than_off():
     assert "parameters/outputGain" in unknown.values
 
 
-def test_an_unreadable_gate_value_is_also_unknown():
-    """A value that will not translate is not a reading either."""
+def test_an_unreadable_gate_value_is_also_unknown_and_says_which_problem():
+    """A value that will not translate is not a reading either — and the caveat has
+    to name *that*, not report the control as unstated. Telling someone to set a
+    value they have already set is advice they cannot act on."""
     path = invert._validated_signal_path("morgan", AMP)
     current = {
         ("", "selectedAmp"): "2",
@@ -1146,10 +1148,43 @@ def test_an_unreadable_gate_value_is_also_unknown():
         ("eqParameters", "sectionActive"): True,
     }
 
-    assert invert._eq_is_active(path, current, "morgan") is None
-    assert invert._unreadable_eq_gates(path, current, "morgan") == [
-        f"{AMP}EQ/{AMP}EQActive"
-    ]
+    result = invert.invert(measure({f"{AMP}EQ/{AMP}EQBand3": 8.0}), measure(),
+                           amp=AMP, current_settings=current)
+
+    assert not any(control in result.values
+                   for control in path.eq_band_controls), result.values
+    gate = next(c for c in result.caveats if "in circuit" in c)
+    assert "not a switch position" in gate and "cannot read as a switch" in gate
+    assert "does not state" not in gate, "the template does state it"
+
+
+def test_a_gate_known_to_be_off_settles_it_whatever_the_others_say():
+    """One open gate proves the section was out of circuit for that render. Letting
+    an unstated sibling override it discarded a correct inversion and replaced it
+    with a caveat claiming the state was unknowable — and which of the two won
+    depended on the order the manifest happens to declare them in."""
+    path = invert._validated_signal_path("morgan", AMP)
+    base = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 6.0,
+    }
+    off_first = {**base, (f"{AMP}EQ", f"{AMP}EQActive"): False}
+    off_second = {**base, ("eqParameters", "sectionActive"): False}
+
+    assert invert._eq_is_active(path, off_first, "morgan") is False
+    assert invert._eq_is_active(path, off_second, "morgan") is False, (
+        "declaration order must not decide this"
+    )
+    target = measure({f"{AMP}EQ/{AMP}EQActive": True,
+                      f"{AMP}EQ/{AMP}EQBand3": 8.0})
+    result = invert.invert(target, measure(), amp=AMP,
+                           current_settings=off_first)
+
+    assert any(control in result.values for control in path.eq_band_controls), (
+        "a bypassed section has a known-zero baseline, so it can be inverted"
+    )
+    assert not any("in circuit" in caveat for caveat in result.caveats)
 
 
 def test_eq_delta_bounds_reach_the_opposite_control_rail():
