@@ -1097,6 +1097,61 @@ def test_a_dormant_corner_already_open_is_not_written_again():
     assert all(f"{AMP}EQ/{AMP}EQHpf" not in caveat for caveat in result.caveats)
 
 
+def test_an_unstated_eq_gate_is_unknown_rather_than_off():
+    """`Space.active`'s rule, applied where it decides nine controls: a gate the
+    template does not state is not a gate that is off. Reading it as off made every
+    stored band dormant, which licensed overwriting all nine with neutral zero and
+    switching the section on — discarding an audible equaliser and reporting it as
+    a tidy-up."""
+    path = invert._validated_signal_path("morgan", AMP)
+    stated = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): True,
+        ("eqParameters", "sectionActive"): True,
+        (f"{AMP}EQ", f"{AMP}EQBand5"): 6.0,
+    }
+    # The same template with one gate missing, which is the only difference.
+    silent = {key: value for key, value in stated.items()
+              if key != ("eqParameters", "sectionActive")}
+    target = measure({f"{AMP}EQ/{AMP}EQActive": True,
+                      f"{AMP}EQ/{AMP}EQBand3": 8.0})
+    candidate = measure({f"{AMP}EQ/{AMP}EQActive": True,
+                         f"{AMP}EQ/{AMP}EQBand5": 6.0})
+
+    known = invert.invert(target, candidate, amp=AMP, current_settings=stated)
+    unknown = invert.invert(target, candidate, amp=AMP, current_settings=silent)
+
+    assert any(control in known.values for control in path.eq_band_controls), (
+        "the stated template must still be inverted"
+    )
+    assert not any(control in unknown.values
+                   for control in path.eq_band_controls), unknown.values
+    assert not any(control in unknown.values
+                   for control in path.eq_enable_controls)
+    assert f"{AMP}EQ/{AMP}EQHpf" not in unknown.values
+    assert any("eqParameters/sectionActive" in caveat and "no way to know" in caveat
+               for caveat in unknown.caveats), unknown.caveats
+    # The rest of the inversion is unaffected: level is not an EQ decision.
+    assert "parameters/outputGain" in unknown.values
+
+
+def test_an_unreadable_gate_value_is_also_unknown():
+    """A value that will not translate is not a reading either."""
+    path = invert._validated_signal_path("morgan", AMP)
+    current = {
+        ("", "selectedAmp"): "2",
+        ("parameters", "outputGain"): 0.0,
+        (f"{AMP}EQ", f"{AMP}EQActive"): "not a switch position",
+        ("eqParameters", "sectionActive"): True,
+    }
+
+    assert invert._eq_is_active(path, current, "morgan") is None
+    assert invert._unreadable_eq_gates(path, current, "morgan") == [
+        f"{AMP}EQ/{AMP}EQActive"
+    ]
+
+
 def test_eq_delta_bounds_reach_the_opposite_control_rail():
     path = invert._validated_signal_path("morgan", AMP)
     band = f"{AMP}EQ/{AMP}EQBand5"

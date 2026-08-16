@@ -2804,6 +2804,17 @@ None of this would have worked before §12g: the store served an identical vecto
 from cache, so the second and third observations would have been copies of the
 first. The cache is now bypassed on exactly the backends that need replicating.
 
+**A postscript on absence, from the same review.** `_eq_is_active` read a gate the
+template does not state as a gate that is *off*, which is the opposite of the rule
+`Space.active` states and the plan repeats in §3's working agreements. It decided
+nine controls: "bypassed" makes every stored band dormant, which licenses
+overwriting all of them with neutral zero and switching the section on — so an
+audible equaliser could be discarded and the run would report it as a tidy-up. The
+gate is three-valued now, and an unreadable one means the whole section is left
+alone: not the bands, not the corners, not the gates. Neither committed pack can
+reach it — Morgan and Tone King both declare their gates and both appear in any
+real preset — which is why it survived as long as it did.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |
