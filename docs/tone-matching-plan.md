@@ -2825,7 +2825,9 @@ plugin, whose band noise is 5.229 dB against Morgan's 0.23.
 ```
 
 Tone King 1.0.3 through the reused Swift server, `unpaired-v1`, **zero failed
-targets**, 2813 seconds across the three arms:
+targets**, 2813 seconds across the three arms. (The command prints 2865 s, which
+is wall clock including the eight ground-truth renders that fall outside per-arm
+timing; 2813 is the figure the artifact holds.)
 
 | arm | mean objective | median | param MAE | selector | renders |
 |---|---:|---:|---:|---:|---:|
@@ -2833,19 +2835,31 @@ targets**, 2813 seconds across the three arms:
 | inversion | 1.0942 | 0.9088 | 0.2545 | 0.6739 | 16 |
 | **full** | **0.8109** | **0.7375** | 0.2641 | 0.6739 | 1567 |
 
-**The per-target counts are the result, not the means.** Inversion beat the
-recipe stack on **8 of 8** targets and the search beat inversion on **8 of 8**.
-Eight means on a backend that moves 5.229 dB between identical renders would not
-support much; eight-for-eight in both comparisons is the same shape §12c reported
-as 49 of 49 and M7-1 as 24 of 24, and it is what this run actually establishes.
+**The per-target counts carry more than the means, and the two legs are not equally
+strong.** Inversion beat the recipe stack on **8 of 8** targets and the search beat
+inversion on **8 of 8**. Those two counts do not deserve the same weight:
+
+- *Recipe → inversion* is robust. Every margin lies between **0.3223 and 1.2224**,
+  which is one to two orders above anything this run measured as noise.
+- *Inversion → full* is not. Its margins run **0.0235 to 0.6715**, and three of the
+  eight — 0.0235, 0.0418, 0.1151 — sit inside the range of screen thresholds the
+  run measured for itself on the same material (0.01, 0.0296, 0.0547, 0.1092,
+  0.1320, each the peak-to-peak of five uncached observations of one seed). Those
+  three targets are ties as far as this run can tell. Read as 5 of 8 with three
+  undecided, which a sign test does not distinguish from a coin.
+
+§12c's 49 of 49 is the *full-versus-inversion* leg, and Morgan's other leg was 47
+of 49 — so Tone King is stronger where Morgan was weaker and weaker where Morgan
+was strong. Eight targets settles the first leg and gestures at the second.
 
 **Every objective here is a single unreplicated render.** §12h's replication is
 three observations per input level in the shortlist re-rank, which runs inside
 `search()` — so it touched the full arm and not the other two, and even there the
 number reported in this table is one final scoring render per target
 (`match/benchmark.py`). On a `reproducible=false` backend that is a sampled
-observation, not a settled one, and it is why the per-target counts carry the
-argument.
+observation, not a settled one — which is also why the counts above are split by
+leg: a count built from single renders inherits their noise, and is only more
+robust than a mean where the margins clear it.
 
 **Parameter MAE is not read here, deliberately.** The column moves 0.2564 →
 0.2545 → 0.2641, non-monotonically, across a spread of 0.0077. §12c measured this
@@ -2856,13 +2870,22 @@ says parameter error is not part of the gate, because the plugin's controls are
 not identifiable from its output; that reasoning stands on its own and does not
 need this run's difference to support it.
 
-**Two caveats from the run that the table hides.** The shortlist's scores moved by
-up to **0.82** across ±6 dB of input level on one target and 0.35 on another —
-the larger is nearly three times the 0.283 gap between the full and inversion
-means, so how hard the amp is hit matters more than the difference this table
-reports. And the screen froze between 1 and 7 of 18 continuous controls depending
-on the target, so "the search" searched 11 to 17 of them, not 18. The other
-sixteen caveats are in `docs/toneking-benchmark-8.json`.
+**The selector column measures nothing here.** All three arms report 0.6739
+because nothing enumerated switches or selectors, so all three inherit whatever
+topology the seed had; the CLI's own `--enumerate` help says the column means
+nothing until something does enumerate.
+
+**Three caveats from the run that the table hides.** The shortlist's scores moved
+by up to **0.82** across ±6 dB of input level, and by 0.35 on at least one other
+target — the larger is nearly three times the 0.283 gap between the full and
+inversion means, so how hard the amp is hit matters more than the difference this
+table reports. The screen froze controls two ways, and both count: between 1 and 7
+of 18 as insensitive, plus 2 to 4 more as the weakest surviving quartile, so
+roughly 2 to 11 were frozen per target and the search moved roughly **7 to 16** of
+18 — never all of them. And no switches were enumerated, which is the caveat
+behind the selector column above. The remaining three are in
+`docs/toneking-benchmark-8.json`, which also records the renderer build, the
+plugin version and `reproducible=false` beside every number.
 
 **What it is not comparable to.** §12g's `0.5686985 -> 0.3464464` used a 4-second
 `fx.plucks` DI normalised to 0.15 and passed with `--probe-di`; this run used the
