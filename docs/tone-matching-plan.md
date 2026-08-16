@@ -2840,8 +2840,10 @@ strong.** Inversion beat the recipe stack on **8 of 8** targets and the search b
 inversion on **8 of 8**. Those two counts do not deserve the same weight:
 
 - *Recipe → inversion* is robust. Every margin lies between **0.3223 and 1.2224**
-  — at least 2.4× the largest noise figure this run measured anywhere, and mostly
-  3× to 9×.
+  — at least 2.4× the largest repeat-variation figure this run measured, and
+  mostly 3× to 9×. (Repeat variation, not the 0.82 the shortlist moved across
+  ±6 dB of input level below: that is the preset responding to the amp being hit
+  harder, which is a different quantity.)
 - *Inversion → full* is not. Its margins run **0.0235 to 0.6715**, and the three
   smallest — 0.0235, 0.0418 and, more marginally, 0.1151 — are the size of the
   variation this backend shows between renders of one unchanged vector.
@@ -2853,8 +2855,10 @@ the number in this table. So margins of roughly 0.1 and below cannot be resolved
 from this run — not "are ties", which would need a per-target noise estimate the
 artifact cannot supply, since its screen thresholds are measured at the seed rather
 than at the candidates and its caveats are deduped by text so none can be tied to a
-target. Whether 5, 6 or 8 of the eight comparisons survive depends on a measurement
-nobody made. Replicating the final scoring render on a non-reproducible backend is
+target. Whether between 5 and 8 of the eight comparisons survive depends on a
+measurement nobody made — and not 5, 6 or 8, which would assume the three
+marginal margins resolve in size order when each target carries its own
+threshold that the artifact cannot attribute to it. Replicating the final scoring render on a non-reproducible backend is
 the change that would make these counts load-bearing, and it is not done.
 
 One point in the leg's favour: the full arm's reported score is a fresh render of
