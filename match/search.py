@@ -34,6 +34,7 @@ caller's, and every stage reports what it used so the arithmetic is checkable.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -252,6 +253,14 @@ class Evaluator:
         self.alignment_attempts = 0
         self.untrusted_alignments = 0
         self.weakest_alignment: Optional[float] = None
+        # Held while the three counters above are updated. `evaluate_many` scores
+        # inside its worker threads, and a summary statistic that loses an
+        # increment is a wrong number in a report even though no score depends
+        # on it.
+        self._counters = threading.Lock()
+        # Set by a caller that has several renderers to spend. `evaluate` is
+        # unaffected either way: one vector is one render.
+        self.pool = None
         self.set_reference(target, reference_audio)
 
     def set_reference(self, target, reference_audio=None) -> None:
@@ -333,50 +342,7 @@ class Evaluator:
         self.renders += 1
         self.wall_ms += elapsed
 
-        objectives: Optional[Dict[str, float]] = None
-        printed = None
-        if rendered is not None and not rendered.silent:
-            printed = fingerprint(io.from_samples(rendered.audio, metadata.sample_rate),
-                                  regime="probe", excerpt_s=None)
-            waveform_residual = None
-            if self.residual_enabled:
-                from analysis.align import align, residual_db
-
-                reference, candidate, alignment = align(
-                    self.reference_audio, rendered.audio, metadata.sample_rate)
-                self.alignment_attempts += 1
-                correlation = abs(float(alignment.correlation))
-                self.weakest_alignment = (
-                    correlation if self.weakest_alignment is None
-                    else min(self.weakest_alignment, correlation)
-                )
-                if not alignment.trustworthy:
-                    # ``align`` deliberately returns the unshifted signals here.
-                    # The resulting residual is conservative about an unknown
-                    # timing relationship instead of inventing one from noise.
-                    self.untrusted_alignments += 1
-                waveform_residual = residual_db(reference, candidate)
-                if waveform_residual is None:
-                    error = (
-                        "paired waveform residual is not measurable: the aligned "
-                        "reference has no usable mono energy"
-                    )
-            vector = compare(
-                self.target, printed, profile=self.profile,
-                prior_deviation=self._prior_deviation(values),
-                complexity=self._complexity(values),
-                residual_db=waveform_residual,
-            )
-            objectives = {name: float(value) for name, value in vector.values.items()
-                          if value is not None}
-            total = scalar(vector)
-            if error is not None or total is None:
-                # A required waveform term failed, or nothing the profile weights
-                # was measurable on both sides. Either way there is no ordering to
-                # be had; it must not become a zero or a silently renormalised score.
-                objectives = None
-            else:
-                objectives["total"] = float(total)
+        objectives, printed, error = self._measure(rendered, values, error)
 
         trial_id = None
         if self.store is not None and self.run_id is not None:
@@ -399,6 +365,71 @@ class Evaluator:
         return Candidate(values=dict(values), objectives=objectives or {},
                          total=float((objectives or {}).get("total", float("inf"))),
                          trial_id=trial_id, error=error)
+
+    def _measure(self, rendered, values: Mapping, error):
+        """Turn one render into an objective vector, or into a reason there is none.
+
+        Split out of `evaluate` so `evaluate_many` can run it inside the worker
+        thread that produced the render rather than serially afterwards: the
+        fingerprint is ~150 ms against a plugin render of ~370 ms, so scoring on
+        the calling thread would give back a third of what the pool buys.
+
+        The three alignment counters are the only shared state here, and they are
+        summary statistics for a caveat rather than anything a score depends on —
+        but a lost increment is still a wrong number in a report, so they take a
+        lock.
+        """
+        from analysis import io
+        from analysis.compare import compare, scalar
+        from analysis.fingerprint import fingerprint
+
+        metadata = self.renderer.metadata()
+        objectives: Optional[Dict[str, float]] = None
+        printed = None
+        if rendered is not None and not rendered.silent:
+            printed = fingerprint(io.from_samples(rendered.audio, metadata.sample_rate),
+                                  regime="probe", excerpt_s=None)
+            waveform_residual = None
+            if self.residual_enabled:
+                from analysis.align import align, residual_db
+
+                reference, candidate, alignment = align(
+                    self.reference_audio, rendered.audio, metadata.sample_rate)
+                correlation = abs(float(alignment.correlation))
+                with self._counters:
+                    self.alignment_attempts += 1
+                    self.weakest_alignment = (
+                        correlation if self.weakest_alignment is None
+                        else min(self.weakest_alignment, correlation)
+                    )
+                    if not alignment.trustworthy:
+                        # ``align`` deliberately returns the unshifted signals here.
+                        # The resulting residual is conservative about an unknown
+                        # timing relationship instead of inventing one from noise.
+                        self.untrusted_alignments += 1
+                waveform_residual = residual_db(reference, candidate)
+                if waveform_residual is None:
+                    error = (
+                        "paired waveform residual is not measurable: the aligned "
+                        "reference has no usable mono energy"
+                    )
+            vector = compare(
+                self.target, printed, profile=self.profile,
+                prior_deviation=self._prior_deviation(values),
+                complexity=self._complexity(values),
+                residual_db=waveform_residual,
+            )
+            objectives = {name: float(value) for name, value in vector.values.items()
+                          if value is not None}
+            total = scalar(vector)
+            if error is not None or total is None:
+                # A required waveform term failed, or nothing the profile weights
+                # was measurable on both sides. Either way there is no ordering to
+                # be had; it must not become a zero or a silently renormalised score.
+                objectives = None
+            else:
+                objectives["total"] = float(total)
+        return objectives, printed, error
 
     # --- what the renderer is actually given --------------------------------
 

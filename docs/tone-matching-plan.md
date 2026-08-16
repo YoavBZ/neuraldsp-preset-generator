@@ -29,7 +29,9 @@ item is recorded in §12f.
 Tone King's topology-generic calibration, fresh-process repeatability finding and
 corrected known-target runs, including direct inversion, are recorded in §12g.
 §12h replicates shortlist scoring on backends that do not repeat themselves,
-which is the design §12d asked for and §12g's runs did without.
+which is the design §12d asked for and §12g's runs did without. §12i is the
+eight-target Tone King benchmark §12g named as missing: the arms nest on Tone
+King as §12d already showed they do on Morgan.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2700,7 +2702,8 @@ template seed, direct inversion and continuous search. It is not a Tone King
 equivalent of the 50-target Morgan benchmark. `SyntheticRenderer` models Morgan's
 topology only, so there is no synthetic Tone King score from which to quote an
 honest percentage gap. The remaining gap is explicit instead: a large measured
-non-reproducible backend and no Tone King aggregate benchmark. Candidate
+non-reproducible backend and, at the time these runs were made, no Tone King
+aggregate benchmark — §12i has since measured one. Candidate
 evaluations were not replicated when these runs were made; §12h has since built
 that, and re-running the pair under it would be the way to ask whether the
 difference above survives. The older §12d `1.320 -> 0.819` result is invalid
@@ -2803,6 +2806,122 @@ other than a max of point estimates, which is a larger change than this one.
 None of this would have worked before §12g: the store served an identical vector
 from cache, so the second and third observations would have been copies of the
 first. The cache is now bypassed on exactly the backends that need replicating.
+
+## 12i. A Tone King aggregate, and what eight targets can carry
+
+§12g could call its Tone King runs valid end-to-end evidence and nothing more,
+and named the gap exactly: "no Tone King aggregate benchmark". `SyntheticRenderer`
+models Morgan's topology only, so there was no Tone King distribution against
+which one run's `0.5686985 -> 0.3464464` meant anything. This closes that gap and
+nothing wider. §12d already ran 50 targets against the real Morgan Audio Unit —
+recipe 2.572, inversion 1.551, full 0.932 — so "the arms nest on a real plugin"
+was measured a milestone ago. What was missing was whether they nest on *this*
+plugin, whose band noise is 5.229 dB against Morgan's 0.23.
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 8 --budget 200 --seed 0 --seconds 2.0 \
+  --json docs/toneking-benchmark-8.json
+```
+
+Tone King 1.0.3 through the reused Swift server, `unpaired-v1`, **zero failed
+targets**, 2813 seconds across the three arms. (The command prints 2865 s, which
+is wall clock including the eight ground-truth renders that fall outside per-arm
+timing; 2813 is the figure the artifact holds.)
+
+| arm | mean objective | median | param MAE | selector | renders |
+|---|---:|---:|---:|---:|---:|
+| recipe | 1.6564 | 1.2722 | 0.2564 | 0.6739 | 8 |
+| inversion | 1.0942 | 0.9088 | 0.2545 | 0.6739 | 16 |
+| **full** | **0.8109** | **0.7375** | 0.2641 | 0.6739 | 1567 |
+
+**The per-target counts carry more than the means, and the two legs are not equally
+strong.** Inversion beat the recipe stack on **8 of 8** targets and the search beat
+inversion on **8 of 8**. Those two counts do not deserve the same weight:
+
+- *Recipe → inversion* is robust. Every margin lies between **0.3223 and 1.2224**
+  — at least 2.4× the largest repeat-variation figure this run measured, and
+  mostly 3× to 9×. (Repeat variation, not the 0.82 the shortlist moved across
+  ±6 dB of input level below: that is the preset responding to the amp being hit
+  harder, which is a different quantity.)
+- *Inversion → full* is not. Its margins run **0.0235 to 0.6715**, and the three
+  smallest — 0.0235, 0.0418 and, more marginally, 0.1151 — are the size of the
+  variation this backend shows between renders of one unchanged vector.
+
+**The benchmark never replicates the objective it reports**, and that is the honest
+form of the second point. `compare_baselines` scores each arm's answer with a single
+`evaluate()`; §12h's replication lives inside `search()`'s re-rank and never reaches
+the number in this table. So margins of roughly 0.1 and below cannot be resolved
+from this run — not "are ties", which would need a per-target noise estimate the
+artifact cannot supply, since its screen thresholds are measured at the seed rather
+than at the candidates and its caveats are deduped by text so none can be tied to a
+target. Whether between 5 and 8 of the eight comparisons survive depends on a
+measurement nobody made — and not 5, 6 or 8, which would assume the three
+marginal margins resolve in size order when each target carries its own
+threshold that the artifact cannot attribute to it. Replicating the final scoring render on a non-reproducible backend is
+the change that would make these counts load-bearing, and it is not done.
+
+One point in the leg's favour: the full arm's reported score is a fresh render of
+the selected vector rather than the search's own best score, so it carries no
+winner's-curse bias. Selection on noisy scores can pick a slightly suboptimal
+vector, and this number honestly reflects whatever vector was picked.
+
+§12c's 49 of 49 is the *full-versus-inversion* leg, and Morgan's other leg was 47
+of 49 — so Tone King is stronger where Morgan was weaker and weaker where Morgan
+was strong. Eight targets settles the first leg and gestures at the second.
+
+**Every objective here is a single unreplicated render.** §12h's replication is
+three observations per input level in the shortlist re-rank, which runs inside
+`search()` — so it touched the full arm and not the other two, and even there the
+number reported in this table is one final scoring render per target
+(`match/benchmark.py`). On a `reproducible=false` backend that is a sampled
+observation, not a settled one — which is also why the counts above are split by
+leg: a count built from single renders inherits their noise, and is only more
+robust than a mean where the margins clear it.
+
+**Parameter MAE is not read here, deliberately.** The column moves 0.2564 →
+0.2545 → 0.2641, non-monotonically, across a spread of 0.0077. §12c measured this
+same column over 50 targets, found the direction consistent there and *not*
+consistent over six, and concluded that the claim worth making is the one at
+n=50. Eight targets is nearer six than fifty. The benchmark's own verdict text
+says parameter error is not part of the gate, because the plugin's controls are
+not identifiable from its output; that reasoning stands on its own and does not
+need this run's difference to support it.
+
+**The selector column measures nothing here.** All three arms report 0.6739
+because nothing enumerated switches or selectors, so all three inherit whatever
+topology the seed had; the CLI's own `--enumerate` help says the column means
+nothing until something does enumerate.
+
+**Three caveats from the run that the table hides.** The shortlist's scores moved
+by up to **0.82** across ±6 dB of input level, and by 0.35 on at least one other
+target — the larger is nearly three times the 0.283 gap between the full and
+inversion means, so how hard the amp is hit matters more than the difference this
+table reports. The screen froze controls two ways, and both count: between 1 and 7
+of 18 as insensitive, plus 2 to 4 more as the weakest surviving quartile, so
+roughly 2 to 11 were frozen per target and the search moved roughly **7 to 16** of
+18 — never all of them. And no switches were enumerated, which is the caveat
+behind the selector column above. The remaining two are in
+`docs/toneking-benchmark-8.json`, which also records the renderer build, the
+plugin version and `reproducible=false` beside every number.
+
+**What it is not comparable to.** §12g's `0.5686985 -> 0.3464464` used a 4-second
+`fx.plucks` DI normalised to 0.15 and passed with `--probe-di`; this run used the
+2-second synthetic decaying noise-burst sequence with no `--probe-di`. Different
+generator, different length, no normalisation — the objective scales are not
+shared, so the numbers sit beside each other rather than against each other. The
+burst sequence shows attack and decay clearly and sustained or palm-muted playing
+not at all.
+
+**On repeating it.** `--seed 0` feeds both target sampling and the search from one
+generator, and the search consumes a variable number of draws — CMA-ES can stop
+early, and the frozen-parameter count differs per target. On a backend that does
+not repeat itself those counts shift between runs, which moves the stream and
+therefore the next target's vector. Expect the shape to reproduce and the
+individual targets not to.
+
+Scaling this to §12c's fifty targets is about 5 hours at this budget and nearer
+7 at the `--budget 300` the Morgan runs used.
 
 ## 13. Reading list, in the order it becomes relevant
 

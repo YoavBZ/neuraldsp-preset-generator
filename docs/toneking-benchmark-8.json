@@ -1,0 +1,352 @@
+{
+  "targets": 8,
+  "budget": 200,
+  "pack": "toneking",
+  "amp": "lead",
+  "loss_profile": "unpaired-v1",
+  "seed": 0,
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.0.3",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 5.228794,
+    "notes": [
+      "toneking through aumf TKI2 NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "summaries": {
+    "recipe": {
+      "arm": "recipe",
+      "targets": 8,
+      "failures": 0,
+      "failure_rate": 0.0,
+      "parameter_mae": 0.2564,
+      "selector_accuracy": 0.6739,
+      "objective": 1.6564,
+      "objective_median": 1.2722,
+      "renders": 8,
+      "wall_s": 17.5
+    },
+    "inversion": {
+      "arm": "inversion",
+      "targets": 8,
+      "failures": 0,
+      "failure_rate": 0.0,
+      "parameter_mae": 0.2545,
+      "selector_accuracy": 0.6739,
+      "objective": 1.0942,
+      "objective_median": 0.9088,
+      "renders": 16,
+      "wall_s": 31.3
+    },
+    "full": {
+      "arm": "full",
+      "targets": 8,
+      "failures": 0,
+      "failure_rate": 0.0,
+      "parameter_mae": 0.2641,
+      "selector_accuracy": 0.6739,
+      "objective": 0.8109,
+      "objective_median": 0.7375,
+      "renders": 1567,
+      "wall_s": 2764.4
+    }
+  },
+  "ships": true,
+  "reasons": [
+    "beats recipe: 0.811 against 1.656 mean objective distance over the 8 targets both arms scored",
+    "beats inversion: 0.811 against 1.094 mean objective distance over the 8 targets both arms scored",
+    "parameter MAE is 0.2641 and selector accuracy 0.6739; neither is part of this gate, because the plugin's controls are not identifiable from its output and a match that sounds right with different numbers is still a match"
+  ],
+  "caveats": [
+    "rendered by swift (plugin 1.0.3), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 5.228794 dB. Every number below carries that, and none of them may be committed without it",
+    "no --probe-di was given, so candidates were rendered through a synthetic decaying noise-burst sequence. It shows attack and decay clearly and shows sustained or palm-muted playing not at all \u2014 match against your own DI before trusting this on a real part.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.150. A larger budget would search them.",
+    "full: no switches or selectors were enumerated, so every on/off, the cabinet, the microphone and the amp are whatever the starting point had \u2014 only continuous controls were searched. Trying a different cab or mic means editing the template and running this again.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.047. A larger budget would search them.",
+    "full: 1 of 18 parameters changed the distance to the reference by less than 0.109189 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.204. A larger budget would search them.",
+    "full: the shortlist's scores move by up to 0.82 across \u00b16 dB of input level, so how hard you hit the amp matters as much as these settings do \u2014 check the match at your own playing level",
+    "full: 1 of 18 parameters changed the distance to the reference by less than 0.01 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.056. A larger budget would search them.",
+    "full: 2 of 18 parameters changed the distance to the reference by less than 0.0547324 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.159. A larger budget would search them.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.043. A larger budget would search them.",
+    "full: 1 of 18 parameters changed the distance to the reference by less than 0.0295904 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 4 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.096. A larger budget would search them.",
+    "full: the shortlist's scores move by up to 0.35 across \u00b16 dB of input level, so how hard you hit the amp matters as much as these settings do \u2014 check the match at your own playing level",
+    "full: 7 of 18 parameters changed the distance to the reference by less than 0.131995 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 2 of 18 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.171. A larger budget would search them."
+  ],
+  "outcomes": [
+    {
+      "arm": "recipe",
+      "target_index": 0,
+      "parameter_mae": 0.27874761822904,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 1.0318342962265716,
+      "renders": 1,
+      "wall_ms": 5295.165416086093,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 0,
+      "parameter_mae": 0.28549761822904,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 0.6147496350873006,
+      "renders": 2,
+      "wall_ms": 1615.6322079477832,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 0,
+      "parameter_mae": 0.27028635826718966,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 0.3507069648368303,
+      "renders": 195,
+      "wall_ms": 386383.09704104904,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 1,
+      "parameter_mae": 0.2606546192104797,
+      "selector_accuracy": 0.8571428571428571,
+      "objective": 0.6682561448209733,
+      "renders": 1,
+      "wall_ms": 1334.1185419121757,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 1,
+      "parameter_mae": 0.22799436280022334,
+      "selector_accuracy": 0.8571428571428571,
+      "objective": 0.19190859066202337,
+      "renders": 2,
+      "wall_ms": 3512.6305419253185,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 1,
+      "parameter_mae": 0.22008742301411136,
+      "selector_accuracy": 0.8571428571428571,
+      "objective": 0.15014124156350872,
+      "renders": 195,
+      "wall_ms": 389817.1601659851,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 2,
+      "parameter_mae": 0.2608189559794219,
+      "selector_accuracy": 0.6,
+      "objective": 3.6496988571856708,
+      "renders": 1,
+      "wall_ms": 395.8282920066267,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 2,
+      "parameter_mae": 0.265680067090533,
+      "selector_accuracy": 0.6,
+      "objective": 2.4273012964475864,
+      "renders": 2,
+      "wall_ms": 6452.006250037812,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 2,
+      "parameter_mae": 0.265680067090533,
+      "selector_accuracy": 0.6,
+      "objective": 1.7557804266763712,
+      "renders": 195,
+      "wall_ms": 383301.8590840511,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 3,
+      "parameter_mae": 0.26330549214432414,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 0.9652757015280145,
+      "renders": 1,
+      "wall_ms": 2603.976209065877,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 3,
+      "parameter_mae": 0.28328356231976276,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 0.44823940204274376,
+      "renders": 2,
+      "wall_ms": 4070.717209018767,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 3,
+      "parameter_mae": 0.309599351793447,
+      "selector_accuracy": 0.6521739130434783,
+      "objective": 0.42477103349107914,
+      "renders": 195,
+      "wall_ms": 341105.62462499365,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 4,
+      "parameter_mae": 0.23899341776483154,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 2.3879060064853563,
+      "renders": 1,
+      "wall_ms": 419.4006659090519,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 4,
+      "parameter_mae": 0.2447466228930367,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 1.7172045632292594,
+      "renders": 2,
+      "wall_ms": 2773.826083051972,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 4,
+      "parameter_mae": 0.284581146145124,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 1.2690084842528202,
+      "renders": 195,
+      "wall_ms": 229436.2417079974,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 5,
+      "parameter_mae": 0.2490761854238071,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 1.3967496167943088,
+      "renders": 1,
+      "wall_ms": 3024.7227910440415,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 5,
+      "parameter_mae": 0.24716150288412458,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 1.074456092033028,
+      "renders": 2,
+      "wall_ms": 3287.793542025611,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 5,
+      "parameter_mae": 0.25302859477034595,
+      "selector_accuracy": 0.6666666666666666,
+      "objective": 0.8468611970137503,
+      "renders": 195,
+      "wall_ms": 319516.46549999714,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 6,
+      "parameter_mae": 0.2671072374946772,
+      "selector_accuracy": 0.7037037037037037,
+      "objective": 2.0035235740959028,
+      "renders": 1,
+      "wall_ms": 1423.573667067103,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 6,
+      "parameter_mae": 0.24924098525509017,
+      "selector_accuracy": 0.7037037037037037,
+      "objective": 1.5363888884213381,
+      "renders": 2,
+      "wall_ms": 2087.4799579614773,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 6,
+      "parameter_mae": 0.2618650171131832,
+      "selector_accuracy": 0.7037037037037037,
+      "objective": 1.0614965775559573,
+      "renders": 195,
+      "wall_ms": 354820.1315830229,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "recipe",
+      "target_index": 7,
+      "parameter_mae": 0.23281199941346825,
+      "selector_accuracy": 0.5925925925925926,
+      "objective": 1.1476356919036115,
+      "renders": 1,
+      "wall_ms": 2964.380999910645,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "inversion",
+      "target_index": 7,
+      "parameter_mae": 0.2324611222204858,
+      "selector_accuracy": 0.5925925925925926,
+      "objective": 0.7432234293802377,
+      "renders": 2,
+      "wall_ms": 7533.995209028944,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 7,
+      "parameter_mae": 0.24741824932538514,
+      "selector_accuracy": 0.5925925925925926,
+      "objective": 0.6280959034045552,
+      "renders": 202,
+      "wall_ms": 360055.22012501024,
+      "failed": false,
+      "error": null
+    }
+  ]
+}
