@@ -1379,3 +1379,103 @@ def test_a_generation_that_all_failed_stops_rather_than_chasing_it(space, seed,
         f"{evaluator.renders} renders spent on a backend that failed every one"
     )
     assert any("failed to render" in c for c in caveats), caveats
+
+
+# --- the pool ---------------------------------------------------------------
+
+
+def test_a_pool_scores_a_batch_exactly_as_the_one_at_a_time_path_does(
+    space, seed, target,
+):
+    """The whole claim. A pool may only make the same run faster — if it changes
+    a number, every measurement in this repository taken with it is a different
+    experiment from the ones taken without."""
+    from match.pool import RendererPool
+
+    vectors = [dict(seed) for _ in range(6)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 8.0
+
+    serial = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    one_at_a_time = [serial.evaluate(values) for values in vectors]
+
+    pooled = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(SyntheticRenderer, workers=3) as pool:
+        pooled.pool = pool
+        batched = pooled.evaluate_many(vectors)
+
+    assert [c.total for c in batched] == [c.total for c in one_at_a_time]
+    assert [c.objectives for c in batched] == [c.objectives for c in one_at_a_time]
+    assert pooled.renders == serial.renders
+
+
+def test_a_pool_returns_results_in_the_order_it_was_given_them(space, seed, target):
+    """Not the order they finish in. A population reordered by machine load is a
+    search whose answer depends on how busy the machine was."""
+    import time as _time
+    from match.pool import RendererPool
+
+    class Uneven(SyntheticRenderer):
+        """Later jobs finish first."""
+
+        def render(self, di_samples, settings=None, **kwargs):
+            volume = (settings or {}).get(f"{AMP}Amp/{AMP}Volume", 0.0)
+            _time.sleep(max(0.0, (90.0 - float(volume)) / 400.0))
+            return super().render(di_samples, settings, **kwargs)
+
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 30.0 + index * 20.0
+
+    evaluator = S.Evaluator(Uneven(), target, di(), space, recipe=seed)
+    with RendererPool(Uneven, workers=4) as pool:
+        evaluator.pool = pool
+        batched = evaluator.evaluate_many(vectors)
+
+    assert [c.values[(f"{AMP}Amp", f"{AMP}Volume")] for c in batched] == [
+        30.0, 50.0, 70.0, 90.0
+    ]
+
+
+def test_a_pool_of_disagreeing_backends_is_refused():
+    """Members must be the same backend. Two plugin versions in one pool would put
+    two backends' numbers in one shortlist and rank them against each other."""
+    from dataclasses import replace
+
+    from match.pool import PoolError, RendererPool
+
+    made = []
+
+    class Drifting(SyntheticRenderer):
+        def metadata(self):
+            base = super().metadata()
+            made.append(1)
+            return replace(base, plugin_version=f"1.0.{len(made)}")
+
+    with pytest.raises(PoolError, match="same backend"):
+        RendererPool(Drifting, workers=2)
+
+
+def test_one_refused_vector_does_not_take_the_batch_with_it(space, seed, target):
+    from match.pool import RendererPool
+    from match.renderer import RenderError
+
+    class RefusesTheLoudest(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            if float((settings or {}).get(f"{AMP}Amp/{AMP}Volume", 0.0)) > 80.0:
+                raise RenderError("deliberate refusal")
+            return super().render(di_samples, settings, **kwargs)
+
+    vectors = [dict(seed) for _ in range(3)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 30.0
+
+    evaluator = S.Evaluator(RefusesTheLoudest(), target, di(), space, recipe=seed)
+    with RendererPool(RefusesTheLoudest, workers=3) as pool:
+        evaluator.pool = pool
+        batched = evaluator.evaluate_many(vectors)
+
+    assert batched[0].objectives and batched[1].objectives
+    assert not batched[2].objectives
+    assert "deliberate refusal" in batched[2].error
+    assert evaluator.renders == 3, "a refused render still cost one"
