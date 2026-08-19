@@ -2946,6 +2946,71 @@ individual targets not to.
 Scaling this to §12c's fifty targets is about 5 hours at this budget and nearer
 7 at the `--budget 300` the Morgan runs used.
 
+## 12j. Why the renders are not run in parallel
+
+Four plugin instances render 3.82x as fast as one. The pool that does it is
+committed — `match/pool.py`, with `Evaluator.evaluate_many` as its batch entry —
+and nothing in the search uses it, because measuring what it does to the answer
+showed it changes the answer.
+
+The measurements, on Tone King through the Swift server:
+
+**Raw throughput.** 24 renders per configuration, four warm-up renders per
+instance, the single-worker case repeated afterwards to check the baseline had not
+drifted (4.54 to 4.51 renders/s): 1 worker 4.54/s, 2 workers 8.77/s (1.94x),
+4 workers 17.24/s (3.82x). Fingerprinting parallelises too — 65.8 ms on one thread,
+21.7 on four — so the GIL is not the ceiling.
+
+**The screen, wired to the pool.** 17.2 s against 5.2 s on four workers, 3.30x,
+the same 41 renders spent. That figure needs the pool warmed first: unwarmed it is
+1.28x, because each member pays instantiation on its first render and a 36-render
+screen is too short to amortise four of those.
+
+**And it changes what the screen measures.** Comparing `Screen.movement` control by
+control across five serial and five pooled runs, 6 of 18 controls moved by more
+than either group's own spread. The noisy controls hide it — `gateThreshold`,
+`inputGain` and `leadAmpVolume` all have spreads of 0.28 to 0.34 — and the stable
+ones expose it:
+
+| control | serial | pooled | gap | own spread |
+|---|---:|---:|---:|---:|
+| `/eqBand1` | 0.5460 | 0.4130 | 0.1330 | 0.017 / 0.025 |
+| `/leadAmpMidBite` | 0.0023 | 0.0180 | 0.0157 | 0.001 / 0.002 |
+| `/eqBand2` | 0.4963 | 0.4935 | 0.0028 | 0.0002 / 0.0004 |
+| `/outputGain` | 0.2886 | 0.2858 | 0.0028 | 0.0005 / 0.0002 |
+
+`/leadAmpMidBite` is the one that matters: its true movement is about 0.003, the
+freeze floor is near 0.01, and pooled it reads 0.018. That is the difference
+between a control the search never touches and one it spends budget on.
+
+**The mechanism is not isolated.** A pool of *one* — every probe on a single other
+instance, no concurrency whatsoever — already moves `/leadAmpMidBite` to 0.0214,
+and four instances take it to 0.1195, which points at the comparison crossing
+instances rather than at concurrency. But `/eqBand1` shows the opposite: a pool of
+one matches serial and only four workers move it. Three repeats cannot separate the
+two, and the noisy controls are uninterpretable at that count.
+
+**Why this is bigger than the screen.** Every stage that spends renders in bulk
+spends them on *comparisons*: the screen compares each probe with a baseline,
+CMA-ES ranks a generation against itself, the re-rank compares input levels. Spread
+any of those across plugin instances and the comparison acquires whatever offset
+separates the instances. On a backend that reports `reproducible=false`, that
+offset is not knowable in advance — §12h measured 5.229 dB of band noise on *one*
+reused instance, and nothing has measured the between-instance figure.
+
+**What would be sound.** The benchmark's 50 targets are independent experiments,
+not comparisons: each renders its own truth, runs its own search and reports its
+own score. Giving each target its own instance for its whole run keeps every
+comparison inside one instance while parallelising the part that actually costs
+hours — §12i measured 2865 s for eight targets, so fifty is about five. That is
+where this should go next, and it needs no change to the search at all.
+
+An earlier version of this section claimed the pooled screen kept the same controls
+as the serial one. That came from comparing which controls cleared the floor, which
+is a thresholded view of a noisy measurement and flips on almost nothing; four such
+comparisons contradicted each other before the movements themselves were compared.
+The instrument was the mistake, not the backend.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |

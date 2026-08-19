@@ -705,31 +705,24 @@ def screen(evaluator: Evaluator, seed: Mapping,
         evaluator, repeats, expected=NONREPRODUCIBLE_SCREEN_SAMPLES,
     ))
 
-    # Every probe below is independent of every other — that is the screen's whole
-    # premise, one control moved against a fixed seed — so they go to the pool as
-    # one batch when there is a pool. `evaluate_many` walks the list through
-    # `evaluate` when there is not, which is what this loop did before, and returns
-    # in list order either way so `probes` and `movement` do not depend on which
-    # render happened to finish first.
+    # Deliberately one render at a time, even where a pool exists. The screen
+    # measures each probe *against the baseline*, and on a backend that is not a
+    # function of its inputs a probe rendered by one plugin instance compared with
+    # a baseline rendered by another is not the same measurement. Measured on Tone
+    # King: `/leadAmpMidBite` moves 0.0027 when both come from one instance, 0.0214
+    # with the probes on a second instance and no concurrency at all, and 0.1195
+    # across four — against a floor near 0.01, which is the difference between
+    # frozen and searched. §12j has the rest.
     movement: Dict[str, float] = {}
-    ends = [(dimension, value)
-            for dimension in candidates
-            for value in dimension.bounds()]
-    vectors = []
-    for dimension, value in ends:
-        probe = dict(seed)
-        probe[(dimension.module, dimension.key)] = dimension.quantise(value)
-        vectors.append(probe)
-    scored_ends = evaluator.evaluate_many(vectors)
-    probes.extend(scored_ends)
-    by_dimension: Dict[Any, List] = {}
-    for (dimension, value), scored in zip(ends, scored_ends):
-        by_dimension.setdefault(dimension.path, []).append((value, scored))
-
     for dimension in candidates:
+        low, high = dimension.bounds()
         scores = []
         silenced = []
-        for value, scored in by_dimension[dimension.path]:
+        for value in (low, high):
+            probe = dict(seed)
+            probe[(dimension.module, dimension.key)] = dimension.quantise(value)
+            scored = evaluator.evaluate(probe)
+            probes.append(scored)
             if scored.objectives:
                 scores.append(scored.total)
             else:

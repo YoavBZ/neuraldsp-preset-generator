@@ -24,6 +24,28 @@ it would invalidate every committed `eq_basis.json`.
 **Order is not timing.** `render_many` returns results in the order it was given
 them, whatever order they complete in, because a search that reordered its own
 population under load would be a search whose answer depended on machine load.
+
+**Nothing in the search uses this, and §12j says why.** Spreading a *comparison*
+across plugin instances gives it whatever offset separates them: on Tone King,
+`/leadAmpMidBite` moves 0.0027 measured within one instance, 0.0214 with the probes
+on a second instance and no concurrency at all, and 0.1195 across four — against a
+freeze floor near 0.01. Every bulk stage in `match/search.py` is comparison-based,
+so none of them can use this on a `reproducible=false` backend. The sound
+application is the benchmark, whose targets are independent experiments rather than
+comparisons: one instance per target, for the whole of that target.
+
+**Superseded note, kept because it names the mistake.** On a
+`reproducible=false` backend the screen's output — which controls clear the freeze
+threshold — is a thresholded view of a noisy measurement, and several controls sit
+close enough to that threshold for membership to flip. Four attempts to compare
+pooled against serial selection contradicted each other: 0 of 3 pairs differing
+within each group and 9 of 9 across it, then 0 of 2 across it on a later run, and a
+variant sharing one instance between baseline and probes differing by 7. Comparing
+thresholded sets was the wrong instrument — it amplifies exactly what the threshold
+exists to suppress. What would settle it is a comparison of the *movements*, control
+by control, over enough repeats to separate the pool's contribution from the
+backend's own spread. Until that exists, treat pooled numbers from a
+non-reproducible backend as unvalidated.
 """
 
 from __future__ import annotations
