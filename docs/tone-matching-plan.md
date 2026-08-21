@@ -2953,13 +2953,16 @@ committed — `match/pool.py`, with `Evaluator.evaluate_many` as its batch entry
 and nothing in the search uses it, because measuring what it does to the answer
 showed it changes the answer.
 
-The measurements, on Tone King through the Swift server:
+**Raw throughput, on Morgan** — not Tone King, which is the pack the rest of this
+section measures. 24 renders per configuration, four warm-up renders per instance,
+the single-worker case repeated afterwards to check the baseline had not drifted
+(4.54 to 4.51 renders/s): 1 worker 4.54/s, 2 workers 8.77/s (1.94x), 4 workers
+17.24/s (3.82x). Fingerprinting parallelises too — 65.8 ms on one thread, 21.7 on
+four — so the GIL is not the ceiling. Morgan renders without the resource cycling
+Tone King needs on a first render, so this figure is an upper bound on what Tone
+King would show, not a measurement of it.
 
-**Raw throughput.** 24 renders per configuration, four warm-up renders per
-instance, the single-worker case repeated afterwards to check the baseline had not
-drifted (4.54 to 4.51 renders/s): 1 worker 4.54/s, 2 workers 8.77/s (1.94x),
-4 workers 17.24/s (3.82x). Fingerprinting parallelises too — 65.8 ms on one thread,
-21.7 on four — so the GIL is not the ceiling.
+The rest below is Tone King through the Swift server.
 
 **The screen, wired to the pool.** 17.2 s against 5.2 s on four workers, 3.30x,
 the same 41 renders spent. That figure needs the pool warmed first: unwarmed it is
@@ -2978,17 +2981,56 @@ ones expose it:
 | `/leadAmpMidBite` | 0.0023 | 0.0180 | 0.0157 | 0.001 / 0.002 |
 | `/eqBand2` | 0.4963 | 0.4935 | 0.0028 | 0.0002 / 0.0004 |
 | `/outputGain` | 0.2886 | 0.2858 | 0.0028 | 0.0005 / 0.0002 |
+| `/ampTremoloSpeed` | 0.1319 | 0.1220 | 0.0099 | 0.0059 / 0.0034 |
+| `/eqBand3` | 0.3698 | 0.3672 | 0.0026 | 0.0009 / 0.0014 |
 
-`/leadAmpMidBite` is the one that matters: its true movement is about 0.003, the
-freeze floor is near 0.01, and pooled it reads 0.018. That is the difference
-between a control the search never touches and one it spends budget on.
+`/ampReverb` is worth naming although it is not in that six: serial 0.2436,
+pool-of-one 0.5637, pool-of-four 0.6265 in the later session — the largest
+absolute effect anywhere in the data. It does not appear above because its own
+spread, 0.29 to 0.33 in the session the table comes from, swallows it. A control
+can be moved a great deal by pooling and still fail a test that asks whether the
+move exceeds the control's own noise.
 
-**The mechanism is not isolated.** A pool of *one* — every probe on a single other
-instance, no concurrency whatsoever — already moves `/leadAmpMidBite` to 0.0214,
-and four instances take it to 0.1195, which points at the comparison crossing
-instances rather than at concurrency. But `/eqBand1` shows the opposite: a pool of
-one matches serial and only four workers move it. Three repeats cannot separate the
-two, and the noisy controls are uninterpretable at that count.
+`/leadAmpMidBite` looks like the one that matters — 0.003 measured within one
+instance against 0.018 pooled, across a floor of 0.01 — and an earlier version of
+this section said so. **It is wrong.** The screen freezes twice: below the floor,
+and then the weakest surviving quartile (`match/search.py`). `/leadAmpMidBite` has
+the smallest movement of all 18 controls in every configuration measured — the
+next smallest is 0.070 — so it sits at index 0 of the ordering and the quartile cut
+removes it whether it cleared the floor or not. Reconstructed from the raw
+movements across floors from 0.0027 to 0.098, it is frozen in all three
+configurations.
+
+What pooling actually changes is the **denominator**. 18 controls above the floor
+instead of 17 makes the quartile cut four out of eighteen rather than four out of
+seventeen, and the control that changes hands is `/eqBand5`, whose movement is
+about 0.17. The conclusion survives — pooling changes which controls the search
+touches — but by a mechanism two steps removed from the one this section claimed.
+
+One thing neither experiment recorded: the floor itself. `screen` sets it to
+`max(0.01, the peak-to-peak of five repeat scores)` on a non-reproducible backend,
+so "the floor is near 0.01" is an assumption about a number computed at runtime.
+A run whose repeat spread exceeded 0.018 would freeze the same set either way.
+
+**The mechanism points at the instance, not the concurrency.** A pool of *one* —
+every probe on a single other instance, no concurrency whatsoever — already moves
+`/leadAmpMidBite` from 0.0027 to 0.0214, and the three repeats of each are tight
+enough to settle it: serial [0.0027, 0.0028, 0.0027] against pool-of-one [0.0213,
+0.0214, 0.0214], a within-group spread of 0.0001 against a gap of 0.0187. Four
+instances give 0.018, the same as one.
+
+An earlier version of this section said four instances gave **0.1195**, and called
+the mechanism unresolved on the strength of it. That figure was the mean of
+[0.3229, 0.0177, 0.0179] — one run anomalous across nearly every control at once
+(`gateThreshold` 0.17 against 0.48, `leadAmpTone` 0.20 against 0.47, `eqBand1` 0.25
+against 0.41) — and the two clean runs agree with the five-repeat session's 0.0180
+to three decimals. Quoting a three-point mean without looking at the three points
+is how a contaminated run becomes a published number, and this document had both
+figures two paragraphs apart for the same configuration without noticing.
+
+What three repeats genuinely cannot settle is `/eqBand1`, where a pool of one
+matches serial and only four workers move it — and that comparison rests on the
+same contaminated run.
 
 **Why this is bigger than the screen.** Every stage that spends renders in bulk
 spends them on *comparisons*: the screen compares each probe with a baseline,
@@ -3009,7 +3051,7 @@ same reason, and this is the same class of mistake with a bigger blast radius.
 not comparisons: each renders its own truth, runs its own search and reports its
 own score. Giving each target its own instance for its whole run keeps every
 comparison inside one instance while parallelising the part that actually costs
-hours — §12i measured 2865 s for eight targets, so fifty is about five. That is
+hours — §12i measured 2813 s of arm time for eight targets, so fifty is about five. That is
 where this should go next, and it needs no change to the search at all.
 
 An earlier version of this section claimed the pooled screen kept the same controls

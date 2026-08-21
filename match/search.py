@@ -297,9 +297,6 @@ class Evaluator:
         `Store.best` from picking a candidate that only looked good because the DI
         was quieter.
         """
-        from analysis import io
-        from analysis.compare import compare, scalar
-        from analysis.fingerprint import fingerprint
         from match.renderer import RenderError, cache_key
 
         settings = self._settings(values)
@@ -386,16 +383,18 @@ class Evaluator:
         and in list order, so a run's trial ids and render count do not depend on
         thread scheduling either.
         """
-        if self.pool is not None and not self.renderer.metadata().reproducible:
+        if self.pool is None or len(jobs) < 2:
+            return [self.evaluate(values, di=di, offset_db=offset_db,
+                                  use_cache=use_cache) for values in jobs]
+        if not self.pool.metadata().reproducible:
             # A guard rather than a note in a docstring, because §12j is a rule
             # about what a measurement means and those get ignored when they are
             # only written down. Every caller of this method is comparing its
             # results with each other or with a baseline, and spreading a
             # comparison across plugin instances gives it whatever offset separates
             # them: measured on Tone King, `/leadAmpMidBite` moves 0.0027 within one
-            # instance, 0.0214 with the probes on a second instance and no
-            # concurrency at all, and 0.1195 across four — against a freeze floor
-            # near 0.01.
+            # instance and 0.0214 with the probes on a second instance and no
+            # concurrency at all — 187 times its own repeat spread.
             raise SearchError(
                 f"this backend reports reproducible=false, so a pool of "
                 f"{self.pool.workers} renderers cannot be used to score a batch: "
@@ -406,11 +405,11 @@ class Evaluator:
                 f"backend where the work is independent rather than compared — one "
                 f"instance per benchmark target, for the whole of that target."
             )
-        if self.pool is None or len(jobs) < 2:
-            return [self.evaluate(values, di=di, offset_db=offset_db,
-                                  use_cache=use_cache) for values in jobs]
+        # The members must be the backend this evaluator says it is: the cache key
+        # and the sample rate the audio is read at both come from `self.renderer`
+        # while the audio comes from a member.
+        self.pool.verify_matches(self.renderer)
 
-        from analysis import io
         from match.renderer import RenderError, cache_key
 
         metadata = self.renderer.metadata()
@@ -430,6 +429,10 @@ class Evaluator:
 
         pending = [index for index, row in enumerate(prepared) if row[4] is None]
         measured = {}
+        # A worker that dies on something other than a render failure must not
+        # surface as `KeyError` on the caller with the cause lost to the threading
+        # excepthook. `evaluate` would have propagated it with its traceback.
+        failures: Dict[int, BaseException] = {}
 
         def score(index: int) -> None:
             values, settings, _, _, _ = prepared[index]
@@ -441,7 +444,11 @@ class Evaluator:
             except (RenderError, ValueError) as e:
                 error = f"{type(e).__name__}: {e}"
             elapsed = (time.perf_counter() - started) * 1000.0
-            objectives, printed, error = self._measure(rendered, values, error)
+            try:
+                objectives, printed, error = self._measure(rendered, values, error)
+            except BaseException as unexpected:      # noqa: BLE001 — re-raised below
+                failures[index] = unexpected
+                return
             measured[index] = (rendered, objectives, printed, error, elapsed)
 
         threads = [threading.Thread(target=score, args=(index,), daemon=True)
@@ -450,6 +457,9 @@ class Evaluator:
             thread.start()
         for thread in threads:
             thread.join()
+        if failures:
+            index = min(failures)
+            raise failures[index]
 
         results: List[Candidate] = []
         for index, (values, settings, key, scoring_key, hit) in enumerate(prepared):
@@ -491,9 +501,12 @@ class Evaluator:
         """Turn one render into an objective vector, or into a reason there is none.
 
         Split out of `evaluate` so `evaluate_many` can run it inside the worker
-        thread that produced the render rather than serially afterwards: the
-        fingerprint is ~150 ms against a plugin render of ~370 ms, so scoring on
-        the calling thread would give back a third of what the pool buys.
+        thread that produced the render rather than serially afterwards. The two
+        costs are the same order — §12j measures a fingerprint at 65.8 ms on one
+        thread, and Morgan's 4.54 renders/s implies about 220 ms per render — so
+        scoring serially would give back roughly a quarter of what the pool buys.
+        Earlier drafts of this docstring said 150 ms and 370 ms, which came from a
+        different signal and a different pack than the numbers §12j records.
 
         The three alignment counters are the only shared state here, and they are
         summary statistics for a caveat rather than anything a score depends on —
@@ -729,10 +742,10 @@ def screen(evaluator: Evaluator, seed: Mapping,
     # measures each probe *against the baseline*, and on a backend that is not a
     # function of its inputs a probe rendered by one plugin instance compared with
     # a baseline rendered by another is not the same measurement. Measured on Tone
-    # King: `/leadAmpMidBite` moves 0.0027 when both come from one instance, 0.0214
-    # with the probes on a second instance and no concurrency at all, and 0.1195
-    # across four — against a floor near 0.01, which is the difference between
-    # frozen and searched. §12j has the rest.
+    # King: `/leadAmpMidBite` moves 0.0027 when both come from one instance and
+    # 0.0214 with the probes on a second instance and no concurrency at all. It is
+    # frozen either way — the quartile cut takes it — but the extra control above
+    # the floor changes the cut's denominator and promotes a different one. §12j.
     movement: Dict[str, float] = {}
     for dimension in candidates:
         low, high = dimension.bounds()

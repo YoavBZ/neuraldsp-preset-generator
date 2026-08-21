@@ -21,16 +21,18 @@ is released while a worker waits on it. That also means no renderer source had t
 change — `match/renderer_au.py` is hashed into calibration provenance, and editing
 it would invalidate every committed `eq_basis.json`.
 
-**Order is not timing.** `render_many` returns results in the order it was given
-them, whatever order they complete in, because a search that reordered its own
-population under load would be a search whose answer depended on machine load.
+**Order is not timing.** `match.search.Evaluator.evaluate_many` returns results in
+the order it was given them, whatever order they complete in, because a search that
+reordered its own population under load would be a search whose answer depended on
+machine load. This module only lends out renderers; the ordering guarantee is the
+caller's and is tested there.
 
 **Nothing in the search uses this, and `Evaluator.evaluate_many` refuses to let
 it — §12j says why.** Spreading a *comparison*
 across plugin instances gives it whatever offset separates them: on Tone King,
-`/leadAmpMidBite` moves 0.0027 measured within one instance, 0.0214 with the probes
-on a second instance and no concurrency at all, and 0.1195 across four — against a
-freeze floor near 0.01. Every bulk stage in `match/search.py` is comparison-based,
+`/leadAmpMidBite` moves 0.0027 measured within one instance and 0.0214 with the
+probes on a second instance and no concurrency at all — a gap of 0.0187 against a
+within-group spread of 0.0001. Every bulk stage in `match/search.py` is comparison-based,
 so none of them can use this on a `reproducible=false` backend. The sound
 application is the benchmark, whose targets are independent experiments rather than
 comparisons: one instance per target, for the whole of that target.
@@ -73,15 +75,16 @@ class RendererPool:
             raise PoolError(f"a pool needs at least one renderer, not {workers}")
         self._members: List[Any] = []
         self._free: "queue.Queue[Any]" = queue.Queue()
+        self._closed = False
         try:
             for _ in range(workers):
                 member = factory()
                 self._members.append(member)
                 self._free.put(member)
+            self._verify_agreement()
         except BaseException:
             self.close()
             raise
-        self._verify_agreement()
 
     # --- the contract that makes results interchangeable --------------------
 
@@ -107,7 +110,24 @@ class RendererPool:
     def _identity(member) -> Tuple:
         metadata = member.metadata()
         return (metadata.renderer_id, metadata.plugin_version, metadata.sample_rate,
-                metadata.block_size, metadata.renderer_build, metadata.quality_mode)
+                metadata.block_size, metadata.renderer_build, metadata.quality_mode,
+                metadata.reproducible)
+
+    def verify_matches(self, renderer) -> None:
+        """Refuse a pool that does not describe the same backend as `renderer`.
+
+        `Evaluator` holds one renderer of its own and scores batches through the
+        pool, so the two have to agree or a run mixes backends: the cache key and
+        the sample rate a render is interpreted at come from the evaluator's
+        renderer while the audio comes from a member.
+        """
+        mine, theirs = self._identity(self._members[0]), self._identity(renderer)
+        if mine != theirs:
+            raise PoolError(
+                f"this pool describes {mine}, and the renderer it would be used "
+                f"beside describes {theirs}. Scores from the two are not "
+                f"comparable and the cache key would name the wrong one."
+            )
 
     # --- use ----------------------------------------------------------------
 
@@ -128,44 +148,29 @@ class RendererPool:
         hand out a renderer that nobody else is using. Blocks when every member is
         busy, which is what limits concurrency to `workers`.
         """
+        if self._closed:
+            raise PoolError("this pool is closed; its renderers are gone")
         member = self._free.get()
         try:
             return member.render(di, settings, di_sha256=di_sha256)
         finally:
             self._free.put(member)
 
-    def render_many(self, jobs: Sequence[Tuple[Any, Mapping, Optional[str]]]):
-        """Run `(di, settings, di_sha256)` jobs, results in the order given.
-
-        A job that raises returns its exception rather than propagating it, because
-        one refused vector does not invalidate the others and the caller already
-        knows how to record a failed trial — `Evaluator.evaluate` catches exactly
-        the same errors one at a time.
-        """
-        results: List[Any] = [None] * len(jobs)
-        errors: List[Optional[BaseException]] = [None] * len(jobs)
-
-        def work(index: int, di, settings, di_sha) -> None:
-            member = self._free.get()
-            try:
-                results[index] = member.render(di, settings, di_sha256=di_sha)
-            except BaseException as error:      # noqa: BLE001 — handed back below
-                errors[index] = error
-            finally:
-                self._free.put(member)
-
-        threads = [
-            threading.Thread(target=work, args=(index, di, settings, di_sha),
-                             daemon=True)
-            for index, (di, settings, di_sha) in enumerate(jobs)
-        ]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
-        return list(zip(results, errors))
-
     def close(self) -> None:
+        """Close every member and make the pool unusable.
+
+        Draining `_free` is the half that matters. Leaving members in the queue let
+        a post-close `render_one` succeed — and on an `AudioUnitRenderer` that is
+        worse than a stale handle, because `close()` clears its process handle and
+        the next render starts a *fresh* Swift server and plugin instance that
+        `_members` no longer tracks and a second `close()` cannot stop.
+        """
+        self._closed = True
+        while True:
+            try:
+                self._free.get_nowait()
+            except queue.Empty:
+                break
         for member in self._members:
             close = getattr(member, "close", None)
             if close is not None:

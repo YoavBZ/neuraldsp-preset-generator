@@ -1437,6 +1437,74 @@ def test_a_pool_returns_results_in_the_order_it_was_given_them(space, seed, targ
     ]
 
 
+def test_a_pool_that_is_not_the_evaluators_backend_is_refused(space, seed, target):
+    """The guard has to read the object that renders. Every render in a batch comes
+    from a pool member, while the cache key and the sample rate the audio is read
+    at come from the evaluator's own renderer — so a reproducible evaluator holding
+    a non-reproducible pool would score across instances *and* file the trials
+    under the wrong backend."""
+    from dataclasses import replace
+
+    from match.pool import PoolError, RendererPool
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(Stateful, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(S.SearchError, match="reproducible=false"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+    class OtherVersion(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), plugin_version="9.9.9")
+
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(OtherVersion, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(PoolError, match="not comparable|describes"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+
+def test_a_closed_pool_cannot_hand_out_a_renderer():
+    """`close()` used to empty `_members` and leave them in the free queue, so a
+    later render succeeded — and on a real backend started a fresh plugin instance
+    that nothing tracked and a second close could not stop."""
+    from match.pool import PoolError, RendererPool
+
+    pool = RendererPool(SyntheticRenderer, workers=2)
+    pool.close()
+
+    assert pool.workers == 0
+    with pytest.raises(PoolError, match="closed"):
+        pool.render_one(di(), {})
+
+
+def test_a_worker_failure_reaches_the_caller_with_its_cause(space, seed, target):
+    """Not as `KeyError` with the real exception lost to the threading excepthook."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Reproducible(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+    evaluator = S.Evaluator(Reproducible(), target, di(), space, recipe=seed)
+
+    def explode(*args, **kwargs):
+        raise MemoryError("deliberate, and not a render failure")
+
+    with RendererPool(Reproducible, workers=2) as pool:
+        evaluator.pool = pool
+        evaluator._measure = explode
+        with pytest.raises(MemoryError, match="deliberate"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+
 def test_a_pool_of_disagreeing_backends_is_refused():
     """Members must be the same backend. Two plugin versions in one pool would put
     two backends' numbers in one shortlist and rank them against each other."""
@@ -1487,8 +1555,8 @@ def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
     """§12j as a guard rather than a docstring. Every caller of `evaluate_many`
     compares its results with each other or with a baseline, and a comparison
     spread across plugin instances picks up whatever offset separates them —
-    measured on Tone King as 0.0027 within one instance against 0.1195 across
-    four, on a control whose freeze floor is near 0.01."""
+    measured on Tone King as 0.0027 within one instance against 0.0214 with the
+    probes on a second instance and no concurrency at all."""
     from dataclasses import replace
 
     from match.pool import RendererPool
@@ -1503,6 +1571,10 @@ def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
         evaluator.pool = pool
         with pytest.raises(S.SearchError, match="reproducible=false"):
             evaluator.evaluate_many([dict(seed), dict(seed)])
+        # A batch too small to reach the pool is not a §12j violation: one render
+        # has nothing to compare itself with.
+        assert evaluator.evaluate_many([dict(seed)])[0].objectives
+        assert evaluator.evaluate_many([]) == []
         # And the one-at-a-time path is unaffected: it renders once per call, so
         # there is no comparison to contaminate.
         assert evaluator.evaluate(seed).objectives
