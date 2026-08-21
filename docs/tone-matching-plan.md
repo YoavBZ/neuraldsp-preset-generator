@@ -2998,6 +2998,13 @@ separates the instances. On a backend that reports `reproducible=false`, that
 offset is not knowable in advance — §12h measured 5.229 dB of band noise on *one*
 reused instance, and nothing has measured the between-instance figure.
 
+**The rule is a guard, not a note.** `Evaluator.evaluate_many` raises when a pool
+is set on a backend reporting `reproducible=false`, naming §12j and the sound
+alternative. A constraint that lives only in a docstring is a constraint someone
+wires past — this repository refuses a stale EQ basis, an output-gain control
+without `unit: db` and a pool whose members disagree about their backend for the
+same reason, and this is the same class of mistake with a bigger blast radius.
+
 **What would be sound.** The benchmark's 50 targets are independent experiments,
 not comparisons: each renders its own truth, runs its own search and reports its
 own score. Giving each target its own instance for its whole run keeps every

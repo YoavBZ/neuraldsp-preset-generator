@@ -386,6 +386,26 @@ class Evaluator:
         and in list order, so a run's trial ids and render count do not depend on
         thread scheduling either.
         """
+        if self.pool is not None and not self.renderer.metadata().reproducible:
+            # A guard rather than a note in a docstring, because §12j is a rule
+            # about what a measurement means and those get ignored when they are
+            # only written down. Every caller of this method is comparing its
+            # results with each other or with a baseline, and spreading a
+            # comparison across plugin instances gives it whatever offset separates
+            # them: measured on Tone King, `/leadAmpMidBite` moves 0.0027 within one
+            # instance, 0.0214 with the probes on a second instance and no
+            # concurrency at all, and 0.1195 across four — against a freeze floor
+            # near 0.01.
+            raise SearchError(
+                f"this backend reports reproducible=false, so a pool of "
+                f"{self.pool.workers} renderers cannot be used to score a batch: "
+                f"the results would be compared with each other across plugin "
+                f"instances, and §12j of docs/tone-matching-plan.md measures what "
+                f"that does to the answer.\n"
+                f"  Leave `Evaluator.pool` unset here. A pool is sound on this "
+                f"backend where the work is independent rather than compared — one "
+                f"instance per benchmark target, for the whole of that target."
+            )
         if self.pool is None or len(jobs) < 2:
             return [self.evaluate(values, di=di, offset_db=offset_db,
                                   use_cache=use_cache) for values in jobs]

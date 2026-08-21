@@ -25,7 +25,8 @@ it would invalidate every committed `eq_basis.json`.
 them, whatever order they complete in, because a search that reordered its own
 population under load would be a search whose answer depended on machine load.
 
-**Nothing in the search uses this, and §12j says why.** Spreading a *comparison*
+**Nothing in the search uses this, and `Evaluator.evaluate_many` refuses to let
+it — §12j says why.** Spreading a *comparison*
 across plugin instances gives it whatever offset separates them: on Tone King,
 `/leadAmpMidBite` moves 0.0027 measured within one instance, 0.0214 with the probes
 on a second instance and no concurrency at all, and 0.1195 across four — against a

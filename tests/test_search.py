@@ -1479,3 +1479,30 @@ def test_one_refused_vector_does_not_take_the_batch_with_it(space, seed, target)
     assert not batched[2].objectives
     assert "deliberate refusal" in batched[2].error
     assert evaluator.renders == 3, "a refused render still cost one"
+
+
+def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
+    space, seed, target,
+):
+    """§12j as a guard rather than a docstring. Every caller of `evaluate_many`
+    compares its results with each other or with a baseline, and a comparison
+    spread across plugin instances picks up whatever offset separates them —
+    measured on Tone King as 0.0027 within one instance against 0.1195 across
+    four, on a control whose freeze floor is near 0.01."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    evaluator = S.Evaluator(Stateful(), target, di(), space, recipe=seed)
+    with RendererPool(Stateful, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(S.SearchError, match="reproducible=false"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+        # And the one-at-a-time path is unaffected: it renders once per call, so
+        # there is no comparison to contaminate.
+        assert evaluator.evaluate(seed).objectives
