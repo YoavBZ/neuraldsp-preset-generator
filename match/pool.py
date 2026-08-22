@@ -54,8 +54,7 @@ non-reproducible backend as unvalidated.
 from __future__ import annotations
 
 import queue
-import threading
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 
 class PoolError(RuntimeError):
@@ -121,6 +120,7 @@ class RendererPool:
         the sample rate a render is interpreted at come from the evaluator's
         renderer while the audio comes from a member.
         """
+        self._require_open()
         mine, theirs = self._identity(self._members[0]), self._identity(renderer)
         if mine != theirs:
             raise PoolError(
@@ -137,24 +137,34 @@ class RendererPool:
 
     def metadata(self):
         """The backend all members agree they are."""
+        self._require_open()
         return self._members[0].metadata()
 
     def render_one(self, di, settings: Mapping, di_sha256: Optional[str] = None):
         """Borrow a member, render, give it back.
 
         The unit `match.search.Evaluator.evaluate_many` wants: it runs its own
-        thread per job so the ~150 ms fingerprint happens beside the render that
-        produced it rather than serially afterwards, and it only needs the pool to
+        thread per job so the fingerprint happens beside the render that produced
+        it rather than serially afterwards, and it only needs the pool to
         hand out a renderer that nobody else is using. Blocks when every member is
         busy, which is what limits concurrency to `workers`.
         """
-        if self._closed:
-            raise PoolError("this pool is closed; its renderers are gone")
-        member = self._free.get()
+        self._require_open()
+        # A timeout rather than a bare get: `close()` drains the queue, so a caller
+        # racing a close would otherwise wait on a member that is never coming back.
+        try:
+            member = self._free.get(timeout=300)
+        except queue.Empty:
+            self._require_open()
+            raise PoolError("no renderer became free within 300 s")
         try:
             return member.render(di, settings, di_sha256=di_sha256)
         finally:
             self._free.put(member)
+
+    def _require_open(self) -> None:
+        if self._closed:
+            raise PoolError("this pool is closed; its renderers are gone")
 
     def close(self) -> None:
         """Close every member and make the pool unusable.

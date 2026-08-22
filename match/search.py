@@ -440,13 +440,18 @@ class Evaluator:
             error = None
             rendered = None
             try:
-                rendered = self.pool.render_one(signal, settings, di_sha)
-            except (RenderError, ValueError) as e:
-                error = f"{type(e).__name__}: {e}"
-            elapsed = (time.perf_counter() - started) * 1000.0
-            try:
+                try:
+                    rendered = self.pool.render_one(signal, settings, di_sha)
+                except (RenderError, ValueError) as e:
+                    error = f"{type(e).__name__}: {e}"
+                elapsed = (time.perf_counter() - started) * 1000.0
                 objectives, printed, error = self._measure(rendered, values, error)
             except BaseException as unexpected:      # noqa: BLE001 — re-raised below
+                # Everything that is not "this vector would not render". A dead
+                # Swift server gives `BrokenPipeError` through the subprocess pipe,
+                # which is neither a `RenderError` nor a `ValueError`, and it used
+                # to reach the caller as `KeyError` with the cause left in the
+                # threading excepthook.
                 failures[index] = unexpected
                 return
             measured[index] = (rendered, objectives, printed, error, elapsed)
@@ -458,8 +463,13 @@ class Evaluator:
         for thread in threads:
             thread.join()
         if failures:
-            index = min(failures)
-            raise failures[index]
+            # Charge what was actually rendered before raising. `SearchResult`'s
+            # render count is documented as the truth rather than an estimate, and
+            # a batch that dies after four renders spent four.
+            for index in sorted(measured):
+                self.renders += 1
+                self.wall_ms += measured[index][4]
+            raise failures[min(failures)]
 
         results: List[Candidate] = []
         for index, (values, settings, key, scoring_key, hit) in enumerate(prepared):

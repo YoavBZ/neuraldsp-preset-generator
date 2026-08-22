@@ -1505,6 +1505,45 @@ def test_a_worker_failure_reaches_the_caller_with_its_cause(space, seed, target)
             evaluator.evaluate_many([dict(seed), dict(seed)])
 
 
+def test_a_render_that_dies_outside_the_expected_errors_still_reaches_the_caller(
+    space, seed, target,
+):
+    """A dead Swift server gives `BrokenPipeError` through the subprocess pipe,
+    which is neither `RenderError` nor `ValueError`. Catching only those left the
+    caller with `KeyError` and the cause in the threading excepthook — and the
+    renders already spent uncounted."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class DiesMidBatch(SyntheticRenderer):
+        calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            if type(self).calls == 3:
+                raise BrokenPipeError("the swift server went away mid-batch")
+            return super().render(di_samples, settings, **kwargs)
+
+    DiesMidBatch.calls = 0
+    evaluator = S.Evaluator(DiesMidBatch(), target, di(), space, recipe=seed)
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 10.0
+
+    with RendererPool(DiesMidBatch, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(BrokenPipeError, match="went away"):
+            evaluator.evaluate_many(vectors)
+
+    assert evaluator.renders > 0, (
+        "the renders that did happen were paid for and must be counted"
+    )
+
+
 def test_a_pool_of_disagreeing_backends_is_refused():
     """Members must be the same backend. Two plugin versions in one pool would put
     two backends' numbers in one shortlist and rank them against each other."""

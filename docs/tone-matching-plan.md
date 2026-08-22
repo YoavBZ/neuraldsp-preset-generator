@@ -3012,12 +3012,14 @@ One thing neither experiment recorded: the floor itself. `screen` sets it to
 so "the floor is near 0.01" is an assumption about a number computed at runtime.
 A run whose repeat spread exceeded 0.018 would freeze the same set either way.
 
-**The mechanism points at the instance, not the concurrency.** A pool of *one* —
+**Two mechanisms, and the clean data settles both.** A pool of *one* —
 every probe on a single other instance, no concurrency whatsoever — already moves
 `/leadAmpMidBite` from 0.0027 to 0.0214, and the three repeats of each are tight
 enough to settle it: serial [0.0027, 0.0028, 0.0027] against pool-of-one [0.0213,
 0.0214, 0.0214], a within-group spread of 0.0001 against a gap of 0.0187. Four
-instances give 0.018, the same as one.
+instances give 0.018 against one instance's 0.021 — themselves distinguishable by
+this section's own test, but both far above the 0.0027 measured inside a single
+instance, and both on the other side of the floor.
 
 An earlier version of this section said four instances gave **0.1195**, and called
 the mechanism unresolved on the strength of it. That figure was the mean of
@@ -3028,9 +3030,20 @@ to three decimals. Quoting a three-point mean without looking at the three point
 is how a contaminated run becomes a published number, and this document had both
 figures two paragraphs apart for the same configuration without noticing.
 
-What three repeats genuinely cannot settle is `/eqBand1`, where a pool of one
-matches serial and only four workers move it — and that comparison rests on the
-same contaminated run.
+`/eqBand1` shows the other mechanism, and it is not the same one. There a pool of
+one is indistinguishable from serial — 0.5384 against 0.5417, a gap of 0.0033 — and
+four workers move it to 0.4117, a gap of 0.127 against a largest within-group
+spread of 0.0058, about 22 times it. Dropping the contaminated run makes that
+comparison *cleaner* rather than weaker, and the two that remain agree with the
+five-repeat session's 0.4130 to 0.0013. An earlier version of this paragraph
+dismissed `/eqBand1` as resting on the contaminated run; it does not, and saying so
+threw away the section's own second piece of evidence.
+
+So there are two independent reasons not to pool a comparison. `/leadAmpMidBite` is
+an offset between instances: one instance and four give nearly the same answer, and
+both differ from measuring inside a single instance. `/eqBand1` is an effect of
+concurrency itself: one instance behaves like serial, four do not. Either alone
+would be enough.
 
 **Why this is bigger than the screen.** Every stage that spends renders in bulk
 spends them on *comparisons*: the screen compares each probe with a baseline,
