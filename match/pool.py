@@ -53,6 +53,7 @@ non-reproducible backend as unvalidated.
 
 from __future__ import annotations
 
+import contextlib
 import queue
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
@@ -152,6 +153,41 @@ class RendererPool:
         self._require_open()
         return self._members[0].metadata()
 
+    @contextlib.contextmanager
+    def borrow(self):
+        """Lease one member for the whole of a caller's block.
+
+        The unit §12j says is sound on a backend that does not repeat itself. A
+        `render_one` lease lasts one render, so consecutive renders in one caller
+        can land on different instances — which is exactly what disqualified
+        pooling the screen, where a probe must be comparable with its baseline. A
+        borrow held across a whole benchmark target keeps every comparison that
+        target makes inside one instance, and parallelises the part that is
+        genuinely independent: the targets themselves.
+        """
+        self._require_open()
+        member = self._take()
+        try:
+            yield member
+        finally:
+            self._free.put(member)
+
+    def _take(self):
+        """Wait for a free member, noticing a close under us in under a second."""
+        waited = 0.0
+        while True:
+            self._require_open()
+            try:
+                return self._free.get(timeout=CLOSED_POLL_S)
+            except queue.Empty:
+                waited += CLOSED_POLL_S
+                if waited >= WEDGED_MEMBER_S:
+                    raise PoolError(
+                        f"no renderer became free in {WEDGED_MEMBER_S:g} s, which "
+                        f"is far longer than any render this backend makes — a "
+                        f"member has most likely stopped responding"
+                    ) from None
+
     def render_one(self, di, settings: Mapping, di_sha256: Optional[str] = None):
         """Borrow a member, render, give it back.
 
@@ -162,24 +198,7 @@ class RendererPool:
         busy, which is what limits concurrency to `workers`.
         """
         self._require_open()
-        # Polled rather than one long wait, because `close()` drains the queue and a
-        # caller racing a close is otherwise waiting on a member that is never
-        # coming back. The poll notices that in under a second; the deadline is the
-        # separate question of a member that has stopped responding.
-        waited = 0.0
-        while True:
-            self._require_open()
-            try:
-                member = self._free.get(timeout=CLOSED_POLL_S)
-                break
-            except queue.Empty:
-                waited += CLOSED_POLL_S
-                if waited >= WEDGED_MEMBER_S:
-                    raise PoolError(
-                        f"no renderer became free in {WEDGED_MEMBER_S:g} s, which "
-                        f"is far longer than any render this backend makes — a "
-                        f"member has most likely stopped responding"
-                    ) from None
+        member = self._take()
         try:
             return member.render(di, settings, di_sha256=di_sha256)
         finally:

@@ -30,6 +30,7 @@ plugin. `--targets` and `--budget` exist so a smaller version can run in a test.
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -346,7 +347,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                       amp: Optional[str] = None,
                       switches: Optional[Sequence[str]] = None,
                       selectors: Optional[Sequence[str]] = None,
-                      progress=None) -> BenchmarkResult:
+                      progress=None, workers: int = 1,
+                      renderer_factory=None) -> BenchmarkResult:
     """Run each arm against the same targets, and report them side by side.
 
     `seed` is the recipe-stack starting point, which is also the `recipe` arm's whole
@@ -424,7 +426,18 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     # unchanged.
     streams = rng.spawn(int(targets))
 
-    for index in range(int(targets)):
+    def one_target(index, own_renderer, own_scorer):
+        """Everything one target needs, on one renderer.
+
+        Every comparison a target makes — its truth against each arm's answer —
+        stays inside `own_renderer`, which is what §12j requires: the offset
+        between two plugin instances lands in any comparison spread across them.
+        Targets themselves compare with nothing, so they are free to run at once.
+
+        Returns `(outcomes, caveats)` rather than appending, so a concurrent caller
+        can put them in index order instead of completion order.
+        """
+        outcomes, caveats = [], []
         stream = streams[index]
         truth = dict(seed)
         truth.update(random_vector(space, stream, supported=supported, base=truth))
@@ -432,14 +445,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             truth = invert.apply_to(truth, selection, space)
         elif any(dimension.key == "selectedAmp" for dimension in space.dimensions):
             truth[("", "selectedAmp")] = _get_or(seed, ("", "selectedAmp"), 2)
-        rendered = renderer.render(probe_di, scorer._settings(truth))
+        rendered = own_renderer.render(probe_di, own_scorer._settings(truth))
         if rendered.silent:
-            result.caveats.append(
+            caveats.append(
                 f"target {index} rendered silent from a legal parameter vector — "
                 f"a gate threshold above the signal, most likely — so it was skipped "
                 f"rather than counted as a failure of any arm"
             )
-            continue
+            return outcomes, caveats
         target = fingerprint(io.from_samples(
             rendered.audio, rendered.metadata.sample_rate),
             regime="probe", excerpt_s=None)
@@ -460,20 +473,18 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 # reporting 0 renders for it understates what the failure cost. The
                 # error carries the count when the raiser knows it.
                 outcome.renders = getattr(e, "renders_spent", 0)
-                result.outcomes.append(outcome)
+                outcomes.append(outcome)
                 continue
             # Deduped: fifty targets produce fifty copies of the same sentence about
             # the budget, and a caveat block nobody can read is a caveat block nobody
             # reads. Prefixed with the arm, because "the optimiser never ran" is a fact
             # about `full` and would otherwise look like a fact about the benchmark.
             for text in arm_caveats:
-                tagged = f"{arm}: {text}"
-                if tagged not in result.caveats:
-                    result.caveats.append(tagged)
-            scoring_renders = scorer.renders
-            scored = scorer_score(scorer, target, found,
+                caveats.append(f"{arm}: {text}")
+            scoring_renders = own_scorer.renders
+            scored = scorer_score(own_scorer, target, found,
                                   reference_audio=rendered.audio)
-            outcome.renders = renders + (scorer.renders - scoring_renders)
+            outcome.renders = renders + (own_scorer.renders - scoring_renders)
             outcome.wall_ms = (time.perf_counter() - started) * 1000.0
             if scored is None:
                 outcome.failed = True
@@ -490,7 +501,60 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                     ])
                 outcome.parameter_mae = mae
                 outcome.selector_accuracy = accuracy
-            result.outcomes.append(outcome)
+            outcomes.append(outcome)
+        return outcomes, caveats
+
+    def collect(index, outcomes, caveats):
+        """Fold one target's results in, deduping caveats as the loop used to.
+
+        Fifty targets produce fifty copies of the same sentence about the budget,
+        and a caveat block nobody can read is a caveat block nobody reads.
+        """
+        result.outcomes.extend(outcomes)
+        for text in caveats:
+            if text not in result.caveats:
+                result.caveats.append(text)
+
+    if workers > 1 and renderer_factory is not None:
+        # One instance per target, held for the whole target. Targets compare with
+        # nothing outside themselves, which is the property §12j says a parallel
+        # render has to have; the pool refuses to be used any other way on a
+        # backend that does not repeat itself.
+        from match.pool import RendererPool
+
+        done = {}
+        lock = threading.Lock()
+        finished = [0]
+
+        def work(index):
+            with pool.borrow() as member:
+                own_scorer = search.Evaluator(
+                    member, fingerprint(
+                        io.from_samples(probe_di, member.metadata().sample_rate),
+                        regime="probe", excerpt_s=None),
+                    probe_di, space, profile=profile, reference_audio=probe_di)
+                outcomes, caveats = one_target(index, member, own_scorer)
+            with lock:
+                done[index] = (outcomes, caveats)
+                finished[0] += 1
+                if progress is not None:
+                    progress(finished[0], int(targets))
+
+        with RendererPool(renderer_factory, workers=workers) as pool:
+            threads = [threading.Thread(target=work, args=(index,), daemon=True)
+                       for index in range(int(targets))]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        # Index order, not completion order: a benchmark whose rows depended on
+        # which target finished first would not be the same experiment twice.
+        for index in sorted(done):
+            collect(index, *done[index])
+        return result
+
+    for index in range(int(targets)):
+        collect(index, *one_target(index, renderer, scorer))
         if progress is not None:
             progress(index + 1, int(targets))
     return result

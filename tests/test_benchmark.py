@@ -682,3 +682,42 @@ def test_a_target_depends_on_its_index_and_not_on_the_ones_before_it(space, seed
 
     assert steady == disturbed, "a target must not move because of what preceded it"
     assert steady[0] != steady[1], "and the targets must still differ from each other"
+
+
+def test_targets_run_concurrently_and_give_the_same_answer(space, seed):
+    """The one parallel use §12j says is sound: targets are independent
+    experiments, so each takes an instance for its whole run and every comparison
+    it makes stays inside that instance. The answer must not depend on how many
+    ran at once."""
+    probe = fx.plucks(seconds=0.5)
+
+    serial = B.compare_baselines(
+        SyntheticRenderer(), space, probe, seed, targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3))
+    parallel = B.compare_baselines(
+        SyntheticRenderer(), space, probe, seed, targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3),
+        workers=3, renderer_factory=SyntheticRenderer)
+
+    def rows(result):
+        return [(o.arm, o.target_index, o.objective, o.parameter_mae)
+                for o in result.outcomes]
+
+    assert rows(parallel) == rows(serial), (
+        "same targets, same arms, same scores — and in index order, not the order "
+        "they happened to finish in"
+    )
+    assert [o.target_index for o in parallel.outcomes] == sorted(
+        o.target_index for o in parallel.outcomes)
+
+
+def test_a_concurrent_run_reports_progress_once_per_target(space, seed):
+    seen = []
+    B.compare_baselines(
+        SyntheticRenderer(), space, fx.plucks(seconds=0.5), seed, targets=4,
+        budget=12, arms=("recipe",), rng=np.random.default_rng(3), workers=2,
+        renderer_factory=SyntheticRenderer,
+        progress=lambda done, total: seen.append((done, total)))
+
+    assert [done for done, _ in seen] == [1, 2, 3, 4]
+    assert {total for _, total in seen} == {4}
