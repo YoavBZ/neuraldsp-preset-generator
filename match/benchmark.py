@@ -403,9 +403,31 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         reference_audio=probe_di)
     result = BenchmarkResult()
 
+    # One independent stream per target, rather than one generator threaded through
+    # every target and every search in turn. Two reasons, and the second is why this
+    # is a fix rather than a refactor.
+    #
+    # It makes a target reproducible. §12i had to record that `--seed 0` does not
+    # pin individual targets, because the search draws a variable number of times —
+    # CMA-ES can stop early, and how many controls the screen freezes differs per
+    # target — so on a backend that does not repeat itself, target *i*'s consumption
+    # moved target *i+1*'s vector. Target *i* now depends on the seed and on `i`,
+    # and on nothing that happened before it.
+    #
+    # And it is the precondition for running targets concurrently: a shared
+    # generator makes the order they execute in part of the answer. Each target is
+    # an independent experiment — its own truth, its own search, its own score — so
+    # nothing but the generator was keeping them in a line.
+    #
+    # This does change which vectors get sampled, so figures from before it are not
+    # comparable target-for-target. The distribution they are drawn from is
+    # unchanged.
+    streams = rng.spawn(int(targets))
+
     for index in range(int(targets)):
+        stream = streams[index]
         truth = dict(seed)
-        truth.update(random_vector(space, rng, supported=supported, base=truth))
+        truth.update(random_vector(space, stream, supported=supported, base=truth))
         if selection:
             truth = invert.apply_to(truth, selection, space)
         elif any(dimension.key == "selectedAmp" for dimension in space.dimensions):
@@ -428,7 +450,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             try:
                 found, renders, arm_caveats = _run_arm(
                     arm, renderer, target, probe_di, space, seed, budget, profile,
-                    invert, search, rng, pack_id, amp, switches, selectors,
+                    invert, search, stream, pack_id, amp, switches, selectors,
                     reference_audio=rendered.audio)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True

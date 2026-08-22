@@ -656,3 +656,29 @@ def test_a_renderer_with_no_pack_dimensions_is_refused_before_sampling():
             targets=0, budget=10, arms=("recipe",), pack_id="toneking",
             amp="lead",
         )
+
+
+def test_a_target_depends_on_its_index_and_not_on_the_ones_before_it(space, seed):
+    """§12i had to record that `--seed 0` does not pin individual targets, because
+    the search drew a variable number of times from the generator that sampled
+    them. Target *i* now depends on the seed and on *i* alone — which is also what
+    lets targets run concurrently, since a shared generator makes execution order
+    part of the answer."""
+    import numpy as np
+
+    def truths(targets, greedy):
+        """Sample `targets` vectors, optionally burning draws in between."""
+        streams = np.random.default_rng(5).spawn(targets)
+        out = []
+        for index, stream in enumerate(streams):
+            out.append(B.random_vector(space, stream, base=dict(seed)))
+            if greedy:
+                # Stands in for a search consuming an unpredictable number of
+                # draws before the next target is sampled.
+                np.random.default_rng(99 + index).random(index * 7 + 1)
+        return out
+
+    steady, disturbed = truths(4, greedy=False), truths(4, greedy=True)
+
+    assert steady == disturbed, "a target must not move because of what preceded it"
+    assert steady[0] != steady[1], "and the targets must still differ from each other"
