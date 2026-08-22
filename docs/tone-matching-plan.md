@@ -3097,9 +3097,12 @@ benchmark's targets are independent experiments rather than comparisons. This is
 that exception, measured.
 
 `RendererPool.borrow()` leases a member for a whole caller block rather than for
-one render, which is the distinction §12j turns on. A target's truth render, its
-three arms and its scoring all happen on the instance it borrowed; targets compare
-with nothing outside themselves, so they run at once.
+one render, which is the distinction §12j turns on. Each worker thread borrows one
+instance for its life and runs targets from a shared queue on it, so a target's
+truth render, its arms and its scoring all happen on one instance. Several targets
+sharing an instance is not a comparison spread across instances — targets compare
+with nothing outside themselves — and it is what the serial path has always done
+with its single renderer.
 
 ```bash
 .venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
@@ -3135,6 +3138,15 @@ recorded it of its own 0.6739. The row that could have moved is the full arm's
 parameter MAE, 0.2715 serial against 0.2676 parallel, and it belongs there more
 than either.
 
+**The control this section said was missing.** It exists: the two parallel runs
+are the same condition against itself, differing only in how the pool was built.
+Paired over sixteen targets they give recipe −0.0427 ± 0.0285, inversion
+−0.0805 ± 0.0373, full −0.0014 ± 0.0067 — t of 1.50, **2.16** and 0.22. That 2.16
+is the largest in the whole data set, and it is same-condition against
+same-condition, where there is no serial-versus-parallel effect to find. It retires
+the inversion arm's cross-condition 1.8 far better than observing that none of them
+reaches significance.
+
 **A second run agrees more closely than the first.** That re-measurement is
 contaminated for timing but not for scores — an objective does not depend on how
 many cores were free — and its paired differences are +0.0011, +0.0082 and +0.0099
@@ -3145,15 +3157,16 @@ that are not. Two samples, not a distribution.
 **Where the divergence sits.** The per-target serial-versus-parallel differences
 correlate at r = +0.95 between the recipe and full arms and about +0.74 for the
 other pairs; six of sixteen targets carry nearly all of it while the other ten
-agree to within 0.007 to 0.021. All three arms score against the same truth render,
+have mean absolute differences of 0.007 to 0.021 by arm — means, not ceilings;
+the largest single difference among those ten is 0.067. All three arms score against the same truth render,
 so a target whose truth landed differently moves every arm together — which is what
 that correlation is. It puts the divergence in the truth render rather than in the
 search, and says more than the means agreeing does.
 
 **1.46x, not 3.82x, and the gap is a startup this code serialises.** Four Tone
 King instances each pay about 46 s loading impulse responses, and `RendererPool`
-builds its members in a plain loop — so about 173 s passes before the first target
-starts, which the log shows directly: the first four targets finish at 197 to 200 s
+built its members in a plain loop at the time of this run — so about 173 s passed
+before the first target started, which the log shows directly: the first four targets finish at 197 to 200 s
 and every wave after takes 24 s. That is this constructor, not a property of the
 plugin.
 
@@ -3166,8 +3179,11 @@ work was 688 s against 384 s for identical work. Arm timings that double are loa
 not construction. **The speedup after concurrent construction is unmeasured on a
 quiet machine**, and 2.8x stays a prediction.
 
-The arms themselves do not slow each other down: 384 s of summed arm work in about
-96 s of wall clock on four workers, an efficiency near 4.0. Extrapolated to 50
+The arms themselves do not slow each other down: 384 s of arm work summed across
+all three arms, in about 96 s of wall clock on four workers, an efficiency near
+4.0. (Three different figures in this section have been called "summed arm work";
+this one and the 688 s above are both all-three-arm totals, 383.5 s and 726.2 s,
+and their ratio is the 1.9x the load argument rests on.) Extrapolated to 50
 targets the parallel run lands near 470 s against about 1250 s serial. Both are
 arithmetic, neither has been run, the 1.46x is a single sample, and there is no
 serial-versus-serial control at sixteen targets.
@@ -3176,7 +3192,7 @@ serial-versus-serial control at sixteen targets.
 gave arm means differing by 0.22 to 0.25 — as large as anything separating serial
 from parallel, and larger than the gaps above. Paired, that spread is one target of
 the four: its per-target differences are 1.08, 0.96 and 0.92 across the three arms,
-while the other three differ by at most 0.12. The noise is heavy-tailed and
+while the other three differ by at most 0.122. The noise is heavy-tailed and
 target-specific rather than a general 0.22, which is both more accurate and more
 useful. An earlier version of this work
 compared one 4-target serial run with one 4-target parallel run, found differences

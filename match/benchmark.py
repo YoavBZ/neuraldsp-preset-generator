@@ -517,10 +517,12 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 result.caveats.append(text)
 
     if workers > 1 and renderer_factory is not None:
-        # One instance per target, held for the whole target. Targets compare with
-        # nothing outside themselves, which is the property §12j says a parallel
-        # render has to have; the pool refuses to be used any other way on a
-        # backend that does not repeat itself.
+        # One instance per worker thread, held for that thread's whole life. The
+        # property §12j requires is that every comparison a target makes stays
+        # inside one instance, and it does: a target's truth render, its arms and
+        # its scoring all go through the member its thread holds. Several targets
+        # sharing an instance is not a comparison spread across instances — and it
+        # is what the serial path has always done with its single renderer.
         from match.pool import RendererPool
 
         done = {}
@@ -555,7 +557,12 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                         return
                     try:
                         outcomes, caveats = one_target(index, member, own_scorer)
-                    except BaseException as unexpected:   # noqa: BLE001
+                    except (KeyboardInterrupt, SystemExit):
+                        # Not this net's business. Swallowing these turned a
+                        # Ctrl-C into a "failed target" and carried on with the
+                        # rest of the run.
+                        raise
+                    except Exception as unexpected:   # noqa: BLE001
                         # A target that dies outside the arm loop — its truth
                         # render, or building its evaluator — used to take its
                         # thread with it and leave no trace but a shorter table.

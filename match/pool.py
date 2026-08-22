@@ -35,7 +35,7 @@ probes on a second instance and no concurrency at all — a gap of 0.0187 agains
 within-group spread of 0.0001. Every bulk stage in `match/search.py` is comparison-based,
 so none of them can use this on a `reproducible=false` backend. The sound
 application is the benchmark, whose targets are independent experiments rather than
-comparisons: one instance per target, for the whole of that target.
+comparisons: one instance per worker thread, with every render a target makes staying on the instance its thread holds.
 
 **Superseded note, kept because it names the mistake.** On a
 `reproducible=false` backend the screen's output — which controls clear the freeze
@@ -95,23 +95,32 @@ class RendererPool:
             # loading impulse responses — so a serial loop put roughly three
             # minutes in front of a four-worker run before any work began, which
             # §12k first recorded as a property of the plugin and is not.
-            made: List[Any] = [None] * workers
             errors: List[Optional[BaseException]] = [None] * workers
+            registered = threading.Lock()
+
             def build(slot: int) -> None:
                 try:
-                    made[slot] = factory()
+                    member = factory()
                 except BaseException as error:      # noqa: BLE001 — raised below
                     errors[slot] = error
-            threads = [threading.Thread(target=build, args=(slot,))
+                    return
+                # Registered here, not after the join. A member that exists only in
+                # a local list is a member `close()` cannot reach, and the join is
+                # exactly where an interrupt lands — Ctrl-C during a 46-second
+                # plugin load is the likeliest moment anyone sends one, because it
+                # is the stretch where nothing appears to be happening. Unwinding
+                # past the join left four live Swift servers that nothing tracked
+                # and a second `close()` could not stop.
+                with registered:
+                    self._members.append(member)
+                    self._free.put(member)
+
+            threads = [threading.Thread(target=build, args=(slot,), daemon=True)
                        for slot in range(workers)]
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
-            for member in made:
-                if member is not None:
-                    self._members.append(member)
-                    self._free.put(member)
             for error in errors:
                 if error is not None:
                     raise error

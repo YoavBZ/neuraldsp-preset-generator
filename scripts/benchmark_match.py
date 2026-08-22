@@ -70,8 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="print the switches and selectors --enumerate accepts for "
                          "this pack and amp, and exit")
     ap.add_argument("--workers", type=positive_int, default=1, metavar="N",
-                    help="run N targets at once, each holding one plugin instance "
-                         "for its whole target (default: 1). Targets are "
+                    help="run N targets at once across N plugin instances, each "
+                         "thread keeping one for its whole life (default: 1). "
+                         "Targets are "
                          "independent experiments, so this is the one place §12j "
                          "of the plan allows parallel renders — every comparison "
                          "stays inside one instance. Costs N plugin instances of "
