@@ -3135,6 +3135,13 @@ recorded it of its own 0.6739. The row that could have moved is the full arm's
 parameter MAE, 0.2715 serial against 0.2676 parallel, and it belongs there more
 than either.
 
+**A second run agrees more closely than the first.** That re-measurement is
+contaminated for timing but not for scores — an objective does not depend on how
+many cores were free — and its paired differences are +0.0011, +0.0082 and +0.0099
+for recipe, inversion and full: 0.0, 0.2 and 0.3 standard errors, against the first
+run's 1.2, 1.8 and 0.4. The arm closest to significant is now the middle of three
+that are not. Two samples, not a distribution.
+
 **Where the divergence sits.** The per-target serial-versus-parallel differences
 correlate at r = +0.95 between the recipe and full arms and about +0.74 for the
 other pairs; six of sixteen targets carry nearly all of it while the other ten
@@ -3148,8 +3155,16 @@ King instances each pay about 46 s loading impulse responses, and `RendererPool`
 builds its members in a plain loop — so about 173 s passes before the first target
 starts, which the log shows directly: the first four targets finish at 197 to 200 s
 and every wave after takes 24 s. That is this constructor, not a property of the
-plugin, and building the members concurrently should turn 1.46x into something
-nearer 2.8x. It has not been done.
+plugin.
+
+Building the members concurrently was then done, and it does what it was meant to:
+the first wave of four targets now completes at 80 s where it used to complete at
+197 s. What it has **not** shown is a matching speedup. The run measuring it came
+in at 243 s against 274 — 1.65x rather than the predicted 2.8x — but that run
+shared the machine with another job, and the signature is unmistakable: summed arm
+work was 688 s against 384 s for identical work. Arm timings that double are load,
+not construction. **The speedup after concurrent construction is unmeasured on a
+quiet machine**, and 2.8x stays a prediction.
 
 The arms themselves do not slow each other down: 384 s of summed arm work in about
 96 s of wall clock on four workers, an efficiency near 4.0. Extrapolated to 50
