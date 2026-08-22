@@ -1654,3 +1654,31 @@ def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
         # And the one-at-a-time path is unaffected: it renders once per call, so
         # there is no comparison to contaminate.
         assert evaluator.evaluate(seed).objectives
+
+
+def test_a_borrow_lasts_the_whole_block_and_comes_back_after_it():
+    """The lease §12j turns on: `render_one` returns its member per render, so two
+    renders by one caller can land on different instances. A borrow held across a
+    caller's block keeps everything that caller compares inside one instance."""
+    from match.pool import PoolError, RendererPool
+
+    with RendererPool(SyntheticRenderer, workers=2) as pool:
+        with pool.borrow() as first:
+            assert pool._free.qsize() == 1, "the borrowed member is not on offer"
+            with pool.borrow() as second:
+                assert second is not first, "two borrows cannot share a member"
+                assert pool._free.qsize() == 0
+        assert pool._free.qsize() == 2, "both come back when their blocks end"
+
+        try:
+            with pool.borrow():
+                raise ValueError("deliberate")
+        except ValueError:
+            pass
+        assert pool._free.qsize() == 2, "and a member comes back on an exception"
+
+    pool_closed = RendererPool(SyntheticRenderer, workers=1)
+    pool_closed.close()
+    with pytest.raises(PoolError, match="closed"):
+        with pool_closed.borrow():
+            pass

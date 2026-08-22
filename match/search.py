@@ -403,7 +403,8 @@ class Evaluator:
                 f"that does to the answer.\n"
                 f"  Leave `Evaluator.pool` unset here. A pool is sound on this "
                 f"backend where the work is independent rather than compared — one "
-                f"instance per benchmark target, for the whole of that target."
+                f"instance per benchmark worker, with each target's comparisons "
+                f"staying on the one its thread holds."
             )
         # The members must be the backend this evaluator says it is: the cache key
         # and the sample rate the audio is read at both come from `self.renderer`
