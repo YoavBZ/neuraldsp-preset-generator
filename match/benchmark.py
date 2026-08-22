@@ -462,9 +462,9 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             outcome = Outcome(arm=arm, target_index=index)
             try:
                 found, renders, arm_caveats = _run_arm(
-                    arm, renderer, target, probe_di, space, seed, budget, profile,
-                    invert, search, stream, pack_id, amp, switches, selectors,
-                    reference_audio=rendered.audio)
+                    arm, own_renderer, target, probe_di, space, seed, budget,
+                    profile, invert, search, stream, pack_id, amp, switches,
+                    selectors, reference_audio=rendered.audio)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"

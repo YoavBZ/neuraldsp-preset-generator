@@ -721,3 +721,32 @@ def test_a_concurrent_run_reports_progress_once_per_target(space, seed):
 
     assert [done for done, _ in seen] == [1, 2, 3, 4]
     assert {total for _, total in seen} == {4}
+
+
+def test_every_render_a_target_makes_goes_to_its_own_instance(space, seed):
+    """The invariant §12j requires, and the one the synthetic chain cannot check by
+    comparing answers: a stateless reproducible renderer gives the same numbers
+    whether or not the arms accidentally share one instance, which is how a shared
+    renderer survived a passing test and only showed up as a state-file race on the
+    real plugin."""
+    import threading
+
+    seen = {}
+
+    class Tagged(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            seen.setdefault(threading.current_thread().name, set()).add(id(self))
+            return super().render(di_samples, settings, **kwargs)
+
+    B.compare_baselines(
+        Tagged(), space, fx.plucks(seconds=0.5), seed, targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3),
+        workers=4, renderer_factory=Tagged)
+
+    worker_threads = [name for name in seen if name != "MainThread"]
+    assert worker_threads, "the targets must actually have run on worker threads"
+    for name in worker_threads:
+        assert len(seen[name]) == 1, (
+            f"{name} rendered through {len(seen[name])} instances; a target's "
+            f"comparisons must all happen on the one it borrowed"
+        )

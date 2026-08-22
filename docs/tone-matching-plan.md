@@ -3070,7 +3070,8 @@ wires past — this repository refuses a stale EQ basis, an output-gain control
 without `unit: db` and a pool whose members disagree about their backend for the
 same reason, and this is the same class of mistake with a bigger blast radius.
 
-**What would be sound.** The benchmark's 50 targets are independent experiments,
+**What would be sound** — and §12k has since measured it at 1.46x on 16 targets.
+The benchmark's 50 targets are independent experiments,
 not comparisons: each renders its own truth, runs its own search and reports its
 own score. Giving each target its own instance for its whole run keeps every
 comparison inside one instance while parallelising the part that actually costs
@@ -3082,6 +3083,70 @@ as the serial one. That came from comparing which controls cleared the floor, wh
 is a thresholded view of a noisy measurement and flips on almost nothing; four such
 comparisons contradicted each other before the movements themselves were compared.
 The instrument was the mistake, not the backend.
+
+## 12k. The one place the pool pays
+
+§12j measured why a renderer pool cannot go inside the search — every bulk stage
+there spends renders on comparisons, and the offset between two plugin instances
+lands in any comparison spread across them — and named the exception: the
+benchmark's targets are independent experiments rather than comparisons. This is
+that exception, measured.
+
+`RendererPool.borrow()` leases a member for a whole caller block rather than for
+one render, which is the distinction §12j turns on. A target's truth render, its
+three arms and its scoring all happen on the instance it borrowed; targets compare
+with nothing outside themselves, so they run at once.
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 16 --budget 60 --seed 7 --seconds 2.0 --workers 4
+```
+
+Tone King 1.0.3, 16 targets, budget 60, the same seed both ways:
+
+| | serial | 4 workers |
+|---|---:|---:|
+| wall clock | 400 s | **274 s** (1.46x) |
+| failures | 0 | 0 |
+| recipe | 2.1849 | 2.1411 |
+| inversion | 1.3244 | 1.2357 |
+| full | 1.0648 | 1.0534 |
+| parameter MAE, recipe | 0.2559 | 0.2559 |
+| selector accuracy | 0.6501 | 0.6501 |
+
+**The arms agree.** Each gap is well inside one standard error of its own mean:
+0.0437 against 0.1762 for recipe, 0.0887 against 0.1447 for inversion, 0.0113
+against 0.1279 for full — 0.25, 0.61 and 0.09 standard errors. Parameter MAE and
+selector accuracy come out identical to four decimals, which is the per-target
+streams doing their job: both runs sampled the same sixteen targets.
+
+**1.46x, not 3.82x, and the gap is startup.** Four Tone King instances each pay
+about 46 s loading impulse responses before their first render. That is a fixed
+cost against a run that grows with targets: at 16 it eats most of the win, and the
+arms' own work — 364 s serial against 363 s parallel by the per-arm timer — is
+being done four at a time while the clock is dominated by getting four plugins
+ready. Extrapolating the same split to 50 targets puts the parallel run near 470 s
+against about 1250 s serial, so it should improve; that is arithmetic and has not
+been run.
+
+**Do not read a 4-target run.** At four targets two *serial* runs of the same seed
+gave arm means differing by 0.22 to 0.25 — as large as anything separating serial
+from parallel, and larger than the gaps above. An earlier version of this work
+compared one 4-target serial run with one 4-target parallel run, found differences
+of 0.24 to 0.27, and was about to write them down as evidence of contamination. The
+control is what stopped it. The benchmark's own run-to-run spread at small target
+counts is the thing to measure first, and §12i's eight-target figures should be
+read with that in mind.
+
+**One defect this found that the unit tests could not.** The arms were being run
+through the renderer the caller passed in rather than the one the target borrowed,
+so four concurrent targets shared a single instance for their searches. On the
+plugin that showed up as a state-file race — `could not read state-4.bin` — a 25%
+failure rate on one arm, and the `full` arm taking 184 s where serial took 88. The
+synthetic chain cannot see it: `SyntheticRenderer` is stateless and reproducible,
+so sharing one instance across four threads changes nothing it reports. The tests
+agreed while the plugin failed, which is the same blind spot §12j's screen
+measurements had, in the opposite direction.
 
 ## 13. Reading list, in the order it becomes relevant
 
