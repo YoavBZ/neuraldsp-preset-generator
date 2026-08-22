@@ -214,6 +214,7 @@ def main() -> None:
         result.caveats.insert(0, backend_caveat)
 
     print(f"\n{args.targets} targets, budget {args.budget}, "
+          f"{args.workers} worker(s), "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
           f"{time.time() - started:.0f}s total\n")
@@ -227,6 +228,10 @@ def main() -> None:
             "targets": args.targets, "budget": args.budget, "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,
+            # Whether the pool was used, and how wide. §12j's standing rule is to
+            # treat pooled numbers from a non-reproducible backend as unvalidated,
+            # which needs the artifact to say whether they are pooled.
+            "workers": args.workers,
             # Which backend, and whether it repeats itself. A table of objectives
             # with no backend beside it is the one thing this project has agreed
             # never to write down.

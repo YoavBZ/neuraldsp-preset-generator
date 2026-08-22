@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import contextlib
 import queue
+import threading
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 
@@ -89,10 +90,31 @@ class RendererPool:
         self._free: "queue.Queue[Any]" = queue.Queue()
         self._closed = False
         try:
-            for _ in range(workers):
-                member = factory()
-                self._members.append(member)
-                self._free.put(member)
+            # Built at once, not one after another. Each `AudioUnitRenderer` spends
+            # its construction starting a server and, on Tone King, about 46 s
+            # loading impulse responses — so a serial loop put roughly three
+            # minutes in front of a four-worker run before any work began, which
+            # §12k first recorded as a property of the plugin and is not.
+            made: List[Any] = [None] * workers
+            errors: List[Optional[BaseException]] = [None] * workers
+            def build(slot: int) -> None:
+                try:
+                    made[slot] = factory()
+                except BaseException as error:      # noqa: BLE001 — raised below
+                    errors[slot] = error
+            threads = [threading.Thread(target=build, args=(slot,))
+                       for slot in range(workers)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            for member in made:
+                if member is not None:
+                    self._members.append(member)
+                    self._free.put(member)
+            for error in errors:
+                if error is not None:
+                    raise error
             self._verify_agreement()
         except BaseException:
             self.close()

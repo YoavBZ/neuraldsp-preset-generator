@@ -30,6 +30,7 @@ plugin. `--targets` and `--budget` exist so a smaller version can run in a test.
 
 from __future__ import annotations
 
+import queue
 import threading
 import time
 from dataclasses import dataclass, field
@@ -525,28 +526,70 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         done = {}
         lock = threading.Lock()
         finished = [0]
+        # `workers` threads pulling from a queue, not one thread per target. A
+        # thread per target starts every target at once and leaves all but
+        # `workers` of them blocked inside `borrow()`, which is bounded by the
+        # pool's wedged-member deadline — so a long run would have had its later
+        # targets time out, their threads die, and their results simply be absent
+        # from a report that still said it ran `targets` of them. At the
+        # documented `--targets 50 --budget 300` roughly three quarters of the run
+        # would have vanished that way.
+        pending: "queue.Queue[int]" = queue.Queue()
+        for index in range(int(targets)):
+            pending.put(index)
 
-        def work(index):
+        def work():
+            # One member for the thread's whole life. Different targets on one
+            # instance is fine — targets compare with nothing outside themselves —
+            # and it matches what the serial path does with its single renderer.
             with pool.borrow() as member:
                 own_scorer = search.Evaluator(
                     member, fingerprint(
                         io.from_samples(probe_di, member.metadata().sample_rate),
                         regime="probe", excerpt_s=None),
                     probe_di, space, profile=profile, reference_audio=probe_di)
-                outcomes, caveats = one_target(index, member, own_scorer)
-            with lock:
-                done[index] = (outcomes, caveats)
-                finished[0] += 1
-                if progress is not None:
-                    progress(finished[0], int(targets))
+                while True:
+                    try:
+                        index = pending.get_nowait()
+                    except queue.Empty:
+                        return
+                    try:
+                        outcomes, caveats = one_target(index, member, own_scorer)
+                    except BaseException as unexpected:   # noqa: BLE001
+                        # A target that dies outside the arm loop — its truth
+                        # render, or building its evaluator — used to take its
+                        # thread with it and leave no trace but a shorter table.
+                        # It is a failed target now, and it says so.
+                        outcomes = [Outcome(arm=arm, target_index=index, failed=True,
+                                            error=f"{type(unexpected).__name__}: "
+                                                  f"{unexpected}")
+                                    for arm in arms]
+                        caveats = [
+                            f"target {index} failed outside its arms: "
+                            f"{type(unexpected).__name__}: {unexpected}"
+                        ]
+                    with lock:
+                        done[index] = (outcomes, caveats)
+                        finished[0] += 1
+                        if progress is not None:
+                            progress(finished[0], int(targets))
 
         with RendererPool(renderer_factory, workers=workers) as pool:
-            threads = [threading.Thread(target=work, args=(index,), daemon=True)
-                       for index in range(int(targets))]
+            threads = [threading.Thread(target=work, daemon=True)
+                       for _ in range(min(int(workers), int(targets)))]
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
+        missing = [index for index in range(int(targets)) if index not in done]
+        if missing:
+            # Never silently. A benchmark that reports on a subset it did not
+            # choose is worse than one that fails.
+            raise BenchmarkError(
+                f"{len(missing)} of {targets} targets produced no result at all "
+                f"(indices {missing[:5]}{'…' if len(missing) > 5 else ''}). This is "
+                f"a bug in the concurrent path, not a property of the run."
+            )
         # Index order, not completion order: a benchmark whose rows depended on
         # which target finished first would not be the same experiment twice.
         for index in sorted(done):

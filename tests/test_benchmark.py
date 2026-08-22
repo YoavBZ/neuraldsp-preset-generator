@@ -689,7 +689,7 @@ def test_targets_run_concurrently_and_give_the_same_answer(space, seed):
     experiments, so each takes an instance for its whole run and every comparison
     it makes stays inside that instance. The answer must not depend on how many
     ran at once."""
-    probe = fx.plucks(seconds=0.5)
+    probe = fx.plucks(seconds=2.0, gap=0.9, seed=13)
 
     serial = B.compare_baselines(
         SyntheticRenderer(), space, probe, seed, targets=4, budget=12,
@@ -703,6 +703,11 @@ def test_targets_run_concurrently_and_give_the_same_answer(space, seed):
         return [(o.arm, o.target_index, o.objective, o.parameter_mae)
                 for o in result.outcomes]
 
+    assert serial.outcomes, (
+        "a probe short enough to silence every target makes this test compare two "
+        "empty lists — which is how three concurrency tests here passed against a "
+        "bug that cost a 25% failure rate on the plugin"
+    )
     assert rows(parallel) == rows(serial), (
         "same targets, same arms, same scores — and in index order, not the order "
         "they happened to finish in"
@@ -714,8 +719,9 @@ def test_targets_run_concurrently_and_give_the_same_answer(space, seed):
 def test_a_concurrent_run_reports_progress_once_per_target(space, seed):
     seen = []
     B.compare_baselines(
-        SyntheticRenderer(), space, fx.plucks(seconds=0.5), seed, targets=4,
-        budget=12, arms=("recipe",), rng=np.random.default_rng(3), workers=2,
+        SyntheticRenderer(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13), seed,
+        targets=4, budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+        workers=2,
         renderer_factory=SyntheticRenderer,
         progress=lambda done, total: seen.append((done, total)))
 
@@ -739,14 +745,45 @@ def test_every_render_a_target_makes_goes_to_its_own_instance(space, seed):
             return super().render(di_samples, settings, **kwargs)
 
     B.compare_baselines(
-        Tagged(), space, fx.plucks(seconds=0.5), seed, targets=4, budget=12,
+        Tagged(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13), seed,
+        targets=4, budget=12,
         arms=("recipe", "inversion"), rng=np.random.default_rng(3),
         workers=4, renderer_factory=Tagged)
 
     worker_threads = [name for name in seen if name != "MainThread"]
     assert worker_threads, "the targets must actually have run on worker threads"
+    assert sum(len(ids) for ids in seen.values()) >= len(worker_threads), (
+        "and they must have rendered something — see the empty-list trap above"
+    )
     for name in worker_threads:
         assert len(seen[name]) == 1, (
             f"{name} rendered through {len(seen[name])} instances; a target's "
             f"comparisons must all happen on the one it borrowed"
         )
+
+
+def test_a_target_that_dies_outside_its_arms_is_reported_not_dropped(space, seed):
+    """A worker exception used to kill its thread and leave the target absent from
+    a table that still claimed to have run it. At the documented 50 targets on 4
+    workers that would have silently discarded most of the run."""
+    class DiesOnTheTruthRender(SyntheticRenderer):
+        calls = 0
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            if type(self).calls == 2:
+                raise OSError("deliberate, outside any arm")
+            return super().render(di_samples, settings, **kwargs)
+
+    DiesOnTheTruthRender.calls = 0
+    result = B.compare_baselines(
+        DiesOnTheTruthRender(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=3, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3), workers=2,
+        renderer_factory=DiesOnTheTruthRender)
+
+    indices = {o.target_index for o in result.outcomes}
+    assert indices == {0, 1, 2}, f"every target must appear, got {sorted(indices)}"
+    failed = [o for o in result.outcomes if o.failed]
+    assert len(failed) == 1 and "deliberate" in failed[0].error
+    assert any("outside its arms" in c for c in result.caveats)
