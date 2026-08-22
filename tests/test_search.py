@@ -1379,3 +1379,278 @@ def test_a_generation_that_all_failed_stops_rather_than_chasing_it(space, seed,
         f"{evaluator.renders} renders spent on a backend that failed every one"
     )
     assert any("failed to render" in c for c in caveats), caveats
+
+
+# --- the pool ---------------------------------------------------------------
+
+
+def test_a_pool_scores_a_batch_exactly_as_the_one_at_a_time_path_does(
+    space, seed, target,
+):
+    """The whole claim. A pool may only make the same run faster — if it changes
+    a number, every measurement in this repository taken with it is a different
+    experiment from the ones taken without."""
+    from match.pool import RendererPool
+
+    vectors = [dict(seed) for _ in range(6)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 8.0
+
+    serial = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    one_at_a_time = [serial.evaluate(values) for values in vectors]
+
+    pooled = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(SyntheticRenderer, workers=3) as pool:
+        pooled.pool = pool
+        batched = pooled.evaluate_many(vectors)
+
+    assert [c.total for c in batched] == [c.total for c in one_at_a_time]
+    assert [c.objectives for c in batched] == [c.objectives for c in one_at_a_time]
+    assert pooled.renders == serial.renders
+
+
+def test_a_pool_returns_results_in_the_order_it_was_given_them(space, seed, target):
+    """Not the order they finish in. A population reordered by machine load is a
+    search whose answer depends on how busy the machine was."""
+    import time as _time
+    from match.pool import RendererPool
+
+    class Uneven(SyntheticRenderer):
+        """Later jobs finish first."""
+
+        def render(self, di_samples, settings=None, **kwargs):
+            volume = (settings or {}).get(f"{AMP}Amp/{AMP}Volume", 0.0)
+            _time.sleep(max(0.0, (90.0 - float(volume)) / 400.0))
+            return super().render(di_samples, settings, **kwargs)
+
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 30.0 + index * 20.0
+
+    evaluator = S.Evaluator(Uneven(), target, di(), space, recipe=seed)
+    with RendererPool(Uneven, workers=4) as pool:
+        evaluator.pool = pool
+        batched = evaluator.evaluate_many(vectors)
+
+    assert [c.values[(f"{AMP}Amp", f"{AMP}Volume")] for c in batched] == [
+        30.0, 50.0, 70.0, 90.0
+    ]
+
+
+def test_a_pool_that_is_not_the_evaluators_backend_is_refused(space, seed, target):
+    """The guard has to read the object that renders. Every render in a batch comes
+    from a pool member, while the cache key and the sample rate the audio is read
+    at come from the evaluator's own renderer — so a reproducible evaluator holding
+    a non-reproducible pool would score across instances *and* file the trials
+    under the wrong backend."""
+    from dataclasses import replace
+
+    from match.pool import PoolError, RendererPool
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(Stateful, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(S.SearchError, match="reproducible=false"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+    class OtherVersion(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), plugin_version="9.9.9")
+
+    evaluator = S.Evaluator(SyntheticRenderer(), target, di(), space, recipe=seed)
+    with RendererPool(OtherVersion, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(PoolError, match="not comparable|describes"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+
+def test_a_closed_pool_cannot_hand_out_a_renderer():
+    """`close()` used to empty `_members` and leave them in the free queue, so a
+    later render succeeded — and on a real backend started a fresh plugin instance
+    that nothing tracked and a second close could not stop."""
+    from match.pool import PoolError, RendererPool
+
+    pool = RendererPool(SyntheticRenderer, workers=2)
+    pool.close()
+
+    assert pool.workers == 0
+    with pytest.raises(PoolError, match="closed"):
+        pool.render_one(di(), {})
+
+
+def test_a_worker_failure_reaches_the_caller_with_its_cause(space, seed, target):
+    """Not as `KeyError` with the real exception lost to the threading excepthook."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Reproducible(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+    evaluator = S.Evaluator(Reproducible(), target, di(), space, recipe=seed)
+
+    def explode(*args, **kwargs):
+        raise MemoryError("deliberate, and not a render failure")
+
+    with RendererPool(Reproducible, workers=2) as pool:
+        evaluator.pool = pool
+        evaluator._measure = explode
+        with pytest.raises(MemoryError, match="deliberate"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+
+
+def test_a_render_that_dies_outside_the_expected_errors_still_reaches_the_caller(
+    space, seed, target,
+):
+    """A dead Swift server gives `BrokenPipeError` through the subprocess pipe,
+    which is neither `RenderError` nor `ValueError`. Catching only those left the
+    caller with `KeyError` and the cause in the threading excepthook — and the
+    renders already spent uncounted."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class DiesMidBatch(SyntheticRenderer):
+        calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            if type(self).calls == 3:
+                raise BrokenPipeError("the swift server went away mid-batch")
+            return super().render(di_samples, settings, **kwargs)
+
+    DiesMidBatch.calls = 0
+    evaluator = S.Evaluator(DiesMidBatch(), target, di(), space, recipe=seed)
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 10.0
+
+    with RendererPool(DiesMidBatch, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(BrokenPipeError, match="went away"):
+            evaluator.evaluate_many(vectors)
+
+    assert evaluator.renders == 3, (
+        "three renders completed before the fourth died; all three were paid for"
+    )
+
+
+def test_a_render_that_scores_badly_is_still_charged(space, seed, target):
+    """Charging from the scored results under-counted by one for every job that
+    rendered and then failed to score — which is the shape the catch was added for,
+    so the count was wrong in exactly the case it was meant to cover."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Reproducible(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+    evaluator = S.Evaluator(Reproducible(), target, di(), space, recipe=seed)
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 10.0
+
+    calls = []
+    real = evaluator._measure
+
+    def third_one_explodes(rendered, values, error):
+        calls.append(1)
+        if len(calls) == 3:
+            raise MemoryError("scored badly, after the render was paid for")
+        return real(rendered, values, error)
+
+    with RendererPool(Reproducible, workers=2) as pool:
+        evaluator.pool = pool
+        evaluator._measure = third_one_explodes
+        with pytest.raises(MemoryError):
+            evaluator.evaluate_many(vectors)
+
+    assert evaluator.renders == 4, (
+        "every render completed and was paid for, whatever scoring then did"
+    )
+
+
+def test_a_pool_of_disagreeing_backends_is_refused():
+    """Members must be the same backend. Two plugin versions in one pool would put
+    two backends' numbers in one shortlist and rank them against each other."""
+    from dataclasses import replace
+
+    from match.pool import PoolError, RendererPool
+
+    made = []
+
+    class Drifting(SyntheticRenderer):
+        def metadata(self):
+            base = super().metadata()
+            made.append(1)
+            return replace(base, plugin_version=f"1.0.{len(made)}")
+
+    with pytest.raises(PoolError, match="same backend"):
+        RendererPool(Drifting, workers=2)
+
+
+def test_one_refused_vector_does_not_take_the_batch_with_it(space, seed, target):
+    from match.pool import RendererPool
+    from match.renderer import RenderError
+
+    class RefusesTheLoudest(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            if float((settings or {}).get(f"{AMP}Amp/{AMP}Volume", 0.0)) > 80.0:
+                raise RenderError("deliberate refusal")
+            return super().render(di_samples, settings, **kwargs)
+
+    vectors = [dict(seed) for _ in range(3)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 30.0
+
+    evaluator = S.Evaluator(RefusesTheLoudest(), target, di(), space, recipe=seed)
+    with RendererPool(RefusesTheLoudest, workers=3) as pool:
+        evaluator.pool = pool
+        batched = evaluator.evaluate_many(vectors)
+
+    assert batched[0].objectives and batched[1].objectives
+    assert not batched[2].objectives
+    assert "deliberate refusal" in batched[2].error
+    assert evaluator.renders == 3, "a refused render still cost one"
+
+
+def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
+    space, seed, target,
+):
+    """§12j as a guard rather than a docstring. Every caller of `evaluate_many`
+    compares its results with each other or with a baseline, and a comparison
+    spread across plugin instances picks up whatever offset separates them —
+    measured on Tone King as 0.0027 within one instance against 0.0214 with the
+    probes on a second instance and no concurrency at all."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    evaluator = S.Evaluator(Stateful(), target, di(), space, recipe=seed)
+    with RendererPool(Stateful, workers=2) as pool:
+        evaluator.pool = pool
+        with pytest.raises(S.SearchError, match="reproducible=false"):
+            evaluator.evaluate_many([dict(seed), dict(seed)])
+        # A batch too small to reach the pool is not a §12j violation: one render
+        # has nothing to compare itself with.
+        assert evaluator.evaluate_many([dict(seed)])[0].objectives
+        assert evaluator.evaluate_many([]) == []
+        # And the one-at-a-time path is unaffected: it renders once per call, so
+        # there is no comparison to contaminate.
+        assert evaluator.evaluate(seed).objectives

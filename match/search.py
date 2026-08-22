@@ -34,6 +34,7 @@ caller's, and every stage reports what it used so the arithmetic is checkable.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -252,6 +253,14 @@ class Evaluator:
         self.alignment_attempts = 0
         self.untrusted_alignments = 0
         self.weakest_alignment: Optional[float] = None
+        # Held while the three counters above are updated. `evaluate_many` scores
+        # inside its worker threads, and a summary statistic that loses an
+        # increment is a wrong number in a report even though no score depends
+        # on it.
+        self._counters = threading.Lock()
+        # Set by a caller that has several renderers to spend. `evaluate` is
+        # unaffected either way: one vector is one render.
+        self.pool = None
         self.set_reference(target, reference_audio)
 
     def set_reference(self, target, reference_audio=None) -> None:
@@ -288,9 +297,6 @@ class Evaluator:
         `Store.best` from picking a candidate that only looked good because the DI
         was quieter.
         """
-        from analysis import io
-        from analysis.compare import compare, scalar
-        from analysis.fingerprint import fingerprint
         from match.renderer import RenderError, cache_key
 
         settings = self._settings(values)
@@ -333,50 +339,7 @@ class Evaluator:
         self.renders += 1
         self.wall_ms += elapsed
 
-        objectives: Optional[Dict[str, float]] = None
-        printed = None
-        if rendered is not None and not rendered.silent:
-            printed = fingerprint(io.from_samples(rendered.audio, metadata.sample_rate),
-                                  regime="probe", excerpt_s=None)
-            waveform_residual = None
-            if self.residual_enabled:
-                from analysis.align import align, residual_db
-
-                reference, candidate, alignment = align(
-                    self.reference_audio, rendered.audio, metadata.sample_rate)
-                self.alignment_attempts += 1
-                correlation = abs(float(alignment.correlation))
-                self.weakest_alignment = (
-                    correlation if self.weakest_alignment is None
-                    else min(self.weakest_alignment, correlation)
-                )
-                if not alignment.trustworthy:
-                    # ``align`` deliberately returns the unshifted signals here.
-                    # The resulting residual is conservative about an unknown
-                    # timing relationship instead of inventing one from noise.
-                    self.untrusted_alignments += 1
-                waveform_residual = residual_db(reference, candidate)
-                if waveform_residual is None:
-                    error = (
-                        "paired waveform residual is not measurable: the aligned "
-                        "reference has no usable mono energy"
-                    )
-            vector = compare(
-                self.target, printed, profile=self.profile,
-                prior_deviation=self._prior_deviation(values),
-                complexity=self._complexity(values),
-                residual_db=waveform_residual,
-            )
-            objectives = {name: float(value) for name, value in vector.values.items()
-                          if value is not None}
-            total = scalar(vector)
-            if error is not None or total is None:
-                # A required waveform term failed, or nothing the profile weights
-                # was measurable on both sides. Either way there is no ordering to
-                # be had; it must not become a zero or a silently renormalised score.
-                objectives = None
-            else:
-                objectives["total"] = float(total)
+        objectives, printed, error = self._measure(rendered, values, error)
 
         trial_id = None
         if self.store is not None and self.run_id is not None:
@@ -399,6 +362,225 @@ class Evaluator:
         return Candidate(values=dict(values), objectives=objectives or {},
                          total=float((objectives or {}).get("total", float("inf"))),
                          trial_id=trial_id, error=error)
+
+    def evaluate_many(self, jobs: Sequence[Mapping], di=None,
+                      offset_db: float = 0.0,
+                      use_cache: bool = True) -> List[Candidate]:
+        """Score several vectors, rendering them at once where a pool allows it.
+
+        Returns candidates **in the order given**, whatever order they finish in.
+        A search whose population came back reordered under load would be a search
+        whose answer depended on how busy the machine was.
+
+        The three stages that spend renders in bulk all ask for independent ones —
+        the screen's two per parameter, a CMA-ES generation's λ samples, the
+        re-rank's replicates — so this is where a pool pays. Without one it walks
+        the list through `evaluate`, which is exactly what those stages did before
+        and is still what a reproducible backend wants: a second renderer buys
+        nothing when the first is a function of its inputs.
+
+        Cache lookups, budget counting and store writes stay on the calling thread
+        and in list order, so a run's trial ids and render count do not depend on
+        thread scheduling either.
+        """
+        if self.pool is None or len(jobs) < 2:
+            return [self.evaluate(values, di=di, offset_db=offset_db,
+                                  use_cache=use_cache) for values in jobs]
+        if not self.pool.metadata().reproducible:
+            # A guard rather than a note in a docstring, because §12j is a rule
+            # about what a measurement means and those get ignored when they are
+            # only written down. Every caller of this method is comparing its
+            # results with each other or with a baseline, and spreading a
+            # comparison across plugin instances gives it whatever offset separates
+            # them: measured on Tone King, `/leadAmpMidBite` moves 0.0027 within one
+            # instance and 0.0214 with the probes on a second instance and no
+            # concurrency at all — 187 times its own repeat spread.
+            raise SearchError(
+                f"this backend reports reproducible=false, so a pool of "
+                f"{self.pool.workers} renderers cannot be used to score a batch: "
+                f"the results would be compared with each other across plugin "
+                f"instances, and §12j of docs/tone-matching-plan.md measures what "
+                f"that does to the answer.\n"
+                f"  Leave `Evaluator.pool` unset here. A pool is sound on this "
+                f"backend where the work is independent rather than compared — one "
+                f"instance per benchmark target, for the whole of that target."
+            )
+        # The members must be the backend this evaluator says it is: the cache key
+        # and the sample rate the audio is read at both come from `self.renderer`
+        # while the audio comes from a member.
+        self.pool.verify_matches(self.renderer)
+
+        from match.renderer import RenderError, cache_key
+
+        metadata = self.renderer.metadata()
+        signal = self.probe_di if di is None else di
+        di_sha = _hash(signal)
+
+        prepared = []
+        for values in jobs:
+            settings = self._settings(values)
+            key = cache_key(metadata, di_sha, settings)
+            scoring_key = _scoring_key(key, self.target, self.profile, self.recipe,
+                                       self.reference_audio_sha)
+            hit = None
+            if use_cache and metadata.reproducible and self.store is not None:
+                hit = self.store.cached(scoring_key)
+            prepared.append((values, settings, key, scoring_key, hit))
+
+        pending = [index for index, row in enumerate(prepared) if row[4] is None]
+        measured = {}
+        # A worker that dies on something other than a render failure must not
+        # surface as `KeyError` on the caller with the cause lost to the threading
+        # excepthook. `evaluate` would have propagated it with its traceback.
+        failures: Dict[int, BaseException] = {}
+        spent: Dict[int, float] = {}
+
+        def score(index: int) -> None:
+            values, settings, _, _, _ = prepared[index]
+            started = time.perf_counter()
+            error = None
+            rendered = None
+            try:
+                try:
+                    rendered = self.pool.render_one(signal, settings, di_sha)
+                except (RenderError, ValueError) as e:
+                    error = f"{type(e).__name__}: {e}"
+                elapsed = (time.perf_counter() - started) * 1000.0
+                # Recorded here, not after scoring: the render is paid for whether
+                # or not `_measure` then succeeds, and charging from `measured`
+                # under-counted by one for every job that rendered and then failed
+                # to score — which is the shape this catch was added for.
+                with self._counters:
+                    spent[index] = elapsed
+                objectives, printed, error = self._measure(rendered, values, error)
+            except BaseException as unexpected:      # noqa: BLE001 — re-raised below
+                # Everything that is not "this vector would not render". A dead
+                # Swift server gives `BrokenPipeError` through the subprocess pipe,
+                # which is neither a `RenderError` nor a `ValueError`, and it used
+                # to reach the caller as `KeyError` with the cause left in the
+                # threading excepthook.
+                failures[index] = unexpected
+                return
+            measured[index] = (rendered, objectives, printed, error, elapsed)
+
+        threads = [threading.Thread(target=score, args=(index,), daemon=True)
+                   for index in pending]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        if failures:
+            # Charge what was actually rendered before raising. `SearchResult`'s
+            # render count is documented as the truth rather than an estimate, and
+            # a batch that dies after four renders spent four.
+            for index in sorted(spent):
+                self.renders += 1
+                self.wall_ms += spent[index]
+            raise failures[min(failures)]
+
+        results: List[Candidate] = []
+        for index, (values, settings, key, scoring_key, hit) in enumerate(prepared):
+            if hit is not None:
+                self.cache_hits += 1
+                results.append(Candidate(
+                    values=dict(values),
+                    objectives=dict(hit.objectives or {}),
+                    total=float((hit.objectives or {}).get("total", float("inf"))),
+                    trial_id=hit.trial_id))
+                continue
+            rendered, objectives, printed, error, elapsed = measured[index]
+            self.renders += 1
+            self.wall_ms += elapsed
+            trial_id = None
+            if self.store is not None and self.run_id is not None:
+                trial = self.store.add_trial(self.run_id, Trial(
+                    params=dict(settings),
+                    cache_key=key,
+                    objective_key=scoring_key,
+                    di_sha=di_sha,
+                    di_offset_db=float(offset_db),
+                    render_sha=None if rendered is None else _hash(rendered.audio),
+                    peak=None if rendered is None else rendered.peak,
+                    silent=None if rendered is None else rendered.silent,
+                    wall_ms=round(elapsed, 2),
+                    objectives=objectives,
+                    fingerprint=None if printed is None else printed.to_dict(),
+                    error=error,
+                ))
+                trial_id = trial.trial_id
+            results.append(Candidate(
+                values=dict(values), objectives=objectives or {},
+                total=float((objectives or {}).get("total", float("inf"))),
+                trial_id=trial_id, error=error))
+        return results
+
+    def _measure(self, rendered, values: Mapping, error):
+        """Turn one render into an objective vector, or into a reason there is none.
+
+        Split out of `evaluate` so `evaluate_many` can run it inside the worker
+        thread that produced the render rather than serially afterwards. The two
+        costs are the same order — §12j measures a fingerprint at 65.8 ms on one
+        thread, and Morgan's 4.54 renders/s implies about 220 ms per render — so
+        scoring serially would give back roughly a quarter of what the pool buys.
+        Earlier drafts of this docstring said 150 ms and 370 ms, which came from a
+        different signal and a different pack than the numbers §12j records.
+
+        The three alignment counters are the only shared state here, and they are
+        summary statistics for a caveat rather than anything a score depends on —
+        but a lost increment is still a wrong number in a report, so they take a
+        lock.
+        """
+        from analysis import io
+        from analysis.compare import compare, scalar
+        from analysis.fingerprint import fingerprint
+
+        metadata = self.renderer.metadata()
+        objectives: Optional[Dict[str, float]] = None
+        printed = None
+        if rendered is not None and not rendered.silent:
+            printed = fingerprint(io.from_samples(rendered.audio, metadata.sample_rate),
+                                  regime="probe", excerpt_s=None)
+            waveform_residual = None
+            if self.residual_enabled:
+                from analysis.align import align, residual_db
+
+                reference, candidate, alignment = align(
+                    self.reference_audio, rendered.audio, metadata.sample_rate)
+                correlation = abs(float(alignment.correlation))
+                with self._counters:
+                    self.alignment_attempts += 1
+                    self.weakest_alignment = (
+                        correlation if self.weakest_alignment is None
+                        else min(self.weakest_alignment, correlation)
+                    )
+                    if not alignment.trustworthy:
+                        # ``align`` deliberately returns the unshifted signals here.
+                        # The resulting residual is conservative about an unknown
+                        # timing relationship instead of inventing one from noise.
+                        self.untrusted_alignments += 1
+                waveform_residual = residual_db(reference, candidate)
+                if waveform_residual is None:
+                    error = (
+                        "paired waveform residual is not measurable: the aligned "
+                        "reference has no usable mono energy"
+                    )
+            vector = compare(
+                self.target, printed, profile=self.profile,
+                prior_deviation=self._prior_deviation(values),
+                complexity=self._complexity(values),
+                residual_db=waveform_residual,
+            )
+            objectives = {name: float(value) for name, value in vector.values.items()
+                          if value is not None}
+            total = scalar(vector)
+            if error is not None or total is None:
+                # A required waveform term failed, or nothing the profile weights
+                # was measurable on both sides. Either way there is no ordering to
+                # be had; it must not become a zero or a silently renormalised score.
+                objectives = None
+            else:
+                objectives["total"] = float(total)
+        return objectives, printed, error
 
     # --- what the renderer is actually given --------------------------------
 
@@ -573,6 +755,14 @@ def screen(evaluator: Evaluator, seed: Mapping,
         evaluator, repeats, expected=NONREPRODUCIBLE_SCREEN_SAMPLES,
     ))
 
+    # Deliberately one render at a time, even where a pool exists. The screen
+    # measures each probe *against the baseline*, and on a backend that is not a
+    # function of its inputs a probe rendered by one plugin instance compared with
+    # a baseline rendered by another is not the same measurement. Measured on Tone
+    # King: `/leadAmpMidBite` moves 0.0027 when both come from one instance and
+    # 0.0214 with the probes on a second instance and no concurrency at all. It is
+    # frozen either way — the quartile cut takes it — but the extra control above
+    # the floor changes the cut's denominator and promotes a different one. §12j.
     movement: Dict[str, float] = {}
     for dimension in candidates:
         low, high = dimension.bounds()
