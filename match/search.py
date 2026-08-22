@@ -433,6 +433,7 @@ class Evaluator:
         # surface as `KeyError` on the caller with the cause lost to the threading
         # excepthook. `evaluate` would have propagated it with its traceback.
         failures: Dict[int, BaseException] = {}
+        spent: Dict[int, float] = {}
 
         def score(index: int) -> None:
             values, settings, _, _, _ = prepared[index]
@@ -445,6 +446,12 @@ class Evaluator:
                 except (RenderError, ValueError) as e:
                     error = f"{type(e).__name__}: {e}"
                 elapsed = (time.perf_counter() - started) * 1000.0
+                # Recorded here, not after scoring: the render is paid for whether
+                # or not `_measure` then succeeds, and charging from `measured`
+                # under-counted by one for every job that rendered and then failed
+                # to score — which is the shape this catch was added for.
+                with self._counters:
+                    spent[index] = elapsed
                 objectives, printed, error = self._measure(rendered, values, error)
             except BaseException as unexpected:      # noqa: BLE001 — re-raised below
                 # Everything that is not "this vector would not render". A dead
@@ -466,9 +473,9 @@ class Evaluator:
             # Charge what was actually rendered before raising. `SearchResult`'s
             # render count is documented as the truth rather than an estimate, and
             # a batch that dies after four renders spent four.
-            for index in sorted(measured):
+            for index in sorted(spent):
                 self.renders += 1
-                self.wall_ms += measured[index][4]
+                self.wall_ms += spent[index]
             raise failures[min(failures)]
 
         results: List[Candidate] = []

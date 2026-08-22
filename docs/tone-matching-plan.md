@@ -3030,10 +3030,12 @@ to three decimals. Quoting a three-point mean without looking at the three point
 is how a contaminated run becomes a published number, and this document had both
 figures two paragraphs apart for the same configuration without noticing.
 
-`/eqBand1` shows the other mechanism, and it is not the same one. There a pool of
-one is indistinguishable from serial — 0.5384 against 0.5417, a gap of 0.0033 — and
-four workers move it to 0.4117, a gap of 0.127 against a largest within-group
-spread of 0.0058, about 22 times it. Dropping the contaminated run makes that
+`/eqBand1` shows the other mechanism, and it is not the same one. A pool of one
+moves it from 0.5384 to 0.5417 — a gap of 0.0033, which is 2.2 times its own
+spread and so a real effect by the test used above, but a small one. Four workers
+move it to 0.4117: a gap of 0.127, about 22 times the largest within-group spread
+and **39 times the one-instance effect**. Both terms exist; concurrency dominates
+by a factor of thirty-nine. Dropping the contaminated run makes that
 comparison *cleaner* rather than weaker, and the two that remain agree with the
 five-repeat session's 0.4130 to 0.0013. An earlier version of this paragraph
 dismissed `/eqBand1` as resting on the contaminated run; it does not, and saying so
@@ -3041,9 +3043,17 @@ threw away the section's own second piece of evidence.
 
 So there are two independent reasons not to pool a comparison. `/leadAmpMidBite` is
 an offset between instances: one instance and four give nearly the same answer, and
-both differ from measuring inside a single instance. `/eqBand1` is an effect of
-concurrency itself: one instance behaves like serial, four do not. Either alone
-would be enough.
+both differ from measuring inside a single instance. `/eqBand1` is dominated by concurrency
+itself: one instance barely moves it, four move it thirty-nine times further.
+Either alone would be enough.
+
+A fourth correction to this paragraph, and the pattern in the four is worth more
+than any of them. It has been wrong by overstating twice, by discarding its own
+evidence once, and here by asserting an absence — "indistinguishable" — without
+applying the test it applies to everything else. 2.2 times its own spread is the
+same verdict this section gives `/eqBand3` at 1.86 times, forty-nine lines above.
+The test is two subtractions; run it on the comparisons expected to come back
+null as well as the ones expected to come back positive.
 
 **Why this is bigger than the screen.** Every stage that spends renders in bulk
 spends them on *comparisons*: the screen compares each probe with a baseline,

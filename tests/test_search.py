@@ -1539,8 +1539,45 @@ def test_a_render_that_dies_outside_the_expected_errors_still_reaches_the_caller
         with pytest.raises(BrokenPipeError, match="went away"):
             evaluator.evaluate_many(vectors)
 
-    assert evaluator.renders > 0, (
-        "the renders that did happen were paid for and must be counted"
+    assert evaluator.renders == 3, (
+        "three renders completed before the fourth died; all three were paid for"
+    )
+
+
+def test_a_render_that_scores_badly_is_still_charged(space, seed, target):
+    """Charging from the scored results under-counted by one for every job that
+    rendered and then failed to score — which is the shape the catch was added for,
+    so the count was wrong in exactly the case it was meant to cover."""
+    from dataclasses import replace
+
+    from match.pool import RendererPool
+
+    class Reproducible(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=True)
+
+    evaluator = S.Evaluator(Reproducible(), target, di(), space, recipe=seed)
+    vectors = [dict(seed) for _ in range(4)]
+    for index, values in enumerate(vectors):
+        values[(f"{AMP}Amp", f"{AMP}Volume")] = 40.0 + index * 10.0
+
+    calls = []
+    real = evaluator._measure
+
+    def third_one_explodes(rendered, values, error):
+        calls.append(1)
+        if len(calls) == 3:
+            raise MemoryError("scored badly, after the render was paid for")
+        return real(rendered, values, error)
+
+    with RendererPool(Reproducible, workers=2) as pool:
+        evaluator.pool = pool
+        evaluator._measure = third_one_explodes
+        with pytest.raises(MemoryError):
+            evaluator.evaluate_many(vectors)
+
+    assert evaluator.renders == 4, (
+        "every render completed and was paid for, whatever scoring then did"
     )
 
 

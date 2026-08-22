@@ -57,6 +57,18 @@ import queue
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 
+# How long a borrow may wait before the pool decides a member is wedged rather
+# than busy. Two different questions were being answered by one number: "has the
+# pool been closed under me", which wants an answer in under a second, and "has a
+# plugin stopped responding", which must not fire on a legitimately long queue. The
+# first is a poll; this is the second, and it is deliberately far above any real
+# render — Tone King's slowest measured render is 46 s, its first — so that a wait
+# this long means something is wrong rather than busy.
+WEDGED_MEMBER_S = 300.0
+# How often a waiting borrow re-checks whether the pool was closed under it.
+CLOSED_POLL_S = 0.5
+
+
 class PoolError(RuntimeError):
     """The pool cannot be built, or its members do not agree with each other."""
 
@@ -150,13 +162,24 @@ class RendererPool:
         busy, which is what limits concurrency to `workers`.
         """
         self._require_open()
-        # A timeout rather than a bare get: `close()` drains the queue, so a caller
-        # racing a close would otherwise wait on a member that is never coming back.
-        try:
-            member = self._free.get(timeout=300)
-        except queue.Empty:
+        # Polled rather than one long wait, because `close()` drains the queue and a
+        # caller racing a close is otherwise waiting on a member that is never
+        # coming back. The poll notices that in under a second; the deadline is the
+        # separate question of a member that has stopped responding.
+        waited = 0.0
+        while True:
             self._require_open()
-            raise PoolError("no renderer became free within 300 s")
+            try:
+                member = self._free.get(timeout=CLOSED_POLL_S)
+                break
+            except queue.Empty:
+                waited += CLOSED_POLL_S
+                if waited >= WEDGED_MEMBER_S:
+                    raise PoolError(
+                        f"no renderer became free in {WEDGED_MEMBER_S:g} s, which "
+                        f"is far longer than any render this backend makes — a "
+                        f"member has most likely stopped responding"
+                    ) from None
         try:
             return member.render(di, settings, di_sha256=di_sha256)
         finally:
