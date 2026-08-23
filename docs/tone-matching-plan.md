@@ -3109,77 +3109,43 @@ with its single renderer.
   --renderer swift --targets 16 --budget 60 --seed 7 --seconds 2.0 --workers 4
 ```
 
-Tone King 1.0.3, 16 targets, budget 60, the same seed both ways:
+Tone King 1.0.3, 16 targets, budget 60, the current per-target streams and a quiet
+machine — the exact same targets both ways:
 
 | | serial | 4 workers |
 |---|---:|---:|
-| wall clock | 400 s | **274 s** (1.46x) |
+| wall clock | 351 s | **154 s (2.28x)** |
 | failures | 0 | 0 |
-| recipe | 2.1849 | 2.1411 |
-| inversion | 1.3244 | 1.2357 |
-| full | 1.0648 | 1.0534 |
-| parameter MAE, recipe | 0.2559 | 0.2559 |
-| selector accuracy | 0.6501 | 0.6501 |
+| recipe | 1.8921 | 2.0579 |
+| inversion | 1.0827 | 1.2488 |
+| full | 0.8784 | 1.0310 |
+| parameter MAE, full | 0.2554 | 0.2598 |
 
-**The arms agree, on the paired test rather than the unpaired one.** Both runs
-sample the same sixteen targets — that is what per-target streams are for — so the
-comparison is paired, and measuring two means against the standard error of one of
-them measures how much targets differ from *each other* rather than the effect
-being tested. Paired: recipe −0.0437 ± 0.0366, inversion −0.0887 ± 0.0490, full
-−0.0113 ± 0.0276 — 1.2, 1.8 and 0.4 standard errors. None is significant; inversion
-at 1.8 is the closest, and all three lean the same way, which the unpaired figures
-this section first quoted (0.25, 0.61, 0.09) hid.
+**The arms agree on the paired test.** Both runs sample the same sixteen targets,
+so paired differences are the comparison: recipe −0.1658 ± 0.1393, inversion
+−0.1661 ± 0.1399, full −0.1526 ± 0.1165 — 1.19, 1.19 and 1.31 standard errors.
+All three lean toward the serial run and none reaches significance. Selector
+accuracy is 0.6837 in both runs and is not evidence: nothing enumerated, so the
+column cannot differ. The full arm's parameter MAE can differ and moves by 0.0044.
 
-Two rows of that table cannot disagree and are not evidence. The recipe arm's
-answer is the seed, so its parameter MAE is a function of the sampled truth with no
-render in it. Selector accuracy is identical across all three arms in both runs
-because nothing enumerated — `compare_baselines` says so itself, and §12i already
-recorded it of its own 0.6739. The row that could have moved is the full arm's
-parameter MAE, 0.2715 serial against 0.2676 parallel, and it belongs there more
-than either.
+**2.28x, not the pool's raw 3.82x.** Four Tone King instances still pay their
+first-render load, but the constructor now starts those loads concurrently: the
+first wave completes at 76 to 77 s, against target one at 29 s serially, and the
+remaining three waves take about 26 s each. The pool's raw Morgan measurement has
+no Tone King resource cycle and remains an upper bound rather than a prediction.
 
-**The apparent control is not a pure control.** The two parallel runs give paired
-differences of −0.0427 ± 0.0285, −0.0805 ± 0.0373 and −0.0014 ± 0.0067 — t of
-1.50, **2.16** and 0.22 — but they differ in two ways, not one. The first predates
-the bounded worker queue and used one evaluator per target; the second uses one
-evaluator per worker for its life, as well as building the pool concurrently. On a
-backend whose answer depends on instance history, that is not same-condition
-against same-condition, and the 2.16 cannot retire the cross-condition 1.8. The
-arithmetic is exact; the interpretation an earlier version put on it is not.
+Two earlier measurements are still useful as failure records, not current speed
+figures. The first implementation built four members serially and took 274 s,
+with its first wave at 197 to 200 s. After concurrent construction, a 243 s run
+shared the machine with a review job: all-three-arm work nearly doubled to 726.2 s
+from 383.5 s for the prior run, so its clock was load, not construction. An earlier
+version of this section quoted 1.46x and then called the replacement speedup
+unmeasured. The clean pair above replaces both.
 
-**Where the divergence sits.** The per-target serial-versus-parallel differences
-correlate at r = +0.95 between the recipe and full arms and about +0.74 for the
-other pairs; six of sixteen targets carry nearly all of it while the other ten
-have mean absolute differences of 0.007 to 0.021 by arm — means, not ceilings;
-the largest single difference among those ten is 0.067. All three arms score
-against the same truth render, so a target-shared source of variation moves them
-together. The truth render is one plausible source, and renderer-instance history
-is another; the correlation locates the variation at target scope rather than
-uniquely identifying its cause.
-
-**1.46x, not 3.82x, and the gap is a startup this code serialises.** Four Tone
-King instances each pay about 46 s loading impulse responses, and `RendererPool`
-built its members in a plain loop at the time of this run — so about 173 s passed
-before the first target started, which the log shows directly: the first four targets finish at 197 to 200 s
-and every wave after takes 24 s. That is this constructor, not a property of the
-plugin.
-
-Building the members concurrently was then done, and it does what it was meant to:
-the first wave of four targets now completes at 80 s where it used to complete at
-197 s. What it has **not** shown is a matching speedup. The run measuring it came
-in at 243 s against 274 — 1.65x rather than the predicted 2.8x — but that run
-shared the machine with another job, and the signature is unmistakable: all-three-
-arm work summed to 726.2 s against 383.5 s for the prior run (the full arm alone was
-688.0 s against 362.8 s). Arm timings that nearly double are load, not construction.
-**The speedup after concurrent construction is unmeasured on a
-quiet machine**, and 2.8x stays a prediction.
-
-The first run's arms did not slow each other down: 383.5 s summed across
-all three arms, in about 96 s of wall clock on four workers, an efficiency near
-4.0. Extrapolated to 50
-targets the parallel run lands near 470 s against about 1250 s serial. Both are
-arithmetic, neither has been run, the 1.46x is a single sample, and there is no
-serial-versus-serial control at sixteen targets.
+Scaling 16 targets to 50 is arithmetic until it is run. The current waves suggest
+roughly 6 to 7 minutes on four workers against about 18 minutes serially at budget
+60; the production `--budget 300` costs more per target, and is the next
+measurement rather than a number to infer from this table.
 
 **Do not read a 4-target run.** At four targets two *serial* runs of the same seed
 gave arm means differing by 0.22 to 0.25 — as large as anything separating serial
