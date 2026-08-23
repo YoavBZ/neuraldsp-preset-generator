@@ -668,14 +668,15 @@ def test_a_target_depends_on_its_index_and_not_on_the_ones_before_it(space, seed
 
     def truths(targets, greedy):
         """Sample `targets` vectors, optionally burning draws in between."""
-        streams = np.random.default_rng(5).spawn(targets)
+        streams = B._spawn_streams(np.random.default_rng(5), targets, np)
         out = []
         for index, stream in enumerate(streams):
             out.append(B.random_vector(space, stream, base=dict(seed)))
             if greedy:
                 # Stands in for a search consuming an unpredictable number of
-                # draws before the next target is sampled.
-                np.random.default_rng(99 + index).random(index * 7 + 1)
+                # draws after this target was sampled. It must not move the next
+                # target, whose stream is a different SeedSequence child.
+                stream.random(index * 7 + 1)
         return out
 
     steady, disturbed = truths(4, greedy=False), truths(4, greedy=True)
@@ -830,7 +831,10 @@ def test_the_pool_width_is_capped_by_the_target_count(space, seed):
         budget=12, arms=("recipe",), rng=np.random.default_rng(3),
         workers=8, renderer_factory=factory)
 
-    assert len(made) == 1, "seven idle plugin instances would be pure startup cost"
+    assert len(made) == 0, (
+        "the caller's renderer is the one effective member; seven idle plugin "
+        "instances would be pure startup cost"
+    )
 
 
 def test_workers_without_a_factory_are_refused_not_silently_serial(space, seed):

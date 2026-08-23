@@ -83,7 +83,8 @@ class RendererPool:
     closed as a unit — a leaked member holds a plugin instance open.
     """
 
-    def __init__(self, factory: Callable[[], Any], workers: int) -> None:
+    def __init__(self, factory: Callable[[], Any], workers: int,
+                 initial=None) -> None:
         if workers < 1:
             raise PoolError(f"a pool needs at least one renderer, not {workers}")
         self._members: List[Any] = []
@@ -94,12 +95,16 @@ class RendererPool:
         # lock it can append a live renderer to an abandoned pool.
         self._state_lock = threading.Lock()
         try:
+            if initial is not None:
+                self._members.append(initial)
+                self._free.put(initial)
             # Built at once, not one after another. Each `AudioUnitRenderer` spends
             # its construction starting a server and, on Tone King, about 46 s
             # loading impulse responses — so a serial loop put roughly three
             # minutes in front of a four-worker run before any work began, which
             # §12k first recorded as a property of the plugin and is not.
-            errors: List[Optional[BaseException]] = [None] * workers
+            to_build = workers - (1 if initial is not None else 0)
+            errors: List[Optional[BaseException]] = [None] * to_build
             def build(slot: int) -> None:
                 try:
                     member = factory()
@@ -132,7 +137,7 @@ class RendererPool:
                             pass
 
             threads = [threading.Thread(target=build, args=(slot,), daemon=True)
-                       for slot in range(workers)]
+                       for slot in range(to_build)]
             for thread in threads:
                 thread.start()
             for thread in threads:

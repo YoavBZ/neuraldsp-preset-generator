@@ -3074,7 +3074,7 @@ wires past — this repository refuses a stale EQ basis, an output-gain control
 without `unit: db` and a pool whose members disagree about their backend for the
 same reason, and this is the same class of mistake with a bigger blast radius.
 
-**What would be sound** — and §12k has since measured it at 1.46x on 16 targets.
+**What would be sound** — and §12k has since measured it at 2.28x on 16 targets.
 The benchmark's 50 targets are independent experiments,
 not comparisons: each renders its own truth, runs its own search and reports its
 own score. Giving each target its own instance for its whole run keeps every

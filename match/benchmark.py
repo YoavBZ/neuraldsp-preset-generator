@@ -539,7 +539,6 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
 
         done = {}
         lock = threading.Lock()
-        finished = [0]
         completed: "queue.Queue[Optional[int]]" = queue.Queue()
         cancelled = threading.Event()
         fatal: List[BaseException] = []
@@ -587,7 +586,6 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                         ]
                     with lock:
                         done[index] = (outcomes, caveats)
-                        finished[0] += 1
                     completed.put(index)
 
         def work():
@@ -605,7 +603,11 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         pool_width = min(int(workers), int(targets))
         if pool_width == 0:
             return result
-        with RendererPool(renderer_factory, workers=pool_width) as pool:
+        # The renderer the caller already created counts as one member. Starting
+        # `pool_width` more would keep N+1 plugin instances alive while the CLI
+        # promised N, and leave the primary idle for the whole run.
+        with RendererPool(renderer_factory, workers=pool_width,
+                          initial=renderer) as pool:
             threads = [threading.Thread(target=work, daemon=True)
                        for _ in range(pool_width)]
             for thread in threads:

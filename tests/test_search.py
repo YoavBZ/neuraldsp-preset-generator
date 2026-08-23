@@ -1734,3 +1734,22 @@ def test_a_borrow_lasts_the_whole_block_and_comes_back_after_it():
     with pytest.raises(PoolError, match="closed"):
         with pool_closed.borrow():
             pass
+
+
+def test_an_existing_renderer_counts_as_one_pool_member():
+    """The benchmark CLI already creates one renderer to inspect the backend.
+    A four-worker run must add three, not keep an idle fifth plugin alive."""
+    from match.pool import RendererPool
+
+    initial = SyntheticRenderer()
+    made = []
+
+    def factory():
+        made.append(1)
+        return SyntheticRenderer()
+
+    with RendererPool(factory, workers=4, initial=initial) as pool:
+        assert pool.workers == 4
+        assert len(made) == 3
+        with pool.borrow() as member:
+            assert member in pool._members

@@ -187,6 +187,14 @@ def main() -> None:
 
     def progress(done: int, total: int) -> None:
         elapsed = time.time() - started
+        if args.workers > 1:
+            # A serial ETA treats the first member of a four-target wave as one
+            # quarter of the work done, so it reports 1138 s left on a run that
+            # finishes in 154. Completion waves are uneven too; elapsed time is
+            # honest and enough for a concurrent run.
+            print(f"  target {done}/{total} — {elapsed:.0f}s elapsed",
+                  file=sys.stderr, flush=True)
+            return
         rate = elapsed / done
         print(f"  target {done}/{total} — {elapsed:.0f}s elapsed, "
               f"about {rate * (total - done):.0f}s left", file=sys.stderr, flush=True)
@@ -215,9 +223,12 @@ def main() -> None:
         result.caveats.insert(0, backend_caveat)
 
     completed_targets = len({row.target_index for row in result.outcomes})
+    effective_workers = min(args.workers, args.targets)
     print(f"\n{args.targets} targets requested, {completed_targets} produced, "
           f"budget {args.budget}, "
-          f"{args.workers} worker(s), "
+          f"{effective_workers} worker(s)"
+          + (f" requested as {args.workers}" if effective_workers != args.workers
+             else "") + ", "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
           f"{time.time() - started:.0f}s total\n")
@@ -236,7 +247,8 @@ def main() -> None:
             # Whether the pool was used, and how wide. §12j's standing rule is to
             # treat pooled numbers from a non-reproducible backend as unvalidated,
             # which needs the artifact to say whether they are pooled.
-            "workers": args.workers,
+            "workers": effective_workers,
+            "workers_requested": args.workers,
             # Which backend, and whether it repeats itself. A table of objectives
             # with no backend beside it is the one thing this project has agreed
             # never to write down.
