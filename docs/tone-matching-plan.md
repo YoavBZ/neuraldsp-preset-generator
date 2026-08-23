@@ -2877,8 +2877,8 @@ inversion on **8 of 8**. Those two counts do not deserve the same weight:
   smallest — 0.0235, 0.0418 and, more marginally, 0.1151 — are the size of the
   variation this backend shows between renders of one unchanged vector.
 
-**The benchmark never replicates the objective it reports**, and that is the honest
-form of the second point. `compare_baselines` scores each arm's answer with a single
+**This §12i run did not replicate the objective it reports**, and that is the honest
+form of the second point. At the time, `compare_baselines` scored each arm's answer with a single
 `evaluate()`; §12h's replication lives inside `search()`'s re-rank and never reaches
 the number in this table. So margins of roughly 0.1 and below cannot be resolved
 from this run — not "are ties", which would need a per-target noise estimate the
@@ -2887,8 +2887,9 @@ than at the candidates and its caveats are deduped by text so none can be tied t
 target. Whether between 5 and 8 of the eight comparisons survive depends on a
 measurement nobody made — and not 5, 6 or 8, which would assume the three
 marginal margins resolve in size order when each target carries its own
-threshold that the artifact cannot attribute to it. Replicating the final scoring render on a non-reproducible backend is
-the change that would make these counts load-bearing, and it is not done.
+threshold that the artifact cannot attribute to it. Replicating the final scoring
+render on a non-reproducible backend was the change that would make these counts
+load-bearing; §12m has since implemented and piloted it for future runs.
 
 One point in the leg's favour: the full arm's reported score is a fresh render of
 the selected vector rather than the search's own best score, so it carries no
@@ -3205,8 +3206,8 @@ counts.** Inversion beats the recipe on
 with medians 0.6991 and 0.3129. Morgan's *synthetic* M4 run recorded 47 of 49 and
 49 of 49 on those same two legs; its real-plugin run recorded 47 of 50 and 45 of
 50. Tone King shows the full nesting more consistently than Morgan's real-plugin
-sample did, while every Tone King objective remains a single noisy render as the
-next paragraph says.
+sample did, while every objective in this §12l artifact remains a single noisy
+render as the next paragraph says.
 
 **Fifty wins are still fifty single scoring renders.** `compare_baselines` rendered
 each selected answer once for the objective in this table. The full-over-inversion
