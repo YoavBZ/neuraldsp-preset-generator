@@ -88,6 +88,11 @@ class RendererPool:
         if workers < 1:
             raise PoolError(f"a pool needs at least one renderer, not {workers}")
         self._members: List[Any] = []
+        # Factory-created members belong to the pool. `initial` is borrowed from
+        # the caller and remains the caller's responsibility; otherwise the pool
+        # closes it on context exit and the CLI's `finally` closes it a second
+        # time. Track ownership separately from membership.
+        self._owned_ids = set()
         self._free: "queue.Queue[Any]" = queue.Queue()
         self._closed = False
         # Registration and close are one state transition. A builder can finish
@@ -124,6 +129,7 @@ class RendererPool:
                         close_now = True
                     else:
                         self._members.append(member)
+                        self._owned_ids.add(id(member))
                         self._free.put(member)
                 if close_now:
                     close = getattr(member, "close", None)
@@ -261,7 +267,10 @@ class RendererPool:
             raise PoolError("this pool is closed; its renderers are gone")
 
     def close(self) -> None:
-        """Close every member and make the pool unusable.
+        """Close every owned member and make the pool unusable.
+
+        A renderer supplied as `initial` is borrowed, not owned. It is removed
+        from the pool here and left for the caller to close exactly once.
 
         Draining `_free` is the half that matters. Leaving members in the queue let
         a post-close `render_one` succeed — and on an `AudioUnitRenderer` that is
@@ -280,12 +289,15 @@ class RendererPool:
                     break
             members, self._members = self._members, []
         for member in members:
+            if id(member) not in self._owned_ids:
+                continue
             close = getattr(member, "close", None)
             if close is not None:
                 try:
                     close()
                 except BaseException:
                     pass
+        self._owned_ids.clear()
 
     def __enter__(self) -> "RendererPool":
         return self

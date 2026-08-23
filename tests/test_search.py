@@ -1741,15 +1741,29 @@ def test_an_existing_renderer_counts_as_one_pool_member():
     A four-worker run must add three, not keep an idle fifth plugin alive."""
     from match.pool import RendererPool
 
-    initial = SyntheticRenderer()
+    class Tracked(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.closes = 0
+
+        def close(self):
+            self.closes += 1
+
+    initial = Tracked()
     made = []
 
     def factory():
-        made.append(1)
-        return SyntheticRenderer()
+        member = Tracked()
+        made.append(member)
+        return member
 
     with RendererPool(factory, workers=4, initial=initial) as pool:
         assert pool.workers == 4
         assert len(made) == 3
         with pool.borrow() as member:
             assert member in pool._members
+
+    assert initial.closes == 0, "the caller still owns the initial renderer"
+    assert all(member.closes == 1 for member in made)
+    initial.close()
+    assert initial.closes == 1
