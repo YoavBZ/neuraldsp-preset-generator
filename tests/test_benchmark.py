@@ -854,3 +854,80 @@ def test_per_target_streams_do_not_need_generator_spawn():
     assert [s.random() for s in streams] == [s.random() for s in again]
     assert len({s.random() for s in B._spawn_streams(
         np.random.default_rng(7), 3, np)}) == 3
+
+
+def test_final_scores_are_replicated_on_a_stateful_backend(
+    space, seed, monkeypatch,
+):
+    """The gap §12l leaves open: one selected vector, three observations, the
+    mean reported and the spread stored rather than a lucky render winning."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    asked = []
+
+    def fixed_scores(scorer, target, values, observations=1,
+                     reference_audio=None):
+        asked.append(observations)
+        return [0.3, 0.6, 0.9]
+
+    monkeypatch.setattr(B, "scorer_scores", fixed_scores)
+    result = B.compare_baselines(
+        Stateful(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=1, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3))
+
+    outcome = result.outcomes[0]
+    assert asked == [3]
+    assert outcome.objective == pytest.approx(0.6)
+    assert outcome.objective_observations == 3
+    assert outcome.objective_spread == pytest.approx(0.6)
+    summary = result.summarise("recipe")
+    assert summary["objective_observations"] == 3
+    assert summary["objective_spread_max"] == pytest.approx(0.6)
+    assert any("mean of 3 renders" in caveat for caveat in result.caveats)
+
+
+def test_stateful_final_scoring_spends_three_renders(space, seed):
+    """Replication is outside the search budget but not outside accounting. The
+    recipe arm used to cost one final render per target; on a stateful backend it
+    now costs three and says so in both the outcome and summary."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    result = B.compare_baselines(
+        Stateful(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=1, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3))
+
+    outcome = result.outcomes[0]
+    assert outcome.renders == 3
+    assert outcome.objective_observations == 3
+    assert result.summarise("recipe")["renders"] == 3
+
+
+def test_a_failed_final_observation_does_not_erase_the_others():
+    from match.search import Candidate
+
+    scores = iter([
+        Candidate(values={}, objectives={"total": 0.4}, total=0.4),
+        Candidate(values={}, objectives={}, total=float("inf")),
+        Candidate(values={}, objectives={"total": 0.8}, total=0.8),
+    ])
+
+    class Scorer:
+        def set_reference(self, target, reference_audio):
+            pass
+
+        def evaluate(self, values):
+            return next(scores)
+
+    assert B.scorer_scores(Scorer(), object(), {}, observations=3) == [0.4, 0.8]

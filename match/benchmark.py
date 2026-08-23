@@ -57,6 +57,11 @@ class Outcome:
     parameter_mae: Optional[float] = None
     selector_accuracy: Optional[float] = None
     objective: Optional[float] = None
+    # The final score is a mean of several observations on a backend that does
+    # not repeat itself. One number without these two fields is exactly the gap
+    # §12l leaves open.
+    objective_observations: int = 0
+    objective_spread: Optional[float] = None
     renders: int = 0
     wall_ms: float = 0.0
     failed: bool = False
@@ -113,6 +118,13 @@ class BenchmarkResult:
             "objective": _mean(o.objective for o in good),
             "objective_median": _median([o.objective for o in good
                                          if o.objective is not None]),
+            "objective_observations": _mean(
+                o.objective_observations for o in good),
+            "objective_spread": _mean(
+                o.objective_spread for o in good),
+            "objective_spread_max": max(
+                (o.objective_spread for o in good
+                 if o.objective_spread is not None), default=None),
             "renders": sum(o.renders for o in outcomes),
             "wall_s": round(sum(o.wall_ms for o in outcomes) / 1000.0, 1),
         }
@@ -417,6 +429,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         regime="probe", excerpt_s=None), probe_di, space, profile=profile,
         reference_audio=probe_di)
     result = BenchmarkResult()
+    final_observations = search.shortlist_replicates(renderer.metadata())
+    if final_observations > 1:
+        result.caveats.append(
+            f"each arm's final objective on each target is the mean of "
+            f"{final_observations} renders of the selected vector, because this "
+            f"backend does not repeat itself. The per-target peak-to-peak spread "
+            f"and observation count are stored beside every outcome"
+        )
 
     # One independent stream per target, rather than one generator threaded through
     # every target and every search in turn. Two reasons, and the second is why this
@@ -495,15 +515,28 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             for text in arm_caveats:
                 caveats.append(f"{arm}: {text}")
             scoring_renders = own_scorer.renders
-            scored = scorer_score(own_scorer, target, found,
-                                  reference_audio=rendered.audio)
+            observations = search.shortlist_replicates(
+                own_renderer.metadata())
+            scores = scorer_scores(
+                own_scorer, target, found, observations=observations,
+                reference_audio=rendered.audio)
             outcome.renders = renders + (own_scorer.renders - scoring_renders)
             outcome.wall_ms = (time.perf_counter() - started) * 1000.0
-            if scored is None:
+            outcome.objective_observations = len(scores)
+            outcome.objective_spread = (
+                max(scores) - min(scores) if len(scores) > 1 else None)
+            if not scores:
                 outcome.failed = True
                 outcome.error = "the recovered vector produced nothing comparable"
             else:
-                outcome.objective = scored
+                outcome.objective = sum(scores) / len(scores)
+                if len(scores) < observations:
+                    caveats.append(
+                        f"{arm}: target {index}'s final score averages "
+                        f"{len(scores)} of the {observations} observations this "
+                        f"backend calls for; one or more renders produced no "
+                        f"comparable objective"
+                    )
                 active = {dimension.path for dimension in space.active(truth)}
                 mae, accuracy = parameter_error(
                     space, truth, found,
@@ -671,9 +704,9 @@ def _spawn_streams(rng, count: int, np):
             for child in np.random.SeedSequence(words).spawn(int(count))]
 
 
-def scorer_score(scorer, target, values: Mapping,
-                 reference_audio=None) -> Optional[float]:
-    """One vector's weighted distance to a target, through the shared evaluator.
+def scorer_scores(scorer, target, values: Mapping, observations: int = 1,
+                  reference_audio=None) -> List[float]:
+    """Repeated weighted distances for one vector through the shared evaluator.
 
     Updating the reference is the sharp edge here and the reason this is a named
     function rather than three inline lines: the evaluator is shared across every arm
@@ -684,8 +717,12 @@ def scorer_score(scorer, target, values: Mapping,
     there is exactly one caller.
     """
     scorer.set_reference(target, reference_audio)
-    scored = scorer.evaluate(values)
-    return scored.total if scored.objectives else None
+    scores = []
+    for _ in range(max(1, int(observations))):
+        scored = scorer.evaluate(values)
+        if scored.objectives:
+            scores.append(scored.total)
+    return scores
 
 
 def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
