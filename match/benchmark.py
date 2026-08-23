@@ -30,6 +30,8 @@ plugin. `--targets` and `--budget` exist so a smaller version can run in a test.
 
 from __future__ import annotations
 
+import queue
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -346,7 +348,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                       amp: Optional[str] = None,
                       switches: Optional[Sequence[str]] = None,
                       selectors: Optional[Sequence[str]] = None,
-                      progress=None) -> BenchmarkResult:
+                      progress=None, workers: int = 1,
+                      renderer_factory=None) -> BenchmarkResult:
     """Run each arm against the same targets, and report them side by side.
 
     `seed` is the recipe-stack starting point, which is also the `recipe` arm's whole
@@ -359,6 +362,10 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     with nothing enumerated all three arms report the *same* selector accuracy in
     every run and that column measures nothing. It is the one column that can show
     the topology stage doing something.
+
+    `workers > 1` requires `renderer_factory`: the renderer passed in is the
+    serial instance and cannot be cloned safely by guessing its constructor.
+    Each worker keeps one factory-created instance for its life.
     """
     from analysis import io, require
 
@@ -373,6 +380,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     if unknown:
         raise BenchmarkError(f"unknown arm(s) {', '.join(unknown)}; "
                              f"available: {', '.join(ARMS)}")
+    workers = int(workers)
+    if workers < 1:
+        raise BenchmarkError(f"workers must be at least 1, not {workers}")
+    if workers > 1 and renderer_factory is None:
+        raise BenchmarkError(
+            f"workers={workers} needs renderer_factory so each worker can own "
+            f"one backend instance; without it the run would silently be serial"
+        )
 
     selection = {}
     if amp is not None:
@@ -403,21 +418,54 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         reference_audio=probe_di)
     result = BenchmarkResult()
 
-    for index in range(int(targets)):
+    # One independent stream per target, rather than one generator threaded through
+    # every target and every search in turn. Two reasons, and the second is why this
+    # is a fix rather than a refactor.
+    #
+    # It makes a target reproducible. §12i had to record that `--seed 0` does not
+    # pin individual targets, because the search draws a variable number of times —
+    # CMA-ES can stop early, and how many controls the screen freezes differs per
+    # target — so on a backend that does not repeat itself, target *i*'s consumption
+    # moved target *i+1*'s vector. Target *i* now depends on the seed and on `i`,
+    # and on nothing that happened before it.
+    #
+    # And it is the precondition for running targets concurrently: a shared
+    # generator makes the order they execute in part of the answer. Each target is
+    # an independent experiment — its own truth, its own search, its own score — so
+    # nothing but the generator was keeping them in a line.
+    #
+    # This does change which vectors get sampled, so figures from before it are not
+    # comparable target-for-target. The distribution they are drawn from is
+    # unchanged.
+    streams = _spawn_streams(rng, int(targets), np)
+
+    def one_target(index, own_renderer, own_scorer):
+        """Everything one target needs, on one renderer.
+
+        Every comparison a target makes — its truth against each arm's answer —
+        stays inside `own_renderer`, which is what §12j requires: the offset
+        between two plugin instances lands in any comparison spread across them.
+        Targets themselves compare with nothing, so they are free to run at once.
+
+        Returns `(outcomes, caveats)` rather than appending, so a concurrent caller
+        can put them in index order instead of completion order.
+        """
+        outcomes, caveats = [], []
+        stream = streams[index]
         truth = dict(seed)
-        truth.update(random_vector(space, rng, supported=supported, base=truth))
+        truth.update(random_vector(space, stream, supported=supported, base=truth))
         if selection:
             truth = invert.apply_to(truth, selection, space)
         elif any(dimension.key == "selectedAmp" for dimension in space.dimensions):
             truth[("", "selectedAmp")] = _get_or(seed, ("", "selectedAmp"), 2)
-        rendered = renderer.render(probe_di, scorer._settings(truth))
+        rendered = own_renderer.render(probe_di, own_scorer._settings(truth))
         if rendered.silent:
-            result.caveats.append(
+            caveats.append(
                 f"target {index} rendered silent from a legal parameter vector — "
                 f"a gate threshold above the signal, most likely — so it was skipped "
                 f"rather than counted as a failure of any arm"
             )
-            continue
+            return outcomes, caveats
         target = fingerprint(io.from_samples(
             rendered.audio, rendered.metadata.sample_rate),
             regime="probe", excerpt_s=None)
@@ -427,9 +475,9 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             outcome = Outcome(arm=arm, target_index=index)
             try:
                 found, renders, arm_caveats = _run_arm(
-                    arm, renderer, target, probe_di, space, seed, budget, profile,
-                    invert, search, rng, pack_id, amp, switches, selectors,
-                    reference_audio=rendered.audio)
+                    arm, own_renderer, target, probe_di, space, seed, budget,
+                    profile, invert, search, stream, pack_id, amp, switches,
+                    selectors, reference_audio=rendered.audio)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -438,20 +486,18 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                 # reporting 0 renders for it understates what the failure cost. The
                 # error carries the count when the raiser knows it.
                 outcome.renders = getattr(e, "renders_spent", 0)
-                result.outcomes.append(outcome)
+                outcomes.append(outcome)
                 continue
             # Deduped: fifty targets produce fifty copies of the same sentence about
             # the budget, and a caveat block nobody can read is a caveat block nobody
             # reads. Prefixed with the arm, because "the optimiser never ran" is a fact
             # about `full` and would otherwise look like a fact about the benchmark.
             for text in arm_caveats:
-                tagged = f"{arm}: {text}"
-                if tagged not in result.caveats:
-                    result.caveats.append(tagged)
-            scoring_renders = scorer.renders
-            scored = scorer_score(scorer, target, found,
+                caveats.append(f"{arm}: {text}")
+            scoring_renders = own_scorer.renders
+            scored = scorer_score(own_scorer, target, found,
                                   reference_audio=rendered.audio)
-            outcome.renders = renders + (scorer.renders - scoring_renders)
+            outcome.renders = renders + (own_scorer.renders - scoring_renders)
             outcome.wall_ms = (time.perf_counter() - started) * 1000.0
             if scored is None:
                 outcome.failed = True
@@ -468,10 +514,161 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                     ])
                 outcome.parameter_mae = mae
                 outcome.selector_accuracy = accuracy
-            result.outcomes.append(outcome)
+            outcomes.append(outcome)
+        return outcomes, caveats
+
+    def collect(index, outcomes, caveats):
+        """Fold one target's results in, deduping caveats as the loop used to.
+
+        Fifty targets produce fifty copies of the same sentence about the budget,
+        and a caveat block nobody can read is a caveat block nobody reads.
+        """
+        result.outcomes.extend(outcomes)
+        for text in caveats:
+            if text not in result.caveats:
+                result.caveats.append(text)
+
+    if workers > 1 and renderer_factory is not None:
+        # One instance per worker thread, held for that thread's whole life. The
+        # property §12j requires is that every comparison a target makes stays
+        # inside one instance, and it does: a target's truth render, its arms and
+        # its scoring all go through the member its thread holds. Several targets
+        # sharing an instance is not a comparison spread across instances — and it
+        # is what the serial path has always done with its single renderer.
+        from match.pool import RendererPool
+
+        done = {}
+        lock = threading.Lock()
+        completed: "queue.Queue[Optional[int]]" = queue.Queue()
+        cancelled = threading.Event()
+        fatal: List[BaseException] = []
+        # `workers` threads pulling from a queue, not one thread per target. A
+        # thread per target starts every target at once and leaves all but
+        # `workers` of them blocked inside `borrow()`, which is bounded by the
+        # pool's wedged-member deadline — so a long run would have had its later
+        # targets time out, their threads die, and their results simply be absent
+        # from a report that still said it ran `targets` of them. At the
+        # documented `--targets 50 --budget 300` roughly three quarters of the run
+        # would have vanished that way.
+        pending: "queue.Queue[int]" = queue.Queue()
+        for index in range(int(targets)):
+            pending.put(index)
+
+        def work_body():
+            # One member for the thread's whole life. Different targets on one
+            # instance is fine — targets compare with nothing outside themselves —
+            # and it matches what the serial path does with its single renderer.
+            with pool.borrow() as member:
+                own_scorer = search.Evaluator(
+                    member, fingerprint(
+                        io.from_samples(probe_di, member.metadata().sample_rate),
+                        regime="probe", excerpt_s=None),
+                    probe_di, space, profile=profile, reference_audio=probe_di)
+                while not cancelled.is_set():
+                    try:
+                        index = pending.get_nowait()
+                    except queue.Empty:
+                        return
+                    try:
+                        outcomes, caveats = one_target(index, member, own_scorer)
+                    except Exception as unexpected:   # noqa: BLE001
+                        # A target that dies outside the arm loop — its truth
+                        # render, or building its evaluator — used to take its
+                        # thread with it and leave no trace but a shorter table.
+                        # It is a failed target now, and it says so.
+                        outcomes = [Outcome(arm=arm, target_index=index, failed=True,
+                                            error=f"{type(unexpected).__name__}: "
+                                                  f"{unexpected}")
+                                    for arm in arms]
+                        caveats = [
+                            f"target {index} failed outside its arms: "
+                            f"{type(unexpected).__name__}: {unexpected}"
+                        ]
+                    with lock:
+                        done[index] = (outcomes, caveats)
+                    completed.put(index)
+
+        def work():
+            try:
+                work_body()
+            except BaseException as unexpected:      # noqa: BLE001 — re-raised below
+                # Includes control exceptions, borrowing a member, and building
+                # the per-worker evaluator. A child thread cannot propagate any
+                # of those to its joining thread by raising alone.
+                with lock:
+                    fatal.append(unexpected)
+                cancelled.set()
+                completed.put(None)
+
+        pool_width = min(int(workers), int(targets))
+        if pool_width == 0:
+            return result
+        # The renderer the caller already created counts as one member. Starting
+        # `pool_width` more would keep N+1 plugin instances alive while the CLI
+        # promised N, and leave the primary idle for the whole run.
+        with RendererPool(renderer_factory, workers=pool_width,
+                          initial=renderer) as pool:
+            threads = [threading.Thread(target=work, daemon=True)
+                       for _ in range(pool_width)]
+            for thread in threads:
+                thread.start()
+            progress_error = None
+            reported = 0
+            while any(thread.is_alive() for thread in threads) or not completed.empty():
+                try:
+                    item = completed.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                if item is None:
+                    continue
+                reported += 1
+                if progress is not None and progress_error is None:
+                    try:
+                        # User code belongs on the calling thread. Running this
+                        # in a worker swallowed its exception while the benchmark
+                        # returned a clean result.
+                        progress(reported, int(targets))
+                    except BaseException as error:  # noqa: BLE001 — re-raised below
+                        progress_error = error
+                        cancelled.set()
+            for thread in threads:
+                thread.join()
+        if progress_error is not None:
+            raise progress_error
+        if fatal:
+            raise fatal[0]
+        missing = [index for index in range(int(targets)) if index not in done]
+        if missing:
+            # Never silently. A benchmark that reports on a subset it did not
+            # choose is worse than one that fails.
+            raise BenchmarkError(
+                f"{len(missing)} of {targets} targets produced no result at all "
+                f"(indices {missing[:5]}{'…' if len(missing) > 5 else ''}). This is "
+                f"a bug in the concurrent path, not a property of the run."
+            )
+        # Index order, not completion order: a benchmark whose rows depended on
+        # which target finished first would not be the same experiment twice.
+        for index in sorted(done):
+            collect(index, *done[index])
+        return result
+
+    for index in range(int(targets)):
+        collect(index, *one_target(index, renderer, scorer))
         if progress is not None:
             progress(index + 1, int(targets))
     return result
+
+
+def _spawn_streams(rng, count: int, np):
+    """Independent target streams supported by NumPy 1.24.
+
+    ``Generator.spawn`` arrived in NumPy 1.25 while this project permits 1.24.
+    ``SeedSequence.spawn`` predates that minimum. One seed sequence is drawn from
+    the caller's generator, then target-indexed children are derived from it.
+    """
+    words = rng.integers(0, 2 ** 32, size=4, dtype=np.uint32)
+    return [np.random.default_rng(child)
+            for child in np.random.SeedSequence(words).spawn(int(count))]
 
 
 def scorer_score(scorer, target, values: Mapping,

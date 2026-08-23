@@ -656,3 +656,201 @@ def test_a_renderer_with_no_pack_dimensions_is_refused_before_sampling():
             targets=0, budget=10, arms=("recipe",), pack_id="toneking",
             amp="lead",
         )
+
+
+def test_a_target_depends_on_its_index_and_not_on_the_ones_before_it(space, seed):
+    """§12i had to record that `--seed 0` does not pin individual targets, because
+    the search drew a variable number of times from the generator that sampled
+    them. Target *i* now depends on the seed and on *i* alone — which is also what
+    lets targets run concurrently, since a shared generator makes execution order
+    part of the answer."""
+    import numpy as np
+
+    def truths(targets, greedy):
+        """Sample `targets` vectors, optionally burning draws in between."""
+        streams = B._spawn_streams(np.random.default_rng(5), targets, np)
+        out = []
+        for index, stream in enumerate(streams):
+            out.append(B.random_vector(space, stream, base=dict(seed)))
+            if greedy:
+                # Stands in for a search consuming an unpredictable number of
+                # draws after this target was sampled. It must not move the next
+                # target, whose stream is a different SeedSequence child.
+                stream.random(index * 7 + 1)
+        return out
+
+    steady, disturbed = truths(4, greedy=False), truths(4, greedy=True)
+
+    assert steady == disturbed, "a target must not move because of what preceded it"
+    assert steady[0] != steady[1], "and the targets must still differ from each other"
+
+
+def test_targets_run_concurrently_and_give_the_same_answer(space, seed):
+    """The one parallel use §12j says is sound: targets are independent
+    experiments, so each takes an instance for its whole run and every comparison
+    it makes stays inside that instance. The answer must not depend on how many
+    ran at once."""
+    probe = fx.plucks(seconds=2.0, gap=0.9, seed=13)
+
+    serial = B.compare_baselines(
+        SyntheticRenderer(), space, probe, seed, targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3))
+    parallel = B.compare_baselines(
+        SyntheticRenderer(), space, probe, seed, targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3),
+        workers=3, renderer_factory=SyntheticRenderer)
+
+    def rows(result):
+        return [(o.arm, o.target_index, o.objective, o.parameter_mae)
+                for o in result.outcomes]
+
+    assert serial.outcomes, (
+        "a probe short enough to silence every target makes this test compare two "
+        "empty lists — which is how three concurrency tests here passed against a "
+        "bug that cost a 25% failure rate on the plugin"
+    )
+    assert rows(parallel) == rows(serial), (
+        "same targets, same arms, same scores — and in index order, not the order "
+        "they happened to finish in"
+    )
+    assert [o.target_index for o in parallel.outcomes] == sorted(
+        o.target_index for o in parallel.outcomes)
+
+
+def test_a_concurrent_run_reports_progress_once_per_target(space, seed):
+    seen = []
+    B.compare_baselines(
+        SyntheticRenderer(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13), seed,
+        targets=4, budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+        workers=2,
+        renderer_factory=SyntheticRenderer,
+        progress=lambda done, total: seen.append((done, total)))
+
+    assert [done for done, _ in seen] == [1, 2, 3, 4]
+    assert {total for _, total in seen} == {4}
+
+
+def test_every_render_a_target_makes_goes_to_its_own_instance(space, seed):
+    """The invariant §12j requires, and the one the synthetic chain cannot check by
+    comparing answers: a stateless reproducible renderer gives the same numbers
+    whether or not the arms accidentally share one instance, which is how a shared
+    renderer survived a passing test and only showed up as a state-file race on the
+    real plugin."""
+    import threading
+
+    seen = {}
+
+    class Tagged(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            seen.setdefault(threading.current_thread().name, set()).add(id(self))
+            return super().render(di_samples, settings, **kwargs)
+
+    B.compare_baselines(
+        Tagged(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13), seed,
+        targets=4, budget=12,
+        arms=("recipe", "inversion"), rng=np.random.default_rng(3),
+        workers=4, renderer_factory=Tagged)
+
+    worker_threads = [name for name in seen if name != "MainThread"]
+    assert worker_threads, "the targets must actually have run on worker threads"
+    assert sum(len(ids) for ids in seen.values()) >= len(worker_threads), (
+        "and they must have rendered something — see the empty-list trap above"
+    )
+    for name in worker_threads:
+        assert len(seen[name]) == 1, (
+            f"{name} rendered through {len(seen[name])} instances; a target's "
+            f"comparisons must all happen on the one it borrowed"
+        )
+
+
+def test_a_target_that_dies_outside_its_arms_is_reported_not_dropped(space, seed):
+    """A worker exception used to kill its thread and leave the target absent from
+    a table that still claimed to have run it. At the documented 50 targets on 4
+    workers that would have silently discarded most of the run."""
+    class DiesOnTheTruthRender(SyntheticRenderer):
+        calls = 0
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            if type(self).calls == 2:
+                raise OSError("deliberate, outside any arm")
+            return super().render(di_samples, settings, **kwargs)
+
+    DiesOnTheTruthRender.calls = 0
+    result = B.compare_baselines(
+        DiesOnTheTruthRender(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=3, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3), workers=2,
+        renderer_factory=DiesOnTheTruthRender)
+
+    indices = {o.target_index for o in result.outcomes}
+    assert indices == {0, 1, 2}, f"every target must appear, got {sorted(indices)}"
+    failed = [o for o in result.outcomes if o.failed]
+    assert len(failed) == 1 and "deliberate" in failed[0].error
+    assert any("outside its arms" in c for c in result.caveats)
+
+
+def test_a_control_exception_in_a_worker_reaches_the_caller(space, seed):
+    """Raising it inside the child thread is not enough: threading sends it to
+    `excepthook` and the caller otherwise sees only a generic missing-target error."""
+    class Interrupted(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            raise KeyboardInterrupt("user pressed ctrl-c")
+
+    with pytest.raises(KeyboardInterrupt, match="ctrl-c"):
+        B.compare_baselines(
+            Interrupted(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2, renderer_factory=Interrupted)
+
+
+def test_a_progress_callback_exception_reaches_the_caller(space, seed):
+    def stop_after_one(done, total):
+        raise RuntimeError(f"progress failed at {done}/{total}")
+
+    with pytest.raises(RuntimeError, match="progress failed"):
+        B.compare_baselines(
+            SyntheticRenderer(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2, renderer_factory=SyntheticRenderer,
+            progress=stop_after_one)
+
+
+def test_the_pool_width_is_capped_by_the_target_count(space, seed):
+    made = []
+
+    def factory():
+        made.append(1)
+        return SyntheticRenderer()
+
+    B.compare_baselines(
+        SyntheticRenderer(), space,
+        fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=1,
+        budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+        workers=8, renderer_factory=factory)
+
+    assert len(made) == 0, (
+        "the caller's renderer is the one effective member; seven idle plugin "
+        "instances would be pure startup cost"
+    )
+
+
+def test_workers_without_a_factory_are_refused_not_silently_serial(space, seed):
+    with pytest.raises(B.BenchmarkError, match="renderer_factory"):
+        B.compare_baselines(
+            SyntheticRenderer(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2)
+
+
+def test_per_target_streams_do_not_need_generator_spawn():
+    """`Generator.spawn` requires NumPy 1.25; the project supports 1.24."""
+    streams = B._spawn_streams(np.random.default_rng(7), 3, np)
+    again = B._spawn_streams(np.random.default_rng(7), 3, np)
+
+    assert [s.random() for s in streams] == [s.random() for s in again]
+    assert len({s.random() for s in B._spawn_streams(
+        np.random.default_rng(7), 3, np)}) == 3

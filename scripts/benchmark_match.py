@@ -69,6 +69,14 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--list-enumerable", action="store_true",
                     help="print the switches and selectors --enumerate accepts for "
                          "this pack and amp, and exit")
+    ap.add_argument("--workers", type=positive_int, default=1, metavar="N",
+                    help="run N targets at once across N plugin instances, each "
+                         "thread keeping one for its whole life (default: 1). "
+                         "Targets are "
+                         "independent experiments, so this is the one place §12j "
+                         "of the plan allows parallel renders — every comparison "
+                         "stays inside one instance. Costs N plugin instances of "
+                         "memory and one first-render load each")
     ap.add_argument("--renderer", default="synthetic", choices=("synthetic", "swift"),
                     help="which backend renders a candidate (default: synthetic). "
                          "'swift' is the installed plugin, and is the only one whose "
@@ -179,6 +187,14 @@ def main() -> None:
 
     def progress(done: int, total: int) -> None:
         elapsed = time.time() - started
+        if args.workers > 1:
+            # A serial ETA treats the first member of a four-target wave as one
+            # quarter of the work done, so it reports 1138 s left on a run that
+            # finishes in 154. Completion waves are uneven too; elapsed time is
+            # honest and enough for a concurrent run.
+            print(f"  target {done}/{total} — {elapsed:.0f}s elapsed",
+                  file=sys.stderr, flush=True)
+            return
         rate = elapsed / done
         print(f"  target {done}/{total} — {elapsed:.0f}s elapsed, "
               f"about {rate * (total - done):.0f}s left", file=sys.stderr, flush=True)
@@ -190,7 +206,9 @@ def main() -> None:
             profile=args.loss_profile, rng=np.random.default_rng(args.seed), arms=arms,
             pack_id=args.pack, amp=signal_path,
             switches=switches, selectors=selectors,
-            progress=progress,
+            progress=progress, workers=args.workers,
+            renderer_factory=(None if args.workers < 2
+                              else lambda: _renderer(args.renderer, args.pack)),
         )
     finally:
         # The plugin instance goes back even if the run raised or was interrupted.
@@ -204,7 +222,13 @@ def main() -> None:
     if backend_caveat:
         result.caveats.insert(0, backend_caveat)
 
-    print(f"\n{args.targets} targets, budget {args.budget}, "
+    completed_targets = len({row.target_index for row in result.outcomes})
+    effective_workers = min(args.workers, args.targets)
+    print(f"\n{args.targets} targets requested, {completed_targets} produced, "
+          f"budget {args.budget}, "
+          f"{effective_workers} worker(s)"
+          + (f" requested as {args.workers}" if effective_workers != args.workers
+             else "") + ", "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
           f"{time.time() - started:.0f}s total\n")
@@ -215,9 +239,16 @@ def main() -> None:
     if args.json:
         rows = [vars(outcome) for outcome in result.outcomes]
         args.json.write_text(json.dumps({
-            "targets": args.targets, "budget": args.budget, "pack": args.pack,
+            "targets": args.targets,
+            "targets_completed": completed_targets,
+            "budget": args.budget, "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,
+            # Whether the pool was used, and how wide. §12j's standing rule is to
+            # treat pooled numbers from a non-reproducible backend as unvalidated,
+            # which needs the artifact to say whether they are pooled.
+            "workers": effective_workers,
+            "workers_requested": args.workers,
             # Which backend, and whether it repeats itself. A table of objectives
             # with no backend beside it is the one thing this project has agreed
             # never to write down.

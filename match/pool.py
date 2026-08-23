@@ -35,7 +35,7 @@ probes on a second instance and no concurrency at all — a gap of 0.0187 agains
 within-group spread of 0.0001. Every bulk stage in `match/search.py` is comparison-based,
 so none of them can use this on a `reproducible=false` backend. The sound
 application is the benchmark, whose targets are independent experiments rather than
-comparisons: one instance per target, for the whole of that target.
+comparisons: one instance per worker thread, with every render a target makes staying on the instance its thread holds.
 
 **Superseded note, kept because it names the mistake.** On a
 `reproducible=false` backend the screen's output — which controls clear the freeze
@@ -53,7 +53,9 @@ non-reproducible backend as unvalidated.
 
 from __future__ import annotations
 
+import contextlib
 import queue
+import threading
 from typing import Any, Callable, List, Mapping, Optional, Tuple
 
 
@@ -81,17 +83,74 @@ class RendererPool:
     closed as a unit — a leaked member holds a plugin instance open.
     """
 
-    def __init__(self, factory: Callable[[], Any], workers: int) -> None:
+    def __init__(self, factory: Callable[[], Any], workers: int,
+                 initial=None) -> None:
         if workers < 1:
             raise PoolError(f"a pool needs at least one renderer, not {workers}")
         self._members: List[Any] = []
+        # Factory-created members belong to the pool. `initial` is borrowed from
+        # the caller and remains the caller's responsibility; otherwise the pool
+        # closes it on context exit and the CLI's `finally` closes it a second
+        # time. Track ownership separately from membership.
+        self._owned_ids = set()
         self._free: "queue.Queue[Any]" = queue.Queue()
         self._closed = False
+        # Registration and close are one state transition. A builder can finish
+        # after `__init__` has been interrupted and `close()` has run; without one
+        # lock it can append a live renderer to an abandoned pool.
+        self._state_lock = threading.Lock()
         try:
-            for _ in range(workers):
-                member = factory()
-                self._members.append(member)
-                self._free.put(member)
+            if initial is not None:
+                self._members.append(initial)
+                self._free.put(initial)
+            # Built at once, not one after another. Each `AudioUnitRenderer` spends
+            # its construction starting a server and, on Tone King, about 46 s
+            # loading impulse responses — so a serial loop put roughly three
+            # minutes in front of a four-worker run before any work began, which
+            # §12k first recorded as a property of the plugin and is not.
+            to_build = workers - (1 if initial is not None else 0)
+            errors: List[Optional[BaseException]] = [None] * to_build
+            def build(slot: int) -> None:
+                try:
+                    member = factory()
+                except BaseException as error:      # noqa: BLE001 — raised below
+                    errors[slot] = error
+                    return
+                # Registered here, not after the join. A member that exists only in
+                # a local list is a member `close()` cannot reach, and the join is
+                # exactly where an interrupt lands — Ctrl-C during a 46-second
+                # plugin load is the likeliest moment anyone sends one, because it
+                # is the stretch where nothing appears to be happening. Unwinding
+                # past the join left four live Swift servers that nothing tracked
+                # and a second `close()` could not stop.
+                close_now = False
+                with self._state_lock:
+                    if self._closed:
+                        close_now = True
+                    else:
+                        self._members.append(member)
+                        self._owned_ids.add(id(member))
+                        self._free.put(member)
+                if close_now:
+                    close = getattr(member, "close", None)
+                    if close is not None:
+                        try:
+                            close()
+                        except BaseException:
+                            # Construction has already been cancelled. Cleanup
+                            # must not let one member's close failure strand the
+                            # other builders or replace the original interrupt.
+                            pass
+
+            threads = [threading.Thread(target=build, args=(slot,), daemon=True)
+                       for slot in range(to_build)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            for error in errors:
+                if error is not None:
+                    raise error
             self._verify_agreement()
         except BaseException:
             self.close()
@@ -152,6 +211,41 @@ class RendererPool:
         self._require_open()
         return self._members[0].metadata()
 
+    @contextlib.contextmanager
+    def borrow(self):
+        """Lease one member for the whole of a caller's block.
+
+        The unit §12j says is sound on a backend that does not repeat itself. A
+        `render_one` lease lasts one render, so consecutive renders in one caller
+        can land on different instances — which is exactly what disqualified
+        pooling the screen, where a probe must be comparable with its baseline. A
+        borrow held across a whole benchmark target keeps every comparison that
+        target makes inside one instance, and parallelises the part that is
+        genuinely independent: the targets themselves.
+        """
+        self._require_open()
+        member = self._take()
+        try:
+            yield member
+        finally:
+            self._free.put(member)
+
+    def _take(self):
+        """Wait for a free member, noticing a close under us in under a second."""
+        waited = 0.0
+        while True:
+            self._require_open()
+            try:
+                return self._free.get(timeout=CLOSED_POLL_S)
+            except queue.Empty:
+                waited += CLOSED_POLL_S
+                if waited >= WEDGED_MEMBER_S:
+                    raise PoolError(
+                        f"no renderer became free in {WEDGED_MEMBER_S:g} s, which "
+                        f"is far longer than any render this backend makes — a "
+                        f"member has most likely stopped responding"
+                    ) from None
+
     def render_one(self, di, settings: Mapping, di_sha256: Optional[str] = None):
         """Borrow a member, render, give it back.
 
@@ -162,24 +256,7 @@ class RendererPool:
         busy, which is what limits concurrency to `workers`.
         """
         self._require_open()
-        # Polled rather than one long wait, because `close()` drains the queue and a
-        # caller racing a close is otherwise waiting on a member that is never
-        # coming back. The poll notices that in under a second; the deadline is the
-        # separate question of a member that has stopped responding.
-        waited = 0.0
-        while True:
-            self._require_open()
-            try:
-                member = self._free.get(timeout=CLOSED_POLL_S)
-                break
-            except queue.Empty:
-                waited += CLOSED_POLL_S
-                if waited >= WEDGED_MEMBER_S:
-                    raise PoolError(
-                        f"no renderer became free in {WEDGED_MEMBER_S:g} s, which "
-                        f"is far longer than any render this backend makes — a "
-                        f"member has most likely stopped responding"
-                    ) from None
+        member = self._take()
         try:
             return member.render(di, settings, di_sha256=di_sha256)
         finally:
@@ -190,7 +267,10 @@ class RendererPool:
             raise PoolError("this pool is closed; its renderers are gone")
 
     def close(self) -> None:
-        """Close every member and make the pool unusable.
+        """Close every owned member and make the pool unusable.
+
+        A renderer supplied as `initial` is borrowed, not owned. It is removed
+        from the pool here and left for the caller to close exactly once.
 
         Draining `_free` is the half that matters. Leaving members in the queue let
         a post-close `render_one` succeed — and on an `AudioUnitRenderer` that is
@@ -198,20 +278,26 @@ class RendererPool:
         the next render starts a *fresh* Swift server and plugin instance that
         `_members` no longer tracks and a second `close()` cannot stop.
         """
-        self._closed = True
-        while True:
-            try:
-                self._free.get_nowait()
-            except queue.Empty:
-                break
-        for member in self._members:
+        with self._state_lock:
+            if self._closed:
+                return
+            self._closed = True
+            while True:
+                try:
+                    self._free.get_nowait()
+                except queue.Empty:
+                    break
+            members, self._members = self._members, []
+        for member in members:
+            if id(member) not in self._owned_ids:
+                continue
             close = getattr(member, "close", None)
             if close is not None:
                 try:
                     close()
                 except BaseException:
                     pass
-        self._members = []
+        self._owned_ids.clear()
 
     def __enter__(self) -> "RendererPool":
         return self

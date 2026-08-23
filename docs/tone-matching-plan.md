@@ -1693,8 +1693,11 @@ leave active — 90 of 125 on Morgan against 124 before, because the two unselec
 amps' controls never reached the sound — and `parameter_error`'s denominator is
 now the active set rather than every supported path. `compare_baselines` also
 folds each arm's final scoring render into its own count, so every per-arm render
-figure below is one lower than the same run would report today. The comparison
-between arms is unaffected: all three arms changed the same way at once. Re-run
+figure below is one lower than the same run would report today. A third change has
+since joined them: §12k gives each target its own random stream, so the targets
+this run sampled are not the ones the command samples now. The comparison between
+arms is unaffected by any of the three: all three arms changed the same way at
+once. Re-run
 the command above before quoting any of these figures as current.
 
 (The `--json` is not decoration: without it nothing is written, and the version of this
@@ -2936,12 +2939,13 @@ shared, so the numbers sit beside each other rather than against each other. The
 burst sequence shows attack and decay clearly and sustained or palm-muted playing
 not at all.
 
-**On repeating it.** `--seed 0` feeds both target sampling and the search from one
-generator, and the search consumes a variable number of draws — CMA-ES can stop
-early, and the frozen-parameter count differs per target. On a backend that does
-not repeat itself those counts shift between runs, which moves the stream and
-therefore the next target's vector. Expect the shape to reproduce and the
-individual targets not to.
+**On repeating it.** When this run was made, `--seed 0` fed both target sampling
+and the search from one generator, and the search consumed a variable number of
+draws — so a target's vector depended on how many the previous target's search had
+taken. §12k replaced that with one stream per target, which fixes it going forward
+and means **this command no longer reproduces this artifact**: the same invocation
+now samples eight different targets from the same distribution. The aggregate
+remains comparable; `docs/toneking-benchmark-8.json` target-for-target does not.
 
 Scaling this to §12c's fifty targets is about 5 hours at this budget and nearer
 7 at the `--budget 300` the Morgan runs used.
@@ -3070,7 +3074,8 @@ wires past — this repository refuses a stale EQ basis, an output-gain control
 without `unit: db` and a pool whose members disagree about their backend for the
 same reason, and this is the same class of mistake with a bigger blast radius.
 
-**What would be sound.** The benchmark's 50 targets are independent experiments,
+**What would be sound** — and §12k has since measured it at 2.28x on 16 targets.
+The benchmark's 50 targets are independent experiments,
 not comparisons: each renders its own truth, runs its own search and reports its
 own score. Giving each target its own instance for its whole run keeps every
 comparison inside one instance while parallelising the part that actually costs
@@ -3082,6 +3087,93 @@ as the serial one. That came from comparing which controls cleared the floor, wh
 is a thresholded view of a noisy measurement and flips on almost nothing; four such
 comparisons contradicted each other before the movements themselves were compared.
 The instrument was the mistake, not the backend.
+
+## 12k. The one place the pool pays
+
+§12j measured why a renderer pool cannot go inside the search — every bulk stage
+there spends renders on comparisons, and the offset between two plugin instances
+lands in any comparison spread across them — and named the exception: the
+benchmark's targets are independent experiments rather than comparisons. This is
+that exception, measured.
+
+`RendererPool.borrow()` leases a member for a whole caller block rather than for
+one render, which is the distinction §12j turns on. Each worker thread borrows one
+instance for its life and runs targets from a shared queue on it, so a target's
+truth render, its arms and its scoring all happen on one instance. Several targets
+sharing an instance is not a comparison spread across instances — targets compare
+with nothing outside themselves — and it is what the serial path has always done
+with its single renderer.
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 16 --budget 60 --seed 7 --seconds 2.0 --workers 4
+```
+
+Tone King 1.0.3, 16 targets, budget 60, the current per-target streams and a quiet
+machine — the exact same targets both ways:
+
+| | serial | 4 workers |
+|---|---:|---:|
+| wall clock | 351 s | **154 s (2.28x)** |
+| failures | 0 | 0 |
+| recipe | 1.8921 | 2.0579 |
+| inversion | 1.0827 | 1.2488 |
+| full | 0.8784 | 1.0310 |
+| parameter MAE, full | 0.2554 | 0.2598 |
+
+**The arms agree on the paired test.** Both runs sample the same sixteen targets,
+so paired differences are the comparison: recipe −0.1658 ± 0.1393, inversion
+−0.1661 ± 0.1399, full −0.1526 ± 0.1165 — 1.19, 1.19 and 1.31 standard errors.
+All three lean toward the serial run and none reaches significance. Selector
+accuracy is 0.6837 in both runs and is not evidence: nothing enumerated, so the
+column cannot differ. The full arm's parameter MAE can differ and moves by 0.0044.
+
+**2.28x, not the pool's raw 3.82x.** Four Tone King instances still pay their
+first-render load, but the constructor now starts those loads concurrently: the
+first wave completes at 76 to 77 s, against target one at 29 s serially, and the
+remaining three waves take about 26 s each. The pool's raw Morgan measurement has
+no Tone King resource cycle and remains an upper bound rather than a prediction.
+
+Two earlier measurements are still useful as failure records, not current speed
+figures. The first implementation built four members serially and took 274 s,
+with its first wave at 197 to 200 s. After concurrent construction, a 243 s run
+shared the machine with a review job: all-three-arm work nearly doubled to 726.2 s
+from 383.5 s for the prior run, so its clock was load, not construction. An earlier
+version of this section quoted 1.46x and then called the replacement speedup
+unmeasured. The clean pair above replaces both.
+
+Scaling 16 targets to 50 is arithmetic until it is run. The current waves suggest
+roughly 6 to 7 minutes on four workers against about 18 minutes serially at budget
+60; the production `--budget 300` costs more per target, and is the next
+measurement rather than a number to infer from this table.
+
+**Do not read a 4-target run.** At four targets two *serial* runs of the same seed
+gave arm means differing by 0.22 to 0.25 — as large as anything separating serial
+from parallel, and larger than the gaps above. Paired, that spread is one target of
+the four: its per-target differences are 1.08, 0.96 and 0.92 across the three arms,
+while the other three differ by at most 0.122. The noise is heavy-tailed and
+target-specific rather than a general 0.22, which is both more accurate and more
+useful. An earlier version of this work
+compared one 4-target serial run with one 4-target parallel run, found differences
+of 0.24 to 0.27, and was about to write them down as evidence of contamination. The
+control is what stopped it. The benchmark's own run-to-run spread at small target
+counts is the thing to measure first, and §12i's eight-target figures should be
+read with that in mind.
+
+**One defect this found, and a claim about it that was wrong.** The arms were
+being run through the renderer the caller passed in rather than the one the target
+borrowed, so four concurrent targets shared a single instance for their searches.
+On the plugin that showed up as a state-file race — `could not read state-4.bin` —
+a 25% failure rate on one arm, and the `full` arm taking 184 s where serial took 88.
+
+An earlier version of this section said the synthetic chain could not see it,
+because `SyntheticRenderer` is stateless and reproducible. **That is false, and it
+was wrong twice over.** A test that measures which renderer *instance* each thread
+used does not care whether the renderer is stateless: with the bug it sees two per
+thread, without it one. The three tests written beside that claim did pass against
+the bug — but because their probe was half a second rather than two, every target
+rendered silent and all three were comparing empty lists. The claim excused missing
+coverage that was one fixture argument away.
 
 ## 13. Reading list, in the order it becomes relevant
 

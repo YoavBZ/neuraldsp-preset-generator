@@ -1483,6 +1483,58 @@ def test_a_closed_pool_cannot_hand_out_a_renderer():
         pool.render_one(di(), {})
 
 
+def test_an_interrupted_pool_build_closes_members_that_finish_late(monkeypatch):
+    """Ctrl-C during plugin startup is the likely interrupt: Tone King can spend
+    46 seconds appearing to do nothing. A builder finishing after `close()` used
+    to append a live renderer to an abandoned pool that no second close could
+    find."""
+    import threading
+
+    from match.pool import RendererPool
+
+    release = threading.Event()
+    all_done = threading.Event()
+    made = []
+    finished = []
+
+    class Tracked(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.closes = 0
+
+        def close(self):
+            self.closes += 1
+
+    def factory():
+        release.wait(timeout=2)
+        member = Tracked()
+        made.append(member)
+        finished.append(1)
+        if len(finished) == 2:
+            all_done.set()
+        return member
+
+    real_join = threading.Thread.join
+    interrupted = []
+
+    def interrupt_first_join(thread, *args, **kwargs):
+        if not interrupted:
+            interrupted.append(1)
+            raise KeyboardInterrupt("user interrupted plugin startup")
+        return real_join(thread, *args, **kwargs)
+
+    monkeypatch.setattr(threading.Thread, "join", interrupt_first_join)
+    with pytest.raises(KeyboardInterrupt):
+        RendererPool(factory, workers=2)
+    release.set()
+    assert all_done.wait(timeout=2), "both daemon builders should finish"
+    assert len(made) == 2
+    assert all(member.closes == 1 for member in made), (
+        "a member that finishes after the interrupted constructor must close "
+        "itself instead of registering in the abandoned pool"
+    )
+
+
 def test_a_worker_failure_reaches_the_caller_with_its_cause(space, seed, target):
     """Not as `KeyError` with the real exception lost to the threading excepthook."""
     from dataclasses import replace
@@ -1654,3 +1706,64 @@ def test_a_pool_is_refused_on_a_backend_that_does_not_repeat_itself(
         # And the one-at-a-time path is unaffected: it renders once per call, so
         # there is no comparison to contaminate.
         assert evaluator.evaluate(seed).objectives
+
+
+def test_a_borrow_lasts_the_whole_block_and_comes_back_after_it():
+    """The lease §12j turns on: `render_one` returns its member per render, so two
+    renders by one caller can land on different instances. A borrow held across a
+    caller's block keeps everything that caller compares inside one instance."""
+    from match.pool import PoolError, RendererPool
+
+    with RendererPool(SyntheticRenderer, workers=2) as pool:
+        with pool.borrow() as first:
+            assert pool._free.qsize() == 1, "the borrowed member is not on offer"
+            with pool.borrow() as second:
+                assert second is not first, "two borrows cannot share a member"
+                assert pool._free.qsize() == 0
+        assert pool._free.qsize() == 2, "both come back when their blocks end"
+
+        try:
+            with pool.borrow():
+                raise ValueError("deliberate")
+        except ValueError:
+            pass
+        assert pool._free.qsize() == 2, "and a member comes back on an exception"
+
+    pool_closed = RendererPool(SyntheticRenderer, workers=1)
+    pool_closed.close()
+    with pytest.raises(PoolError, match="closed"):
+        with pool_closed.borrow():
+            pass
+
+
+def test_an_existing_renderer_counts_as_one_pool_member():
+    """The benchmark CLI already creates one renderer to inspect the backend.
+    A four-worker run must add three, not keep an idle fifth plugin alive."""
+    from match.pool import RendererPool
+
+    class Tracked(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.closes = 0
+
+        def close(self):
+            self.closes += 1
+
+    initial = Tracked()
+    made = []
+
+    def factory():
+        member = Tracked()
+        made.append(member)
+        return member
+
+    with RendererPool(factory, workers=4, initial=initial) as pool:
+        assert pool.workers == 4
+        assert len(made) == 3
+        with pool.borrow() as member:
+            assert member in pool._members
+
+    assert initial.closes == 0, "the caller still owns the initial renderer"
+    assert all(member.closes == 1 for member in made)
+    initial.close()
+    assert initial.closes == 1
