@@ -854,3 +854,153 @@ def test_per_target_streams_do_not_need_generator_spawn():
     assert [s.random() for s in streams] == [s.random() for s in again]
     assert len({s.random() for s in B._spawn_streams(
         np.random.default_rng(7), 3, np)}) == 3
+
+
+def test_final_scores_are_replicated_on_a_stateful_backend(
+    space, seed, monkeypatch,
+):
+    """The gap §12l leaves open: one selected vector, three observations, the
+    mean reported and the spread stored rather than a lucky render winning."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    asked = []
+
+    def fixed_scores(scorer, target, values, observations=1,
+                     reference_audio=None):
+        asked.append(observations)
+        return [0.3, 0.6, 0.9]
+
+    monkeypatch.setattr(B, "scorer_scores", fixed_scores)
+    result = B.compare_baselines(
+        Stateful(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=1, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3))
+
+    outcome = result.outcomes[0]
+    assert asked == [3]
+    assert outcome.objective == pytest.approx(0.6)
+    assert outcome.objective_observations == 3
+    assert outcome.objective_spread == pytest.approx(0.6)
+    summary = result.summarise("recipe")
+    assert summary["objective_observations"] == 3
+    assert summary["objective_spread_max"] == pytest.approx(0.6)
+    assert any("mean of 3 renders" in caveat for caveat in result.caveats)
+
+
+def test_every_arm_replicates_final_scoring_and_counts_it(space, seed):
+    """Replication is outside the search budget but not outside accounting. The
+    recipe arm used to cost one final render per target; on a stateful backend it
+    now costs three and says so in both the outcome and summary."""
+    from dataclasses import replace
+
+    class Stateful(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+    result = B.compare_baselines(
+        Stateful(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=1, budget=12, arms=("recipe", "inversion", "full"),
+        rng=np.random.default_rng(3))
+
+    by_arm = {outcome.arm: outcome for outcome in result.outcomes}
+    assert set(by_arm) == {"recipe", "inversion", "full"}
+    assert all(outcome.objective_observations == 3
+               for outcome in by_arm.values())
+    assert by_arm["recipe"].renders == 3
+    assert by_arm["inversion"].renders == 4, "one inversion probe plus three scores"
+    assert result.summarise("recipe")["renders"] == 3
+    assert all(result.summarise(arm)["objective_observations"] == 3
+               for arm in by_arm)
+
+
+def test_a_failed_final_observation_does_not_erase_the_others():
+    from match.search import Candidate
+
+    scores = iter([
+        Candidate(values={}, objectives={"total": 0.4}, total=0.4),
+        Candidate(values={}, objectives={}, total=float("inf")),
+        Candidate(values={}, objectives={"total": 0.8}, total=0.8),
+    ])
+
+    class Scorer:
+        def set_reference(self, target, reference_audio):
+            pass
+
+        def evaluate(self, values):
+            return next(scores)
+
+    assert B.scorer_scores(Scorer(), object(), {}, observations=3) == [0.4, 0.8]
+
+
+def test_partial_final_scoring_reaches_the_outcome_and_caveat(space, seed):
+    """End to end, not only the list helper: one failed observation preserves the
+    other two, stores their count and spread, charges all three attempts and says
+    which target and arm have thinner evidence."""
+    from dataclasses import replace
+    from match.renderer import RenderError
+
+    class OneFinalFailure(SyntheticRenderer):
+        calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            # Truth is call 1; final recipe observations are calls 2, 3, 4.
+            if type(self).calls == 3:
+                raise RenderError("one final observation failed")
+            return super().render(di_samples, settings, **kwargs)
+
+    OneFinalFailure.calls = 0
+    result = B.compare_baselines(
+        OneFinalFailure(), space,
+        fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=1,
+        budget=12, arms=("recipe",), rng=np.random.default_rng(3))
+
+    outcome = result.outcomes[0]
+    assert not outcome.failed
+    assert outcome.objective_observations == 2
+    assert outcome.objective_spread == pytest.approx(0.0)
+    assert outcome.renders == 3
+    assert result.summarise("recipe")["objective_spread"] == pytest.approx(0.0)
+    assert any("recipe: target 0" in caveat and "2 of the 3" in caveat
+               for caveat in result.caveats)
+
+
+def test_all_failed_final_observations_fail_the_outcome(space, seed):
+    from dataclasses import replace
+    from match.renderer import RenderError
+
+    class NoFinalScore(SyntheticRenderer):
+        calls = 0
+
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.2)
+
+        def render(self, di_samples, settings=None, **kwargs):
+            type(self).calls += 1
+            if type(self).calls in {2, 3, 4}:
+                raise RenderError("no final observation survived")
+            return super().render(di_samples, settings, **kwargs)
+
+    NoFinalScore.calls = 0
+    result = B.compare_baselines(
+        NoFinalScore(), space, fx.plucks(seconds=2.0, gap=0.9, seed=13),
+        seed, targets=1, budget=12, arms=("recipe",),
+        rng=np.random.default_rng(3))
+
+    outcome = result.outcomes[0]
+    assert outcome.failed
+    assert outcome.objective is None
+    assert outcome.objective_observations == 0
+    assert outcome.objective_spread is None
+    assert outcome.renders == 3

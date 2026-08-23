@@ -32,7 +32,8 @@ corrected known-target runs, including direct inversion, are recorded in §12g.
 which is the design §12d asked for and §12g's runs did without. §12i is the
 eight-target Tone King pilot §12g named as missing; §12l is the full fifty-target,
 300-render result: 50 of 50 full-over-inversion wins, 47 of 50
-inversion-over-recipe, zero failures, 29 minutes on four workers.
+inversion-over-recipe, zero failures, 29 minutes on four workers. §12m closes the
+single-render scoring gap with three observations per final arm score.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2876,8 +2877,8 @@ inversion on **8 of 8**. Those two counts do not deserve the same weight:
   smallest — 0.0235, 0.0418 and, more marginally, 0.1151 — are the size of the
   variation this backend shows between renders of one unchanged vector.
 
-**The benchmark never replicates the objective it reports**, and that is the honest
-form of the second point. `compare_baselines` scores each arm's answer with a single
+**This §12i run did not replicate the objective it reports**, and that is the honest
+form of the second point. At the time, `compare_baselines` scored each arm's answer with a single
 `evaluate()`; §12h's replication lives inside `search()`'s re-rank and never reaches
 the number in this table. So margins of roughly 0.1 and below cannot be resolved
 from this run — not "are ties", which would need a per-target noise estimate the
@@ -2886,8 +2887,9 @@ than at the candidates and its caveats are deduped by text so none can be tied t
 target. Whether between 5 and 8 of the eight comparisons survive depends on a
 measurement nobody made — and not 5, 6 or 8, which would assume the three
 marginal margins resolve in size order when each target carries its own
-threshold that the artifact cannot attribute to it. Replicating the final scoring render on a non-reproducible backend is
-the change that would make these counts load-bearing, and it is not done.
+threshold that the artifact cannot attribute to it. Replicating the final scoring
+render on a non-reproducible backend was the change that would make these counts
+load-bearing; §12m has since implemented and piloted it for future runs.
 
 One point in the leg's favour: the full arm's reported score is a fresh render of
 the selected vector rather than the search's own best score, so it carries no
@@ -3204,15 +3206,16 @@ counts.** Inversion beats the recipe on
 with medians 0.6991 and 0.3129. Morgan's *synthetic* M4 run recorded 47 of 49 and
 49 of 49 on those same two legs; its real-plugin run recorded 47 of 50 and 45 of
 50. Tone King shows the full nesting more consistently than Morgan's real-plugin
-sample did, while every Tone King objective remains a single noisy render as the
-next paragraph says.
+sample did, while every objective in this §12l artifact remains a single noisy
+render as the next paragraph says.
 
-**Fifty wins are still fifty single scoring renders.** `compare_baselines` renders
+**Fifty wins are still fifty single scoring renders.** `compare_baselines` rendered
 each selected answer once for the objective in this table. The full-over-inversion
 margins run from 0.0159 to 2.6535; the smallest are below the variation this backend
 has shown between identical renders, so 50 of 50 is the observed sign and not a
-claim that every target is individually resolved. Replicating that final scoring
-render is the remaining benchmark-design gap §12i and §12j both point at.
+claim that every target is individually resolved. §12m has since changed future
+runs to replicate that final score; this artifact remains the single-render record
+it was measured as.
 
 **The other columns remain diagnostics, not gates.** Full-arm parameter MAE is
 worse than inversion and recipe, the same non-identifiability pattern §12c says to
@@ -3241,6 +3244,56 @@ serial speedup measurement, because no matching 50-target serial run was made.
 constants, `target_sampler=seed-sequence-spawn-1`, `workers=4`,
 `workers_requested=4`, `targets_completed=50`, renderer build, plugin version and
 `reproducible=false` with `band_noise_db=5.228794` beside the result.
+
+## 12m. Replicate the number the benchmark reports
+
+§12l's final benchmark gap was narrower than §12h's shortlist problem and more
+important to its conclusion: the benchmark selected a vector and then reported
+one fresh render of it as the arm's objective. Selection bias was gone, but backend
+variation was not. Future runs score each selected vector three times when the
+backend reports `reproducible=false`, report their mean, and store the observation
+count and peak-to-peak spread on every outcome. Reproducible backends still render
+once.
+
+The real-plugin pilot is reproduced by:
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 8 --budget 60 --seed 19 --seconds 2.0 \
+  --workers 4 --json docs/toneking-benchmark-replicated-8.json
+```
+
+Tone King 1.0.3, source commit `9666a4a`, 8 targets, zero failures, 108 seconds:
+
+| arm | mean objective | median | final renders | mean spread | max spread |
+|---|---:|---:|---:|---:|---:|
+| recipe | 2.0671 | 2.4998 | 3/target | 0.0499 | 0.1483 |
+| inversion | 1.1119 | 1.0379 | 3/target | 0.0341 | 0.1840 |
+| full | 0.9150 | 0.9161 | 3/target | 0.0041 | 0.0090 |
+
+All 24 outcomes obtained all three observations. A failed observation does not
+erase the others: the smaller count and the surviving mean are stored, and a
+target-and-arm caveat says the evidence is thinner than requested. Aggregate
+summaries carry mean observation count, mean spread and maximum spread.
+
+**The cost is outside the search budget and inside render accounting.** Compared
+with one final render, this adds two per arm per target — 48 renders in this pilot,
+300 in a fifty-target run. The recorded arm totals are 24 recipe, 32 inversion and
+442 full: recipe is three scoring renders per target; inversion adds its one probe;
+full adds the search. Nothing is hidden in the 60-render search budget.
+
+**Do not read the spread pattern as a property of an arm yet.** Full is much more
+stable than recipe or inversion in these eight targets, and the result reproduced
+across the uncommitted preflight and committed run, but eight targets is a pilot
+and several full arms could not afford one optimiser generation at budget 60. The
+purpose here is to prove the scoring contract on the real backend, not to explain
+why one set of selected vectors repeats better than another.
+
+`docs/toneking-benchmark-replicated-8.json` records the three observations through
+their mean and spread, source commit, elapsed time, sampler, probe constants,
+worker counts and backend provenance. §12l's fifty-target artifact is not rewritten
+or reinterpreted; repeating that run under this scorer is the next aggregate
+measurement.
 
 ## 13. Reading list, in the order it becomes relevant
 
