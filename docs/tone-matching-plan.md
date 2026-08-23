@@ -30,8 +30,9 @@ Tone King's topology-generic calibration, fresh-process repeatability finding an
 corrected known-target runs, including direct inversion, are recorded in §12g.
 §12h replicates shortlist scoring on backends that do not repeat themselves,
 which is the design §12d asked for and §12g's runs did without. §12i is the
-eight-target Tone King benchmark §12g named as missing: the arms nest on Tone
-King as §12d already showed they do on Morgan.
+eight-target Tone King pilot §12g named as missing; §12l is the full fifty-target,
+300-render result: 50 of 50 full-over-inversion wins, 47 of 50
+inversion-over-recipe, zero failures, 29 minutes on four workers.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2833,6 +2834,7 @@ than a second helper that could disagree with it.
 Neither committed pack can reach any of this — Morgan and Tone King both declare
 their gates and both appear in any real preset — which is why it survived as long
 as it did.
+
 ## 12i. A Tone King aggregate, and what eight targets can carry
 
 §12g could call its Tone King runs valid end-to-end evidence and nothing more,
@@ -2947,8 +2949,9 @@ and means **this command no longer reproduces this artifact**: the same invocati
 now samples eight different targets from the same distribution. The aggregate
 remains comparable; `docs/toneking-benchmark-8.json` target-for-target does not.
 
-Scaling this to §12c's fifty targets is about 5 hours at this budget and nearer
-7 at the `--budget 300` the Morgan runs used.
+§12l has since replaced this pilot as the aggregate to quote. The two are not
+target-for-target comparable: §12k changed the target sampler, and the full run
+uses budget 300 rather than 200.
 
 ## 12j. Why the renders are not run in parallel
 
@@ -3174,6 +3177,61 @@ thread, without it one. The three tests written beside that claim did pass again
 the bug — but because their probe was half a second rather than two, every target
 rendered silent and all three were comparing empty lists. The claim excused missing
 coverage that was one fixture argument away.
+
+## 12l. Fifty Tone King targets, at the production budget
+
+§12i stopped at eight targets because the old serial path extrapolated to hours.
+§12k made the one sound use of a renderer pool explicit — one instance per worker,
+every comparison a target makes staying on that worker's instance — and the full
+run is now measured rather than extrapolated:
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 50 --budget 300 --seed 0 --seconds 2.0 \
+  --workers 4 --json docs/toneking-benchmark-50.json
+```
+
+Tone King 1.0.3 through the Swift server, `unpaired-v1`, 50 targets requested and
+50 produced, **zero failures**, 1745 seconds (29m05s):
+
+| arm | mean objective | median | param MAE | selector | renders |
+|---|---:|---:|---:|---:|---:|
+| recipe | 1.9796 | 2.0000 | 0.2542 | 0.6729 | 50 |
+| inversion | 1.3255 | 1.3411 | 0.2558 | 0.6729 | 100 |
+| **full** | **0.8738** | **0.8264** | 0.2665 | 0.6729 | 14757 |
+
+**The per-target result matches Morgan's shape.** Inversion beats the recipe on
+**47 of 50** targets; full beats inversion on **50 of 50**. The mean margins are
+0.6541 ± 0.0714 and 0.4517 ± 0.0655 respectively (standard error over targets),
+with medians 0.6991 and 0.3129. Morgan's real-plugin run recorded 47 of 49 and 49
+of 49 on those same two legs. Tone King is now the second real backend to show the
+full nesting at aggregate scale.
+
+**Fifty wins are still fifty single scoring renders.** `compare_baselines` renders
+each selected answer once for the objective in this table. The full-over-inversion
+margins run from 0.0159 to 2.6535; the smallest are below the variation this backend
+has shown between identical renders, so 50 of 50 is the observed sign and not a
+claim that every target is individually resolved. Replicating that final scoring
+render is the remaining benchmark-design gap §12i and §12j both point at.
+
+**The other columns remain diagnostics, not gates.** Full-arm parameter MAE is
+worse than inversion and recipe, the same non-identifiability pattern §12c says to
+read only at large n. Selector accuracy is identical across all arms because
+nothing enumerated; the column measures the seed's topology rather than recovery.
+The probe is the synthetic two-second decaying noise-burst sequence, not played
+guitar, so sustained and palm-muted behaviour are absent.
+
+**Parallelism paid where §12j said it could.** The full arm accounts for 6435 s of
+summed worker time and all three arms for about 6500 s, completed in 1745 s of wall
+clock on four workers — roughly 93% of four-worker capacity after startup. That is
+not a serial speedup measurement, because no matching 50-target serial run was
+made; it is the accounting behind a production-budget run completing in 29 minutes
+rather than the hours the old path projected.
+
+`docs/toneking-benchmark-50.json` is the committed evidence. It records the current
+per-target sampler, `workers=4`, `workers_requested=4`, `targets_completed=50`,
+renderer build, plugin version and `reproducible=false` with
+`band_noise_db=5.228794` beside the result.
 
 ## 13. Reading list, in the order it becomes relevant
 
