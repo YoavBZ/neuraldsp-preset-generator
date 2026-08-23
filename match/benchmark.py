@@ -362,6 +362,10 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     with nothing enumerated all three arms report the *same* selector accuracy in
     every run and that column measures nothing. It is the one column that can show
     the topology stage doing something.
+
+    `workers > 1` requires `renderer_factory`: the renderer passed in is the
+    serial instance and cannot be cloned safely by guessing its constructor.
+    Each worker keeps one factory-created instance for its life.
     """
     from analysis import io, require
 
@@ -376,6 +380,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     if unknown:
         raise BenchmarkError(f"unknown arm(s) {', '.join(unknown)}; "
                              f"available: {', '.join(ARMS)}")
+    workers = int(workers)
+    if workers < 1:
+        raise BenchmarkError(f"workers must be at least 1, not {workers}")
+    if workers > 1 and renderer_factory is None:
+        raise BenchmarkError(
+            f"workers={workers} needs renderer_factory so each worker can own "
+            f"one backend instance; without it the run would silently be serial"
+        )
 
     selection = {}
     if amp is not None:
@@ -425,7 +437,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     # This does change which vectors get sampled, so figures from before it are not
     # comparable target-for-target. The distribution they are drawn from is
     # unchanged.
-    streams = rng.spawn(int(targets))
+    streams = _spawn_streams(rng, int(targets), np)
 
     def one_target(index, own_renderer, own_scorer):
         """Everything one target needs, on one renderer.
@@ -528,6 +540,9 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         done = {}
         lock = threading.Lock()
         finished = [0]
+        completed: "queue.Queue[Optional[int]]" = queue.Queue()
+        cancelled = threading.Event()
+        fatal: List[BaseException] = []
         # `workers` threads pulling from a queue, not one thread per target. A
         # thread per target starts every target at once and leaves all but
         # `workers` of them blocked inside `borrow()`, which is bounded by the
@@ -540,7 +555,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         for index in range(int(targets)):
             pending.put(index)
 
-        def work():
+        def work_body():
             # One member for the thread's whole life. Different targets on one
             # instance is fine — targets compare with nothing outside themselves —
             # and it matches what the serial path does with its single renderer.
@@ -550,18 +565,13 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                         io.from_samples(probe_di, member.metadata().sample_rate),
                         regime="probe", excerpt_s=None),
                     probe_di, space, profile=profile, reference_audio=probe_di)
-                while True:
+                while not cancelled.is_set():
                     try:
                         index = pending.get_nowait()
                     except queue.Empty:
                         return
                     try:
                         outcomes, caveats = one_target(index, member, own_scorer)
-                    except (KeyboardInterrupt, SystemExit):
-                        # Not this net's business. Swallowing these turned a
-                        # Ctrl-C into a "failed target" and carried on with the
-                        # rest of the run.
-                        raise
                     except Exception as unexpected:   # noqa: BLE001
                         # A target that dies outside the arm loop — its truth
                         # render, or building its evaluator — used to take its
@@ -578,16 +588,53 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                     with lock:
                         done[index] = (outcomes, caveats)
                         finished[0] += 1
-                        if progress is not None:
-                            progress(finished[0], int(targets))
+                    completed.put(index)
 
-        with RendererPool(renderer_factory, workers=workers) as pool:
+        def work():
+            try:
+                work_body()
+            except BaseException as unexpected:      # noqa: BLE001 — re-raised below
+                # Includes control exceptions, borrowing a member, and building
+                # the per-worker evaluator. A child thread cannot propagate any
+                # of those to its joining thread by raising alone.
+                with lock:
+                    fatal.append(unexpected)
+                cancelled.set()
+                completed.put(None)
+
+        pool_width = min(int(workers), int(targets))
+        if pool_width == 0:
+            return result
+        with RendererPool(renderer_factory, workers=pool_width) as pool:
             threads = [threading.Thread(target=work, daemon=True)
-                       for _ in range(min(int(workers), int(targets)))]
+                       for _ in range(pool_width)]
             for thread in threads:
                 thread.start()
+            progress_error = None
+            reported = 0
+            while any(thread.is_alive() for thread in threads) or not completed.empty():
+                try:
+                    item = completed.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                if item is None:
+                    continue
+                reported += 1
+                if progress is not None and progress_error is None:
+                    try:
+                        # User code belongs on the calling thread. Running this
+                        # in a worker swallowed its exception while the benchmark
+                        # returned a clean result.
+                        progress(reported, int(targets))
+                    except BaseException as error:  # noqa: BLE001 — re-raised below
+                        progress_error = error
+                        cancelled.set()
             for thread in threads:
                 thread.join()
+        if progress_error is not None:
+            raise progress_error
+        if fatal:
+            raise fatal[0]
         missing = [index for index in range(int(targets)) if index not in done]
         if missing:
             # Never silently. A benchmark that reports on a subset it did not
@@ -608,6 +655,18 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         if progress is not None:
             progress(index + 1, int(targets))
     return result
+
+
+def _spawn_streams(rng, count: int, np):
+    """Independent target streams supported by NumPy 1.24.
+
+    ``Generator.spawn`` arrived in NumPy 1.25 while this project permits 1.24.
+    ``SeedSequence.spawn`` predates that minimum. One seed sequence is drawn from
+    the caller's generator, then target-indexed children are derived from it.
+    """
+    words = rng.integers(0, 2 ** 32, size=4, dtype=np.uint32)
+    return [np.random.default_rng(child)
+            for child in np.random.SeedSequence(words).spawn(int(count))]
 
 
 def scorer_score(scorer, target, values: Mapping,

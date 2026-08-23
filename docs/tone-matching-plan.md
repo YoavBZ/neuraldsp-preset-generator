@@ -3138,30 +3138,24 @@ recorded it of its own 0.6739. The row that could have moved is the full arm's
 parameter MAE, 0.2715 serial against 0.2676 parallel, and it belongs there more
 than either.
 
-**The control this section said was missing.** It exists: the two parallel runs
-are the same condition against itself, differing only in how the pool was built.
-Paired over sixteen targets they give recipe −0.0427 ± 0.0285, inversion
-−0.0805 ± 0.0373, full −0.0014 ± 0.0067 — t of 1.50, **2.16** and 0.22. That 2.16
-is the largest in the whole data set, and it is same-condition against
-same-condition, where there is no serial-versus-parallel effect to find. It retires
-the inversion arm's cross-condition 1.8 far better than observing that none of them
-reaches significance.
-
-**A second run agrees more closely than the first.** That re-measurement is
-contaminated for timing but not for scores — an objective does not depend on how
-many cores were free — and its paired differences are +0.0011, +0.0082 and +0.0099
-for recipe, inversion and full: 0.0, 0.2 and 0.3 standard errors, against the first
-run's 1.2, 1.8 and 0.4. The arm closest to significant is now the middle of three
-that are not. Two samples, not a distribution.
+**The apparent control is not a pure control.** The two parallel runs give paired
+differences of −0.0427 ± 0.0285, −0.0805 ± 0.0373 and −0.0014 ± 0.0067 — t of
+1.50, **2.16** and 0.22 — but they differ in two ways, not one. The first predates
+the bounded worker queue and used one evaluator per target; the second uses one
+evaluator per worker for its life, as well as building the pool concurrently. On a
+backend whose answer depends on instance history, that is not same-condition
+against same-condition, and the 2.16 cannot retire the cross-condition 1.8. The
+arithmetic is exact; the interpretation an earlier version put on it is not.
 
 **Where the divergence sits.** The per-target serial-versus-parallel differences
 correlate at r = +0.95 between the recipe and full arms and about +0.74 for the
 other pairs; six of sixteen targets carry nearly all of it while the other ten
 have mean absolute differences of 0.007 to 0.021 by arm — means, not ceilings;
-the largest single difference among those ten is 0.067. All three arms score against the same truth render,
-so a target whose truth landed differently moves every arm together — which is what
-that correlation is. It puts the divergence in the truth render rather than in the
-search, and says more than the means agreeing does.
+the largest single difference among those ten is 0.067. All three arms score
+against the same truth render, so a target-shared source of variation moves them
+together. The truth render is one plausible source, and renderer-instance history
+is another; the correlation locates the variation at target scope rather than
+uniquely identifying its cause.
 
 **1.46x, not 3.82x, and the gap is a startup this code serialises.** Four Tone
 King instances each pay about 46 s loading impulse responses, and `RendererPool`
@@ -3174,16 +3168,15 @@ Building the members concurrently was then done, and it does what it was meant t
 the first wave of four targets now completes at 80 s where it used to complete at
 197 s. What it has **not** shown is a matching speedup. The run measuring it came
 in at 243 s against 274 — 1.65x rather than the predicted 2.8x — but that run
-shared the machine with another job, and the signature is unmistakable: summed arm
-work was 688 s against 384 s for identical work. Arm timings that double are load,
-not construction. **The speedup after concurrent construction is unmeasured on a
+shared the machine with another job, and the signature is unmistakable: all-three-
+arm work summed to 726.2 s against 383.5 s for the prior run (the full arm alone was
+688.0 s against 362.8 s). Arm timings that nearly double are load, not construction.
+**The speedup after concurrent construction is unmeasured on a
 quiet machine**, and 2.8x stays a prediction.
 
-The arms themselves do not slow each other down: 384 s of arm work summed across
+The first run's arms did not slow each other down: 383.5 s summed across
 all three arms, in about 96 s of wall clock on four workers, an efficiency near
-4.0. (Three different figures in this section have been called "summed arm work";
-this one and the 688 s above are both all-three-arm totals, 383.5 s and 726.2 s,
-and their ratio is the 1.9x the load argument rests on.) Extrapolated to 50
+4.0. Extrapolated to 50
 targets the parallel run lands near 470 s against about 1250 s serial. Both are
 arithmetic, neither has been run, the 1.46x is a single sample, and there is no
 serial-versus-serial control at sixteen targets.

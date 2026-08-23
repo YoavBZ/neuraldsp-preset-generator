@@ -89,6 +89,10 @@ class RendererPool:
         self._members: List[Any] = []
         self._free: "queue.Queue[Any]" = queue.Queue()
         self._closed = False
+        # Registration and close are one state transition. A builder can finish
+        # after `__init__` has been interrupted and `close()` has run; without one
+        # lock it can append a live renderer to an abandoned pool.
+        self._state_lock = threading.Lock()
         try:
             # Built at once, not one after another. Each `AudioUnitRenderer` spends
             # its construction starting a server and, on Tone King, about 46 s
@@ -96,8 +100,6 @@ class RendererPool:
             # minutes in front of a four-worker run before any work began, which
             # §12k first recorded as a property of the plugin and is not.
             errors: List[Optional[BaseException]] = [None] * workers
-            registered = threading.Lock()
-
             def build(slot: int) -> None:
                 try:
                     member = factory()
@@ -111,9 +113,23 @@ class RendererPool:
                 # is the stretch where nothing appears to be happening. Unwinding
                 # past the join left four live Swift servers that nothing tracked
                 # and a second `close()` could not stop.
-                with registered:
-                    self._members.append(member)
-                    self._free.put(member)
+                close_now = False
+                with self._state_lock:
+                    if self._closed:
+                        close_now = True
+                    else:
+                        self._members.append(member)
+                        self._free.put(member)
+                if close_now:
+                    close = getattr(member, "close", None)
+                    if close is not None:
+                        try:
+                            close()
+                        except BaseException:
+                            # Construction has already been cancelled. Cleanup
+                            # must not let one member's close failure strand the
+                            # other builders or replace the original interrupt.
+                            pass
 
             threads = [threading.Thread(target=build, args=(slot,), daemon=True)
                        for slot in range(workers)]
@@ -248,20 +264,23 @@ class RendererPool:
         the next render starts a *fresh* Swift server and plugin instance that
         `_members` no longer tracks and a second `close()` cannot stop.
         """
-        self._closed = True
-        while True:
-            try:
-                self._free.get_nowait()
-            except queue.Empty:
-                break
-        for member in self._members:
+        with self._state_lock:
+            if self._closed:
+                return
+            self._closed = True
+            while True:
+                try:
+                    self._free.get_nowait()
+                except queue.Empty:
+                    break
+            members, self._members = self._members, []
+        for member in members:
             close = getattr(member, "close", None)
             if close is not None:
                 try:
                     close()
                 except BaseException:
                     pass
-        self._members = []
 
     def __enter__(self) -> "RendererPool":
         return self

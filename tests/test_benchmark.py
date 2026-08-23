@@ -787,3 +787,66 @@ def test_a_target_that_dies_outside_its_arms_is_reported_not_dropped(space, seed
     failed = [o for o in result.outcomes if o.failed]
     assert len(failed) == 1 and "deliberate" in failed[0].error
     assert any("outside its arms" in c for c in result.caveats)
+
+
+def test_a_control_exception_in_a_worker_reaches_the_caller(space, seed):
+    """Raising it inside the child thread is not enough: threading sends it to
+    `excepthook` and the caller otherwise sees only a generic missing-target error."""
+    class Interrupted(SyntheticRenderer):
+        def render(self, di_samples, settings=None, **kwargs):
+            raise KeyboardInterrupt("user pressed ctrl-c")
+
+    with pytest.raises(KeyboardInterrupt, match="ctrl-c"):
+        B.compare_baselines(
+            Interrupted(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2, renderer_factory=Interrupted)
+
+
+def test_a_progress_callback_exception_reaches_the_caller(space, seed):
+    def stop_after_one(done, total):
+        raise RuntimeError(f"progress failed at {done}/{total}")
+
+    with pytest.raises(RuntimeError, match="progress failed"):
+        B.compare_baselines(
+            SyntheticRenderer(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2, renderer_factory=SyntheticRenderer,
+            progress=stop_after_one)
+
+
+def test_the_pool_width_is_capped_by_the_target_count(space, seed):
+    made = []
+
+    def factory():
+        made.append(1)
+        return SyntheticRenderer()
+
+    B.compare_baselines(
+        SyntheticRenderer(), space,
+        fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=1,
+        budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+        workers=8, renderer_factory=factory)
+
+    assert len(made) == 1, "seven idle plugin instances would be pure startup cost"
+
+
+def test_workers_without_a_factory_are_refused_not_silently_serial(space, seed):
+    with pytest.raises(B.BenchmarkError, match="renderer_factory"):
+        B.compare_baselines(
+            SyntheticRenderer(), space,
+            fx.plucks(seconds=2.0, gap=0.9, seed=13), seed, targets=2,
+            budget=12, arms=("recipe",), rng=np.random.default_rng(3),
+            workers=2)
+
+
+def test_per_target_streams_do_not_need_generator_spawn():
+    """`Generator.spawn` requires NumPy 1.25; the project supports 1.24."""
+    streams = B._spawn_streams(np.random.default_rng(7), 3, np)
+    again = B._spawn_streams(np.random.default_rng(7), 3, np)
+
+    assert [s.random() for s in streams] == [s.random() for s in again]
+    assert len({s.random() for s in B._spawn_streams(
+        np.random.default_rng(7), 3, np)}) == 3

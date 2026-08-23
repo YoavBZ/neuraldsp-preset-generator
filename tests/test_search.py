@@ -1483,6 +1483,58 @@ def test_a_closed_pool_cannot_hand_out_a_renderer():
         pool.render_one(di(), {})
 
 
+def test_an_interrupted_pool_build_closes_members_that_finish_late(monkeypatch):
+    """Ctrl-C during plugin startup is the likely interrupt: Tone King can spend
+    46 seconds appearing to do nothing. A builder finishing after `close()` used
+    to append a live renderer to an abandoned pool that no second close could
+    find."""
+    import threading
+
+    from match.pool import RendererPool
+
+    release = threading.Event()
+    all_done = threading.Event()
+    made = []
+    finished = []
+
+    class Tracked(SyntheticRenderer):
+        def __init__(self):
+            super().__init__()
+            self.closes = 0
+
+        def close(self):
+            self.closes += 1
+
+    def factory():
+        release.wait(timeout=2)
+        member = Tracked()
+        made.append(member)
+        finished.append(1)
+        if len(finished) == 2:
+            all_done.set()
+        return member
+
+    real_join = threading.Thread.join
+    interrupted = []
+
+    def interrupt_first_join(thread, *args, **kwargs):
+        if not interrupted:
+            interrupted.append(1)
+            raise KeyboardInterrupt("user interrupted plugin startup")
+        return real_join(thread, *args, **kwargs)
+
+    monkeypatch.setattr(threading.Thread, "join", interrupt_first_join)
+    with pytest.raises(KeyboardInterrupt):
+        RendererPool(factory, workers=2)
+    release.set()
+    assert all_done.wait(timeout=2), "both daemon builders should finish"
+    assert len(made) == 2
+    assert all(member.closes == 1 for member in made), (
+        "a member that finishes after the interrupted constructor must close "
+        "itself instead of registering in the abandoned pool"
+    )
+
+
 def test_a_worker_failure_reaches_the_caller_with_its_cause(space, seed, target):
     """Not as `KeyError` with the real exception lost to the threading excepthook."""
     from dataclasses import replace

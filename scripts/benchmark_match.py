@@ -214,7 +214,9 @@ def main() -> None:
     if backend_caveat:
         result.caveats.insert(0, backend_caveat)
 
-    print(f"\n{args.targets} targets, budget {args.budget}, "
+    completed_targets = len({row.target_index for row in result.outcomes})
+    print(f"\n{args.targets} targets requested, {completed_targets} produced, "
+          f"budget {args.budget}, "
           f"{args.workers} worker(s), "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
@@ -226,7 +228,9 @@ def main() -> None:
     if args.json:
         rows = [vars(outcome) for outcome in result.outcomes]
         args.json.write_text(json.dumps({
-            "targets": args.targets, "budget": args.budget, "pack": args.pack,
+            "targets": args.targets,
+            "targets_completed": completed_targets,
+            "budget": args.budget, "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,
             # Whether the pool was used, and how wide. §12j's standing rule is to
