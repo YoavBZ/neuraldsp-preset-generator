@@ -555,6 +555,18 @@ def test_the_benchmark_runs_and_reports_every_number_separately(tmp_path):
     assert "mean absolute error" in done.stdout
 
     written = json.loads(out.read_text())
+    assert written["schema"] == "benchmark-match-2"
+    assert len(written["source_commit"]) == 40
+    assert written["elapsed_s"] > 0
+    assert written["target_sampler"] == "seed-sequence-spawn-1"
+    assert written["probe"] == {
+        "kind": "synthetic-decaying-noise-bursts",
+        "seconds": 1.5,
+        "gap_s": 0.9,
+        "seed": 13,
+    }
+    assert written["workers"] == written["workers_requested"] == 1
+    assert written["targets_completed"] == 2
     assert set(written["summaries"]) == {"recipe", "inversion", "full"}
     assert len(written["outcomes"]) == 6, "two targets by three arms"
     assert isinstance(written["ships"], bool)

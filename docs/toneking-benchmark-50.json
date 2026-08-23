@@ -1,4 +1,7 @@
 {
+  "schema": "benchmark-match-2",
+  "source_commit": "48659ca907384280ed8a0ec49a42c1bc51a706a7",
+  "elapsed_s": 1745.0,
   "targets": 50,
   "targets_completed": 50,
   "budget": 300,
@@ -6,6 +9,13 @@
   "amp": "lead",
   "loss_profile": "unpaired-v1",
   "seed": 0,
+  "target_sampler": "seed-sequence-spawn-1",
+  "probe": {
+    "kind": "synthetic-decaying-noise-bursts",
+    "seconds": 2.0,
+    "gap_s": 0.9,
+    "seed": 13
+  },
   "workers": 4,
   "workers_requested": 4,
   "backend": {
