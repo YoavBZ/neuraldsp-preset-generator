@@ -30,8 +30,9 @@ Tone King's topology-generic calibration, fresh-process repeatability finding an
 corrected known-target runs, including direct inversion, are recorded in §12g.
 §12h replicates shortlist scoring on backends that do not repeat themselves,
 which is the design §12d asked for and §12g's runs did without. §12i is the
-eight-target Tone King benchmark §12g named as missing: the arms nest on Tone
-King as §12d already showed they do on Morgan.
+eight-target Tone King pilot §12g named as missing; §12l is the full fifty-target,
+300-render result: 50 of 50 full-over-inversion wins, 47 of 50
+inversion-over-recipe, zero failures, 29 minutes on four workers.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2833,6 +2834,7 @@ than a second helper that could disagree with it.
 Neither committed pack can reach any of this — Morgan and Tone King both declare
 their gates and both appear in any real preset — which is why it survived as long
 as it did.
+
 ## 12i. A Tone King aggregate, and what eight targets can carry
 
 §12g could call its Tone King runs valid end-to-end evidence and nothing more,
@@ -2947,8 +2949,9 @@ and means **this command no longer reproduces this artifact**: the same invocati
 now samples eight different targets from the same distribution. The aggregate
 remains comparable; `docs/toneking-benchmark-8.json` target-for-target does not.
 
-Scaling this to §12c's fifty targets is about 5 hours at this budget and nearer
-7 at the `--budget 300` the Morgan runs used.
+§12l has since replaced this pilot as the aggregate to quote. The two are not
+target-for-target comparable: §12k changed the target sampler, and the full run
+uses budget 300 rather than 200.
 
 ## 12j. Why the renders are not run in parallel
 
@@ -3074,13 +3077,11 @@ wires past — this repository refuses a stale EQ basis, an output-gain control
 without `unit: db` and a pool whose members disagree about their backend for the
 same reason, and this is the same class of mistake with a bigger blast radius.
 
-**What would be sound** — and §12k has since measured it at 2.28x on 16 targets.
-The benchmark's 50 targets are independent experiments,
-not comparisons: each renders its own truth, runs its own search and reports its
-own score. Giving each target its own instance for its whole run keeps every
-comparison inside one instance while parallelising the part that actually costs
-hours — §12i measured 2813 s of arm time for eight targets, so fifty is about five. That is
-where this should go next, and it needs no change to the search at all.
+**What is sound** — §12k measures 2.28x on 16 targets and §12l measures the full
+production-budget run. Benchmark targets are independent experiments, not
+comparisons: each renders its own truth, runs its own search and reports its own
+score. One instance per worker keeps every comparison a target makes inside that
+instance while parallelising targets across workers.
 
 An earlier version of this section claimed the pooled screen kept the same controls
 as the serial one. That came from comparing which controls cleared the floor, which
@@ -3142,10 +3143,9 @@ from 383.5 s for the prior run, so its clock was load, not construction. An earl
 version of this section quoted 1.46x and then called the replacement speedup
 unmeasured. The clean pair above replaces both.
 
-Scaling 16 targets to 50 is arithmetic until it is run. The current waves suggest
-roughly 6 to 7 minutes on four workers against about 18 minutes serially at budget
-60; the production `--budget 300` costs more per target, and is the next
-measurement rather than a number to infer from this table.
+Scaling 16 targets to 50 was arithmetic until §12l ran it. At the production
+`--budget 300`, four workers complete the 50-target run in 29m05s; no matching
+serial run was made.
 
 **Do not read a 4-target run.** At four targets two *serial* runs of the same seed
 gave arm means differing by 0.22 to 0.25 — as large as anything separating serial
@@ -3174,6 +3174,73 @@ thread, without it one. The three tests written beside that claim did pass again
 the bug — but because their probe was half a second rather than two, every target
 rendered silent and all three were comparing empty lists. The claim excused missing
 coverage that was one fixture argument away.
+
+## 12l. Fifty Tone King targets, at the production budget
+
+§12i stopped at eight targets because the old serial path extrapolated to hours.
+§12k made the one sound use of a renderer pool explicit — one instance per worker,
+every comparison a target makes staying on that worker's instance — and the full
+run is now measured rather than extrapolated:
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 50 --budget 300 --seed 0 --seconds 2.0 \
+  --workers 4 --json docs/toneking-benchmark-50.json
+```
+
+Tone King 1.0.3 through the Swift server, `unpaired-v1`, 50 targets requested and
+50 produced, **zero failures**, 1745 seconds (29m05s):
+
+| arm | mean objective | median | param MAE | selector | renders |
+|---|---:|---:|---:|---:|---:|
+| recipe | 1.9796 | 2.0000 | 0.2542 | 0.6729 | 50 |
+| inversion | 1.3255 | 1.3411 | 0.2558 | 0.6729 | 100 |
+| **full** | **0.8738** | **0.8264** | 0.2665 | 0.6729 | 14757 |
+
+**The per-target result matches Morgan's synthetic shape, not its real-plugin
+counts.** Inversion beats the recipe on
+**47 of 50** targets; full beats inversion on **50 of 50**. The mean margins are
+0.6541 ± 0.0714 and 0.4517 ± 0.0655 respectively (standard error over targets),
+with medians 0.6991 and 0.3129. Morgan's *synthetic* M4 run recorded 47 of 49 and
+49 of 49 on those same two legs; its real-plugin run recorded 47 of 50 and 45 of
+50. Tone King shows the full nesting more consistently than Morgan's real-plugin
+sample did, while every Tone King objective remains a single noisy render as the
+next paragraph says.
+
+**Fifty wins are still fifty single scoring renders.** `compare_baselines` renders
+each selected answer once for the objective in this table. The full-over-inversion
+margins run from 0.0159 to 2.6535; the smallest are below the variation this backend
+has shown between identical renders, so 50 of 50 is the observed sign and not a
+claim that every target is individually resolved. Replicating that final scoring
+render is the remaining benchmark-design gap §12i and §12j both point at.
+
+**The other columns remain diagnostics, not gates.** Full-arm parameter MAE is
+worse than inversion and recipe, the same non-identifiability pattern §12c says to
+read only at large n. Selector accuracy is identical across all arms because
+nothing enumerated; the column measures the seed's topology rather than recovery.
+The probe is the synthetic two-second decaying noise-burst sequence, not played
+guitar, so sustained and palm-muted behaviour are absent.
+
+**Playing level moves more than the arm gap.** On at least one target the
+shortlist's score moves by **2.30** across ±6 dB of input level — more than five
+times the 0.4517 mean full-over-inversion margin — and up to **82%** of such
+movement is the output getting louder or quieter rather than the tone changing.
+That does not invalidate a benchmark at its reference level; it limits how far
+the ordering generalises to a player hitting the amp differently.
+
+**Parallelism paid where §12j said it could.** The full arm accounts for 6435 s of
+summed worker time and all three arms for about 6500 s, completed in 1745 s of wall
+clock on four workers — 93% when summed arm wall time is divided by four times the
+measured command interval. That is utilization-like accounting, not CPU
+utilization: the command timer excludes the primary renderer's startup, includes
+the other members' construction, and arm timers exclude truth renders. It is not a
+serial speedup measurement, because no matching 50-target serial run was made.
+
+`docs/toneking-benchmark-50.json` is the committed evidence. It records
+`source_commit=48659ca…`, `elapsed_s=1745`, the two-second synthetic probe and its
+constants, `target_sampler=seed-sequence-spawn-1`, `workers=4`,
+`workers_requested=4`, `targets_completed=50`, renderer build, plugin version and
+`reproducible=false` with `band_noise_db=5.228794` beside the result.
 
 ## 13. Reading list, in the order it becomes relevant
 

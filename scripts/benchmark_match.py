@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
 import time
 
@@ -222,6 +223,7 @@ def main() -> None:
     if backend_caveat:
         result.caveats.insert(0, backend_caveat)
 
+    elapsed_s = time.time() - started
     completed_targets = len({row.target_index for row in result.outcomes})
     effective_workers = min(args.workers, args.targets)
     print(f"\n{args.targets} targets requested, {completed_targets} produced, "
@@ -231,7 +233,7 @@ def main() -> None:
              else "") + ", "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
-          f"{time.time() - started:.0f}s total\n")
+          f"{elapsed_s:.0f}s total\n")
     print(benchmark.format_table(result, arms=arms))
     if backend_caveat:
         print(f"\n  {backend_caveat}.")
@@ -239,11 +241,24 @@ def main() -> None:
     if args.json:
         rows = [vars(outcome) for outcome in result.outcomes]
         args.json.write_text(json.dumps({
+            "schema": "benchmark-match-2",
+            "source_commit": _source_commit(),
+            "elapsed_s": round(elapsed_s, 3),
             "targets": args.targets,
             "targets_completed": completed_targets,
             "budget": args.budget, "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,
+            "target_sampler": "seed-sequence-spawn-1",
+            "probe": ({
+                "kind": "provided",
+                "path": str(args.probe_di),
+            } if args.probe_di is not None else {
+                "kind": "synthetic-decaying-noise-bursts",
+                "seconds": float(args.seconds),
+                "gap_s": 0.9,
+                "seed": 13,
+            }),
             # Whether the pool was used, and how wide. §12j's standing rule is to
             # treat pooled numbers from a non-reproducible backend as unvalidated,
             # which needs the artifact to say whether they are pooled.
@@ -261,6 +276,18 @@ def main() -> None:
 
     ships, _ = result.verdict()
     sys.exit(0 if ships else 1)
+
+
+def _source_commit():
+    """The checkout that produced an artifact, when this is a checkout."""
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=PLUGIN_ROOT,
+            capture_output=True, text=True, check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return completed.stdout.strip() or None
 
 
 if __name__ == "__main__":
