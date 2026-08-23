@@ -33,7 +33,9 @@ which is the design §12d asked for and §12g's runs did without. §12i is the
 eight-target Tone King pilot §12g named as missing; §12l is the full fifty-target,
 300-render result: 50 of 50 full-over-inversion wins, 47 of 50
 inversion-over-recipe, zero failures, 29 minutes on four workers. §12m closes the
-single-render scoring gap with three observations per final arm score.
+single-render scoring gap with three observations per final arm score; §12n reruns
+all fifty targets under that scorer and finds 47 resolved full-over-inversion wins,
+zero resolved losses and three unresolved targets.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -3245,6 +3247,9 @@ constants, `target_sampler=seed-sequence-spawn-1`, `workers=4`,
 `workers_requested=4`, `targets_completed=50`, renderer build, plugin version and
 `reproducible=false` with `band_noise_db=5.228794` beside the result.
 
+§12n has since replaced this artifact as the Tone King aggregate to quote. This
+one remains the single-render record that exposed the need for replicated scoring.
+
 ## 12m. Replicate the number the benchmark reports
 
 §12l's final benchmark gap was narrower than §12h's shortlist problem and more
@@ -3292,8 +3297,71 @@ why one set of selected vectors repeats better than another.
 `docs/toneking-benchmark-replicated-8.json` records the three observations through
 their mean and spread, source commit, elapsed time, sampler, probe constants,
 worker counts and backend provenance. §12l's fifty-target artifact is not rewritten
-or reinterpreted; repeating that run under this scorer is the next aggregate
-measurement.
+or reinterpreted; §12n is the separate fifty-target rerun under this scorer.
+
+## 12n. Fifty targets with replicated final scores
+
+The production aggregate was rerun after §12m, with the same current target
+sampler and production budget:
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --pack toneking --amp lead \
+  --renderer swift --targets 50 --budget 300 --seed 0 --seconds 2.0 \
+  --workers 4 --json docs/toneking-benchmark-50-replicated.json
+```
+
+Tone King 1.0.3, source commit `0fa10a8`, 50 targets requested and produced,
+zero failures, 1781 seconds (29m41s):
+
+| arm | mean objective | median | param MAE | renders | mean spread | max spread |
+|---|---:|---:|---:|---:|---:|---:|
+| recipe | 1.9333 | 1.9780 | 0.2542 | 150 | 0.0700 | 0.3570 |
+| inversion | 1.3392 | 1.2766 | 0.2557 | 200 | 0.0365 | 0.3134 |
+| **full** | **0.8589** | **0.8267** | 0.2636 | 14850 | 0.0206 | 0.3934 |
+
+Every one of the 150 outcomes obtained all three requested observations. The run
+adds 300 final scoring renders over §12l's one-render contract and takes 36 s more
+wall clock; search itself is noisy enough that total full-arm renders move by less
+than exactly 100 between the two artifacts, so the outcome observation counts —
+not subtracting aggregate render totals — are the accounting proof.
+
+**The observed signs soften; the resolved result strengthens.** Inversion beats
+recipe on 45 of 50 mean scores, with mean margin 0.5942 ± 0.0779. Full beats
+inversion on 48 of 50, with mean margin 0.4803 ± 0.0772. The two apparent full-arm
+losses are −0.0001 and −0.0023, much smaller than the variation measured on those
+same selected vectors.
+
+Resolution uses the same rule §12h uses for two replicated means: convert each
+three-sample range to a standard-deviation estimate with the n=3 control-chart
+constant `d2=1.693`, divide by `sqrt(3)` for the error of each mean, combine the
+two errors in quadrature and require a margin beyond **two** combined standard
+errors. By that rule:
+
+| leg | resolved wins | resolved losses | unresolved |
+|---|---:|---:|---:|
+| recipe → inversion | 45 | 4 | 1 |
+| inversion → full | **47** | **0** | **3** |
+
+The unresolved full-arm targets are target 16 (−0.0001 against resolution 0.0146),
+target 19 (+0.1037 against 0.2138) and target 30 (−0.0023 against 0.3094). So the
+single-render §12l headline "50 of 50" becomes the more useful claim: **47 resolved
+wins, no resolved losses, three targets this backend cannot order from three
+observations**.
+
+**Spread is not an arm property.** The eight-target pilot made full look unusually
+stable, with maximum spread 0.009; at fifty targets its maximum is 0.393. Recipe and
+inversion maxima likewise reach 0.357 and 0.313. The reason §12m refused to explain
+the pilot pattern is now measured rather than precautionary: eight selected vectors
+did not describe the distribution.
+
+The standing input-level caveat remains larger than the arm gap: shortlist scores
+move by up to 2.37 across ±6 dB, and up to 81% of such movement is loudness rather
+than tone. The benchmark measures the reference input level, not every way a player
+can hit the amp.
+
+`docs/toneking-benchmark-50-replicated.json` is the current Tone King aggregate.
+It records source commit, elapsed time, sampler, probe constants, worker counts,
+backend provenance, all 150 outcome means, observation counts and spreads.
 
 ## 13. Reading list, in the order it becomes relevant
 
