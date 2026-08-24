@@ -34,8 +34,9 @@ eight-target Tone King pilot §12g named as missing; §12l is the full fifty-tar
 300-render result: 50 of 50 full-over-inversion wins, 47 of 50
 inversion-over-recipe, zero failures, 29 minutes on four workers. §12m closes the
 single-render scoring gap with three observations per final arm score; §12n reruns
-all fifty targets under that scorer and finds 47 resolved full-over-inversion wins,
-zero resolved losses and three unresolved targets.
+all fifty targets under that scorer and finds 47 full-over-inversion wins beyond
+its stated two-standard-error heuristic, zero losses beyond it and three targets
+inside it.
 
 This is a handoff specification. It is written to be given to a fresh Claude
 Code session as the sole context for building the feature, so it states the
@@ -2953,7 +2954,7 @@ and means **this command no longer reproduces this artifact**: the same invocati
 now samples eight different targets from the same distribution. The aggregate
 remains comparable; `docs/toneking-benchmark-8.json` target-for-target does not.
 
-§12l has since replaced this pilot as the aggregate to quote. The two are not
+§12n has since replaced this pilot as the aggregate to quote. The two are not
 target-for-target comparable: §12k changed the target sampler, and the full run
 uses budget 300 rather than 200.
 
@@ -3319,11 +3320,13 @@ zero failures, 1781 seconds (29m41s):
 | inversion | 1.3392 | 1.2766 | 0.2557 | 200 | 0.0365 | 0.3134 |
 | **full** | **0.8589** | **0.8267** | 0.2636 | 14850 | 0.0206 | 0.3934 |
 
-Every one of the 150 outcomes obtained all three requested observations. The run
-adds 300 final scoring renders over §12l's one-render contract and takes 36 s more
-wall clock; search itself is noisy enough that total full-arm renders move by less
-than exactly 100 between the two artifacts, so the outcome observation counts —
-not subtracting aggregate render totals — are the accounting proof.
+Every one of the 150 outcomes obtained all three requested observations. The
+contract adds exactly 300 final scoring attempts over a counterfactual one-render
+run. This artifact is 36 s longer than §12l's, but that difference is descriptive,
+not a causal timing result: search noise changes other render counts too, and the
+two reused stateful runs do not share the same plugin history. Aggregate render
+totals differ by 293 rather than 300; the outcome observation counts are the
+accounting proof.
 
 **The observed signs soften; the resolved result strengthens.** Inversion beats
 recipe on 45 of 50 mean scores, with mean margin 0.5942 ± 0.0779. Full beats
@@ -3331,22 +3334,26 @@ inversion on 48 of 50, with mean margin 0.4803 ± 0.0772. The two apparent full-
 losses are −0.0001 and −0.0023, much smaller than the variation measured on those
 same selected vectors.
 
-Resolution uses the same rule §12h uses for two replicated means: convert each
+The operational resolution heuristic uses the same rule §12h uses for two replicated means: convert each
 three-sample range to a standard-deviation estimate with the n=3 control-chart
 constant `d2=1.693`, divide by `sqrt(3)` for the error of each mean, combine the
 two errors in quadrature and require a margin beyond **two** combined standard
-errors. By that rule:
+errors. With three observations this is a noisy variance estimate, assumes roughly
+independent normal render variation, and does not cover search-path, selected-vector,
+target-render or whole-run variability. It is not a formal 95% inference. By that
+rule:
 
-| leg | resolved wins | resolved losses | unresolved |
+| leg | wins beyond rule | losses beyond rule | inside rule |
 |---|---:|---:|---:|
 | recipe → inversion | 45 | 4 | 1 |
 | inversion → full | **47** | **0** | **3** |
 
-The unresolved full-arm targets are target 16 (−0.0001 against resolution 0.0146),
-target 19 (+0.1037 against 0.2138) and target 30 (−0.0023 against 0.3094). So the
-single-render §12l headline "50 of 50" becomes the more useful claim: **47 resolved
-wins, no resolved losses, three targets this backend cannot order from three
-observations**.
+The full-arm targets inside the heuristic are target 16 (−0.0001 against threshold
+0.0146), target 19 (+0.1037 against 0.2138) and target 30 (−0.0023 against 0.3094).
+So the
+single-render §12l headline "50 of 50" becomes the more useful, explicitly
+conditional claim: **47 wins beyond the two-SE heuristic, no losses beyond it,
+three targets inside it**.
 
 **Spread is not an arm property.** The eight-target pilot made full look unusually
 stable, with maximum spread 0.009; at fifty targets its maximum is 0.393. Recipe and
@@ -3355,9 +3362,10 @@ the pilot pattern is now measured rather than precautionary: eight selected vect
 did not describe the distribution.
 
 The standing input-level caveat remains larger than the arm gap: shortlist scores
-move by up to 2.37 across ±6 dB, and up to 81% of such movement is loudness rather
-than tone. The benchmark measures the reference input level, not every way a player
-can hit the amp.
+move by up to 2.37 across ±6 dB, and one deduplicated caveat reports **100%** of
+such movement as loudness rather than tone. Caveats are not keyed to target IDs, so
+that is the largest disclosed example rather than a population maximum. The
+benchmark measures the reference input level, not every way a player can hit the amp.
 
 `docs/toneking-benchmark-50-replicated.json` is the current Tone King aggregate.
 It records source commit, elapsed time, sampler, probe constants, worker counts,
