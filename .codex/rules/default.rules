@@ -1,217 +1,142 @@
-# Project-local command policy. Loaded only because this repository is trusted.
-# Rules match argv prefixes, not shell text. More restrictive matches win, so the
-# prompt rules below override broader allow rules for main, force, and destructive
-# variants.
+# Project-local command policy. Loaded only for this trusted repository.
+#
+# Important: `decision = "allow"` means the command may run OUTSIDE the sandbox.
+# Therefore the allowlist is intentionally small. Normal file reads, edits, tests,
+# and project scripts should stay inside workspace-write and need no rule at all.
+# User-reviewed prompts are cheap because `.codex/config.toml` disables the
+# auto-review subagent for this project.
 
-# Read-only repository inspection.
-prefix_rule(
-    pattern = ["git", ["status", "diff", "log", "show", "rev-parse", "ls-files"]],
-    decision = "allow",
-    justification = "Read-only inspection of the trusted project repository",
-    match = ["git status --short", "git diff --check", "git log --oneline -5"],
-    not_match = ["git reset --hard"],
-)
-prefix_rule(
-    pattern = ["git", "branch", ["--show-current", "--list"]],
-    decision = "allow",
-    justification = "Read-only branch inspection",
-)
-prefix_rule(
-    pattern = ["git", "remote", "-v"],
-    decision = "allow",
-    justification = "Read-only remote inspection",
-)
-prefix_rule(
-    pattern = ["git", "ls-remote", "origin"],
-    decision = "allow",
-    justification = "Read refs from the configured project origin",
-)
-
-# Reversible local development operations used on nearly every change.
+# Local staging is reversible and cannot transmit data off the machine.
 prefix_rule(
     pattern = ["git", "add"],
     decision = "allow",
-    justification = "Stage project changes locally",
-)
-prefix_rule(
-    pattern = ["git", "commit"],
-    decision = "allow",
-    justification = "Create a local project commit",
-)
-prefix_rule(
-    pattern = ["git", "switch"],
-    decision = "allow",
-    justification = "Switch or create project branches",
-)
-prefix_rule(
-    pattern = ["git", "checkout", "-b"],
-    decision = "allow",
-    justification = "Create a feature branch",
-)
-prefix_rule(
-    pattern = ["git", "merge", "--ff-only"],
-    decision = "allow",
-    justification = "Fast-forward a feature branch without creating a merge commit",
+    justification = "Stage changes in the local project index",
+    match = ["git add README.md", "git add -A"],
+    not_match = ["git commit -m message"],
 )
 
-# Read/update remote refs from the already-configured trusted origin.
+# Read the configured project's remote refs. This cannot update local refs.
 prefix_rule(
-    pattern = ["git", "fetch", "origin"],
+    pattern = ["git", "ls-remote", "origin"],
     decision = "allow",
-    justification = "Fetch project refs from the configured origin",
-)
-prefix_rule(
-    pattern = ["git", "fetch", "-q", "origin"],
-    decision = "allow",
-    justification = "Quietly fetch project refs from the configured origin",
+    justification = "Read refs from the already-configured project origin",
+    match = ["git ls-remote origin", "git ls-remote origin refs/heads/main"],
+    not_match = ["git ls-remote https://example.com/repository.git"],
 )
 
-# Normal feature-branch pushes are authorized for this project. Main and history-
-# rewriting variants match stricter prompt rules below. The rules language supports
-# literal prefixes, not a `codex/*` branch glob, so pushes are limited to the trusted
-# `origin` remote and the dangerous common forms are carved back out.
-prefix_rule(
-    pattern = ["git", "push", "origin"],
-    decision = "allow",
-    justification = "Push a project feature branch to the configured origin",
-)
-prefix_rule(
-    pattern = ["git", "push", "-u", "origin"],
-    decision = "allow",
-    justification = "Push and track a project feature branch on origin",
-)
-prefix_rule(
-    pattern = ["git", "push", "--set-upstream", "origin"],
-    decision = "allow",
-    justification = "Push and track a project feature branch on origin",
-)
-prefix_rule(
-    pattern = ["git", "push", "origin", "main"],
-    decision = "prompt",
-    justification = "Main changes must go through a freshly reviewed pull request",
-    match = ["git push origin main"],
-)
-prefix_rule(
-    pattern = ["git", "push", "-u", "origin", "main"],
-    decision = "prompt",
-    justification = "Main changes must go through a freshly reviewed pull request",
-)
-prefix_rule(
-    pattern = ["git", "push", "--set-upstream", "origin", "main"],
-    decision = "prompt",
-    justification = "Main changes must go through a freshly reviewed pull request",
-)
-prefix_rule(
-    pattern = ["git", "push", ["--force", "-f", "--force-with-lease"]],
-    decision = "prompt",
-    justification = "History-rewriting pushes require explicit user approval",
-)
-prefix_rule(
-    pattern = ["git", "push", "origin", "--delete"],
-    decision = "prompt",
-    justification = "Deleting a remote branch requires explicit user approval",
-)
-
-# Common GitHub PR reads and routine feature-branch PR creation/edits.
+# GitHub network reads. These prefixes do not accept host-file inputs or display
+# credentials. `gh auth status` is deliberately omitted because `--show-token`
+# would expose the GitHub token.
 prefix_rule(
     pattern = ["gh", "pr", ["view", "checks", "list"]],
     decision = "allow",
     justification = "Read pull-request state and CI results",
+    match = ["gh pr view 37", "gh pr checks 37 --watch", "gh pr list"],
+    not_match = ["gh pr create --title change", "gh pr merge 37"],
 )
 prefix_rule(
     pattern = ["gh", "run", ["view", "watch", "list"]],
     decision = "allow",
-    justification = "Read GitHub Actions state",
-)
-prefix_rule(
-    pattern = ["gh", "auth", "status"],
-    decision = "allow",
-    justification = "Inspect GitHub CLI authentication state",
-)
-prefix_rule(
-    pattern = ["gh", "pr", ["create", "edit"]],
-    decision = "allow",
-    justification = "Create or update a feature-branch pull request",
-)
-prefix_rule(
-    pattern = ["gh", "pr", "merge"],
-    decision = "prompt",
-    justification = "Merge only after a fresh-context review and green CI",
-)
-prefix_rule(
-    pattern = ["gh", "pr", ["close", "reopen"]],
-    decision = "prompt",
-    justification = "Changing pull-request lifecycle state requires user approval",
+    justification = "Read GitHub Actions state and logs",
 )
 
-# Trusted project validation. These execute project code, but remain scoped to the
-# checked-in virtual environment and well-known read/validation entry points.
+# Remote writes always remain user-reviewed. A broad prompt rule is safer than
+# trying to carve feature branches out of `git push`: Git refspecs can encode main
+# updates, force and deletion (`HEAD:main`, `+HEAD:main`, `:main`) without putting a
+# dangerous option at a fixed argument position.
 prefix_rule(
-    pattern = [".venv/bin/python", "-m", ["pytest", "py_compile"]],
-    decision = "allow",
-    justification = "Run project tests or syntax validation",
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Confirm the exact remote and refspec before any push",
 )
 prefix_rule(
-    pattern = [".venv/bin/python", ["scripts/show.py", "scripts/fingerprint.py", "scripts/compare_audio.py", "scripts/audit_manifest.py", "scripts/compare_response_atlases.py", "scripts/query_response_atlas.py"]],
-    decision = "allow",
-    justification = "Run trusted read-only project inspection tools",
+    pattern = ["git", "fetch"],
+    decision = "prompt",
+    justification = "Fetching mutates local refs and accepts arbitrary refspecs",
 )
 prefix_rule(
-    pattern = ["auval", "-v"],
-    decision = "allow",
-    justification = "Validate an installed Audio Unit without changing project files",
+    pattern = ["gh", "pr", ["create", "edit", "merge", "close", "reopen", "ready", "review"]],
+    decision = "prompt",
+    justification = "GitHub pull-request writes require user review; merge also requires fresh-context code review",
 )
 prefix_rule(
-    pattern = ["codex", "execpolicy", "check"],
-    decision = "allow",
-    justification = "Validate this project's command rules",
+    pattern = ["gh", "api"],
+    decision = "prompt",
+    justification = "GitHub API calls can read credentials, upload files, or mutate remote state",
 )
 
-# Expensive or state-writing project commands remain user-reviewed.
+# Local repository mutations remain prompts. Broad allow rules for these commands
+# are unsafe because options can move (`git commit -a --amend`) or encode destructive
+# behavior (`git switch -C`, forced refspecs). The sandbox still permits ordinary
+# read-only Git commands without asking.
+prefix_rule(
+    pattern = ["git", ["commit", "switch", "checkout", "merge", "rebase", "reset", "clean", "stash", "branch", "worktree", "tag"]],
+    decision = "prompt",
+    justification = "Confirm local history, branch, worktree, or destructive mutations",
+)
+
+# Dependency installs and project commands that are expensive, invoke licensed
+# plugins, or write output/state remain user-reviewed. Ordinary pytest and Python
+# commands are intentionally NOT allowlisted: they execute project-controlled code
+# and should remain inside the workspace sandbox.
+prefix_rule(
+    pattern = [["pip", "pip3", ".venv/bin/pip"], "install"],
+    decision = "prompt",
+    justification = "Dependency installation changes the environment and may download code",
+)
+prefix_rule(
+    pattern = ["python", "-m", "pip", "install"],
+    decision = "prompt",
+    justification = "Dependency installation changes the environment and may download code",
+)
+prefix_rule(
+    pattern = ["python3", "-m", "pip", "install"],
+    decision = "prompt",
+    justification = "Dependency installation changes the environment and may download code",
+)
 prefix_rule(
     pattern = [".venv/bin/python", ["scripts/benchmark_match.py", "scripts/match_preset.py", "scripts/apply_spec.py", "scripts/measure_eq_basis.py", "scripts/measure_drive_curve.py", "scripts/build_response_atlas.py", "scripts/benchmark_warm_start.py", "scripts/build_observed.py", "scripts/bootstrap_pack.py"]],
     decision = "prompt",
     justification = "This command can spend significant plugin time or write project/output state",
 )
 prefix_rule(
-    pattern = [["pip", ".venv/bin/pip"], "install"],
+    pattern = ["auval", "-v"],
     decision = "prompt",
-    justification = "Dependency installation changes the environment and may download code",
+    justification = "Audio Unit validation executes an installed third-party plugin",
 )
 
-# Explicit backstops for destructive or history-rewriting operations.
+# Common destructive spellings are blocked outright. This is defense in depth, not
+# an exhaustive parser: unmatched spellings still remain constrained by the
+# workspace sandbox and the agent's destructive-action policy.
 prefix_rule(
-    pattern = ["rm", ["-rf", "-fr"]],
+    pattern = ["rm", ["-rf", "-fr", "-Rf", "-fR"]],
+    decision = "forbidden",
+    justification = "Use a scoped recoverable deletion or ask the user for a specific target",
+)
+prefix_rule(
+    pattern = ["rm", ["-r", "-R", "--recursive"], ["-f", "--force"]],
+    decision = "forbidden",
+    justification = "Use a scoped recoverable deletion or ask the user for a specific target",
+)
+prefix_rule(
+    pattern = ["rm", ["-f", "--force"], ["-r", "-R", "--recursive"]],
     decision = "forbidden",
     justification = "Use a scoped recoverable deletion or ask the user for a specific target",
 )
 prefix_rule(
     pattern = ["git", "reset", "--hard"],
     decision = "forbidden",
-    justification = "Use a non-destructive restore or preserve the user's worktree changes",
+    justification = "Preserve the user's worktree; use a non-destructive restore",
 )
 prefix_rule(
-    pattern = ["git", "commit", "--amend"],
-    decision = "prompt",
-    justification = "Amending rewrites local history",
+    pattern = ["git", "reset", ["-q", "--quiet"], "--hard"],
+    decision = "forbidden",
+    justification = "Preserve the user's worktree; use a non-destructive restore",
 )
+
+# Safe policy inspection itself.
 prefix_rule(
-    pattern = ["git", "switch", ["-f", "--discard-changes"]],
-    decision = "prompt",
-    justification = "Forced branch switching can discard local work",
-)
-prefix_rule(
-    pattern = ["git", "branch", "-D"],
-    decision = "prompt",
-    justification = "Force-deleting a branch can remove unmerged work",
-)
-prefix_rule(
-    pattern = ["git", "clean"],
-    decision = "prompt",
-    justification = "Cleaning can permanently delete untracked project files",
-)
-prefix_rule(
-    pattern = ["git", "stash", ["pop", "drop", "clear"]],
-    decision = "prompt",
-    justification = "Stash mutation previously restored unrelated work into this project",
+    pattern = ["codex", "execpolicy", "check"],
+    decision = "allow",
+    justification = "Validate this project's command policy",
 )
