@@ -1,0 +1,13 @@
+# Project-specific approval posture.
+#
+# Keep local work inside the workspace sandbox. Commands explicitly allowed by
+# `.codex/rules/default.rules` may run outside it without a prompt; everything else
+# remains an on-request, user-reviewed decision. This avoids the token cost of the
+# auto-review subagent without granting full filesystem or network access.
+approval_policy = "on-request"
+approvals_reviewer = "user"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = false
+
