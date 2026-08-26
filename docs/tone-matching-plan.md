@@ -3328,11 +3328,12 @@ two reused stateful runs do not share the same plugin history. Aggregate render
 totals differ by 293 rather than 300; the outcome observation counts are the
 accounting proof.
 
-**The observed signs soften; the resolved result strengthens.** Inversion beats
+**The observed signs soften; the replicated evidence becomes more informative.** Inversion beats
 recipe on 45 of 50 mean scores, with mean margin 0.5942 ± 0.0779. Full beats
 inversion on 48 of 50, with mean margin 0.4803 ± 0.0772. The two apparent full-arm
 losses are −0.0001 and −0.0023, much smaller than the variation measured on those
-same selected vectors.
+same selected vectors. The two `±` values are standard errors across the fifty
+target margins, not the per-target range-derived errors used below.
 
 The operational resolution heuristic uses the same rule §12h uses for two replicated means: convert each
 three-sample range to a standard-deviation estimate with the n=3 control-chart
@@ -3355,11 +3356,12 @@ single-render §12l headline "50 of 50" becomes the more useful, explicitly
 conditional claim: **47 wins beyond the two-SE heuristic, no losses beyond it,
 three targets inside it**.
 
-**Spread is not an arm property.** The eight-target pilot made full look unusually
+**The pilot spread pattern did not generalize.** The eight-target pilot made full look unusually
 stable, with maximum spread 0.009; at fifty targets its maximum is 0.393. Recipe and
-inversion maxima likewise reach 0.357 and 0.313. The reason §12m refused to explain
-the pilot pattern is now measured rather than precautionary: eight selected vectors
-did not describe the distribution.
+inversion maxima likewise reach 0.357 and 0.313. This does not isolate arm,
+selected-vector, target, plugin-history or run effects; it establishes the narrower
+claim §12m preserved: eight selected vectors did not describe the fifty-target
+spread distribution.
 
 The standing input-level caveat remains larger than the arm gap: shortlist scores
 move by up to 2.37 across ±6 dB, and one deduplicated caveat reports **100%** of
