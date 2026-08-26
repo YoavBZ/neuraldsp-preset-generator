@@ -165,11 +165,12 @@ def test_the_report_names_replicated_starting_evidence():
     html = R.render_report(
         run_id="r", target=printed(), shortlist=[winner],
         seed_objectives={"total": 0.9, "timbre": 0.8},
-        seed_observations=3, seed_spread=0.12)
+        seed_observations=3, seed_spread=0.12,
+        seed_objective_observations={"total": 3, "timbre": 2})
 
     assert "starting score is the mean of 3 renders" in html
     assert "peak-to-peak spread was 0.120" in html
-    assert "starting row is the mean of 3 renders" in html
+    assert "per-objective counts are recorded in summary.json" in html
 
 
 def test_the_shortlist_shows_what_each_candidate_changed():

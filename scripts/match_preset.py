@@ -36,7 +36,7 @@ import json
 import pathlib
 import sys
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
@@ -66,6 +66,21 @@ MINIMUM_REFERENCE_S = 1.0
 # `fingerprint` floors a silent band at -300 dB rather than returning None, so this is
 # how silence is recognised rather than matched.
 SILENCE_FLOOR_DB = -120.0
+
+
+class _ReplicatedStart:
+    """Both the exact first trial and the aggregate a person should compare."""
+
+    def __init__(self, *, estimate: Any, trial: Any, observations: int,
+                 spread: Optional[float],
+                 objective_observations: Dict[str, int],
+                 objective_spreads: Dict[str, Optional[float]]):
+        self.estimate = estimate
+        self.trial = trial
+        self.observations = int(observations)
+        self.spread = spread
+        self.objective_observations = dict(objective_observations)
+        self.objective_spreads = dict(objective_spreads)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -316,13 +331,15 @@ def main() -> None:
                                  reference_audio=(reference.samples
                                                   if residual_weighted else None))
     start_requested = search.shortlist_replicates(metadata)
-    start, start_observations, start_spread = _replicated_start(
-        evaluator, seed, start_requested)
-    if start is None:
+    start_result = _replicated_start(evaluator, seed, start_requested)
+    if start_result is None:
         die("the template rendered nothing comparable — a silent render, or no "
             "dimension this loss profile weights could be measured on both sides.\n"
             "  Check the reference is long enough to measure and that the renderer "
             "produces audio.")
+    start = start_result.estimate
+    start_observations = start_result.observations
+    start_spread = start_result.spread
     if start_observations < start_requested:
         caveats.append(
             f"the starting template score averages {start_observations} of the "
@@ -443,6 +460,8 @@ def main() -> None:
         unheard=dropped,
         profile=args.loss_profile, reference=str(args.reference),
         seed_observations=start_observations, seed_spread=start_spread,
+        seed_objective_observations=start_result.objective_observations,
+        seed_objective_spreads=start_result.objective_spreads,
     )
     outside = evaluator.renders + len(extra)
     outside_sources = {
@@ -463,6 +482,10 @@ def main() -> None:
         shortlist=result.shortlist, caveats=caveats, seed=template_values,
         seed_objectives=start.objectives, fingerprints=prints,
         seed_observations=start_observations, seed_spread=start_spread,
+        seed_trial_score=start_result.trial.total,
+        seed_trial_objectives=start_result.trial.objectives,
+        seed_objective_observations=start_result.objective_observations,
+        seed_objective_spreads=start_result.objective_spreads,
         inverted_seed=inverted_values, inversion_detail=inversion_detail,
         unheard=dropped,
         searched=result.searched, frozen=result.frozen,
@@ -596,14 +619,24 @@ def _replicated_start(evaluator, values, requested: int):
         if scored.objectives:
             samples.append(scored)
     if not samples:
-        return None, 0, None
+        return None
 
     names = set().union(*(sample.objectives for sample in samples))
-    objectives = {
-        name: sum(sample.objectives[name] for sample in samples
-                  if name in sample.objectives)
-        / sum(1 for sample in samples if name in sample.objectives)
+    values_by_objective = {
+        name: [sample.objectives[name] for sample in samples
+               if name in sample.objectives]
         for name in names
+    }
+    objectives = {
+        name: sum(values) / len(values)
+        for name, values in values_by_objective.items()
+    }
+    objective_observations = {
+        name: len(values) for name, values in values_by_objective.items()
+    }
+    objective_spreads = {
+        name: (max(values) - min(values) if len(values) > 1 else None)
+        for name, values in values_by_objective.items()
     }
     totals = [sample.total for sample in samples]
     total = sum(totals) / len(totals)
@@ -612,7 +645,14 @@ def _replicated_start(evaluator, values, requested: int):
         values=dict(values), objectives=objectives, total=total,
         trial_id=samples[0].trial_id)
     spread = max(totals) - min(totals) if len(totals) > 1 else None
-    return candidate, len(samples), spread
+    return _ReplicatedStart(
+        estimate=candidate,
+        trial=samples[0],
+        observations=len(samples),
+        spread=spread,
+        objective_observations=objective_observations,
+        objective_spreads=objective_spreads,
+    )
 
 
 def _no_better(found: float, started: float, budget: int,

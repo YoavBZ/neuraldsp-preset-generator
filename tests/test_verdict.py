@@ -194,6 +194,39 @@ def test_the_note_itself_carries_the_trimmed_delta_and_says_it_trimmed():
     assert delta_line.count('"centre_hz"') == 5, "the array itself must be trimmed"
 
 
+def test_the_note_uses_replicated_scores_and_keeps_exact_trials():
+    from match.verdict import _note_entry
+
+    summary = _summary()
+    summary["starting_point"].update({
+        "reference_level_score": 0.85, "observations": 3, "spread": 0.08,
+    })
+    candidate = summary["shortlist"][0]
+    candidate.update({
+        "reference_level_score": 0.35,
+        "input_level_observations": {"0.0": 3},
+        "input_level_spread": {"0.0": 0.06},
+    })
+    run = Run(run_id="run-one", created_at=0.0, pack="morgan", template=None,
+              reference_sha=SHA, regime="separated_stem",
+              loss_profile="unpaired-v1", budget=10, renderer_id="swift",
+              plugin_version="1.1.1", notes=None)
+    trial = Trial(params={"amp/gain": 7.0},
+                  objectives={"total": 0.4}, trial_id=1)
+
+    entry = _note_entry(summary, candidate, trial, run, 1, "candidate",
+                        "someone", None, 0.0, "abc123")
+
+    measurement_line, = [line for line in entry.splitlines()
+                         if line.startswith("- Measurement")]
+    assert '"starting_score":0.85' in measurement_line
+    assert '"candidate_score":0.35' in measurement_line
+    assert '"starting_trial_score":0.9' in measurement_line
+    assert '"candidate_trial_score":0.4' in measurement_line
+    assert '"starting_observations":3' in measurement_line
+    assert '"candidate_observations":3' in measurement_line
+
+
 def test_a_band_buried_in_the_noise_floor_cannot_outrank_an_audible_one():
     """Ranking on deviation alone spends the budget where the spectrum has died.
 

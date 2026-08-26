@@ -3383,13 +3383,21 @@ it.
 
 The template now uses `shortlist_replicates(metadata)` before inversion or search:
 one render on a reproducible backend and three on a stateful one. Every comparable
-observation contributes to the mean of each starting-point objective. The total's
-peak-to-peak spread and the obtained observation count travel into `summary.json`
-as `starting_point.spread` and `starting_point.observations`, and the HTML names the
-same evidence beside the headline. If a render fails or is unmeasurable, surviving
-observations remain evidence and a caveat says the starting score is thinner than
-requested; if all fail, the command still refuses to search from an unmeasurable
-template.
+observation contributes to the mean of each starting-point objective. Because a
+confidence-gated dimension can be measurable in fewer renders than the total,
+`summary.json` carries per-objective observation counts and spreads as well as the
+total's `starting_point.observations` and `starting_point.spread`; the HTML does not
+claim every cell averaged three when those counts differ. If a render fails or is
+unmeasurable, surviving observations remain evidence and a caveat says the starting
+score is thinner than requested; if all fail, the command still refuses to search
+from an unmeasurable template.
+
+`tone-match-summary-v1` keeps its exact-trial contract: `starting_point.score` and
+`.objectives` remain the first rendered trial, mirroring each shortlist entry's
+stored `score` and `objectives`. The replicated estimate is additive under
+`reference_level_score` and `reference_level_objectives`. Verdict logging uses the
+replicated template and candidate scores, counts and spreads for the listening
+comparison while retaining both exact trial scores in the learned note.
 
 The cost is outside the search budget and inside command accounting. On a stateful
 backend `outside_budget_by_source.template` is now three attempts rather than one;
@@ -3401,7 +3409,9 @@ made the counts differ.
 No new plugin measurement is claimed here. The three-observation contract was
 already measured on Tone King in §12m and §12n; this change applies that measured
 contract to the other side of the before-and-after comparison. Focused CLI/report
-tests pin the mean, spread, partial-failure behavior, accounting and report wording.
+tests pin the mean, per-objective evidence, partial- and all-failure behavior, a
+stateful end-to-end run with three charged template attempts, verdict persistence,
+summary compatibility and report wording.
 
 ## 13. Reading list, in the order it becomes relevant
 

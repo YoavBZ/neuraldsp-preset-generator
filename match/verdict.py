@@ -576,8 +576,20 @@ def _note_entry(summary: Mapping[str, Any], candidate: Mapping[str, Any],
         "renderer": source_run.renderer_id,
         "plugin_version": source_run.plugin_version,
         "loss_profile": source_run.loss_profile,
-        "starting_score": starting.get("score"),
-        "candidate_score": (trial.objectives or {}).get("total"),
+        "starting_score": starting.get("reference_level_score",
+                                       starting.get("score")),
+        "candidate_score": candidate.get("reference_level_score",
+                                         (trial.objectives or {}).get("total")),
+        "starting_observations": starting.get("observations", 1),
+        "candidate_observations": (
+            (candidate.get("input_level_observations") or {}).get("0.0", 1)
+        ),
+        "starting_spread": starting.get("spread"),
+        "candidate_spread": (
+            (candidate.get("input_level_spread") or {}).get("0.0")
+        ),
+        "starting_trial_score": starting.get("score"),
+        "candidate_trial_score": (trial.objectives or {}).get("total"),
         "objectives": trial.objectives,
     }
     bands, label = _worst_bands(candidate.get("fingerprint_delta"))

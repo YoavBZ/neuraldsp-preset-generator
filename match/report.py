@@ -76,6 +76,8 @@ def render_report(
     seed_objectives: Optional[Mapping[str, float]] = None,
     seed_observations: int = 1,
     seed_spread: Optional[float] = None,
+    seed_objective_observations: Optional[Mapping[str, int]] = None,
+    seed_objective_spreads: Optional[Mapping[str, Optional[float]]] = None,
     fingerprints: Optional[Mapping[int, Any]] = None,
     convergence: Sequence[Mapping[str, float]] = (),
     summary: Optional[Mapping[str, Any]] = None,
@@ -119,7 +121,8 @@ def render_report(
     parts.append(_reference_excerpt(target))
     parts.append(_shortlist(shortlist, seed, unheard))
     parts.append(_objectives_table(
-        shortlist, seed_objectives, profile, seed_observations, seed_spread))
+        shortlist, seed_objectives, profile, seed_observations,
+        seed_objective_observations))
     parts.append(_spectrum(target, fingerprints or {}, shortlist))
     parts.append(_band_bars(target, fingerprints or {}))
     parts.append(_envelopes(target, fingerprints or {}))
@@ -153,6 +156,10 @@ def build_summary(
     seed_objectives: Mapping[str, float],
     seed_observations: int = 1,
     seed_spread: Optional[float] = None,
+    seed_trial_score: Optional[float] = None,
+    seed_trial_objectives: Optional[Mapping[str, float]] = None,
+    seed_objective_observations: Optional[Mapping[str, int]] = None,
+    seed_objective_spreads: Optional[Mapping[str, Optional[float]]] = None,
     fingerprints: Mapping[int, Any],
     inverted_seed: Optional[Mapping],
     inversion_detail: Optional[Mapping[str, Any]],
@@ -276,11 +283,35 @@ def build_summary(
         },
         "command_accounting": dict(command_accounting),
         "starting_point": {
-            "score": float(seed_objectives.get("total", float("inf"))),
+            # V1 compatibility: the score/objectives fields identify one exact
+            # render, just like shortlist.score and shortlist.objectives. Verdict
+            # logging cross-checks that kind of measurement against a stored trial.
+            "score": float(
+                seed_objectives.get("total", float("inf"))
+                if seed_trial_score is None else seed_trial_score
+            ),
+            "objectives": {
+                key: float(value) for key, value in
+                (seed_objectives if seed_trial_objectives is None
+                 else seed_trial_objectives).items()
+            },
+            # The best estimate a report compares with the candidate's replicated
+            # reference-level score. Kept separate from the exact-trial fields.
+            "reference_level_score": float(
+                seed_objectives.get("total", float("inf"))
+            ),
+            "reference_level_objectives": {
+                key: float(value) for key, value in seed_objectives.items()
+            },
             "observations": int(seed_observations),
             "spread": None if seed_spread is None else float(seed_spread),
-            "objectives": {
-                key: float(value) for key, value in seed_objectives.items()
+            "objective_observations": {
+                key: int(value) for key, value in
+                (seed_objective_observations or {}).items()
+            },
+            "objective_spreads": {
+                key: None if value is None else float(value)
+                for key, value in (seed_objective_spreads or {}).items()
             },
         },
         "shortlist": candidates,
@@ -474,7 +505,8 @@ def _objectives_table(shortlist: Sequence[Any],
                       seed_objectives: Optional[Mapping[str, float]],
                       profile: str = "unpaired-v1",
                       seed_observations: int = 1,
-                      seed_spread: Optional[float] = None) -> str:
+                      seed_objective_observations: Optional[Mapping[str, int]] = None
+                      ) -> str:
     """Every dimension for every candidate, never collapsed.
 
     §2's D6 and §6.2 both insist on this: the scalar is one weighting, and a
@@ -539,8 +571,18 @@ def _objectives_table(shortlist: Sequence[Any],
             if replicated > 1 else
             "Candidate dimensions and headline come from one render."
         )
-        start_note = (f" The starting row is the mean of {seed_observations} renders."
-                      if seed_observations > 1 else "")
+        counts = set((seed_objective_observations or {}).values())
+        if seed_observations > 1 and len(counts) > 1:
+            start_note = (
+                " Starting-row dimensions average only the renders in which that "
+                "dimension was measurable; their per-objective counts are recorded "
+                "in summary.json."
+            )
+        else:
+            start_note = (
+                f" The starting row is the mean of {seed_observations} renders."
+                if seed_observations > 1 else ""
+            )
         note += (f"<p class='muted'>{candidate_note}{start_note} On a "
                  f"backend that does not repeat itself the weighted candidate row "
                  f"will not reproduce its headline exactly, and the difference is "
