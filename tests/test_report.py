@@ -158,6 +158,21 @@ def test_the_headline_has_no_grade():
         assert verdict not in html.lower()
 
 
+def test_the_report_names_replicated_starting_evidence():
+    winner = candidate(0.4, timbre=0.4)
+    winner.by_level = {0.0: 0.42, -6.0: 0.45, 6.0: 0.44}
+    winner.by_level_observations = {0.0: 3, -6.0: 3, 6.0: 3}
+    html = R.render_report(
+        run_id="r", target=printed(), shortlist=[winner],
+        seed_objectives={"total": 0.9, "timbre": 0.8},
+        seed_observations=3, seed_spread=0.12,
+        seed_objective_observations={"total": 3, "timbre": 2})
+
+    assert "starting score is the mean of 3 renders" in html
+    assert "peak-to-peak spread was 0.120" in html
+    assert "per-objective counts are recorded in summary.json" in html
+
+
 def test_the_shortlist_shows_what_each_candidate_changed():
     """The diff is the deliverable — a person reads the report to learn which knobs
     moved, not to admire a number."""

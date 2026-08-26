@@ -2795,10 +2795,10 @@ carries both, plus `input_level_spread` and a *per-level* `input_level_observati
 can be the very level that sets the worst-case score. The "nothing beat the preset you
 started from" verdict is decided on the same estimate it prints, which it was not:
 one run said nothing had beaten the template beside a line showing the template's
-0.550 against the candidate's 0.480. The template's own score is still a single
-render, so that caveat now names the asymmetry instead of implying a dead heat was
-measured on both sides. Replicating the template as well is the obvious next step and
-is not done here.
+0.550 against the candidate's 0.480. The template's own score was still a single
+render, so that caveat named the asymmetry instead of implying a dead heat was
+measured on both sides. §12o now closes it: the template uses the same observation
+count as the published candidate, and a partial failure names the unequal evidence.
 
 **What the two rules do when composed, which is not nothing.** Ranking on the worst
 of three means is a max over noisy estimates, so it is biased upward, and the bias
@@ -3372,6 +3372,46 @@ benchmark measures the reference input level, not every way a player can hit the
 `docs/toneking-benchmark-50-replicated.json` is the current Tone King aggregate.
 It records source commit, elapsed time, sampler, probe constants, worker counts,
 backend provenance, all 150 outcome means, observation counts and spreads.
+
+## 12o. Replicate the starting point too
+
+§12h made every candidate number a person reads the mean of three renders on a
+backend reporting `reproducible=false`, but the starting template stayed one render.
+That left the headline, percentage and "nothing beat your preset" caveat comparing
+an estimate against a sample. The caveat admitted the mismatch; it did not remove
+it.
+
+The template now uses `shortlist_replicates(metadata)` before inversion or search:
+one render on a reproducible backend and three on a stateful one. Every comparable
+observation contributes to the mean of each starting-point objective. Because a
+confidence-gated dimension can be measurable in fewer renders than the total,
+`summary.json` carries per-objective observation counts and spreads as well as the
+total's `starting_point.observations` and `starting_point.spread`; the HTML does not
+claim every cell averaged three when those counts differ. If a render fails or is
+unmeasurable, surviving observations remain evidence and a caveat says the starting
+score is thinner than requested; if all fail, the command still refuses to search
+from an unmeasurable template.
+
+`tone-match-summary-v1` keeps its exact-trial contract: `starting_point.score` and
+`.objectives` remain the first rendered trial, mirroring each shortlist entry's
+stored `score` and `objectives`. The replicated estimate is additive under
+`reference_level_score` and `reference_level_objectives`. Verdict logging uses the
+replicated template and candidate scores, counts and spreads for the listening
+comparison while retaining both exact trial scores in the learned note.
+
+The cost is outside the search budget and inside command accounting. On a stateful
+backend `outside_budget_by_source.template` is now three attempts rather than one;
+on the synthetic backend it remains one. The published winner and template are
+therefore the same kind of number before the CLI decides whether the run improved,
+and `_no_better` only discusses unequal evidence when a failed observation actually
+made the counts differ.
+
+No new plugin measurement is claimed here. The three-observation contract was
+already measured on Tone King in §12m and §12n; this change applies that measured
+contract to the other side of the before-and-after comparison. Focused CLI/report
+tests pin the mean, per-objective evidence, partial- and all-failure behavior, a
+stateful end-to-end run with three charged template attempts, verdict persistence,
+summary compatibility and report wording.
 
 ## 13. Reading list, in the order it becomes relevant
 

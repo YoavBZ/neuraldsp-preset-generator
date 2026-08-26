@@ -33,6 +33,59 @@ def run(script: str, *args) -> subprocess.CompletedProcess:
     )
 
 
+def test_the_template_score_uses_the_mean_and_keeps_partial_evidence():
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    samples = iter([
+        Candidate(values={"gain": 1}, objectives={"total": 0.9, "timbre": 0.8},
+                  total=0.9),
+        Candidate(values={"gain": 1}, error="silent render"),
+        Candidate(values={"gain": 1}, objectives={"total": 0.7},
+                  total=0.7),
+    ])
+
+    class Evaluator:
+        def evaluate(self, values):
+            return next(samples)
+
+    start = cli._replicated_start(
+        Evaluator(), {"gain": 1}, requested=3)
+
+    assert start is not None
+    assert start.observations == 2
+    assert start.spread == pytest.approx(0.2)
+    assert start.trial.total == pytest.approx(0.9)
+    assert start.estimate.total == pytest.approx(0.8)
+    assert start.estimate.objectives == pytest.approx(
+        {"total": 0.8, "timbre": 0.8})
+    assert start.objective_observations == {"total": 2, "timbre": 1}
+    assert start.objective_spreads == {"total": pytest.approx(0.2),
+                                       "timbre": None}
+
+
+def test_the_template_score_refuses_when_every_observation_fails():
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    class Evaluator:
+        def evaluate(self, values):
+            return Candidate(values=dict(values), error="silent render")
+
+    assert cli._replicated_start(Evaluator(), {"gain": 1}, requested=3) is None
+
+
+def test_the_no_better_caveat_only_names_evidence_asymmetry_when_it_exists():
+    from scripts import match_preset as cli
+
+    equal = cli._no_better(0.8, 0.7, 300, 3, 3)
+    thin = cli._no_better(0.8, 0.7, 300, 2, 3)
+
+    assert "unequal evidence" not in equal
+    assert "candidate averages 2 observations" in thin
+    assert "template 3" in thin
+
+
 @pytest.fixture(scope="module")
 def audio(tmp_path_factory):
     """A reference rendered through the synthetic chain, and the DI behind it."""
@@ -94,6 +147,10 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "inversion_probe": 1,
         "report_candidates": 2,
     }
+    assert summary["starting_point"]["observations"] == 1
+    assert summary["starting_point"]["spread"] is None
+    assert summary["starting_point"]["reference_level_score"] == pytest.approx(
+        summary["starting_point"]["score"])
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
     for candidate in summary["shortlist"]:
@@ -118,6 +175,49 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     # The next command, printed rather than left in a docstring the user never sees.
     assert "apply_spec.py" in done.stdout
     assert "reference excerpt 0.000000–2.000000 s" in done.stdout
+
+
+def test_a_stateful_run_replicates_the_template_and_accounts_for_it(
+        audio, tmp_path, monkeypatch, capsys):
+    from dataclasses import replace
+
+    from match.renderer_synth import SyntheticRenderer
+    from scripts import match_preset as cli
+
+    class StatefulSynthetic(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=0.23)
+
+    renderer = StatefulSynthetic()
+    monkeypatch.setattr(cli, "_renderer", lambda name, pack: renderer)
+    out = tmp_path / "stateful"
+    monkeypatch.setattr(sys, "argv", [
+        "match_preset.py",
+        "--template", str(TEMPLATE),
+        "--reference", str(audio / "ref.wav"),
+        "--reference-mode", "probe",
+        "--probe-di", str(audio / "probe.wav"),
+        "--amp", "sw50r",
+        "--no-invert",
+        "--budget", "90",
+        "--shortlist", "1",
+        "--renderer", "synthetic",
+        "--out-dir", str(out),
+    ])
+
+    cli.main()
+
+    summary = json.loads((out / "summary.json").read_text())
+    starting = summary["starting_point"]
+    assert summary["command_accounting"]["outside_budget_by_source"]["template"] == 3
+    assert starting["observations"] == 3
+    assert starting["spread"] == pytest.approx(0.0)
+    assert starting["score"] == pytest.approx(starting["reference_level_score"])
+    assert set(starting["objective_observations"].values()) == {3}
+    assert summary["shortlist"][0]["input_level_observations"]["0.0"] == 3
+    output = capsys.readouterr().out
+    assert "candidate mean of 3 renders; starting score mean of 3" in output
 
     applied = run("apply_spec.py", "--template", TEMPLATE,
                   "--spec", out / "match-1.json", "--out", tmp_path / "matched.xml")
