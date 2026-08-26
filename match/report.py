@@ -74,6 +74,8 @@ def render_report(
     caveats: Sequence[str] = (),
     seed: Optional[Mapping] = None,
     seed_objectives: Optional[Mapping[str, float]] = None,
+    seed_observations: int = 1,
+    seed_spread: Optional[float] = None,
     fingerprints: Optional[Mapping[int, Any]] = None,
     convergence: Sequence[Mapping[str, float]] = (),
     summary: Optional[Mapping[str, Any]] = None,
@@ -112,11 +114,12 @@ def render_report(
         f"{time.strftime('%Y-%m-%d %H:%M')}</p>",
     ]
 
-    parts.append(_headline(best, seed_objectives))
+    parts.append(_headline(best, seed_objectives, seed_observations, seed_spread))
     parts.append(_caveats(caveats))
     parts.append(_reference_excerpt(target))
     parts.append(_shortlist(shortlist, seed, unheard))
-    parts.append(_objectives_table(shortlist, seed_objectives, profile))
+    parts.append(_objectives_table(
+        shortlist, seed_objectives, profile, seed_observations, seed_spread))
     parts.append(_spectrum(target, fingerprints or {}, shortlist))
     parts.append(_band_bars(target, fingerprints or {}))
     parts.append(_envelopes(target, fingerprints or {}))
@@ -148,6 +151,8 @@ def build_summary(
     caveats: Sequence[str],
     seed: Mapping,
     seed_objectives: Mapping[str, float],
+    seed_observations: int = 1,
+    seed_spread: Optional[float] = None,
     fingerprints: Mapping[int, Any],
     inverted_seed: Optional[Mapping],
     inversion_detail: Optional[Mapping[str, Any]],
@@ -272,6 +277,8 @@ def build_summary(
         "command_accounting": dict(command_accounting),
         "starting_point": {
             "score": float(seed_objectives.get("total", float("inf"))),
+            "observations": int(seed_observations),
+            "spread": None if seed_spread is None else float(seed_spread),
             "objectives": {
                 key: float(value) for key, value in seed_objectives.items()
             },
@@ -349,7 +356,9 @@ def _reference_excerpt(target: Any) -> str:
     )
 
 
-def _headline(best, seed_objectives: Optional[Mapping[str, float]]) -> str:
+def _headline(best, seed_objectives: Optional[Mapping[str, float]],
+              seed_observations: int = 1,
+              seed_spread: Optional[float] = None) -> str:
     """The one number, with what it was before it, and no interpretation.
 
     Deliberately not a grade. There is no measured threshold that says 0.39 is
@@ -389,9 +398,15 @@ def _headline(best, seed_objectives: Optional[Mapping[str, float]]) -> str:
                  f"score between {min(best.by_level.values()):.3f} and "
                  f"{best.worst_level:.3f}. The shortlist below is ordered by the "
                  f"worse end of that.{averaged}</p>")
+    starting = ""
+    if seed_observations > 1:
+        spread = ("" if seed_spread is None else
+                  f"; their peak-to-peak spread was {seed_spread:.3f}")
+        starting = (f"<p class='muted'>The starting score is the mean of "
+                    f"{seed_observations} renders of the same template{spread}.</p>")
     return (f"<h2>Result</h2><p class='headline'>{headline}</p>"
             f"<p>Weighted distance to the reference, lower is closer.{change}</p>"
-            f"{worst}")
+            f"{starting}{worst}")
 
 
 def _caveats(caveats: Sequence[str]) -> str:
@@ -457,7 +472,9 @@ def _shortlist(shortlist: Sequence[Any], seed: Optional[Mapping],
 
 def _objectives_table(shortlist: Sequence[Any],
                       seed_objectives: Optional[Mapping[str, float]],
-                      profile: str = "unpaired-v1") -> str:
+                      profile: str = "unpaired-v1",
+                      seed_observations: int = 1,
+                      seed_spread: Optional[float] = None) -> str:
     """Every dimension for every candidate, never collapsed.
 
     §2's D6 and §6.2 both insist on this: the scalar is one weighting, and a
@@ -514,13 +531,20 @@ def _objectives_table(shortlist: Sequence[Any],
     # can be checked against it, so when it cannot be, the table has to say so rather
     # than let a reader conclude the weighted sum does not add up.
     replicated = getattr(shortlist[0], "by_level_observations", {}).get(0.0, 1)
-    if replicated > 1:
-        note += (f"<p class='muted'>These dimensions come from the single render the "
-                 f"search scored, while the headline above is the mean of "
-                 f"{replicated} renders of the same settings. On a backend that does "
-                 f"not repeat itself the weighted sum of this row will not reproduce "
-                 f"the headline exactly, and the difference is the backend rather "
-                 f"than an error in either.</p>")
+    if replicated > 1 or seed_observations > 1:
+        candidate_note = (
+            f"Candidate dimensions come from the single render the search scored, "
+            f"while the candidate headline above is the mean of {replicated} "
+            f"renders of the same settings."
+            if replicated > 1 else
+            "Candidate dimensions and headline come from one render."
+        )
+        start_note = (f" The starting row is the mean of {seed_observations} renders."
+                      if seed_observations > 1 else "")
+        note += (f"<p class='muted'>{candidate_note}{start_note} On a "
+                 f"backend that does not repeat itself the weighted candidate row "
+                 f"will not reproduce its headline exactly, and the difference is "
+                 f"the backend rather than an error in either.</p>")
     worse = _regressions(shortlist[0], seed_objectives, present)
     if worse:
         # The headline is a weighted sum, so it can improve while the two dimensions a

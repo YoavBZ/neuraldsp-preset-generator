@@ -33,6 +33,43 @@ def run(script: str, *args) -> subprocess.CompletedProcess:
     )
 
 
+def test_the_template_score_uses_the_mean_and_keeps_partial_evidence():
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    samples = iter([
+        Candidate(values={"gain": 1}, objectives={"total": 0.9, "timbre": 0.8},
+                  total=0.9),
+        Candidate(values={"gain": 1}, error="silent render"),
+        Candidate(values={"gain": 1}, objectives={"total": 0.7, "timbre": 0.6},
+                  total=0.7),
+    ])
+
+    class Evaluator:
+        def evaluate(self, values):
+            return next(samples)
+
+    start, observations, spread = cli._replicated_start(
+        Evaluator(), {"gain": 1}, requested=3)
+
+    assert start is not None
+    assert observations == 2
+    assert spread == pytest.approx(0.2)
+    assert start.total == pytest.approx(0.8)
+    assert start.objectives == pytest.approx({"total": 0.8, "timbre": 0.7})
+
+
+def test_the_no_better_caveat_only_names_evidence_asymmetry_when_it_exists():
+    from scripts import match_preset as cli
+
+    equal = cli._no_better(0.8, 0.7, 300, 3, 3)
+    thin = cli._no_better(0.8, 0.7, 300, 2, 3)
+
+    assert "unequal evidence" not in equal
+    assert "candidate averages 2 observations" in thin
+    assert "template 3" in thin
+
+
 @pytest.fixture(scope="module")
 def audio(tmp_path_factory):
     """A reference rendered through the synthetic chain, and the DI behind it."""
@@ -94,6 +131,8 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "inversion_probe": 1,
         "report_candidates": 2,
     }
+    assert summary["starting_point"]["observations"] == 1
+    assert summary["starting_point"]["spread"] is None
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
     for candidate in summary["shortlist"]:

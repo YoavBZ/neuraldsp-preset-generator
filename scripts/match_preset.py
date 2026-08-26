@@ -315,12 +315,21 @@ def main() -> None:
                                  profile=args.loss_profile, recipe=seed,
                                  reference_audio=(reference.samples
                                                   if residual_weighted else None))
-    start = evaluator.evaluate(seed)
-    if not start.objectives:
+    start_requested = search.shortlist_replicates(metadata)
+    start, start_observations, start_spread = _replicated_start(
+        evaluator, seed, start_requested)
+    if start is None:
         die("the template rendered nothing comparable — a silent render, or no "
             "dimension this loss profile weights could be measured on both sides.\n"
             "  Check the reference is long enough to measure and that the renderer "
             "produces audio.")
+    if start_observations < start_requested:
+        caveats.append(
+            f"the starting template score averages {start_observations} of the "
+            f"{start_requested} observations this backend calls for, because one "
+            "or more renders produced no comparable objective; the before-and-after "
+            "comparison starts from thinner evidence than requested"
+        )
 
     dropped: list = []
     inversion_detail = None
@@ -403,7 +412,8 @@ def main() -> None:
     if result.best.reference_score >= start.total:
         caveats.insert(0, _no_better(
             result.best.reference_score, start.total, args.budget,
-            observations=result.best.by_level_observations.get(0.0, 1),
+            found_observations=result.best.by_level_observations.get(0.0, 1),
+            started_observations=start_observations,
         ))
 
     # The caveat that says the headline was not searched for goes first, not ninth. A
@@ -432,6 +442,7 @@ def main() -> None:
         movement=result.movement, floor=result.floor, silences=result.silences,
         unheard=dropped,
         profile=args.loss_profile, reference=str(args.reference),
+        seed_observations=start_observations, seed_spread=start_spread,
     )
     outside = evaluator.renders + len(extra)
     outside_sources = {
@@ -451,6 +462,7 @@ def main() -> None:
         str(args.out_dir / "summary.json"), run_id=run_id, target=target,
         shortlist=result.shortlist, caveats=caveats, seed=template_values,
         seed_objectives=start.objectives, fingerprints=prints,
+        seed_observations=start_observations, seed_spread=start_spread,
         inverted_seed=inverted_values, inversion_detail=inversion_detail,
         unheard=dropped,
         searched=result.searched, frozen=result.frozen,
@@ -494,8 +506,9 @@ def main() -> None:
     elif best.worst_level is not None:
         worst = ", and it holds up across ±6 dB of input level"
     averaged = best.by_level_observations.get(0.0, 1)
-    if averaged > 1:
-        worst += f" (each score the mean of {averaged} renders)"
+    if averaged > 1 or start_observations > 1:
+        worst += (f" (candidate mean of {averaged} renders; starting score mean "
+                  f"of {start_observations})")
     print(f"  distance to the reference {start.total:.3f} -> {reached:.3f}{worst}")
     excerpt = target.source
     if "excerpt_start_s" in excerpt and "excerpt_end_s" in excerpt:
@@ -566,8 +579,45 @@ def _unmeasurable(target, audio) -> Optional[str]:
     return None
 
 
+def _replicated_start(evaluator, values, requested: int):
+    """The template score on the same evidence used for the published winner.
+
+    A stateful backend makes one score a sample. The shortlist already averages
+    three observations before a person reads it; doing less for the template makes
+    the before-and-after verdict depend on which side drew the lucky render.
+    Failed observations do not erase comparable ones, matching the benchmark's
+    final-score contract.
+    """
+    from match.search import Candidate
+
+    samples = []
+    for _ in range(max(1, int(requested))):
+        scored = evaluator.evaluate(values)
+        if scored.objectives:
+            samples.append(scored)
+    if not samples:
+        return None, 0, None
+
+    names = set().union(*(sample.objectives for sample in samples))
+    objectives = {
+        name: sum(sample.objectives[name] for sample in samples
+                  if name in sample.objectives)
+        / sum(1 for sample in samples if name in sample.objectives)
+        for name in names
+    }
+    totals = [sample.total for sample in samples]
+    total = sum(totals) / len(totals)
+    objectives["total"] = total
+    candidate = Candidate(
+        values=dict(values), objectives=objectives, total=total,
+        trial_id=samples[0].trial_id)
+    spread = max(totals) - min(totals) if len(totals) > 1 else None
+    return candidate, len(samples), spread
+
+
 def _no_better(found: float, started: float, budget: int,
-               observations: int = 1) -> str:
+               found_observations: int = 1,
+               started_observations: int = 1) -> str:
     """The caveat for a run that did not improve on what it was given.
 
     Decided on the same number the rest of the run reports — the candidate's
@@ -576,14 +626,15 @@ def _no_better(found: float, started: float, budget: int,
     started from" beside a line showing it had, which is worse than either number
     alone.
 
-    The template's own score is still one render. On a backend that repeats itself
-    that is the same kind of number; on one that does not, the comparison is a mean
-    against a sample, and the caveat says so rather than implying a dead heat was
-    measured twice over.
+    Both sides use the best evidence the backend calls for. If a failed render left
+    one side thinner, the caveat says so instead of presenting unequal sample counts
+    as the same kind of estimate.
     """
-    against = (f" The template's {started:.3f} is a single render, against a mean of "
-               f"{observations}, so a difference this size may be the backend rather "
-               f"than the preset." if observations > 1 else "")
+    against = (
+        f" The candidate averages {found_observations} observations and the "
+        f"template {started_observations}, so the comparison rests on unequal "
+        f"evidence." if found_observations != started_observations else ""
+    )
     return (f"nothing beat the preset you started from: it scored {started:.3f} and "
             f"the best candidate {found:.3f}, so the spec below is not an "
             f"improvement. Either the template is already close and the search is "
