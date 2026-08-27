@@ -3417,8 +3417,12 @@ summary compatibility and report wording.
 
 §12d and §12h leave one deliberate hole: continuous candidates are scored once
 inside each topology search, then only the global shortlist is replicated. Two
-apparently natural fixes were tested before changing that loop, and both lost at
-equal render cost. `scripts/simulate_topology_replication.py` fixes seed 20260827,
+apparently natural fixes were tested before changing that loop, and both lost.
+Rendering every search point three times was held to the same search-render cost by
+evaluating one third as many points. Forcing one finalist from every topology was
+allowed to spend more — `2 × (variants − shortlist)` extra renders, which is 2 for
+four topologies and 10 for eight — and still lost.
+`scripts/simulate_topology_replication.py` fixes seed 20260827,
 50,000 trials per configuration, 2/4/8 topologies and per-render sigma
 0.05/0.15/0.30. Across all nine configurations the current policy's mean true
 regret was no worse than either alternative: replicating one finalist per topology
