@@ -193,7 +193,8 @@ def main() -> None:
               if args.budget_per_topology else args.budget)
     switches, selectors = enumerated(
         space, args.enumerated, budget, shortlist=1, supported=supported,
-        seed=seed, replicates=search.shortlist_replicates(renderer.metadata()))
+        seed=seed, replicates=search.shortlist_replicates(renderer.metadata()),
+        budget_scale=(variant_count if args.budget_per_topology else 1))
     di, di_caveat = probe_di(args.probe_di, args.seconds)
 
     started = time.time()
@@ -270,6 +271,7 @@ def main() -> None:
             "budget_requested": args.budget,
             "budget_per_topology": bool(args.budget_per_topology),
             "topology_variants": variant_count,
+            "enumerated": sorted(args.enumerated),
             "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,

@@ -3418,11 +3418,17 @@ summary compatibility and report wording.
 §12d and §12h leave one deliberate hole: continuous candidates are scored once
 inside each topology search, then only the global shortlist is replicated. Two
 apparently natural fixes were tested before changing that loop, and both lost at
-equal render cost. In 50,000 simulated searches across 2, 4 and 8 topologies,
-replicating one finalist per topology increased true regret; rendering every search
-point three times while evaluating one third as many points did the same. The
-current shape — explore broadly, then replicate the few candidates a person will
-read — bought more information from the same renders.
+equal render cost. `scripts/simulate_topology_replication.py` fixes seed 20260827,
+50,000 trials per configuration, 2/4/8 topologies and per-render sigma
+0.05/0.15/0.30. Across all nine configurations the current policy's mean true
+regret was no worse than either alternative: replicating one finalist per topology
+raised it from 0.011–0.089 to 0.017–0.102, while rendering every search point three
+times and evaluating one third as many raised it to 0.020–0.090. Exact-best recovery
+also fell or stayed effectively tied. The complete configuration and rows are in
+`docs/topology-replication-simulation.json`; this is a generic stochastic budget
+model, not a model of Morgan. The current shape — explore broadly, then replicate
+the few candidates a person will read — bought more information from these fixed
+renders.
 
 The real-plugin discriminator held four Morgan SW50R targets, sampler seed, probe,
 workers and final three-render scorer fixed. Only Bright enumeration and its budget
@@ -3455,9 +3461,15 @@ without the flag the old shared-total behavior is unchanged.
 The raw four-target evidence is committed as
 `docs/topology-budget-pilot-baseline.json`,
 `docs/topology-budget-pilot-shared.json` and
-`docs/topology-budget-pilot-per-topology.json`. This is a budget-policy pilot, not a
-claim that Bright enumeration generally improves Morgan: four targets and one
-synthetic probe cannot carry that.
+`docs/topology-budget-pilot-per-topology.json`. Those files predate the new artifact
+fields, so `docs/topology-budget-pilot-manifest.json` records their exact commands,
+SHA-256 digests, enumerated paths and the fact that the 600-render treatment was a
+manual pre-flag equivalent of `--budget 300 --budget-per-topology`. New
+`benchmark-match-2` artifacts add optional `budget_requested`,
+`budget_per_topology`, `topology_variants` and `enumerated` fields; older v2 files
+remain valid without them. This is a budget-policy pilot, not a claim that Bright
+enumeration generally improves Morgan: four targets and one synthetic probe cannot
+carry that.
 
 ## 13. Reading list, in the order it becomes relevant
 

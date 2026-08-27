@@ -422,7 +422,8 @@ def main() -> None:
     switches, selectors = _enumerated(
         space, args.enumerated, budget, args.shortlist,
         supported=supported, seed=seed,
-        replicates=search.shortlist_replicates(metadata))
+        replicates=search.shortlist_replicates(metadata),
+        budget_scale=(variant_count if args.budget_per_topology else 1))
 
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,

@@ -321,7 +321,8 @@ def print_enumerable(space, pack_id: str, amp, supported=None) -> None:
 
 
 def enumerated(space, paths, budget: Optional[int], shortlist: int,
-               supported=None, seed=None, replicates: int = 1):
+               supported=None, seed=None, replicates: int = 1,
+               budget_scale: int = 1):
     """Split the requested paths into switches and selectors, and refuse the silly.
 
     Routed by the dimension's own kind rather than by asking the caller to know
@@ -400,14 +401,27 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
     reserved = screen_cost + variants + rerank_cost + 1
     per_variant = (budget - reserved) / max(variants, 1)
     if per_variant < round_cost:
-        die(f"{variants} topologies do not fit in a {budget}-render budget.\n"
+        budget_scale = max(1, int(budget_scale))
+        requested = budget // budget_scale
+        needed_total = int(reserved + variants * round_cost)
+        needed_requested = (needed_total + budget_scale - 1) // budget_scale
+        budget_label = (
+            f"{budget}-render total ({requested} requested × {budget_scale})"
+            if budget_scale > 1 else f"{budget}-render budget"
+        )
+        raise_to = (
+            f"about {needed_requested} with --budget-per-topology "
+            f"({needed_total} effective renders)"
+            if budget_scale > 1 else f"about {needed_total}"
+        )
+        die(f"{variants} topologies do not fit in a {budget_label}.\n"
             f"  {reserved} renders are spent before any searching: {screen_cost} on "
             f"the screen, {variants} on one starting point per topology, "
             f"{rerank_cost} on the ±6 dB re-rank. That leaves "
             f"{max(budget - reserved, 0)} to split {variants} ways — about "
             f"{max(per_variant, 0):.0f} each, against the {round_cost} one round "
             f"of the optimiser costs.\n"
-            f"  Raise --budget to about {int(reserved + variants * round_cost)}, "
+            f"  Raise --budget to {raise_to}, "
             f"or enumerate fewer controls. A topology with no search behind it is "
             f"its starting point scored once.")
     return switches or None, selectors or None
