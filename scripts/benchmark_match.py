@@ -43,6 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how many random vectors to try to recover (default: 50)")
     ap.add_argument("--budget", type=positive_int, default=300, metavar="RENDERS",
                     help="the search's render budget per target (default: 300)")
+    ap.add_argument("--budget-per-topology", action="store_true",
+                    help="when --enumerate creates V variants, multiply the per-"
+                         "target allowance to V × --budget so each topology keeps "
+                         "roughly one-topology search depth. Without this flag all "
+                         "variants share one budget")
     ap.add_argument("--pack", default="morgan",
                     help="which plugin pack the targets are sampled from "
                          "(default: morgan)")
@@ -180,7 +185,14 @@ def main() -> None:
     # rather than repeated: two copies of "is this a switch or a selector" would be
     # two places for the answer to drift.
     switches, selectors = enumerated(
-        space, args.enumerated, args.budget, shortlist=1, supported=supported,
+        space, args.enumerated, None, shortlist=1, supported=supported,
+        seed=seed, replicates=search.shortlist_replicates(renderer.metadata()))
+    variant_count = len(search.topologies(
+        space, seed, switches=switches, selectors=selectors))
+    budget = (args.budget * variant_count
+              if args.budget_per_topology else args.budget)
+    switches, selectors = enumerated(
+        space, args.enumerated, budget, shortlist=1, supported=supported,
         seed=seed, replicates=search.shortlist_replicates(renderer.metadata()))
     di, di_caveat = probe_di(args.probe_di, args.seconds)
 
@@ -203,7 +215,7 @@ def main() -> None:
     metadata = renderer.metadata()
     try:
         result = benchmark.compare_baselines(
-            renderer, space, di, seed, targets=args.targets, budget=args.budget,
+            renderer, space, di, seed, targets=args.targets, budget=budget,
             profile=args.loss_profile, rng=np.random.default_rng(args.seed), arms=arms,
             pack_id=args.pack, amp=signal_path,
             switches=switches, selectors=selectors,
@@ -218,6 +230,12 @@ def main() -> None:
             close()
     if di_caveat:
         result.caveats.insert(0, di_caveat)
+    if args.budget_per_topology and variant_count > 1:
+        result.caveats.insert(
+            0, f"--budget {args.budget} was multiplied by {variant_count} "
+               f"enumerated topologies, for a {budget}-render allowance per target; "
+               "shared fixed costs make per-topology search depth approximate"
+        )
     # First, not last: it is the caveat that qualifies every other line.
     backend_caveat = _backend_caveat(metadata)
     if backend_caveat:
@@ -227,7 +245,9 @@ def main() -> None:
     completed_targets = len({row.target_index for row in result.outcomes})
     effective_workers = min(args.workers, args.targets)
     print(f"\n{args.targets} targets requested, {completed_targets} produced, "
-          f"budget {args.budget}, "
+          f"budget {budget}"
+          + (f" ({args.budget} requested/topology × {variant_count})"
+             if args.budget_per_topology and variant_count > 1 else "") + ", "
           f"{effective_workers} worker(s)"
           + (f" requested as {args.workers}" if effective_workers != args.workers
              else "") + ", "
@@ -246,7 +266,11 @@ def main() -> None:
             "elapsed_s": round(elapsed_s, 3),
             "targets": args.targets,
             "targets_completed": completed_targets,
-            "budget": args.budget, "pack": args.pack,
+            "budget": budget,
+            "budget_requested": args.budget,
+            "budget_per_topology": bool(args.budget_per_topology),
+            "topology_variants": variant_count,
+            "pack": args.pack,
             "amp": signal_path, "loss_profile": args.loss_profile,
             "seed": args.seed,
             "target_sampler": "seed-sequence-spawn-1",

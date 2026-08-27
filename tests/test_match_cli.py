@@ -666,6 +666,9 @@ def test_the_benchmark_runs_and_reports_every_number_separately(tmp_path):
         "seed": 13,
     }
     assert written["workers"] == written["workers_requested"] == 1
+    assert written["budget"] == written["budget_requested"] == 30
+    assert written["budget_per_topology"] is False
+    assert written["topology_variants"] == 1
     assert written["targets_completed"] == 2
     assert set(written["summaries"]) == {"recipe", "inversion", "full"}
     assert len(written["outcomes"]) == 6, "two targets by three arms"
@@ -815,6 +818,47 @@ def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
                "--enumerate", "sw50rAmp/sw50rBright")
     assert done.returncode == 0, done.stdout + done.stderr
     assert "no switches or selectors were enumerated" not in done.stdout, done.stdout
+
+
+def test_a_per_topology_budget_scales_the_total_explicitly(audio, tmp_path):
+    common = (
+        "--template", TEMPLATE,
+        "--reference", audio / "ref.wav",
+        "--reference-mode", "probe",
+        "--probe-di", audio / "probe.wav",
+        "--amp", "sw50r",
+        "--budget", "45",
+        "--shortlist", "1",
+        "--enumerate", "sw50rAmp/sw50rBright",
+    )
+    refused = run("match_preset.py", *common, "--out-dir", tmp_path / "refused")
+    assert refused.returncode != 0
+    assert "2 topologies do not fit" in refused.stderr
+
+    out = tmp_path / "scaled"
+    scaled = run("match_preset.py", *common, "--budget-per-topology",
+                 "--out-dir", out)
+    assert scaled.returncode == 0, scaled.stdout + scaled.stderr
+    summary = json.loads((out / "summary.json").read_text())
+    assert summary["search"]["budget"] == 90
+    assert "--budget 45 was multiplied by 2 enumerated topologies" in \
+        scaled.stdout
+
+
+def test_the_benchmark_records_a_per_topology_budget(tmp_path):
+    out = tmp_path / "bench-topology.json"
+    done = run(
+        "benchmark_match.py", "--targets", "1", "--budget", "45",
+        "--budget-per-topology", "--seconds", "1.5", "--arms", "full",
+        "--enumerate", "sw50rAmp/sw50rBright", "--json", out)
+    assert done.returncode in (0, 1), done.stdout + done.stderr
+
+    written = json.loads(out.read_text())
+    assert written["budget"] == 90
+    assert written["budget_requested"] == 45
+    assert written["budget_per_topology"] is True
+    assert written["topology_variants"] == 2
+    assert "45 requested/topology × 2" in done.stdout
 
 
 def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):

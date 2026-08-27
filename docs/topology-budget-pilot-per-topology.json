@@ -1,0 +1,129 @@
+{
+  "schema": "benchmark-match-2",
+  "source_commit": "7966f53cf5c688d6dab11b2dfdd8da83638a53a7",
+  "elapsed_s": 288.904,
+  "targets": 4,
+  "targets_completed": 4,
+  "budget": 600,
+  "pack": "morgan",
+  "amp": "sw50r",
+  "loss_profile": "unpaired-v1",
+  "seed": 47,
+  "target_sampler": "seed-sequence-spawn-1",
+  "probe": {
+    "kind": "synthetic-decaying-noise-bursts",
+    "seconds": 2.0,
+    "gap_s": 0.9,
+    "seed": 13
+  },
+  "workers": 4,
+  "workers_requested": 4,
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.1.1",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 0.23,
+    "notes": [
+      "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "summaries": {
+    "full": {
+      "arm": "full",
+      "targets": 4,
+      "failures": 0,
+      "failure_rate": 0.0,
+      "parameter_mae": 0.2418,
+      "selector_accuracy": 0.6542,
+      "objective": 1.0806,
+      "objective_median": 0.883,
+      "objective_observations": 3.0,
+      "objective_spread": 0.6099,
+      "objective_spread_max": 2.437464899664773,
+      "renders": 2354,
+      "wall_s": 978.2
+    }
+  },
+  "ships": false,
+  "reasons": [
+    "the recipe baseline was not run, so there is nothing to beat",
+    "the inversion baseline was not run, so there is nothing to beat",
+    "parameter MAE is 0.2418 and selector accuracy 0.6542; neither is part of this gate, because the plugin's controls are not identifiable from its output and a match that sounds right with different numbers is still a match"
+  ],
+  "caveats": [
+    "rendered by swift (plugin 1.1.1), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 0.23 dB. Every number below carries that, and none of them may be committed without it",
+    "no --probe-di was given, so candidates were rendered through a synthetic decaying noise-burst sequence. It shows attack and decay clearly and shows sustained or palm-muted playing not at all \u2014 match against your own DI before trusting this on a real part.",
+    "each arm's final objective on each target is the mean of 3 renders of the selected vector, because this backend does not repeat itself. The per-target peak-to-peak spread and observation count are stored beside every outcome",
+    "full: 4 of 19 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.084. A larger budget would search them.",
+    "full: 2 topologies share the budget, so each got about 273 renders. Enumerating fewer switches gives each remaining one a deeper search.",
+    "full: the shortlist's scores move by up to 0.76 across \u00b16 dB of input level, so how hard you hit the amp matters as much as these settings do \u2014 check the match at your own playing level",
+    "full: about 68% of the change in score across \u00b16 dB is the output getting louder or quieter rather than the tone changing \u2014 turning the input up makes the render louder, and the level term counts that. The \u00b16 dB figures are a weaker statement about breakup than they look.",
+    "full: 6 of 24 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.053. A larger budget would search them.",
+    "full: 2 topologies share the budget, so each got about 268 renders. Enumerating fewer switches gives each remaining one a deeper search.",
+    "full: about 72% of the change in score across \u00b16 dB is the output getting louder or quieter rather than the tone changing \u2014 turning the input up makes the render louder, and the level term counts that. The \u00b16 dB figures are a weaker statement about breakup than they look.",
+    "full: 1 of 19 parameters changed the distance to the reference by less than 0.01 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 4 of 19 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 0.131. A larger budget would search them.",
+    "full: about 79% of the change in score across \u00b16 dB is the output getting louder or quieter rather than the tone changing \u2014 turning the input up makes the render louder, and the level term counts that. The \u00b16 dB figures are a weaker statement about breakup than they look.",
+    "full: 15 of 24 parameters changed the distance to the reference by less than 2.36066 across their whole range on this material, so they were left at the seed. On different material they might matter.",
+    "full: 2 of 24 parameters did change the distance to the reference but were the weakest 25% that did, so they were left at the seed to spend the budget on the rest \u2014 the most any of them moved it was 3.000. A larger budget would search them."
+  ],
+  "outcomes": [
+    {
+      "arm": "full",
+      "target_index": 0,
+      "parameter_mae": 0.2745151269736985,
+      "selector_accuracy": 0.7142857142857143,
+      "objective": 1.0351429198527193,
+      "objective_observations": 3,
+      "objective_spread": 0.0006123044247170473,
+      "renders": 585,
+      "wall_ms": 241777.38637500443,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 1,
+      "parameter_mae": 0.25214621162109985,
+      "selector_accuracy": 0.5,
+      "objective": 0.354952901298392,
+      "objective_observations": 3,
+      "objective_spread": 0.0016629095461976329,
+      "renders": 595,
+      "wall_ms": 247968.63899985328,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 2,
+      "parameter_mae": 0.2698323256736275,
+      "selector_accuracy": 0.6333333333333333,
+      "objective": 0.7308941413390032,
+      "objective_observations": 3,
+      "objective_spread": 1.117753637747132e-05,
+      "renders": 585,
+      "wall_ms": 242893.60795798711,
+      "failed": false,
+      "error": null
+    },
+    {
+      "arm": "full",
+      "target_index": 3,
+      "parameter_mae": 0.17053789984514978,
+      "selector_accuracy": 0.7692307692307693,
+      "objective": 2.2015713627898945,
+      "objective_observations": 3,
+      "objective_spread": 2.437464899664773,
+      "renders": 589,
+      "wall_ms": 245555.16624986194,
+      "failed": false,
+      "error": null
+    }
+  ]
+}
