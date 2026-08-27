@@ -11,8 +11,10 @@ The budgets are small and the DI is short, so the whole file is a few seconds.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -666,6 +668,10 @@ def test_the_benchmark_runs_and_reports_every_number_separately(tmp_path):
         "seed": 13,
     }
     assert written["workers"] == written["workers_requested"] == 1
+    assert written["budget"] == written["budget_requested"] == 30
+    assert written["budget_per_topology"] is False
+    assert written["topology_variants"] == 1
+    assert written["enumerated"] == []
     assert written["targets_completed"] == 2
     assert set(written["summaries"]) == {"recipe", "inversion", "full"}
     assert len(written["outcomes"]) == 6, "two targets by three arms"
@@ -815,6 +821,110 @@ def test_enumerating_reaches_the_search_and_drops_the_caveat(audio, tmp_path):
                "--enumerate", "sw50rAmp/sw50rBright")
     assert done.returncode == 0, done.stdout + done.stderr
     assert "no switches or selectors were enumerated" not in done.stdout, done.stdout
+
+
+def test_a_per_topology_budget_scales_the_total_explicitly(audio, tmp_path):
+    common = (
+        "--template", TEMPLATE,
+        "--reference", audio / "ref.wav",
+        "--reference-mode", "probe",
+        "--probe-di", audio / "probe.wav",
+        "--amp", "sw50r",
+        "--budget", "45",
+        "--shortlist", "1",
+        "--enumerate", "sw50rAmp/sw50rBright",
+    )
+    refused = run("match_preset.py", *common, "--out-dir", tmp_path / "refused")
+    assert refused.returncode != 0
+    assert "2 topologies do not fit" in refused.stderr
+
+    out = tmp_path / "scaled"
+    scaled = run("match_preset.py", *common, "--budget-per-topology",
+                 "--out-dir", out)
+    assert scaled.returncode == 0, scaled.stdout + scaled.stderr
+    summary = json.loads((out / "summary.json").read_text())
+    assert summary["search"]["budget"] == 90
+    assert "--budget 45 was multiplied by 2 enumerated topologies" in \
+        scaled.stdout
+
+    too_small = run(
+        "match_preset.py",
+        "--template", TEMPLATE,
+        "--reference", audio / "ref.wav",
+        "--reference-mode", "probe",
+        "--probe-di", audio / "probe.wav",
+        "--amp", "sw50r",
+        "--budget", "20",
+        "--budget-per-topology",
+        "--shortlist", "1",
+        "--enumerate", "sw50rAmp/sw50rBright",
+        "--out-dir", tmp_path / "scaled-refused",
+    )
+    assert too_small.returncode != 0
+    assert "40-render total (20 requested × 2)" in too_small.stderr
+    recommendation = re.search(
+        r"Raise --budget to about (\d+) with --budget-per-topology "
+        r"\((\d+) effective renders\)", too_small.stderr)
+    assert recommendation, too_small.stderr
+    requested, effective = map(int, recommendation.groups())
+    assert requested == (effective + 1) // 2
+    assert f"Raise --budget to about {effective} with --budget-per-topology" \
+        not in too_small.stderr
+
+
+def test_the_benchmark_records_a_per_topology_budget(tmp_path):
+    out = tmp_path / "bench-topology.json"
+    done = run(
+        "benchmark_match.py", "--targets", "1", "--budget", "45",
+        "--budget-per-topology", "--seconds", "1.5", "--arms", "full",
+        "--enumerate", "sw50rAmp/sw50rBright", "--json", out)
+    assert done.returncode in (0, 1), done.stdout + done.stderr
+
+    written = json.loads(out.read_text())
+    assert written["budget"] == 90
+    assert written["budget_requested"] == 45
+    assert written["budget_per_topology"] is True
+    assert written["topology_variants"] == 2
+    assert written["enumerated"] == ["sw50rAmp/sw50rBright"]
+    assert "45 requested/topology × 2" in done.stdout
+
+
+def test_the_topology_simulation_is_reproducible_and_structured(tmp_path):
+    first = tmp_path / "first.json"
+    second = tmp_path / "second.json"
+    args = ("--trials", "20", "--seed", "7")
+    one = run("simulate_topology_replication.py", *args, "--out", first)
+    two = run("simulate_topology_replication.py", *args, "--out", second)
+    assert one.returncode == two.returncode == 0, one.stderr + two.stderr
+    assert first.read_bytes() == second.read_bytes()
+
+    result = json.loads(first.read_text())
+    assert result["schema"] == "topology-replication-simulation-1"
+    assert result["seed"] == 7
+    assert result["trials_per_configuration"] == 20
+    assert len(result["rows"]) == 9
+    assert {(row["topologies"], row["noise_sigma"])
+            for row in result["rows"]} == {
+                (variants, sigma)
+                for variants in (2, 4, 8)
+                for sigma in (0.05, 0.15, 0.30)
+            }
+
+
+def test_the_topology_pilot_manifest_pins_every_artifact():
+    manifest = json.loads(
+        (ROOT / "docs" / "topology-budget-pilot-manifest.json").read_text())
+    assert manifest["source_commit"].startswith("7966f53")
+    assert len(manifest["artifacts"]) == 3
+    for entry in manifest["artifacts"]:
+        artifact = ROOT / entry["path"]
+        assert hashlib.sha256(artifact.read_bytes()).hexdigest() == entry["sha256"]
+        assert json.loads(artifact.read_text())["source_commit"].startswith("7966f53")
+        assert "scripts/benchmark_match.py" in entry["command"]
+    simulation = manifest["simulation"]
+    assert hashlib.sha256((ROOT / simulation["artifact"]).read_bytes()).hexdigest() \
+        == simulation["sha256"]
+    assert simulation["script"] == "scripts/simulate_topology_replication.py"
 
 
 def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):

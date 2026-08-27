@@ -1552,8 +1552,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
         if len(variants) > 1:
             result.caveats.append(
                 f"{len(variants)} topologies share the budget, so each got about "
-                f"{per_variant} render{'' if per_variant == 1 else 's'}. Enumerating "
-                f"fewer switches gives each remaining one a deeper search."
+                f"{per_variant} render{'' if per_variant == 1 else 's'}. This is the "
+                f"measured allocation after shared fixed costs; change the total "
+                f"budget or topology count to change it."
             )
         # The screen's own probes are candidates: each one is a real parameter
         # vector that was rendered and scored, and one of them may be the answer.

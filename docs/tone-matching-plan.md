@@ -3413,6 +3413,68 @@ tests pin the mean, per-objective evidence, partial- and all-failure behavior, a
 stateful end-to-end run with three charged template attempts, verdict persistence,
 summary compatibility and report wording.
 
+## 12p. Topology ranking: spend depth before spending repeats
+
+§12d and §12h leave one deliberate hole: continuous candidates are scored once
+inside each topology search, then only the global shortlist is replicated. Two
+apparently natural fixes were tested before changing that loop, and both lost.
+Rendering every search point three times was held to the same search-render cost by
+evaluating one third as many points. Forcing one finalist from every topology was
+allowed to spend more — `2 × (variants − shortlist)` extra renders, which is 2 for
+four topologies and 10 for eight — and still lost.
+`scripts/simulate_topology_replication.py` fixes seed 20260827,
+50,000 trials per configuration, 2/4/8 topologies and per-render sigma
+0.05/0.15/0.30. Across all nine configurations the current policy's mean true
+regret was no worse than either alternative: replicating one finalist per topology
+raised it from 0.011–0.089 to 0.017–0.102, while rendering every search point three
+times and evaluating one third as many raised it to 0.020–0.090. Exact-best recovery
+also fell or stayed effectively tied. The complete configuration and rows are in
+`docs/topology-replication-simulation.json`; this is a generic stochastic budget
+model, not a model of Morgan. The current shape — explore broadly, then replicate
+the few candidates a person will read — bought more information from these fixed
+renders.
+
+The real-plugin discriminator held four Morgan SW50R targets, sampler seed, probe,
+workers and final three-render scorer fixed. Only Bright enumeration and its budget
+changed. Morgan 1.1.1 reports `reproducible=false` and 0.23 dB per-band variation;
+the probe is the synthetic two-second decaying-burst sequence.
+
+| run | total budget | effective depth | objective mean / median | selector | renders | wall |
+|---|---:|---:|---:|---:|---:|---:|
+| no enumeration | 300 | one topology, about 300 | 0.9252 / 0.9220 | 0.6357 | 1188 | 166 s |
+| Bright, shared budget | 300 | about 120 per topology | 1.0109 / 0.9346 | 0.6453 | 1180 | 166 s |
+| Bright, equalized depth | 600 | about 270 per topology | 1.0806 / 0.8830 | 0.6542 | 2354 | 289 s |
+
+The aggregate mean in the last row is misleading by itself. Against the baseline,
+the equalized-depth run improved two targets beyond §12n's operational two-SE rule,
+lost none beyond it and left two inside it. One of those unresolved targets moved
+by +0.7006 while its two three-render ranges imply a 2.1098 threshold; it alone
+pulls the mean upward. The shared-budget run instead made two stable targets worse
+beyond the rule because enumeration halved their continuous-search depth. Selector
+accuracy improved only modestly in both enumerated runs.
+
+So the topology loop is not replicated. The measured product problem is budget
+semantics: `--budget 300` meant 300 total whether there was one topology or eight.
+Both CLIs now offer `--budget-per-topology`; with V enumerated variants it multiplies
+the total allowance to `V × budget`, preserving approximately the one-topology search
+depth. It is deliberately described as approximate because the screen, fallback and
+re-rank are shared fixed costs rather than V separate charges. The effective total,
+requested value, mode and variant count are recorded. Nothing scales silently:
+without the flag the old shared-total behavior is unchanged.
+
+The raw four-target evidence is committed as
+`docs/topology-budget-pilot-baseline.json`,
+`docs/topology-budget-pilot-shared.json` and
+`docs/topology-budget-pilot-per-topology.json`. Those files predate the new artifact
+fields, so `docs/topology-budget-pilot-manifest.json` records their exact commands,
+SHA-256 digests, enumerated paths and the fact that the 600-render treatment was a
+manual pre-flag equivalent of `--budget 300 --budget-per-topology`. New
+`benchmark-match-2` artifacts add optional `budget_requested`,
+`budget_per_topology`, `topology_variants` and `enumerated` fields; older v2 files
+remain valid without them. This is a budget-policy pilot, not a claim that Bright
+enumeration generally improves Morgan: four targets and one synthetic probe cannot
+carry that.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |

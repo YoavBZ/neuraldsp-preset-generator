@@ -135,6 +135,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "Morgan that is about 70 before anything is searched, and a "
                          "run that could not afford a round says so and names the "
                          "number to raise this to")
+    ap.add_argument("--budget-per-topology", action="store_true",
+                    help="when --enumerate creates V topology variants, multiply "
+                         "the total allowance to V × --budget so each keeps roughly "
+                         "one-topology search depth. Shared screen/re-rank costs are "
+                         "still charged once. Without this flag all variants share "
+                         "one --budget")
     ap.add_argument("--shortlist", type=positive_int, default=3,
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,
@@ -257,6 +263,10 @@ def main() -> None:
             space,
         )
     template_values = dict(seed)
+    variant_count = len(search.topologies(
+        space, seed, switches=switches, selectors=selectors))
+    budget = (args.budget * variant_count
+              if args.budget_per_topology else args.budget)
 
     reference = io.load(str(args.reference))
     target = fingerprint(reference, regime=args.reference_mode,
@@ -289,7 +299,7 @@ def main() -> None:
     store.start_run(Run(
         run_id=run_id, pack=args.pack, template=str(args.template),
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
-        loss_profile=args.loss_profile, budget=args.budget,
+        loss_profile=args.loss_profile, budget=budget,
         renderer_id=metadata.renderer_id, plugin_version=metadata.plugin_version,
         notes=json.dumps({
             "schema": "tone-match-run-notes-v1",
@@ -299,6 +309,13 @@ def main() -> None:
     ))
 
     caveats = [probe_note] if probe_note else []
+    if args.budget_per_topology and variant_count > 1:
+        caveats.append(
+            f"--budget {args.budget} was multiplied by {variant_count} enumerated "
+            f"topologies, so the total render allowance is {budget}; shared fixed "
+            "costs are charged once, so per-topology search depth is approximate. "
+            "Without --budget-per-topology they would share one budget"
+        )
     # What the *measurement of the reference* could not establish. `Fingerprint.caveats()`
     # docstring is "everything a report has to say out loud about this measurement", and
     # `fingerprint.py` and `compare_audio.py` both call it — this script, the one that
@@ -403,13 +420,14 @@ def main() -> None:
     # inversion can switch whole sections on and select a different amp, so doing
     # this against the template above overstated or understated the fixed cost.
     switches, selectors = _enumerated(
-        space, args.enumerated, args.budget, args.shortlist,
+        space, args.enumerated, budget, args.shortlist,
         supported=supported, seed=seed,
-        replicates=search.shortlist_replicates(metadata))
+        replicates=search.shortlist_replicates(metadata),
+        budget_scale=(variant_count if args.budget_per_topology else 1))
 
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
-                           budget=args.budget, profile=args.loss_profile,
+                           budget=budget, profile=args.loss_profile,
                            shortlist=args.shortlist, store=store, run_id=run_id,
                            fallbacks=[template_values],
                            switches=switches, selectors=selectors,
@@ -428,7 +446,7 @@ def main() -> None:
     # pipeline handed back 0.408 while the report announced "-488% closer".
     if result.best.reference_score >= start.total:
         caveats.insert(0, _no_better(
-            result.best.reference_score, start.total, args.budget,
+            result.best.reference_score, start.total, budget,
             found_observations=result.best.by_level_observations.get(0.0, 1),
             started_observations=start_observations,
         ))
@@ -493,7 +511,7 @@ def main() -> None:
         floor_observations=result.floor_observations,
         silences=result.silences,
         profile=args.loss_profile, reference=str(args.reference), pack=args.pack,
-        renderer=metadata.as_dict(), budget=args.budget, accounting=accounting,
+        renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
         out_dir=str(args.out_dir),
     )
@@ -517,7 +535,7 @@ def main() -> None:
     if not args.no_invert:
         outside_sources += "the inversion's probe and "
     outside_sources += "one per shortlisted candidate for the report"
-    print(f"  {result.renders} of them against the {args.budget}-render budget; "
+    print(f"  {result.renders} of them against the {budget}-render budget; "
           f"{outside} outside it — {outside_sources}")
     worst = ""
     # The reference-level estimate rather than the one render the search made: on a

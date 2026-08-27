@@ -1,0 +1,54 @@
+{
+  "schema": "topology-budget-pilot-manifest-1",
+  "source_commit": "7966f53cf5c688d6dab11b2dfdd8da83638a53a7",
+  "shared_configuration": {
+    "pack": "morgan",
+    "amp": "sw50r",
+    "renderer": "swift",
+    "plugin_version": "1.1.1",
+    "targets": 4,
+    "seed": 47,
+    "seconds": 2.0,
+    "workers": 4,
+    "arms": ["full"],
+    "final_observations": 3,
+    "reproducible": false,
+    "band_noise_db": 0.23
+  },
+  "artifacts": [
+    {
+      "path": "docs/topology-budget-pilot-baseline.json",
+      "sha256": "35e2d1fd0e78a17427fa5463b3a056cb0bb5e72d7862668a70f8e7d8008cedb5",
+      "treatment": "no-enumeration-shared-300",
+      "enumerated": [],
+      "budget_requested": 300,
+      "budget_effective": 300,
+      "command": ".venv/bin/python scripts/benchmark_match.py --pack morgan --amp sw50r --renderer swift --targets 4 --budget 300 --seed 47 --seconds 2 --workers 4 --arms full --json /private/tmp/topology-baseline.json"
+    },
+    {
+      "path": "docs/topology-budget-pilot-shared.json",
+      "sha256": "5e517a9051628637d4d218dc56ce998f25e6999d7923b66c7708f45e1a5c712b",
+      "treatment": "bright-enumeration-shared-300",
+      "enumerated": ["sw50rAmp/sw50rBright"],
+      "budget_requested": 300,
+      "budget_effective": 300,
+      "command": ".venv/bin/python scripts/benchmark_match.py --pack morgan --amp sw50r --renderer swift --targets 4 --budget 300 --seed 47 --seconds 2 --workers 4 --arms full --enumerate sw50rAmp/sw50rBright --json /private/tmp/topology-bright.json"
+    },
+    {
+      "path": "docs/topology-budget-pilot-per-topology.json",
+      "sha256": "0ae15b25189baf9efceab0891566933c7e2f71e9145f204fa3b508266660ef24",
+      "treatment": "bright-enumeration-manual-equalized-600-pre-flag",
+      "enumerated": ["sw50rAmp/sw50rBright"],
+      "budget_requested": 600,
+      "budget_effective": 600,
+      "equivalent_new_invocation": "--budget 300 --budget-per-topology",
+      "command": ".venv/bin/python scripts/benchmark_match.py --pack morgan --amp sw50r --renderer swift --targets 4 --budget 600 --seed 47 --seconds 2 --workers 4 --arms full --enumerate sw50rAmp/sw50rBright --json /private/tmp/topology-bright-600.json"
+    }
+  ],
+  "simulation": {
+    "script": "scripts/simulate_topology_replication.py",
+    "artifact": "docs/topology-replication-simulation.json",
+    "sha256": "f9e61507599e607d4a951d7f94aca81d324f47b6b9db5fa18b1b02ed7a0dae29",
+    "command": ".venv/bin/python scripts/simulate_topology_replication.py --out docs/topology-replication-simulation.json"
+  }
+}

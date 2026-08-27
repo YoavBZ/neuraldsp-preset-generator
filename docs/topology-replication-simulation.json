@@ -1,0 +1,120 @@
+{
+  "schema": "topology-replication-simulation-1",
+  "seed": 20260827,
+  "trials_per_configuration": 50000,
+  "candidate_points_per_topology": 12,
+  "replicated_points_per_topology": 4,
+  "observations_per_replicated_score": 3,
+  "topology_baseline_step": 0.1,
+  "candidate_exponential_scale": 0.08,
+  "rows": [
+    {
+      "topologies": 2,
+      "shortlist": 2,
+      "noise_sigma": 0.05,
+      "extra_finalist_renders": 0,
+      "current_regret": 0.012887332299513849,
+      "finalist_regret": 0.016956251487278945,
+      "replicated_points_regret": 0.020461963458582498,
+      "current_exact": 0.30266,
+      "finalist_exact": 0.25828,
+      "replicated_points_exact": 0.21662
+    },
+    {
+      "topologies": 2,
+      "shortlist": 2,
+      "noise_sigma": 0.15,
+      "extra_finalist_renders": 0,
+      "current_regret": 0.04356435372732724,
+      "finalist_regret": 0.048895111789982466,
+      "replicated_points_regret": 0.045721122337259966,
+      "current_exact": 0.14634,
+      "finalist_exact": 0.1324,
+      "replicated_points_exact": 0.1336
+    },
+    {
+      "topologies": 2,
+      "shortlist": 2,
+      "noise_sigma": 0.3,
+      "extra_finalist_renders": 0,
+      "current_regret": 0.07016663701511693,
+      "finalist_regret": 0.0738610989806124,
+      "replicated_points_regret": 0.07051615768932179,
+      "current_exact": 0.09568,
+      "finalist_exact": 0.08826,
+      "replicated_points_exact": 0.09128
+    },
+    {
+      "topologies": 4,
+      "shortlist": 3,
+      "noise_sigma": 0.05,
+      "extra_finalist_renders": 2,
+      "current_regret": 0.011404347460380031,
+      "finalist_regret": 0.01696123193518043,
+      "replicated_points_regret": 0.020275713146324086,
+      "current_exact": 0.3262,
+      "finalist_exact": 0.25616,
+      "replicated_points_exact": 0.21772
+    },
+    {
+      "topologies": 4,
+      "shortlist": 3,
+      "noise_sigma": 0.15,
+      "extra_finalist_renders": 2,
+      "current_regret": 0.041581505810577776,
+      "finalist_regret": 0.0530439199762181,
+      "replicated_points_regret": 0.047475148371158495,
+      "current_exact": 0.15332,
+      "finalist_exact": 0.12768,
+      "replicated_points_exact": 0.1301
+    },
+    {
+      "topologies": 4,
+      "shortlist": 3,
+      "noise_sigma": 0.3,
+      "extra_finalist_renders": 2,
+      "current_regret": 0.08569842210295246,
+      "finalist_regret": 0.09808203903361586,
+      "replicated_points_regret": 0.08850496367178774,
+      "current_exact": 0.0875,
+      "finalist_exact": 0.07808,
+      "replicated_points_exact": 0.08288
+    },
+    {
+      "topologies": 8,
+      "shortlist": 3,
+      "noise_sigma": 0.05,
+      "extra_finalist_renders": 10,
+      "current_regret": 0.011441125224255104,
+      "finalist_regret": 0.01713937193294308,
+      "replicated_points_regret": 0.02053836484712427,
+      "current_exact": 0.32138,
+      "finalist_exact": 0.25538,
+      "replicated_points_exact": 0.21314
+    },
+    {
+      "topologies": 8,
+      "shortlist": 3,
+      "noise_sigma": 0.15,
+      "extra_finalist_renders": 10,
+      "current_regret": 0.04197593614149789,
+      "finalist_regret": 0.05287782544118474,
+      "replicated_points_regret": 0.047534474029200746,
+      "current_exact": 0.15296,
+      "finalist_exact": 0.1298,
+      "replicated_points_exact": 0.1343
+    },
+    {
+      "topologies": 8,
+      "shortlist": 3,
+      "noise_sigma": 0.3,
+      "extra_finalist_renders": 10,
+      "current_regret": 0.08942168516747676,
+      "finalist_regret": 0.10153373691734122,
+      "replicated_points_regret": 0.08970217387583138,
+      "current_exact": 0.08672,
+      "finalist_exact": 0.07668,
+      "replicated_points_exact": 0.08186
+    }
+  ]
+}
