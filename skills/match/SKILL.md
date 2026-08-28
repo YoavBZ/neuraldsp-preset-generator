@@ -151,9 +151,11 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/export_match_audition.py" \
   --run-dir RUN_DIR --candidate 1 --probe-di PROBE_DI.wav
 ```
 
-The tool verifies the renderer/plugin build against `summary.json`, writes untouched
-template/candidate renders under its private raw directory, and writes the blind key
-separately. Do not open the key until the listener answers both questions
+The tool verifies the effective starting settings (including an in-memory `--amp`
+selection), candidate trial, exact reference excerpt and renderer/plugin build. It
+refuses changed source files and source/output aliases even with `--force`, writes
+untouched template/candidate renders under its private raw directory, and writes the
+blind key separately. Do not open the key until the listener answers both questions
 independently:
 
 1. Which is closer to the reference: A, B, or indistinguishable?
@@ -164,9 +166,9 @@ judgment, play the untouched raw renders afterward and record that separately.
 
 After the user listens, record the blind label rather than manually opening and
 translating the key. The logger verifies the audition file's SHA-256, resolves the
-label only after the answer is supplied, and attaches the database verdict and
-learned note to the same validated render trial. Closeness and preference remain
-separate inputs:
+label only after the answer is supplied, then revalidates the run, trial, summary,
+spec, settings, renderer and excerpt before attaching the database verdict and
+learned note. Closeness and preference remain separate inputs:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/log_blind_verdict.py" \

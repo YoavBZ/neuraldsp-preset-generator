@@ -27,6 +27,8 @@ import pathlib
 import time
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
+from match.renderer import canonical_settings
+
 # Deliberately dull. This is read for its numbers, and a report that looks like a
 # dashboard invites reading the big number and skipping the caveats.
 STYLE = """
@@ -179,6 +181,7 @@ def build_summary(
     elapsed_s: float,
     command_accounting: Mapping[str, Any],
     out_dir: str,
+    template_source: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """The compact, machine-readable counterpart to the HTML report.
 
@@ -313,6 +316,10 @@ def build_summary(
                 key: None if value is None else float(value)
                 for key, value in (seed_objective_spreads or {}).items()
             },
+            # The settings actually scored, after an explicit --amp selection.
+            # Re-reading the source preset cannot reconstruct that in-memory state.
+            "settings": json.loads(canonical_settings(seed)),
+            "template": dict(template_source or {}),
         },
         "shortlist": candidates,
         "caveats": list(caveats),

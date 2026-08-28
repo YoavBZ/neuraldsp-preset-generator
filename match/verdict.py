@@ -19,11 +19,11 @@ import re
 import tempfile
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from match.store import STORE_NAME, Store, StoreError, Trial
+from match.store import STORE_NAME, Run, Store, StoreError, Trial
 from packs.paths import data_root, learned_tones_path
 
 CHOICES = ("candidate", "template", "indistinguishable")
@@ -46,6 +46,54 @@ class RecordedVerdict:
     candidate: int
     choice: str
     notes_path: pathlib.Path
+
+
+@dataclass(frozen=True)
+class ValidatedCandidate:
+    """One summary/spec/store candidate proved to describe the same render."""
+
+    directory: pathlib.Path
+    summary: Mapping[str, Any]
+    candidate: Mapping[str, Any]
+    spec: Mapping[str, Any]
+    parameters: Mapping[str, Any]
+    run: Run
+    trial: Trial
+
+
+def validate_candidate(
+    run_dir: str | pathlib.Path, candidate_rank: int,
+) -> ValidatedCandidate:
+    """Resolve and cross-check a candidate without recording a verdict."""
+    directory = pathlib.Path(run_dir).expanduser().resolve()
+    summary = _read_object(directory / "summary.json", "summary")
+    run_id, _pack, candidate = _validate_summary(summary, candidate_rank)
+    spec = _read_object(directory / f"match-{candidate_rank}.json", "candidate spec")
+    parameters = _spec_parameters(spec)
+    _validate_changes(candidate, parameters)
+    store_path = directory / STORE_NAME
+    if not store_path.is_file():
+        raise VerdictError(f"the run has no render store at {store_path}")
+    with Store(str(store_path)) as store:
+        trial = _resolve_trial(store, run_id, summary, candidate, parameters)
+        run = store.run(run_id)
+    return ValidatedCandidate(
+        directory, summary, candidate, spec, parameters, run, trial,
+    )
+
+
+def candidate_binding_sha256(validated: ValidatedCandidate) -> str:
+    """Digest every durable object that identifies the auditioned render."""
+    material = {
+        "summary": validated.summary,
+        "spec": validated.spec,
+        "run": asdict(validated.run),
+        "trial": asdict(validated.trial),
+    }
+    encoded = json.dumps(
+        material, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def record_verdict(

@@ -78,6 +78,11 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert key["schema"] == "rab-audition-v1"
     assert key["match"]["schema"] == "match-audition-1"
     assert key["match"]["candidate_rank"] == 1
+    assert isinstance(key["match"]["trial_id"], int)
+    assert set(key["match"]["binding"]) == {
+        "candidate_context_sha256", "summary_sha256", "spec_sha256",
+        "template_settings_sha256",
+    }
     assert key["match"]["roles"] == {"first": "template", "second": "candidate"}
     assert key["match"]["reference_regime"] == "probe"
     assert key["sequence"] == "Reference-A-B-Reference-A-B"
@@ -86,6 +91,29 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert [source["used_start_s"] for source in key["sources"]] == \
         pytest.approx([excerpt["start_s"]] * 3)
     assert key["segment_duration_s"] == pytest.approx(excerpt["duration_s"])
+
+    # The source XML selects PR12, but the completed run scored --amp sw50r.
+    # The audition must reconstruct that effective in-memory starting state.
+    import numpy as np
+    from analysis import io
+    from match import invert
+    from match import space as space_module
+    from match.renderer_synth import SyntheticRenderer
+    from scripts._cli import renderer_paths
+    from scripts.export_match_audition import _settings
+    from scripts.match_preset import _seed_from_template
+
+    space = space_module.build("morgan", amp="sw50r")
+    seed, _ = _seed_from_template(TEMPLATE, space, "morgan")
+    effective = invert.apply_to(
+        seed, invert.signal_path_selection("morgan", "sw50r"), space,
+    )
+    renderer = SyntheticRenderer()
+    settings = _settings(space, effective, renderer_paths(renderer))
+    probe = io.load(str(probe_path), target_rate=renderer.metadata().sample_rate)
+    expected = renderer.render(probe.samples, settings).audio
+    heard = io.load(str(audition_dir / "raw" / "template.wav")).samples
+    assert np.allclose(heard, expected, atol=2e-7)
 
     candidate_label = next(
         label for label, source_role in key["blind_key"].items()
@@ -166,3 +194,121 @@ def test_a_different_probe_performance_is_refused(completed_run, tmp_path):
     )
     assert refused.returncode != 0
     assert "does not match any reference-level DI" in refused.stderr
+
+
+def test_export_refuses_a_candidate_spec_that_no_longer_matches_its_trial(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    spec_path = run_dir / "match-1.json"
+    spec = json.loads(spec_path.read_text())
+    rendered = next(
+        item for item in spec["parameters"]
+        if item["module"] == "sw50rAmp" and item["key"] == "sw50rVolume"
+    )
+    rendered["value"] = 0.123456
+    spec_path.write_text(json.dumps(spec))
+
+    refused = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", tmp_path / "audition",
+    )
+    assert refused.returncode != 0
+    assert "does not match" in refused.stderr
+
+
+def test_logging_refuses_a_run_changed_after_the_audition_was_exported(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    audition_dir = tmp_path / "audition"
+    exported = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic", "--seed", "12",
+        "--out-dir", audition_dir,
+    )
+    assert exported.returncode == 0, exported.stdout + exported.stderr
+    key_path = audition_dir / "audition.flac.key.json"
+    key = json.loads(key_path.read_text())
+    candidate_label = next(
+        label for label, role in key["blind_key"].items()
+        if key["match"]["roles"][role] == "candidate"
+    )
+    wrong_trial = dict(key)
+    wrong_trial["match"] = dict(key["match"])
+    wrong_trial["match"]["trial_id"] += 1
+    key_path.write_text(json.dumps(wrong_trial))
+    refused_trial = run(
+        "log_blind_verdict.py", "--key", key_path, "--choice", candidate_label,
+        "--listener", "wrong-trial", "--data-dir", tmp_path / "data",
+    )
+    assert refused_trial.returncode != 0
+    assert "different candidate trial" in refused_trial.stderr
+    key_path.write_text(json.dumps(key))
+
+    summary_path = run_dir / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["caveats"].append("changed after listening material was made")
+    summary_path.write_text(json.dumps(summary))
+
+    refused = run(
+        "log_blind_verdict.py", "--key", key_path, "--choice", candidate_label,
+        "--listener", "stale-test", "--data-dir", tmp_path / "data",
+    )
+    assert refused.returncode != 0
+    assert "changed after the audition was exported" in refused.stderr
+
+
+def test_force_never_overwrites_an_aliased_reference(completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    summary_path = run_dir / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    original = pathlib.Path(summary["reference"]["path"])
+    collision_dir = tmp_path / "collision"
+    collision_dir.mkdir()
+    collision = collision_dir / "audition.flac"
+    collision.write_bytes(original.read_bytes())
+    summary["reference"]["path"] = str(collision)
+    summary_path.write_text(json.dumps(summary))
+    before = collision.read_bytes()
+
+    refused = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", collision_dir, "--force",
+    )
+    assert refused.returncode != 0
+    assert "aliases the reference input" in refused.stderr
+    assert collision.read_bytes() == before
+
+    # A pre-existing output symlink is the same collision even though its spelling
+    # differs. --force may replace the link, but must never reach its source.
+    summary["reference"]["path"] = str(original)
+    summary_path.write_text(json.dumps(summary))
+    symlink_dir = tmp_path / "symlink-collision"
+    symlink_dir.mkdir()
+    (symlink_dir / "audition.flac").symlink_to(original)
+    original_before = original.read_bytes()
+    refused_symlink = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", symlink_dir, "--force",
+    )
+    assert refused_symlink.returncode != 0
+    assert "aliases the reference input" in refused_symlink.stderr
+    assert original.read_bytes() == original_before
+
+
+def test_a_run_without_an_exact_excerpt_is_refused(completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    summary_path = run_dir / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["reference"].pop("excerpt")
+    summary_path.write_text(json.dumps(summary))
+
+    refused = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", tmp_path / "audition",
+    )
+    assert refused.returncode != 0
+    assert "does not record its exact reference excerpt" in refused.stderr

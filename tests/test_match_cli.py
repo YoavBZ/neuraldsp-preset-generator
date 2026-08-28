@@ -154,6 +154,10 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["starting_point"]["spread"] is None
     assert summary["starting_point"]["reference_level_score"] == pytest.approx(
         summary["starting_point"]["score"])
+    assert summary["starting_point"]["settings"]["/selectedAmp"] == "SW50R"
+    template_source = summary["starting_point"]["template"]
+    assert pathlib.Path(template_source["path"]) == TEMPLATE.resolve()
+    assert template_source["sha256"] == hashlib.sha256(TEMPLATE.read_bytes()).hexdigest()
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
     for candidate in summary["shortlist"]:

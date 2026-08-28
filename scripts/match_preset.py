@@ -32,6 +32,7 @@ Needs the analysis and match extras:  pip install -e '.[analysis,match]'
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
 import shlex
@@ -192,6 +193,7 @@ def main() -> None:
     from analysis.fingerprint import fingerprint
     from match import invert, report, search
     from match import space as space_module
+    from match.renderer import canonical_settings
     from match.store import Run, open_store
 
     if args.loss_profile not in list_profiles():
@@ -264,6 +266,15 @@ def main() -> None:
             space,
         )
     template_values = dict(seed)
+    template_path = args.template.expanduser().resolve()
+    template_source = {
+        "path": str(template_path),
+        "sha256": hashlib.sha256(template_path.read_bytes()).hexdigest(),
+    }
+    effective_template = {
+        "source": template_source,
+        "settings": json.loads(canonical_settings(template_values)),
+    }
     variant_count = len(search.topologies(
         space, seed, switches=switches, selectors=selectors))
     budget = (args.budget * variant_count
@@ -299,7 +310,7 @@ def main() -> None:
     )
     store.start_run(Run(
         run_id=run_id, pack=args.pack,
-        template=str(args.template.expanduser().resolve()),
+        template=str(template_path),
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
         loss_profile=args.loss_profile, budget=budget,
         renderer_id=metadata.renderer_id, plugin_version=metadata.plugin_version,
@@ -307,6 +318,7 @@ def main() -> None:
             "schema": "tone-match-run-notes-v1",
             "probe_note": probe_note,
             "renderer": metadata.as_dict(),
+            "effective_template": effective_template,
         }, sort_keys=True, separators=(",", ":")),
     ))
 
@@ -517,7 +529,7 @@ def main() -> None:
         reference=str(args.reference.expanduser().resolve()), pack=args.pack,
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
-        out_dir=str(args.out_dir),
+        out_dir=str(args.out_dir), template_source=template_source,
     )
     store.close()
 

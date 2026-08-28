@@ -53,10 +53,42 @@ def main() -> None:
     if match.get("schema") != "match-audition-1":
         die("the key is not attached to a completed match run")
     output = key.get("output") or {}
-    montage = pathlib.Path(str(output.get("path", "")))
+    montage = pathlib.Path(str(output.get("path", ""))).expanduser().resolve()
     if not montage.is_file() or _sha256(montage) != output.get("sha256"):
         die("the audition audio is missing or no longer matches the key; refusing "
             "to attach a verdict to different audio")
+
+    from match.verdict import candidate_binding_sha256, validate_candidate
+
+    try:
+        candidate_rank = int(match["candidate_rank"])
+        validated = validate_candidate(match["run_dir"], candidate_rank)
+    except (KeyError, TypeError, ValueError) as error:
+        die(f"the completed match no longer validates against the audition key: {error}")
+    binding = match.get("binding") or {}
+    expected = {
+        "candidate_context_sha256": candidate_binding_sha256(validated),
+        "summary_sha256": _sha256(validated.directory / "summary.json"),
+        "spec_sha256": _sha256(validated.directory / f"match-{candidate_rank}.json"),
+        "template_settings_sha256": hashlib.sha256(json.dumps(
+            (validated.summary.get("starting_point") or {}).get("settings") or {},
+            sort_keys=True, separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")).hexdigest(),
+    }
+    if match.get("run_id") != validated.run.run_id:
+        die("the audition key names a different run than the completed match")
+    if match.get("trial_id") != validated.trial.trial_id:
+        die("the audition key names a different candidate trial")
+    for name, digest in expected.items():
+        if binding.get(name) != digest:
+            die(f"the completed match's {name.removesuffix('_sha256').replace('_', ' ')} "
+                "changed after the audition was exported; refusing a stale verdict")
+    recorded_renderer = validated.summary.get("renderer") or {}
+    if match.get("renderer") != recorded_renderer:
+        die("the audition key's renderer provenance differs from the completed run")
+    recorded_excerpt = (validated.summary.get("reference") or {}).get("excerpt")
+    if match.get("excerpt") != recorded_excerpt:
+        die("the audition key's reference excerpt differs from the completed run")
 
     choice = _answer(key, args.choice)
     preference = None if args.prefer is None else _answer(key, args.prefer)
@@ -75,7 +107,7 @@ def main() -> None:
         print(f"warning: {warning}", file=sys.stderr)
     recorded = record_verdict(
         match["run_dir"],
-        candidate_rank=int(match["candidate_rank"]),
+        candidate_rank=candidate_rank,
         choice=choice,
         listener=args.listener,
         comment="; ".join(details) or None,

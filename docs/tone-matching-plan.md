@@ -3485,11 +3485,13 @@ key, then translate A/B back to candidate/template before calling
 unvalidated manual join.
 
 `export_match_audition.py` now accepts a completed run, shortlist rank and exact
-probe DI. It resolves the original template from `trials.sqlite3`, validates the
-candidate spec and recorded renderer/plugin build, renders both alternatives, and
-delegates montage construction to the existing R–A–B engine. The only listening
-file is Reference → A → B twice; untouched renders and the randomised answer key
-stay separate. A SHA-256 ties the key to the exact montage.
+probe DI. A run persists the effective starting settings as well as the source
+template hash, because reparsing the XML loses an in-memory `--amp` selection. The
+exporter cross-checks that state, the candidate spec and trial, exact reference
+excerpt, DI, and renderer/plugin build before rendering both alternatives. It also
+rejects direct and symlink source/output aliases even under `--force`. The only
+listening file is Reference → A → B twice; untouched renders and the randomised
+answer key stay separate. A SHA-256 ties the key to the exact montage.
 
 The exporter refuses `mix`, `isolated_stem` and `separated_stem` runs by default:
 different performances do not support a direct blind timing/content comparison.
@@ -3498,8 +3500,11 @@ different performances do not support a direct blind timing/content comparison.
 `apply_spec.py` command.
 
 After listening, `log_blind_verdict.py` accepts A, B or indistinguishable without
-requiring the user to open the key. It verifies the montage hash, resolves the blind
-label, and calls the existing validated verdict path. A separate optional
+requiring the user to open the key. It verifies the montage hash and recomputes a
+binding over the summary, spec, store run/trial, effective settings, renderer and
+excerpt before resolving the blind label and calling the validated verdict path. A
+reused run directory or edited result is therefore refused rather than receiving a
+stale listening verdict. A separate optional
 `--prefer` label is recorded in the comment as structured `preference=...` context;
 it does not replace the closeness verdict that future objective calibration needs.
 

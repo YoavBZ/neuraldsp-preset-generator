@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import ast
 import functools
+import hashlib
 import inspect
 import json
 import os
@@ -232,6 +233,7 @@ NEEDS_A_PRESET_FOLDER = (
 AUDIO_PLACEHOLDERS = (
     "REFERENCE.wav",
     "PROBE.wav",
+    "PROBE_DI.wav",
     "TEMPLATE_RENDER.wav",
     "CANDIDATE_RENDER.wav",
 )
@@ -412,6 +414,7 @@ class Sandbox:
             "pack": "morgan", "loss_profile": "unpaired-v1",
             "reference": {
                 "regime": "probe", "regime_confidence": 1.0,
+                "excerpt": {"start_s": 0.0, "duration_s": 1.0},
                 "fingerprint": {
                     "source": {"sha256": reference_sha},
                     "spectrum": {"band_centres_hz": [100.0], "band_db": [0.0]},
@@ -420,7 +423,10 @@ class Sandbox:
             "renderer": {"renderer_id": "synthetic", "plugin_version": None,
                          "renderer_build": "test", "reproducible": True,
                          "band_noise_db": 0.0},
-            "starting_point": {"score": 0.8, "objectives": {"total": 0.8}},
+            "starting_point": {
+                "score": 0.8, "objectives": {"total": 0.8},
+                "settings": {"sw50rAmp/sw50rVolume": 50.0},
+            },
             "shortlist": [{
                 "rank": 1, "trial_id": trial.trial_id, "score": 0.4,
                 "objectives": {"total": 0.4, "timbre": 0.3},
@@ -463,22 +469,54 @@ class Sandbox:
         return directory
 
     def blind_key(self) -> pathlib.Path:
-        """Generate the key because documented commands run independently."""
+        """Make a valid key without requiring the optional audio stack.
+
+        The logger verifies bytes and records a verdict; audio rendering belongs
+        to the exporter's independently exercised command.  Keeping this fixture
+        byte-only makes that separation true in the lightweight CI matrix too.
+        """
         if self._blind_key is not None:
             return self._blind_key
-        _, probe = self.audio_pair()
-        run_dir = self.audition_run()
-        completed = subprocess.run([
-            sys.executable, str(ROOT / "scripts" / "export_match_audition.py"),
-            "--run-dir", str(run_dir),
-            "--candidate", "1",
-            "--probe-di", str(probe),
-            "--renderer", "synthetic",
-            "--seed", "123",
-        ], cwd=ROOT, capture_output=True, text=True)
-        assert completed.returncode == 0, completed.stdout + completed.stderr
-        self._blind_key = (
-            run_dir / "audition-candidate-1" / "audition.flac.key.json")
+        run_dir = self.verdict_run()
+        audition_dir = run_dir / "audition-candidate-1"
+        audition_dir.mkdir()
+        montage = audition_dir / "audition.flac"
+        montage.write_bytes(b"documented blind audition")
+        from match.verdict import candidate_binding_sha256, validate_candidate
+
+        validated = validate_candidate(run_dir, 1)
+        summary_path = run_dir / "summary.json"
+        spec_path = run_dir / "match-1.json"
+        settings = validated.summary["starting_point"]["settings"]
+        self._blind_key = audition_dir / "audition.flac.key.json"
+        self._blind_key.write_text(json.dumps({
+            "schema": "rab-audition-v1",
+            "blind_key": {"A": "second", "B": "first"},
+            "output": {
+                "path": str(montage),
+                "sha256": hashlib.sha256(montage.read_bytes()).hexdigest(),
+            },
+            "match": {
+                "schema": "match-audition-1",
+                "run_dir": str(run_dir),
+                "run_id": validated.run.run_id,
+                "trial_id": validated.trial.trial_id,
+                "candidate_rank": 1,
+                "roles": {"first": "template", "second": "candidate"},
+                "renderer": validated.summary["renderer"],
+                "excerpt": validated.summary["reference"]["excerpt"],
+                "binding": {
+                    "candidate_context_sha256": candidate_binding_sha256(validated),
+                    "summary_sha256": hashlib.sha256(
+                        summary_path.read_bytes()).hexdigest(),
+                    "spec_sha256": hashlib.sha256(spec_path.read_bytes()).hexdigest(),
+                    "template_settings_sha256": hashlib.sha256(json.dumps(
+                        settings, sort_keys=True, separators=(",", ":"),
+                        allow_nan=False,
+                    ).encode("utf-8")).hexdigest(),
+                },
+            },
+        }))
         return self._blind_key
 
     def build(self, helper: str) -> pathlib.Path:
