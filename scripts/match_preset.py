@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import shlex
 import sys
 import time
 from typing import Any, Dict, Optional
@@ -297,7 +298,8 @@ def main() -> None:
         f"{interrupt_note}"
     )
     store.start_run(Run(
-        run_id=run_id, pack=args.pack, template=str(args.template),
+        run_id=run_id, pack=args.pack,
+        template=str(args.template.expanduser().resolve()),
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
         loss_profile=args.loss_profile, budget=budget,
         renderer_id=metadata.renderer_id, plugin_version=metadata.plugin_version,
@@ -476,7 +478,8 @@ def main() -> None:
         frozen=result.frozen, searched=result.searched,
         movement=result.movement, floor=result.floor, silences=result.silences,
         unheard=dropped,
-        profile=args.loss_profile, reference=str(args.reference),
+        profile=args.loss_profile,
+        reference=str(args.reference.expanduser().resolve()),
         seed_observations=start_observations, seed_spread=start_spread,
         seed_objective_observations=start_result.objective_observations,
         seed_objective_spreads=start_result.objective_spreads,
@@ -510,7 +513,8 @@ def main() -> None:
         movement=result.movement, floor=result.floor,
         floor_observations=result.floor_observations,
         silences=result.silences,
-        profile=args.loss_profile, reference=str(args.reference), pack=args.pack,
+        profile=args.loss_profile,
+        reference=str(args.reference.expanduser().resolve()), pack=args.pack,
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
         out_dir=str(args.out_dir),
@@ -566,6 +570,12 @@ def main() -> None:
     print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
     print(f"    --spec {args.out_dir / 'match-1.json'} \\")
     print(f"    --out {args.out_dir / 'match-1.xml'}")
+    if args.probe_di is not None and args.reference_mode in ("paired_di", "probe"):
+        print("\nto audition it blind against the starting template:")
+        print("  python3 scripts/export_match_audition.py \\")
+        print(f"    --run-dir {shlex.quote(str(args.out_dir))} --candidate 1 \\")
+        print(f"    --probe-di {shlex.quote(str(args.probe_di))} \\")
+        print(f"    --renderer {args.renderer}")
     if caveats:
         print(f"\n{len(caveats)} caveats — read them before trusting the number "
               f"above:")

@@ -3475,6 +3475,39 @@ remain valid without them. This is a budget-policy pilot, not a claim that Brigh
 enumeration generally improves Morgan: four targets and one synthetic probe cannot
 carry that.
 
+## 12q. Make the listening verdict blind and reproducible
+
+M6 could store a listener verdict, and `build_rab_audition.py` could build a blind,
+static-level-matched montage, but a completed match did not connect the two. A user
+had to render the template and candidate manually, build the R–A–B file, avoid the
+key, then translate A/B back to candidate/template before calling
+`log_match_verdict.py`. The most valuable data in the roadmap depended on an
+unvalidated manual join.
+
+`export_match_audition.py` now accepts a completed run, shortlist rank and exact
+probe DI. It resolves the original template from `trials.sqlite3`, validates the
+candidate spec and recorded renderer/plugin build, renders both alternatives, and
+delegates montage construction to the existing R–A–B engine. The only listening
+file is Reference → A → B twice; untouched renders and the randomised answer key
+stay separate. A SHA-256 ties the key to the exact montage.
+
+The exporter refuses `mix`, `isolated_stem` and `separated_stem` runs by default:
+different performances do not support a direct blind timing/content comparison.
+`--allow-unpaired` exists for an explicit, qualified exception. Successful
+`paired_di` and `probe` matches print the export command beside the existing
+`apply_spec.py` command.
+
+After listening, `log_blind_verdict.py` accepts A, B or indistinguishable without
+requiring the user to open the key. It verifies the montage hash, resolves the blind
+label, and calls the existing validated verdict path. A separate optional
+`--prefer` label is recorded in the comment as structured `preference=...` context;
+it does not replace the closeness verdict that future objective calibration needs.
+
+No plugin-quality result is claimed here. The implementation is workflow
+infrastructure, tested end to end on the synthetic renderer: completed match,
+template/candidate renders, blind montage/key, hidden-label verdict, learned note,
+and refusal after the audition audio is modified.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |

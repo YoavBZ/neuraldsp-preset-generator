@@ -121,6 +121,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     summary = json.loads((out / "summary.json").read_text())
     assert summary["schema"] == "tone-match-summary-v1"
     assert summary["reference"]["regime"] == "probe"
+    assert pathlib.Path(summary["reference"]["path"]).is_absolute()
     assert summary["reference"]["regime_confidence"] == 1.0
     assert summary["reference"]["excerpt"] == {
         "start_s": 0.0,
@@ -176,6 +177,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
 
     # The next command, printed rather than left in a docstring the user never sees.
     assert "apply_spec.py" in done.stdout
+    assert "export_match_audition.py" in done.stdout
     assert "reference excerpt 0.000000–2.000000 s" in done.stdout
 
 

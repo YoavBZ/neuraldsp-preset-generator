@@ -354,6 +354,8 @@ class Sandbox:
         self._runs = 0
         self._audio = None
         self._verdict_run = None
+        self._audition_run = None
+        self._blind_key = None
 
     def out(self) -> pathlib.Path:
         self._runs += 1
@@ -438,6 +440,47 @@ class Sandbox:
         self._verdict_run = directory
         return directory
 
+    def audition_run(self) -> pathlib.Path:
+        """A real synthetic match run for the independently tested exporter."""
+        if self._audition_run is not None:
+            return self._audition_run
+        reference, probe = self.audio_pair()
+        directory = self.path / "audition-run"
+        completed = subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "match_preset.py"),
+            "--template", str(self.template),
+            "--reference", str(reference),
+            "--reference-mode", "probe",
+            "--probe-di", str(probe),
+            "--amp", "sw50r",
+            "--budget", "60",
+            "--shortlist", "1",
+            "--renderer", "synthetic",
+            "--out-dir", str(directory),
+        ], cwd=ROOT, capture_output=True, text=True)
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        self._audition_run = directory
+        return directory
+
+    def blind_key(self) -> pathlib.Path:
+        """Generate the key because documented commands run independently."""
+        if self._blind_key is not None:
+            return self._blind_key
+        _, probe = self.audio_pair()
+        run_dir = self.audition_run()
+        completed = subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "export_match_audition.py"),
+            "--run-dir", str(run_dir),
+            "--candidate", "1",
+            "--probe-di", str(probe),
+            "--renderer", "synthetic",
+            "--seed", "123",
+        ], cwd=ROOT, capture_output=True, text=True)
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        self._blind_key = (
+            run_dir / "audition-candidate-1" / "audition.flac.key.json")
+        return self._blind_key
+
     def build(self, helper: str) -> pathlib.Path:
         """Compile one of the documented Swift helpers into this sandbox.
 
@@ -503,17 +546,29 @@ BUILT_HELPERS = ("au_probe", "au_render_server", "au_render", "au_silence_check"
 def materialise(command: str, sandbox: Sandbox) -> list:
     """Turn a documented command into an argv the test can actually run."""
     text = command.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
-    is_verdict = "log_match_verdict.py" in text
+    is_blind_verdict = "log_blind_verdict.py" in text
+    is_verdict = "log_match_verdict.py" in text or is_blind_verdict
+    is_export = "export_match_audition.py" in text
+    if is_blind_verdict:
+        text = text.replace(
+            "RUN_DIR/audition-candidate-1/audition.flac.key.json",
+            str(sandbox.blind_key()))
+        text = text.replace("LISTENER", "documentation-blind-test")
+    if is_export:
+        text = text.replace("RUN_DIR", str(sandbox.audition_run()))
     if is_verdict:
-        text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
+        if not is_blind_verdict:
+            text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
         text = text.replace("LISTENER", "documentation-test")
     for placeholder in ("PRESET.xml", "TEMPLATE.xml"):
         text = text.replace(placeholder, str(sandbox.template))
     text = text.replace("/tmp/spec.json", str(sandbox.spec))
-    if "REFERENCE.wav" in text or "PROBE.wav" in text:
+    if ("REFERENCE.wav" in text or "PROBE.wav" in text
+            or "PROBE_DI.wav" in text):
         reference, probe = sandbox.audio_pair()
         text = text.replace("REFERENCE.wav", str(reference))
         text = text.replace("PROBE.wav", str(probe))
+        text = text.replace("PROBE_DI.wav", str(probe))
         # The audition command needs two already-rendered alternatives. Their tone
         # is irrelevant to this documentation test; existing deterministic audio
         # exercises the command and keeps every placeholder explicit.
