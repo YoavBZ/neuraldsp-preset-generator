@@ -155,10 +155,11 @@ The tool verifies the effective starting settings (including an in-memory `--amp
 selection), candidate trial, exact reference excerpt and renderer/plugin build. It
 refuses changed source files and source/output aliases even with `--force`, writes
 untouched template/candidate renders under its private raw directory, and writes the
-fresh candidate render as its own scored trial. That last step matters on a stateful
-plugin: the heard waveform, not an earlier observation of the same settings, receives
-the verdict. The blind key stays separate. Do not open it until the listener answers
-both questions independently:
+fresh candidate render as its own scored trial under the search's exact post-inversion
+recipe. That last step matters on a stateful plugin: the heard waveform, not an
+earlier observation of the same settings, receives the verdict. The complete audition
+trial is hashed into the blind key, which stays separate. Do not open it until the
+listener answers both questions independently:
 
 1. Which is closer to the reference: A, B, or indistinguishable?
 2. Which do you prefer: A, B, or indistinguishable?

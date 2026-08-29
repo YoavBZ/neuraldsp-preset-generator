@@ -97,6 +97,15 @@ def candidate_binding_sha256(validated: ValidatedCandidate) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def trial_binding_sha256(trial: Trial) -> str:
+    """Digest every stored field of one exact render observation."""
+    encoded = json.dumps(
+        _binding_value(asdict(trial)), sort_keys=True, separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _binding_value(value):
     """Canonical JSON form, including the search's deliberate NaN sentinel."""
     if isinstance(value, float) and not math.isfinite(value):
@@ -112,6 +121,7 @@ def _binding_value(value):
 
 def validate_audition_trial(
     validated: ValidatedCandidate, trial_id: int, *, di_sha: str, render_sha: str,
+    trial_sha: str,
 ) -> Trial:
     """Prove that an audition trial is the exact re-render named by its key."""
     store_path = validated.directory / STORE_NAME
@@ -119,12 +129,14 @@ def validate_audition_trial(
         trial = store.trial(trial_id)
         _validate_audition_trial(
             trial, validated, di_sha=di_sha, render_sha=render_sha,
+            trial_sha=trial_sha,
         )
     return trial
 
 
 def _validate_audition_trial(
     trial: Trial, validated: ValidatedCandidate, *, di_sha: str, render_sha: str,
+    trial_sha: str,
 ) -> None:
     if trial.run_id != validated.run.run_id:
         raise VerdictError("the audition trial belongs to a different run")
@@ -140,6 +152,8 @@ def _validate_audition_trial(
         raise VerdictError("the audition trial used a different probe DI")
     if trial.render_sha != render_sha:
         raise VerdictError("the audition trial render no longer matches the heard audio")
+    if trial_binding_sha256(trial) != trial_sha:
+        raise VerdictError("the audition trial's stored evidence changed after export")
 
 
 def record_verdict(
@@ -152,6 +166,7 @@ def record_verdict(
     audition_trial_id: Optional[int] = None,
     audition_di_sha: Optional[str] = None,
     audition_render_sha: Optional[str] = None,
+    audition_trial_sha: Optional[str] = None,
 ) -> RecordedVerdict:
     """Record a template-versus-candidate audition from a completed match run."""
     directory = pathlib.Path(run_dir).expanduser().resolve()
@@ -188,7 +203,7 @@ def record_verdict(
     with Store(str(store_path)) as store:
         trial = _resolve_trial(store, run_id, summary, candidate, parameters)
         if audition_trial_id is not None:
-            if not audition_di_sha or not audition_render_sha:
+            if not audition_di_sha or not audition_render_sha or not audition_trial_sha:
                 raise VerdictError(
                     "an audition trial needs its DI and render hashes"
                 )
@@ -199,7 +214,7 @@ def record_verdict(
             )
             _validate_audition_trial(
                 heard, validated, di_sha=audition_di_sha,
-                render_sha=audition_render_sha,
+                render_sha=audition_render_sha, trial_sha=audition_trial_sha,
             )
             trial = heard
         if trial.trial_id is None:

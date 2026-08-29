@@ -483,7 +483,8 @@ class Sandbox:
         montage = audition_dir / "audition.flac"
         montage.write_bytes(b"documented blind audition")
         from match.store import Store, Trial
-        from match.verdict import candidate_binding_sha256, validate_candidate
+        from match.verdict import (candidate_binding_sha256, trial_binding_sha256,
+                                   validate_candidate)
 
         validated = validate_candidate(run_dir, 1)
         audition_di_sha = "d" * 64
@@ -513,6 +514,7 @@ class Sandbox:
                 "source_trial_id": validated.trial.trial_id,
                 "audition_trial_id": audition_trial.trial_id,
                 "audition_render_sha256": audition_render_sha,
+                "audition_trial_sha256": trial_binding_sha256(audition_trial),
                 "candidate_rank": 1,
                 "roles": {"first": "template", "second": "candidate"},
                 "renderer": validated.summary["renderer"],

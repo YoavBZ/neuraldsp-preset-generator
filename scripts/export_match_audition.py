@@ -160,7 +160,8 @@ def main() -> None:
             "  Use a paired_di run for blind R–A–B listening, or pass "
             "--allow-unpaired and treat timing/content differences as a limitation.")
 
-    from match.verdict import candidate_binding_sha256, validate_candidate
+    from match.verdict import (candidate_binding_sha256, trial_binding_sha256,
+                               validate_candidate)
 
     validated = validate_candidate(run_dir, args.candidate)
     summary = validated.summary
@@ -203,7 +204,11 @@ def main() -> None:
     from scripts.match_preset import _renderer
 
     space = space_module.build(pack_id)
-    candidate_values = _candidate_values(template_values, validated.spec)
+    search_seed = (summary.get("search") or {}).get("starting_settings")
+    if not isinstance(search_seed, dict) or not search_seed:
+        die("the completed run does not record the post-inversion search recipe; "
+            "rerun the match with the current code before exporting an audition")
+    candidate_values = _candidate_values(search_seed, validated.spec)
     candidate_settings = dict(validated.trial.params)
     if not candidate_settings:
         die("the validated candidate trial records no rendered settings")
@@ -232,6 +237,10 @@ def main() -> None:
     for path in (template_wav, candidate_wav, montage_path, key_path):
         if (path.exists() or path.is_symlink()) and not args.force:
             die(f"{path} already exists; choose another --out-dir or pass --force")
+    if out_dir.exists() and not out_dir.is_dir():
+        die(f"--out-dir {out_dir} is a file; choose a directory path")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    raw_dir.mkdir(parents=True, exist_ok=True)
 
     renderer = _renderer(renderer_name, pack_id)
     try:
@@ -260,6 +269,26 @@ def main() -> None:
         candidate_wall_ms = (time.perf_counter() - started) * 1000.0
         candidate_render = candidate_result.audio
 
+        # Stage every audio artifact before mutating the completed run's store. An
+        # invalid destination or montage failure must not leave an orphan trial.
+        _write_audio(template_wav, template_render, metadata.sample_rate)
+        _write_audio(candidate_wav, candidate_render, metadata.sample_rate)
+        blind_seed = args.seed if args.seed is not None else secrets.randbits(64)
+        montage, key = build(
+            reference=reference_path,
+            first=template_wav,
+            second=candidate_wav,
+            starts=(excerpt_start, excerpt_start, excerpt_start),
+            duration_s=audition_duration,
+            target_lufs=args.target_lufs,
+            peak_ceiling_dbtp=args.peak_ceiling_dbtp,
+            gap_s=args.gap,
+            cycle_gap_s=args.cycle_gap,
+            seed=blind_seed,
+            force_mono=args.mono,
+        )
+        _write_audio(montage_path, montage, key["sample_rate"])
+
         from analysis.fingerprint import Fingerprint
         from match import search
         from match.store import STORE_NAME, Store
@@ -273,7 +302,7 @@ def main() -> None:
                 renderer, target, probe.samples, space,
                 profile=str(summary.get("loss_profile", "unpaired-v1")),
                 store=store, run_id=validated.run.run_id,
-                recipe=template_values, reference_audio=reference_audio,
+                recipe=search_seed, reference_audio=reference_audio,
             )
             audition_candidate = evaluator.record_rendered(
                 candidate_values, candidate_result, wall_ms=candidate_wall_ms,
@@ -287,26 +316,6 @@ def main() -> None:
         if close is not None:
             close()
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    raw_dir.mkdir(parents=True, exist_ok=True)
-
-    _write_audio(template_wav, template_render, metadata.sample_rate)
-    _write_audio(candidate_wav, candidate_render, metadata.sample_rate)
-    blind_seed = args.seed if args.seed is not None else secrets.randbits(64)
-    montage, key = build(
-        reference=reference_path,
-        first=template_wav,
-        second=candidate_wav,
-        starts=(excerpt_start, excerpt_start, excerpt_start),
-        duration_s=audition_duration,
-        target_lufs=args.target_lufs,
-        peak_ceiling_dbtp=args.peak_ceiling_dbtp,
-        gap_s=args.gap,
-        cycle_gap_s=args.cycle_gap,
-        seed=blind_seed,
-        force_mono=args.mono,
-    )
-    _write_audio(montage_path, montage, key["sample_rate"])
     key["output"] = {
         "path": str(montage_path),
         "sha256": _sha256(montage_path),
@@ -319,6 +328,7 @@ def main() -> None:
         "source_trial_id": validated.trial.trial_id,
         "audition_trial_id": audition_trial.trial_id,
         "audition_render_sha256": audition_trial.render_sha,
+        "audition_trial_sha256": trial_binding_sha256(audition_trial),
         "pack": pack_id,
         "candidate_rank": args.candidate,
         "roles": {"first": "template", "second": "candidate"},

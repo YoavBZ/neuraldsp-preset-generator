@@ -96,6 +96,7 @@ def main() -> None:
             validated, int(match["audition_trial_id"]),
             di_sha=str(probe["audio_sha256"]),
             render_sha=str(match["audition_render_sha256"]),
+            trial_sha=str(match["audition_trial_sha256"]),
         )
     except (KeyError, TypeError, ValueError) as error:
         die(f"the heard audition trial no longer validates: {error}")
@@ -124,6 +125,7 @@ def main() -> None:
         audition_trial_id=audition_trial.trial_id,
         audition_di_sha=audition_trial.di_sha,
         audition_render_sha=audition_trial.render_sha,
+        audition_trial_sha=match["audition_trial_sha256"],
     )
     print(f"blind label {args.choice!r} resolved after listening to {choice!r}")
     if preference is not None:

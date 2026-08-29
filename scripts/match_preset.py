@@ -530,6 +530,7 @@ def main() -> None:
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
         out_dir=str(args.out_dir), template_source=template_source,
+        search_seed=seed,
     )
     store.close()
 

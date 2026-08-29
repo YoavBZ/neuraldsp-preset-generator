@@ -182,6 +182,7 @@ def build_summary(
     command_accounting: Mapping[str, Any],
     out_dir: str,
     template_source: Optional[Mapping[str, Any]] = None,
+    search_seed: Optional[Mapping] = None,
 ) -> Dict[str, Any]:
     """The compact, machine-readable counterpart to the HTML report.
 
@@ -275,6 +276,12 @@ def build_summary(
         },
         "search": {
             "budget": int(budget),
+            # The prior and complexity objectives are relative to the post-inversion
+            # seed, not the source template. A later audition must score under this
+            # exact recipe or identical audio receives a different objective key.
+            "starting_settings": json.loads(canonical_settings(
+                seed if search_seed is None else search_seed
+            )),
             "searched": list(searched),
             "frozen": {key: float(value) for key, value in frozen.items()},
             "movement": {key: float(value) for key, value in movement.items()},

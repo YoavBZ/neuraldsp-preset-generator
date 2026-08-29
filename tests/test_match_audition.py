@@ -82,6 +82,7 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert isinstance(key["match"]["source_trial_id"], int)
     assert isinstance(key["match"]["audition_trial_id"], int)
     assert key["match"]["audition_trial_id"] != key["match"]["source_trial_id"]
+    assert len(key["match"]["audition_trial_sha256"]) == 64
     assert set(key["match"]["binding"]) == {
         "candidate_context_sha256", "summary_sha256", "spec_sha256",
         "template_settings_sha256",
@@ -140,10 +141,15 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     with Store(str(run_dir / "trials.sqlite3")) as store:
         verdict, = store.verdicts(json.loads((run_dir / "summary.json").read_text())[
             "run_id"])
+        source_trial = store.trial(key["match"]["source_trial_id"])
         heard_trial = store.trial(key["match"]["audition_trial_id"])
     assert verdict["choice"] == "candidate"
     assert verdict["trial_id"] == heard_trial.trial_id
     assert heard_trial.render_sha == key["match"]["audition_render_sha256"]
+    assert heard_trial.params == source_trial.params
+    assert heard_trial.cache_key == source_trial.cache_key
+    assert heard_trial.objective_key == source_trial.objective_key
+    assert heard_trial.objectives == pytest.approx(source_trial.objectives)
     assert verdict["listener"] == "blind-test"
     assert verdict["comment"].startswith("preference=template;")
 
@@ -283,6 +289,27 @@ def test_logging_refuses_a_run_changed_after_the_audition_was_exported(
     assert "different source candidate trial" in refused_trial.stderr
     key_path.write_text(json.dumps(key))
 
+    with sqlite3.connect(run_dir / "trials.sqlite3") as database:
+        original_objectives, = database.execute(
+            "SELECT objectives_json FROM trials WHERE trial_id = ?",
+            (key["match"]["audition_trial_id"],),
+        ).fetchone()
+        database.execute(
+            "UPDATE trials SET objectives_json = ? WHERE trial_id = ?",
+            ('{"total":999,"timbre":999}', key["match"]["audition_trial_id"]),
+        )
+    refused_evidence = run(
+        "log_blind_verdict.py", "--key", key_path, "--choice", candidate_label,
+        "--listener", "changed-evidence", "--data-dir", tmp_path / "data",
+    )
+    assert refused_evidence.returncode != 0
+    assert "stored evidence changed after export" in refused_evidence.stderr
+    with sqlite3.connect(run_dir / "trials.sqlite3") as database:
+        database.execute(
+            "UPDATE trials SET objectives_json = ? WHERE trial_id = ?",
+            (original_objectives, key["match"]["audition_trial_id"]),
+        )
+
     summary_path = run_dir / "summary.json"
     summary = json.loads(summary_path.read_text())
     summary["caveats"].append("changed after listening material was made")
@@ -380,3 +407,24 @@ def test_nonfinite_screen_evidence_has_a_stable_audition_binding(
     )
     assert exported.returncode == 0, exported.stdout + exported.stderr
     assert (tmp_path / "audition" / "audition.flac.key.json").is_file()
+
+
+def test_an_invalid_output_directory_does_not_append_an_audition_trial(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    summary = json.loads((run_dir / "summary.json").read_text())
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        before = len(list(store.trials(summary["run_id"])))
+    not_a_directory = tmp_path / "occupied"
+    not_a_directory.write_text("not a directory")
+
+    refused = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", not_a_directory,
+    )
+    assert refused.returncode != 0
+    assert "is a file" in refused.stderr
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        after = len(list(store.trials(summary["run_id"])))
+    assert after == before

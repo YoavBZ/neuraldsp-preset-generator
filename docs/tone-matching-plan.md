@@ -3492,8 +3492,10 @@ excerpt, DI, and renderer/plugin build before rendering both alternatives. It al
 rejects direct and symlink source/output aliases even under `--force`. The only
 listening file is Reference → A → B twice; untouched renders and the randomised
 answer key stay separate. The freshly heard candidate is scored and persisted as a
-new trial, because a stateful plugin's second render is not the old search render; the
-verdict attaches to that audition trial. A SHA-256 ties the key to the exact montage.
+new trial under the exact post-inversion recipe the search used, because both a
+stateful plugin's second waveform and a prior measured from the wrong seed would be
+different evidence. The verdict attaches to that audition trial, whose complete row
+is hashed into the key. A SHA-256 also ties the key to the exact montage.
 
 The exporter accepts only `paired_di` by default. Even `probe` means a controlled
 known-chain render, not proof that the reference and DI are the same performance;

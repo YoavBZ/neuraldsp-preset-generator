@@ -140,6 +140,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "explicit --amp must select SW50R before the inversion probe is rendered"
     )
     assert summary["search"]["searched"]
+    assert summary["search"]["starting_settings"]["/selectedAmp"] == "SW50R"
     assert summary["search"]["sensitivity_floor_observations"] == 1
     command = summary["command_accounting"]
     assert command["total_renders"] == (
