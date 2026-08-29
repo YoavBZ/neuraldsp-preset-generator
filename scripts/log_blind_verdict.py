@@ -58,7 +58,8 @@ def main() -> None:
         die("the audition audio is missing or no longer matches the key; refusing "
             "to attach a verdict to different audio")
 
-    from match.verdict import candidate_binding_sha256, validate_candidate
+    from match.verdict import (candidate_binding_sha256, validate_audition_trial,
+                               validate_candidate)
 
     try:
         candidate_rank = int(match["candidate_rank"])
@@ -77,8 +78,8 @@ def main() -> None:
     }
     if match.get("run_id") != validated.run.run_id:
         die("the audition key names a different run than the completed match")
-    if match.get("trial_id") != validated.trial.trial_id:
-        die("the audition key names a different candidate trial")
+    if match.get("source_trial_id") != validated.trial.trial_id:
+        die("the audition key names a different source candidate trial")
     for name, digest in expected.items():
         if binding.get(name) != digest:
             die(f"the completed match's {name.removesuffix('_sha256').replace('_', ' ')} "
@@ -89,6 +90,15 @@ def main() -> None:
     recorded_excerpt = (validated.summary.get("reference") or {}).get("excerpt")
     if match.get("excerpt") != recorded_excerpt:
         die("the audition key's reference excerpt differs from the completed run")
+    probe = match.get("probe_di") or {}
+    try:
+        audition_trial = validate_audition_trial(
+            validated, int(match["audition_trial_id"]),
+            di_sha=str(probe["audio_sha256"]),
+            render_sha=str(match["audition_render_sha256"]),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        die(f"the heard audition trial no longer validates: {error}")
 
     choice = _answer(key, args.choice)
     preference = None if args.prefer is None else _answer(key, args.prefer)
@@ -111,6 +121,9 @@ def main() -> None:
         choice=choice,
         listener=args.listener,
         comment="; ".join(details) or None,
+        audition_trial_id=audition_trial.trial_id,
+        audition_di_sha=audition_trial.di_sha,
+        audition_render_sha=audition_trial.render_sha,
     )
     print(f"blind label {args.choice!r} resolved after listening to {choice!r}")
     if preference is not None:

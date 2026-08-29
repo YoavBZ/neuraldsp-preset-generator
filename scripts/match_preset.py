@@ -582,7 +582,7 @@ def main() -> None:
     print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
     print(f"    --spec {args.out_dir / 'match-1.json'} \\")
     print(f"    --out {args.out_dir / 'match-1.xml'}")
-    if args.probe_di is not None and args.reference_mode in ("paired_di", "probe"):
+    if args.probe_di is not None and args.reference_mode == "paired_di":
         print("\nto audition it blind against the starting template:")
         print("  python3 scripts/export_match_audition.py \\")
         print(f"    --run-dir {shlex.quote(str(args.out_dir))} --candidate 1 \\")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import sqlite3
 import subprocess
 import sys
 
@@ -43,7 +44,7 @@ def completed_run(tmp_path):
         "match_preset.py",
         "--template", TEMPLATE,
         "--reference", reference_path,
-        "--reference-mode", "probe",
+        "--reference-mode", "paired_di",
         "--probe-di", probe_path,
         "--amp", "sw50r",
         "--budget", "60",
@@ -78,13 +79,15 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert key["schema"] == "rab-audition-v1"
     assert key["match"]["schema"] == "match-audition-1"
     assert key["match"]["candidate_rank"] == 1
-    assert isinstance(key["match"]["trial_id"], int)
+    assert isinstance(key["match"]["source_trial_id"], int)
+    assert isinstance(key["match"]["audition_trial_id"], int)
+    assert key["match"]["audition_trial_id"] != key["match"]["source_trial_id"]
     assert set(key["match"]["binding"]) == {
         "candidate_context_sha256", "summary_sha256", "spec_sha256",
         "template_settings_sha256",
     }
     assert key["match"]["roles"] == {"first": "template", "second": "candidate"}
-    assert key["match"]["reference_regime"] == "probe"
+    assert key["match"]["reference_regime"] == "paired_di"
     assert key["sequence"] == "Reference-A-B-Reference-A-B"
     excerpt = json.loads((run_dir / "summary.json").read_text())["reference"][
         "excerpt"]
@@ -137,7 +140,10 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     with Store(str(run_dir / "trials.sqlite3")) as store:
         verdict, = store.verdicts(json.loads((run_dir / "summary.json").read_text())[
             "run_id"])
+        heard_trial = store.trial(key["match"]["audition_trial_id"])
     assert verdict["choice"] == "candidate"
+    assert verdict["trial_id"] == heard_trial.trial_id
+    assert heard_trial.render_sha == key["match"]["audition_render_sha256"]
     assert verdict["listener"] == "blind-test"
     assert verdict["comment"].startswith("preference=template;")
 
@@ -178,11 +184,22 @@ def test_an_unpaired_run_is_refused_without_an_explicit_override(
 
 
 def test_a_different_probe_performance_is_refused(completed_run, tmp_path):
+    from analysis import io
+    from match.renderer import _hash_audio
+    from match.store import Trial
     from tests import fixtures_audio as fx
 
     run_dir, _ = completed_run
     wrong_probe = tmp_path / "wrong-probe.wav"
     fx.write_wav(str(wrong_probe), fx.plucks(seconds=2.0, gap=0.9, seed=999))
+    wrong_sha = _hash_audio(io.load(str(wrong_probe)).samples)
+    # An unrelated row must not authorize this DI for the selected candidate.
+    summary = json.loads((run_dir / "summary.json").read_text())
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        store.add_trial(summary["run_id"], Trial(
+            params={"sw50rAmp/sw50rVolume": 1.0}, di_sha=wrong_sha,
+            error="an unrelated failed probe",
+        ))
 
     refused = run(
         "export_match_audition.py",
@@ -193,7 +210,28 @@ def test_a_different_probe_performance_is_refused(completed_run, tmp_path):
         "--out-dir", tmp_path / "audition",
     )
     assert refused.returncode != 0
-    assert "does not match any reference-level DI" in refused.stderr
+    assert "does not match the DI of the selected candidate trial" in refused.stderr
+
+
+def test_probe_regime_requires_an_explicit_unpaired_override(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    summary_path = run_dir / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["reference"]["regime"] = "probe"
+    summary_path.write_text(json.dumps(summary))
+    with sqlite3.connect(run_dir / "trials.sqlite3") as database:
+        database.execute("UPDATE runs SET regime = 'probe' WHERE run_id = ?",
+                         (summary["run_id"],))
+
+    refused = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", tmp_path / "audition",
+    )
+    assert refused.returncode != 0
+    assert "regime 'probe' is not the exact probe performance" in refused.stderr
+    assert "--allow-unpaired" in refused.stderr
 
 
 def test_export_refuses_a_candidate_spec_that_no_longer_matches_its_trial(
@@ -235,14 +273,14 @@ def test_logging_refuses_a_run_changed_after_the_audition_was_exported(
     )
     wrong_trial = dict(key)
     wrong_trial["match"] = dict(key["match"])
-    wrong_trial["match"]["trial_id"] += 1
+    wrong_trial["match"]["source_trial_id"] += 1
     key_path.write_text(json.dumps(wrong_trial))
     refused_trial = run(
         "log_blind_verdict.py", "--key", key_path, "--choice", candidate_label,
         "--listener", "wrong-trial", "--data-dir", tmp_path / "data",
     )
     assert refused_trial.returncode != 0
-    assert "different candidate trial" in refused_trial.stderr
+    assert "different source candidate trial" in refused_trial.stderr
     key_path.write_text(json.dumps(key))
 
     summary_path = run_dir / "summary.json"
@@ -297,6 +335,19 @@ def test_force_never_overwrites_an_aliased_reference(completed_run, tmp_path):
     assert "aliases the reference input" in refused_symlink.stderr
     assert original.read_bytes() == original_before
 
+    dangling_dir = tmp_path / "dangling-output"
+    dangling_dir.mkdir()
+    dangling = dangling_dir / "audition.flac"
+    dangling.symlink_to(tmp_path / "missing.flac")
+    refused_dangling = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", dangling_dir,
+    )
+    assert refused_dangling.returncode != 0
+    assert "already exists" in refused_dangling.stderr
+    assert dangling.is_symlink()
+
 
 def test_a_run_without_an_exact_excerpt_is_refused(completed_run, tmp_path):
     run_dir, probe_path = completed_run
@@ -312,3 +363,20 @@ def test_a_run_without_an_exact_excerpt_is_refused(completed_run, tmp_path):
     )
     assert refused.returncode != 0
     assert "does not record its exact reference excerpt" in refused.stderr
+
+
+def test_nonfinite_screen_evidence_has_a_stable_audition_binding(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    summary_path = run_dir / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["search"]["movement"]["a/control/whose/extremes/failed"] = float("nan")
+    summary_path.write_text(json.dumps(summary))
+
+    exported = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic", "--seed", "55",
+        "--out-dir", tmp_path / "audition",
+    )
+    assert exported.returncode == 0, exported.stdout + exported.stderr
+    assert (tmp_path / "audition" / "audition.flac.key.json").is_file()

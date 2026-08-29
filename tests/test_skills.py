@@ -456,7 +456,7 @@ class Sandbox:
             sys.executable, str(ROOT / "scripts" / "match_preset.py"),
             "--template", str(self.template),
             "--reference", str(reference),
-            "--reference-mode", "probe",
+            "--reference-mode", "paired_di",
             "--probe-di", str(probe),
             "--amp", "sw50r",
             "--budget", "60",
@@ -482,9 +482,19 @@ class Sandbox:
         audition_dir.mkdir()
         montage = audition_dir / "audition.flac"
         montage.write_bytes(b"documented blind audition")
+        from match.store import Store, Trial
         from match.verdict import candidate_binding_sha256, validate_candidate
 
         validated = validate_candidate(run_dir, 1)
+        audition_di_sha = "d" * 64
+        audition_render_sha = "e" * 64
+        with Store(str(run_dir / "trials.sqlite3")) as store:
+            audition_trial = store.add_trial("documented-run", Trial(
+                params=dict(validated.trial.params), di_sha=audition_di_sha,
+                render_sha=audition_render_sha,
+                objectives=dict(validated.trial.objectives or {}),
+                fingerprint=dict(validated.trial.fingerprint or {}),
+            ))
         summary_path = run_dir / "summary.json"
         spec_path = run_dir / "match-1.json"
         settings = validated.summary["starting_point"]["settings"]
@@ -500,11 +510,14 @@ class Sandbox:
                 "schema": "match-audition-1",
                 "run_dir": str(run_dir),
                 "run_id": validated.run.run_id,
-                "trial_id": validated.trial.trial_id,
+                "source_trial_id": validated.trial.trial_id,
+                "audition_trial_id": audition_trial.trial_id,
+                "audition_render_sha256": audition_render_sha,
                 "candidate_rank": 1,
                 "roles": {"first": "template", "second": "candidate"},
                 "renderer": validated.summary["renderer"],
                 "excerpt": validated.summary["reference"]["excerpt"],
+                "probe_di": {"audio_sha256": audition_di_sha},
                 "binding": {
                     "candidate_context_sha256": candidate_binding_sha256(validated),
                     "summary_sha256": hashlib.sha256(

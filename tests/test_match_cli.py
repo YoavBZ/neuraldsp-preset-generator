@@ -111,7 +111,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     only true if `apply_spec.py` accepts what came out."""
     out = tmp_path / "run"
     done = run("match_preset.py", "--template", TEMPLATE,
-               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
                "--probe-di", audio / "probe.wav", "--amp", "sw50r",
                "--budget", "60", "--shortlist", "2", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
@@ -120,7 +120,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert (out / "report.html").exists()
     summary = json.loads((out / "summary.json").read_text())
     assert summary["schema"] == "tone-match-summary-v1"
-    assert summary["reference"]["regime"] == "probe"
+    assert summary["reference"]["regime"] == "paired_di"
     assert pathlib.Path(summary["reference"]["path"]).is_absolute()
     assert summary["reference"]["regime_confidence"] == 1.0
     assert summary["reference"]["excerpt"] == {
@@ -128,7 +128,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "end_s": pytest.approx(2.0, abs=0.01),
         "duration_s": pytest.approx(2.0, abs=0.01),
         "source_duration_s": pytest.approx(2.0, abs=0.01),
-        "requested_s": 20.0,
+        "requested_s": None,
         "policy": "full_source",
     }
     assert summary["renderer"]["renderer_id"] == "synthetic"

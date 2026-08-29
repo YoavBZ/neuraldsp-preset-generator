@@ -3491,13 +3491,15 @@ exporter cross-checks that state, the candidate spec and trial, exact reference
 excerpt, DI, and renderer/plugin build before rendering both alternatives. It also
 rejects direct and symlink source/output aliases even under `--force`. The only
 listening file is Reference → A → B twice; untouched renders and the randomised
-answer key stay separate. A SHA-256 ties the key to the exact montage.
+answer key stay separate. The freshly heard candidate is scored and persisted as a
+new trial, because a stateful plugin's second render is not the old search render; the
+verdict attaches to that audition trial. A SHA-256 ties the key to the exact montage.
 
-The exporter refuses `mix`, `isolated_stem` and `separated_stem` runs by default:
-different performances do not support a direct blind timing/content comparison.
-`--allow-unpaired` exists for an explicit, qualified exception. Successful
-`paired_di` and `probe` matches print the export command beside the existing
-`apply_spec.py` command.
+The exporter accepts only `paired_di` by default. Even `probe` means a controlled
+known-chain render, not proof that the reference and DI are the same performance;
+the other regimes are weaker still. `--allow-unpaired` exists for an explicit,
+qualified exception. Successful `paired_di` matches print the export command beside
+the existing `apply_spec.py` command.
 
 After listening, `log_blind_verdict.py` accepts A, B or indistinguishable without
 requiring the user to open the key. It verifies the montage hash and recomputes a

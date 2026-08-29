@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Export a completed match as a blind, level-matched R–A–B audition.
 
-The reference must be a render of the exact probe performance (`paired_di` or
-`probe`) unless --allow-unpaired is explicit. The output montage stays blind; a
+The reference must be a render of the exact probe performance (`paired_di`)
+unless --allow-unpaired is explicit. The output montage stays blind; a
 separate key carries the run/candidate identity used by log_blind_verdict.py.
 """
 
@@ -15,6 +15,7 @@ import pathlib
 import secrets
 import shlex
 import sys
+import time
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
@@ -77,18 +78,11 @@ def _settings(space, values, supported):
     return result
 
 
-def _reference_di_hashes(run_dir: pathlib.Path, run_id: str):
-    from match.store import STORE_NAME, Store
-
-    store_path = run_dir / STORE_NAME
-    if not store_path.is_file():
-        die(f"the run has no render store at {store_path}")
-    with Store(str(store_path)) as store:
-        di_hashes = {
-            trial.di_sha for trial in store.trials(run_id)
-            if trial.di_sha and abs(float(trial.di_offset_db or 0.0)) < 1e-12
-        }
-    return di_hashes
+def _candidate_values(seed, spec):
+    values = dict(seed)
+    for item in spec.get("parameters") or []:
+        values[(item.get("module", ""), item["key"])] = item["value"]
+    return values
 
 
 def _effective_template(validated, template_path: pathlib.Path):
@@ -151,8 +145,9 @@ def main() -> None:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--mono", action="store_true")
     parser.add_argument("--allow-unpaired", action="store_true",
-                        help="allow different reference/probe performances; the key "
-                             "records that direct timing/content comparison is weak")
+                        help="allow a regime that does not prove reference/probe "
+                             "pairing; the key records that direct timing/content "
+                             "comparison is weak")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -160,9 +155,9 @@ def main() -> None:
     summary = _read_object(run_dir / "summary.json", "summary")
     reference = summary.get("reference") or {}
     regime = reference.get("regime")
-    if regime not in ("paired_di", "probe") and not args.allow_unpaired:
+    if regime != "paired_di" and not args.allow_unpaired:
         die(f"reference regime {regime!r} is not the exact probe performance.\n"
-            "  Use a paired_di/probe run for blind R–A–B listening, or pass "
+            "  Use a paired_di run for blind R–A–B listening, or pass "
             "--allow-unpaired and treat timing/content differences as a limitation.")
 
     from match.verdict import candidate_binding_sha256, validate_candidate
@@ -191,8 +186,6 @@ def main() -> None:
     if excerpt_start < 0.0 or audition_duration <= 0.0:
         die("the completed run records an invalid reference excerpt")
 
-    recorded_di_hashes = _reference_di_hashes(
-        run_dir, str(summary.get("run_id", "")))
     if not validated.run.template:
         die("the run store does not record its template path")
     template_path = _recorded_file(validated.run.template, run_dir, "template")
@@ -210,9 +203,18 @@ def main() -> None:
     from scripts.match_preset import _renderer
 
     space = space_module.build(pack_id)
+    candidate_values = _candidate_values(template_values, validated.spec)
     candidate_settings = dict(validated.trial.params)
     if not candidate_settings:
         die("the validated candidate trial records no rendered settings")
+
+    source_binding = candidate_binding_sha256(validated)
+    summary_sha = _sha256(run_dir / "summary.json")
+    spec_sha = _sha256(run_dir / f"match-{args.candidate}.json")
+    template_settings_sha = hashlib.sha256(
+        json.dumps(template_values, sort_keys=True, separators=(",", ":"),
+                   allow_nan=False).encode("utf-8")
+    ).hexdigest()
 
     out_dir = (args.out_dir or
                run_dir / f"audition-candidate-{args.candidate}").expanduser().resolve()
@@ -228,7 +230,7 @@ def main() -> None:
          "montage": montage_path, "private key": key_path},
     )
     for path in (template_wav, candidate_wav, montage_path, key_path):
-        if path.exists() and not args.force:
+        if (path.exists() or path.is_symlink()) and not args.force:
             die(f"{path} already exists; choose another --out-dir or pass --force")
 
     renderer = _renderer(renderer_name, pack_id)
@@ -243,14 +245,43 @@ def main() -> None:
         probe = io.load(str(probe_path), target_rate=metadata.sample_rate)
         from match.renderer import _hash_audio
         probe_audio_sha = _hash_audio(probe.samples)
-        if probe_audio_sha not in recorded_di_hashes:
-            die("--probe-di does not match any reference-level DI recorded in the "
-                "run store; pass the exact performance used by match_preset.py")
+        if probe_audio_sha != validated.trial.di_sha:
+            die("--probe-di does not match the DI of the selected candidate trial; "
+                "pass the exact performance used for that render")
         supported = renderer_paths(renderer)
+        if _settings(space, candidate_values, supported) != candidate_settings:
+            die("the candidate spec does not reconstruct the settings stored for "
+                "its trial")
         template_render = renderer.render(
             probe.samples, _settings(space, template_values, supported)).audio
-        candidate_render = renderer.render(
-            probe.samples, candidate_settings).audio
+        started = time.perf_counter()
+        candidate_result = renderer.render(
+            probe.samples, candidate_settings, di_sha256=probe_audio_sha)
+        candidate_wall_ms = (time.perf_counter() - started) * 1000.0
+        candidate_render = candidate_result.audio
+
+        from analysis.fingerprint import Fingerprint
+        from match import search
+        from match.store import STORE_NAME, Store
+
+        target = Fingerprint.from_dict(reference["fingerprint"])
+        reference_audio = io.load(
+            str(reference_path), target_rate=metadata.sample_rate,
+        ).samples
+        with Store(str(run_dir / STORE_NAME)) as store:
+            evaluator = search.Evaluator(
+                renderer, target, probe.samples, space,
+                profile=str(summary.get("loss_profile", "unpaired-v1")),
+                store=store, run_id=validated.run.run_id,
+                recipe=template_values, reference_audio=reference_audio,
+            )
+            audition_candidate = evaluator.record_rendered(
+                candidate_values, candidate_result, wall_ms=candidate_wall_ms,
+            )
+            if audition_candidate.error or not audition_candidate.objectives:
+                die("the audition render produced no comparable score; refusing to "
+                    "record listening evidence for an invalid trial")
+            audition_trial = store.trial(int(audition_candidate.trial_id))
     finally:
         close = getattr(renderer, "close", None)
         if close is not None:
@@ -285,7 +316,9 @@ def main() -> None:
         "schema": "match-audition-1",
         "run_dir": str(run_dir),
         "run_id": summary["run_id"],
-        "trial_id": validated.trial.trial_id,
+        "source_trial_id": validated.trial.trial_id,
+        "audition_trial_id": audition_trial.trial_id,
+        "audition_render_sha256": audition_trial.render_sha,
         "pack": pack_id,
         "candidate_rank": args.candidate,
         "roles": {"first": "template", "second": "candidate"},
@@ -297,13 +330,10 @@ def main() -> None:
         "renderer": metadata.as_dict(),
         "excerpt": dict(excerpt),
         "binding": {
-            "candidate_context_sha256": candidate_binding_sha256(validated),
-            "summary_sha256": _sha256(run_dir / "summary.json"),
-            "spec_sha256": _sha256(run_dir / f"match-{args.candidate}.json"),
-            "template_settings_sha256": hashlib.sha256(
-                json.dumps(template_values, sort_keys=True,
-                           separators=(",", ":"), allow_nan=False).encode("utf-8")
-            ).hexdigest(),
+            "candidate_context_sha256": source_binding,
+            "summary_sha256": summary_sha,
+            "spec_sha256": spec_sha,
+            "template_settings_sha256": template_settings_sha,
         },
     }
     key["invocation"] = [sys.executable, str(pathlib.Path(__file__)), *sys.argv[1:]]

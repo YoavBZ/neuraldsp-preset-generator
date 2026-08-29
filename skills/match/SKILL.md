@@ -141,7 +141,7 @@ the matched topology. Verify the written preset with `show.py`, then follow
 
 Do not use raw, unequal-level renders to decide which tone is closer. Preserve them
 for the separate question of whether the preset's output level is right. For a
-`paired_di` or `probe` run, export one blind mobile-friendly file directly from the
+`paired_di` run, export one blind mobile-friendly file directly from the
 completed run. It renders the starting template and selected candidate through the
 exact probe DI, then delegates static LUFS matching, randomisation and the
 Reference → A → B montage to `build_rab_audition.py`:
@@ -155,8 +155,10 @@ The tool verifies the effective starting settings (including an in-memory `--amp
 selection), candidate trial, exact reference excerpt and renderer/plugin build. It
 refuses changed source files and source/output aliases even with `--force`, writes
 untouched template/candidate renders under its private raw directory, and writes the
-blind key separately. Do not open the key until the listener answers both questions
-independently:
+fresh candidate render as its own scored trial. That last step matters on a stateful
+plugin: the heard waveform, not an earlier observation of the same settings, receives
+the verdict. The blind key stays separate. Do not open it until the listener answers
+both questions independently:
 
 1. Which is closer to the reference: A, B, or indistinguishable?
 2. Which do you prefer: A, B, or indistinguishable?
@@ -180,6 +182,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/log_blind_verdict.py" \
 `--choice` is the closer blind label: `A`, `B`, or `indistinguishable`. `--prefer`
 uses the same labels and is optional; the learned note records it separately from
 closeness. Pass the same `--data-dir` used for the preset library when one was used.
+Other regimes, including `probe`, do not prove that the reference and DI are the
+same performance; export them only with an explicit `--allow-unpaired` limitation.
 The appended note includes:
 
 - reference SHA-256, regime and confidence;

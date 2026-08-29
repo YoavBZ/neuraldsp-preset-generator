@@ -363,6 +363,45 @@ class Evaluator:
                          total=float((objectives or {}).get("total", float("inf"))),
                          trial_id=trial_id, error=error)
 
+    def record_rendered(self, values: Mapping, rendered, *, di=None,
+                        offset_db: float = 0.0, wall_ms: float = 0.0) -> Candidate:
+        """Score and store audio rendered once outside :meth:`evaluate`.
+
+        A blind audition has to keep the exact waveform the listener receives. On a
+        stateful backend, asking ``evaluate`` to render and then rendering again for
+        the audio file would create two different observations. The exporter renders
+        once, hands that result here, and the resulting trial is therefore both the
+        measured candidate and the heard candidate.
+        """
+        if self.store is None or self.run_id is None:
+            raise SearchError("record_rendered needs a store and run_id")
+        from match.renderer import cache_key
+
+        settings = self._settings(values)
+        signal = self.probe_di if di is None else di
+        di_sha = _hash(signal)
+        render_key = cache_key(self.renderer.metadata(), di_sha, settings)
+        scoring_key = _scoring_key(
+            render_key, self.target, self.profile, self.recipe,
+            self.reference_audio_sha,
+        )
+        objectives, printed, error = self._measure(rendered, values, None)
+        self.renders += 1
+        self.wall_ms += float(wall_ms)
+        trial = self.store.add_trial(self.run_id, Trial(
+            params=dict(settings), cache_key=render_key,
+            objective_key=scoring_key, di_sha=di_sha,
+            di_offset_db=float(offset_db), render_sha=_hash(rendered.audio),
+            peak=rendered.peak, silent=rendered.silent,
+            wall_ms=round(float(wall_ms), 2), objectives=objectives,
+            fingerprint=None if printed is None else printed.to_dict(), error=error,
+        ))
+        return Candidate(
+            values=dict(values), objectives=objectives or {},
+            total=float((objectives or {}).get("total", float("inf"))),
+            trial_id=trial.trial_id, error=error,
+        )
+
     def evaluate_many(self, jobs: Sequence[Mapping], di=None,
                       offset_db: float = 0.0,
                       use_cache: bool = True) -> List[Candidate]:
