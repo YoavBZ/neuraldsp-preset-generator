@@ -428,3 +428,17 @@ def test_an_invalid_output_directory_does_not_append_an_audition_trial(
     with Store(str(run_dir / "trials.sqlite3")) as store:
         after = len(list(store.trials(summary["run_id"])))
     assert after == before
+
+    occupied_key_dir = tmp_path / "key-is-directory"
+    occupied_key_dir.mkdir()
+    (occupied_key_dir / "audition.flac.key.json").mkdir()
+    refused_key = run(
+        "export_match_audition.py", "--run-dir", run_dir, "--candidate", "1",
+        "--probe-di", probe_path, "--renderer", "synthetic",
+        "--out-dir", occupied_key_dir, "--force",
+    )
+    assert refused_key.returncode != 0
+    assert "is a directory" in refused_key.stderr
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        after_key = len(list(store.trials(summary["run_id"])))
+    assert after_key == before

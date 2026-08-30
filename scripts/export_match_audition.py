@@ -235,6 +235,9 @@ def main() -> None:
          "montage": montage_path, "private key": key_path},
     )
     for path in (template_wav, candidate_wav, montage_path, key_path):
+        if path.is_dir():
+            die(f"output path {path} is a directory; move it or choose another "
+                "--out-dir")
         if (path.exists() or path.is_symlink()) and not args.force:
             die(f"{path} already exists; choose another --out-dir or pass --force")
     if out_dir.exists() and not out_dir.is_dir():
