@@ -140,21 +140,26 @@ the matched topology. Verify the written preset with `show.py`, then follow
 ## 6. Audition at equal loudness, then record the result
 
 Do not use raw, unequal-level renders to decide which tone is closer. Preserve them
-for the separate question of whether the preset's output level is right. For tone,
-make one blind mobile-friendly file that contains Reference → A → B twice, with one
-static gain per source and no EQ, compression, or limiting:
+for the separate question of whether the preset's output level is right. For a
+`paired_di` run, export one blind mobile-friendly file directly from the
+completed run. It renders the starting template and selected candidate through the
+exact probe DI, then delegates static LUFS matching, randomisation and the
+Reference → A → B montage to `build_rab_audition.py`:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/build_rab_audition.py" \
-  --reference REFERENCE.wav --reference-start START_SECONDS \
-  --a TEMPLATE_RENDER.wav --b CANDIDATE_RENDER.wav \
-  --duration DURATION_SECONDS --target-lufs -20 \
-  --out RUN_DIR/candidate-1-rab.flac
+python "${CLAUDE_PLUGIN_ROOT}/scripts/export_match_audition.py" \
+  --run-dir RUN_DIR --candidate 1 --probe-di PROBE_DI.wav
 ```
 
-Take `START_SECONDS` and the duration from `summary.json`'s
-`reference.excerpt`. The tool writes the blind key separately; do not open it until
-the listener answers both questions independently:
+The tool verifies the effective starting settings (including an in-memory `--amp`
+selection), candidate trial, exact reference excerpt and renderer/plugin build. It
+refuses changed source files and source/output aliases even with `--force`, writes
+untouched template/candidate renders under its private raw directory, and writes the
+fresh candidate render as its own scored trial under the search's exact post-inversion
+recipe. That last step matters on a stateful plugin: the heard waveform, not an
+earlier observation of the same settings, receives the verdict. The complete audition
+trial is hashed into the blind key, which stays separate. Do not open it until the
+listener answers both questions independently:
 
 1. Which is closer to the reference: A, B, or indistinguishable?
 2. Which do you prefer: A, B, or indistinguishable?
@@ -162,20 +167,25 @@ the listener answers both questions independently:
 Overall loudness is allowed to affect neither answer here. If output level needs
 judgment, play the untouched raw renders afterward and record that separately.
 
-After the user auditions one candidate against the starting template, record the
-closeness result with the logger. Put a different preference, if any, in the comment
-until the verdict schema has a separate preference field. It attaches the database
-verdict and learned note to the same validated render trial:
+After the user listens, record the blind label rather than manually opening and
+translating the key. The logger verifies the audition file's SHA-256, resolves the
+label only after the answer is supplied, then revalidates the run, trial, summary,
+spec, settings, renderer and excerpt before attaching the database verdict and
+learned note. Closeness and preference remain separate inputs:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/log_match_verdict.py" \
-  --run-dir RUN_DIR --candidate 1 --choice candidate \
-  --listener LISTENER --comment "the low mids are still too thick"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/log_blind_verdict.py" \
+  --key RUN_DIR/audition-candidate-1/audition.flac.key.json \
+  --choice A --prefer B --listener LISTENER \
+  --comment "the low mids are still too thick"
 ```
 
-`--choice` is the closer side: `candidate`, `template`, or `indistinguishable`.
-Pass the same
-`--data-dir` used for the preset library when one was used. The appended note includes:
+`--choice` is the closer blind label: `A`, `B`, or `indistinguishable`. `--prefer`
+uses the same labels and is optional; the learned note records it separately from
+closeness. Pass the same `--data-dir` used for the preset library when one was used.
+Other regimes, including `probe`, do not prove that the reference and DI are the
+same performance; export them only with an explicit `--allow-unpaired` limitation.
+The appended note includes:
 
 - reference SHA-256, regime and confidence;
 - renderer, plugin version, loss profile, starting score and chosen objective vector;

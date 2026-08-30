@@ -19,11 +19,11 @@ import re
 import tempfile
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from match.store import STORE_NAME, Store, StoreError, Trial
+from match.store import STORE_NAME, Run, Store, StoreError, Trial
 from packs.paths import data_root, learned_tones_path
 
 CHOICES = ("candidate", "template", "indistinguishable")
@@ -48,6 +48,114 @@ class RecordedVerdict:
     notes_path: pathlib.Path
 
 
+@dataclass(frozen=True)
+class ValidatedCandidate:
+    """One summary/spec/store candidate proved to describe the same render."""
+
+    directory: pathlib.Path
+    summary: Mapping[str, Any]
+    candidate: Mapping[str, Any]
+    spec: Mapping[str, Any]
+    parameters: Mapping[str, Any]
+    run: Run
+    trial: Trial
+
+
+def validate_candidate(
+    run_dir: str | pathlib.Path, candidate_rank: int,
+) -> ValidatedCandidate:
+    """Resolve and cross-check a candidate without recording a verdict."""
+    directory = pathlib.Path(run_dir).expanduser().resolve()
+    summary = _read_object(directory / "summary.json", "summary")
+    run_id, _pack, candidate = _validate_summary(summary, candidate_rank)
+    spec = _read_object(directory / f"match-{candidate_rank}.json", "candidate spec")
+    parameters = _spec_parameters(spec)
+    _validate_changes(candidate, parameters)
+    store_path = directory / STORE_NAME
+    if not store_path.is_file():
+        raise VerdictError(f"the run has no render store at {store_path}")
+    with Store(str(store_path)) as store:
+        trial = _resolve_trial(store, run_id, summary, candidate, parameters)
+        run = store.run(run_id)
+    return ValidatedCandidate(
+        directory, summary, candidate, spec, parameters, run, trial,
+    )
+
+
+def candidate_binding_sha256(validated: ValidatedCandidate) -> str:
+    """Digest every durable object that identifies the auditioned render."""
+    material = {
+        "summary": validated.summary,
+        "spec": validated.spec,
+        "run": asdict(validated.run),
+        "trial": asdict(validated.trial),
+    }
+    encoded = json.dumps(
+        _binding_value(material), sort_keys=True, separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def trial_binding_sha256(trial: Trial) -> str:
+    """Digest every stored field of one exact render observation."""
+    encoded = json.dumps(
+        _binding_value(asdict(trial)), sort_keys=True, separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _binding_value(value):
+    """Canonical JSON form, including the search's deliberate NaN sentinel."""
+    if isinstance(value, float) and not math.isfinite(value):
+        if math.isnan(value):
+            return {"__nonfinite__": "nan"}
+        return {"__nonfinite__": "inf" if value > 0 else "-inf"}
+    if isinstance(value, Mapping):
+        return {str(key): _binding_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_binding_value(item) for item in value]
+    return value
+
+
+def validate_audition_trial(
+    validated: ValidatedCandidate, trial_id: int, *, di_sha: str, render_sha: str,
+    trial_sha: str,
+) -> Trial:
+    """Prove that an audition trial is the exact re-render named by its key."""
+    store_path = validated.directory / STORE_NAME
+    with Store(str(store_path)) as store:
+        trial = store.trial(trial_id)
+        _validate_audition_trial(
+            trial, validated, di_sha=di_sha, render_sha=render_sha,
+            trial_sha=trial_sha,
+        )
+    return trial
+
+
+def _validate_audition_trial(
+    trial: Trial, validated: ValidatedCandidate, *, di_sha: str, render_sha: str,
+    trial_sha: str,
+) -> None:
+    if trial.run_id != validated.run.run_id:
+        raise VerdictError("the audition trial belongs to a different run")
+    if trial.trial_id == validated.trial.trial_id:
+        raise VerdictError("the audition key points back to the search trial")
+    if trial.failed:
+        raise VerdictError("the audition trial did not produce scored, audible audio")
+    if abs(float(trial.di_offset_db or 0.0)) > _TOLERANCE:
+        raise VerdictError("the audition trial is not at the reference input level")
+    if not _same_structure(trial.params, validated.trial.params):
+        raise VerdictError("the audition trial used different candidate settings")
+    if trial.di_sha != di_sha:
+        raise VerdictError("the audition trial used a different probe DI")
+    if trial.render_sha != render_sha:
+        raise VerdictError("the audition trial render no longer matches the heard audio")
+    if trial_binding_sha256(trial) != trial_sha:
+        raise VerdictError("the audition trial's stored evidence changed after export")
+
+
 def record_verdict(
     run_dir: str | pathlib.Path,
     *,
@@ -55,6 +163,10 @@ def record_verdict(
     choice: str,
     listener: str,
     comment: Optional[str] = None,
+    audition_trial_id: Optional[int] = None,
+    audition_di_sha: Optional[str] = None,
+    audition_render_sha: Optional[str] = None,
+    audition_trial_sha: Optional[str] = None,
 ) -> RecordedVerdict:
     """Record a template-versus-candidate audition from a completed match run."""
     directory = pathlib.Path(run_dir).expanduser().resolve()
@@ -90,6 +202,21 @@ def record_verdict(
 
     with Store(str(store_path)) as store:
         trial = _resolve_trial(store, run_id, summary, candidate, parameters)
+        if audition_trial_id is not None:
+            if not audition_di_sha or not audition_render_sha or not audition_trial_sha:
+                raise VerdictError(
+                    "an audition trial needs its DI and render hashes"
+                )
+            heard = store.trial(audition_trial_id)
+            validated = ValidatedCandidate(
+                directory, summary, candidate, spec, parameters,
+                store.run(run_id), trial,
+            )
+            _validate_audition_trial(
+                heard, validated, di_sha=audition_di_sha,
+                render_sha=audition_render_sha, trial_sha=audition_trial_sha,
+            )
+            trial = heard
         if trial.trial_id is None:
             raise VerdictError("the resolved render has no trial id")
         with _notes_lock(notes):

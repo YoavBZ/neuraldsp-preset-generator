@@ -3475,6 +3475,48 @@ remain valid without them. This is a budget-policy pilot, not a claim that Brigh
 enumeration generally improves Morgan: four targets and one synthetic probe cannot
 carry that.
 
+## 12q. Make the listening verdict blind and reproducible
+
+M6 could store a listener verdict, and `build_rab_audition.py` could build a blind,
+static-level-matched montage, but a completed match did not connect the two. A user
+had to render the template and candidate manually, build the R–A–B file, avoid the
+key, then translate A/B back to candidate/template before calling
+`log_match_verdict.py`. The most valuable data in the roadmap depended on an
+unvalidated manual join.
+
+`export_match_audition.py` now accepts a completed run, shortlist rank and exact
+probe DI. A run persists the effective starting settings as well as the source
+template hash, because reparsing the XML loses an in-memory `--amp` selection. The
+exporter cross-checks that state, the candidate spec and trial, exact reference
+excerpt, DI, and renderer/plugin build before rendering both alternatives. It also
+rejects direct and symlink source/output aliases even under `--force`. The only
+listening file is Reference → A → B twice; untouched renders and the randomised
+answer key stay separate. The freshly heard candidate is scored and persisted as a
+new trial under the exact post-inversion recipe the search used, because both a
+stateful plugin's second waveform and a prior measured from the wrong seed would be
+different evidence. The verdict attaches to that audition trial, whose complete row
+is hashed into the key. A SHA-256 also ties the key to the exact montage.
+
+The exporter accepts only `paired_di` by default. Even `probe` means a controlled
+known-chain render, not proof that the reference and DI are the same performance;
+the other regimes are weaker still. `--allow-unpaired` exists for an explicit,
+qualified exception. Successful `paired_di` matches print the export command beside
+the existing `apply_spec.py` command.
+
+After listening, `log_blind_verdict.py` accepts A, B or indistinguishable without
+requiring the user to open the key. It verifies the montage hash and recomputes a
+binding over the summary, spec, store run/trial, effective settings, renderer and
+excerpt before resolving the blind label and calling the validated verdict path. A
+reused run directory or edited result is therefore refused rather than receiving a
+stale listening verdict. A separate optional
+`--prefer` label is recorded in the comment as structured `preference=...` context;
+it does not replace the closeness verdict that future objective calibration needs.
+
+No plugin-quality result is claimed here. The implementation is workflow
+infrastructure, tested end to end on the synthetic renderer: completed match,
+template/candidate renders, blind montage/key, hidden-label verdict, learned note,
+and refusal after the audition audio is modified.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |

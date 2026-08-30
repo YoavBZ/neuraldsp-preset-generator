@@ -111,7 +111,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     only true if `apply_spec.py` accepts what came out."""
     out = tmp_path / "run"
     done = run("match_preset.py", "--template", TEMPLATE,
-               "--reference", audio / "ref.wav", "--reference-mode", "probe",
+               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
                "--probe-di", audio / "probe.wav", "--amp", "sw50r",
                "--budget", "60", "--shortlist", "2", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
@@ -120,14 +120,15 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert (out / "report.html").exists()
     summary = json.loads((out / "summary.json").read_text())
     assert summary["schema"] == "tone-match-summary-v1"
-    assert summary["reference"]["regime"] == "probe"
+    assert summary["reference"]["regime"] == "paired_di"
+    assert pathlib.Path(summary["reference"]["path"]).is_absolute()
     assert summary["reference"]["regime_confidence"] == 1.0
     assert summary["reference"]["excerpt"] == {
         "start_s": 0.0,
         "end_s": pytest.approx(2.0, abs=0.01),
         "duration_s": pytest.approx(2.0, abs=0.01),
         "source_duration_s": pytest.approx(2.0, abs=0.01),
-        "requested_s": 20.0,
+        "requested_s": None,
         "policy": "full_source",
     }
     assert summary["renderer"]["renderer_id"] == "synthetic"
@@ -139,6 +140,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "explicit --amp must select SW50R before the inversion probe is rendered"
     )
     assert summary["search"]["searched"]
+    assert summary["search"]["starting_settings"]["/selectedAmp"] == "SW50R"
     assert summary["search"]["sensitivity_floor_observations"] == 1
     command = summary["command_accounting"]
     assert command["total_renders"] == (
@@ -153,6 +155,10 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["starting_point"]["spread"] is None
     assert summary["starting_point"]["reference_level_score"] == pytest.approx(
         summary["starting_point"]["score"])
+    assert summary["starting_point"]["settings"]["/selectedAmp"] == "SW50R"
+    template_source = summary["starting_point"]["template"]
+    assert pathlib.Path(template_source["path"]) == TEMPLATE.resolve()
+    assert template_source["sha256"] == hashlib.sha256(TEMPLATE.read_bytes()).hexdigest()
     assert all(candidate["trial_id"] is not None
                for candidate in summary["shortlist"])
     for candidate in summary["shortlist"]:
@@ -176,6 +182,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
 
     # The next command, printed rather than left in a docstring the user never sees.
     assert "apply_spec.py" in done.stdout
+    assert "export_match_audition.py" in done.stdout
     assert "reference excerpt 0.000000–2.000000 s" in done.stdout
 
 

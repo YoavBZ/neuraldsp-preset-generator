@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import ast
 import functools
+import hashlib
 import inspect
 import json
 import os
@@ -232,6 +233,7 @@ NEEDS_A_PRESET_FOLDER = (
 AUDIO_PLACEHOLDERS = (
     "REFERENCE.wav",
     "PROBE.wav",
+    "PROBE_DI.wav",
     "TEMPLATE_RENDER.wav",
     "CANDIDATE_RENDER.wav",
 )
@@ -354,6 +356,8 @@ class Sandbox:
         self._runs = 0
         self._audio = None
         self._verdict_run = None
+        self._audition_run = None
+        self._blind_key = None
 
     def out(self) -> pathlib.Path:
         self._runs += 1
@@ -410,6 +414,7 @@ class Sandbox:
             "pack": "morgan", "loss_profile": "unpaired-v1",
             "reference": {
                 "regime": "probe", "regime_confidence": 1.0,
+                "excerpt": {"start_s": 0.0, "duration_s": 1.0},
                 "fingerprint": {
                     "source": {"sha256": reference_sha},
                     "spectrum": {"band_centres_hz": [100.0], "band_db": [0.0]},
@@ -418,7 +423,10 @@ class Sandbox:
             "renderer": {"renderer_id": "synthetic", "plugin_version": None,
                          "renderer_build": "test", "reproducible": True,
                          "band_noise_db": 0.0},
-            "starting_point": {"score": 0.8, "objectives": {"total": 0.8}},
+            "starting_point": {
+                "score": 0.8, "objectives": {"total": 0.8},
+                "settings": {"sw50rAmp/sw50rVolume": 50.0},
+            },
             "shortlist": [{
                 "rank": 1, "trial_id": trial.trial_id, "score": 0.4,
                 "objectives": {"total": 0.4, "timbre": 0.3},
@@ -437,6 +445,94 @@ class Sandbox:
         }))
         self._verdict_run = directory
         return directory
+
+    def audition_run(self) -> pathlib.Path:
+        """A real synthetic match run for the independently tested exporter."""
+        if self._audition_run is not None:
+            return self._audition_run
+        reference, probe = self.audio_pair()
+        directory = self.path / "audition-run"
+        completed = subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "match_preset.py"),
+            "--template", str(self.template),
+            "--reference", str(reference),
+            "--reference-mode", "paired_di",
+            "--probe-di", str(probe),
+            "--amp", "sw50r",
+            "--budget", "60",
+            "--shortlist", "1",
+            "--renderer", "synthetic",
+            "--out-dir", str(directory),
+        ], cwd=ROOT, capture_output=True, text=True)
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        self._audition_run = directory
+        return directory
+
+    def blind_key(self) -> pathlib.Path:
+        """Make a valid key without requiring the optional audio stack.
+
+        The logger verifies bytes and records a verdict; audio rendering belongs
+        to the exporter's independently exercised command.  Keeping this fixture
+        byte-only makes that separation true in the lightweight CI matrix too.
+        """
+        if self._blind_key is not None:
+            return self._blind_key
+        run_dir = self.verdict_run()
+        audition_dir = run_dir / "audition-candidate-1"
+        audition_dir.mkdir()
+        montage = audition_dir / "audition.flac"
+        montage.write_bytes(b"documented blind audition")
+        from match.store import Store, Trial
+        from match.verdict import (candidate_binding_sha256, trial_binding_sha256,
+                                   validate_candidate)
+
+        validated = validate_candidate(run_dir, 1)
+        audition_di_sha = "d" * 64
+        audition_render_sha = "e" * 64
+        with Store(str(run_dir / "trials.sqlite3")) as store:
+            audition_trial = store.add_trial("documented-run", Trial(
+                params=dict(validated.trial.params), di_sha=audition_di_sha,
+                render_sha=audition_render_sha,
+                objectives=dict(validated.trial.objectives or {}),
+                fingerprint=dict(validated.trial.fingerprint or {}),
+            ))
+        summary_path = run_dir / "summary.json"
+        spec_path = run_dir / "match-1.json"
+        settings = validated.summary["starting_point"]["settings"]
+        self._blind_key = audition_dir / "audition.flac.key.json"
+        self._blind_key.write_text(json.dumps({
+            "schema": "rab-audition-v1",
+            "blind_key": {"A": "second", "B": "first"},
+            "output": {
+                "path": str(montage),
+                "sha256": hashlib.sha256(montage.read_bytes()).hexdigest(),
+            },
+            "match": {
+                "schema": "match-audition-1",
+                "run_dir": str(run_dir),
+                "run_id": validated.run.run_id,
+                "source_trial_id": validated.trial.trial_id,
+                "audition_trial_id": audition_trial.trial_id,
+                "audition_render_sha256": audition_render_sha,
+                "audition_trial_sha256": trial_binding_sha256(audition_trial),
+                "candidate_rank": 1,
+                "roles": {"first": "template", "second": "candidate"},
+                "renderer": validated.summary["renderer"],
+                "excerpt": validated.summary["reference"]["excerpt"],
+                "probe_di": {"audio_sha256": audition_di_sha},
+                "binding": {
+                    "candidate_context_sha256": candidate_binding_sha256(validated),
+                    "summary_sha256": hashlib.sha256(
+                        summary_path.read_bytes()).hexdigest(),
+                    "spec_sha256": hashlib.sha256(spec_path.read_bytes()).hexdigest(),
+                    "template_settings_sha256": hashlib.sha256(json.dumps(
+                        settings, sort_keys=True, separators=(",", ":"),
+                        allow_nan=False,
+                    ).encode("utf-8")).hexdigest(),
+                },
+            },
+        }))
+        return self._blind_key
 
     def build(self, helper: str) -> pathlib.Path:
         """Compile one of the documented Swift helpers into this sandbox.
@@ -503,17 +599,29 @@ BUILT_HELPERS = ("au_probe", "au_render_server", "au_render", "au_silence_check"
 def materialise(command: str, sandbox: Sandbox) -> list:
     """Turn a documented command into an argv the test can actually run."""
     text = command.replace("${CLAUDE_PLUGIN_ROOT}", str(ROOT))
-    is_verdict = "log_match_verdict.py" in text
+    is_blind_verdict = "log_blind_verdict.py" in text
+    is_verdict = "log_match_verdict.py" in text or is_blind_verdict
+    is_export = "export_match_audition.py" in text
+    if is_blind_verdict:
+        text = text.replace(
+            "RUN_DIR/audition-candidate-1/audition.flac.key.json",
+            str(sandbox.blind_key()))
+        text = text.replace("LISTENER", "documentation-blind-test")
+    if is_export:
+        text = text.replace("RUN_DIR", str(sandbox.audition_run()))
     if is_verdict:
-        text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
+        if not is_blind_verdict:
+            text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
         text = text.replace("LISTENER", "documentation-test")
     for placeholder in ("PRESET.xml", "TEMPLATE.xml"):
         text = text.replace(placeholder, str(sandbox.template))
     text = text.replace("/tmp/spec.json", str(sandbox.spec))
-    if "REFERENCE.wav" in text or "PROBE.wav" in text:
+    if ("REFERENCE.wav" in text or "PROBE.wav" in text
+            or "PROBE_DI.wav" in text):
         reference, probe = sandbox.audio_pair()
         text = text.replace("REFERENCE.wav", str(reference))
         text = text.replace("PROBE.wav", str(probe))
+        text = text.replace("PROBE_DI.wav", str(probe))
         # The audition command needs two already-rendered alternatives. Their tone
         # is irrelevant to this documentation test; existing deterministic audio
         # exercises the command and keeps every placeholder explicit.

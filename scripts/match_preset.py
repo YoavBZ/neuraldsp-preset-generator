@@ -32,8 +32,10 @@ Needs the analysis and match extras:  pip install -e '.[analysis,match]'
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
+import shlex
 import sys
 import time
 from typing import Any, Dict, Optional
@@ -191,6 +193,7 @@ def main() -> None:
     from analysis.fingerprint import fingerprint
     from match import invert, report, search
     from match import space as space_module
+    from match.renderer import canonical_settings
     from match.store import Run, open_store
 
     if args.loss_profile not in list_profiles():
@@ -263,6 +266,15 @@ def main() -> None:
             space,
         )
     template_values = dict(seed)
+    template_path = args.template.expanduser().resolve()
+    template_source = {
+        "path": str(template_path),
+        "sha256": hashlib.sha256(template_path.read_bytes()).hexdigest(),
+    }
+    effective_template = {
+        "source": template_source,
+        "settings": json.loads(canonical_settings(template_values)),
+    }
     variant_count = len(search.topologies(
         space, seed, switches=switches, selectors=selectors))
     budget = (args.budget * variant_count
@@ -297,7 +309,8 @@ def main() -> None:
         f"{interrupt_note}"
     )
     store.start_run(Run(
-        run_id=run_id, pack=args.pack, template=str(args.template),
+        run_id=run_id, pack=args.pack,
+        template=str(template_path),
         reference_sha=target.source.get("sha256"), regime=args.reference_mode,
         loss_profile=args.loss_profile, budget=budget,
         renderer_id=metadata.renderer_id, plugin_version=metadata.plugin_version,
@@ -305,6 +318,7 @@ def main() -> None:
             "schema": "tone-match-run-notes-v1",
             "probe_note": probe_note,
             "renderer": metadata.as_dict(),
+            "effective_template": effective_template,
         }, sort_keys=True, separators=(",", ":")),
     ))
 
@@ -476,7 +490,8 @@ def main() -> None:
         frozen=result.frozen, searched=result.searched,
         movement=result.movement, floor=result.floor, silences=result.silences,
         unheard=dropped,
-        profile=args.loss_profile, reference=str(args.reference),
+        profile=args.loss_profile,
+        reference=str(args.reference.expanduser().resolve()),
         seed_observations=start_observations, seed_spread=start_spread,
         seed_objective_observations=start_result.objective_observations,
         seed_objective_spreads=start_result.objective_spreads,
@@ -510,10 +525,12 @@ def main() -> None:
         movement=result.movement, floor=result.floor,
         floor_observations=result.floor_observations,
         silences=result.silences,
-        profile=args.loss_profile, reference=str(args.reference), pack=args.pack,
+        profile=args.loss_profile,
+        reference=str(args.reference.expanduser().resolve()), pack=args.pack,
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
-        out_dir=str(args.out_dir),
+        out_dir=str(args.out_dir), template_source=template_source,
+        search_seed=seed,
     )
     store.close()
 
@@ -566,6 +583,12 @@ def main() -> None:
     print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
     print(f"    --spec {args.out_dir / 'match-1.json'} \\")
     print(f"    --out {args.out_dir / 'match-1.xml'}")
+    if args.probe_di is not None and args.reference_mode == "paired_di":
+        print("\nto audition it blind against the starting template:")
+        print("  python3 scripts/export_match_audition.py \\")
+        print(f"    --run-dir {shlex.quote(str(args.out_dir))} --candidate 1 \\")
+        print(f"    --probe-di {shlex.quote(str(args.probe_di))} \\")
+        print(f"    --renderer {args.renderer}")
     if caveats:
         print(f"\n{len(caveats)} caveats — read them before trusting the number "
               f"above:")
