@@ -96,9 +96,28 @@ def audio(tmp_path_factory):
 
     directory = tmp_path_factory.mktemp("audio")
     di = fx.plucks(seconds=2.0, gap=0.9, seed=5)
+    fx.write_wav(str(directory / "probe.wav"), di)
     fx.write_wav(str(directory / "ref.wav"), refchain.render(di, {
         "sw50rAmp/sw50rVolume": 82.0, "sw50rAmp/sw50rTreble": 20.0}))
-    fx.write_wav(str(directory / "probe.wav"), di)
+    spec = directory / "target.json"
+    spec.write_text(json.dumps({
+        "name": "paired target",
+        "parameters": [
+            {"module": "sw50rAmp", "key": "sw50rVolume", "value": 82.0},
+            {"module": "sw50rAmp", "key": "sw50rTreble", "value": 20.0},
+        ],
+    }))
+    target = directory / "target.xml"
+    applied = run("apply_spec.py", "--template", TEMPLATE, "--spec", spec,
+                  "--out", target)
+    assert applied.returncode == 0, applied.stdout + applied.stderr
+    rendered = run(
+        "render_paired_reference.py", "--preset", target,
+        "--probe-di", directory / "probe.wav",
+        "--out", directory / "paired-ref.wav",
+        "--pack", "morgan", "--amp", "sw50r", "--renderer", "synthetic",
+    )
+    assert rendered.returncode == 0, rendered.stdout + rendered.stderr
     return directory
 
 
@@ -111,8 +130,10 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     only true if `apply_spec.py` accepts what came out."""
     out = tmp_path / "run"
     done = run("match_preset.py", "--template", TEMPLATE,
-               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
+               "--reference", audio / "paired-ref.wav",
+               "--reference-mode", "paired_di",
                "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--paired-provenance", audio / "paired-ref.wav.paired.json",
                "--budget", "60", "--shortlist", "2", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
 
@@ -121,6 +142,9 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     summary = json.loads((out / "summary.json").read_text())
     assert summary["schema"] == "tone-match-summary-v1"
     assert summary["reference"]["regime"] == "paired_di"
+    assert summary["reference"]["pairing"]["schema"] == "paired-di-reference-1"
+    assert pathlib.Path(summary["reference"]["pairing"]["path"]) == \
+        (audio / "paired-ref.wav.paired.json").resolve()
     assert pathlib.Path(summary["reference"]["path"]).is_absolute()
     assert summary["reference"]["regime_confidence"] == 1.0
     assert summary["reference"]["excerpt"] == {
@@ -406,8 +430,10 @@ def test_each_reference_mode_actually_runs(audio, tmp_path, mode):
 def test_paired_profile_reaches_the_search_and_records_residual(audio, tmp_path):
     out = tmp_path / "paired"
     done = run("match_preset.py", "--template", TEMPLATE,
-               "--reference", audio / "ref.wav", "--reference-mode", "paired_di",
+               "--reference", audio / "paired-ref.wav",
+               "--reference-mode", "paired_di",
                "--probe-di", audio / "probe.wav", "--loss-profile", "paired-v1",
+               "--paired-provenance", audio / "paired-ref.wav.paired.json",
                "--amp", "sw50r", "--budget", "60", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
     assert "paired waveform residual was measured" in done.stdout
@@ -426,6 +452,55 @@ def test_paired_profile_reaches_the_search_and_records_residual(audio, tmp_path)
     assert summary["reference"]["regime_confidence"] == 1.0
     assert all("residual" in candidate["objectives"]
                for candidate in summary["shortlist"])
+
+
+def test_paired_provenance_refuses_a_changed_pair(audio, tmp_path):
+    provenance = json.loads((audio / "paired-ref.wav.paired.json").read_text())
+    provenance["probe_di"]["sha256"] = "0" * 64
+    changed = tmp_path / "changed-pair.json"
+    changed.write_text(json.dumps(provenance))
+    done = run(
+        "match_preset.py", "--template", TEMPLATE,
+        "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+        "--probe-di", audio / "probe.wav", "--paired-provenance", changed,
+        "--amp", "sw50r", "--budget", "60", "--out-dir", tmp_path / "run",
+    )
+    assert done.returncode != 0
+    assert "--probe-di no longer matches its paired provenance" in done.stderr
+    assert not (tmp_path / "run" / "trials.sqlite3").exists()
+
+
+@pytest.mark.parametrize("section,bad", [("reference", []), ("probe_di", "wrong"),
+                                        ("renderer", []), ("preset", {})])
+def test_malformed_pairing_is_a_cli_error(audio, tmp_path, section, bad):
+    document = json.loads((audio / "paired-ref.wav.paired.json").read_text())
+    document[section] = bad
+    sidecar = tmp_path / "bad.json"
+    sidecar.write_text(json.dumps(document))
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--paired-provenance", sidecar,
+               "--renderer", "synthetic", "--out-dir", tmp_path / "run")
+    assert done.returncode == 2
+    assert "paired provenance" in done.stderr
+    assert "Traceback" not in done.stderr
+    assert not (tmp_path / "run").exists()
+
+
+@pytest.mark.parametrize("field,value", [("sample_rate", 44100), ("block_size", 1024),
+                                       ("quality_mode", "different")])
+def test_pairing_checks_render_affecting_metadata(audio, tmp_path, field, value):
+    document = json.loads((audio / "paired-ref.wav.paired.json").read_text())
+    document["renderer"][field] = value
+    sidecar = tmp_path / "different-renderer.json"
+    sidecar.write_text(json.dumps(document))
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--paired-provenance", sidecar,
+               "--renderer", "synthetic", "--out-dir", tmp_path / "run")
+    assert done.returncode == 2
+    assert "differs from --paired-provenance" in done.stderr
+    assert not (tmp_path / "run").exists()
 
 
 def test_paired_profile_refuses_a_different_performance_mode(audio, tmp_path):

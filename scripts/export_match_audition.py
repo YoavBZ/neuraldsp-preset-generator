@@ -154,10 +154,19 @@ def main() -> None:
     run_dir = args.run_dir.expanduser().resolve()
     summary = _read_object(run_dir / "summary.json", "summary")
     reference = summary.get("reference") or {}
+    if not isinstance(reference, dict):
+        die("the summary reference must be an object")
     regime = reference.get("regime")
-    if regime != "paired_di" and not args.allow_unpaired:
-        die(f"reference regime {regime!r} is not the exact probe performance.\n"
-            "  Use a paired_di run for blind R–A–B listening, or pass "
+    pairing = reference.get("pairing") or {}
+    from match.pairing import same_renderer, validate_pairing
+    if "pairing" in reference:
+        validate_pairing(reference["pairing"], compact=True)
+    exact_pair = (regime == "paired_di"
+                  and pairing.get("schema") == "paired-di-reference-1")
+    if not exact_pair and not args.allow_unpaired:
+        die(f"reference regime {regime!r} has no verified exact-DI pairing.\n"
+            "  Use a paired_di run with --paired-provenance for blind R–A–B "
+            "listening, or pass "
             "--allow-unpaired and treat timing/content differences as a limitation.")
 
     from match.verdict import (candidate_binding_sha256, trial_binding_sha256,
@@ -165,6 +174,15 @@ def main() -> None:
 
     validated = validate_candidate(run_dir, args.candidate)
     summary = validated.summary
+    if exact_pair:
+        try:
+            run_notes = json.loads(validated.run.notes or "null")
+        except (TypeError, json.JSONDecodeError):
+            run_notes = None
+        if not isinstance(run_notes, dict) or run_notes.get("paired_reference") != pairing:
+            die("the summary's paired provenance does not match the stored run")
+        if not same_renderer(pairing["renderer"], summary["renderer"]):
+            die("the paired provenance renderer differs from the completed run")
     reference = summary.get("reference") or {}
     regime = reference.get("regime")
     reference_path = _recorded_file(reference.get("path"), run_dir, "reference")
@@ -249,26 +267,32 @@ def main() -> None:
     try:
         metadata = renderer.metadata()
         recorded = summary.get("renderer") or {}
-        if (metadata.renderer_id != recorded.get("renderer_id")
-                or metadata.plugin_version != recorded.get("plugin_version")
-                or metadata.renderer_build != recorded.get("renderer_build")):
+        if not same_renderer(recorded, metadata.as_dict()):
             die("the available renderer/plugin build does not match the completed "
                 "run; rerun the match before collecting a listening verdict")
         probe = io.load(str(probe_path), target_rate=metadata.sample_rate)
+        probe_samples = probe.mono()
         from match.renderer import _hash_audio
-        probe_audio_sha = _hash_audio(probe.samples)
+        probe_audio_sha = _hash_audio(probe_samples)
         if probe_audio_sha != validated.trial.di_sha:
             die("--probe-di does not match the DI of the selected candidate trial; "
                 "pass the exact performance used for that render")
+        if exact_pair:
+            paired_probe = pairing.get("probe_di") or {}
+            paired_reference = pairing.get("reference") or {}
+            if paired_probe.get("audio_sha256") != probe_audio_sha:
+                die("the summary's paired provenance names a different probe DI")
+            if paired_reference.get("sha256") != recorded_reference_sha:
+                die("the summary's paired provenance names a different reference")
         supported = renderer_paths(renderer)
         if _settings(space, candidate_values, supported) != candidate_settings:
             die("the candidate spec does not reconstruct the settings stored for "
                 "its trial")
         template_render = renderer.render(
-            probe.samples, _settings(space, template_values, supported)).audio
+            probe_samples, _settings(space, template_values, supported)).audio
         started = time.perf_counter()
         candidate_result = renderer.render(
-            probe.samples, candidate_settings, di_sha256=probe_audio_sha)
+            probe_samples, candidate_settings, di_sha256=probe_audio_sha)
         candidate_wall_ms = (time.perf_counter() - started) * 1000.0
         candidate_render = candidate_result.audio
 
@@ -302,7 +326,7 @@ def main() -> None:
         ).samples
         with Store(str(run_dir / STORE_NAME)) as store:
             evaluator = search.Evaluator(
-                renderer, target, probe.samples, space,
+                renderer, target, probe_samples, space,
                 profile=str(summary.get("loss_profile", "unpaired-v1")),
                 store=store, run_id=validated.run.run_id,
                 recipe=search_seed, reference_audio=reference_audio,
