@@ -115,6 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the DI every candidate is rendered through. Without one a "
                          "synthetic decaying noise-burst sequence is used, and the "
                          "report says so")
+    ap.add_argument("--paired-provenance", type=pathlib.Path,
+                    help="paired-di-reference-1 sidecar proving that --reference "
+                         "was rendered from this exact --probe-di")
     ap.add_argument("--pack", default="morgan", help="which plugin pack (default: morgan)")
     ap.add_argument("--amp", default=None,
                     help="signal path to invert, e.g. sw50r or lead (default: read "
@@ -217,6 +220,12 @@ def main() -> None:
             "waveform score.\n  Omit --excerpt or pass --excerpt 0.")
 
     signal_path_arg = None
+    pairing_document = None
+    if args.paired_provenance is not None:
+        from match.pairing import read_pairing
+        if args.reference_mode != "paired_di" or args.probe_di is None:
+            die("--paired-provenance requires --reference-mode paired_di and --probe-di")
+        pairing_document = read_pairing(args.paired_provenance)
     if args.amp is not None:
         try:
             signal_path_arg = invert.resolve_signal_path(args.pack, args.amp)
@@ -288,6 +297,10 @@ def main() -> None:
         die(unmeasurable)
     probe_di, probe_note = _probe(args.probe_di)
 
+    pairing = _paired_reference(
+        args, reference.samples, probe_di, renderer.metadata(), pairing_document,
+    )
+
     run_id = args.run_id or f"{args.out_dir.name}-{time.strftime('%Y%m%d-%H%M%S')}"
     store = open_store(str(args.out_dir))
     metadata = renderer.metadata()
@@ -319,10 +332,17 @@ def main() -> None:
             "probe_note": probe_note,
             "renderer": metadata.as_dict(),
             "effective_template": effective_template,
+            "paired_reference": pairing,
         }, sort_keys=True, separators=(",", ":")),
     ))
 
     caveats = [probe_note] if probe_note else []
+    if args.reference_mode == "paired_di" and pairing is None:
+        caveats.append(
+            "paired_di was asserted without a paired-di-reference-1 sidecar, so "
+            "the run cannot prove that the reference was rendered from this exact "
+            "DI; blind export requires --allow-unpaired"
+        )
     if args.budget_per_topology and variant_count > 1:
         caveats.append(
             f"--budget {args.budget} was multiplied by {variant_count} enumerated "
@@ -530,7 +550,7 @@ def main() -> None:
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
         out_dir=str(args.out_dir), template_source=template_source,
-        search_seed=seed,
+        search_seed=seed, reference_pairing=pairing,
     )
     store.close()
 
@@ -583,7 +603,8 @@ def main() -> None:
     print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
     print(f"    --spec {args.out_dir / 'match-1.json'} \\")
     print(f"    --out {args.out_dir / 'match-1.xml'}")
-    if args.probe_di is not None and args.reference_mode == "paired_di":
+    if (args.probe_di is not None and args.reference_mode == "paired_di"
+            and pairing is not None):
         print("\nto audition it blind against the starting template:")
         print("  python3 scripts/export_match_audition.py \\")
         print(f"    --run-dir {shlex.quote(str(args.out_dir))} --candidate 1 \\")
@@ -722,6 +743,57 @@ def _no_better(found: float, started: float, budget: int,
             f"moving inside its own noise, or {budget} renders was not enough to "
             f"recover from what the calculated step did. Keep your template."
             + against)
+
+
+def _paired_reference(args, reference_samples, probe_samples, metadata, document=None):
+    """Validate and compact one paired-di-reference-1 sidecar."""
+    path = args.paired_provenance
+    if path is None:
+        return None
+    if args.reference_mode != "paired_di":
+        die("--paired-provenance is meaningful only with --reference-mode paired_di")
+    if args.probe_di is None:
+        die("--paired-provenance requires the exact --probe-di it records")
+    provenance = path.expanduser().resolve()
+    from match.pairing import read_pairing, same_renderer, validate_pairing
+    if document is None:
+        document = read_pairing(provenance)
+    validate_pairing(document)
+
+    from match.renderer import _hash_audio
+
+    reference_path = args.reference.expanduser().resolve()
+    probe_path = args.probe_di.expanduser().resolve()
+    recorded_reference = document.get("reference") or {}
+    recorded_probe = document.get("probe_di") or {}
+    if pathlib.Path(str(recorded_reference.get("path", ""))).resolve() != reference_path:
+        die("--reference is not the file named by --paired-provenance")
+    if pathlib.Path(str(recorded_probe.get("path", ""))).resolve() != probe_path:
+        die("--probe-di is not the file named by --paired-provenance")
+    reference_sha = hashlib.sha256(reference_path.read_bytes()).hexdigest()
+    probe_sha = hashlib.sha256(probe_path.read_bytes()).hexdigest()
+    if recorded_reference.get("sha256") != reference_sha:
+        die("--reference no longer matches its paired provenance")
+    if recorded_probe.get("sha256") != probe_sha:
+        die("--probe-di no longer matches its paired provenance")
+    if recorded_reference.get("audio_sha256") != _hash_audio(reference_samples):
+        die("decoded --reference audio no longer matches its paired provenance")
+    if recorded_probe.get("audio_sha256") != _hash_audio(probe_samples):
+        die("decoded --probe-di audio no longer matches its paired provenance")
+    if document.get("pack") != args.pack:
+        die("--paired-provenance was rendered with a different plugin pack")
+    recorded_renderer = document.get("renderer") or {}
+    if not same_renderer(recorded_renderer, metadata.as_dict()):
+        die("the current renderer/plugin build differs from --paired-provenance")
+    return {
+        "schema": "paired-di-reference-1",
+        "path": str(provenance),
+        "sha256": hashlib.sha256(provenance.read_bytes()).hexdigest(),
+        "preset": document.get("preset"),
+        "probe_di": recorded_probe,
+        "reference": recorded_reference,
+        "renderer": recorded_renderer,
+    }
 
 
 def _renderer(name: str, pack_id: str = "morgan"):

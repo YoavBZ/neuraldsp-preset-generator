@@ -183,6 +183,7 @@ def build_summary(
     out_dir: str,
     template_source: Optional[Mapping[str, Any]] = None,
     search_seed: Optional[Mapping] = None,
+    reference_pairing: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """The compact, machine-readable counterpart to the HTML report.
 
@@ -260,6 +261,8 @@ def build_summary(
     excerpt = _excerpt_metadata(target)
     if excerpt is not None:
         reference_entry["excerpt"] = excerpt
+    if reference_pairing is not None:
+        reference_entry["pairing"] = dict(reference_pairing)
 
     return {
         "schema": "tone-match-summary-v1",

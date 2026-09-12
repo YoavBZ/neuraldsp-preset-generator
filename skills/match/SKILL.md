@@ -77,6 +77,14 @@ use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
 residual.
 
+For a controlled preset-recovery experiment, use `${CLAUDE_PLUGIN_ROOT}/scripts/render_paired_reference.py`
+with `--preset`, `--probe-di`, `--out`, `--pack`, and `--renderer`. Pass its
+`OUT.wav.paired.json` sidecar to `match_preset.py --paired-provenance` alongside
+`--reference-mode paired_di` and the same DI. The sidecar records the actual render
+inputs; a regime label alone is an assertion of pairing. A supplied WAV may still
+be a synthetic noise probe: check its source record before using it for guitar
+listening. Use a verified played DI for listening verdicts.
+
 ## 4. Match and read the compact summary
 
 Use one output directory per run. Start with a 300-render budget unless the user
@@ -141,7 +149,7 @@ the matched topology. Verify the written preset with `show.py`, then follow
 
 Do not use raw, unequal-level renders to decide which tone is closer. Preserve them
 for the separate question of whether the preset's output level is right. For a
-`paired_di` run, export one blind mobile-friendly file directly from the
+`paired_di` run with validated `--paired-provenance`, export one blind mobile-friendly file directly from the
 completed run. It renders the starting template and selected candidate through the
 exact probe DI, then delegates static LUFS matching, randomisation and the
 Reference → A → B montage to `build_rab_audition.py`:

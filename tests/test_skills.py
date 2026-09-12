@@ -450,7 +450,15 @@ class Sandbox:
         """A real synthetic match run for the independently tested exporter."""
         if self._audition_run is not None:
             return self._audition_run
-        reference, probe = self.audio_pair()
+        _, probe = self.audio_pair()
+        reference = self.path / "paired-reference.wav"
+        rendered = subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "render_paired_reference.py"),
+            "--preset", str(self.template), "--probe-di", str(probe),
+            "--out", str(reference), "--pack", "morgan", "--amp", "sw50r",
+            "--renderer", "synthetic",
+        ], cwd=ROOT, capture_output=True, text=True)
+        assert rendered.returncode == 0, rendered.stdout + rendered.stderr
         directory = self.path / "audition-run"
         completed = subprocess.run([
             sys.executable, str(ROOT / "scripts" / "match_preset.py"),
@@ -458,6 +466,7 @@ class Sandbox:
             "--reference", str(reference),
             "--reference-mode", "paired_di",
             "--probe-di", str(probe),
+            "--paired-provenance", str(reference) + ".paired.json",
             "--amp", "sw50r",
             "--budget", "60",
             "--shortlist", "1",

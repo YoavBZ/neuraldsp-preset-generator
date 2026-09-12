@@ -3517,6 +3517,25 @@ infrastructure, tested end to end on the synthetic renderer: completed match,
 template/candidate renders, blind montage/key, hidden-label verdict, learned note,
 and refusal after the audition audio is modified.
 
+## 12r. Paired-reference provenance and listening validation
+
+`render_paired_reference.py` renders a known preset through a supplied DI and
+writes a reference WAV plus a `paired-di-reference-1` sidecar.
+`match_preset.py --paired-provenance` verifies the files, canonical mono DI,
+plugin pack, and renderer configuration before recording the pairing in the run.
+Blind export checks that pairing against the stored run and uses the same mono
+signal throughout rendering and scoring.
+
+A pairing record establishes which signal was used, not whether it contains
+played guitar. Synthetic noise probes remain useful for automated measurements;
+human guitar-tone comparisons require source verification and recorded playing.
+
+Private recording paths, content hashes, preset names, run identifiers, audio,
+answer keys, and individual listener responses belong in local ignored artifacts.
+Keep the public plan limited to the protocol and results explicitly approved for
+publication. Closeness and preference are separate questions, and repeated
+comparisons on one target must not be counted as independent targets.
+
 ## 13. Reading list, in the order it becomes relevant
 
 | When | Work | Why |

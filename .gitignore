@@ -42,6 +42,13 @@ out/
 # match skill says outright never to commit them.
 /runs/
 
+# Run databases and audio provenance/answer keys also stay private when a caller
+# chooses an output directory outside runs/.
+*.sqlite3
+*.wav.paired.json
+*.flac.key.json
+*.wav.key.json
+
 # --- Python ---------------------------------------------------------------
 __pycache__/
 *.pyc

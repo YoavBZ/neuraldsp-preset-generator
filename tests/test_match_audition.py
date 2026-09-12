@@ -28,17 +28,18 @@ def run(script: str, *args):
 
 @pytest.fixture()
 def completed_run(tmp_path):
-    from analysis import refchain
     from tests import fixtures_audio as fx
 
     probe = fx.plucks(seconds=2.0, gap=0.9, seed=73)
     probe_path = tmp_path / "probe.wav"
     reference_path = tmp_path / "reference.wav"
     fx.write_wav(str(probe_path), probe)
-    fx.write_wav(str(reference_path), refchain.render(probe, {
-        "sw50rAmp/sw50rVolume": 76.0,
-        "sw50rAmp/sw50rTreble": 24.0,
-    }))
+    rendered = run(
+        "render_paired_reference.py", "--preset", TEMPLATE,
+        "--probe-di", probe_path, "--out", reference_path,
+        "--pack", "morgan", "--amp", "sw50r", "--renderer", "synthetic",
+    )
+    assert rendered.returncode == 0, rendered.stdout + rendered.stderr
     run_dir = tmp_path / "run"
     matched = run(
         "match_preset.py",
@@ -46,6 +47,7 @@ def completed_run(tmp_path):
         "--reference", reference_path,
         "--reference-mode", "paired_di",
         "--probe-di", probe_path,
+        "--paired-provenance", pathlib.Path(str(reference_path) + ".paired.json"),
         "--amp", "sw50r",
         "--budget", "60",
         "--shortlist", "1",
@@ -185,7 +187,7 @@ def test_an_unpaired_run_is_refused_without_an_explicit_override(
         "--out-dir", tmp_path / "audition",
     )
     assert refused.returncode != 0
-    assert "not the exact probe performance" in refused.stderr
+    assert "has no verified exact-DI pairing" in refused.stderr
     assert "--allow-unpaired" in refused.stderr
 
 
@@ -219,6 +221,35 @@ def test_a_different_probe_performance_is_refused(completed_run, tmp_path):
     assert "does not match the DI of the selected candidate trial" in refused.stderr
 
 
+def test_export_requires_complete_pairing_bound_to_run(completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    path = run_dir / "summary.json"
+    summary = json.loads(path.read_text())
+    original = path.read_text()
+    for invalid in ([], "pair", {"schema": "paired-di-reference-1"}):
+        summary["reference"]["pairing"] = invalid
+        path.write_text(json.dumps(summary))
+        refused = run("export_match_audition.py", "--run-dir", run_dir,
+                      "--candidate", "1", "--probe-di", probe_path,
+                      "--renderer", "synthetic")
+        assert refused.returncode != 0
+        assert "paired provenance" in refused.stderr
+        assert "Traceback" not in refused.stderr
+    path.write_text(original)
+    with sqlite3.connect(run_dir / "trials.sqlite3") as db:
+        notes = json.loads(db.execute("SELECT notes FROM runs WHERE run_id = ?",
+                                     (summary["run_id"],)).fetchone()[0])
+        notes["paired_reference"] = None
+        db.execute("UPDATE runs SET notes = ? WHERE run_id = ?",
+                   (json.dumps(notes), summary["run_id"]))
+    refused = run("export_match_audition.py", "--run-dir", run_dir,
+                  "--candidate", "1", "--probe-di", probe_path,
+                  "--renderer", "synthetic")
+    assert refused.returncode != 0
+    assert "does not match the stored run" in refused.stderr
+    assert not (run_dir / "audition-candidate-1").exists()
+
+
 def test_probe_regime_requires_an_explicit_unpaired_override(
         completed_run, tmp_path):
     run_dir, probe_path = completed_run
@@ -236,7 +267,7 @@ def test_probe_regime_requires_an_explicit_unpaired_override(
         "--out-dir", tmp_path / "audition",
     )
     assert refused.returncode != 0
-    assert "regime 'probe' is not the exact probe performance" in refused.stderr
+    assert "regime 'probe' has no verified exact-DI pairing" in refused.stderr
     assert "--allow-unpaired" in refused.stderr
 
 
