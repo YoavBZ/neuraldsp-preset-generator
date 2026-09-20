@@ -517,3 +517,49 @@ def test_a_dimension_that_is_always_zero_is_flagged_as_flattering():
         run_id="r", target=printed(),
         shortlist=[candidate(0.4, timbre=0.4, prior_deviation=0.0, complexity=0.0)])
     assert "reads 0.000 for every candidate" not in unchanged
+
+
+@pytest.mark.parametrize("policy,expected,forbidden", [
+    ("explicit_window", "named by --excerpt-start", "full source"),
+    ("activity_tie", "equally-ranked windows", "full source"),
+    ("explicit_window_clamped", "NOT the window named", "full source"),
+    ("explicit_window_ignored_short_source", "could not be honoured", "named by --excerpt-start"),
+    ("full_source", "the full source", "--excerpt-start"),
+])
+def test_every_excerpt_policy_describes_itself(policy, expected, forbidden):
+    """This was a two-way branch whose `else` said "the full source". The moment
+    a third policy existed, a run windowed to 259.84-289.84 s printed those
+    bounds and called them the full source in the same sentence — and the
+    `uninformative_activity` case lost the warning it exists to carry."""
+    target = printed(source={
+        "sha256": "a" * 64,
+        "sample_rate": 48000,
+        "duration_s": 30.0,
+        "source_duration_s": 312.5,
+        "excerpt_start_s": 259.84,
+        "excerpt_end_s": 289.84,
+        "excerpt_requested_s": 30.0,
+        "excerpt_policy": policy,
+    })
+    html = R.render_report(run_id="r", target=target,
+                           shortlist=[candidate(0.4)], caveats=[])
+    assert expected in html
+    assert forbidden not in html
+
+
+def test_an_unknown_excerpt_policy_names_itself_rather_than_guessing():
+    """A policy added later must not silently inherit another one's sentence."""
+    target = printed(source={
+        "sha256": "a" * 64,
+        "sample_rate": 48000,
+        "duration_s": 30.0,
+        "source_duration_s": 312.5,
+        "excerpt_start_s": 0.0,
+        "excerpt_end_s": 30.0,
+        "excerpt_requested_s": 30.0,
+        "excerpt_policy": "some_future_policy",
+    })
+    html = R.render_report(run_id="r", target=target,
+                           shortlist=[candidate(0.4)], caveats=[])
+    assert "some_future_policy" in html
+    assert "the full source." not in html

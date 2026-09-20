@@ -181,6 +181,35 @@ def test_the_analysis_package_imports_without_numpy():
     assert "ok" in result.stdout
 
 
+def test_the_install_hint_fits_how_the_copy_is_running():
+    """`pip install -e '.[analysis]'` is right in a clone and a dead end from an
+    installed plugin: `.` is a cache directory the next update replaces, and the
+    user may have no checkout for `-e` to point at. The installed branch names
+    the packages and the interpreter instead, because "which Python?" is
+    otherwise a guess — this repo ships stdlib-only tools that run happily on an
+    interpreter with no numpy, so the one that runs `show.py` is not necessarily
+    the one that needs the extra.
+    """
+    from analysis import _install_hint
+
+    in_a_clone = _install_hint()
+    assert "pip install -e '.[analysis]'" in in_a_clone
+
+    import analysis
+
+    original = analysis.__file__
+    try:
+        analysis.__file__ = "/x/.claude/plugins/cache/p/1.0/analysis/__init__.py"
+        installed = _install_hint()
+    finally:
+        analysis.__file__ = original
+
+    assert "-e" not in installed, "there is no editable checkout to install from"
+    assert sys.executable in installed, "name the interpreter that needs them"
+    for package in ("numpy", "scipy", "soundfile", "pyloudnorm"):
+        assert package in installed, f"{package} is part of the extra"
+
+
 def test_the_render_store_works_with_no_third_party_packages():
     """`match/store.py` is stdlib sqlite3 and its docstring rests on that: a store a
     person cannot open is a store they will not trust, and a bare clone has to be able

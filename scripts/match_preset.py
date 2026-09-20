@@ -44,10 +44,11 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import (die, enumerated as _enumerated, guarded, on_interrupt,
-                  nonnegative_float, positive_float, positive_int,
+from _cli import (add_excerpt_start_arg, die, enumerated as _enumerated, guarded,
+                  on_interrupt, nonnegative_float, positive_float, positive_int,
                   print_enumerable as _print_enumerable, probe_di as _probe,
-                  renderer_paths, resolved_excerpt)
+                  reject_excerpt_start_without_window, renderer_paths,
+                  resolved_excerpt)
 
 # The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
 # `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
@@ -165,9 +166,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "exit")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None,
                     metavar="SECONDS",
-                    help="measure the most continuously active window of this length; "
-                         "the exact start and end are recorded (default: 20, except "
-                         "paired_di uses all; 0 for all)")
+                    help="measure a window of this length, chosen by broadband activity; "
+                         "the exact start, end and selection policy are recorded "
+                         "(default: 20, except paired_di uses all; 0 for all)")
+    add_excerpt_start_arg(ap)
     ap.add_argument("--out-dir", type=pathlib.Path, required=True,
                     help="where the store, the spec and the report are written")
     ap.add_argument("--run-id", default=None,
@@ -218,6 +220,11 @@ def main() -> None:
         die("a paired waveform residual must compare the complete reamp and DI; "
             "--excerpt would mix excerpt-level features with a full-performance "
             "waveform score.\n  Omit --excerpt or pass --excerpt 0.")
+    if residual_weighted and args.excerpt_start is not None:
+        die("a paired waveform residual must compare the complete reamp and DI; "
+            "--excerpt-start would score a window of one against all of the "
+            "other.\n  Drop --excerpt-start for a paired run.")
+    reject_excerpt_start_without_window(args.excerpt_start, excerpt_s)
 
     signal_path_arg = None
     pairing_document = None
@@ -291,7 +298,8 @@ def main() -> None:
 
     reference = io.load(str(args.reference))
     target = fingerprint(reference, regime=args.reference_mode,
-                         excerpt_s=excerpt_s)
+                         excerpt_s=excerpt_s,
+                         excerpt_start_s=args.excerpt_start)
     unmeasurable = _unmeasurable(target, reference)
     if unmeasurable:
         die(unmeasurable)

@@ -25,7 +25,8 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded, nonnegative_float, resolved_excerpt
+from _cli import (add_excerpt_start_arg, die, guarded, nonnegative_float,
+                  reject_excerpt_start_without_window, resolved_excerpt)
 
 
 def _format(value, digits: int = 2) -> str:
@@ -107,15 +108,17 @@ def print_text(fp) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Measure audio into a Fingerprint v1 document.",
-        epilog="Needs the analysis extra: pip install -e '.[analysis]'",
+        epilog="Needs the analysis extra; run it once without to see the "
+               "install command for this interpreter.",
     )
     ap.add_argument("audio", type=pathlib.Path)
     ap.add_argument("--regime", default="probe",
                     help="paired_di | isolated_stem | separated_stem | mix | probe")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None, metavar="SECONDS",
-                    help="measure the most continuously active window of this length "
-                         "and record its exact bounds (default: 20; paired_di "
-                         "defaults to all; 0 for all)")
+                    help="measure a window of this length, chosen by broadband activity, "
+                         "and record its exact bounds and how it was chosen "
+                         "(default: 20; paired_di defaults to all; 0 for all)")
+    add_excerpt_start_arg(ap)
     ap.add_argument("--out", type=pathlib.Path, help="write the JSON here instead of stdout")
     ap.add_argument("--text", action="store_true", help="print a summary instead of JSON")
     args = ap.parse_args()
@@ -131,8 +134,10 @@ def main() -> None:
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError, fingerprint_file
 
     excerpt = resolved_excerpt(args.excerpt, args.regime, DEFAULT_EXCERPT_S)
+    reject_excerpt_start_without_window(args.excerpt_start, excerpt)
     try:
-        fp = fingerprint_file(args.audio, regime=args.regime, excerpt_s=excerpt)
+        fp = fingerprint_file(args.audio, regime=args.regime, excerpt_s=excerpt,
+                              excerpt_start_s=args.excerpt_start)
     except (AnalysisUnavailable, FingerprintError) as e:
         die(str(e))
 

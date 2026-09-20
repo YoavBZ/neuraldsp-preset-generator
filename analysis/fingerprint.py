@@ -39,6 +39,18 @@ REGIMES = {
 
 DEFAULT_EXCERPT_S = 20.0
 
+# Floors for "is this window even a guitar", not for "is this tone dark". Both
+# are set well under any real guitar: the darkest neck-pickup jazz sound in the
+# corpus that prompted them measured a 372 Hz centroid and a 737 Hz corner,
+# while the bass intro it was being confused with measured 183 Hz and 401 Hz.
+GUITAR_MIN_CENTROID_HZ = 250.0
+GUITAR_MIN_HF_CORNER_HZ = 500.0
+
+
+def _round(value) -> str:
+    """A frequency as a person would say it, or "unmeasured"."""
+    return "unmeasured" if value is None else f"{float(value):.0f}"
+
 
 class FingerprintError(ValueError):
     """A fingerprint that cannot be read: wrong version, or unknown fields."""
@@ -115,9 +127,71 @@ class Fingerprint:
                 return float(level)
         return None
 
+    def _implausible_for_guitar(self) -> bool:
+        """Whether this spectrum is too low **or** too narrow to be a guitar.
+
+        A guarded sanity check on the *window*, not a judgement about tone. Even
+        a very dark neck-pickup jazz sound carries harmonics well past 500 Hz;
+        a measurement that does not is far more likely to be pointed at a bass,
+        a pad, an intro or a fade than at a guitar that happens to be dull.
+
+        Both thresholds sit well below anything a guitar produces and well above
+        the case that prompted them — a bass intro measuring a 183 Hz centroid
+        with a 401 Hz corner, against 372 Hz and 737 Hz for the guitar section of
+        the same track. Absent measurements do not trip it: an unmeasurable
+        spectrum is not evidence of a wrong window.
+        """
+        centroid = (self.spectrum.get("centroid_hz") or {}).get("p50")
+        corner = self.spectrum.get("hf_corner_hz")
+        if centroid is not None and float(centroid) < GUITAR_MIN_CENTROID_HZ:
+            return True
+        return corner is not None and float(corner) < GUITAR_MIN_HF_CORNER_HZ
+
     def caveats(self) -> list:
         """Everything a report has to say out loud about this measurement."""
         notes = []
+        policy = self.source.get("excerpt_policy")
+        if policy == "activity_tie":
+            # Says only what is true of every case that reaches here. An earlier
+            # version claimed the ranking had chosen nothing, which is false the
+            # moment the plateau is merely large: on silence followed by playing,
+            # the ranking lands on the first note and most windows still tie.
+            tied = self.source.get("excerpt_tied_windows")
+            total = self.source.get("excerpt_candidate_windows")
+            counted = (f"{tied} of {total} candidate windows"
+                       if tied and total else "most candidate windows")
+            notes.append(
+                f"{counted} scored the same, so this one is simply the earliest "
+                "of them rather than a distinguished choice. It may not contain "
+                "the part you meant — check it, and pass --excerpt-start to "
+                "measure a section you choose"
+            )
+        if policy == "explicit_window_clamped":
+            asked = self.source.get("excerpt_requested_start_s")
+            start = self.source.get("excerpt_start_s")
+            notes.append(
+                f"--excerpt-start {_round(asked)} s does not leave room for the "
+                f"requested window, so it was moved to {_round(start)} s. This "
+                "is NOT the section you named; clip the file or ask for a "
+                "shorter --excerpt if you meant somewhere else"
+            )
+        if policy == "explicit_window_ignored_short_source":
+            notes.append(
+                "--excerpt-start was ignored: this source is shorter than the "
+                "requested excerpt, so the whole of it was measured. If you "
+                "meant to skip part of it, clip the file or ask for a shorter "
+                "--excerpt"
+            )
+        if self.regime != "probe" and self._implausible_for_guitar():
+            centroid = (self.spectrum.get("centroid_hz") or {}).get("p50")
+            corner = self.spectrum.get("hf_corner_hz")
+            notes.append(
+                f"this does not look like a guitar: spectral centroid "
+                f"{_round(centroid)} Hz and -6 dB extent reaching only "
+                f"{_round(corner)} Hz. Check that the measured window actually "
+                "contains the part — a bass, a pad or a fade will measure "
+                "cleanly and describe nothing you can dial in"
+            )
         if self.regime in ("mix", "separated_stem"):
             notes.append(
                 f"reference regime is {self.regime}: the guitar is not isolated, "
@@ -152,12 +226,18 @@ class Fingerprint:
 
 
 def fingerprint(audio, regime: str = "probe",
-                excerpt_s: Optional[float] = DEFAULT_EXCERPT_S) -> Fingerprint:
+                excerpt_s: Optional[float] = DEFAULT_EXCERPT_S,
+                excerpt_start_s: Optional[float] = None) -> Fingerprint:
     """Measure an `io.Audio` into a Fingerprint v1.
 
-    Long files are reduced to their most continuously active excerpt first: a
-    four-minute track holds one guitar tone and three minutes of other things,
-    and averaging the fade-out into the spectrum describes the fade-out.
+    Long files are reduced to an excerpt first: a four-minute track holds one
+    guitar tone and three minutes of other things, and averaging the fade-out
+    into the spectrum describes the fade-out.
+
+    ``excerpt_start_s`` measures a window you name instead of one chosen by
+    activity. Worth reaching for whenever the part you care about is not the
+    densest thing in the file — see `io.excerpt_selection`, which explains how
+    the automatic choice degenerates on a dense master.
     """
     require("fingerprinting")
 
@@ -173,12 +253,23 @@ def fingerprint(audio, regime: str = "probe",
     excerpt_start_frame = 0
     excerpt_end_frame = audio.frames
     excerpt_policy = "full_source"
+    active_fraction = tied_windows = candidate_windows = None
     if excerpt_s:
-        from .io import excerpt_bounds
+        from .io import excerpt_selection
 
-        excerpt_start_frame, excerpt_end_frame = excerpt_bounds(audio, excerpt_s)
+        selection = excerpt_selection(audio, excerpt_s, start_s=excerpt_start_s)
+        excerpt_start_frame = selection.start
+        excerpt_end_frame = selection.end
+        excerpt_policy = selection.policy
+        active_fraction = selection.active_fraction
+        tied_windows = selection.tied_windows
+        candidate_windows = selection.candidate_windows
+        # The policy is whatever the selector says, not something inferred from
+        # whether the bounds moved. Deriving it from the bounds threw away the
+        # one case where they deliberately do not move: a source shorter than
+        # the window, where an explicit --excerpt-start could not be honoured
+        # and the run has to say so.
         if excerpt_start_frame != 0 or excerpt_end_frame != audio.frames:
-            excerpt_policy = "most_continuously_active"
             audio = audio.replace(audio.samples[excerpt_start_frame:excerpt_end_frame])
 
     loudness = loudness_lufs(audio)
@@ -204,6 +295,20 @@ def fingerprint(audio, regime: str = "probe",
             None if excerpt_s is None else round(float(excerpt_s), 6)
         ),
         "excerpt_policy": excerpt_policy,
+        # What share of the source the activity gate considered active, and how
+        # many candidate windows tied for best. The caveat quotes the tie rather
+        # than the fraction: a high active share does not by itself mean the
+        # ranking failed, but "this is one of N equally-ranked windows" is true
+        # whenever it is reported.
+        "excerpt_active_fraction": (
+            None if active_fraction is None else round(float(active_fraction), 4)
+        ),
+        "excerpt_tied_windows": tied_windows,
+        "excerpt_candidate_windows": candidate_windows,
+        # What was asked for, so a clamp is visible next to what was measured.
+        "excerpt_requested_start_s": (
+            None if excerpt_start_s is None else round(float(excerpt_start_s), 6)
+        ),
     }
 
     # Everything below this line sees loudness-normalised audio, which is what
@@ -231,8 +336,10 @@ def fingerprint(audio, regime: str = "probe",
 
 
 def fingerprint_file(path, regime: str = "probe",
-                     excerpt_s: Optional[float] = DEFAULT_EXCERPT_S) -> Fingerprint:
+                     excerpt_s: Optional[float] = DEFAULT_EXCERPT_S,
+                     excerpt_start_s: Optional[float] = None) -> Fingerprint:
     """Load and fingerprint in one call."""
     from .io import load
 
-    return fingerprint(load(path), regime=regime, excerpt_s=excerpt_s)
+    return fingerprint(load(path), regime=regime, excerpt_s=excerpt_s,
+                       excerpt_start_s=excerpt_start_s)

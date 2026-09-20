@@ -149,3 +149,79 @@ def test_a_short_source_records_that_the_full_file_was_used():
     assert fp.source["source_duration_s"] == pytest.approx(1.0)
     assert fp.source["excerpt_requested_s"] == 20.0
     assert fp.source["excerpt_policy"] == "full_source"
+
+
+# --- caveats that guard the window, not the tone --------------------------
+#
+# A measurement of the wrong twenty seconds is not wrong in any way the numbers
+# show: it is internally consistent and describes something real, just not the
+# part anyone asked about. Both caveats below exist because a run measured a
+# bass intro, reported it without complaint, and the values went into a preset.
+
+
+def caveat_about(fp, phrase):
+    return [note for note in fp.caveats() if phrase in note]
+
+
+def test_an_unranked_excerpt_says_so_and_offers_the_way_out():
+    fp = fingerprint(io.from_samples(fx.noise(seconds=10.0), SR), excerpt_s=2.0)
+    assert fp.source["excerpt_policy"] == "activity_tie"
+    assert fp.source["excerpt_active_fraction"] > 0.9
+    note = caveat_about(fp, "scored the same")
+    assert note, fp.caveats()
+    assert "--excerpt-start" in note[0], "a caveat with no remedy is just a mood"
+    assert "candidate windows" in note[0], "quote the tie that was measured"
+
+
+def test_a_ranked_excerpt_makes_no_such_claim():
+    import numpy as np
+
+    padded = np.concatenate(
+        [np.zeros(SR * 4), fx.band_limited(seconds=2.0), np.zeros(SR * 4)]
+    )
+    fp = fingerprint(io.from_samples(padded, SR), excerpt_s=2.0)
+    assert fp.source["excerpt_policy"] == "most_continuously_active"
+    assert not caveat_about(fp, "scored the same")
+
+
+def test_an_explicit_window_is_recorded_as_chosen_by_the_caller():
+    fp = fingerprint(io.from_samples(fx.noise(seconds=10.0), SR),
+                     excerpt_s=2.0, excerpt_start_s=6.0)
+    assert fp.source["excerpt_policy"] == "explicit_window"
+    assert fp.source["excerpt_start_s"] == pytest.approx(6.0)
+    assert fp.source["excerpt_end_s"] == pytest.approx(8.0)
+    assert not caveat_about(fp, "scored the same")
+
+
+def test_a_bass_like_spectrum_is_flagged_as_not_a_guitar():
+    """The real failure: a 183 Hz centroid reaching 401 Hz was an upright bass,
+    and every number measured from it was about the bass."""
+    fp = make(fx.band_limited(seconds=4.0, low=40, high=260), regime="mix")
+    note = caveat_about(fp, "does not look like a guitar")
+    assert note, fp.caveats()
+    assert "Hz" in note[0], "say what was measured, not just that it was wrong"
+
+
+def test_a_guitar_like_spectrum_is_not_flagged():
+    """The thresholds must clear a genuinely dark tone, or the caveat is noise.
+    The darkest real guitar window behind these numbers measured 372 Hz."""
+    fp = make(fx.band_limited(seconds=4.0, low=90, high=5000), regime="mix")
+    assert not caveat_about(fp, "does not look like a guitar")
+
+
+def test_a_synthetic_probe_is_exempt():
+    """`probe` is a noise render of a known chain, not a performance. It is not
+    supposed to look like a guitar and saying so every time would train the
+    reader to skip the caveats."""
+    fp = make(fx.band_limited(seconds=4.0, low=40, high=260), regime="probe")
+    assert not caveat_about(fp, "does not look like a guitar")
+
+
+def test_an_unhonoured_window_survives_into_the_fingerprint():
+    """The bounds do not move in this case, so a policy derived from the bounds
+    would silently report `full_source` and lose the caveat."""
+    fp = fingerprint(io.from_samples(fx.noise(seconds=3.0), SR),
+                     excerpt_s=20.0, excerpt_start_s=5.0)
+    assert fp.source["excerpt_policy"] == "explicit_window_ignored_short_source"
+    note = caveat_about(fp, "--excerpt-start was ignored")
+    assert note, fp.caveats()

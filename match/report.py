@@ -392,10 +392,30 @@ def _reference_excerpt(target: Any) -> str:
     end = excerpt["end_s"]
     source_duration = excerpt["source_duration_s"]
     policy = excerpt["policy"]
-    if policy == "most_continuously_active":
-        explanation = "the most continuously active window requested by --excerpt"
-    else:
-        explanation = "the full source"
+    # Every policy needs its own sentence. This was a two-way branch whose `else`
+    # said "the full source", which silently became wrong the moment a third
+    # policy existed: a run windowed to 264–284 s reported those bounds and then
+    # called them the full source in the same sentence. An unknown policy now
+    # names itself rather than claiming to be something it is not.
+    explanation = {
+        "most_continuously_active":
+            "the most continuously active window requested by --excerpt",
+        "activity_tie":
+            "the earliest of several equally-ranked windows of the length "
+            "requested by --excerpt — they scored the same, so this one was not "
+            "distinguished. It may not hold the part being matched; "
+            "--excerpt-start selects a section deliberately",
+        "explicit_window":
+            "the window named by --excerpt-start",
+        "explicit_window_clamped":
+            "NOT the window named by --excerpt-start — that start left no room "
+            "for the requested length, so it was moved back to fit",
+        "explicit_window_ignored_short_source":
+            "the full source: --excerpt-start could not be honoured because the "
+            "source is shorter than the requested excerpt",
+        "full_source":
+            "the full source",
+    }.get(policy, f"a window selected by policy {policy!r}")
     return (
         "<h2>Reference excerpt</h2>"
         f"<p>Measured <code>{start:.6f}–{end:.6f} s</code> from a "

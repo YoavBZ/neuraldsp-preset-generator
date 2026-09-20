@@ -109,6 +109,10 @@ def main() -> None:
     # work out how the data root resolved.
     notes = paths.learned_tones_path(pack.pack_id)
     out["data_root"] = str(paths.data_root())
+    # Which rule chose it. `learned_notes.exists: false` means either "no run has
+    # recorded anything yet" or "this resolved somewhere that is not where your
+    # notes are", and a reader cannot tell those apart from the path alone.
+    out["data_root_origin"] = paths.data_root_origin()
     # A bootstrapped pack has no tone.md, so report whether it is there rather
     # than handing back a path that does not resolve.
     tone = paths.PLUGIN_ROOT / "packs" / pack.pack_id / "tone.md"
@@ -158,6 +162,7 @@ def print_text(out: dict, pack) -> None:
         f"  learned notes:  {notes['path']}"
         f"{'' if notes['exists'] else '  (none yet)'}"
     )
+    print(f"  data root:      {out['data_root']}  [{out['data_root_origin']}]")
     if out.get("duplicate_parameters"):
         print(
             f"\n  (!) duplicate parameter path(s): "

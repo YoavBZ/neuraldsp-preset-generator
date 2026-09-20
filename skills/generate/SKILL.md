@@ -34,6 +34,30 @@ The user speaks in plain language, not flags. Extract:
 Ask at most **one** clarifying question, and only if the answer would change the
 amp choice. Otherwise pick sensible defaults and say what you assumed.
 
+### Which pack, when you have to ask
+
+Offer a shortlist rather than an open question. Run
+`apply_spec.py --list-recipes --pack <id>` for what each one can actually build;
+the differences that decide it are:
+
+| | Morgan Amps Suite | Tone King Imperial MKII |
+|---|---|---|
+| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable | **requires one of the user's own presets**; no Tone King content ships here |
+| voices | PR12 blackface Princeton (12 W, breaks up), AC20 darkened Vox, SW50R Dumble-ish high headroom | Rhythm channel clean, Lead channel with Mid-Bite, attenuator, spring reverb, tremolo |
+| reach for it | jangle and chime, Dumble-style singing lead, anything needing three different amp characters | vintage Fender-flavoured cleans, edge of breakup, blues lead, real spring reverb |
+
+Two traps worth naming out loud when you present the choice:
+
+- **Headroom is a topology decision, not a knob.** A part that never breaks up
+  wants SW50R or the Tone King Rhythm channel; PR12 is 12 watts and will grit up.
+- **A pack with no template is not a choice you can make for the user.** If Tone
+  King is the better voice but they own no Tone King preset, say that — it is the
+  deciding constraint, not a detail.
+
+Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` for the voices before
+recommending one. Where a pack has no `tone.md`, say so rather than guessing at
+its character.
+
 ## 2. Research the tone
 
 When the user supplies audio, measure it before choosing values:
@@ -42,6 +66,24 @@ When the user supplies audio, measure it before choosing values:
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
   --regime separated_stem --text
 ```
+
+Any common audio file works — mp3 included, no conversion step needed.
+
+**Check the window before you use the numbers.** `--excerpt` ranks windows by
+broadband activity, so on a dense master it ranks nothing and measures the start
+of the file. A fingerprint of the wrong twenty seconds is not noisy; it is a
+clean description of the wrong instrument. Two things to look at every time:
+
+- an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`,
+  or a "does not look like a guitar" caveat — each means **look at the window
+  before trusting it**, and re-measure with `--excerpt-start SECONDS`
+- a centroid below 250 Hz or a −6 dB extent below 500 Hz is not a dark tone, it
+  is a different instrument
+
+[reading-a-reference.md](../../reference/reading-a-reference.md) covers this,
+what each regime's confidence is worth, and — importantly for a `mix` or a
+`separated_stem` — **which bands of the measurement to believe and which are
+artifacts**. Read it before letting a measurement move a value.
 
 Classify the reference conservatively: `isolated_stem` only for an original
 multitrack stem, `separated_stem` for source-separated guitar, and `mix` for a
@@ -73,6 +115,13 @@ range.
 as `learned_notes` — that's where past runs recorded what actually worked, and it
 beats generic guidance. It lives under the data root, so it survives plugin
 updates.
+
+`learned_notes.exists: false` is ambiguous on its own: it means either "no run
+has recorded anything yet" or "the data root resolved somewhere that is not where
+your notes are". `show.py` prints `data_root_origin` beside it to tell those
+apart. If the origin is not the one the user expects — they keep a library
+somewhere else, or set `NDSP_PRESET_DATA` in a shell you are not running under —
+pass `--data-dir` explicitly rather than generating as if there were no notes.
 
 **Not every pack has this knowledge.** `show.py` reports `tone_knowledge.exists`,
 and a bootstrapped pack has no `recipes.json` at all. When either is missing,
@@ -145,4 +194,11 @@ the file if it doesn't exist. Record:
 
 Keep the entry concise and actionable. The notes live under the data root, not
 in the plugin directory: Claude Code replaces the plugin on update, and
-anything written there would be lost.
+anything written there would be lost. Append to the same path you *read* in
+step 3 — if you passed `--data-dir` to find the notes, pass it here too, or the
+entry lands somewhere the next run will not look.
+
+Worth recording beyond the values: a window you had to choose by hand and why
+the automatic one was wrong, and any measured band you decided **not** to act on
+because the regime made it untrustworthy. Both are the kind of thing the next run
+would otherwise rediscover the hard way.

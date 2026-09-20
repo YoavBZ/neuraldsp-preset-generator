@@ -17,7 +17,7 @@ from __future__ import annotations
 import hashlib
 import pathlib
 from dataclasses import dataclass
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from . import SAMPLE_RATE, require
 
@@ -305,18 +305,116 @@ def excerpt_bounds(audio: Audio, seconds: float) -> tuple[int, int]:
     Keeping selection in one function also prevents the reported bounds and the
     samples actually measured from drifting apart.
     """
+    selection = excerpt_selection(audio, seconds)
+    return selection.start, selection.end
+
+
+#: Above this share of tied-for-best windows, the chosen one is the earliest of
+#: many equals rather than a distinguished pick.
+_TIE_SHARE_WORTH_REPORTING = 0.5
+
+#: …and only worth reporting when the source is enough longer than the window
+#: that the choice actually excluded something. A 30 s file measured with a 20 s
+#: window has eleven candidates that almost entirely overlap; saying they tied is
+#: true and useless, and a caveat that fires on ordinary material teaches people
+#: to skip the caveats that matter.
+_MIN_SOURCE_MULTIPLE = 2.0
+
+
+class Selection(NamedTuple):
+    """Which window was measured, and the evidence for how it was picked.
+
+    A tuple so ``start, end`` unpacking and ``[:2]`` keep working, named so the
+    policy and its supporting counts do not have to be remembered by position.
+    """
+
+    start: int
+    end: int
+    policy: str
+    active_fraction: Optional[float] = None
+    tied_windows: Optional[int] = None
+    candidate_windows: Optional[int] = None
+
+
+def excerpt_selection(audio: Audio, seconds: float,
+                      start_s: Optional[float] = None) -> tuple:
+    """Which window to measure, and how honestly it was chosen.
+
+    Returns ``(start_frame, end_frame, policy, active_fraction)``.
+
+    The activity ranking underneath this is a **broadband** RMS gate
+    (:func:`active_frames`): it answers "is there sound here", not "is the
+    instrument you care about here". On a mastered, continuously-playing mix
+    almost every frame passes, every window scores the same, and ``argmax``
+    returns the first one — so the selection degenerates into "the start of the
+    file" while still calling itself most-continuously-active.
+
+    That is not hypothetical. On a five-minute mastered ballad, 98% of frames
+    were active and 29,642 of ~30,255 candidate windows tied at the maximum, so
+    the chosen window was the bass intro, with no guitar in it at all. Every
+    number measured from it described an upright bass, and nothing said so.
+
+    The fix is not a cleverer ranking — a broadband gate cannot become
+    instrument-aware — but refusing to overstate what happened. Every policy
+    below reports only what is true of the selection it names, and ``start_s``
+    is the way to choose a window deliberately instead.
+    """
     require("excerpt selection")
     import numpy as np
 
     wanted = int(seconds * audio.sample_rate)
-    if wanted <= 0 or audio.frames <= wanted:
-        return 0, audio.frames
+    if wanted <= 0:
+        # A window shorter than one frame is not a window; nothing was ignored.
+        return Selection(0, audio.frames, "full_source")
+    if audio.frames <= wanted:
+        # Nothing to select — but say so rather than dropping an explicit
+        # request on the floor. Someone who clips a 15 s reference and asks to
+        # start 5 s in to skip a count-in would otherwise measure the count-in,
+        # with the report calling it `full_source` and no caveat anywhere.
+        return Selection(0, audio.frames,
+                         "explicit_window_ignored_short_source"
+                         if start_s else "full_source")
 
-    active = active_frames(audio.mono()).astype(np.float64)
+    mono = audio.mono()
+    active = active_frames(mono).astype(np.float64)
+    fraction = float(active.mean()) if len(active) else None
+
+    if start_s is not None:
+        # Clamped rather than refused, because asking for the last 20 seconds of
+        # a file by eye is an ordinary thing to get slightly wrong. But a clamp
+        # is recorded, not swallowed: `--excerpt-start 300` on a 60 s file used
+        # to measure 40-60 s and report it as the window the user named, which
+        # is a whole match budget spent on a window nobody chose.
+        requested = int(float(start_s) * audio.sample_rate)
+        start = max(0, min(requested, audio.frames - wanted))
+        return Selection(start, start + wanted,
+                         "explicit_window" if start == requested
+                         else "explicit_window_clamped",
+                         fraction)
+
     span = max(1, wanted // HOP)
     if len(active) <= span:
-        return 0, wanted
+        return Selection(0, wanted, "most_continuously_active", fraction)
+
     density = np.convolve(active, np.ones(span), mode="valid")
+    # Tolerance rather than equality: the convolution of a 0/1 array with ones
+    # is integral in exact arithmetic, and comparing floats for equality to
+    # decide a user-visible caveat is not a thing to rely on.
+    tied = int(np.count_nonzero(density >= density.max() - 0.5))
+    candidates = len(density)
     start = int(np.argmax(density)) * HOP
     start = min(start, audio.frames - wanted)
-    return start, start + wanted
+
+    # Report the tie, and only the tie. An earlier version called this case
+    # "uninformative" and had the caveat say the ranking chose nothing — which
+    # is false whenever the plateau is merely large: on ten seconds of silence
+    # followed by fifty of playing, the ranking lands exactly on the first note
+    # and 31 of 41 windows still tie, because they all sit inside the music.
+    # What is true in every case that reaches here is that the window is the
+    # earliest of several that scored the same.
+    tie_share = tied / candidates
+    long_enough = audio.frames >= _MIN_SOURCE_MULTIPLE * wanted
+    policy = ("activity_tie"
+              if tie_share > _TIE_SHARE_WORTH_REPORTING and long_enough
+              else "most_continuously_active")
+    return Selection(start, start + wanted, policy, fraction, tied, candidates)

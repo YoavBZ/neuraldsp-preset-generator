@@ -27,10 +27,41 @@ FINGERPRINT_VERSION = 1
 # `io.load` and `Audio.mono`, which are where that actually happens.
 SAMPLE_RATE = 48000
 
-_INSTALL_HINT = (
-    "the analysis extra, which is not installed.\n"
-    "  pip install -e '.[analysis]'"
-)
+#: What the extra actually is, spelled out for the case where `.[analysis]` means
+#: nothing because there is no editable checkout to resolve `.` against.
+_ANALYSIS_PACKAGES = ("numpy>=1.24", "scipy>=1.10", "soundfile>=0.12",
+                      "pyloudnorm>=0.1")
+
+
+def _install_hint() -> str:
+    """How to get the extra, phrased for how this copy is actually running.
+
+    `pip install -e '.[analysis]'` is the right answer in a clone and a dead end
+    from an installed plugin: `.` is a cache directory that the next plugin
+    update replaces, and the user may have no checkout at all. The installed
+    branch names the packages directly and names the interpreter that needs
+    them, because "which Python?" is otherwise a guess — this repo ships
+    stdlib-only tools that run on any 3.10+, so the interpreter that runs
+    `show.py` fine is not necessarily the one carrying numpy.
+    """
+    import pathlib
+    import sys
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    if ".claude/plugins" in root.as_posix():
+        packages = " ".join(f"'{spec}'" for spec in _ANALYSIS_PACKAGES)
+        return (
+            "the analysis extra, which is not installed.\n"
+            f"  {sys.executable} -m pip install {packages}\n"
+            "  (this copy is an installed plugin, so there is no editable "
+            "checkout to install from;\n"
+            "   install into the interpreter above, not into the plugin "
+            "directory, which updates replace)"
+        )
+    return (
+        "the analysis extra, which is not installed.\n"
+        "  pip install -e '.[analysis]'"
+    )
 
 
 def require(feature: str = "audio analysis"):
@@ -54,7 +85,7 @@ def require(feature: str = "audio analysis"):
         import scipy  # noqa: F401
         import soundfile  # noqa: F401
     except ImportError as e:
-        raise AnalysisUnavailable(f"{feature} needs {_INSTALL_HINT}\n  ({e})") from e
+        raise AnalysisUnavailable(f"{feature} needs {_install_hint()}\n  ({e})") from e
 
 
 class AnalysisUnavailable(RuntimeError):
