@@ -521,7 +521,9 @@ def test_a_dimension_that_is_always_zero_is_flagged_as_flattering():
 
 @pytest.mark.parametrize("policy,expected,forbidden", [
     ("explicit_window", "named by --excerpt-start", "full source"),
-    ("uninformative_activity", "NOT chosen by activity", "full source"),
+    ("activity_tie", "equally-ranked windows", "full source"),
+    ("explicit_window_clamped", "NOT the window named", "full source"),
+    ("explicit_window_ignored_short_source", "could not be honoured", "named by --excerpt-start"),
     ("full_source", "the full source", "--excerpt-start"),
 ])
 def test_every_excerpt_policy_describes_itself(policy, expected, forbidden):

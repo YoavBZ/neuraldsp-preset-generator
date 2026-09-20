@@ -165,12 +165,12 @@ def caveat_about(fp, phrase):
 
 def test_an_unranked_excerpt_says_so_and_offers_the_way_out():
     fp = fingerprint(io.from_samples(fx.noise(seconds=10.0), SR), excerpt_s=2.0)
-    assert fp.source["excerpt_policy"] == "uninformative_activity"
+    assert fp.source["excerpt_policy"] == "activity_tie"
     assert fp.source["excerpt_active_fraction"] > 0.9
-    note = caveat_about(fp, "NOT chosen by activity")
+    note = caveat_about(fp, "scored the same")
     assert note, fp.caveats()
     assert "--excerpt-start" in note[0], "a caveat with no remedy is just a mood"
-    assert "%" in note[0], "quote the measurement that made it degenerate"
+    assert "candidate windows" in note[0], "quote the tie that was measured"
 
 
 def test_a_ranked_excerpt_makes_no_such_claim():
@@ -181,7 +181,7 @@ def test_a_ranked_excerpt_makes_no_such_claim():
     )
     fp = fingerprint(io.from_samples(padded, SR), excerpt_s=2.0)
     assert fp.source["excerpt_policy"] == "most_continuously_active"
-    assert not caveat_about(fp, "NOT chosen by activity")
+    assert not caveat_about(fp, "scored the same")
 
 
 def test_an_explicit_window_is_recorded_as_chosen_by_the_caller():
@@ -190,7 +190,7 @@ def test_an_explicit_window_is_recorded_as_chosen_by_the_caller():
     assert fp.source["excerpt_policy"] == "explicit_window"
     assert fp.source["excerpt_start_s"] == pytest.approx(6.0)
     assert fp.source["excerpt_end_s"] == pytest.approx(8.0)
-    assert not caveat_about(fp, "NOT chosen by activity")
+    assert not caveat_about(fp, "scored the same")
 
 
 def test_a_bass_like_spectrum_is_flagged_as_not_a_guitar():

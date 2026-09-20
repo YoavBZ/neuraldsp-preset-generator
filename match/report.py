@@ -400,13 +400,19 @@ def _reference_excerpt(target: Any) -> str:
     explanation = {
         "most_continuously_active":
             "the most continuously active window requested by --excerpt",
-        "uninformative_activity":
-            "a window of the length requested by --excerpt, but NOT chosen by "
-            "activity — this source is active throughout, so every candidate "
-            "scored the same and the earliest was taken. It may not hold the "
-            "part being matched; --excerpt-start selects a section deliberately",
+        "activity_tie":
+            "the earliest of several equally-ranked windows of the length "
+            "requested by --excerpt — they scored the same, so this one was not "
+            "distinguished. It may not hold the part being matched; "
+            "--excerpt-start selects a section deliberately",
         "explicit_window":
             "the window named by --excerpt-start",
+        "explicit_window_clamped":
+            "NOT the window named by --excerpt-start — that start left no room "
+            "for the requested length, so it was moved back to fit",
+        "explicit_window_ignored_short_source":
+            "the full source: --excerpt-start could not be honoured because the "
+            "source is shorter than the requested excerpt",
         "full_source":
             "the full source",
     }.get(policy, f"a window selected by policy {policy!r}")

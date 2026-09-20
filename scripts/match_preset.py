@@ -166,9 +166,9 @@ def build_parser() -> argparse.ArgumentParser:
                          "exit")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None,
                     metavar="SECONDS",
-                    help="measure the most continuously active window of this length; "
-                         "the exact start and end are recorded (default: 20, except "
-                         "paired_di uses all; 0 for all)")
+                    help="measure a window of this length, chosen by broadband activity; "
+                         "the exact start, end and selection policy are recorded "
+                         "(default: 20, except paired_di uses all; 0 for all)")
     add_excerpt_start_arg(ap)
     ap.add_argument("--out-dir", type=pathlib.Path, required=True,
                     help="where the store, the spec and the report are written")

@@ -236,7 +236,8 @@ def add_data_dir_arg(parser) -> None:
         "--data-dir",
         type=_data_dir,
         help="where your presets and generated catalogs live (default: "
-        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else the repo root)",
+        "$NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else ~/ndsp-presets when "
+        "running as an installed plugin, else the repo root)",
     )
 
 

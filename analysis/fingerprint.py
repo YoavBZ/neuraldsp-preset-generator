@@ -128,7 +128,7 @@ class Fingerprint:
         return None
 
     def _implausible_for_guitar(self) -> bool:
-        """Whether this spectrum is too low and too narrow to be a guitar.
+        """Whether this spectrum is too low **or** too narrow to be a guitar.
 
         A guarded sanity check on the *window*, not a judgement about tone. Even
         a very dark neck-pickup jazz sound carries harmonics well past 500 Hz;
@@ -150,17 +150,32 @@ class Fingerprint:
     def caveats(self) -> list:
         """Everything a report has to say out loud about this measurement."""
         notes = []
-        if self.source.get("excerpt_policy") == "uninformative_activity":
-            share = self.source.get("excerpt_active_fraction")
-            measured = f"{share * 100:.0f}% of" if share is not None else "nearly all of"
+        policy = self.source.get("excerpt_policy")
+        if policy == "activity_tie":
+            # Says only what is true of every case that reaches here. An earlier
+            # version claimed the ranking had chosen nothing, which is false the
+            # moment the plateau is merely large: on silence followed by playing,
+            # the ranking lands on the first note and most windows still tie.
+            tied = self.source.get("excerpt_tied_windows")
+            total = self.source.get("excerpt_candidate_windows")
+            counted = (f"{tied} of {total} candidate windows"
+                       if tied and total else "most candidate windows")
             notes.append(
-                f"the excerpt was NOT chosen by activity: {measured} this source "
-                "is continuously active, so every candidate window scored the "
-                "same and the earliest one was taken. It may not contain the "
-                "part you meant. Pass --excerpt-start to measure a section you "
-                "choose"
+                f"{counted} scored the same, so this one is simply the earliest "
+                "of them rather than a distinguished choice. It may not contain "
+                "the part you meant — check it, and pass --excerpt-start to "
+                "measure a section you choose"
             )
-        if self.source.get("excerpt_policy") == "explicit_window_ignored_short_source":
+        if policy == "explicit_window_clamped":
+            asked = self.source.get("excerpt_requested_start_s")
+            start = self.source.get("excerpt_start_s")
+            notes.append(
+                f"--excerpt-start {_round(asked)} s does not leave room for the "
+                f"requested window, so it was moved to {_round(start)} s. This "
+                "is NOT the section you named; clip the file or ask for a "
+                "shorter --excerpt if you meant somewhere else"
+            )
+        if policy == "explicit_window_ignored_short_source":
             notes.append(
                 "--excerpt-start was ignored: this source is shorter than the "
                 "requested excerpt, so the whole of it was measured. If you "
@@ -238,13 +253,17 @@ def fingerprint(audio, regime: str = "probe",
     excerpt_start_frame = 0
     excerpt_end_frame = audio.frames
     excerpt_policy = "full_source"
-    active_fraction = None
+    active_fraction = tied_windows = candidate_windows = None
     if excerpt_s:
         from .io import excerpt_selection
 
-        (excerpt_start_frame, excerpt_end_frame,
-         excerpt_policy, active_fraction) = excerpt_selection(
-            audio, excerpt_s, start_s=excerpt_start_s)
+        selection = excerpt_selection(audio, excerpt_s, start_s=excerpt_start_s)
+        excerpt_start_frame = selection.start
+        excerpt_end_frame = selection.end
+        excerpt_policy = selection.policy
+        active_fraction = selection.active_fraction
+        tied_windows = selection.tied_windows
+        candidate_windows = selection.candidate_windows
         # The policy is whatever the selector says, not something inferred from
         # whether the bounds moved. Deriving it from the bounds threw away the
         # one case where they deliberately do not move: a source shorter than
@@ -276,10 +295,19 @@ def fingerprint(audio, regime: str = "probe",
             None if excerpt_s is None else round(float(excerpt_s), 6)
         ),
         "excerpt_policy": excerpt_policy,
-        # What share of the source the activity gate considered active. Near 1.0
-        # is why a selection can be uninformative, so the caveat can quote it.
+        # What share of the source the activity gate considered active, and how
+        # many candidate windows tied for best. The caveat quotes the tie rather
+        # than the fraction: a high active share does not by itself mean the
+        # ranking failed, but "this is one of N equally-ranked windows" is true
+        # whenever it is reported.
         "excerpt_active_fraction": (
             None if active_fraction is None else round(float(active_fraction), 4)
+        ),
+        "excerpt_tied_windows": tied_windows,
+        "excerpt_candidate_windows": candidate_windows,
+        # What was asked for, so a clamp is visible next to what was measured.
+        "excerpt_requested_start_s": (
+            None if excerpt_start_s is None else round(float(excerpt_start_s), 6)
         ),
     }
 

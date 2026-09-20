@@ -49,9 +49,12 @@ it.** `--excerpt` ranks by broadband activity, which on a dense master ranks
 nothing and returns the start of the file. A budget spent against the wrong
 twenty seconds buys a careful fit to the wrong instrument, and every score in the
 report will look normal. Re-measure with `--excerpt-start SECONDS` when you see
-either:
+any of:
 
-- `excerpt_policy: uninformative_activity` — the selection was a tie, not a choice
+- `excerpt_policy: activity_tie` — several windows scored the same and this is
+  the earliest of them, so confirm it holds the part
+- a clamped or ignored `--excerpt-start` — the window you named was not the
+  window measured
 - a "does not look like a guitar" caveat — centroid under 250 Hz or a −6 dB
   extent under 500 Hz
 

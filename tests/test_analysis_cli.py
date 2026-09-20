@@ -153,7 +153,7 @@ def test_without_it_the_same_file_reports_an_unranked_choice(long_and_busy):
     """The contrast is the point: same file, same length, and the automatic
     window is the start of the file with a caveat rather than a selection."""
     out = run(FINGERPRINT, long_and_busy, "--excerpt", "2", "--text").stdout
-    assert "uninformative activity" in out
+    assert "activity tie" in out
     assert "--excerpt-start" in out, "the text summary has to carry the remedy"
 
 

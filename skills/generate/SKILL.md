@@ -74,9 +74,9 @@ broadband activity, so on a dense master it ranks nothing and measures the start
 of the file. A fingerprint of the wrong twenty seconds is not noisy; it is a
 clean description of the wrong instrument. Two things to look at every time:
 
-- an `uninformative activity` excerpt policy, or a "does not look like a guitar"
-  caveat — either means **re-measure a section you choose**, with
-  `--excerpt-start SECONDS`
+- an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`,
+  or a "does not look like a guitar" caveat — each means **look at the window
+  before trusting it**, and re-measure with `--excerpt-start SECONDS`
 - a centroid below 250 Hz or a −6 dB extent below 500 Hz is not a dark tone, it
   is a different instrument
 

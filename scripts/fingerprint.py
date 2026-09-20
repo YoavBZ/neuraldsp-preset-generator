@@ -115,9 +115,9 @@ def main() -> None:
     ap.add_argument("--regime", default="probe",
                     help="paired_di | isolated_stem | separated_stem | mix | probe")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None, metavar="SECONDS",
-                    help="measure the most continuously active window of this length "
-                         "and record its exact bounds (default: 20; paired_di "
-                         "defaults to all; 0 for all)")
+                    help="measure a window of this length, chosen by broadband activity, "
+                         "and record its exact bounds and how it was chosen "
+                         "(default: 20; paired_di defaults to all; 0 for all)")
     add_excerpt_start_arg(ap)
     ap.add_argument("--out", type=pathlib.Path, help="write the JSON here instead of stdout")
     ap.add_argument("--text", action="store_true", help="print a summary instead of JSON")

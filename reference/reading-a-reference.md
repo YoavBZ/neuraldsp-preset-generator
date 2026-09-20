@@ -11,15 +11,15 @@ well-formed description of the wrong thing.
 
 `--excerpt` does not find the guitar. It ranks windows by a **broadband**
 activity gate, which answers "is there sound here" and nothing else. On a
-mastered, continuously-playing track almost every frame passes, every window
-scores the same, and the first one wins by default.
+mastered, continuously-playing track almost every frame passes, so almost every
+window scores the same and the earliest of the tied set wins by default.
 
 This is measured, not hypothetical. On a five-minute mastered ballad, 98% of
 frames were active and 29,642 of about 30,255 candidate windows tied at the top,
 so the "chosen" window was the bass intro. The guitar was four minutes later.
 
-The tool now says so — `excerpt_policy: uninformative_activity`, with a caveat —
-but the remedy is yours to apply:
+The tool now says so — `excerpt_policy: activity_tie`, with a caveat naming how
+many windows tied — but the remedy is yours to apply:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
@@ -38,6 +38,12 @@ A fingerprint that fails either is flagged, and the flag means *find a different
 window*, not *this is a dark tone*. Even a neck-pickup jazz sound with the tone
 rolled off carries harmonics well past 500 Hz; a bass, a pad, an intro or a fade
 does not.
+
+`--excerpt-start` is reported honestly when it could not be honoured, too. A
+start with no room for the requested length is clamped and says so
+(`explicit_window_clamped`); a source shorter than the window says that instead
+(`explicit_window_ignored_short_source`). Neither is passed off as the window you
+named — check the policy, not just the bounds.
 
 Prefer a section with **one stable tone**. Averaging a clean verse, a crunch
 chorus and a lead break together produces a target that is none of them.
