@@ -265,10 +265,13 @@ def reject_excerpt_start_without_window(start, excerpt) -> None:
     saying `full_source` for a run the user believes was windowed.
     """
     if start is not None and excerpt is None:
+        # Do not name `--excerpt 0` here. It is one of two ways to get here, and
+        # the other — a paired_di run, whose excerpt defaults to the complete
+        # performance — sends the reader looking for a flag they never typed.
         die("--excerpt-start needs a window to place: it selects where "
-            "--excerpt begins.\n"
-            "  --excerpt 0 measures the whole source, so there is nothing to "
-            "start.\n"
+            "--excerpt begins, and this run is measuring the whole source.\n"
+            "  That is either --excerpt 0, or a regime whose excerpt defaults "
+            "to the complete performance.\n"
             "  Drop --excerpt-start, or give --excerpt a length.")
 
 

@@ -215,3 +215,13 @@ def test_a_synthetic_probe_is_exempt():
     reader to skip the caveats."""
     fp = make(fx.band_limited(seconds=4.0, low=40, high=260), regime="probe")
     assert not caveat_about(fp, "does not look like a guitar")
+
+
+def test_an_unhonoured_window_survives_into_the_fingerprint():
+    """The bounds do not move in this case, so a policy derived from the bounds
+    would silently report `full_source` and lose the caveat."""
+    fp = fingerprint(io.from_samples(fx.noise(seconds=3.0), SR),
+                     excerpt_s=20.0, excerpt_start_s=5.0)
+    assert fp.source["excerpt_policy"] == "explicit_window_ignored_short_source"
+    note = caveat_about(fp, "--excerpt-start was ignored")
+    assert note, fp.caveats()

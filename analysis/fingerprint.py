@@ -160,6 +160,13 @@ class Fingerprint:
                 "part you meant. Pass --excerpt-start to measure a section you "
                 "choose"
             )
+        if self.source.get("excerpt_policy") == "explicit_window_ignored_short_source":
+            notes.append(
+                "--excerpt-start was ignored: this source is shorter than the "
+                "requested excerpt, so the whole of it was measured. If you "
+                "meant to skip part of it, clip the file or ask for a shorter "
+                "--excerpt"
+            )
         if self.regime != "probe" and self._implausible_for_guitar():
             centroid = (self.spectrum.get("centroid_hz") or {}).get("p50")
             corner = self.spectrum.get("hf_corner_hz")
@@ -236,10 +243,14 @@ def fingerprint(audio, regime: str = "probe",
         from .io import excerpt_selection
 
         (excerpt_start_frame, excerpt_end_frame,
-         selected_policy, active_fraction) = excerpt_selection(
+         excerpt_policy, active_fraction) = excerpt_selection(
             audio, excerpt_s, start_s=excerpt_start_s)
+        # The policy is whatever the selector says, not something inferred from
+        # whether the bounds moved. Deriving it from the bounds threw away the
+        # one case where they deliberately do not move: a source shorter than
+        # the window, where an explicit --excerpt-start could not be honoured
+        # and the run has to say so.
         if excerpt_start_frame != 0 or excerpt_end_frame != audio.frames:
-            excerpt_policy = selected_policy
             audio = audio.replace(audio.samples[excerpt_start_frame:excerpt_end_frame])
 
     loudness = loudness_lufs(audio)

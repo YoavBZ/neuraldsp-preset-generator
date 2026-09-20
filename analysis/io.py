@@ -345,7 +345,14 @@ def excerpt_selection(audio: Audio, seconds: float,
 
     wanted = int(seconds * audio.sample_rate)
     if wanted <= 0 or audio.frames <= wanted:
-        return 0, audio.frames, "full_source", None
+        # The whole source is shorter than the window, so there is nothing to
+        # select — but say so rather than dropping an explicit request on the
+        # floor. Someone who clips a 15 s reference and asks to start 5 s in to
+        # skip a count-in would otherwise measure the count-in, with the report
+        # calling it `full_source` and no caveat anywhere.
+        policy = ("explicit_window_ignored_short_source"
+                  if start_s else "full_source")
+        return 0, audio.frames, policy, None
 
     mono = audio.mono()
     active = active_frames(mono).astype(np.float64)

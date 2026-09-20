@@ -168,3 +168,23 @@ def test_excerpt_start_without_a_window_is_refused(long_and_busy):
 def test_a_negative_excerpt_start_is_refused(long_and_busy):
     result = run(FINGERPRINT, long_and_busy, "--excerpt-start", "-4", expect=2)
     assert "zero or greater" in result.stderr
+
+
+def test_a_short_source_says_the_window_could_not_be_honoured(tmp_path):
+    """Silently measuring the whole file would report `full source` for a run
+    the user asked to window — the failure this flag was added to remove."""
+    short = fx.write_wav(tmp_path / "short.wav",
+                         fx.stereo(fx.band_limited(seconds=3.0)))
+    out = run(FINGERPRINT, short, "--regime", "mix",
+              "--excerpt", "20", "--excerpt-start", "1", "--text").stdout
+    assert "--excerpt-start was ignored" in out
+
+
+def test_the_no_window_error_does_not_blame_a_flag_you_did_not_pass(long_and_busy):
+    """paired_di defaults to the complete performance, so this path is reachable
+    without --excerpt ever appearing on the command line."""
+    result = run(FINGERPRINT, long_and_busy, "--regime", "paired_di",
+                 "--excerpt-start", "3", expect=2)
+    assert "--excerpt-start needs a window" in result.stderr
+    assert "defaults to the complete performance" in result.stderr
+    assert "Traceback" not in result.stderr

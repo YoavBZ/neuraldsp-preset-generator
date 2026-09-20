@@ -170,3 +170,22 @@ def test_excerpt_bounds_still_returns_a_pair():
     """Its two callers are unchanged; the extra reporting is additive."""
     audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
     assert io.excerpt_bounds(audio, 2.0) == io.excerpt_selection(audio, 2.0)[:2]
+
+
+def test_a_short_source_reports_that_it_could_not_honour_the_window():
+    """Start 5 s into a 3 s file and there is nothing to select — but dropping
+    the request silently would report `full_source` for a run the caller
+    believes was windowed, which is the whole failure this flag exists to fix."""
+    audio = io.from_samples(fx.noise(seconds=3.0), SAMPLE_RATE)
+    start, end, policy, _ = io.excerpt_selection(audio, 20.0, start_s=5.0)
+    assert (start, end) == (0, audio.frames)
+    assert policy == "explicit_window_ignored_short_source"
+
+
+def test_a_short_source_with_no_window_request_is_just_the_full_source():
+    """No request, nothing ignored: the ordinary case keeps its ordinary name."""
+    audio = io.from_samples(fx.noise(seconds=3.0), SAMPLE_RATE)
+    assert io.excerpt_selection(audio, 20.0)[2] == "full_source"
+    assert io.excerpt_selection(audio, 20.0, start_s=0.0)[2] == "full_source", (
+        "starting at zero is what a full source already is"
+    )
