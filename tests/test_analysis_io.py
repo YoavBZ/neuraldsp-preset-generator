@@ -115,3 +115,58 @@ def test_a_compressed_reference_names_the_conversion(tmp_path):
     assert "afconvert" in message and "ffmpeg" in message
     assert "48000" in message, "the conversion has to land at the rate we measure at"
     assert "reference.m4a" in message
+
+
+# --- how honestly the excerpt was chosen ----------------------------------
+#
+# The ranking underneath `excerpt_selection` is a broadband activity gate, so on
+# a source that never stops it ranks nothing and returns the first window while
+# calling itself most-continuously-active. That is how a real run measured a
+# bass intro and reported it as the guitar tone, so the degenerate case has to
+# be detectable rather than merely rare.
+
+
+def test_a_gapped_source_really_is_ranked_by_activity():
+    """The case the ranking was written for still works and still says so."""
+    quiet = np.zeros(SAMPLE_RATE * 4)
+    audio = io.from_samples(
+        np.concatenate([quiet, fx.noise(seconds=2.0), quiet]), SAMPLE_RATE
+    )
+    start, end, policy, fraction = io.excerpt_selection(audio, 2.0)
+    assert policy == "most_continuously_active"
+    assert 3.9 < start / SAMPLE_RATE < 4.1
+    assert end - start == SAMPLE_RATE * 2
+    assert fraction < 0.5, "most of this source is silence"
+
+
+def test_a_continuously_active_source_admits_it_chose_nothing():
+    """Every window scores the same, so `argmax` is picking the first one."""
+    audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
+    start, _, policy, fraction = io.excerpt_selection(audio, 2.0)
+    assert policy == "uninformative_activity"
+    assert fraction > 0.9
+    assert start == 0, "which is the start of the file, not a chosen section"
+
+
+def test_an_explicit_window_is_taken_as_given():
+    audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
+    start, end, policy, _ = io.excerpt_selection(audio, 2.0, start_s=6.0)
+    assert policy == "explicit_window"
+    assert start == SAMPLE_RATE * 6
+    assert end - start == SAMPLE_RATE * 2
+
+
+def test_an_explicit_window_past_the_end_is_clamped_not_shortened():
+    """Measuring a shorter window than asked for would silently change the
+    measurement; moving the start keeps the length the caller relies on."""
+    audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
+    start, end, policy, _ = io.excerpt_selection(audio, 2.0, start_s=999.0)
+    assert policy == "explicit_window"
+    assert end == audio.frames
+    assert end - start == SAMPLE_RATE * 2
+
+
+def test_excerpt_bounds_still_returns_a_pair():
+    """Its two callers are unchanged; the extra reporting is additive."""
+    audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
+    assert io.excerpt_bounds(audio, 2.0) == io.excerpt_selection(audio, 2.0)[:2]

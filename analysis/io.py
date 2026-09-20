@@ -305,18 +305,72 @@ def excerpt_bounds(audio: Audio, seconds: float) -> tuple[int, int]:
     Keeping selection in one function also prevents the reported bounds and the
     samples actually measured from drifting apart.
     """
+    start, end, _, _ = excerpt_selection(audio, seconds)
+    return start, end
+
+
+#: Above this share of tied-for-best windows, ranking by activity chose nothing.
+#: Half is deliberately lax: the number seen on a real mastered track was 0.98,
+#: and a source where even a third of the windows tie has already stopped being
+#: ranked in any useful sense.
+_UNINFORMATIVE_TIE_SHARE = 0.5
+
+
+def excerpt_selection(audio: Audio, seconds: float,
+                      start_s: Optional[float] = None) -> tuple:
+    """Which window to measure, and how honestly it was chosen.
+
+    Returns ``(start_frame, end_frame, policy, active_fraction)``.
+
+    The activity ranking underneath this is a **broadband** RMS gate
+    (:func:`active_frames`): it answers "is there sound here", not "is the
+    instrument you care about here". On a mastered, continuously-playing mix
+    almost every frame passes, every window scores the same, and ``argmax``
+    returns the first one — so the selection degenerates into "the start of the
+    file" while still calling itself most-continuously-active.
+
+    That is not hypothetical. On a five-minute mastered ballad, 98% of frames
+    were active and 29,642 of ~30,255 candidate windows tied at the maximum, so
+    the chosen window was the bass intro, with no guitar in it at all. Every
+    number measured from it described an upright bass, and nothing said so.
+
+    The fix is not a cleverer ranking — a broadband gate cannot become
+    instrument-aware — but refusing to overstate what happened. When the tie
+    share crosses :data:`_UNINFORMATIVE_TIE_SHARE` the policy says
+    ``uninformative_activity``, the caller turns that into a caveat, and
+    ``start_s`` is the way to choose a window deliberately instead.
+    """
     require("excerpt selection")
     import numpy as np
 
     wanted = int(seconds * audio.sample_rate)
     if wanted <= 0 or audio.frames <= wanted:
-        return 0, audio.frames
+        return 0, audio.frames, "full_source", None
 
-    active = active_frames(audio.mono()).astype(np.float64)
+    mono = audio.mono()
+    active = active_frames(mono).astype(np.float64)
+    fraction = float(active.mean()) if len(active) else None
+
+    if start_s is not None:
+        # Clamped rather than refused: asking for the last 20 seconds of a file
+        # by eye is an ordinary thing to do slightly wrong, and silently
+        # measuring a shorter window would be worse than moving the start.
+        start = int(max(0.0, float(start_s)) * audio.sample_rate)
+        start = min(start, audio.frames - wanted)
+        return start, start + wanted, "explicit_window", fraction
+
     span = max(1, wanted // HOP)
     if len(active) <= span:
-        return 0, wanted
+        return 0, wanted, "most_continuously_active", fraction
+
     density = np.convolve(active, np.ones(span), mode="valid")
+    # Tolerance rather than equality: the convolution of a 0/1 array with ones
+    # is integral in exact arithmetic, and comparing floats for equality to
+    # decide a user-visible caveat is not a thing to rely on.
+    tied = int(np.count_nonzero(density >= density.max() - 0.5))
+    policy = ("uninformative_activity"
+              if tied > _UNINFORMATIVE_TIE_SHARE * len(density)
+              else "most_continuously_active")
     start = int(np.argmax(density)) * HOP
     start = min(start, audio.frames - wanted)
-    return start, start + wanted
+    return start, start + wanted, policy, fraction

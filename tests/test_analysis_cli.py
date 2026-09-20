@@ -131,3 +131,40 @@ def test_compare_rejects_an_unknown_profile(dark, bright):
 def test_compare_of_a_file_with_itself_is_zero(dark):
     document = json.loads(run(COMPARE, dark, dark, "--json").stdout)
     assert document["combined"] == pytest.approx(0.0, abs=1e-9)
+
+
+@pytest.fixture(scope="module")
+def long_and_busy(tmp_path_factory):
+    """Ten seconds that never stop, so the automatic choice has nothing to rank."""
+    path = tmp_path_factory.mktemp("audio") / "busy.wav"
+    return fx.write_wav(path, fx.stereo(fx.band_limited(seconds=10.0, seed=11)))
+
+
+def test_excerpt_start_measures_the_window_you_name(long_and_busy):
+    document = json.loads(
+        run(FINGERPRINT, long_and_busy, "--excerpt", "2", "--excerpt-start", "6").stdout
+    )
+    assert document["source"]["excerpt_policy"] == "explicit_window"
+    assert document["source"]["excerpt_start_s"] == pytest.approx(6.0)
+    assert document["source"]["excerpt_end_s"] == pytest.approx(8.0)
+
+
+def test_without_it_the_same_file_reports_an_unranked_choice(long_and_busy):
+    """The contrast is the point: same file, same length, and the automatic
+    window is the start of the file with a caveat rather than a selection."""
+    out = run(FINGERPRINT, long_and_busy, "--excerpt", "2", "--text").stdout
+    assert "uninformative activity" in out
+    assert "--excerpt-start" in out, "the text summary has to carry the remedy"
+
+
+def test_excerpt_start_without_a_window_is_refused(long_and_busy):
+    """`--excerpt 0` means the whole source, so there is nothing to start."""
+    result = run(FINGERPRINT, long_and_busy,
+                 "--excerpt", "0", "--excerpt-start", "3", expect=2)
+    assert "--excerpt-start needs a window" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_a_negative_excerpt_start_is_refused(long_and_busy):
+    result = run(FINGERPRINT, long_and_busy, "--excerpt-start", "-4", expect=2)
+    assert "zero or greater" in result.stderr

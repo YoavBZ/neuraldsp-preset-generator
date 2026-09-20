@@ -170,9 +170,12 @@ anything — so a failed run leaves no partial output.
 
 ## Verify before you claim success
 
-1. Re-run `show.py` on the output and confirm the new values are there.
-2. Run `python -m pytest tests/test_roundtrip.py` — if the format layer is
-   broken, do not ship the preset.
+1. Re-run `show.py` on the output and confirm the new values are there. This is
+   the check that matters and it needs nothing but the standard library.
+2. In a clone with the `dev` extra installed, `python -m pytest
+   tests/test_roundtrip.py` also proves the format layer is intact. Skip it from
+   an installed plugin — `pytest` is not part of what ships — and rely on step 1,
+   which reads the bytes back through the same parser.
 3. Tell the user where the file is and how to load it —
    see [installing.md](installing.md).
 

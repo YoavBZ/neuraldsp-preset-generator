@@ -240,6 +240,38 @@ def add_data_dir_arg(parser) -> None:
     )
 
 
+def add_excerpt_start_arg(parser) -> None:
+    """For scripts that measure a window of a longer recording.
+
+    Shared so the two CLIs that fingerprint a user's own recording describe the
+    flag the same way. Its reason for existing is in `analysis.io
+    .excerpt_selection`: the automatic choice is a broadband activity ranking,
+    and on a dense master every window ties, so it returns the start of the file
+    while reporting that it chose. Naming a start is the way out.
+    """
+    parser.add_argument(
+        "--excerpt-start", type=nonnegative_float, default=None, metavar="SECONDS",
+        help="measure --excerpt seconds starting here, instead of at the window "
+             "chosen by activity. Use when the part you want is not the densest "
+             "thing in the file",
+    )
+
+
+def reject_excerpt_start_without_window(start, excerpt) -> None:
+    """`--excerpt-start` means nothing when the whole source is being measured.
+
+    Refused rather than ignored: the two flags together read as a request that
+    was understood, and silently measuring everything would leave the report
+    saying `full_source` for a run the user believes was windowed.
+    """
+    if start is not None and excerpt is None:
+        die("--excerpt-start needs a window to place: it selects where "
+            "--excerpt begins.\n"
+            "  --excerpt 0 measures the whole source, so there is nothing to "
+            "start.\n"
+            "  Drop --excerpt-start, or give --excerpt a length.")
+
+
 def add_pack_arg(parser) -> None:
     parser.add_argument(
         "--pack", help="plugin pack id (default: detect from the preset)"

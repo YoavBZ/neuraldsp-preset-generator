@@ -172,3 +172,93 @@ def test_empty_data_dir_fails_at_the_command_line_too():
     assert result.returncode != 0
     assert "cannot be empty" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+# --- the installed case, which used to fall back to the install directory ---
+#
+# `$CLAUDE_PLUGIN_DATA` was documented as "set by Claude Code for installed
+# plugins" and treated as the answer for that case. It is not always set, and
+# when it was absent the chain fell through to the plugin directory: notes were
+# written where the next update deletes them and read back as "none yet", with
+# nothing failing. These pin the durable default that replaced that fall-through.
+
+
+@pytest.fixture
+def installed(monkeypatch, tmp_path):
+    """Pretend this copy is an installed plugin, with a private HOME.
+
+    `looks_installed()` reads the module global, so moving PLUGIN_ROOT is enough
+    — and redirecting HOME keeps the default off the developer's real one.
+    """
+    monkeypatch.setattr(
+        paths, "PLUGIN_ROOT", pathlib.Path("/somewhere/.claude/plugins/pack/1.0")
+    )
+    monkeypatch.setenv("HOME", str(tmp_path))
+    return tmp_path
+
+
+def test_an_installed_plugin_defaults_somewhere_durable(installed):
+    assert paths.looks_installed()
+    assert paths.data_root() == (installed / "ndsp-presets").resolve()
+    assert not paths.is_ephemeral_data_root(), (
+        "the whole point: an installed plugin must not default into its own "
+        "directory, which the next update replaces"
+    )
+    assert paths.data_root_origin() == "installed-plugin default"
+
+
+def test_the_installed_default_is_where_the_readme_says_to_put_it(installed):
+    """Continuity, not taste: README tells people to export
+    NDSP_PRESET_DATA=~/ndsp-presets, so an existing library is already there."""
+    assert paths.INSTALLED_DATA_DIR == "~/ndsp-presets"
+    assert paths.learned_tones_path("morgan") == (
+        installed / "ndsp-presets" / "packs" / "morgan" / "learned-tones.md"
+    )
+
+
+@pytest.mark.parametrize("var", ["NDSP_PRESET_DATA", "CLAUDE_PLUGIN_DATA"])
+def test_env_vars_still_win_over_the_installed_default(installed, monkeypatch, var):
+    monkeypatch.setenv(var, str(installed / "elsewhere"))
+    assert paths.data_root() == (installed / "elsewhere").resolve()
+    assert paths.data_root_origin() == f"${var}"
+
+
+def test_an_explicit_flag_still_wins_over_the_installed_default(installed):
+    paths.set_data_root(installed / "flag")
+    assert paths.data_root() == (installed / "flag").resolve()
+    assert paths.data_root_origin() == "--data-dir"
+
+
+def test_a_clone_is_unaffected():
+    """A checkout keeps writing into the checkout, which is correct and is what
+    every existing workflow and .gitignore rule assumes."""
+    assert not paths.looks_installed()
+    assert paths.data_root() == paths.PLUGIN_ROOT
+    assert paths.data_root_origin() == "repo root"
+
+
+def test_pointing_the_flag_at_the_install_dir_is_still_warned_about(installed):
+    """The one remaining way to land on the ephemeral directory is to ask."""
+    paths.set_data_root(paths.PLUGIN_ROOT)
+    assert paths.is_ephemeral_data_root()
+    warning = paths.data_root_warning()
+    assert warning and "will be lost" in warning
+
+
+def test_the_origin_always_describes_the_path_actually_used(installed, monkeypatch):
+    """Two functions reporting different answers would be worse than silence."""
+    cases = [
+        ({}, None, "installed-plugin default"),
+        ({"CLAUDE_PLUGIN_DATA": str(installed / "a")}, None, "$CLAUDE_PLUGIN_DATA"),
+        ({"NDSP_PRESET_DATA": str(installed / "b")}, None, "$NDSP_PRESET_DATA"),
+        ({}, installed / "c", "--data-dir"),
+    ]
+    for env, override, expected in cases:
+        monkeypatch.delenv("NDSP_PRESET_DATA", raising=False)
+        monkeypatch.delenv("CLAUDE_PLUGIN_DATA", raising=False)
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        paths.set_data_root(override)
+        assert paths.data_root_origin() == expected
+        assert str(paths.data_root()) in paths.describe_roots()
+        assert paths.data_root_origin() in paths.describe_roots()

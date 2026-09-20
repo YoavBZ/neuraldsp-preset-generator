@@ -31,17 +31,33 @@ Choose the most conservative true reference regime:
 
 Do not call two different performances paired. If provenance is unclear, choose
 the lower-confidence regime and say why. Prefer a short section with one stable
-tone; `--excerpt` selects the most continuously active window of that length from
-a longer file and records its exact start and end, or the user can supply a clipped
-section. A long file does not multiply render cost, but averaging clean, rhythm and
-lead sections together produces a target that is none of them.
+tone; `--excerpt` selects a window of that length from a longer file and records
+its exact start and end, or the user can supply a clipped section. A long file
+does not multiply render cost, but averaging clean, rhythm and lead sections
+together produces a target that is none of them.
 
-Fingerprint the reference before spending a render budget:
+Fingerprint the reference before spending a render budget — any common audio
+format, mp3 included:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
   --regime separated_stem --text
 ```
+
+**Then check the window actually holds the part, before spending anything on
+it.** `--excerpt` ranks by broadband activity, which on a dense master ranks
+nothing and returns the start of the file. A budget spent against the wrong
+twenty seconds buys a careful fit to the wrong instrument, and every score in the
+report will look normal. Re-measure with `--excerpt-start SECONDS` when you see
+either:
+
+- `excerpt_policy: uninformative_activity` — the selection was a tie, not a choice
+- a "does not look like a guitar" caveat — centroid under 250 Hz or a −6 dB
+  extent under 500 Hz
+
+[reading-a-reference.md](../../reference/reading-a-reference.md) has both checks,
+what each regime's confidence buys, and which bands of a `mix` or `separated_stem`
+measurement are the guitar rather than the rhythm section.
 
 Report the regime, confidence, duration, channel count, level, spectral tilt and
 roll-off, dynamics, delay/reverb measurements, harmonic confidence, and every

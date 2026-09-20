@@ -21,7 +21,15 @@ handled. Other plugins are supported by adding a pack — see [Packs](#packs).
 ## Requirements
 
 - **Python 3.10 or later** on your `PATH` as `python` — the skills call it to read
-  and write presets. Check with `python --version`.
+  and write presets. Check with `python --version`. Reading, writing and editing
+  presets needs **nothing else**: those tools are standard library only, on
+  purpose.
+- **The `analysis` extra** — only for measuring audio, which is everything the
+  `match` skill does and the measurement step of `generate`. That is
+  `numpy`, `scipy`, `soundfile` and `pyloudnorm`. From a clone,
+  `pip install -e '.[analysis]'`; from an installed plugin there is no checkout
+  to install from, so run any audio command once and it will print the exact
+  `pip install` line for the interpreter that needs it.
 - **Your own licensed copy** of the Neural DSP plugin. Nothing here works without
   at least one preset from it, and no plugin content ships in this repo.
 
@@ -41,17 +49,17 @@ git clone https://github.com/YoavBZ/neuraldsp-preset-generator
 claude --plugin-dir ./neuraldsp-preset-generator
 ```
 
-If you install it as a plugin, **set `NDSP_PRESET_DATA`** to a directory you
-control:
+Installed as a plugin, your preset library and generated catalogs default to
+`~/ndsp-presets` — outside the plugin directory, which Claude Code replaces on
+every update. Nothing to configure. To keep them somewhere else, set:
 
 ```bash
-export NDSP_PRESET_DATA=~/ndsp-presets
+export NDSP_PRESET_DATA=/path/you/control
 ```
 
-Claude Code replaces a plugin's directory when the plugin updates, so your
-preset library and generated catalogs need to live outside it. See
-[Where your data lives](#where-your-data-lives). `build_observed.py` warns when
-it is about to write a catalog somewhere that will be wiped.
+See [Where your data lives](#where-your-data-lives). `show.py` reports the data
+root and the rule that chose it, and `build_observed.py` warns when it is about
+to write a catalog somewhere that will be wiped.
 
 Then:
 
@@ -290,11 +298,19 @@ Two different things, in two different places:
   1. `--data-dir`, on the two scripts that read or write it (`show.py`,
      `build_observed.py`)
   2. `$NDSP_PRESET_DATA`
-  3. `$CLAUDE_PLUGIN_DATA` (set by Claude Code for installed plugins)
-  4. the repo root — correct when working in a clone
+  3. `$CLAUDE_PLUGIN_DATA`, when the host sets it
+  4. `~/ndsp-presets` — the default when running from an installed plugin
+  5. the repo root — correct when working in a clone
 
 Your presets go in `<data root>/packs/<pack>/templates/`, and generated catalogs
 in `<data root>/packs/<pack>/observed.json`. Neither is ever committed.
+
+`show.py` prints the data root it resolved **and which of those rules chose it**,
+so "no learned notes yet" can be told apart from "this looked in the wrong
+place". Rule 4 exists because rule 3 cannot be relied on: `$CLAUDE_PLUGIN_DATA`
+is not always set, and the chain used to fall through to the plugin's own
+directory — which an update replaces, so a library written there was silently
+lost and read back as empty.
 
 ## Optional: taste anchors from your own library
 
