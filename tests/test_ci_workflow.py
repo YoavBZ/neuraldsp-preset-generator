@@ -17,32 +17,54 @@ def test_pull_request_commits_do_not_start_duplicate_ci_runs() -> None:
     assert triggers["push"]["branches"] == ["main"]
 
 
-def test_every_job_that_runs_the_suite_checks_out_full_history() -> None:
-    """`tests/test_plugin_manifest.py` compares against the merge base and, in CI,
-    fails rather than skips when it cannot find one. A depth-1 checkout has no
-    merge base, so a suite-running job without `fetch-depth: 0` turns that guard
-    from a check into a build failure.
+# Jobs that deliberately run on a shallow checkout, each with the reason it is
+# safe. A job is listed here only because it does not run the suite; if one ever
+# does, it needs full history instead of an entry.
+SHALLOW_BY_DESIGN = {
+    "fresh-clone": "installs and exercises the CLI, never invokes pytest",
+    "plugin-validate": "runs `claude plugin validate`, never invokes pytest",
+}
 
-    Asserted here rather than left to whoever adds the next job, because relying
-    on people to remember a checkout option is the same fragility that let the
-    plugin version sit unbumped for twenty-three PRs. This caught the analysis
-    job on the very commit that introduced the guard.
+
+def test_every_job_checks_out_full_history_unless_it_says_why_not() -> None:
+    """`tests/test_plugin_manifest.py` compares against the merge base and, on
+    GitHub Actions, fails rather than skips when it cannot find one. A depth-1
+    checkout has no merge base, so a suite-running job without `fetch-depth: 0`
+    turns that guard from a check into a build failure.
+
+    Written to fail **closed**. An earlier version asked "does any step's `run:`
+    contain pytest", which is not how Actions resolves a workflow: a job running
+    `make test`, a composite action, or a job-level `uses:` reusable workflow all
+    run the suite while matching nothing, so the check passed and the build would
+    still have broken. Requiring every checkout to be full-history unless its job
+    is named here means adding a job forces a decision instead of inheriting a
+    silent default — which is the failure this whole area keeps repeating.
     """
-    workflow = yaml.load(CI_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
-
-    offenders = []
-    for name, job in workflow["jobs"].items():
-        steps = job.get("steps") or []
-        if not any("pytest" in str(step.get("run", "")) for step in steps):
-            continue
-        checkouts = [s for s in steps if str(s.get("uses", "")).startswith(
-            "actions/checkout")]
-        assert checkouts, f"{name} runs the suite without checking anything out"
-        for step in checkouts:
-            if str((step.get("with") or {}).get("fetch-depth")) != "0":
-                offenders.append(name)
+    offenders, unreviewable = [], []
+    for path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        workflow = yaml.load(path.read_text(), Loader=yaml.BaseLoader)
+        for name, job in (workflow.get("jobs") or {}).items():
+            if name in SHALLOW_BY_DESIGN:
+                continue
+            if job.get("uses"):
+                # A reusable workflow has no steps here; its checkout is in
+                # another file this assertion cannot see.
+                unreviewable.append(f"{path.name}:{name}")
+                continue
+            for step in job.get("steps") or []:
+                if not str(step.get("uses", "")).startswith("actions/checkout"):
+                    continue
+                if str((step.get("with") or {}).get("fetch-depth")) != "0":
+                    offenders.append(f"{path.name}:{name}")
 
     assert not offenders, (
-        f"these jobs run pytest without fetch-depth: 0 — the version guard will "
-        f"fail there rather than run: {sorted(set(offenders))}"
+        f"these jobs check out shallow history — the version guard fails rather "
+        f"than runs there. Add `fetch-depth: 0`, or add the job to "
+        f"SHALLOW_BY_DESIGN with the reason it never runs the suite: "
+        f"{sorted(set(offenders))}"
+    )
+    assert not unreviewable, (
+        f"these jobs call a reusable workflow, whose checkout this cannot see. "
+        f"Confirm it uses full history and add the job to SHALLOW_BY_DESIGN, or "
+        f"inline it: {sorted(set(unreviewable))}"
     )

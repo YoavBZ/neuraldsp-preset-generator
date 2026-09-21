@@ -379,3 +379,36 @@ def test_show_skips_a_file_it_cannot_read_rather_than_failing(monkeypatch, tmp_p
     monkeypatch.setattr(paths, "response_atlases", lambda pack: [broken, wrong_schema])
 
     assert show._atlases("morgan") == []
+
+
+def test_show_actually_emits_the_atlases_it_discovers():
+    """Exercise the CLI, not just the helper.
+
+    The helper can be perfect while nothing calls it. Both skills now tell an
+    agent to read `show.py`'s `response_atlases`, so discoverability *is* the
+    feature — and a review found that deleting the two wiring lines in `show.py`
+    left the whole suite green, because the tests only called the private
+    helper.
+    """
+    root = pathlib.Path(__file__).resolve().parents[1]
+    preset = root / "samples" / "Example_Clean_PR12.xml"
+
+    done = subprocess.run(
+        [sys.executable, str(root / "scripts" / "show.py"), str(preset)],
+        capture_output=True, text=True, cwd=root,
+    )
+    assert done.returncode == 0, done.stderr
+    reported = json.loads(done.stdout)["response_atlases"]
+    assert reported, "morgan ships atlases and show.py must surface them"
+    assert reported[0]["sample_count"] >= reported[-1]["sample_count"], (
+        "densest first: filename order puts the 128-point pilot last, which is "
+        "the line someone skimming is most likely to read as current"
+    )
+
+    text = subprocess.run(
+        [sys.executable, str(root / "scripts" / "show.py"), str(preset), "--text"],
+        capture_output=True, text=True, cwd=root,
+    )
+    assert text.returncode == 0, text.stderr
+    assert "response atlas:" in text.stdout, "the human view has to show them too"
+    assert str(reported[0]["sample_count"]) in text.stdout

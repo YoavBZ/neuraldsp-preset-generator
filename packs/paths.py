@@ -166,7 +166,12 @@ def learned_tones_path(pack_id: str) -> pathlib.Path:
 
 
 def response_atlases(pack_id: str) -> List[pathlib.Path]:
-    """Response atlases committed for one pack, newest-largest last.
+    """Response atlases committed for one pack, in filename order.
+
+    Filename order, not density order: `response_atlas_pr12_1024.json` sorts
+    before `response_atlas_pr12_pilot.json`, so the 128-point pilot comes last
+    despite being the older and smaller of the two. Callers that want "the
+    current atlas" must read `sample_count`, not take the last element.
 
     These ship with the code rather than living under the data root: they are
     measurements of the *plugin*, identical for every user, and building one

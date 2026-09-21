@@ -92,7 +92,7 @@ instead of a recipe's defaults. On its own held-out set the pilot beat neutral
 settings on 24 of 24 targets, and scaling to 1,024 points improved mean distance
 a further 28%.
 
-Three limits, each load-bearing:
+Four limits, each load-bearing:
 
 - **One amp, one fixed topology.** Morgan's atlas covers PR12 with the cabinet
   and microphone fixed and gate, doubler, compressor, drive, tremolo, reverb and
@@ -100,14 +100,13 @@ Three limits, each load-bearing:
   about AC20, SW50R or Tone King — no atlas exists for them.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
-- **Near-useless against a full `mix`.** The atlas holds guitar-through-amp
-  responses, and a mix is not one. Measured on a mastered ballad, the nearest of
-  1,024 entries sat at distance 1.907 — worse than the 1.640 neutral baseline the
-  pilot beat — and the tool listed spectral tilt, low-frequency corner and crest
-  as outside its sampled range, which are the bass guitar and the master chain
-  rather than the guitar. Query an atlas for `paired_di`, `isolated_stem` or
-  `separated_stem`; on a `mix`, read the out-of-range list as confirmation that
-  you are not measuring a guitar and go back to the excerpt.
+- **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
+  through this one amp. A mix is that plus bass, drums, keys and a master chain,
+  so the nearest entry is the nearest of a set containing nothing like the
+  target. **The out-of-range list is not a reliable tell here**: on a mastered
+  mix the tool can report every compared feature inside its sampled range and
+  still be nowhere near. Query an atlas for `paired_di`, `isolated_stem` or
+  `separated_stem`; for a `mix`, fix the excerpt and the regime first.
 - **Not an achievability oracle.** The file carries `achievable_ranges`, and at
   this density those are one finite atlas's observed range on one probe, not
   limits on the plugin. Do not tell anyone "this amp cannot get darker than X".

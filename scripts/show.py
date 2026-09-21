@@ -166,6 +166,10 @@ def _atlases(pack_id: str) -> list:
             "sample_count": data.get("sample_count"),
             "reproducible": bool((data.get("renderer") or {}).get("reproducible")),
         })
+    # Densest first. `paths.response_atlases` returns filename order, which puts
+    # the 128-point pilot after the 1,024-point atlas — the reverse of useful for
+    # anyone reading only the first line.
+    found.sort(key=lambda entry: entry["sample_count"] or 0, reverse=True)
     return found
 
 

@@ -132,7 +132,7 @@ the mapping — that is the guess this project exists to avoid.
 **When audio was supplied and an atlas covers the amp, start from it.**
 `show.py` reports `response_atlases`. A matching one gives measured starting
 values for free — see the [match skill](../match/SKILL.md) for the command and
-for the three limits on what it covers. Recipes remain the starting point for
+for the four limits on what it covers. Recipes remain the starting point for
 every amp and topology an atlas does not.
 
 **Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable

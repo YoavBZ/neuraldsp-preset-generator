@@ -187,14 +187,20 @@ def _unavailable(why: str):
     it means the checkout no longer fetches enough history and the guard has
     stopped running where it is the only thing watching.
     """
-    if os.environ.get("CI"):
+    if os.environ.get("GITHUB_ACTIONS"):
         pytest.fail(
-            f"the version guard could not run in CI: {why}.\n"
+            f"the version guard could not run: {why}.\n"
             f"  This check is the only thing that catches a shipped change with "
             f"no version bump, so a skip here is a silent hole.\n"
-            f"  The `test` job needs `fetch-depth: 0` on actions/checkout."
+            f"  Every job that runs the suite needs `fetch-depth: 0` on "
+            f"actions/checkout."
         )
-    pytest.skip(f"{why} — not CI, so this is a developer environment")
+    # Deliberately GITHUB_ACTIONS and not CI. The remedy above names a GitHub
+    # Actions input, and `CI=true` is set by GitLab, CircleCI, Travis and most
+    # Jenkins jobs — all of which default to a shallow single-branch clone with
+    # no `origin/main`. Keying on CI hard-failed those builds and told them to
+    # edit a file they do not have.
+    pytest.skip(f"{why} — not GitHub Actions, so the remedy would not apply")
 
 
 def test_a_shipped_change_bumps_the_version():
@@ -238,26 +244,39 @@ def test_a_shipped_change_bumps_the_version():
     )
 
 
-@pytest.mark.parametrize("in_ci,outcome", [(False, "skip"), (True, "fail")])
-def test_the_version_guard_refuses_to_skip_quietly_in_ci(monkeypatch, in_ci, outcome):
+@pytest.mark.parametrize("env,outcome", [
+    ({}, "skip"),
+    # `CI=true` with no GitHub Actions is GitLab, CircleCI, Travis, most Jenkins
+    # jobs — all of which default to a shallow single-branch clone with no
+    # `origin/main`. Keying the hard failure on CI hard-failed those builds and
+    # told them to set a GitHub Actions input they do not have.
+    ({"CI": "true"}, "skip"),
+    ({"GITHUB_ACTIONS": "true"}, "fail"),
+    ({"CI": "true", "GITHUB_ACTIONS": "true"}, "fail"),
+])
+def test_the_version_guard_refuses_to_skip_quietly_on_github(monkeypatch, env, outcome):
     """A guard that skips looks exactly like a guard that passes.
 
     That is not hypothetical here: the version sat at 0.4.0 for twenty-three PRs
-    with a green suite the whole way. So if this check cannot answer *in CI* —
-    the checkout stopped fetching history, the remote is gone — the build has to
-    go red rather than quietly stop watching. Locally, a developer with a shallow
-    clone or no remote should still be able to run the suite.
+    with a green suite the whole way. So where this repo's CI runs — GitHub
+    Actions, where the remedy applies and where the checkout is ours to fix — a
+    guard that cannot answer has to go red. Everywhere else it skips, because a
+    shallow clone on someone else's CI is not this repository's bug and the
+    advice would not help them.
     """
-    monkeypatch.delenv("CI", raising=False)
-    if in_ci:
-        monkeypatch.setenv("CI", "true")
+    for name in ("CI", "GITHUB_ACTIONS"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
 
     with pytest.raises(BaseException) as raised:
         _unavailable("no merge base with origin/main")
 
     kind = type(raised.value).__name__
     if outcome == "fail":
-        assert kind == "Failed", f"CI must not skip this guard, got {kind}"
+        assert kind == "Failed", f"GitHub Actions must not skip this guard, got {kind}"
         assert "fetch-depth" in str(raised.value), "say how to fix it"
     else:
-        assert kind == "Skipped", f"a local clone may legitimately lack a remote, got {kind}"
+        assert kind == "Skipped", (
+            f"a shallow clone outside GitHub Actions is not this repo's bug, got {kind}"
+        )
