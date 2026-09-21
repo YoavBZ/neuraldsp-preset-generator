@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import pathlib
 import re
+import subprocess
 
 import pytest
 
@@ -152,4 +153,64 @@ def test_plugin_internal_paths_are_root_relative(skill):
     assert not bare, (
         f"{skill.parent.name} refers to plugin files without "
         f"${{CLAUDE_PLUGIN_ROOT}}/: {sorted(set(bare))}"
+    )
+
+
+# What actually reaches a user's installed plugin. Deliberately not `tests/`,
+# `docs/`, `.github/` or the top-level prose files: those change without changing
+# what the plugin does.
+SHIPPED = (
+    ".claude-plugin/", "analysis/", "format/", "match/", "packs/", "pyproject.toml",
+    "reference/", "samples/", "scripts/", "skills/",
+)
+
+
+def _git(*args):
+    """Run a git command, or return None if it cannot answer."""
+    try:
+        done = subprocess.run(("git", "-C", str(ROOT)) + args,
+                              capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def test_a_shipped_change_bumps_the_version():
+    """A behaviour change with no version bump never reaches anybody.
+
+    `test_manifest_version_matches_the_package` only checks the two declarations
+    agree with *each other*, which they did throughout: the version sat at 0.4.0
+    from PR #16 to PR #42 while twenty-three PRs merged — the Tone King
+    calibration and benchmarks, the M7 response atlas and warm-start experiment,
+    blind auditions, paired provenance. All of it was unreachable from an
+    installed plugin, and nothing went red.
+
+    The rule is deliberately blunt: any shipped path changing requires the
+    declared version to differ from the merge base's. A docstring fix will
+    therefore ask for a bump too. That is the cheap side of the trade — a version
+    number costs nothing, and the expensive side is what happened above.
+    """
+    base = _git("merge-base", "HEAD", "origin/main")
+    if base is None:
+        pytest.skip("no merge base with origin/main (shallow clone, or no remote)")
+
+    changed = _git("diff", "--name-only", f"{base}...HEAD")
+    if changed is None:
+        pytest.skip("could not diff against the merge base")
+    touched = sorted(p for p in changed.splitlines() if p.startswith(SHIPPED))
+    if not touched:
+        return  # nothing a user would receive; no bump owed
+
+    previous = _git("show", f"{base}:.claude-plugin/plugin.json")
+    if previous is None:
+        pytest.skip("merge base has no plugin manifest to compare against")
+
+    was = json.loads(previous)["version"]
+    now = json.loads(MANIFEST.read_text())["version"]
+    assert now != was, (
+        f"{len(touched)} shipped path(s) changed but the version is still {now}:\n"
+        + "\n".join(f"  {path}" for path in touched[:10])
+        + (f"\n  … and {len(touched) - 10} more" if len(touched) > 10 else "")
+        + f"\nBump it in .claude-plugin/plugin.json and pyproject.toml — they "
+          f"must match, which test_manifest_version_matches_the_package checks."
     )
