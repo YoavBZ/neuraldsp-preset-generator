@@ -10,6 +10,7 @@ guard, and they run without needing the `claude` CLI installed.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -175,6 +176,27 @@ def _git(*args):
     return done.stdout.strip() if done.returncode == 0 else None
 
 
+def _unavailable(why: str):
+    """Skip locally; fail in CI.
+
+    A guard that silently skips is indistinguishable from a guard that passes,
+    and that is the failure being fixed here — `test_manifest_version_matches_
+    the_package` ran green for twenty-three PRs while checking nothing that
+    mattered. Outside CI a developer may legitimately have no remote, a shallow
+    clone, or no git at all. Inside CI, not being able to answer *is* the bug:
+    it means the checkout no longer fetches enough history and the guard has
+    stopped running where it is the only thing watching.
+    """
+    if os.environ.get("CI"):
+        pytest.fail(
+            f"the version guard could not run in CI: {why}.\n"
+            f"  This check is the only thing that catches a shipped change with "
+            f"no version bump, so a skip here is a silent hole.\n"
+            f"  The `test` job needs `fetch-depth: 0` on actions/checkout."
+        )
+    pytest.skip(f"{why} — not CI, so this is a developer environment")
+
+
 def test_a_shipped_change_bumps_the_version():
     """A behaviour change with no version bump never reaches anybody.
 
@@ -192,18 +214,18 @@ def test_a_shipped_change_bumps_the_version():
     """
     base = _git("merge-base", "HEAD", "origin/main")
     if base is None:
-        pytest.skip("no merge base with origin/main (shallow clone, or no remote)")
+        _unavailable("no merge base with origin/main (shallow clone, or no remote)")
 
     changed = _git("diff", "--name-only", f"{base}...HEAD")
     if changed is None:
-        pytest.skip("could not diff against the merge base")
+        _unavailable("could not diff against the merge base")
     touched = sorted(p for p in changed.splitlines() if p.startswith(SHIPPED))
     if not touched:
         return  # nothing a user would receive; no bump owed
 
     previous = _git("show", f"{base}:.claude-plugin/plugin.json")
     if previous is None:
-        pytest.skip("merge base has no plugin manifest to compare against")
+        _unavailable("merge base has no plugin manifest to compare against")
 
     was = json.loads(previous)["version"]
     now = json.loads(MANIFEST.read_text())["version"]
@@ -214,3 +236,28 @@ def test_a_shipped_change_bumps_the_version():
         + f"\nBump it in .claude-plugin/plugin.json and pyproject.toml — they "
           f"must match, which test_manifest_version_matches_the_package checks."
     )
+
+
+@pytest.mark.parametrize("in_ci,outcome", [(False, "skip"), (True, "fail")])
+def test_the_version_guard_refuses_to_skip_quietly_in_ci(monkeypatch, in_ci, outcome):
+    """A guard that skips looks exactly like a guard that passes.
+
+    That is not hypothetical here: the version sat at 0.4.0 for twenty-three PRs
+    with a green suite the whole way. So if this check cannot answer *in CI* —
+    the checkout stopped fetching history, the remote is gone — the build has to
+    go red rather than quietly stop watching. Locally, a developer with a shallow
+    clone or no remote should still be able to run the suite.
+    """
+    monkeypatch.delenv("CI", raising=False)
+    if in_ci:
+        monkeypatch.setenv("CI", "true")
+
+    with pytest.raises(BaseException) as raised:
+        _unavailable("no merge base with origin/main")
+
+    kind = type(raised.value).__name__
+    if outcome == "fail":
+        assert kind == "Failed", f"CI must not skip this guard, got {kind}"
+        assert "fetch-depth" in str(raised.value), "say how to fix it"
+    else:
+        assert kind == "Skipped", f"a local clone may legitimately lack a remote, got {kind}"
