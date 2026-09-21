@@ -29,11 +29,12 @@ packs/*/.learned-tones.md.lock
 # template, kept as a runnable example and test fixture. Must come after the
 # rules above or git keeps ignoring it.
 !samples/Example_Clean_PR12.xml
-# Generated from the line above by `apply_spec.py --recipe amp/sw50r-smooth-clean-lead`,
-# so it carries no plugin content that file does not already ship. Committed because
-# it is the topology `packs/morgan/response_atlas_sw50r_*.json` record as their
-# `--template`: an atlas whose provenance names a path nobody has cannot be reproduced.
+# Each generated from the line above by `apply_spec.py` setting only `selectedAmp`, so
+# they carry no plugin content that file does not already ship. Committed because they
+# are the topologies `packs/morgan/response_atlas_*.json` record as their `--template`:
+# an atlas whose provenance names a path nobody has cannot be reproduced.
 !samples/SW50R_Atlas_Topology.xml
+!samples/AC20_Atlas_Topology.xml
 !samples/.gitkeep
 
 # --- Generated output -----------------------------------------------------

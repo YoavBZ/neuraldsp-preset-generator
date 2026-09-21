@@ -88,23 +88,27 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
 It fingerprints the reference, finds the nearest stored responses and writes
 ordinary specs. Apply one with `apply_spec.py` and pass the result to
 `match_preset.py` as `--template`, so the search starts from measured settings
-instead of a recipe's defaults. Each atlas beat neutral settings on its own
-held-out set — PR12 on 24 of 24 targets, SW50R on 23 of 24 — and scaling each to
-1,024 points improved mean distance by 28% and 22% respectively.
+instead of a recipe's defaults. Every atlas beat neutral settings on 24 of 24 of
+its own held-out targets, and scaling each to 1,024 points improved mean distance
+by a further 20–30%.
 
-Five limits, each load-bearing:
+Six limits, each load-bearing:
 
-- **One amp each, one fixed topology.** Morgan ships atlases for PR12 and SW50R,
-  each with the cabinet and microphone fixed and gate, doubler, compressor,
-  drive, tremolo, reverb and delay bypassed. Pick the one whose `amp` matches the
-  amp you chose and the larger `sample_count` of that pair — `show.py` prints
-  both. They say nothing about a part needing any of those effects, and nothing
-  about AC20 or Tone King, which have no atlas.
-- **SW50R's atlas also pins three amp switches.** Its topology fixes
-  `sw50rBright` off, `sw50rTrebleBoost` on and `sw50rInputMode` high, none of
-  them swept, so every spec it produces asserts all three. `sw50rTrebleBoost` is
-  a measured +2.5 dB lift from 400 Hz to 4 kHz — if the tone wants that region
-  darker, an atlas start is working against you. PR12's atlas has no equivalent.
+- **One amp each, one fixed topology.** Morgan ships atlases for all three amps —
+  PR12, SW50R and AC20 — each with the cabinet and microphone fixed and gate,
+  doubler, compressor, drive, tremolo, reverb and delay bypassed. Pick the one
+  whose `amp` matches the amp you chose, at the larger `sample_count`; `show.py`
+  prints both figures. They say nothing about a part needing any of those
+  effects, and nothing about Tone King, which has no atlas.
+- **Switches are pinned, never swept.** Each topology is the bundled example with
+  only `selectedAmp` changed, so every amp switch sits wherever that example
+  leaves it and every spec the atlas produces asserts those positions. On SW50R
+  that means `sw50rTrebleBoost` on — a measured +2.5 dB lift from 400 Hz to
+  4 kHz. If the tone wants that region darker, an atlas start is working against
+  you, and no amount of local refinement inside the atlas will move it.
+- **AC20's numbers are the least repeatable.** Its neutral baseline moved 1.33%
+  between two runs of the same measurement, against 0.003% and 0.011% for the
+  other two. Treat an AC20 distance as the rough figure it is.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI

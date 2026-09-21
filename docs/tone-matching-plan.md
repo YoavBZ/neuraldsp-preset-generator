@@ -804,75 +804,63 @@ That is enough gain to retain the 1,024-point atlas as the current lookup
 artifact. The 128-point pilot remains the scale baseline, and neither file is
 dense enough to turn its finite observed ranges into mathematical plugin limits.
 
-#### M7-1 second amp — SW50R, the same two gates
+#### M7-1 across Morgan's three amps
 
-The atlas was PR12-only, which made every claim it supports amp-shaped: the
-`generate` skill could offer measured starting values for one of Morgan's three
-voices and recipe defaults for the other two. SW50R now has both gates, run with
-the pilot's topology, probe, held-out count, held-out seed and loss profile
-unchanged — only the amp and the template differ.
+The atlas was PR12-only, which made every claim it supports amp-shaped: one of
+three voices got measured starting values and the other two got recipe defaults.
+SW50R and AC20 now clear both gates on the same method — pilot's probe, held-out
+count, held-out seed, LHS seed and loss profile unchanged; only the amp and the
+template differ.
 
-The topology template is the bundled example with the amp recipe applied, because
-`build_response_atlas.py` refuses a template whose selector does not already name
-the amp:
+**The topology template sets `selectedAmp` and nothing else.** This matters more
+than it sounds. The first SW50R attempt built its template from
+`amp/sw50r-smooth-clean-lead`, and that recipe turns `sw50rBright` off — so a
+*taste* choice silently removed the amp's main brightness control, measured at
++8 dB at 6.3 kHz, from everything the atlas could reach. Switches are never swept,
+so whatever the template holds is pinned for every spec the atlas produces. Each
+topology is now the bundled example with one parameter changed, which leaves the
+switches at the example's own values for all three amps and keeps the three runs
+parallel.
 
 ```bash
+# one per amp; --spec sets selectedAmp only
 .venv/bin/python scripts/apply_spec.py --template samples/Example_Clean_PR12.xml \
-  --recipe amp/sw50r-smooth-clean-lead --name "SW50R Atlas Topology" \
-  --out /tmp/sw50r-template.xml
+  --spec <amp-selector-only.json> --out samples/SW50R_Atlas_Topology.xml
 
 .venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
-  --template /tmp/sw50r-template.xml --renderer swift --samples 128 \
-  --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
-  --out packs/morgan/response_atlas_sw50r_pilot.json
-
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
-  --template /tmp/sw50r-template.xml --renderer swift --samples 1024 \
+  --template samples/SW50R_Atlas_Topology.xml --renderer swift --samples 1024 \
   --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
   --out packs/morgan/response_atlas_sw50r_1024.json
 ```
 
 Morgan 1.1.1 through the reused Swift server, `reproducible=False`, per-band
-repeats within 0.23 dB. Both numbers carry that.
+repeats within 0.23 dB. Every number here carries that.
 
-| gate | neutral mean | atlas mean | held-out wins | renders |
-|---|---:|---:|---:|---:|
-| pilot, 128 points | 1.369 | 0.732 | 23/24 | 129 s |
-| scale, 1,024 points | 1.369 | **0.573** | **24/24** | 887 s |
+| amp | swept dims | neutral | pilot (128) | scaled (1,024) | closes | scale gain |
+|---|---:|---:|---:|---:|---:|---:|
+| PR12 | 26 | 1.640 | 0.814 | **0.583** | 64.5% | 28.4% |
+| SW50R | 27 | 1.525 | 0.754 | **0.602** | 60.5% | 20.2% |
+| AC20 | 24 | 2.6–2.7 | 0.915 | **0.640** | 76.1% | 30.1% |
 
-`compare_response_atlases.py` puts the scale step at 21.8% lower mean, better on
-24 of 24 targets, median target reduction 23.1%, smallest 1.4%.
+All three beat neutral on 24 of 24 held-out targets at both densities, and each
+scale step wins 22–23 of 24 targets.
 
-**What this does and does not show.** SW50R independently clears both gates —
-that is the result. It is *not* a demonstration that the two amps agree, and the
-absolute means inviting that reading (0.573 against PR12's 0.583) are the
-weakest basis for it. `atlas.compare_scale` refuses this pair outright — "cannot
-compare atlases with different amp" — because they differ in amp, swept
-dimensions, fixed settings and renderer build, and its docstring says that
-refusal exists to stop two merely similar runs being turned into a learning
-curve. Normalised for the different neutral baselines the agreement inverts:
-PR12 closes 64.5% of its neutral distance, SW50R 58.1%, and the scale gains are
-28.4% against 21.8%. Whether M7-1 generalises across amps needs a comparison
-this project can actually make, and this is not one.
+**What three amps do and do not establish.** Each independently clears both
+gates, on one method, which is the result. It is not a demonstration that the
+amps agree: `atlas.compare_scale` refuses any cross-amp pair — different amp,
+different swept dimensions, different fixed settings — and that refusal exists to
+stop merely similar runs being read as a trend. The fraction of neutral distance
+closed spans 60.5% to 76.1%, so they do not agree in any case.
 
-SW50R's lower neutral baseline (1.369 against 1.640) is unexplained. "More
-headroom" was asserted in an earlier draft and the artifacts do not support it:
-the two `achievable_ranges.crest_db` spans are near-identical, and SW50R's
-response cloud is slightly *wider*, not tighter. What it reflects is where the
-all-controls-at-midpoint neutral point falls inside a different control set.
+**AC20's baseline does not repeat as well as the others'.** The same neutral
+measurement, run twice, gave 2.643567 and 2.678757 — a **1.33%** drift, against
+0.003% for PR12 and 0.011% for SW50R on the same comparison. Two observations
+are not a spread, but they are enough to say AC20's figures should not be read to
+three significant figures the way the other two can, and that a future AC20
+result should replicate its baseline before reporting a small difference.
 
-**Three switches are frozen, and only on this amp.** The topology template is the
-bundled example with `amp/sw50r-smooth-clean-lead` applied, and that recipe sets
-`sw50rBright` off, `sw50rTrebleBoost` on and `sw50rInputMode` high. None is a
-swept dimension, so every spec `query_response_atlas.py` writes from this atlas
-pins all three. `sw50rTrebleBoost` matters most: the manifest measures it as a
-+2.5 dB lift from 400 Hz to 4 kHz, so an atlas start silently asserts that lift.
-PR12 has no comparable switches, which is why this limit is new with SW50R
-rather than inherited.
-
-It is still 1,024 points on one probe. The `achievable_ranges` in these files are
-observed ranges, not plugin limits, exactly as for PR12, and AC20 and Tone King
-still have no atlas at all.
+`achievable_ranges` in all six files remain observed ranges on one probe at
+1,024 points, not statements about the plugin. Tone King still has no atlas.
 
 #### M7-2 warm-start regressor — measured negative result
 
