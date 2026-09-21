@@ -235,19 +235,26 @@ def test_python_provenance_is_portable_without_rewriting_external_interpreters(
     assert atlas_builder._portable_executable() == str(external)
 
 
-def test_committed_pr12_atlases_are_valid_qualified_and_record_exact_provenance():
-    expected = {
-        "response_atlas_pr12_pilot.json": 128,
-        "response_atlas_pr12_1024.json": 1024,
-    }
+def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance():
+    """Every atlas, not a named two.
+
+    This hardcoded the PR12 filenames, so the SW50R pair shipped 9 MB with none
+    of these assertions applied to it — and its `build.command` pointed at a
+    scratchpad, which is exactly what the `--out` assertion below exists to
+    catch. A test that names its subjects cannot cover the next one.
+    """
+    from packs import paths
+
+    found = paths.response_atlases("morgan")
+    assert len(found) >= 2, "morgan ships a pilot and a scaled atlas per amp"
     documents = {}
-    for filename, samples in expected.items():
-        path = ROOT / "packs" / "morgan" / filename
+    for path in found:
+        samples = int(json.loads(path.read_text())["sample_count"])
         document = atlas.load(path)
-        documents[samples] = document
+        documents.setdefault(document["amp"], {})[samples] = document
 
         assert document["sample_count"] == samples
-        assert len(document["dimensions"]) == 26
+        assert document["dimensions"], "an atlas with no swept dimension is a point"
         assert document["renderer"]["plugin_version"] == "1.1.1"
         assert document["renderer"]["reproducible"] is False
         assert "reproducible=False" in document["measurement_caveat"]
@@ -258,10 +265,38 @@ def test_committed_pr12_atlases_are_valid_qualified_and_record_exact_provenance(
         assert command[0] == document["build"]["python_executable"]
         assert document["build"]["python_executable"] == ".venv/bin/python"
         assert command[command.index("--out") + 1] == str(path.relative_to(ROOT))
+        # The template half of the same bug. A scratchpad `--out` was caught by
+        # the line above; a scratchpad `--template` was not, and an atlas whose
+        # topology nobody has is exactly as unreproducible.
+        template = command[command.index("--template") + 1]
+        assert (ROOT / template).is_file(), (
+            f"{path.name} records --template {template}, which is not in the "
+            f"repository — commit the topology or the atlas cannot be rebuilt"
+        )
+        assert document["build"]["template"] == template
 
-    comparison = atlas.compare_scale(documents[128], documents[1024])
-    assert comparison["candidate_better_targets"] == 23
-    assert comparison["mean_reduction_fraction"] == pytest.approx(0.2836220902)
+    # Each amp's own pilot-to-scale comparison. Deliberately never across amps:
+    # `compare_scale` refuses that pair, and the refusal is the point.
+    assert set(documents) >= {"pr12", "sw50r", "ac20"}, "every Morgan amp is covered"
+    for amp, by_count in documents.items():
+        assert {128, 1024} <= set(by_count), f"{amp} is missing a gate"
+        comparison = atlas.compare_scale(by_count[128], by_count[1024])
+        # What the scale gate asks is that more points help, clearly and on most
+        # targets. The bound was 23 because PR12 scored 23 — which is copying a
+        # result, not stating a requirement; SW50R and AC20 score 22 and pass the
+        # gate. 20 of 24 is far enough above chance to catch a scale step that
+        # did not work.
+        assert comparison["candidate_better_targets"] >= 20, amp
+        # A bound, not a recorded result. `origin/main` pinned PR12's exact
+        # 0.2836220902, which cannot survive a second amp: the three measured
+        # gains are 28.4%, 20.2% and 30.1%. 0.15 sits below the lowest of those
+        # and well above zero, so it still fails a scale step that did nothing.
+        assert comparison["mean_reduction_fraction"] > 0.15, amp
+
+        # The figure the skill quotes to users ("beat neutral on 24 of 24") had
+        # no test behind it: `beats_neutral` only compares means.
+        for document in by_count.values():
+            assert document["build"]["validation"]["atlas_win_rate"] == 1.0, amp
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert '"*/response_atlas_*.json"' in package_data

@@ -88,16 +88,31 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
 It fingerprints the reference, finds the nearest stored responses and writes
 ordinary specs. Apply one with `apply_spec.py` and pass the result to
 `match_preset.py` as `--template`, so the search starts from measured settings
-instead of a recipe's defaults. On its own held-out set the pilot beat neutral
-settings on 24 of 24 targets, and scaling to 1,024 points improved mean distance
-a further 28%.
+instead of a recipe's defaults. Every atlas beat neutral settings on 24 of 24 of
+its own held-out targets, and scaling each to 1,024 points improved mean distance
+by a further 20–30%.
 
-Four limits, each load-bearing:
+Six limits, each load-bearing:
 
-- **One amp, one fixed topology.** Morgan's atlas covers PR12 with the cabinet
-  and microphone fixed and gate, doubler, compressor, drive, tremolo, reverb and
-  delay bypassed. It says nothing about a part needing any of those, and nothing
-  about AC20, SW50R or Tone King — no atlas exists for them.
+- **One amp each, one fixed topology.** Morgan ships atlases for all three amps —
+  PR12, SW50R and AC20 — each with the cabinet and microphone fixed and gate,
+  doubler, compressor, drive, tremolo, reverb and delay bypassed. Pick the one
+  whose `amp` matches the amp you chose, at the larger `sample_count`; `show.py`
+  prints both figures. They say nothing about a part needing any of those
+  effects, and nothing about Tone King, which has no atlas.
+- **Switches are pinned, never swept.** Each topology is the bundled example with
+  only `selectedAmp` changed, so every amp switch sits wherever that example
+  leaves it, and every spec the atlas produces asserts those positions. The ones
+  that move the most tone: AC20 pins `ac20BassTreble` on, a measured **−15.6 dB
+  at 60 Hz**, and `ac20Bright` on; SW50R pins `sw50rTrebleBoost` on, +2.5 dB from
+  400 Hz to 4 kHz. If the part needs any of those the other way, an atlas start
+  is working against you and no refinement inside the atlas can move it — set the
+  switch yourself after applying the spec.
+- **AC20's two baseline runs differ by an unexplained offset.** Repeating its
+  neutral measurement moved 20 of 24 targets by about +0.042, all in the same
+  direction. That is a bias, not scatter, and its cause is unidentified. AC20's
+  gate result is unaffected at that size, but do not report a small AC20
+  difference as real without replicating the baseline.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
