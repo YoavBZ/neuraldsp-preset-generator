@@ -812,6 +812,14 @@ SW50R and AC20 now clear both gates on the same method — pilot's probe, held-o
 count, held-out seed, LHS seed and loss profile unchanged; only the amp and the
 template differ.
 
+**One caveat on "the same method".** The three runs share a probe, seeds,
+held-out set and loss profile, but PR12's atlases were built on an earlier
+renderer (`audio-unit-renderer-edd93e0965a1`, no `process=reuse` in
+`quality_mode`) than SW50R's and AC20's. `atlas.compare_scale` treats a differing
+renderer build as disqualifying, so PR12 is strictly a third run rather than a
+third arm — including in the repeatability comparison above, where only the
+AC20-versus-SW50R half shares a build.
+
 **The topology template sets `selectedAmp` and nothing else.** This matters more
 than it sounds. The first SW50R attempt built its template from
 `amp/sw50r-smooth-clean-lead`, and that recipe turns `sw50rBright` off — so a
@@ -852,15 +860,33 @@ different swept dimensions, different fixed settings — and that refusal exists
 stop merely similar runs being read as a trend. The fraction of neutral distance
 closed spans 60.5% to 76.1%, so they do not agree in any case.
 
-**AC20's baseline does not repeat as well as the others'.** The same neutral
-measurement, run twice, gave 2.643567 and 2.678757 — a **1.33%** drift, against
-0.003% for PR12 and 0.011% for SW50R on the same comparison. Two observations
-are not a spread, but they are enough to say AC20's figures should not be read to
-three significant figures the way the other two can, and that a future AC20
-result should replicate its baseline before reporting a small difference.
+**AC20's two baseline runs differ by a systematic offset, and the cause is not
+known.** The same neutral measurement gave 2.643567 and 2.678757. Per target,
+that is not scatter: 20 of 24 targets moved by **+0.0422 ± 0.0042**, every one of
+them positive, and the remaining 4 moved by less than 0.00013. PR12 moved no
+target by more than 0.001 and SW50R moved one.
 
-`achievable_ranges` in all six files remain observed ranges on one probe at
-1,024 points, not statements about the plugin. Tone King still has no atlas.
+A near-constant additive shift on most targets with a handful untouched is not
+the shape two-sided 0.23 dB band noise produces, so calling it repeatability
+scatter would be wrong — and so would the obvious remedy, since rounding does not
+remove an offset. Something differed between the two AC20 builds and this project
+has not identified it. The bias carries into the atlas means and therefore into
+AC20's derived percentages, though the size is small: recomputing `closes` against
+the pilot's baseline instead of the scaled run's moves 76.1% to 75.8%.
+
+What follows for use: AC20's gate result stands, because a +0.04 shift on a
+neutral of 2.6 cannot turn a pass into a failure. What does not stand is reading
+a small AC20 difference as real without replicating its baseline first.
+
+`achievable_ranges` in all six files remain observed ranges on one probe — at
+1,024 points for three of them and 128 for the pilots — not statements about the
+plugin. Tone King still has no atlas.
+
+**Each topology pins its amp's switches**, since switches are never swept. AC20's
+are the larger pair: `ac20BassTreble` on is a measured **−15.6 dB at 60 Hz**
+("a big cut", `packs/morgan/tone.md`), and `ac20Bright` on lifts the top. SW50R
+pins `sw50rTrebleBoost` on, +2.5 dB from 400 Hz to 4 kHz. Every spec an atlas
+produces asserts these, and no refinement inside the atlas can move them.
 
 #### M7-2 warm-start regressor — measured negative result
 

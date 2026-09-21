@@ -265,6 +265,15 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance()
         assert command[0] == document["build"]["python_executable"]
         assert document["build"]["python_executable"] == ".venv/bin/python"
         assert command[command.index("--out") + 1] == str(path.relative_to(ROOT))
+        # The template half of the same bug. A scratchpad `--out` was caught by
+        # the line above; a scratchpad `--template` was not, and an atlas whose
+        # topology nobody has is exactly as unreproducible.
+        template = command[command.index("--template") + 1]
+        assert (ROOT / template).is_file(), (
+            f"{path.name} records --template {template}, which is not in the "
+            f"repository — commit the topology or the atlas cannot be rebuilt"
+        )
+        assert document["build"]["template"] == template
 
     # Each amp's own pilot-to-scale comparison. Deliberately never across amps:
     # `compare_scale` refuses that pair, and the refusal is the point.
@@ -278,7 +287,16 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance()
         # gate. 20 of 24 is far enough above chance to catch a scale step that
         # did not work.
         assert comparison["candidate_better_targets"] >= 20, amp
+        # A bound, not a recorded result. `origin/main` pinned PR12's exact
+        # 0.2836220902, which cannot survive a second amp: the three measured
+        # gains are 28.4%, 20.2% and 30.1%. 0.15 sits below the lowest of those
+        # and well above zero, so it still fails a scale step that did nothing.
         assert comparison["mean_reduction_fraction"] > 0.15, amp
+
+        # The figure the skill quotes to users ("beat neutral on 24 of 24") had
+        # no test behind it: `beats_neutral` only compares means.
+        for document in by_count.values():
+            assert document["build"]["validation"]["atlas_win_rate"] == 1.0, amp
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert '"*/response_atlas_*.json"' in package_data

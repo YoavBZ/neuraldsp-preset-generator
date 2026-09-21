@@ -102,13 +102,17 @@ Six limits, each load-bearing:
   effects, and nothing about Tone King, which has no atlas.
 - **Switches are pinned, never swept.** Each topology is the bundled example with
   only `selectedAmp` changed, so every amp switch sits wherever that example
-  leaves it and every spec the atlas produces asserts those positions. On SW50R
-  that means `sw50rTrebleBoost` on — a measured +2.5 dB lift from 400 Hz to
-  4 kHz. If the tone wants that region darker, an atlas start is working against
-  you, and no amount of local refinement inside the atlas will move it.
-- **AC20's numbers are the least repeatable.** Its neutral baseline moved 1.33%
-  between two runs of the same measurement, against 0.003% and 0.011% for the
-  other two. Treat an AC20 distance as the rough figure it is.
+  leaves it, and every spec the atlas produces asserts those positions. The ones
+  that move the most tone: AC20 pins `ac20BassTreble` on, a measured **−15.6 dB
+  at 60 Hz**, and `ac20Bright` on; SW50R pins `sw50rTrebleBoost` on, +2.5 dB from
+  400 Hz to 4 kHz. If the part needs any of those the other way, an atlas start
+  is working against you and no refinement inside the atlas can move it — set the
+  switch yourself after applying the spec.
+- **AC20's two baseline runs differ by an unexplained offset.** Repeating its
+  neutral measurement moved 20 of 24 targets by about +0.042, all in the same
+  direction. That is a bias, not scatter, and its cause is unidentified. AC20's
+  gate result is unaffected at that size, but do not report a small AC20
+  difference as real without replicating the baseline.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
