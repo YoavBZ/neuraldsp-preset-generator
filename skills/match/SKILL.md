@@ -100,6 +100,14 @@ Three limits, each load-bearing:
   about AC20, SW50R or Tone King — no atlas exists for them.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
+- **Near-useless against a full `mix`.** The atlas holds guitar-through-amp
+  responses, and a mix is not one. Measured on a mastered ballad, the nearest of
+  1,024 entries sat at distance 1.907 — worse than the 1.640 neutral baseline the
+  pilot beat — and the tool listed spectral tilt, low-frequency corner and crest
+  as outside its sampled range, which are the bass guitar and the master chain
+  rather than the guitar. Query an atlas for `paired_di`, `isolated_stem` or
+  `separated_stem`; on a `mix`, read the out-of-range list as confirmation that
+  you are not measuring a guitar and go back to the excerpt.
 - **Not an achievability oracle.** The file carries `achievable_ranges`, and at
   this density those are one finite atlas's observed range on one probe, not
   limits on the plugin. Do not tell anyone "this amp cannot get darker than X".
