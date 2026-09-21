@@ -804,6 +804,56 @@ That is enough gain to retain the 1,024-point atlas as the current lookup
 artifact. The 128-point pilot remains the scale baseline, and neither file is
 dense enough to turn its finite observed ranges into mathematical plugin limits.
 
+#### M7-1 second amp — SW50R, the same two gates
+
+The atlas was PR12-only, which made every claim it supports amp-shaped: the
+`generate` skill could offer measured starting values for one of Morgan's three
+voices and recipe defaults for the other two. SW50R now has both gates, run with
+the pilot's topology, probe, held-out count, held-out seed and loss profile
+unchanged — only the amp and the template differ.
+
+The topology template is the bundled example with the amp recipe applied, because
+`build_response_atlas.py` refuses a template whose selector does not already name
+the amp:
+
+```bash
+.venv/bin/python scripts/apply_spec.py --template samples/Example_Clean_PR12.xml \
+  --recipe amp/sw50r-smooth-clean-lead --name "SW50R Atlas Topology" \
+  --out /tmp/sw50r-template.xml
+
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+  --template /tmp/sw50r-template.xml --renderer swift --samples 128 \
+  --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
+  --out packs/morgan/response_atlas_sw50r_pilot.json
+
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+  --template /tmp/sw50r-template.xml --renderer swift --samples 1024 \
+  --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
+  --out packs/morgan/response_atlas_sw50r_1024.json
+```
+
+Morgan 1.1.1 through the reused Swift server, `reproducible=False`, per-band
+repeats within 0.23 dB. Both numbers carry that.
+
+| gate | neutral mean | atlas mean | held-out wins | renders |
+|---|---:|---:|---:|---:|
+| pilot, 128 points | 1.369 | 0.732 | 23/24 | 129 s |
+| scale, 1,024 points | 1.369 | **0.573** | **24/24** | 887 s |
+
+`compare_response_atlases.py` puts the scale step at 21.8% lower mean, better on
+24 of 24 targets, median target reduction 23.1%, smallest 1.4%.
+
+**SW50R lands where PR12 landed.** PR12 scaled 0.814 → 0.583 for 28.4%; SW50R
+scales 0.732 → 0.573 for 21.8%, from a lower neutral baseline (1.369 against
+1.640 — SW50R has more headroom, so its neutral settings start closer to a
+random target). Two amps reaching the same absolute distance under one method is
+the first evidence that M7-1's result is a property of the approach rather than
+of PR12.
+
+It is still 1,024 points on one probe. The `achievable_ranges` in these files are
+observed ranges, not plugin limits, exactly as for PR12, and AC20 and Tone King
+still have no atlas at all.
+
 #### M7-2 warm-start regressor — measured negative result
 
 The warm-start experiment fits one standardized multi-output ridge model directly

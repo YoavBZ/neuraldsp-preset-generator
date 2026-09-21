@@ -94,10 +94,11 @@ a further 28%.
 
 Four limits, each load-bearing:
 
-- **One amp, one fixed topology.** Morgan's atlas covers PR12 with the cabinet
-  and microphone fixed and gate, doubler, compressor, drive, tremolo, reverb and
-  delay bypassed. It says nothing about a part needing any of those, and nothing
-  about AC20, SW50R or Tone King — no atlas exists for them.
+- **One amp, one fixed topology.** Morgan ships atlases for PR12 and SW50R, each
+  with the cabinet and microphone fixed and gate, doubler, compressor, drive,
+  tremolo, reverb and delay bypassed. Pick the one whose `amp` matches the amp you
+  chose — `show.py` prints it. They say nothing about a part needing any of those
+  effects, and nothing about AC20 or Tone King, which have no atlas.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
