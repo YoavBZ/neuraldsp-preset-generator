@@ -165,6 +165,25 @@ def learned_tones_path(pack_id: str) -> pathlib.Path:
     return data_root() / "packs" / pack_id / "learned-tones.md"
 
 
+def response_atlases(pack_id: str) -> List[pathlib.Path]:
+    """Response atlases committed for one pack, newest-largest last.
+
+    These ship with the code rather than living under the data root: they are
+    measurements of the *plugin*, identical for every user, and building one
+    costs hours of renders. `learned-tones.md` is the opposite — one person's
+    taste — which is why the two live in different places.
+
+    Discovery matters more than it looks. An atlas nothing points at is research
+    that never reaches the product: `query_response_atlas.py` turns one into
+    starting specs without opening the plugin, and until `show.py` reported
+    these, an agent following the skills had no way to learn one existed.
+    """
+    directory = PLUGIN_ROOT / "packs" / pack_id
+    if not directory.is_dir():
+        return []
+    return sorted(directory.glob("response_atlas_*.json"))
+
+
 def observed_path(pack_id: str) -> pathlib.Path:
     """Generated observed-value catalog for one plugin. Never committed."""
     return data_root() / "packs" / pack_id / "observed.json"

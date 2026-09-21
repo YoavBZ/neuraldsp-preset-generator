@@ -118,6 +118,11 @@ def main() -> None:
     tone = paths.PLUGIN_ROOT / "packs" / pack.pack_id / "tone.md"
     out["tone_knowledge"] = {"path": str(tone), "exists": tone.exists()}
     out["learned_notes"] = {"path": str(notes), "exists": notes.exists()}
+    # Response atlases shipped for this pack. Reported because an atlas nothing
+    # points at is research that never reaches anybody: `query_response_atlas.py`
+    # turns one into starting specs with no renders at all, and the skills had no
+    # way to discover that one existed.
+    out["response_atlases"] = _atlases(pack.pack_id)
 
     if preset.duplicates:
         out["duplicate_parameters"] = sorted(
@@ -137,6 +142,31 @@ def main() -> None:
     else:
         json.dump(out, sys.stdout, indent=2)
         sys.stdout.write("\n")
+
+
+def _atlases(pack_id: str) -> list:
+    """What each committed atlas covers, for a skill deciding whether to use one.
+
+    An atlas is specific to one amp and one fixed topology, so the amp and the
+    point count are the two facts that decide whether it applies at all. A
+    malformed or unreadable file is skipped rather than failing the inspection:
+    reading a preset must not depend on optional research artifacts.
+    """
+    found = []
+    for path in paths.response_atlases(pack_id):
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if data.get("schema") != "response-atlas-1":
+            continue
+        found.append({
+            "path": str(path),
+            "amp": data.get("amp"),
+            "sample_count": data.get("sample_count"),
+            "reproducible": bool((data.get("renderer") or {}).get("reproducible")),
+        })
+    return found
 
 
 def print_text(out: dict, pack) -> None:
@@ -163,6 +193,10 @@ def print_text(out: dict, pack) -> None:
         f"{'' if notes['exists'] else '  (none yet)'}"
     )
     print(f"  data root:      {out['data_root']}  [{out['data_root_origin']}]")
+    for atlas in out.get("response_atlases", []):
+        repeatable = "" if atlas["reproducible"] else ", reproducible=false"
+        print(f"  response atlas: {atlas['path']}  "
+              f"({atlas['amp']}, {atlas['sample_count']} points{repeatable})")
     if out.get("duplicate_parameters"):
         print(
             f"\n  (!) duplicate parameter path(s): "

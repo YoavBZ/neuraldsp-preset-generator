@@ -73,6 +73,40 @@ names a song or artist, research the recorded amp, cabinet, microphone and effec
 with reliable sources. Use that evidence and the pack's `tone.md` to choose the
 template, amp/channel and discrete topology before matching. Keep source links.
 
+### A measured starting point, when an atlas covers the amp
+
+`show.py` lists any response atlas the pack ships, with the amp and point count
+each one covers. When one matches the amp you just chose, query it **before**
+spending a render budget — it costs no renders at all:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
+  --atlas "${CLAUDE_PLUGIN_ROOT}/packs/morgan/response_atlas_pr12_1024.json" \
+  --reference REFERENCE.wav --reference-mode separated_stem --out-dir RUN_DIR
+```
+
+It fingerprints the reference, finds the nearest stored responses and writes
+ordinary specs. Apply one with `apply_spec.py` and pass the result to
+`match_preset.py` as `--template`, so the search starts from measured settings
+instead of a recipe's defaults. On its own held-out set the pilot beat neutral
+settings on 24 of 24 targets, and scaling to 1,024 points improved mean distance
+a further 28%.
+
+Three limits, each load-bearing:
+
+- **One amp, one fixed topology.** Morgan's atlas covers PR12 with the cabinet
+  and microphone fixed and gate, doubler, compressor, drive, tremolo, reverb and
+  delay bypassed. It says nothing about a part needing any of those, and nothing
+  about AC20, SW50R or Tone King — no atlas exists for them.
+- **A start, not an answer.** The stored settings are a place to search from.
+  Say so when reporting; a nearest-neighbour hit is not a match.
+- **Not an achievability oracle.** The file carries `achievable_ranges`, and at
+  this density those are one finite atlas's observed range on one probe, not
+  limits on the plugin. Do not tell anyone "this amp cannot get darker than X".
+
+Everything an atlas reports inherits `reproducible=false` from the backend that
+built it.
+
 Do not enumerate switches or selectors casually. Enumeration divides the budget
 among complete inner searches, and M5 did not demonstrate an accuracy benefit on
 the real backend. If trying a discrete control is material, run
