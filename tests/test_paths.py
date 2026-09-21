@@ -262,3 +262,31 @@ def test_the_origin_always_describes_the_path_actually_used(installed, monkeypat
         assert paths.data_root_origin() == expected
         assert str(paths.data_root()) in paths.describe_roots()
         assert paths.data_root_origin() in paths.describe_roots()
+
+
+# --- response atlases: research nothing points at never reaches anybody ------
+
+
+def test_committed_atlases_are_found_for_the_pack_that_has_them():
+    found = paths.response_atlases("morgan")
+    assert found, "morgan ships at least one response atlas"
+    assert all(p.name.startswith("response_atlas_") for p in found)
+    assert all(p.suffix == ".json" for p in found)
+
+
+def test_a_pack_with_no_atlas_is_not_an_error():
+    """Tone King has none, and asking must not raise or invent one."""
+    assert paths.response_atlases("toneking") == []
+    assert paths.response_atlases("no-such-pack") == []
+
+
+def test_atlases_come_from_the_code_not_the_data_root(monkeypatch, tmp_path):
+    """An atlas is a measurement of the plugin — identical for every user and
+    hours of renders to build — so it ships with the code. `learned-tones.md` is
+    one person's taste and lives under the data root. Mixing the two up would
+    either lose the notes on update or ask every user to rebuild the atlas."""
+    monkeypatch.setenv("CLAUDE_PLUGIN_DATA", str(tmp_path))
+    assert paths.data_root() == tmp_path.resolve()
+    found = paths.response_atlases("morgan")
+    assert found, "moving the data root must not hide the shipped atlases"
+    assert all(paths.PLUGIN_ROOT in p.parents for p in found)

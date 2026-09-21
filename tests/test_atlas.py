@@ -340,3 +340,75 @@ def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):
 
     assert result.returncode == 2
     assert "stores fingerprints rather than waveforms" in result.stderr
+
+
+# --- what `show.py` tells a skill about the atlases a pack ships -------------
+
+
+def test_show_reports_each_atlas_with_the_amp_and_density_it_covers():
+    """An atlas applies to exactly one amp and one fixed topology, so those are
+    the facts that decide whether a skill can use it at all. Until `show.py`
+    reported them, an agent following the skills had no way to discover that an
+    atlas existed — the M7 research was committed and unreachable."""
+    from scripts.show import _atlases
+
+    reported = _atlases("morgan")
+    assert reported, "morgan ships atlases and they must be discoverable"
+    for entry in reported:
+        assert entry["amp"], "the amp is what decides whether it applies"
+        assert entry["sample_count"] > 0
+        assert pathlib.Path(entry["path"]).exists()
+        assert entry["reproducible"] is False, (
+            "every atlas here was built on a backend that does not repeat itself, "
+            "and anything derived from one inherits that"
+        )
+    assert _atlases("toneking") == [], "no atlas exists for Tone King"
+
+
+def test_show_skips_a_file_it_cannot_read_rather_than_failing(monkeypatch, tmp_path):
+    """Inspecting a preset must not depend on optional research artifacts: a
+    truncated download or a future schema should cost the atlas line, not the
+    whole `show.py` run."""
+    from packs import paths
+    from scripts import show
+
+    broken = tmp_path / "response_atlas_broken.json"
+    broken.write_text("{ not json")
+    wrong_schema = tmp_path / "response_atlas_future.json"
+    wrong_schema.write_text(json.dumps({"schema": "response-atlas-99", "amp": "pr12"}))
+    monkeypatch.setattr(paths, "response_atlases", lambda pack: [broken, wrong_schema])
+
+    assert show._atlases("morgan") == []
+
+
+def test_show_actually_emits_the_atlases_it_discovers():
+    """Exercise the CLI, not just the helper.
+
+    The helper can be perfect while nothing calls it. Both skills now tell an
+    agent to read `show.py`'s `response_atlases`, so discoverability *is* the
+    feature — and a review found that deleting the two wiring lines in `show.py`
+    left the whole suite green, because the tests only called the private
+    helper.
+    """
+    root = pathlib.Path(__file__).resolve().parents[1]
+    preset = root / "samples" / "Example_Clean_PR12.xml"
+
+    done = subprocess.run(
+        [sys.executable, str(root / "scripts" / "show.py"), str(preset)],
+        capture_output=True, text=True, cwd=root,
+    )
+    assert done.returncode == 0, done.stderr
+    reported = json.loads(done.stdout)["response_atlases"]
+    assert reported, "morgan ships atlases and show.py must surface them"
+    assert reported[0]["sample_count"] >= reported[-1]["sample_count"], (
+        "densest first: filename order puts the 128-point pilot last, which is "
+        "the line someone skimming is most likely to read as current"
+    )
+
+    text = subprocess.run(
+        [sys.executable, str(root / "scripts" / "show.py"), str(preset), "--text"],
+        capture_output=True, text=True, cwd=root,
+    )
+    assert text.returncode == 0, text.stderr
+    assert "response atlas:" in text.stdout, "the human view has to show them too"
+    assert str(reported[0]["sample_count"]) in text.stdout

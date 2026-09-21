@@ -10,8 +10,10 @@ guard, and they run without needing the `claude` CLI installed.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import re
+import subprocess
 
 import pytest
 
@@ -153,3 +155,128 @@ def test_plugin_internal_paths_are_root_relative(skill):
         f"{skill.parent.name} refers to plugin files without "
         f"${{CLAUDE_PLUGIN_ROOT}}/: {sorted(set(bare))}"
     )
+
+
+# What actually reaches a user's installed plugin. Deliberately not `tests/`,
+# `docs/`, `.github/` or the top-level prose files: those change without changing
+# what the plugin does.
+SHIPPED = (
+    ".claude-plugin/", "analysis/", "format/", "match/", "packs/", "pyproject.toml",
+    "reference/", "samples/", "scripts/", "skills/",
+)
+
+
+def _git(*args):
+    """Run a git command, or return None if it cannot answer."""
+    try:
+        done = subprocess.run(("git", "-C", str(ROOT)) + args,
+                              capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def _unavailable(why: str):
+    """Skip locally; fail in CI.
+
+    A guard that silently skips is indistinguishable from a guard that passes,
+    and that is the failure being fixed here — `test_manifest_version_matches_
+    the_package` ran green for twenty-three PRs while checking nothing that
+    mattered. Outside CI a developer may legitimately have no remote, a shallow
+    clone, or no git at all. Inside CI, not being able to answer *is* the bug:
+    it means the checkout no longer fetches enough history and the guard has
+    stopped running where it is the only thing watching.
+    """
+    if os.environ.get("GITHUB_ACTIONS"):
+        pytest.fail(
+            f"the version guard could not run: {why}.\n"
+            f"  This check is the only thing that catches a shipped change with "
+            f"no version bump, so a skip here is a silent hole.\n"
+            f"  Every job that runs the suite needs `fetch-depth: 0` on "
+            f"actions/checkout."
+        )
+    # Deliberately GITHUB_ACTIONS and not CI. The remedy above names a GitHub
+    # Actions input, and `CI=true` is set by GitLab, CircleCI, Travis and most
+    # Jenkins jobs — all of which default to a shallow single-branch clone with
+    # no `origin/main`. Keying on CI hard-failed those builds and told them to
+    # edit a file they do not have.
+    pytest.skip(f"{why} — not GitHub Actions, so the remedy would not apply")
+
+
+def test_a_shipped_change_bumps_the_version():
+    """A behaviour change with no version bump never reaches anybody.
+
+    `test_manifest_version_matches_the_package` only checks the two declarations
+    agree with *each other*, which they did throughout: the version sat at 0.4.0
+    from PR #16 to PR #42 while twenty-three PRs merged — the Tone King
+    calibration and benchmarks, the M7 response atlas and warm-start experiment,
+    blind auditions, paired provenance. All of it was unreachable from an
+    installed plugin, and nothing went red.
+
+    The rule is deliberately blunt: any shipped path changing requires the
+    declared version to differ from the merge base's. A docstring fix will
+    therefore ask for a bump too. That is the cheap side of the trade — a version
+    number costs nothing, and the expensive side is what happened above.
+    """
+    base = _git("merge-base", "HEAD", "origin/main")
+    if base is None:
+        _unavailable("no merge base with origin/main (shallow clone, or no remote)")
+
+    changed = _git("diff", "--name-only", f"{base}...HEAD")
+    if changed is None:
+        _unavailable("could not diff against the merge base")
+    touched = sorted(p for p in changed.splitlines() if p.startswith(SHIPPED))
+    if not touched:
+        return  # nothing a user would receive; no bump owed
+
+    previous = _git("show", f"{base}:.claude-plugin/plugin.json")
+    if previous is None:
+        _unavailable("merge base has no plugin manifest to compare against")
+
+    was = json.loads(previous)["version"]
+    now = json.loads(MANIFEST.read_text())["version"]
+    assert now != was, (
+        f"{len(touched)} shipped path(s) changed but the version is still {now}:\n"
+        + "\n".join(f"  {path}" for path in touched[:10])
+        + (f"\n  … and {len(touched) - 10} more" if len(touched) > 10 else "")
+        + f"\nBump it in .claude-plugin/plugin.json and pyproject.toml — they "
+          f"must match, which test_manifest_version_matches_the_package checks."
+    )
+
+
+@pytest.mark.parametrize("env,outcome", [
+    ({}, "skip"),
+    # `CI=true` with no GitHub Actions is GitLab, CircleCI, Travis, most Jenkins
+    # jobs — all of which default to a shallow single-branch clone with no
+    # `origin/main`. Keying the hard failure on CI hard-failed those builds and
+    # told them to set a GitHub Actions input they do not have.
+    ({"CI": "true"}, "skip"),
+    ({"GITHUB_ACTIONS": "true"}, "fail"),
+    ({"CI": "true", "GITHUB_ACTIONS": "true"}, "fail"),
+])
+def test_the_version_guard_refuses_to_skip_quietly_on_github(monkeypatch, env, outcome):
+    """A guard that skips looks exactly like a guard that passes.
+
+    That is not hypothetical here: the version sat at 0.4.0 for twenty-three PRs
+    with a green suite the whole way. So where this repo's CI runs — GitHub
+    Actions, where the remedy applies and where the checkout is ours to fix — a
+    guard that cannot answer has to go red. Everywhere else it skips, because a
+    shallow clone on someone else's CI is not this repository's bug and the
+    advice would not help them.
+    """
+    for name in ("CI", "GITHUB_ACTIONS"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+
+    with pytest.raises(BaseException) as raised:
+        _unavailable("no merge base with origin/main")
+
+    kind = type(raised.value).__name__
+    if outcome == "fail":
+        assert kind == "Failed", f"GitHub Actions must not skip this guard, got {kind}"
+        assert "fetch-depth" in str(raised.value), "say how to fix it"
+    else:
+        assert kind == "Skipped", (
+            f"a shallow clone outside GitHub Actions is not this repo's bug, got {kind}"
+        )
