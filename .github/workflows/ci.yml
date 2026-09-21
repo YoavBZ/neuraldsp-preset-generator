@@ -63,6 +63,10 @@ jobs:
         python-version: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Same reason as the test job: tests/test_plugin_manifest.py compares
+          # against the merge base and fails rather than skips in CI.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
