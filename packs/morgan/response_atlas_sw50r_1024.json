@@ -287840,16 +287840,16 @@
     }
   ],
   "build": {
-    "command": ".venv/bin/python /Users/yoavbz/projects/neuraldsp-preset-generator/scripts/build_response_atlas.py --pack morgan --amp sw50r --template /private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/sw50r-template.xml --renderer swift --samples 1024 --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 --out /private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/atlas_sw50r_1024.json",
+    "command": ".venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r --template samples/SW50R_Atlas_Topology.xml --renderer swift --samples 1024 --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 --out packs/morgan/response_atlas_sw50r_1024.json",
     "python_executable": ".venv/bin/python",
     "argv": [
-      "/Users/yoavbz/projects/neuraldsp-preset-generator/scripts/build_response_atlas.py",
+      "scripts/build_response_atlas.py",
       "--pack",
       "morgan",
       "--amp",
       "sw50r",
       "--template",
-      "/private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/sw50r-template.xml",
+      "samples/SW50R_Atlas_Topology.xml",
       "--renderer",
       "swift",
       "--samples",
@@ -287863,9 +287863,9 @@
       "--held-out-seed",
       "29",
       "--out",
-      "/private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/atlas_sw50r_1024.json"
+      "packs/morgan/response_atlas_sw50r_1024.json"
     ],
-    "template": "/private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/sw50r-template.xml",
+    "template": "samples/SW50R_Atlas_Topology.xml",
     "template_name": "SW50R Atlas Topology",
     "probe_caveat": "no --probe-di was given, so candidates were rendered through a synthetic decaying noise-burst sequence. It shows attack and decay clearly and shows sustained or palm-muted playing not at all \u2014 match against your own DI before trusting this on a real part.",
     "validation": {

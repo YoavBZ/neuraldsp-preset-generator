@@ -88,17 +88,23 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
 It fingerprints the reference, finds the nearest stored responses and writes
 ordinary specs. Apply one with `apply_spec.py` and pass the result to
 `match_preset.py` as `--template`, so the search starts from measured settings
-instead of a recipe's defaults. On its own held-out set the pilot beat neutral
-settings on 24 of 24 targets, and scaling to 1,024 points improved mean distance
-a further 28%.
+instead of a recipe's defaults. Each atlas beat neutral settings on its own
+held-out set — PR12 on 24 of 24 targets, SW50R on 23 of 24 — and scaling each to
+1,024 points improved mean distance by 28% and 22% respectively.
 
-Four limits, each load-bearing:
+Five limits, each load-bearing:
 
-- **One amp, one fixed topology.** Morgan ships atlases for PR12 and SW50R, each
-  with the cabinet and microphone fixed and gate, doubler, compressor, drive,
-  tremolo, reverb and delay bypassed. Pick the one whose `amp` matches the amp you
-  chose — `show.py` prints it. They say nothing about a part needing any of those
-  effects, and nothing about AC20 or Tone King, which have no atlas.
+- **One amp each, one fixed topology.** Morgan ships atlases for PR12 and SW50R,
+  each with the cabinet and microphone fixed and gate, doubler, compressor,
+  drive, tremolo, reverb and delay bypassed. Pick the one whose `amp` matches the
+  amp you chose and the larger `sample_count` of that pair — `show.py` prints
+  both. They say nothing about a part needing any of those effects, and nothing
+  about AC20 or Tone King, which have no atlas.
+- **SW50R's atlas also pins three amp switches.** Its topology fixes
+  `sw50rBright` off, `sw50rTrebleBoost` on and `sw50rInputMode` high, none of
+  them swept, so every spec it produces asserts all three. `sw50rTrebleBoost` is
+  a measured +2.5 dB lift from 400 Hz to 4 kHz — if the tone wants that region
+  darker, an atlas start is working against you. PR12's atlas has no equivalent.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI

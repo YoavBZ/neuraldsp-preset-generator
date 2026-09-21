@@ -843,12 +843,32 @@ repeats within 0.23 dB. Both numbers carry that.
 `compare_response_atlases.py` puts the scale step at 21.8% lower mean, better on
 24 of 24 targets, median target reduction 23.1%, smallest 1.4%.
 
-**SW50R lands where PR12 landed.** PR12 scaled 0.814 → 0.583 for 28.4%; SW50R
-scales 0.732 → 0.573 for 21.8%, from a lower neutral baseline (1.369 against
-1.640 — SW50R has more headroom, so its neutral settings start closer to a
-random target). Two amps reaching the same absolute distance under one method is
-the first evidence that M7-1's result is a property of the approach rather than
-of PR12.
+**What this does and does not show.** SW50R independently clears both gates —
+that is the result. It is *not* a demonstration that the two amps agree, and the
+absolute means inviting that reading (0.573 against PR12's 0.583) are the
+weakest basis for it. `atlas.compare_scale` refuses this pair outright — "cannot
+compare atlases with different amp" — because they differ in amp, swept
+dimensions, fixed settings and renderer build, and its docstring says that
+refusal exists to stop two merely similar runs being turned into a learning
+curve. Normalised for the different neutral baselines the agreement inverts:
+PR12 closes 64.5% of its neutral distance, SW50R 58.1%, and the scale gains are
+28.4% against 21.8%. Whether M7-1 generalises across amps needs a comparison
+this project can actually make, and this is not one.
+
+SW50R's lower neutral baseline (1.369 against 1.640) is unexplained. "More
+headroom" was asserted in an earlier draft and the artifacts do not support it:
+the two `achievable_ranges.crest_db` spans are near-identical, and SW50R's
+response cloud is slightly *wider*, not tighter. What it reflects is where the
+all-controls-at-midpoint neutral point falls inside a different control set.
+
+**Three switches are frozen, and only on this amp.** The topology template is the
+bundled example with `amp/sw50r-smooth-clean-lead` applied, and that recipe sets
+`sw50rBright` off, `sw50rTrebleBoost` on and `sw50rInputMode` high. None is a
+swept dimension, so every spec `query_response_atlas.py` writes from this atlas
+pins all three. `sw50rTrebleBoost` matters most: the manifest measures it as a
++2.5 dB lift from 400 Hz to 4 kHz, so an atlas start silently asserts that lift.
+PR12 has no comparable switches, which is why this limit is new with SW50R
+rather than inherited.
 
 It is still 1,024 points on one probe. The `achievable_ranges` in these files are
 observed ranges, not plugin limits, exactly as for PR12, and AC20 and Tone King

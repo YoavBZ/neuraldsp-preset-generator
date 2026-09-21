@@ -128,11 +128,18 @@ def test_all_presets_deduplicates(monkeypatch, tmp_path):
     except (OSError, NotImplementedError):
         pytest.skip("symlinks unavailable on this platform")
 
+    # Counted rather than hardcoded: this asserted `== 2` and `== 1`, which was
+    # really an assertion that `samples/` holds exactly one preset. Committing a
+    # second one — the SW50R atlas topology — broke a test about de-duplication
+    # for reasons that had nothing to do with de-duplication.
+    bundled_count = len(paths.bundled_presets())
     both_routes = paths.bundled_presets() + paths.user_presets("morgan")
-    assert len(both_routes) == 2, "the file is reachable two ways"
-    assert len({p.resolve() for p in both_routes}) == 1, "but it is one file"
+    assert len(both_routes) == bundled_count + 1, "the file is reachable two ways"
+    assert len({p.resolve() for p in both_routes}) == bundled_count, (
+        "but it is one file, so the routes collapse to the bundled set"
+    )
 
-    assert len(paths.all_presets(["morgan"])) == 1, (
+    assert len(paths.all_presets(["morgan"])) == bundled_count, (
         "all_presets must collapse the duplicate, or the preset would be parsed "
         "twice and counted twice in the observed catalog"
     )

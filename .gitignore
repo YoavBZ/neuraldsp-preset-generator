@@ -29,6 +29,11 @@ packs/*/.learned-tones.md.lock
 # template, kept as a runnable example and test fixture. Must come after the
 # rules above or git keeps ignoring it.
 !samples/Example_Clean_PR12.xml
+# Generated from the line above by `apply_spec.py --recipe amp/sw50r-smooth-clean-lead`,
+# so it carries no plugin content that file does not already ship. Committed because
+# it is the topology `packs/morgan/response_atlas_sw50r_*.json` record as their
+# `--template`: an atlas whose provenance names a path nobody has cannot be reproduced.
+!samples/SW50R_Atlas_Topology.xml
 !samples/.gitkeep
 
 # --- Generated output -----------------------------------------------------
@@ -54,6 +59,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+# ...and a symlink to one. `.venv/` matches a directory only, so a worktree
+# pointing at the main checkout's interpreter was staged as a file.
+.venv
 venv/
 env/
 build/
