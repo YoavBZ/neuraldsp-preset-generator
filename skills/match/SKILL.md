@@ -99,7 +99,9 @@ Six limits, each load-bearing:
   doubler, compressor, drive, tremolo, reverb and delay bypassed. Pick the one
   whose `amp` matches the amp you chose, at the larger `sample_count`; `show.py`
   prints both figures. They say nothing about a part needing any of those
-  effects, and nothing about Tone King, which has no atlas.
+  effects, and nothing about Tone King — whose channels the atlas builder cannot
+  express, so no atlas exists or can be built for it today. Matching Tone King
+  works normally; only this shortcut is unavailable.
 - **Switches are pinned, never swept.** Each topology is the bundled example with
   only `selectedAmp` changed, so every amp switch sits wherever that example
   leaves it, and every spec the atlas produces asserts those positions. The ones
