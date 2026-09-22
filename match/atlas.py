@@ -25,9 +25,10 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 SCHEMA = "response-atlas-1"
 
 # A response atlas is about the amp/cab response, not every effect chain that can
-# be placed around it.  Cab lanes, microphones, amp voicing switches and section
-# switches stay exactly as the topology template chose them; these effect bypasses
-# are the only choices normalized by the pilot.
+# be placed around it. The topology comes from a template, or from the pack's own
+# neutral seed when there is none; the table below then overrides whatever it says
+# for the controls it names. Everything else — microphone choices, amp voicing
+# switches the table does not name — stays as the topology chose it.
 # What an atlas topology pins, per pack, and to what. Mostly effects held off; for
 # Tone King also two amp options its user-supplied template would otherwise decide.
 # Tone-shaping controls stay live — amp, EQ, level, cabinet — while anything that
@@ -55,6 +56,12 @@ ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
         "tremolo/tremoloActive": False,
         "reverb/reverbActive": False,
         "delay/delayActive": False,
+        # Both cab mics on, which is what every committed Morgan atlas already has
+        # from the bundled example. Pinned because the neutral seed turns them off,
+        # so an atlas built without a template would otherwise be the amp with no
+        # speaker — and would render loud and non-silent, so nothing would refuse it.
+        "cabParameters/leftCabActive": True,
+        "cabParameters/rightCabActive": True,
     },
     "toneking": {
         "gateThreshold": -96.0,
@@ -70,14 +77,12 @@ ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
         "chorusActive": False,
         "delayActive": False,
         "reverbActive": False,
-        # Not effects: amp options. Tone King ships no template, so the topology
-        # comes from one of the user's own presets — and the first one tried pinned
-        # the attenuator at -24 dB, a heavily attenuated power amp baked into every
-        # atlas point. Same failure as a tone recipe switching SW50R's Bright off:
-        # the template's taste becoming the atlas's definition of the amp. Pinned
-        # to the pack's own calibration neutral, so the atlas does not depend on
-        # which of the user's presets happened to be the template. (Cabinet and
-        # microphone choices still come from the template, as they do for Morgan.)
+        # Not effects: amp options. Tone King ships no preset, and the first user
+        # preset tried as a template pinned the attenuator at -24 dB — a heavily
+        # attenuated power amp baked into every atlas point, the same failure as a
+        # tone recipe switching SW50R's Bright off. Pinned to the pack's own
+        # calibration neutral, so an atlas does not depend on which preset (if any)
+        # was the template. The committed Tone King atlases use no template at all.
         "ampAttenuation": "0 dB",
         "ampHfc": "NORMAL",
         # Both cabinets on, as both of Morgan's cab mics are in its atlases. The
@@ -88,8 +93,10 @@ ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
     },
 }
 
-#: Morgan's set, as this name always meant. Kept for existing importers.
-TONE_EFFECT_BYPASSES = frozenset(ATLAS_PINS_BY_PACK["morgan"])
+#: Morgan's effect bypasses, as this name always meant: the controls pinned *off*.
+#: Not every Morgan pin — the cab mics are pinned *on*, and are not effects.
+TONE_EFFECT_BYPASSES = frozenset(
+    path for path, value in ATLAS_PINS_BY_PACK["morgan"].items() if value is False)
 
 
 def atlas_pins(pack_id: str) -> Dict[str, Any]:
@@ -170,9 +177,11 @@ def tone_topology(values: Mapping, space, amp: str) -> Dict[Any, Any]:
             continue
         value = pins[dimension.path]
         if dimension.kind == "enum":
-            # Written as a label for readability; stored the way the rest of the
-            # decoded topology is, so `'1'` from a template and a pinned `'0 dB'`
-            # are the same kind of value by the time anything compares them.
+            # Written as a label for readability and converted to the pack's stored
+            # form. Not necessarily the form every other value in a topology takes —
+            # a decoded seed can hold an enum as an index or a label — but every
+            # consumer (query, spec, apply) goes through the pack and accepts all of
+            # them.
             from packs.loader import load_pack
 
             pack = pack or load_pack(space.pack_id)
@@ -240,7 +249,11 @@ def build(renderer, space, probe_di, pack: str, amp: str, samples: int,
     from analysis.fingerprint import fingerprint
 
     metadata = renderer.metadata()
-    fixed = fixed_topology_seed(space, amp) if fixed is None else dict(fixed)
+    # No topology given: the neutral seed, *with* the pins. The raw seed alone has
+    # the gate on, tremolo at half depth, Tone King's attenuator at -36 dB and no
+    # cabinets, and would have been rendered as-is.
+    fixed = (tone_topology(fixed_topology_seed(space, amp), space, amp)
+             if fixed is None else dict(fixed))
     if selected_path(space, fixed) != amp:
         raise AtlasError(f"fixed topology does not select requested amp {amp!r}")
     supported = renderer.parameter_specs()

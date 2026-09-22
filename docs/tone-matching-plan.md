@@ -876,7 +876,54 @@ Swift server:
   signal-domain time constant that settles; it is state tied to the sequence of
   parameter writes, and only a new plugin instance resets it.
 - **It is AC20's, not the backend's.** Spread across predecessors: PR12 ~0.001,
-  SW50R ~0.01, AC20 ~0.09.
+  SW50R ~0.01, AC20 ~0.09–0.1. An independent replay also reproduced the two
+  committed AC20 baselines' scores to four decimals by rendering the neutral right
+  after pilot row 127 and right after scaled row 1023.
+
+The measurement is small enough to repeat, and needs nothing beyond the repository
+and the plugin. Render the atlas topology's neutral settings, render one other
+setting, render the neutral again, and compare; repeat per predecessor:
+
+```bash
+.venv/bin/python - <<'EOF'
+from analysis import io
+from analysis.compare import compare, scalar
+from analysis.fingerprint import fingerprint
+from match import atlas, space as space_module
+from match.renderer_au import AudioUnitRenderer
+from scripts.match_preset import _seed_from_template
+from scripts._cli import probe_di
+
+AMP, TEMPLATE = "ac20", "samples/AC20_Atlas_Topology.xml"
+fp = lambda r: fingerprint(io.from_samples(r.audio, r.metadata.sample_rate),
+                           regime="probe", excerpt_s=None)
+space = space_module.build("morgan", amp=AMP)
+values, _ = _seed_from_template(TEMPLATE, space, "morgan")
+fixed = atlas.tone_topology(values, space, AMP)
+renderer = AudioUnitRenderer("morgan")  # reuse: the policy under test
+paths = atlas._supported_paths(renderer.parameter_specs()) or set()
+base = {atlas._path(k): v for k, v in fixed.items() if atlas._path(k) in paths}
+dims = atlas.sampling_dimensions(space, fixed, renderer.parameter_specs())
+neutral = atlas.neutral_settings(base, dims)
+rows = atlas.latin_hypercube(dims, 64, 17)
+di, _ = probe_di(None, 4.0)
+renderer.render(di, neutral)                   # absorb the first-render effect
+reference = fp(renderer.render(di, neutral))
+for label, before in (("neutral", neutral), ("row 31", {**base, **rows[31]}),
+                      ("row 63", {**base, **rows[63]})):
+    scores = []
+    for _ in range(5):
+        renderer.render(di, before)
+        scores.append(scalar(compare(reference, fp(renderer.render(di, neutral)),
+                                     profile="unpaired-v1"), "unpaired-v1"))
+    print(f"after {label:8}", " ".join(f"{s:.4f}" for s in scores))
+renderer.close()
+EOF
+```
+
+Repeats within a row agreeing and rows disagreeing is history dependence; repeats
+within a row disagreeing is noise. Swap `AMP` and `TEMPLATE` for the other amps,
+or pass `warmup_s=` to the renderer to test warm-up.
 
 That is the offset. The atlas scores every target against one baseline render,
 and the pilot's was rendered after atlas row 127 while the scaled build's came
@@ -884,8 +931,9 @@ after row 1023 — different histories, different neutral, the same shift on eve
 target it is compared with. It also means **every AC20 atlas entry carries
 whatever was rendered before it**, and so does every AC20 candidate in a search on
 a reused instance. The committed AC20 atlases are left in place with that stated;
-rebuilding them with `--process-policy fresh` (one plugin process per render,
-roughly 7× slower) is the fix, and is not done here.
+rebuilding them with `--process-policy fresh` (one plugin process per render —
+about 2 s each against 0.3 s reused, from `match/renderer_au.py`'s own timings,
+so roughly 7× slower) is the fix, and is not done here.
 
 `--neutral-replicates` does not help AC20: its replicates agree with each other
 because they share a history. It exists for noise, which is Tone King's problem.
@@ -925,11 +973,16 @@ puts a Dynamic 57 on both cabinets, which is an ordinary choice. The provenance
 test accepts a template-free atlas only when it records no template and names the
 pack's neutral seed.
 
-**Tone King's variation is noise, not history.** Repeats of one setting after the
-same predecessor already vary by ~0.02–0.04 (`unpaired-v1`), where AC20's agree
-exactly. So the baseline is rendered five times (`--neutral-replicates 5`) and each
-target scored against the median; a test shows one spoiled baseline render moving
-every target's score and three replicates putting it back.
+**Tone King's variation is noise, not history — and sometimes large.** Repeats of
+the neutral after the same predecessor typically vary by ~0.02–0.04
+(`unpaired-v1`), where AC20's agree exactly. But some settings are bistable: lead
+held-out target 3 scored 2.146 in one build and 1.866 in the other, and a replay
+gave 2.094, 2.125 and 1.862 — the first and last after identical history. So a
+single Tone King render can land in one of two states about 0.25 apart. The
+baseline is rendered five times (`--neutral-replicates 5`) and each target scored
+against the median, which handles the typical case; a test shows one spoiled
+baseline render moving every target's score and three replicates putting it back.
+The replicates cannot help a bistable *target*, which is rendered once.
 
 Tone King 1.0.3 through the reused Swift server, `reproducible=False`, all four
 atlases on renderer build `audio-unit-renderer-2af9432f77c6`:
@@ -942,8 +995,11 @@ atlases on renderer build `audio-unit-renderer-2af9432f77c6`:
 Rhythm beats neutral on 24 of 24 held-out targets at both densities; lead on 22
 of 24 at 128 points and 23 at 1,024 — the first atlas here that does not win every
 target at pilot density. Each scale step is better on 24 and 23 of 24 targets.
-Lead's baseline still moved 0.7% between its two builds with five replicates each,
-which is Tone King's per-render noise showing through a median of five.
+Lead's neutral mean moved 0.7% between its two builds, and that is **not** the
+baseline moving: the whole shift is held-out target 3 (−0.280, the bistable one
+above). The other 23 targets moved by at most 0.034, and without target 3 the mean
+moved +0.17% the other way. The five-render baselines themselves agreed to within
+0.042 on every target on replay.
 
 ```bash
 .venv/bin/python scripts/build_response_atlas.py --pack toneking --amp rhythm \

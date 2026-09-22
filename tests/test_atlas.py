@@ -235,8 +235,11 @@ def test_python_provenance_is_portable_without_rewriting_external_interpreters(
     assert atlas_builder._portable_executable() == str(external)
 
 
-# Every amp each pack is expected to ship an atlas for.
+# Every amp each pack is expected to ship an atlas for, and the plugin build each
+# was rendered on — the audited versions, so an atlas rendered on an unaudited
+# plugin cannot slip in unnoticed.
 ATLASED = {"morgan": {"pr12", "sw50r", "ac20"}, "toneking": {"rhythm", "lead"}}
+PLUGIN_VERSION = {"morgan": "1.1.1", "toneking": "1.0.3"}
 
 
 @pytest.mark.parametrize("pack", sorted(ATLASED))
@@ -261,7 +264,7 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         assert document["pack"] == pack
         assert document["sample_count"] == samples
         assert document["dimensions"], "an atlas with no swept dimension is a point"
-        assert document["renderer"]["plugin_version"], "record what was rendered"
+        assert document["renderer"]["plugin_version"] == PLUGIN_VERSION[pack]
         assert document["renderer"]["reproducible"] is False
         assert "reproducible=False" in document["measurement_caveat"]
         validation = document["build"]["validation"]
@@ -303,11 +306,11 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         # targets. 20 of 24 is far enough above chance to catch a scale step that
         # did not work.
         assert comparison["candidate_better_targets"] >= 20, amp
-        # One bound for both packs, set by the noisier backend and written down
-        # before Tone King's 1,024-point results existed: its per-render repeat
-        # spread is ~0.02-0.04 on atlas distances near 0.7, about 5%, so a scale
-        # step has to beat twice that. It was 0.15, reasoned from Morgan alone.
-        assert comparison["mean_reduction_fraction"] > 0.10, amp
+        # A bound, not a recorded result: well below every measured scale gain
+        # across both packs (20.2% to 30.1%) and well above zero, so it still fails
+        # a scale step that did nothing. Loosening it to 0.10 for Tone King's noise
+        # was considered and turned out unnecessary — no result comes near 0.15.
+        assert comparison["mean_reduction_fraction"] > 0.15, amp
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert '"*/response_atlas_*.json"' in package_data
@@ -507,6 +510,13 @@ def test_tone_king_topology_holds_effects_off_and_keeps_both_cabinets_live():
     # Pinned continuous controls must not be re-swept, or the hypercube undoes the
     # bypass: gate off at its floor, tremolo off at zero depth (and speed then dead).
     assert not {"gateThreshold", "ampTremoloDepth", "ampTremoloSpeed"} & swept
+    # ...and that they hold the value that turns them off. Checking only that they
+    # were unswept let a pin loop that skipped continuous controls leave the gate
+    # at -48 dB and the tremolo at half depth in every atlas point, with the whole
+    # suite green.
+    assert fixed[("", "gateThreshold")] == -96.0
+    assert fixed[("", "ampTremoloDepth")] == 0.0
+    assert fixed[("", "ampTremoloSpeed")] == 0.0
 
 
 def test_a_templates_attenuator_does_not_become_the_atlas_amp():
@@ -570,7 +580,11 @@ class _OneOddRender:
         return dataclasses.replace(result, audio=(frames + rumble).astype(frames.dtype))
 
 
-def test_a_replicated_baseline_absorbs_one_odd_render():
+@pytest.mark.parametrize("odd_call", [1, 3])
+def test_a_replicated_baseline_absorbs_one_odd_render(odd_call):
+    """The spoiled render is the first replicate in one case and the last in the
+    other, so an implementation that took either end instead of the median fails
+    one of them. (With the spoil in the middle, first and last both passed.)"""
     from tests.fixtures_audio import plucks
 
     space = space_module.build("morgan", amp="pr12")
@@ -581,10 +595,12 @@ def test_a_replicated_baseline_absorbs_one_odd_render():
                            fixed=fixed)
 
     clean = atlas.held_out(SyntheticRenderer(), space, probe, document, 4, 29)
-    # The baseline renders come first in held_out, so call 2 is a baseline render.
+    # With one replicate the baseline is call 1.
     spoiled_one = atlas.held_out(_OneOddRender(SyntheticRenderer(), 1),
                                  space, probe, document, 4, 29)
-    spoiled_of_three = atlas.held_out(_OneOddRender(SyntheticRenderer(), 2),
+    # held_out renders every baseline replicate before any target, so with three
+    # replicates the baseline is calls 1-3. Spoil the first (1) or the last (3).
+    spoiled_of_three = atlas.held_out(_OneOddRender(SyntheticRenderer(), odd_call),
                                       space, probe, document, 4, 29,
                                       neutral_replicates=3)
 
@@ -638,3 +654,31 @@ def test_a_process_policy_without_the_plugin_is_refused_not_ignored(tmp_path):
     assert result.returncode != 0
     assert "plugin renderer only" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("amp", ["pr12", "sw50r", "ac20"])
+def test_a_morgan_atlas_without_a_template_still_has_a_speaker(amp):
+    """The neutral seed turns Morgan's cab mics off, and an amp with no cabinet
+    renders loud and non-silent, so nothing downstream would refuse it. With the
+    template optional, that became a one-flag way to build a wrong atlas."""
+    space = space_module.build("morgan", amp=amp)
+    fixed = atlas.tone_topology(atlas.fixed_topology_seed(space, amp), space, amp)
+    assert fixed[("cabParameters", "leftCabActive")] is True
+    assert fixed[("cabParameters", "rightCabActive")] is True
+    swept = {dimension.path for dimension in atlas.sampling_dimensions(space, fixed)}
+    assert "cabParameters/leftCabDistance" in swept
+
+
+def test_build_with_no_topology_applies_the_pins():
+    """`atlas.build(fixed=None)` used the raw neutral seed — gate on, tremolo at
+    half depth, no cabinets — rather than the pinned topology."""
+    from tests.fixtures_audio import plucks
+
+    space = space_module.build("morgan", amp="pr12")
+    probe = plucks(seconds=1.0, gap=0.4, seed=5)
+    default = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 4, 17)
+    pinned = atlas.tone_topology(atlas.fixed_topology_seed(space, "pr12"), space, "pr12")
+    explicit = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 4, 17,
+                           fixed=pinned)
+    assert default["fixed_settings"] == explicit["fixed_settings"]
+    assert default["dimensions"] == explicit["dimensions"]
