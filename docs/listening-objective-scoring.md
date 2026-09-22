@@ -19,6 +19,8 @@ separate tooling check; warm-up does not clear it. Historical AC20 audio remains
 the stimulus the listener actually heard and must be flagged as having uncertain
 instance history. Rerendering it would create a different comparison requiring
 a new blind judgment. PR12 did not show this effect; SW50R showed a smaller one.
+When an archived alternative has no known amp model, the audit records
+`amp_model_unknown`; it does not silently count that audio as history-independent.
 
 Match audition exports take the reference regime from the
 completed run and accept the same grouping/identifier options. Do not reveal
@@ -31,6 +33,8 @@ standard audio distance with `level`, its fingerprint, individual objectives,
 effective weights, source hashes, and scorer/profile hashes. Preset-prior and
 complexity penalties cannot be recovered from audio alone: these are audio
 distances, not full optimization scores. Matching weights are not changed.
+The builder scores cropped and gained source samples before montage encoding;
+24-bit FLAC quantization can make the decoded listening file differ minutely.
 
 For backing mixes, supply the processed guitar file **before backing is added**.
 Record its crop, timing and gain processing and the actual reference source.
@@ -43,6 +47,8 @@ explicit: generated probe, paired DI, isolated/separated stem, or full mix.
 listener/session, leaving the original blind key untouched. Closeness and
 preference remain separate. Missing preferences are not guessed. Unknown target
 groups stay `unassigned` and are excluded from target-level summaries.
+If a raw source is later unavailable, the intact hashed audition still permits
+the subjective verdict; its objective sidecar is marked unscored.
 
 For historical or custom comparisons, create a **private** JSON manifest:
 

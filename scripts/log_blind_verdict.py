@@ -118,10 +118,18 @@ def main() -> None:
         from build_rab_audition import _write_text
         identity = hashlib.sha256(args.listener.strip().encode()).hexdigest()
         sidecar = args.key.with_name(args.key.name + f".{identity}.objective-verdict.json")
-        scored = score_record({**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
+        submission = {**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
             "closer": args.choice, "preferred": args.prefer},
             "listener": args.listener.strip(),
-            "heard_audio": {"path": str(montage), "sha256": output["sha256"]}})
+            "heard_audio": {"path": str(montage), "sha256": output["sha256"]}}
+        try:
+            scored = score_record(submission)
+        except Exception as error:
+            # The listener's verdict belongs to the verified montage, not to
+            # the continued availability of its raw sources for rescoring.
+            scored = {field: value for field, value in submission.items()
+                      if field not in ("objective_scoring", "agreement", "agreement_with_level", "scoring_error")}
+            scored["scoring_error"] = f"{type(error).__name__}: {error}"
         if sidecar.exists():
             previous = json.loads(sidecar.read_text())
             for field in ("verdict", "listener", "heard_audio", "alternatives", "reference"):
@@ -151,8 +159,14 @@ def main() -> None:
     if objective is not None:
         # Separate sidecar preserves the immutable audition key and its bindings.
         if not sidecar.exists():
-            _write_text(sidecar, json.dumps(scored, indent=2, allow_nan=False) + "\n")
-        print(f"objective and listener verdict: {sidecar}")
+            try:
+                _write_text(sidecar, json.dumps(scored, indent=2, allow_nan=False) + "\n")
+            except OSError as error:
+                print(f"warning: verdict recorded, but cannot write objective sidecar: {error}", file=sys.stderr)
+        if sidecar.exists():
+            print(f"objective and listener verdict: {sidecar}")
+        if "scoring_error" in scored:
+            print(f"warning: verdict recorded; objective unscored: {scored['scoring_error']}", file=sys.stderr)
 
 
 if __name__ == "__main__":

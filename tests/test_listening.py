@@ -122,6 +122,7 @@ def test_cli_retains_failed_record_but_discards_stale_scores(record, tmp_path):
 def test_ac20_history_remains_uncertain_without_bound_fresh_proof(record, tmp_path):
     record["render_provenance"] = {"A": {"amp_model": "AC20", "process_policy": "fresh"}}
     assert score_record(record)["objective_scoring"]["ac20_history_uncertain"] == ["A"]
+    assert score_record(record)["objective_scoring"]["amp_model_unknown"] == ["B"]
     proof_path = tmp_path / "fresh.json"
     proof = {"schema": "listening-fresh-render-v1", "pack": "morgan", "amp_model": "AC20",
              "process_policy": "fresh", "renderer": {"quality_mode": "process=fresh"},
@@ -134,6 +135,14 @@ def test_ac20_history_remains_uncertain_without_bound_fresh_proof(record, tmp_pa
     record["render_provenance"]["A"]["render_record"]["sha256"] = sha256(proof_path)
     with pytest.raises(ValueError, match="does not prove"):
         score_record(record)
+
+
+def test_missing_amp_provenance_is_explicitly_unknown(record):
+    result = score_record(record)
+    assert result["objective_scoring"]["amp_model_unknown"] == ["A", "B"]
+    assert result["objective_scoring"]["ac20_history_uncertain"] == []
+    group = agreement_report([result])["target_groups"]["song"]
+    assert group["amp_model_unknown_count_not_independent_n"] == 1
 
 
 def test_fresh_renderer_keeps_every_writable_setting():

@@ -147,6 +147,10 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
                                 for dimension in scores["A"]["objectives"]["detail"]},
     }
     provenance = record.get("render_provenance") or {}
+    result["objective_scoring"]["amp_model_unknown"] = [
+        label for label in ("A", "B")
+        if provenance.get(label, {}).get("amp_model") not in ("AC20", "PR12", "SW50R", "non-Morgan")
+    ]
     result["objective_scoring"]["ac20_history_uncertain"] = [
         label for label in ("A", "B")
         if provenance.get(label, {}).get("amp_model") == "AC20"
@@ -195,8 +199,11 @@ def agreement_report(records: list[dict]) -> dict:
         group = groups.setdefault(target, {"comparisons": [], "closer": {}, "preferred": {}})
         group["comparisons"].append(record["id"])
         uncertain = bool(record.get("objective_scoring", {}).get("ac20_history_uncertain"))
+        unknown = bool(record.get("objective_scoring", {}).get("amp_model_unknown"))
         group["ac20_history_uncertain_count_not_independent_n"] = (
             group.get("ac20_history_uncertain_count_not_independent_n", 0) + int(uncertain))
+        group["amp_model_unknown_count_not_independent_n"] = (
+            group.get("amp_model_unknown_count_not_independent_n", 0) + int(unknown))
         for question in ("closer", "preferred"):
             status = "unscored" if "scoring_error" in record else record.get("agreement", {}).get(question, {}).get("status", "unscored")
             counts = group[question].setdefault("diagnostic_counts_not_independent_n", {})
