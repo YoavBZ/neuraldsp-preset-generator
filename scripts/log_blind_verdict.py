@@ -112,6 +112,22 @@ def main() -> None:
     from match.verdict import record_verdict
     from packs.paths import data_root_warning, set_data_root
 
+    objective = key.get("objective_record")
+    if objective is not None:
+        from analysis.listening import score_record
+        from build_rab_audition import _write_text
+        identity = hashlib.sha256(args.listener.strip().encode()).hexdigest()
+        sidecar = args.key.with_name(args.key.name + f".{identity}.objective-verdict.json")
+        scored = score_record({**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
+            "closer": args.choice, "preferred": args.prefer},
+            "listener": args.listener.strip(),
+            "heard_audio": {"path": str(montage), "sha256": output["sha256"]}})
+        if sidecar.exists():
+            previous = json.loads(sidecar.read_text())
+            for field in ("verdict", "listener", "heard_audio", "alternatives", "reference"):
+                if previous.get(field) != scored.get(field):
+                    die(f"conflicting objective verdict at {sidecar}; use a distinct listener/session")
+
     set_data_root(args.data_dir)
     warning = data_root_warning()
     if warning:
@@ -132,6 +148,11 @@ def main() -> None:
         print(f"separate preference: {preference!r}")
     print(f"recorded trial {recorded.trial_id} in run {recorded.run_id}")
     print(f"learned notes: {recorded.notes_path}")
+    if objective is not None:
+        # Separate sidecar preserves the immutable audition key and its bindings.
+        if not sidecar.exists():
+            _write_text(sidecar, json.dumps(scored, indent=2, allow_nan=False) + "\n")
+        print(f"objective and listener verdict: {sidecar}")
 
 
 if __name__ == "__main__":

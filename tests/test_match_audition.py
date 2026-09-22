@@ -158,6 +158,24 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     notes = data_dir / "packs" / "morgan" / "learned-tones.md"
     assert "preference=template" in notes.read_text()
 
+    sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
+    assert len(sidecars) == 1
+    before = sidecars[0].read_bytes()
+    repeated = run("log_blind_verdict.py", "--key", key_path,
+                   "--choice", candidate_label, "--prefer", template_label,
+                   "--listener", "blind-test", "--comment", "candidate is closer but template feels softer",
+                   "--data-dir", data_dir)
+    assert repeated.returncode != 0
+    assert "already recorded" in repeated.stderr
+    assert sidecars[0].read_bytes() == before
+    another = run("log_blind_verdict.py", "--key", key_path,
+                  "--choice", template_label, "--listener", "another-session", "--data-dir", data_dir)
+    assert another.returncode == 0, another.stderr
+    sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
+    assert len(sidecars) == 2
+    ids = {json.loads(path.read_text())["id"] for path in sidecars}
+    assert len(ids) == 2
+
     montage.write_bytes(montage.read_bytes() + b"tampered")
     refused = run(
         "log_blind_verdict.py",

@@ -1,7 +1,8 @@
 """Build a blind, level-matched Reference–A–B listening file.
 
     python scripts/build_rab_audition.py \
-      --reference reference.wav --a template.wav --b candidate.wav \
+      --reference reference.wav --reference-regime separated_stem \
+      --a template.wav --b candidate.wav \
       --out audition.flac
 
 The output is one file in the order Reference, A, B, Reference, A, B, with
@@ -24,6 +25,7 @@ import hashlib
 import json
 import os
 import pathlib
+import uuid
 import random
 import secrets
 import shlex
@@ -180,6 +182,11 @@ def build(
     cycle_gap_s: float,
     seed: int,
     force_mono: bool = False,
+    reference_regime: str,
+    amp_models: tuple[str, str],
+    target_id: str = "unassigned",
+    comparison_id: str | None = None,
+    render_records: tuple[pathlib.Path | None, pathlib.Path | None] = (None, None),
 ):
     """Return the montage samples and the complete blind-key metadata."""
     import numpy as np
@@ -187,6 +194,20 @@ def build(
     from analysis import io
 
     paths = (reference, first, second)
+    provenance = {}
+    for role, source, model, render_record in zip(("first", "second"), (first, second), amp_models, render_records):
+        if render_record is None:
+            if model == "AC20":
+                raise ValueError("AC20 comparison requires a fresh-process render record for each alternative")
+            provenance[role] = {"amp_model": model, "process_policy": "unknown"}
+            continue
+        binding = {"path": str(pathlib.Path(render_record).resolve()),
+                   "sha256": _sha256(render_record)}
+        from analysis.listening import verified_fresh_render
+        entry = {"amp_model": model, "process_policy": "fresh", "render_record": binding}
+        if not verified_fresh_render(entry, {"path": str(source), "sha256": _sha256(source)}):
+            raise ValueError(f"{role} render record does not prove the exact fresh-process audio")
+        provenance[role] = entry
     originals = [io.load(path) for path in paths]
     loaded, output_channels = _audition_channels(originals, force_mono)
     remaining = [audio.duration_s - start for audio, start in zip(loaded, starts)]
@@ -298,6 +319,30 @@ def build(
         "sources": entries,
         "timeline": timeline,
     }
+    # A private prediction alongside the key, never in the blind audio. Score
+    # each bare source at its actual playback gain against the declared reference
+    # crop, without inventing the optimizer's preset-prior penalty.
+    from analysis.listening import score_record
+
+    scoring_sources = {
+        role: {"path": str(path.resolve()), "sha256": _sha256(path),
+               "start_s": start, "duration_s": used_duration,
+               "mono": force_mono, "gain_db": gains[index]}
+        for index, (role, path, start) in enumerate(zip(
+            ("reference", "first", "second"), paths, starts))
+    }
+    for source in scoring_sources.values():
+        source["promote_stereo"] = output_channels == 2 and not force_mono
+    scoring_sources["reference"]["regime"] = reference_regime
+    scoring_record = {
+        "id": comparison_id or uuid.uuid4().hex, "target_id": target_id,
+        "reference": scoring_sources["reference"],
+        "alternatives": {label: scoring_sources[role] for label, role in metadata["blind_key"].items()},
+        "listening_context": "Bare, level-matched audition; all scored sources use their playback gain. No automatic target grouping.",
+        "render_provenance": {label: provenance[role] for label, role in metadata["blind_key"].items()},
+    }
+    scored = score_record(scoring_record)
+    metadata["objective_record"] = scored
     return montage, metadata
 
 
@@ -344,6 +389,13 @@ def main() -> None:
         epilog="Judge closer and prefer separately. Use raw renders for output level.",
     )
     ap.add_argument("--reference", required=True, type=pathlib.Path)
+    ap.add_argument("--reference-regime", choices=("probe", "paired_di", "isolated_stem", "separated_stem", "mix"), required=True)
+    ap.add_argument("--target-id", default="unassigned", help="private target group; reuse for repeats and backed revisits")
+    ap.add_argument("--comparison-id", help="unique private comparison identifier")
+    ap.add_argument("--a-amp-model", required=True, choices=("AC20", "PR12", "SW50R", "non-Morgan"))
+    ap.add_argument("--b-amp-model", required=True, choices=("AC20", "PR12", "SW50R", "non-Morgan"))
+    ap.add_argument("--a-render-record", type=pathlib.Path, help="fresh-render sidecar, required for AC20")
+    ap.add_argument("--b-render-record", type=pathlib.Path, help="fresh-render sidecar, required for AC20")
     ap.add_argument("--a", required=True, type=pathlib.Path,
                     help="first option; its blind label is assigned randomly")
     ap.add_argument("--b", required=True, type=pathlib.Path,
@@ -412,6 +464,11 @@ def main() -> None:
         cycle_gap_s=args.cycle_gap,
         seed=seed,
         force_mono=args.mono,
+        reference_regime=args.reference_regime,
+        target_id=args.target_id,
+        comparison_id=args.comparison_id,
+        amp_models=(args.a_amp_model, args.b_amp_model),
+        render_records=(args.a_render_record, args.b_render_record),
     )
     metadata["invocation"] = [sys.executable, str(pathlib.Path(__file__)), *sys.argv[1:]]
     if args.seed is None:

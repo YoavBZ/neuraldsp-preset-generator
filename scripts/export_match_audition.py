@@ -144,6 +144,8 @@ def main() -> None:
     parser.add_argument("--cycle-gap", type=_nonnegative_float, default=1.0)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--mono", action="store_true")
+    parser.add_argument("--target-id", default="unassigned", help="private target group shared by repeats")
+    parser.add_argument("--comparison-id", help="unique private comparison identifier")
     parser.add_argument("--allow-unpaired", action="store_true",
                         help="allow a regime that does not prove reference/probe "
                              "pairing; the key records that direct timing/content "
@@ -230,6 +232,24 @@ def main() -> None:
     candidate_settings = dict(validated.trial.params)
     if not candidate_settings:
         die("the validated candidate trial records no rendered settings")
+    from packs.loader import load_pack
+    pack = load_pack(pack_id)
+    selector = pack.parameters.get("/selectedAmp")
+    def _amp_model(values):
+        if selector is None:
+            return "non-Morgan"
+        value = values.get("selectedAmp", values.get("/selectedAmp"))
+        if value is None:
+            die("Morgan audition settings omit selectedAmp; the active amp is unknown")
+        return selector.members[pack.to_stored(selector, value)]
+    if renderer_name == "swift" and pack_id == "morgan":
+        amp_models = (_amp_model(template_values), _amp_model(candidate_settings))
+    else:
+        amp_models = ("non-Morgan", "non-Morgan")
+    if "AC20" in amp_models:
+        die("AC20 listening renders must use a fresh Audio Unit process. Render each "
+            "alternative with render_listening_guitar.py, then build a new blind "
+            "comparison from those files; this exporter binds reused-render trials")
 
     source_binding = candidate_binding_sha256(validated)
     summary_sha = _sha256(run_dir / "summary.json")
@@ -313,6 +333,10 @@ def main() -> None:
             cycle_gap_s=args.cycle_gap,
             seed=blind_seed,
             force_mono=args.mono,
+            reference_regime=regime,
+            target_id=args.target_id,
+            comparison_id=args.comparison_id,
+            amp_models=amp_models,
         )
         _write_audio(montage_path, montage, key["sample_rate"])
 
