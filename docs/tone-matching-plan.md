@@ -880,7 +880,27 @@ a small AC20 difference as real without replicating its baseline first.
 
 `achievable_ranges` in all six files remain observed ranges on one probe — at
 1,024 points for three of them and 128 for the pilots — not statements about the
-plugin. Tone King still has no atlas.
+plugin.
+
+**Tone King cannot be atlased at all, and that is a design limit rather than a
+gap in the work done.** `match/atlas.py` resolves an amp through
+`space.amp_prefix`, which reads `("", "selectedAmp")` and maps it via the pack's
+`amp_modules` — both Morgan concepts. Tone King selects its channel with
+`ampType` and declares no `amp_modules`, so `build_response_atlas.py --pack
+toneking --amp rhythm` fails at the topology check with "the topology selects no
+recognised amp, not rhythm", whatever template it is given.
+
+The search side has no such problem: `match_preset.py --pack toneking --amp lead`
+resolves the channel and reports 33 enumerable controls, because the space is
+built from the manifest's `search_conditions`, which name the selector
+(`/ampType`) and the members that enable each parameter. That declaration is the
+generic mechanism; the atlas predates it and uses the Morgan-shaped one.
+
+So M7-1 for Tone King is not "run the builder for a third pack". It needs
+`atlas.py` to select a signal path through `search_conditions` rather than
+`selectedAmp`, which is a change to the space abstraction and deserves its own
+work package. Until then, every atlas claim in this document is a claim about
+Morgan.
 
 **Each topology pins its amp's switches**, since switches are never swept. AC20's
 are the larger pair: `ac20BassTreble` on is a measured **−15.6 dB at 60 Hz**
