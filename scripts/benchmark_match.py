@@ -92,7 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def _renderer(name: str, pack_id: str):
+def _renderer(name: str, pack_id: str, process_policy: str = "reuse"):
     """The backend to benchmark through.
 
     The synthetic chain is the default because it is the only one that runs
@@ -107,7 +107,7 @@ def _renderer(name: str, pack_id: str):
         return SyntheticRenderer()
     from match.renderer_au import AudioUnitError, AudioUnitRenderer
 
-    renderer = AudioUnitRenderer(pack_id)
+    renderer = AudioUnitRenderer(pack_id, process_policy=process_policy)
     try:
         renderer.metadata()
     except AudioUnitError as e:
