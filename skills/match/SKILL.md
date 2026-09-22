@@ -88,33 +88,35 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
 It fingerprints the reference, finds the nearest stored responses and writes
 ordinary specs. Apply one with `apply_spec.py` and pass the result to
 `match_preset.py` as `--template`, so the search starts from measured settings
-instead of a recipe's defaults. Every atlas beat neutral settings on 24 of 24 of
-its own held-out targets, and scaling each to 1,024 points improved mean distance
-by a further 20–30%.
+instead of a recipe's defaults. Every atlas is required to beat neutral settings
+on at least 20 of 24 of its own held-out targets — the committed ones score 22 to
+24 — and scaling each to 1,024 points improved mean distance by a further 20–30%.
 
 Six limits, each load-bearing:
 
-- **One amp each, one fixed topology.** Morgan ships atlases for all three amps —
-  PR12, SW50R and AC20 — each with the cabinet and microphone fixed and gate,
-  doubler, compressor, drive, tremolo, reverb and delay bypassed. Pick the one
-  whose `amp` matches the amp you chose, at the larger `sample_count`; `show.py`
-  prints both figures. They say nothing about a part needing any of those
-  effects, and nothing about Tone King — whose channels the atlas builder cannot
-  express, so no atlas exists or can be built for it today. Matching Tone King
-  works normally; only this shortcut is unavailable.
-- **Switches are pinned, never swept.** Each topology is the bundled example with
-  only `selectedAmp` changed, so every amp switch sits wherever that example
-  leaves it, and every spec the atlas produces asserts those positions. The ones
-  that move the most tone: AC20 pins `ac20BassTreble` on, a measured **−15.6 dB
-  at 60 Hz**, and `ac20Bright` on; SW50R pins `sw50rTrebleBoost` on, +2.5 dB from
-  400 Hz to 4 kHz. If the part needs any of those the other way, an atlas start
-  is working against you and no refinement inside the atlas can move it — set the
-  switch yourself after applying the spec.
-- **AC20's two baseline runs differ by an unexplained offset.** Repeating its
-  neutral measurement moved 20 of 24 targets by about +0.042, all in the same
-  direction. That is a bias, not scatter, and its cause is unidentified. AC20's
-  gate result is unaffected at that size, but do not report a small AC20
-  difference as real without replicating the baseline.
+- **One amp or channel each, one fixed topology.** Morgan ships atlases for PR12,
+  SW50R and AC20; Tone King for its rhythm and lead channels. Each has its cabinet
+  and microphones fixed and its pedals and rack effects bypassed. **The amp's own
+  spring reverb is not bypassed — it is one of the swept controls**, so an atlas
+  start can carry a lot of reverb; check it and set it yourself if the part is
+  dry.
+  Pick the one whose `amp` matches the amp or channel you chose, at the larger
+  `sample_count`; `show.py` prints both. They say nothing about a part that needs
+  any of those effects.
+- **Switches are pinned, never swept.** Morgan's topologies are the bundled
+  example with only `selectedAmp` changed; Tone King's are the pack's own neutral
+  seed, with the attenuator at 0 dB and a Dynamic 57 on both cabinets. Every spec
+  an atlas produces asserts those positions. The ones that move the most tone:
+  AC20 pins `ac20BassTreble` on, a measured **−15.6 dB at 60 Hz**, and
+  `ac20Bright` on; SW50R pins `sw50rTrebleBoost` on, +2.5 dB from 400 Hz to 4 kHz.
+  If the part needs any of those the other way, an atlas start is working against
+  you and no refinement inside the atlas can move it — set the switch yourself
+  after applying the spec.
+- **AC20's atlas carries render history.** On a reused plugin instance AC20's
+  output depends on what was rendered before it — the same settings move by up to
+  ~0.1 depending only on the predecessor, and warm-up does not clear it. Every
+  point in the committed AC20 atlas carries that, so treat an AC20 start as
+  approximate. PR12 and SW50R are barely affected.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
@@ -141,6 +143,14 @@ the real backend. If trying a discrete control is material, run
 Use `--renderer swift` when macOS has the licensed Audio Unit installed. Its
 numbers are facts about that plugin version, but the reused instance reports
 `reproducible=false`; preserve that warning beside every reported number.
+
+**When matching Morgan's AC20, pass `--process-policy fresh`.** A reused
+instance's AC20 output depends on what it rendered before, so the same candidate
+scores differently along different search paths. Fresh starts one plugin process
+per render — roughly 7× slower (about 2 s each against 0.3 s reused, per the
+renderer's own measurements), and the only thing that removes it. Other amps
+and Tone King do not need it; Tone King's variation is per-render noise, which
+the replicated shortlist scoring already handles.
 
 Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of

@@ -282,9 +282,17 @@ def test_committed_atlases_are_found_for_the_pack_that_has_them():
 
 
 def test_a_pack_with_no_atlas_is_not_an_error():
-    """Tone King has none, and asking must not raise or invent one."""
-    assert paths.response_atlases("toneking") == []
+    """Asking about a pack with none must not raise or invent one. (This used to
+    name Tone King, which now has atlases for both channels.)"""
     assert paths.response_atlases("no-such-pack") == []
+
+
+def test_both_packs_now_ship_atlases():
+    assert paths.response_atlases("morgan")
+    assert paths.response_atlases("toneking"), (
+        "Tone King was un-atlasable until the atlas resolved signal paths through "
+        "packs.calibration instead of Morgan's selectedAmp"
+    )
 
 
 def test_atlases_come_from_the_code_not_the_data_root(monkeypatch, tmp_path):

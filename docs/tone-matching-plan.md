@@ -860,47 +860,166 @@ different swept dimensions, different fixed settings — and that refusal exists
 stop merely similar runs being read as a trend. The fraction of neutral distance
 closed spans 60.5% to 76.1%, so they do not agree in any case.
 
-**AC20's two baseline runs differ by a systematic offset, and the cause is not
-known.** The same neutral measurement gave 2.643567 and 2.678757. Per target,
-that is not scatter: 20 of 24 targets moved by **+0.0422 ± 0.0042**, every one of
-them positive, and the remaining 4 moved by less than 0.00013. PR12 moved no
-target by more than 0.001 and SW50R moved one.
+**AC20's baseline offset is history dependence, and it contaminates the AC20
+atlas.** Two AC20 builds' neutral baselines differed by +0.0422 ± 0.0042 on 20 of
+24 targets. The cause, measured afterwards on Morgan 1.1.1 through the reused
+Swift server:
 
-A near-constant additive shift on most targets with a handful untouched is not
-the shape two-sided 0.23 dB band noise produces, so calling it repeatability
-scatter would be wrong — and so would the obvious remedy, since rounding does not
-remove an offset. Something differed between the two AC20 builds and this project
-has not identified it. The bias carries into the atlas means and therefore into
-AC20's derived percentages, though the size is small: recomputing `closes` against
-the pilot's baseline instead of the scaled run's moves 76.1% to 75.8%.
+- **Back-to-back renders of one setting agree exactly.** Five repeats of AC20's
+  neutral, each preceded by the same setting, agree to four decimals.
+- **What was rendered before decides the value.** The same neutral settings land
+  0.0340, 0.0544 or 0.0410 from a reference render depending only on which
+  setting preceded them — deterministically, every repeat. After sixteen random
+  renders the gap reached 0.111, so the memory spans more than one render.
+- **Warm-up does not clear it.** Processing the new setting for 1 s or 3 s before
+  capture left the spread across predecessors at 0.094 and 0.084. So it is not a
+  signal-domain time constant that settles; it is state tied to the sequence of
+  parameter writes, and only a new plugin instance resets it.
+- **It is AC20's, not the backend's.** Spread across predecessors: PR12 ~0.001,
+  SW50R ~0.01, AC20 ~0.09–0.1. An independent replay also reproduced the two
+  committed AC20 baselines' scores to four decimals by rendering the neutral right
+  after pilot row 127 and right after scaled row 1023.
 
-What follows for use: AC20's gate result stands, because a +0.04 shift on a
-neutral of 2.6 cannot turn a pass into a failure. What does not stand is reading
-a small AC20 difference as real without replicating its baseline first.
+The measurement is small enough to repeat, and needs nothing beyond the repository
+and the plugin. Render the atlas topology's neutral settings, render one other
+setting, render the neutral again, and compare; repeat per predecessor:
 
-`achievable_ranges` in all six files remain observed ranges on one probe — at
-1,024 points for three of them and 128 for the pilots — not statements about the
-plugin.
+```bash
+.venv/bin/python - <<'EOF'
+from analysis import io
+from analysis.compare import compare, scalar
+from analysis.fingerprint import fingerprint
+from match import atlas, space as space_module
+from match.renderer_au import AudioUnitRenderer
+from scripts.match_preset import _seed_from_template
+from scripts._cli import probe_di
 
-**Tone King cannot be atlased at all, and that is a design limit rather than a
-gap in the work done.** `match/atlas.py` resolves an amp through
-`space.amp_prefix`, which reads `("", "selectedAmp")` and maps it via the pack's
-`amp_modules` — both Morgan concepts. Tone King selects its channel with
-`ampType` and declares no `amp_modules`, so `build_response_atlas.py --pack
-toneking --amp rhythm` fails at the topology check with "the topology selects no
-recognised amp, not rhythm", whatever template it is given.
+AMP, TEMPLATE = "ac20", "samples/AC20_Atlas_Topology.xml"
+fp = lambda r: fingerprint(io.from_samples(r.audio, r.metadata.sample_rate),
+                           regime="probe", excerpt_s=None)
+space = space_module.build("morgan", amp=AMP)
+values, _ = _seed_from_template(TEMPLATE, space, "morgan")
+fixed = atlas.tone_topology(values, space, AMP)
+renderer = AudioUnitRenderer("morgan")  # reuse: the policy under test
+paths = atlas._supported_paths(renderer.parameter_specs()) or set()
+base = {atlas._path(k): v for k, v in fixed.items() if atlas._path(k) in paths}
+dims = atlas.sampling_dimensions(space, fixed, renderer.parameter_specs())
+neutral = atlas.neutral_settings(base, dims)
+rows = atlas.latin_hypercube(dims, 64, 17)
+di, _ = probe_di(None, 4.0)
+renderer.render(di, neutral)                   # absorb the first-render effect
+reference = fp(renderer.render(di, neutral))
+for label, before in (("neutral", neutral), ("row 31", {**base, **rows[31]}),
+                      ("row 63", {**base, **rows[63]})):
+    scores = []
+    for _ in range(5):
+        renderer.render(di, before)
+        scores.append(scalar(compare(reference, fp(renderer.render(di, neutral)),
+                                     profile="unpaired-v1"), "unpaired-v1"))
+    print(f"after {label:8}", " ".join(f"{s:.4f}" for s in scores))
+renderer.close()
+EOF
+```
 
-The search side has no such problem: `match_preset.py --pack toneking --amp lead`
-resolves the channel and reports 33 enumerable controls, because the space is
-built from the manifest's `search_conditions`, which name the selector
-(`/ampType`) and the members that enable each parameter. That declaration is the
-generic mechanism; the atlas predates it and uses the Morgan-shaped one.
+Repeats within a row agreeing and rows disagreeing is history dependence; repeats
+within a row disagreeing is noise. Swap `AMP` and `TEMPLATE` for the other amps,
+or pass `warmup_s=` to the renderer to test warm-up.
 
-So M7-1 for Tone King is not "run the builder for a third pack". It needs
-`atlas.py` to select a signal path through `search_conditions` rather than
-`selectedAmp`, which is a change to the space abstraction and deserves its own
-work package. Until then, every atlas claim in this document is a claim about
-Morgan.
+That is the offset. The atlas scores every target against one baseline render,
+and the pilot's was rendered after atlas row 127 while the scaled build's came
+after row 1023 — different histories, different neutral, the same shift on every
+target it is compared with. It also means **every AC20 atlas entry carries
+whatever was rendered before it**, and so does every AC20 candidate in a search on
+a reused instance. The committed AC20 atlases are left in place with that stated;
+rebuilding them with `--process-policy fresh` (one plugin process per render —
+about 2 s each against 0.3 s reused, from `match/renderer_au.py`'s own timings,
+so roughly 7× slower) is the fix, and is not done here.
+
+`--neutral-replicates` does not help AC20: its replicates agree with each other
+because they share a history. It exists for noise, which is Tone King's problem.
+
+**Tone King, through its own signal paths.** The atlas used to resolve an amp
+through `space.amp_prefix`, which reads Morgan's `selectedAmp` and nothing else,
+so `build_response_atlas.py --pack toneking` refused every topology — while
+`match_preset.py --pack toneking --amp lead` worked, because the search already
+went through `packs.calibration.signal_paths`. That function answers the question
+for both packs: Tone King declares `calibration.signal_paths` selected by
+`ampType`, and Morgan's paths are derived from `amp_modules`. The atlas now asks
+it too. A regression test recomputes every committed Morgan atlas's topology
+from its recorded template and requires the fixed settings it recorded, so the
+change is proven not to move Morgan.
+
+What an atlas pins is now a per-pack table (`ATLAS_PINS_BY_PACK`), deliberately
+explicit rather than Tone King's calibration neutral. That neutral exists to
+measure an amp alone, so it also pins input gain, the amp's spring reverb and the
+whole EQ — all of which Morgan's atlases sweep. Tone King pins:
+
+- the same effects Morgan bypasses, where it has them: compressor, both drives,
+  wah, chorus, delay and reverb off;
+- the gate and tremolo, which have no switch: gate threshold at its floor and
+  tremolo depth at zero, with tremolo speed pinned too because it is dead once
+  depth is zero. These are continuous, so pinning also removes them from the
+  sweep — otherwise the hypercube would put them straight back;
+- the attenuator at 0 dB and HFC at normal. The first real template tried pinned
+  the attenuator at −24 dB: a heavily attenuated power amp baked into every atlas
+  point, the same failure as a recipe switching SW50R's Bright off;
+- both cabinets on, as both of Morgan's cab mics are.
+
+**No preset is needed, and none is used.** `--template` is now optional; without
+it the topology is the pack's own centre seed with the path selected. Tone King
+ships no preset and cannot, and a user's preset would put its own cabinet and
+taste into the atlas and its provenance outside the repository. The neutral seed
+puts a Dynamic 57 on both cabinets, which is an ordinary choice. The provenance
+test accepts a template-free atlas only when it records no template and names the
+pack's neutral seed.
+
+**Tone King's variation is noise, not history — and sometimes large.** Repeats of
+the neutral after the same predecessor typically vary by ~0.02–0.04
+(`unpaired-v1`), where AC20's agree exactly. But some settings are bistable: lead
+held-out target 3 scored 2.146 in one build and 1.866 in the other, and a replay
+gave 2.094, 2.125 and 1.862 — the first and last after identical history. So a
+single Tone King render can land in one of two states about 0.25 apart. The
+baseline is rendered five times (`--neutral-replicates 5`) and each target scored
+against the median, which handles the typical case; a test shows one spoiled
+baseline render moving every target's score and three replicates putting it back.
+The replicates cannot help a bistable *target*, which is rendered once.
+
+Tone King 1.0.3 through the reused Swift server, `reproducible=False`, all four
+atlases on renderer build `audio-unit-renderer-2af9432f77c6`:
+
+| channel | swept dims | neutral | pilot (128) | scaled (1,024) | closes | scale gain |
+|---|---:|---:|---:|---:|---:|---:|
+| rhythm | 23 | 1.417 | 0.683 | **0.493** | 65.2% | 27.8% |
+| lead | 23 | 1.40–1.41 | 0.745 | **0.533** | 61.9% | 28.4% |
+
+Rhythm beats neutral on 24 of 24 held-out targets at both densities; lead on 22
+of 24 at 128 points and 23 at 1,024 — the first atlas here that does not win every
+target at pilot density. Each scale step is better on 24 and 23 of 24 targets.
+Lead's neutral mean moved 0.7% between its two builds, and that is **not** the
+baseline moving: the whole shift is held-out target 3 (−0.280, the bistable one
+above). The other 23 targets moved by at most 0.034, and without target 3 the mean
+moved +0.17% the other way. The five-render baselines themselves agreed to within
+0.042 on every target on replay.
+
+```bash
+.venv/bin/python scripts/build_response_atlas.py --pack toneking --amp rhythm \
+  --renderer swift --samples 1024 --held-out 24 --seconds 4 --seed 17 \
+  --held-out-seed 29 --neutral-replicates 5 \
+  --out packs/toneking/response_atlas_rhythm_1024.json
+```
+
+**The renderer's identity is a byte hash of its source.** `renderer_build` hashes
+`match/renderer_au.py` and the two Swift helpers as bytes. A docstring edit to
+the renderer between one amp's pilot and scale builds gave the pair different
+builds, and `compare_scale` refused them; it also moved the build away from the
+one Tone King's committed calibration was measured on, which a test pins. The
+atlases above were rebuilt on the unmodified renderer. Anyone building an atlas:
+do not touch those three files between an amp's pilot and scale runs, and do not
+touch them at all without re-measuring Tone King's calibration.
+
+**What this does not show.** Not that Tone King and Morgan agree — `compare_scale`
+refuses cross-pack pairs as it refuses cross-amp ones. Each atlas clears its own
+gates, on one method.
 
 **Each topology pins its amp's switches**, since switches are never swept. AC20's
 are the larger pair: `ac20BassTreble` on is a measured **−15.6 dB at 60 Hz**
