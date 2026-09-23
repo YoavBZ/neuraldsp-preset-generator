@@ -102,6 +102,14 @@ renderer's own measurements), and the only thing that removes it. Other amps
 and Tone King do not need it; Tone King's variation is per-render noise, which
 the replicated shortlist scoring already handles.
 
+**Pass it too when the template has Morgan's rack reverb or tremolo switched on
+and you are matching with a played DI.** Both keep an oscillator running from one
+render to the next on a reused instance, so the same settings come out
+differently each time — the rack reverb's renders of one setting landed 0.1 to
+0.6 apart through a played DI, the tremolo's several dB apart — and the search
+ranks noise. Only a new instance resets it; warm-up and `isolate` do not. Fresh
+costs about 2 s per render, against 0.9 s reused with a 6 s DI.
+
 Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
