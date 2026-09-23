@@ -3,6 +3,9 @@
 Use before building a comparison whenever the active amp may be AC20. The
 private output record binds the exact DI, settings, audio and renderer policy.
 No earlier audition or judgment is changed by a new render.
+
+Supply either a full effective settings JSON object or a plugin XML preset.
+The XML path reads every declared writable control, not just search dimensions.
 """
 from __future__ import annotations
 
@@ -31,52 +34,103 @@ def _amp(settings, pack):
     return pack.parameters["/selectedAmp"].members[stored]
 
 
-def _all_writable_settings(settings, pack, supported):
+def _all_writable_settings(settings, pack, supported, *, warnings=None):
     """Preserve every supplied writable control, including non-search controls."""
     applied = {}
     for name, value in settings.items():
         if not isinstance(name, str) or not name or name == "/":
             raise ValueError(f"invalid setting path {name!r}")
-        path = name.lstrip("/") if name in ("selectedAmp", "/selectedAmp") else name
-        spec = pack.parameters.get("/selectedAmp" if path == "selectedAmp" else path)
+        path = name[1:] if name.startswith("/") else name
+        if not path or path.startswith("/"):
+            raise ValueError(f"invalid setting path {name!r}")
+        spec = pack.parameters.get("/" + path if "/" not in path else path)
         if spec is None or not spec.writable or (supported is not None and path not in supported):
             raise ValueError(f"unsupported or read-only setting {name!r}")
         if path in applied and applied[path] != value:
             raise ValueError(f"conflicting spellings for setting {path!r}")
-        pack.to_stored(spec, value)
+        pack.to_stored(spec, value, warnings=warnings)
         applied[path] = value
     if "selectedAmp" not in applied:
         raise ValueError("effective settings omit selectedAmp")
     return applied
 
 
+def _settings_from_preset(path, pack, supported, *, warnings=None):
+    """Read the complete writable state, refusing an unknown or undrivable slot."""
+    from format.parser import parse_file
+    from format.structured import build
+    from format.translate import from_binary
+    from packs.loader import detect_pack
+
+    preset = build(parse_file(str(path)))
+    detected = detect_pack(preset.file_header)
+    if detected is None or detected.pack_id != pack.pack_id:
+        raise ValueError(f"{path} is not a {pack.display_name} preset")
+    values = {}
+    for parameter in preset.parameters:
+        spec = pack.get(parameter.module_path, parameter.key)
+        name = f"{parameter.module_path}/{parameter.key}" if parameter.module_path else parameter.key
+        if spec is None:
+            raise ValueError(f"preset contains an undeclared control: {name}")
+        if not spec.writable:
+            continue
+        if supported is not None and name not in supported:
+            raise ValueError(f"preset control cannot be rendered: {name}")
+        value = from_binary(spec.kind, parameter.value, spec.unit)
+        if name in values and values[name] != value:
+            raise ValueError(f"preset states conflicting values for {name}")
+        values[name] = value
+    if "selectedAmp" not in values:
+        raise ValueError("Morgan preset omits selectedAmp")
+    required = {spec.path for spec in pack.parameters.values() if spec.writable}
+    missing = sorted(required - values.keys())
+    if missing:
+        names = ", ".join(missing[:5])
+        suffix = f" (and {len(missing) - 5} more)" if len(missing) > 5 else ""
+        raise ValueError(f"preset omits {len(missing)} writable control(s): {names}{suffix}; "
+                         "rendering it would substitute plugin defaults")
+    # Opaque enums read from this exact preset are preserved as stored. Their
+    # musical meaning is still unknown; keep the warning in the render record.
+    return _all_writable_settings(values, pack, supported,
+                                  warnings=[] if warnings is None else warnings)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--di", required=True, type=pathlib.Path)
-    parser.add_argument("--settings-json", required=True, type=pathlib.Path,
-                        help="full effective Morgan settings as one JSON object")
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument("--settings-json", type=pathlib.Path,
+                             help="full effective Morgan settings as one JSON object")
+    input_group.add_argument("--preset", type=pathlib.Path,
+                             help="Morgan XML preset; render all its writable controls")
     parser.add_argument("--settings-key", help="dot-separated object path within settings JSON, e.g. settings.ac20")
     parser.add_argument("--out", required=True, type=pathlib.Path,
                         help="new private WAV under runs/")
     args = parser.parse_args()
-    di_path, settings_path, out = (p.expanduser().resolve() for p in
-                                   (args.di, args.settings_json, args.out))
+    di_path = args.di.expanduser().resolve()
+    source_path = (args.settings_json or args.preset).expanduser().resolve()
+    out = args.out.expanduser().resolve()
+    if args.settings_key and args.preset:
+        raise ValueError("--settings-key applies only to --settings-json")
     if out.suffix.lower() != ".wav" or ROOT / "runs" not in out.parents:
         raise ValueError("--out must be a new private WAV under this project's runs/")
     sidecar = out.with_suffix(out.suffix + ".render.json")
-    if out.exists() or sidecar.exists() or out in (di_path, settings_path):
+    if out.exists() or sidecar.exists() or out in (di_path, source_path):
         raise ValueError("output already exists or aliases an input")
-    settings = json.loads(settings_path.read_text())
-    if args.settings_key:
-        for key in args.settings_key.split("."):
-            if not isinstance(settings, dict) or key not in settings:
-                raise ValueError(f"settings key {args.settings_key!r} is missing")
-            settings = settings[key]
-    if not isinstance(settings, dict):
-        raise ValueError("settings JSON must be an object")
+    if not source_path.is_file():
+        raise ValueError(f"input settings or preset does not exist: {source_path}")
+    settings = None
+    if args.settings_json:
+        settings = json.loads(source_path.read_text())
+        if args.settings_key:
+            for key in args.settings_key.split("."):
+                if not isinstance(settings, dict) or key not in settings:
+                    raise ValueError(f"settings key {args.settings_key!r} is missing")
+                settings = settings[key]
+        if not isinstance(settings, dict):
+            raise ValueError("settings JSON must be an object")
     from packs.loader import load_pack
     pack = load_pack("morgan")
-    amp = _amp(settings, pack)
     from analysis import io
     from match.renderer import _hash_audio
     from match.renderer_au import AudioUnitRenderer
@@ -87,9 +141,12 @@ def main():
         metadata = renderer.metadata()
         if "process=fresh" not in metadata.quality_mode:
             raise ValueError("renderer did not report a fresh process")
-        mapped = _all_writable_settings(settings, pack, renderer_paths(renderer))
-        if _amp(mapped, pack) != amp:
-            raise ValueError("selected amp changed during settings validation")
+        supported = renderer_paths(renderer)
+        source_warnings = []
+        mapped = (_settings_from_preset(source_path, pack, supported,
+                                        warnings=source_warnings) if args.preset
+                  else _all_writable_settings(settings, pack, supported))
+        amp = _amp(mapped, pack)
         result = renderer.render(di, mapped, di_sha256=_hash_audio(di))
         out.parent.mkdir(parents=True, exist_ok=True)
         _write_audio(out, result.audio, metadata.sample_rate)
@@ -98,9 +155,12 @@ def main():
                   "audio": {"path": str(out), "sha256": _sha(out)},
                   "di": {"path": str(di_path), "sha256": _sha(di_path),
                          "audio_sha256": _hash_audio(di)},
-                  "settings": {"path": str(settings_path), "sha256": _sha(settings_path),
-                               "key": args.settings_key},
+                  "settings": ({"path": str(source_path), "sha256": _sha(source_path),
+                                "key": args.settings_key} if args.settings_json else None),
+                  "preset": ({"path": str(source_path), "sha256": _sha(source_path)}
+                             if args.preset else None),
                   "applied_settings": mapped,
+                  "source_warnings": source_warnings,
                   "renderer": metadata.as_dict()}
         _write_text(sidecar, json.dumps(record, indent=2, allow_nan=False) + "\n")
         print(json.dumps({"audio": str(out), "record": str(sidecar),

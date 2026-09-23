@@ -163,37 +163,35 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         if provenance.get(label, {}).get("amp_model") == "AC20"
         and not verified_fresh_ac20(provenance[label], record["alternatives"][label])
     ]
-    verdict = record.get("verdict") or {}
-    result["agreement"] = {}
-    result["agreement_with_level"] = {}
+    return attach_verdict(result, record.get("verdict") or {})
+
+
+def attach_verdict(scored: dict, verdict: dict) -> dict:
+    """Compare a listener's answers with *frozen* scores, without rescoring audio."""
+    scoring = scored.get("objective_scoring")
+    if not isinstance(scoring, dict) or scoring.get("schema") != "listening-objective-v1":
+        raise ValueError("a frozen listening-objective-v1 score is required")
+    result = {**scored, "verdict": dict(verdict), "agreement": {},
+              "agreement_with_level": {}}
+    comparable_coverage = scoring["prediction_comparable"]
     for question in ("closer", "preferred"):
         answer = verdict.get(question)
         if answer not in (None, "A", "B", "indistinguishable"):
             raise ValueError(f"invalid {question} verdict: {answer!r}")
-        if answer is None:
-            status, agrees = "no_verdict", None
-        elif not comparable_coverage:
-            status, agrees = "unequal_coverage", None
-        elif answer == "indistinguishable":
-            status, agrees = "listener_tie", prediction == answer
-        elif prediction == "indistinguishable":
-            status, agrees = "objective_tie", False
-        else:
-            agrees = answer == prediction
-            status = "agree" if agrees else "disagree"
-        result["agreement"][question] = {"status": status, "agrees": agrees}
-        if answer is None:
-            status, agrees = "no_verdict", None
-        elif not comparable_coverage:
-            status, agrees = "unequal_coverage", None
-        elif answer == "indistinguishable":
-            status, agrees = "listener_tie", with_level_prediction == answer
-        elif with_level_prediction == "indistinguishable":
-            status, agrees = "objective_tie", False
-        else:
-            agrees = answer == with_level_prediction
-            status = "agree" if agrees else "disagree"
-        result["agreement_with_level"][question] = {"status": status, "agrees": agrees}
+        for field, prediction in (("agreement", scoring["prediction"]),
+                                  ("agreement_with_level", scoring["prediction_with_level"])):
+            if answer is None:
+                status, agrees = "no_verdict", None
+            elif not comparable_coverage:
+                status, agrees = "unequal_coverage", None
+            elif answer == "indistinguishable":
+                status, agrees = "listener_tie", prediction == answer
+            elif prediction == "indistinguishable":
+                status, agrees = "objective_tie", False
+            else:
+                agrees = answer == prediction
+                status = "agree" if agrees else "disagree"
+            result[field][question] = {"status": status, "agrees": agrees}
     return result
 
 
