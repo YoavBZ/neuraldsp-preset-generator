@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import pathlib
-import shlex
 import subprocess
 import sys
 
@@ -235,100 +234,23 @@ def test_python_provenance_is_portable_without_rewriting_external_interpreters(
     assert atlas_builder._portable_executable() == str(external)
 
 
-# Every amp each pack is expected to ship an atlas for, and the plugin build each
-# was rendered on — the audited versions, so an atlas rendered on an unaudited
-# plugin cannot slip in unnoticed.
-ATLASED = {"morgan": {"pr12", "sw50r", "ac20"}, "toneking": {"rhythm", "lead"}}
-PLUGIN_VERSION = {"morgan": "1.1.1", "toneking": "1.0.3"}
-
-
-@pytest.mark.parametrize("pack", sorted(ATLASED))
-def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(pack):
-    """Every atlas of every pack, not a named few.
-
-    This hardcoded the PR12 filenames, so the SW50R pair shipped 9 MB with none
-    of these assertions applied to it — and its `build.command` pointed at a
-    scratchpad, which is exactly what the `--out` assertion below exists to
-    catch. A test that names its subjects cannot cover the next one; it was then
-    Morgan-only, and would have waved Tone King's through the same way.
-    """
-    from packs import paths
-
-    found = paths.response_atlases(pack)
-    documents = {}
-    for path in found:
-        samples = int(json.loads(path.read_text())["sample_count"])
-        document = atlas.load(path)
-        documents.setdefault(document["amp"], {})[samples] = document
-
-        assert document["pack"] == pack
-        assert document["sample_count"] == samples
-        assert document["dimensions"], "an atlas with no swept dimension is a point"
-        assert document["renderer"]["plugin_version"] == PLUGIN_VERSION[pack]
-        # A reused plugin instance does not repeat itself; one process per render
-        # does, bit for bit, and says so. Either way the flag and the caveat
-        # agree. AC20 is the fresh one, because only its history was large.
-        fresh = "process=fresh" in document["renderer"]["quality_mode"]
-        assert fresh is (document["amp"] == "ac20"), path
-        assert document["renderer"]["reproducible"] is fresh
-        # And the recorded command rebuilds the same thing: a fresh atlas whose
-        # command lacked the flag would come back reused if re-run.
-        command = shlex.split(document["build"]["command"])
-        assert ("--process-policy" in command
-                and command[command.index("--process-policy") + 1] == "fresh"
-                ) is fresh, path
-        if fresh:
-            assert document["measurement_caveat"] is None
-            assert document["renderer"]["band_noise_db"] == 0
-        else:
-            assert "reproducible=False" in document["measurement_caveat"]
-        validation = document["build"]["validation"]
-        assert validation["samples"] == 24
-        assert validation["beats_neutral"] is True
-        # A requirement, not a result. This asserted a 100% win rate, which was
-        # every atlas's result at the time copied down as if it were the rule —
-        # the same mistake as pinning the scale gate at PR12's score. Tone King's
-        # lead pilot wins 22 of 24 and passes its gate.
-        assert validation["atlas_win_rate"] * validation["samples"] >= 20, path.name
-        command = shlex.split(document["build"]["command"])
-        assert command[0] == document["build"]["python_executable"]
-        assert document["build"]["python_executable"] == ".venv/bin/python"
-        assert command[command.index("--out") + 1] == str(path.relative_to(ROOT))
-        # The template half of the same bug. A scratchpad `--out` was caught by
-        # the line above; a scratchpad `--template` was not, and an atlas whose
-        # topology nobody has is exactly as unreproducible. With no template the
-        # topology is the pack's own neutral seed, which needs nothing outside the
-        # repository — Tone King's atlases are built that way, since none of its
-        # presets may ship.
-        if "--template" in command:
-            template = command[command.index("--template") + 1]
-            assert (ROOT / template).is_file(), (
-                f"{path.name} records --template {template}, which is not in the "
-                f"repository — commit the topology or the atlas cannot be rebuilt"
-            )
-            assert document["build"]["template"] == template
-        else:
-            assert document["build"]["template"] is None
-            assert document["build"]["template_name"] == f"{pack} neutral seed"
-
-    # Each amp's own pilot-to-scale comparison. Deliberately never across amps:
-    # `compare_scale` refuses that pair, and the refusal is the point.
-    assert set(documents) >= ATLASED[pack], f"{pack} is missing an amp"
-    for amp, by_count in documents.items():
-        assert {128, 1024} <= set(by_count), f"{amp} is missing a gate"
-        comparison = atlas.compare_scale(by_count[128], by_count[1024])
-        # What the scale gate asks is that more points help, clearly and on most
-        # targets. 20 of 24 is far enough above chance to catch a scale step that
-        # did not work.
-        assert comparison["candidate_better_targets"] >= 20, amp
-        # A bound, not a recorded result: well below every measured scale gain
-        # across both packs (20.2% to 32.3%) and well above zero, so it still fails
-        # a scale step that did nothing. Loosening it to 0.10 for Tone King's noise
-        # was considered and turned out unnecessary — no result comes near 0.15.
-        assert comparison["mean_reduction_fraction"] > 0.15, amp
+def test_no_response_atlas_ships_with_the_plugin():
+    """The committed atlases were 44 of the plugin's 47 MB and measured no help
+    to a match, so they were removed (M7-1 in docs/tone-matching-plan.md names
+    the commit that still has them). Kept out of the package and out of the
+    repository, so a rebuilt one is not committed by accident."""
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
-    assert '"*/response_atlas_*.json"' in package_data
+    assert "response_atlas" not in package_data
+    try:
+        tracked = subprocess.run(
+            ["git", "ls-files", "packs"], cwd=ROOT, capture_output=True, text=True)
+    except FileNotFoundError:
+        pytest.skip("git is not installed")
+    if tracked.returncode != 0:
+        pytest.skip("not a git checkout")
+    assert not [line for line in tracked.stdout.splitlines()
+                if "response_atlas_" in line]
 
 
 def test_dry_run_is_plugin_free_and_names_the_render_arithmetic(tmp_path):
@@ -346,20 +268,29 @@ def test_dry_run_is_plugin_free_and_names_the_render_arithmetic(tmp_path):
     assert not (tmp_path / "atlas.json").exists()
 
 
-def test_compare_cli_reproduces_the_committed_scale_result_without_a_plugin():
+def test_compare_cli_reports_a_scale_step_between_two_builds(tmp_path):
+    """The compare tool end to end, on two synthetic builds of one experiment."""
+    built = {}
+    for samples in (8, 16):
+        built[samples] = tmp_path / f"atlas-{samples}.json"
+        done = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+             "--pack", "morgan", "--amp", "pr12", "--renderer", "synthetic",
+             "--template", str(ROOT / "samples" / "Example_Clean_PR12.xml"),
+             "--samples", str(samples), "--held-out", "4", "--seconds", "1",
+             "--out", str(built[samples])],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        assert done.returncode == 0, done.stderr
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "compare_response_atlases.py"),
-         "--baseline", str(ROOT / "packs" / "morgan" /
-                             "response_atlas_pr12_pilot.json"),
-         "--candidate", str(ROOT / "packs" / "morgan" /
-                              "response_atlas_pr12_1024.json")],
+         "--baseline", str(built[8]), "--candidate", str(built[16])],
         cwd=ROOT, capture_output=True, text=True,
     )
 
     assert result.returncode == 0, result.stderr
-    assert "reproducible=False" in result.stdout
-    assert "mean: 0.814 -> 0.583 (28.4% lower)" in result.stdout
-    assert "candidate better on 23/24 targets" in result.stdout
+    assert "8 -> 16 atlas points; 4 held-out targets" in result.stdout
+    assert "candidate better on" in result.stdout
 
 
 def test_query_cli_writes_ranked_specs_without_a_plugin(tmp_path):
@@ -430,28 +361,6 @@ def test_query_warns_that_a_noise_probe_atlas_does_not_transfer_to_a_guitar(
     assert "evidence to distrust the topology" in done.stdout
 
 
-def test_every_committed_atlas_is_the_noise_probe_the_warning_keys_on():
-    """The warning above keys on `build.probe_caveat`, which a build records only
-    when no DI was given. Checked against the probe's hash rather than the
-    caveat's wording, which has changed: the PR12 atlases call the same signal a
-    "pluck sequence". If an atlas lost the caveat while still being the noise
-    probe, the tool would silently stop warning about it."""
-    from analysis import io
-    from scripts._cli import probe_di
-
-    committed = sorted((ROOT / "packs").glob("*/response_atlas_*.json"))
-    # Five amps or channels, a pilot and a scaled atlas each. A glob that
-    # matched nothing would pass the loop below without checking anything.
-    assert len(committed) == 10, [path.name for path in committed]
-    for path in committed:
-        document = json.loads(path.read_text())
-        assert document["build"]["probe_caveat"], path
-        probe = document["probe"]
-        noise, _ = probe_di(None, probe["duration_s"])
-        assert io.from_samples(noise, probe["sample_rate"]).sha256 == (
-            probe["sha256"]), path
-
-
 def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):
     atlas_path = tmp_path / "atlas.json"
     atlas_path.write_text(json.dumps(_document()))
@@ -468,80 +377,6 @@ def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):
 
     assert result.returncode == 2
     assert "stores fingerprints rather than waveforms" in result.stderr
-
-
-# --- what `show.py` tells a skill about the atlases a pack ships -------------
-
-
-def test_show_reports_each_atlas_with_the_amp_and_density_it_covers():
-    """An atlas applies to exactly one amp and one fixed topology, so those are
-    the facts that decide whether a skill can use it at all. Until `show.py`
-    reported them, an agent following the skills had no way to discover that an
-    atlas existed — the M7 research was committed and unreachable."""
-    from scripts.show import _atlases
-
-    reported = _atlases("morgan")
-    assert reported, "morgan ships atlases and they must be discoverable"
-    for entry in reported:
-        assert entry["amp"], "the amp is what decides whether it applies"
-        assert entry["sample_count"] > 0
-        assert pathlib.Path(entry["path"]).exists()
-        # Built on a reused instance, which does not repeat itself, except AC20's,
-        # rebuilt one process per render. Whatever the build says reaches the skill.
-        assert entry["reproducible"] is (entry["amp"] == "ac20"), entry
-    toneking = _atlases("toneking")
-    assert {entry["amp"] for entry in toneking} == {"rhythm", "lead"}, (
-        "Tone King's channels are reported by their signal-path names"
-    )
-
-
-def test_show_skips_a_file_it_cannot_read_rather_than_failing(monkeypatch, tmp_path):
-    """Inspecting a preset must not depend on optional research artifacts: a
-    truncated download or a future schema should cost the atlas line, not the
-    whole `show.py` run."""
-    from packs import paths
-    from scripts import show
-
-    broken = tmp_path / "response_atlas_broken.json"
-    broken.write_text("{ not json")
-    wrong_schema = tmp_path / "response_atlas_future.json"
-    wrong_schema.write_text(json.dumps({"schema": "response-atlas-99", "amp": "pr12"}))
-    monkeypatch.setattr(paths, "response_atlases", lambda pack: [broken, wrong_schema])
-
-    assert show._atlases("morgan") == []
-
-
-def test_show_actually_emits_the_atlases_it_discovers():
-    """Exercise the CLI, not just the helper.
-
-    The helper can be perfect while nothing calls it. Both skills now tell an
-    agent to read `show.py`'s `response_atlases`, so discoverability *is* the
-    feature — and a review found that deleting the two wiring lines in `show.py`
-    left the whole suite green, because the tests only called the private
-    helper.
-    """
-    root = pathlib.Path(__file__).resolve().parents[1]
-    preset = root / "samples" / "Example_Clean_PR12.xml"
-
-    done = subprocess.run(
-        [sys.executable, str(root / "scripts" / "show.py"), str(preset)],
-        capture_output=True, text=True, cwd=root,
-    )
-    assert done.returncode == 0, done.stderr
-    reported = json.loads(done.stdout)["response_atlases"]
-    assert reported, "morgan ships atlases and show.py must surface them"
-    assert reported[0]["sample_count"] >= reported[-1]["sample_count"], (
-        "densest first: filename order puts the 128-point pilot last, which is "
-        "the line someone skimming is most likely to read as current"
-    )
-
-    text = subprocess.run(
-        [sys.executable, str(root / "scripts" / "show.py"), str(preset), "--text"],
-        capture_output=True, text=True, cwd=root,
-    )
-    assert text.returncode == 0, text.stderr
-    assert "response atlas:" in text.stdout, "the human view has to show them too"
-    assert str(reported[0]["sample_count"]) in text.stdout
 
 
 # --- Tone King, through the pack's own signal paths ------------------------
@@ -613,24 +448,6 @@ def test_an_undeclared_pack_is_refused_rather_than_left_unbypassed():
     still call itself a tone atlas."""
     with pytest.raises(atlas.AtlasError, match="no atlas topology is declared"):
         atlas.atlas_pins("gojira")
-
-
-def test_morgan_topology_is_unchanged_by_the_generic_path_resolution():
-    """Regression for the refactor: recompute every committed Morgan atlas's topology
-    from the template it recorded and require the fixed settings it recorded."""
-    from packs import paths
-
-    for path in paths.response_atlases("morgan"):
-        document = atlas.load(path)
-        space = space_module.build("morgan", amp=document["amp"])
-        values, _ = _seed_from_template(
-            ROOT / document["build"]["template"], space, "morgan")
-        recomputed = {
-            atlas._path(key): value
-            for key, value in atlas.tone_topology(values, space, document["amp"]).items()
-        }
-        for key, recorded in document["fixed_settings"].items():
-            assert recomputed.get(key) == recorded, f"{path.name}: {key}"
 
 
 class _OneOddRender:
@@ -760,3 +577,17 @@ def test_build_with_no_topology_applies_the_pins():
                            fixed=pinned)
     assert default["fixed_settings"] == explicit["fixed_settings"]
     assert default["dimensions"] == explicit["dimensions"]
+
+
+def test_the_templates_still_give_the_topologies_the_removed_atlases_recorded():
+    """The atlases are gone but their build commands are documented, and those only
+    rebuild the same atlases if each template still yields the fixed settings the
+    atlas recorded. Frozen from the files in git history (commit 55490f9)."""
+    frozen = json.loads((ROOT / "tests" / "atlas_topologies.json").read_text())
+    for amp, recorded in frozen.items():
+        space = space_module.build("morgan", amp=amp)
+        values, _ = _seed_from_template(ROOT / recorded["template"], space, "morgan")
+        recomputed = {atlas._path(key): value for key, value in
+                      atlas.tone_topology(values, space, amp).items()}
+        for key, value in recorded["fixed_settings"].items():
+            assert recomputed.get(key) == value, f"{amp}: {key}"

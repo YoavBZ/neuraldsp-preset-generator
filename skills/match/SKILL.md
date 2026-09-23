@@ -73,85 +73,15 @@ names a song or artist, research the recorded amp, cabinet, microphone and effec
 with reliable sources. Use that evidence and the pack's `tone.md` to choose the
 template, amp/channel and discrete topology before matching. Keep source links.
 
-### Response atlases are not a starting point yet
+### No response atlas
 
-`show.py` lists any response atlas the pack ships: one amp's measured responses
-at 128 or 1,024 sampled settings, which a query tool searches for the settings
-nearest a reference without rendering anything. **Do not start a match from
-one.** Start from the template, as the rest of this skill describes. Two
-reasons:
-
-- **They were measured with a noise probe, not a guitar.** Every committed atlas
-  stores a synthetic noise-burst sequence played through the amp, and its gates
-  were measured on that same probe. Against held-out settings rendered from a
-  played guitar DI — which is what a reference is — the entry a lookup picks
-  beat the amp's neutral settings on 27 or 28 of 48: it helped on SW50R
-  (11 of 16), was about even on Tone King's rhythm channel (9 or 10 of 16,
-  varying between runs), and hurt on PR12 (7 of 16, further away than neutral
-  on average). That is one played passage per amp, and AC20, Tone King's lead
-  channel and the 128-point pilots were not measured on a guitar at all.
-- **A search started from one finished worse.** With the same 300-render
-  budget, SW50R searches started at the atlas's nearest entry ended further from
-  targets rendered from a played DI than searches started at neutral settings —
-  0.548 against 0.447, closer on only 2 of 12 — although the atlas entry itself
-  was closer than neutral on 9 of them. Even an atlas built from that played DI
-  itself ended no closer than the normal search (0.479 against 0.480), after
-  costing 128 renders to build. One amp, one played passage, twelve targets each.
-
-If the user asks for an atlas start anyway, this is the query. It writes ordinary
-specs; apply one with `apply_spec.py` and pass the result to `match_preset.py` as
-`--template`:
-
-```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
-  --atlas "${CLAUDE_PLUGIN_ROOT}/packs/morgan/response_atlas_pr12_1024.json" \
-  --reference REFERENCE.wav --reference-mode separated_stem --out-dir RUN_DIR
-```
-
-Report the result as an experiment, and keep six more limits in view:
-
-- **One amp or channel each, one fixed topology.** Morgan ships atlases for PR12,
-  SW50R and AC20; Tone King for its rhythm and lead channels. Each has its cabinet
-  and microphones fixed and its pedals and rack effects bypassed. **The amp's own
-  spring reverb is not bypassed — it is one of the swept controls**, so an atlas
-  start can carry a lot of reverb; check it and set it yourself if the part is
-  dry.
-  Pick the one whose `amp` matches the amp or channel you chose, at the larger
-  `sample_count`; `show.py` prints both. They say nothing about a part that needs
-  any of those effects.
-- **Switches are pinned, never swept.** Morgan's topologies are the bundled
-  example with only `selectedAmp` changed; Tone King's are the pack's own neutral
-  seed, with the attenuator at 0 dB and a Dynamic 57 on both cabinets. Every spec
-  an atlas produces asserts those positions. The ones that move the most tone:
-  AC20 pins `ac20BassTreble` on, a measured **−15.6 dB at 60 Hz**, and
-  `ac20Bright` on; SW50R pins `sw50rTrebleBoost` on, +2.5 dB from 400 Hz to 4 kHz.
-  If the part needs any of those the other way, an atlas start is working against
-  you and no refinement inside the atlas can move it — set the switch yourself
-  after applying the spec.
-- **AC20's atlas is built one plugin process per render.** On a reused
-  instance AC20's output depends on what was rendered before it, by up to ~0.1,
-  so its atlas was rebuilt with `--process-policy fresh` and carries no render
-  history. A search on AC20 needs the same policy — see step 3. PR12 and SW50R
-  are barely affected.
-- **A start, not an answer.** The stored settings are a place to search from.
-  Say so when reporting; a nearest-neighbour hit is not a match.
-- **Do not expect it to fit a full `mix`.** Every stored response is the noise
-  probe through this one amp. A mix is a guitar plus bass, drums, keys and a
-  master chain, so the nearest entry is the nearest of a set containing nothing
-  like the target. **The out-of-range list is not a reliable tell here**: on a
-  mastered mix the tool can report every compared feature inside its sampled
-  range and still be nowhere near. Query an atlas for `paired_di`,
-  `isolated_stem` or `separated_stem`; for a `mix`, fix the excerpt and the
-  regime first.
-- **Not an achievability oracle.** The file carries `achievable_ranges`, and
-  those are one finite atlas's observed range on the noise probe, not limits on
-  the plugin — and a played guitar has its own spectrum, so a reference landing
-  inside or outside them says little. Do not tell anyone "this amp cannot get
-  darker than X".
-
-Everything an atlas reports inherits its backend's `reproducible` flag: `false`
-for every atlas built on a reused plugin instance, `true` for AC20's, which was
-rebuilt one process per render.
+Earlier versions shipped response atlases — one amp's stored responses at sampled
+settings — and suggested starting a match from the nearest one. None ship now,
+and do not build one to start from: measured on SW50R, a search started from an
+atlas ended further from played-guitar targets than one started from neutral
+settings (0.548 against 0.447), and even an atlas built from the user's own DI
+ended no closer (0.479 against 0.480) after costing 128 renders to build. The
+research tools remain; see M7-1 in `docs/tone-matching-plan.md`.
 
 Do not enumerate switches or selectors casually. Enumeration divides the budget
 among complete inner searches, and M5 did not demonstrate an accuracy benefit on
@@ -182,7 +112,7 @@ sequence of decaying white-noise bursts and records that limitation. It is
 transient and aperiodic, not a played or pitched guitar part, and it is 6–10 dB
 louder than the two played DIs it has been measured against, so it drives the amp
 harder. Every candidate is then noise through the amp compared with a guitar —
-the same mismatch that made atlas lookups unreliable above. What that costs a
+the mismatch that made the old response atlases unreliable. What that costs a
 search has not been measured, and a no-DI run's own scores are noise-against-guitar
 distances, so a falling score is not evidence the tone got closer. Report a match
 made without a DI as weaker evidence than one rendered from the user's playing.

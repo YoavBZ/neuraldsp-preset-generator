@@ -129,14 +129,6 @@ say so plainly: you can still edit a template the user points at, but you cannot
 map a tonal description onto controls nobody has characterised. Do not invent
 the mapping — that is the guess this project exists to avoid.
 
-**Response atlases are not a starting point yet.** `show.py` reports
-`response_atlases`, but they were measured with a synthetic noise probe, and
-against a played guitar the three that were checked picked an entry better than
-neutral settings only a little over half the time, and on SW50R a search started
-from one finished further away than one started from neutral settings. The
-[match skill](../match/SKILL.md) has the numbers. Build from recipes, as below,
-whether or not an atlas covers the amp.
-
 **Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per
 layer from the intent table and pass them straight to the writer with `--recipe`;

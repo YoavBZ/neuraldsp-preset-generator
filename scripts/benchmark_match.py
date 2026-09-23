@@ -3,7 +3,7 @@
     python scripts/benchmark_match.py --targets 50 --budget 300
     python scripts/benchmark_match.py --targets 6 --budget 60 --json out.json
     python scripts/benchmark_match.py --renderer swift --targets 12 \
-      --atlas packs/morgan/response_atlas_sw50r_1024.json --json atlas.json
+      --atlas atlas_sw50r_1024.json --json atlas.json
 
 Samples random legal parameter vectors, renders each one, throws the vector away,
 and tries to recover it from the audio alone — once with the recipe stack alone,
