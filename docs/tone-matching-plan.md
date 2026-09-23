@@ -1394,7 +1394,9 @@ signal paired against the target's own passage:
 Each of the last three is further away on every target (Wilcoxon p < 0.001). The
 same 12 targets, setting for setting, are the ones in the played-DI run of "M7-1
 at equal budget", where the neutral start scored 1.665 and the inversion alone
-0.871 — another run, so context rather than pairs.
+0.871. That is another run, but a neutral render hardly moves between runs (the
+same targets' neutral scores differ by 0.046 on average between the two
+played-DI runs there), so the comparisons below pair them target by target.
 
 **Without a DI a search ends no closer than neutral settings.** Through the noise
 probe it ended at 1.48 against the neutral start's 1.665 on the same targets —
@@ -1430,7 +1432,7 @@ from 10.66 s and 18.9 s, mono at 48 kHz; neither is in the repository. The run
 took 150 minutes. Its JSON records a pre-squash commit whose measurement code is
 the code merged here; since then only the worker path's error handling, the
 JSON's hash fields (it still says `sha256` for what is now `samples_sha256`), the
-docs and the tests changed.
+docs and the tests changed, plus #56's help text and docs merged underneath.
 
 ---
 
