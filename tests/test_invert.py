@@ -631,6 +631,102 @@ def test_a_tremolo_rate_outside_the_plugin_range_is_clamped_and_reported():
     assert any("clamped" in caveat for caveat in result.caveats)
 
 
+def test_a_modulation_the_render_already_carries_is_not_a_missing_tremolo():
+    """The probe's own rhythm, read as an effect.
+
+    The synthetic noise-burst probe's bursts come out of an amp as a clean
+    modulation — clean enough at a high volume to pass the tremolo gate — so a
+    full-depth tremolo was written into benchmark targets that had none. On the
+    plugin that tremolo's oscillator then ran on between renders and identical
+    settings scored several dB apart. A render of the current settings through
+    the same probe carries the same modulation, which a missing tremolo would not.
+    """
+    from scripts._cli import probe_di
+
+    probe, _ = probe_di(None, 4.0)
+    target = fingerprint(io.from_samples(refchain.render(
+        probe, {f"{AMP}Amp/{AMP}Volume": 90.0}), SR), regime="probe", excerpt_s=None)
+    rendered = fingerprint(io.from_samples(refchain.render(probe, None), SR),
+                           regime="probe", excerpt_s=None)
+    # The fixture has to be the failing case, or the assertions below prove nothing.
+    assert target.modulation["am_confidence"] >= 0.75
+    assert invert.tremolo_settings(target).values["tremolo/tremoloActive"] is True
+
+    result = invert.tremolo_settings(target, rendered=rendered)
+    assert result.values == {}, "left exactly as the template has it"
+    assert any("--enumerate tremolo/tremoloActive" in caveat
+               for caveat in result.caveats), result.caveats
+
+    # And through the whole inversion, which is how the benchmark and
+    # `match_preset.py` reach it.
+    whole = invert.invert(target, rendered, amp=AMP)
+    assert "tremolo/tremoloActive" not in whole.values
+
+
+def test_a_recording_never_shares_the_renders_rhythm():
+    """Only a target rendered from the same DI carries its rhythm. Matching a
+    stem or a mix, the render is the probe through the template and the target is
+    a recording that never went near it — so a real tremolo at the probe's rate
+    must still be set. Before this was gated, a real 2 Hz tremolo on an
+    isolated stem was silently dropped."""
+    render = {"am_rate_hz": 2.17, "am_depth": 1.0, "am_confidence": 0.64}
+    tremolo = {"am_rate_hz": 2.0, "am_depth": 0.6, "am_confidence": 0.97}
+    for regime in ("isolated_stem", "separated_stem", "mix"):
+        stem = synthetic(source={"regime": regime}, modulation=tremolo)
+        result = invert.tremolo_settings(stem, rendered=synthetic(modulation=render))
+        assert result.values["tremolo/tremoloActive"] is True, regime
+    for regime in ("probe", "paired_di"):
+        shared = synthetic(source={"regime": regime}, modulation=tremolo)
+        assert invert.tremolo_settings(
+            shared, rendered=synthetic(modulation=render)).values == {}, regime
+
+
+def test_a_tremolo_at_another_rate_than_the_render_is_still_set():
+    """What the render carries only explains a modulation at its own rate, and
+    only if it carries it cleanly."""
+    rendered = synthetic(modulation={"am_rate_hz": 2.25, "am_depth": 1.0,
+                                     "am_confidence": 0.66})
+    faster = synthetic(modulation={"am_rate_hz": 5.0, "am_depth": 0.6,
+                                   "am_confidence": 0.9})
+    result = invert.tremolo_settings(faster, rendered=rendered)
+    assert result.values["tremolo/tremoloActive"] is True
+    assert result.values["tremolo/tremoloRate"] == 5.0
+
+    same_rate = synthetic(modulation={"am_rate_hz": 2.25, "am_depth": 1.0,
+                                      "am_confidence": 0.88})
+    murky = synthetic(modulation={"am_rate_hz": 2.25, "am_depth": 1.0,
+                                  "am_confidence": 0.3})
+    assert invert.tremolo_settings(
+        same_rate, rendered=murky).values["tremolo/tremoloActive"] is True
+    assert invert.tremolo_settings(same_rate, rendered=rendered).values == {}
+
+    # The tolerance is the delay rule's: 0.4 Hz here, since 15% of 2.25 is less.
+    near = synthetic(modulation={"am_rate_hz": 2.6, "am_depth": 1.0,
+                                 "am_confidence": 0.88})
+    far = synthetic(modulation={"am_rate_hz": 2.75, "am_depth": 1.0,
+                                "am_confidence": 0.88})
+    assert invert.tremolo_settings(near, rendered=rendered).values == {}
+    assert invert.tremolo_settings(
+        far, rendered=rendered).values["tremolo/tremoloActive"] is True
+
+
+def test_the_earlier_declines_still_switch_the_tremolo_off():
+    """The render check runs last. A target with no clean modulation, or one at a
+    delay's repeat rate, still turns a template's tremolo off even when the render
+    carries the same rate — the render carrying it is the template's tremolo."""
+    rendered = synthetic(modulation={"am_rate_hz": 2.38, "am_depth": 1.0,
+                                     "am_confidence": 0.9})
+    unclean = synthetic(modulation={"am_rate_hz": 2.38, "am_depth": 1.0,
+                                    "am_confidence": 0.5})
+    assert invert.tremolo_settings(unclean, rendered=rendered).values == {
+        "tremolo/tremoloActive": False}
+    echo = synthetic(modulation={"am_rate_hz": 2.38, "am_depth": 1.0,
+                                 "am_confidence": 0.85},
+                     time_fx={"delay_ms": 420.0, "delay_confidence": 0.5})
+    assert invert.tremolo_settings(echo, rendered=rendered).values == {
+        "tremolo/tremoloActive": False}
+
+
 def test_the_reverb_decay_is_recovered_from_the_audio_alone():
     target = measure({"reverb/reverbActive": True, "reverb/reverbDecay": 2.4,
                       "reverb/reverbMix": 70.0},

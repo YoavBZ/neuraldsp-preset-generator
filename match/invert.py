@@ -46,6 +46,21 @@ BAND_NOISE_FLOOR_DB = 0.3
 # 15% window is 0.3 Hz, which is finer than the AM detector's own resolution.
 TREMOLO_RATE_TOLERANCE_HZ = 0.4
 
+# How clean a modulation the *current render* has to carry before a target
+# modulation at the same rate is put down to the signal rather than an effect.
+# Lower than the tremolo gate on purpose: the question is not "is this a
+# tremolo?" but "is this rate already in what is rendering now?". The synthetic
+# noise-burst probe's bursts repeat every 0.9 s and the detector reads a harmonic
+# of that — 2.25 Hz from the 4 s probe, 2.17 or 3.33 Hz from the 6 s one. The
+# probe alone measures 0.55; renders of it through the chains measured so far
+# read 0.54 to 0.96. So the margin above this threshold is small, 0.04.
+SOURCE_AM_MIN_CONFIDENCE = 0.5
+
+# The regimes whose target was rendered from the same DI as the current render,
+# and so shares its rhythm. A recording — a stem or a mix — never went through
+# this DI, so what the render carries says nothing about the target's modulation.
+SAME_DI_REGIMES = ("probe", "paired_di")
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -971,7 +986,8 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
 
 
 def tremolo_settings(fingerprint, pack_id: str = "morgan",
-                     min_confidence: float = 0.75) -> Inversion:
+                     min_confidence: float = 0.75,
+                     rendered=None) -> Inversion:
     """Rate and depth from the amplitude-modulation spectrum.
 
     The confidence floor is high on purpose. A part strummed twice a second
@@ -985,6 +1001,12 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     echo is indistinguishable by rate alone, and this declines on it. The cost of
     declining is a tremolo the search has to find; the cost of not declining was a
     full-depth tremolo written into a target that had none.
+
+    `rendered` is the fingerprint of the current settings through the same DI.
+    When the target was rendered from that DI too (`SAME_DI_REGIMES`), a
+    modulation the render already carries at the target's rate cannot be told
+    apart from the DI's own rhythm or the template's tremolo, so the tremolo is
+    left exactly as the template has it. For a recording the render is ignored.
     """
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
@@ -1035,6 +1057,40 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
                 ],
                 detail={"am_confidence": round(confidence, 3),
                         "am_indistinguishable_from": "delay repeats"},
+            )
+
+    # A target rendered from the DI carries the DI's own rhythm. Measured: from
+    # tremolo-free random targets rendered from the synthetic noise-burst probe,
+    # the gate above let a full-depth tremolo through on 41 of 78 (4 s probe) and
+    # 40 of 78 (6 s). On the plugin that tremolo's oscillator keeps running between
+    # renders, so each render starts at a different point in the wobble, and
+    # identical settings rendered at different points in one benchmark target's
+    # run came out several dB apart. A render of the current settings through the
+    # same DI carries that rhythm as well; a missing tremolo would not be in it.
+    # Comparing one detected rate on each side, this leaves 5 of 78: the target
+    # and the render picked different harmonics of the same bursts.
+    shares_di = getattr(fingerprint, "regime", None) in SAME_DI_REGIMES
+    heard = (getattr(rendered, "modulation", None) or {}) if (
+        rendered is not None and shares_di) else {}
+    heard_rate = heard.get("am_rate_hz")
+    if (heard_rate is not None
+            and float(heard.get("am_confidence") or 0.0) >= SOURCE_AM_MIN_CONFIDENCE):
+        tolerance = max(TREMOLO_RATE_TOLERANCE_HZ, 0.15 * float(heard_rate))
+        if abs(float(rate) - float(heard_rate)) <= tolerance:
+            return Inversion(
+                values={},
+                caveats=[
+                    f"the {float(rate):.1f} Hz amplitude modulation matches one a "
+                    f"render of the current settings through the same DI already "
+                    f"carries ({float(heard_rate):.1f} Hz). Nothing in the "
+                    f"measurement separates the DI's own rhythm, or the template's "
+                    f"tremolo, from a tremolo the reference needs at that rate, so "
+                    f"the tremolo is left as the template has it — if the reference "
+                    f"really does have one at this rate, enumerate the tremolo switch "
+                    f"(--enumerate tremolo/tremoloActive in match_preset.py)."
+                ],
+                detail={"am_confidence": round(confidence, 3),
+                        "am_indistinguishable_from": "the current render"},
             )
 
     spec = declared(pack_id, "tremolo/tremoloRate")
@@ -1349,7 +1405,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     if _declares_all(pack_id, (
         "tremolo/tremoloActive", "tremolo/tremoloRate", "tremolo/tremoloDepth"
     )):
-        result.merge(tremolo_settings(target, pack_id=pack_id))
+        result.merge(tremolo_settings(target, pack_id=pack_id, rendered=candidate))
     else:
         unsupported.append("tremolo")
     if unsupported:
