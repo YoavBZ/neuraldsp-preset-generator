@@ -844,7 +844,9 @@ parallel.
 ```
 
 Morgan 1.1.1 through the reused Swift server, `reproducible=False`, per-band
-repeats within 0.23 dB. Every number here carries that.
+repeats within 0.23 dB. Every number here carries that, except AC20's row: it is
+the fresh-process rebuild described below, `reproducible=True` with no band-noise
+floor.
 
 | amp | swept dims | neutral | pilot (128) | scaled (1,024) | closes | scale gain |
 |---|---:|---:|---:|---:|---:|---:|
@@ -864,8 +866,8 @@ different swept dimensions, different fixed settings — and that refusal exists
 stop merely similar runs being read as a trend. The fraction of neutral distance
 closed spans 60.5% to 77.0%, so they do not agree in any case.
 
-**AC20's baseline offset is history dependence, and it contaminates the AC20
-atlas.** Two AC20 builds' neutral baselines differed by +0.0422 ± 0.0042 on 20 of
+**AC20's baseline offset is history dependence, and it contaminated the
+reused-instance AC20 atlases.** Two AC20 builds' neutral baselines differed by +0.0422 ± 0.0042 on 20 of
 24 targets. The cause, measured afterwards on Morgan 1.1.1 through the reused
 Swift server:
 
@@ -939,9 +941,13 @@ a reused instance.
 **The AC20 atlases are rebuilt one plugin process per render.** With
 `--process-policy fresh` every render starts from a new instance, so no entry
 carries another's history. Fresh renders are bit-identical to each other and to
-the first render of a new reused instance; each cost 1.8 s on an idle machine
-(about 15 s under load), so the pilot took 5 minutes and the 1,024-point atlas
-38. The offset is gone: both builds' neutral baselines are now 2.7152, where the
+the first render of a new reused instance. Measured during these builds, a
+fresh render cost 1.8 s on an idle machine and about 15 s under load; the pilot
+took 5 minutes and the 1,024-point atlas 38, about 2.2 s per render.
+`benchmark_warm_start.py` and `benchmark_match.py --atlas` have no
+`--process-policy`, so against these atlases they render on a reused instance:
+warm-start refuses that as a renderer mismatch, and the match benchmark reports it
+as a caveat. The offset is gone: both builds' neutral baselines are now 2.7152, where the
 reused builds' differed by 0.042. The pilot scores 0.924 and the scaled atlas
 0.625, both beating neutral on 24 of 24; the scale step is 32.3% (median 0.897
 to 0.601), better on 23 of 24 targets, with one target 48.5% worse.

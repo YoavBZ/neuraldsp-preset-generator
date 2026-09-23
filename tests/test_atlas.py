@@ -271,8 +271,15 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         fresh = "process=fresh" in document["renderer"]["quality_mode"]
         assert fresh is (document["amp"] == "ac20"), path
         assert document["renderer"]["reproducible"] is fresh
+        # And the recorded command rebuilds the same thing: a fresh atlas whose
+        # command lacked the flag would come back reused if re-run.
+        command = shlex.split(document["build"]["command"])
+        assert ("--process-policy" in command
+                and command[command.index("--process-policy") + 1] == "fresh"
+                ) is fresh, path
         if fresh:
             assert document["measurement_caveat"] is None
+            assert document["renderer"]["band_noise_db"] == 0
         else:
             assert "reproducible=False" in document["measurement_caveat"]
         validation = document["build"]["validation"]
@@ -315,7 +322,7 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         # did not work.
         assert comparison["candidate_better_targets"] >= 20, amp
         # A bound, not a recorded result: well below every measured scale gain
-        # across both packs (20.2% to 30.1%) and well above zero, so it still fails
+        # across both packs (20.2% to 32.3%) and well above zero, so it still fails
         # a scale step that did nothing. Loosening it to 0.10 for Tone King's noise
         # was considered and turned out unnecessary — no result comes near 0.15.
         assert comparison["mean_reduction_fraction"] > 0.15, amp
