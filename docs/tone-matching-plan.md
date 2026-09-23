@@ -1733,6 +1733,29 @@ Four defects mattered:
    `declared()` helper now refuses, which also removed five copies of "look up the
    spec, else a hardcoded fallback", one of which had already drifted.
 
+**Later, the same tremolo mistake from the DI itself.** The synthetic noise-burst
+probe modulates its own envelope at 2.25 Hz (4 s) or 3.33 Hz (6 s). On its own
+that measures 0.55 confidence, under the gate; through an amp and cabinet it
+measures 0.66 to 0.90. So any target rendered from the probe could clear the gate,
+and `tremolo_settings` wrote a full-depth tremolo at the probe's rate into targets
+that had none: 13 of 23 tremolo-free SW50R benchmark targets on the synthetic
+chain, and 4 of 12 on the plugin. On the plugin that is worse than a wrong
+setting. The tremolo's oscillator runs on between renders, so each render starts
+at a different point in the wobble, and the same settings rendered at different
+points in one benchmark target's run came out 3.7 dB quieter in one case and 6 dB
+louder in another. It surfaced as a search that appeared to make its own seed
+worse. `tremolo_settings` now takes the render of the current settings through
+the same DI, and leaves the tremolo as the template has it when that render
+already carries the modulation at the target's rate (within the delay rule's
+tolerance, at confidence ≥ 0.5). Measured on 12 random SW50R targets on the
+plugin, the inversion arm went from 1.283 to 1.218 mean, closer on 8 of 12, and
+its three-render repeat spread from 0.036 to 0.022 on average (worst 0.304 to
+0.138). The synthetic chain does not model the tremolo, so its scores do not
+move. Like the delay rule, this cannot see a real tremolo at the DI's own rate,
+and the search can only find that one with the tremolo switch enumerated. Every
+benchmark above that renders its targets from the probe — M4's and M5's
+included — was measured with the old rule.
+
 Two structural mistakes in the conditioning, both found by checking the second pack:
 
 - **Four of Morgan's five section switches gate nothing**, because they live in

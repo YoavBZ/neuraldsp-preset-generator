@@ -46,6 +46,14 @@ BAND_NOISE_FLOOR_DB = 0.3
 # 15% window is 0.3 Hz, which is finer than the AM detector's own resolution.
 TREMOLO_RATE_TOLERANCE_HZ = 0.4
 
+# How clean a modulation the *current render* has to carry before a target
+# modulation at the same rate is put down to the signal rather than an effect.
+# Lower than the tremolo gate on purpose: the question is not "is this a
+# tremolo?" but "is this rate already in what is rendering now?". The synthetic
+# noise-burst probe measures 0.55 at its 2.25 Hz burst rate on its own, and 0.82
+# to 0.90 once an amp and cabinet have smoothed it.
+SOURCE_AM_MIN_CONFIDENCE = 0.5
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -971,7 +979,8 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
 
 
 def tremolo_settings(fingerprint, pack_id: str = "morgan",
-                     min_confidence: float = 0.75) -> Inversion:
+                     min_confidence: float = 0.75,
+                     rendered=None) -> Inversion:
     """Rate and depth from the amplitude-modulation spectrum.
 
     The confidence floor is high on purpose. A part strummed twice a second
@@ -985,6 +994,11 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     echo is indistinguishable by rate alone, and this declines on it. The cost of
     declining is a tremolo the search has to find; the cost of not declining was a
     full-depth tremolo written into a target that had none.
+
+    `rendered` is the fingerprint of the current settings through the same DI.
+    A modulation it already carries at the target's rate came from the signal or
+    from the template's own tremolo, not from something missing, so the tremolo
+    is left exactly as the template has it.
     """
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
@@ -1035,6 +1049,33 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
                 ],
                 detail={"am_confidence": round(confidence, 3),
                         "am_indistinguishable_from": "delay repeats"},
+            )
+
+    # The DI modulates the envelope too, and the target was rendered from it.
+    # Measured: the synthetic noise-burst probe's bursts come out of the synthetic
+    # chain as a 2.25 Hz modulation at 0.82-0.90 confidence, so this wrote a
+    # full-depth 2.25 Hz tremolo into 5 of 12 tremolo-free benchmark targets. On
+    # the plugin that tremolo's oscillator keeps running between renders, so every
+    # later render started at a different point in the wobble and the same
+    # settings scored up to 4 dB apart. A render of the current settings through
+    # the same DI hears that modulation as well, which a missing tremolo does not.
+    heard = (getattr(rendered, "modulation", None) or {}) if rendered is not None else {}
+    heard_rate = heard.get("am_rate_hz")
+    if (heard_rate is not None
+            and float(heard.get("am_confidence") or 0.0) >= SOURCE_AM_MIN_CONFIDENCE):
+        tolerance = max(TREMOLO_RATE_TOLERANCE_HZ, 0.15 * float(heard_rate))
+        if abs(float(rate) - float(heard_rate)) <= tolerance:
+            return Inversion(
+                values={},
+                caveats=[
+                    f"the {float(rate):.1f} Hz amplitude modulation is already in a "
+                    f"render of the current settings through the same DI "
+                    f"({float(heard_rate):.1f} Hz), so it comes from the signal or "
+                    f"from the template's own tremolo rather than from a missing "
+                    f"one; the tremolo is left as the template has it"
+                ],
+                detail={"am_confidence": round(confidence, 3),
+                        "am_indistinguishable_from": "the current render"},
             )
 
     spec = declared(pack_id, "tremolo/tremoloRate")
@@ -1349,7 +1390,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     if _declares_all(pack_id, (
         "tremolo/tremoloActive", "tremolo/tremoloRate", "tremolo/tremoloDepth"
     )):
-        result.merge(tremolo_settings(target, pack_id=pack_id))
+        result.merge(tremolo_settings(target, pack_id=pack_id, rendered=candidate))
     else:
         unsupported.append("tremolo")
     if unsupported:
