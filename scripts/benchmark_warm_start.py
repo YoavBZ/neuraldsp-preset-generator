@@ -2,7 +2,7 @@
 """Tune and test a warm-start regressor against nearest-atlas lookup.
 
     python scripts/benchmark_warm_start.py \
-      --atlas packs/morgan/response_atlas_pr12_1024.json \
+      --atlas atlas_pr12_1024.json \
       --renderer swift --tune-samples 12 --tune-seed 31 \
       --test-samples 24 --test-seed 43 --seconds 4 \
       --out runs/morgan-pr12-warm-start.json

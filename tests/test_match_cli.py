@@ -835,13 +835,14 @@ def test_an_atlas_benchmark_refuses_what_it_cannot_answer(tmp_path, extra, messa
     assert message in done.stderr
 
 
-def test_an_atlas_from_another_backend_is_refused():
-    """The committed atlases are the plugin's renders. Looked up against the
-    synthetic chain's they describe another backend, so the run is refused
-    rather than caveated."""
-    done = run("benchmark_match.py", "--atlas",
-               ROOT / "packs" / "morgan" / "response_atlas_sw50r_1024.json",
-               "--targets", "1")
+def test_an_atlas_from_another_backend_is_refused(tmp_path):
+    """An atlas of the plugin's renders looked up against the synthetic chain's
+    describes another backend, so the run is refused rather than caveated."""
+    atlas_path = _synthetic_atlas(tmp_path, 1.5)
+    document = json.loads(atlas_path.read_text())
+    document["renderer"]["renderer_id"] = "swift"
+    atlas_path.write_text(json.dumps(document))
+    done = run("benchmark_match.py", "--atlas", atlas_path, "--targets", "1")
     assert done.returncode != 0
     assert "built by the swift renderer" in done.stderr
 

@@ -2,8 +2,7 @@
 """Compare two response-atlas scale runs on one identical held-out experiment.
 
     python scripts/compare_response_atlases.py \
-      --baseline packs/morgan/response_atlas_pr12_pilot.json \
-      --candidate packs/morgan/response_atlas_pr12_1024.json
+      --baseline atlas_pr12_pilot.json --candidate atlas_pr12_1024.json
 
 The command is plugin-free.  It refuses to compare different topologies, probes,
 renderer builds, or held-out seeds so that a lower score can be attributed to

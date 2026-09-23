@@ -2,7 +2,7 @@
 """Find instant fixed-topology starting points in a response atlas.
 
     python scripts/query_response_atlas.py \
-      --atlas packs/morgan/response_atlas_pr12_pilot.json \
+      --atlas atlas_pr12_pilot.json \
       --reference "Hotel California-lead-D major-74bpm-438hz.wav" \
       --reference-mode separated_stem --out-dir /tmp/hotel-atlas
 
@@ -11,10 +11,11 @@ the stored fingerprints under the normal loss profile, and writes ordinary specs
 that ``apply_spec.py`` accepts.  They are starts for local refinement, not claims
 that a finite atlas found the final preset.
 
-Every committed atlas was built on the synthetic noise probe.  Looked up with
-renders of a played guitar, the three measured picked an entry that beat neutral
-settings on only 27 or 28 of 48 held-out targets ("M7-1 on a played guitar" in
-docs/tone-matching-plan.md).  The skills therefore do not start from one.
+No atlas ships with the plugin any more; build one with
+``build_response_atlas.py``.  The ones that used to ship were built on the
+synthetic noise probe, and looked up with renders of a played guitar the three
+measured picked an entry that beat neutral settings on only 27 or 28 of 48
+held-out targets ("M7-1 on a played guitar" in docs/tone-matching-plan.md).
 """
 
 from __future__ import annotations
@@ -90,9 +91,9 @@ def main() -> None:
     caveat = document.get("measurement_caveat")
     if caveat:
         print(f"CAUTION: {caveat}\n")
-    # Every committed atlas was built without --probe-di, so it stores a noise
-    # burst through the amp. Looked up with renders of a played guitar DI, the
-    # three atlases measured (SW50R, PR12, Tone King rhythm) picked an entry that
+    # An atlas built without --probe-di stores a noise burst through the amp, as
+    # every formerly committed one did. Looked up with renders of a played guitar
+    # DI, the three atlases measured (SW50R, PR12, Tone King rhythm) picked an entry that
     # beat the amp's neutral settings on 27-28 of 48 held-out targets, where a lookup
     # made with the noise probe won 39 (docs/tone-matching-plan.md, "M7-1 on a
     # played guitar"). Warned whatever --reference-mode says: `probe` means a
