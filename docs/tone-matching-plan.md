@@ -1734,27 +1734,40 @@ Four defects mattered:
    spec, else a hardcoded fallback", one of which had already drifted.
 
 **Later, the same tremolo mistake from the DI itself.** The synthetic noise-burst
-probe modulates its own envelope at 2.25 Hz (4 s) or 3.33 Hz (6 s). On its own
-that measures 0.55 confidence, under the gate; through an amp and cabinet it
-measures 0.66 to 0.90. So any target rendered from the probe could clear the gate,
-and `tremolo_settings` wrote a full-depth tremolo at the probe's rate into targets
-that had none: 13 of 23 tremolo-free SW50R benchmark targets on the synthetic
-chain, and 4 of 12 on the plugin. On the plugin that is worse than a wrong
-setting. The tremolo's oscillator runs on between renders, so each render starts
-at a different point in the wobble, and the same settings rendered at different
-points in one benchmark target's run came out 3.7 dB quieter in one case and 6 dB
-louder in another. It surfaced as a search that appeared to make its own seed
-worse. `tremolo_settings` now takes the render of the current settings through
-the same DI, and leaves the tremolo as the template has it when that render
-already carries the modulation at the target's rate (within the delay rule's
-tolerance, at confidence ≥ 0.5). Measured on 12 random SW50R targets on the
-plugin, the inversion arm went from 1.283 to 1.218 mean, closer on 8 of 12, and
-its three-render repeat spread from 0.036 to 0.022 on average (worst 0.304 to
-0.138). The synthetic chain does not model the tremolo, so its scores do not
-move. Like the delay rule, this cannot see a real tremolo at the DI's own rate,
-and the search can only find that one with the tremolo switch enumerated. Every
-benchmark above that renders its targets from the probe — M4's and M5's
-included — was measured with the old rule.
+probe's bursts repeat every 0.9 s, and the modulation detector reads a harmonic
+of that: 2.25 Hz from the 4 s probe, 2.17 or 3.33 Hz from the 6 s one. The probe
+alone measures 0.55 confidence, under the 0.75 gate; renders of it through the
+chains measured read 0.54 to 0.96. So a target rendered from the probe can clear
+the gate, and `tremolo_settings` wrote a full-depth tremolo at the probe's rate
+into targets that had none — 41 of 78 tremolo-free random SW50R targets on the
+synthetic chain with the 4 s probe, 40 of 78 with the 6 s one. On the plugin that
+is worse than a wrong setting. The tremolo's oscillator runs on between renders,
+so each render starts at a different point in the wobble, and byte-identical
+settings rendered at different points in one benchmark target's run came out
+3.7 dB quieter in one case and 6 dB louder in another. It surfaced as a search
+that appeared to make its own seed worse.
+
+`tremolo_settings` now takes the render of the current settings through the
+same DI. When the target was rendered from that DI too — the `probe` and
+`paired_di` regimes — and the render already carries a modulation at the
+target's rate (within the delay rule's tolerance, at confidence ≥ 0.5), it
+leaves the tremolo as the template has it and says it cannot tell the two
+apart. For a stem or a mix the render is ignored: a recording never went through
+this DI, and without that gate a real 2 Hz tremolo on a stem was dropped.
+Comparing one detected rate on each side still misses 5 of 78, where target and
+render read different harmonics of the same bursts. The synthetic chain does not
+model the tremolo, so its scores do not move. On the plugin, on 12 random SW50R
+targets from the M4 sampler (which switches a real tremolo on in some), the old
+rule switched the tremolo on for 4. Two of them had none; left off, their
+inversion scores went from 0.450 to 0.283 and from 0.658 to 0.468, and their
+three-render spread from 0.029 and 0.002 to 0.000. One had a real tremolo whose
+modulation read at the probe's rate; it is now left off, and scored closer too
+(1.452 to 1.352). The fourth, a real tremolo at another rate, is set either way.
+Targets whose decision did not change moved by 0.06 on average between the two
+runs, which is render noise. Like the delay rule, this cannot see a real tremolo
+at the DI's own rate, and the search can only find that one with the tremolo
+switch enumerated. Every benchmark above that renders its targets from the
+probe — M4's and M5's included — was measured with the old rule.
 
 Two structural mistakes in the conditioning, both found by checking the second pack:
 
