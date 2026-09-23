@@ -373,6 +373,63 @@ def test_query_cli_writes_ranked_specs_without_a_plugin(tmp_path):
     } for spec in specs)
 
 
+def test_query_warns_that_a_noise_probe_atlas_does_not_transfer_to_a_guitar(
+        tmp_path):
+    """A played guitar looked up in an atlas built on the noise probe beat the
+    amp's neutral settings on 27 of 48 targets, so the tool says so to anyone who
+    runs it on a recording — and only then: a probe-regime target is the lookup
+    the atlas's own gates measured."""
+    document = _document()
+    document["build"] = {"probe_caveat": "no --probe-di was given"}
+    atlas_path = tmp_path / "atlas.json"
+    atlas_path.write_text(json.dumps(document))
+    from tests.fixtures_audio import harmonic_note, write_wav
+
+    reference = tmp_path / "reference.wav"
+    write_wav(reference, harmonic_note(seconds=1.2))
+
+    def query(mode, built=atlas_path):
+        return subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "query_response_atlas.py"),
+             "--atlas", str(built), "--reference", str(reference),
+             "--reference-mode", mode, "--out-dir", str(tmp_path / mode)],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+
+    warning = "measured with a synthetic noise probe"
+    stem = query("separated_stem")
+    assert stem.returncode == 0, stem.stderr
+    assert warning in stem.stdout
+    probe = query("probe")
+    assert probe.returncode == 0, probe.stderr
+    assert warning not in probe.stdout
+
+    # An atlas built with --probe-di records no probe caveat and gets no warning.
+    document["build"] = {"probe_caveat": None}
+    real_di = tmp_path / "real-di-atlas.json"
+    real_di.write_text(json.dumps(document))
+    assert warning not in query("separated_stem", real_di).stdout
+
+
+def test_every_committed_atlas_is_the_noise_probe_the_warning_keys_on():
+    """The warning above keys on `build.probe_caveat`, which a build records only
+    when no DI was given. Checked against the probe's hash rather than the
+    caveat's wording, which has changed: the PR12 atlases call the same signal a
+    "pluck sequence". If an atlas lost the caveat while still being the noise
+    probe, the tool would silently stop warning about it."""
+    from analysis import io
+    from scripts._cli import probe_di
+
+    for pack in ("morgan", "toneking"):
+        for path in sorted((ROOT / "packs" / pack).glob("response_atlas_*.json")):
+            document = json.loads(path.read_text())
+            assert document["build"]["probe_caveat"], path
+            probe = document["probe"]
+            noise, _ = probe_di(None, probe["duration_s"])
+            assert io.from_samples(noise, probe["sample_rate"]).sha256 == (
+                probe["sha256"]), path
+
+
 def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):
     atlas_path = tmp_path / "atlas.json"
     atlas_path.write_text(json.dumps(_document()))

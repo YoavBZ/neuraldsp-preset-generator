@@ -73,11 +73,30 @@ names a song or artist, research the recorded amp, cabinet, microphone and effec
 with reliable sources. Use that evidence and the pack's `tone.md` to choose the
 template, amp/channel and discrete topology before matching. Keep source links.
 
-### A measured starting point, when an atlas covers the amp
+### Response atlases are not a starting point yet
 
-`show.py` lists any response atlas the pack ships, with the amp and point count
-each one covers. When one matches the amp you just chose, query it **before**
-spending a render budget — it costs no renders at all:
+`show.py` lists any response atlas the pack ships: one amp's measured responses
+at 128 or 1,024 sampled settings, which a query tool searches for the settings
+nearest a reference without rendering anything. **Do not start a match from
+one.** Start from the template, as the rest of this skill describes. Two
+measurements say why:
+
+- **They were measured with a noise probe, not a guitar.** Every committed atlas
+  stores a synthetic noise-burst sequence played through the amp. On held-out
+  settings rendered from that same probe, its nearest entry beats the amp's
+  neutral settings on 22 to 24 of 24. On held-out settings rendered from a
+  played guitar DI — which is what a reference is — it beat them on 27 of 48:
+  11 of 16 on SW50R, 9 of 16 on Tone King's rhythm channel, and 7 of 16 on PR12,
+  where it averaged further away than neutral. That is one played passage per
+  amp, and it is close to a coin flip.
+- **No search has been shown to finish better from one.** Beating neutral
+  settings is a claim about where a search starts. Whether a search started from
+  an atlas entry ends closer than the normal pipeline, for the same number of
+  renders, has not been measured.
+
+If the user asks for an atlas start anyway, this is the query. It writes ordinary
+specs; apply one with `apply_spec.py` and pass the result to `match_preset.py` as
+`--template`:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
@@ -85,14 +104,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/query_response_atlas.py" \
   --reference REFERENCE.wav --reference-mode separated_stem --out-dir RUN_DIR
 ```
 
-It fingerprints the reference, finds the nearest stored responses and writes
-ordinary specs. Apply one with `apply_spec.py` and pass the result to
-`match_preset.py` as `--template`, so the search starts from measured settings
-instead of a recipe's defaults. Every atlas is required to beat neutral settings
-on at least 20 of 24 of its own held-out targets — the committed ones score 22 to
-24 — and scaling each to 1,024 points improved mean distance by a further 20–30%.
-
-Six limits, each load-bearing:
+Report the result as an experiment, and keep six more limits in view:
 
 - **One amp or channel each, one fixed topology.** Morgan ships atlases for PR12,
   SW50R and AC20; Tone King for its rhythm and lead channels. Each has its cabinet
@@ -119,16 +131,19 @@ Six limits, each load-bearing:
   approximate. PR12 and SW50R are barely affected.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
-- **Do not expect it to fit a full `mix`.** Every stored response is a guitar DI
-  through this one amp. A mix is that plus bass, drums, keys and a master chain,
-  so the nearest entry is the nearest of a set containing nothing like the
-  target. **The out-of-range list is not a reliable tell here**: on a mastered
-  mix the tool can report every compared feature inside its sampled range and
-  still be nowhere near. Query an atlas for `paired_di`, `isolated_stem` or
-  `separated_stem`; for a `mix`, fix the excerpt and the regime first.
-- **Not an achievability oracle.** The file carries `achievable_ranges`, and at
-  this density those are one finite atlas's observed range on one probe, not
-  limits on the plugin. Do not tell anyone "this amp cannot get darker than X".
+- **Do not expect it to fit a full `mix`.** Every stored response is the noise
+  probe through this one amp. A mix is a guitar plus bass, drums, keys and a
+  master chain, so the nearest entry is the nearest of a set containing nothing
+  like the target. **The out-of-range list is not a reliable tell here**: on a
+  mastered mix the tool can report every compared feature inside its sampled
+  range and still be nowhere near. Query an atlas for `paired_di`,
+  `isolated_stem` or `separated_stem`; for a `mix`, fix the excerpt and the
+  regime first.
+- **Not an achievability oracle.** The file carries `achievable_ranges`, and
+  those are one finite atlas's observed range on the noise probe, not limits on
+  the plugin — and a played guitar has its own spectrum, so a reference landing
+  inside or outside them says little. Do not tell anyone "this amp cannot get
+  darker than X".
 
 Everything an atlas reports inherits `reproducible=false` from the backend that
 built it.

@@ -10,6 +10,11 @@ This does not render the plugin.  It fingerprints the reference, compares it wit
 the stored fingerprints under the normal loss profile, and writes ordinary specs
 that ``apply_spec.py`` accepts.  They are starts for local refinement, not claims
 that a finite atlas found the final preset.
+
+Every committed atlas was built on the synthetic noise probe, and on a played
+guitar its nearest entry beat neutral settings on only 27 of 48 held-out targets
+("M7-1 on a played guitar" in docs/tone-matching-plan.md).  The skills therefore
+do not start from one.
 """
 
 from __future__ import annotations
@@ -85,6 +90,17 @@ def main() -> None:
     caveat = document.get("measurement_caveat")
     if caveat:
         print(f"CAUTION: {caveat}\n")
+    # Every committed atlas was built without --probe-di, so it stores a noise
+    # burst through the amp, and a reference is a played instrument. Measured on a
+    # played guitar DI, this lookup beat the amp's neutral settings on 27 of 48
+    # held-out targets against 22-24 of 24 on the atlas's own probe
+    # (docs/tone-matching-plan.md, "M7-1 on a played guitar").
+    if (document.get("build") or {}).get("probe_caveat") and \
+            args.reference_mode != "probe":
+        print("CAUTION: this atlas was measured with a synthetic noise probe, not "
+              "a played instrument, and on a played guitar its nearest entry beat "
+              "neutral settings only about half the time. Treat these specs as an "
+              "experiment, not a measured start.\n")
     print(f"{document['pack']}/{document['amp']}: {document['sample_count']} "
           f"stored responses, {len(document['dimensions'])} continuous dimensions")
     print(f"reference: {args.reference} ({args.reference_mode})")

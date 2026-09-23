@@ -1027,6 +1027,109 @@ are the larger pair: `ac20BassTreble` on is a measured **−15.6 dB at 60 Hz**
 pins `sw50rTrebleBoost` on, +2.5 dB from 400 Hz to 4 kHz. Every spec an atlas
 produces asserts these, and no refinement inside the atlas can move them.
 
+#### M7-1 on a played guitar — the atlases do not transfer
+
+Every gate above renders its held-out targets through the synthetic noise-burst
+probe the atlas was built with. A reference is a played guitar, so the question
+that matters to a user is a different one: when the target is a guitar through
+the amp, does the nearest atlas entry still start closer than neutral settings?
+
+Measured with the user's own dry DIs, which are not in the repository —
+`how-long-dry-di.wav` (sha256 `378773b21020bd77…`) and
+`hotel-california-dry-di.wav` (`2cbaaf39b0b5b09c…`) — one six-second played
+passage per amp. Sixteen held-out settings on a fresh Latin-hypercube seed are
+each rendered from the guitar to make the target. Three starts are then rendered
+from the same guitar and scored against it: the atlas topology's neutral
+settings; the entry nearest the target's guitar fingerprint, which is what
+`query_response_atlas.py` does with a reference; and the entry nearest the same
+settings rendered from the noise probe, which is the lookup the atlas gates
+measure. Mean / median `unpaired-v1`:
+
+| atlas | DI passage | neutral | guitar lookup | beats neutral | noise lookup | beats neutral |
+|---|---|---:|---:|---:|---:|---:|
+| SW50R 1,024 | How Long, 10.66 s | 1.904 / 1.705 | 1.242 / 1.026 | 11/16 | 0.927 / 0.831 | 14/16 |
+| PR12 1,024 | Hotel California, 18.9 s | 1.314 / 1.366 | 1.501 / 1.404 | 7/16 | 1.057 / 0.945 | 13/16 |
+| Tone King rhythm 1,024 | How Long, 10.66 s | 1.166 / 1.285 | 1.186 / 0.981 | 9/16 | 0.854 / 0.721 | 12/16 |
+
+**The lookup a user gets is close to a coin flip.** The guitar lookup beats
+neutral on 27 of 48 targets, and on PR12 it is further away than neutral on
+average. The noise lookup beats neutral on 39 of 48, although it chose its
+entries without hearing the guitar at all, and the two lookups never chose the
+same entry (0 of 48). So the stored *settings* cover the space well enough; the
+stored *fingerprints* are what fail. A guitar's own spectrum is in every guitar
+fingerprint and in none of the noise ones, and the lookup matches that
+difference rather than the amp. The distance to the nearest stored entry says
+the same: 1.245, 1.531 and 1.331 for the guitar targets, against 0.653, 0.568
+and 0.448 for the noise-probe version of the same settings.
+
+**What this does not show.** Sixteen targets and one passage per amp are enough
+to say the gates do not carry over to a guitar, not to rank the amps. The targets
+are the plugin's own output at known settings rendered from the same DI, so a
+real reference — another player, another guitar, a room, a separated stem — sits
+further away again. And it measures starts only: whether a search begun at an
+atlas entry ends closer than the normal pipeline, for the same number of
+renders, is the next measurement.
+
+**What might fix it.** The noise lookup's 39 of 48 suggests an atlas built from a
+played guitar would work where these do not. Whether one guitar's atlas serves
+another guitar is untested, and building one per DI costs its sample count in
+renders, which would have to earn its place inside a search's budget. Until one
+of those is measured, both skills tell agents not to start from an atlas.
+
+Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,
+`reproducible=False`. The two Morgan rows repeat to three decimals; Tone King's
+move by a few hundredths between runs, with the same win counts on each of three
+runs. Set `DI` to a dry guitar recording and `START` to where six seconds of
+playing begin, and swap `ATLAS`, `DI` and `START` for the other rows:
+
+```bash
+.venv/bin/python - <<'EOF'
+import statistics
+from analysis import io
+from analysis.compare import compare, scalar
+from analysis.fingerprint import fingerprint
+from match import atlas, space as space_module
+from match.renderer_au import AudioUnitRenderer
+from scripts._cli import probe_di
+
+ATLAS = "packs/morgan/response_atlas_sw50r_1024.json"
+DI, START = "how-long-dry-di.wav", 10.66      # a played guitar DI; 6 s from START
+fp = lambda r: fingerprint(io.from_samples(r.audio, r.metadata.sample_rate),
+                           regime="probe", excerpt_s=None)
+score = lambda a, b: scalar(compare(a, b, profile="unpaired-v1"), "unpaired-v1")
+doc = atlas.load(ATLAS)
+space = space_module.build(doc["pack"], amp=doc["amp"])
+guitar = io.load(DI).mono()[int(START * 48000):int((START + 6) * 48000)]
+noise, _ = probe_di(None, 4.0)                # what every committed atlas was built with
+assert io.from_samples(noise, 48000).sha256 == doc["probe"]["sha256"]
+renderer = AudioUnitRenderer(doc["pack"])
+dims = atlas.sampling_dimensions(space, doc["fixed_settings"], renderer.parameter_specs())
+neutral = fp(renderer.render(guitar, atlas.neutral_settings(doc["fixed_settings"], dims)))
+rows = {"neutral": [], "guitar lookup": [], "noise lookup": []}
+stored, same = {"guitar lookup": [], "noise lookup": []}, 0
+for overrides in atlas.latin_hypercube(dims, 16, 53):   # seeds 17, 29, 31, 43 are taken
+    settings = {**doc["fixed_settings"], **overrides}
+    target = fp(renderer.render(guitar, settings))
+    as_noise = fp(renderer.render(noise, settings))
+    rows["neutral"].append(score(target, neutral))
+    picked = []
+    for label, printed in (("guitar lookup", target), ("noise lookup", as_noise)):
+        best = atlas.nearest(doc, printed)[0]
+        picked.append(best.index)
+        stored[label].append(best.score)
+        rows[label].append(score(target, fp(renderer.render(guitar, best.settings))))
+    same += picked[0] == picked[1]
+renderer.close()
+for label, scores in rows.items():
+    wins = sum(s < n for s, n in zip(scores, rows["neutral"]))
+    print(f"{label:13} mean {statistics.fmean(scores):.3f}  median "
+          f"{statistics.median(scores):.3f}" + ("" if label == "neutral" else
+          f"  beats neutral {wins}/16  lookup distance "
+          f"{statistics.fmean(stored[label]):.3f}"))
+print(f"same entry chosen by both lookups: {same}/16")
+EOF
+```
+
 #### M7-2 warm-start regressor — measured negative result
 
 The warm-start experiment fits one standardized multi-output ridge model directly
