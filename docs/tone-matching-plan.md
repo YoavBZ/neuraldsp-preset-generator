@@ -1210,9 +1210,10 @@ size is not significant (Wilcoxon p = 0.20, sign test p = 0.15). One amp, one
 played passage, twelve targets. The lookup alone never beat either full search
 (0 of 12 both times), so an atlas is not a shortcut past the search either.
 
-**The played-DI result is tangled up with a reverb the inversion added.** In most
-of that run's searches the inversion had switched the rack reverb on — they cover
-32 controls instead of 27, the five extra being the reverb's — while the targets'
+**The played-DI result is tangled up with a reverb the inversion added.** In half
+of that run's searches — 12 of 24, six from each start, so both sides alike — the
+inversion had switched the rack reverb on: they cover 32 controls instead of 27,
+the five extra being the reverb's, while the targets'
 reverb came from the amp's own spring reverb, which the atlas sweeps. A switch
 the target does not have is what the selector-accuracy misses record (0.93–0.96,
 in seven probe-run targets and nine played-DI ones). With it on, repeated renders of one setting varied far
