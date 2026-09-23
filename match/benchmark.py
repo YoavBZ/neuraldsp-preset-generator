@@ -30,6 +30,7 @@ plugin. `--targets` and `--budget` exist so a smaller version can run in a test.
 
 from __future__ import annotations
 
+import copy
 import queue
 import threading
 import time
@@ -42,6 +43,14 @@ from match.space import Space
 # already ships: pick a preset from the recipe stack and stop. `inversion` adds the
 # calculated step and no search. `full` is everything.
 ARMS = ("recipe", "inversion", "full")
+
+# The same three stages started from a response atlas's nearest entry instead of
+# the seed. Only with an atlas, and nested the same way: `atlas-full` is the
+# `full` pipeline with nothing changed but where it starts, and the same budget.
+# That pair is the question these exist for — whether an atlas start helps a
+# search — which beating neutral settings at the start does not answer.
+ATLAS_ARMS = ("atlas", "atlas-inversion", "atlas-full")
+ALL_ARMS = ARMS + ATLAS_ARMS
 
 
 class BenchmarkError(ValueError):
@@ -66,6 +75,10 @@ class Outcome:
     wall_ms: float = 0.0
     failed: bool = False
     error: Optional[str] = None
+    # Where this arm ran in its target's sequence. On a reused plugin instance a
+    # render can depend on what preceded it, so an atlas run alternates the order
+    # of the two pipelines and records it.
+    position: Optional[int] = None
 
 
 @dataclass
@@ -206,6 +219,58 @@ class BenchmarkResult:
             f"match"
         )
         return ships, reasons
+
+    def atlas_verdict(self) -> Tuple[bool, List[str]]:
+        """Whether starting the search at the atlas's nearest entry helped.
+
+        `atlas-full` against `full`: the same pipeline and the same budget, from a
+        different start, on the targets both scored. It helps only if it is closer
+        on average *and* on more than half of those targets, so one lucky target
+        cannot carry the mean.
+
+        The lookup on its own is compared with the full search too, because it
+        costs no renders: if it already beats a 300-render search, that is worth
+        knowing whatever the search does from it.
+        """
+        reasons: List[str] = []
+        ours, theirs = self.paired("atlas-full", "full")
+        if not ours:
+            return False, ["no target was scored by both atlas-full and full, so "
+                           "there is nothing to compare"]
+        # The same guards `verdict()` applies: a comparison resting on the few
+        # targets that survived is not a comparison of the arms.
+        summaries = [self.summarise(arm) for arm in ("full", "atlas-full")]
+        for summary in summaries:
+            if summary["failure_rate"] > 0.1:
+                return False, [f"{summary['arm']} failed "
+                               f"{100 * summary['failure_rate']:.0f}% of targets, "
+                               f"too many to compare its mean"]
+        targets = max(summary["targets"] for summary in summaries)
+        if len(ours) < 0.7 * targets:
+            return False, [f"only {len(ours)} of {targets} targets were scored by "
+                           f"both searches"]
+        mine = sum(o.objective for o in ours) / len(ours)
+        against = sum(o.objective for o in theirs) / len(theirs)
+        wins = sum(a.objective < b.objective for a, b in zip(ours, theirs))
+        shared = len(ours)
+        helps = mine < against and wins > shared / 2
+        reasons.append(
+            f"atlas-full {mine:.3f} against full {against:.3f} mean objective "
+            f"over the {shared} targets both scored, closer on {wins} of {shared}, "
+            f"for the same budget")
+        lookup, searched = self.paired("atlas", "full")
+        if lookup:
+            closer = sum(a.objective < b.objective for a, b in zip(lookup, searched))
+            reasons.append(
+                f"the lookup alone, with no renders, was closer than the full "
+                f"search on {closer} of {len(lookup)} targets")
+        started, neutral = self.paired("atlas", "recipe")
+        if started:
+            closer = sum(a.objective < b.objective for a, b in zip(started, neutral))
+            reasons.append(
+                f"as a start, the atlas entry was closer than neutral settings on "
+                f"{closer} of {len(started)} targets")
+        return helps, reasons
 
 
 # --- sampling ----------------------------------------------------------------
@@ -361,7 +426,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                       switches: Optional[Sequence[str]] = None,
                       selectors: Optional[Sequence[str]] = None,
                       progress=None, workers: int = 1,
-                      renderer_factory=None) -> BenchmarkResult:
+                      renderer_factory=None,
+                      atlas_document: Optional[Mapping] = None) -> BenchmarkResult:
     """Run each arm against the same targets, and report them side by side.
 
     `seed` is the recipe-stack starting point, which is also the `recipe` arm's whole
@@ -378,6 +444,14 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     `workers > 1` requires `renderer_factory`: the renderer passed in is the
     serial instance and cannot be cloned safely by guessing its constructor.
     Each worker keeps one factory-created instance for its life.
+
+    `atlas_document` changes the experiment to the one an atlas can be judged on.
+    Targets are sampled inside the atlas's fixed topology — its sampled controls
+    uniform over their ranges, everything else as the atlas fixed it — and `seed`
+    becomes that topology's neutral settings, so `full` and `atlas-full` differ
+    only in where they start. Neither arm gets `match_preset.py`'s fallback to the
+    pre-inversion start, for the same reason; `atlas` reports the lookup alone.
+    Switches and selectors cannot be enumerated: the atlas's topology is fixed.
     """
     from analysis import io, require
 
@@ -388,10 +462,18 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
     from match import invert, search
 
     rng = np.random.default_rng(11) if rng is None else rng
-    unknown = [arm for arm in arms if arm not in ARMS]
+    unknown = [arm for arm in arms if arm not in ALL_ARMS]
     if unknown:
         raise BenchmarkError(f"unknown arm(s) {', '.join(unknown)}; "
-                             f"available: {', '.join(ARMS)}")
+                             f"available: {', '.join(ALL_ARMS)}")
+    if atlas_document is None and any(arm in ATLAS_ARMS for arm in arms):
+        raise BenchmarkError(
+            f"the {', '.join(arm for arm in arms if arm in ATLAS_ARMS)} arm(s) "
+            f"start from a response atlas, and none was given")
+    if atlas_document is not None and (switches or selectors):
+        raise BenchmarkError(
+            "an atlas has one fixed topology, so an atlas benchmark cannot "
+            "enumerate switches or selectors")
     workers = int(workers)
     if workers < 1:
         raise BenchmarkError(f"workers must be at least 1, not {workers}")
@@ -424,6 +506,11 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             f"the renderer supports no searchable controls for {pack_id}/{path_name}; "
             "a benchmark would sample no target settings"
         )
+    atlas_dimensions = None
+    if atlas_document is not None:
+        atlas_dimensions = _atlas_dimensions(
+            atlas_document, space, pack_id, amp, profile, supported)
+        seed = atlas_seed(space, seed, atlas_document, atlas_dimensions)
     scorer = search.Evaluator(renderer, fingerprint(
         io.from_samples(probe_di, renderer.metadata().sample_rate),
         regime="probe", excerpt_s=None), probe_di, space, profile=profile,
@@ -473,7 +560,16 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         outcomes, caveats = [], []
         stream = streams[index]
         truth = dict(seed)
-        truth.update(random_vector(space, stream, supported=supported, base=truth))
+        if atlas_dimensions is not None:
+            truth.update(atlas_vector(atlas_dimensions, stream))
+        else:
+            truth.update(random_vector(space, stream, supported=supported,
+                                       base=truth))
+        # Every search arm draws from a copy of the same state, so `full` and
+        # `atlas-full` get the same random numbers and differ only where they
+        # start. `full` sees exactly what it saw when it used the stream itself:
+        # nothing between here and its search draws from it.
+        search_state = copy.deepcopy(stream)
         if selection:
             truth = invert.apply_to(truth, selection, space)
         elif any(dimension.key == "selectedAmp" for dimension in space.dimensions):
@@ -490,14 +586,17 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             rendered.audio, rendered.metadata.sample_rate),
             regime="probe", excerpt_s=None)
 
-        for arm in arms:
+        for position, arm in enumerate(
+                _arm_order(arms, index, alternate=atlas_document is not None)):
             started = time.perf_counter()
-            outcome = Outcome(arm=arm, target_index=index)
+            outcome = Outcome(arm=arm, target_index=index, position=position)
             try:
                 found, renders, arm_caveats = _run_arm(
                     arm, own_renderer, target, probe_di, space, seed, budget,
-                    profile, invert, search, stream, pack_id, amp, switches,
-                    selectors, reference_audio=rendered.audio)
+                    profile, invert, search, copy.deepcopy(search_state),
+                    pack_id, amp, switches, selectors,
+                    reference_audio=rendered.audio,
+                    atlas_document=atlas_document)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -729,7 +828,7 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
              invert, search, rng, pack_id: str, amp: Optional[str],
              switches: Optional[Sequence[str]] = None,
              selectors: Optional[Sequence[str]] = None,
-             reference_audio=None):
+             reference_audio=None, atlas_document: Optional[Mapping] = None):
     """One arm's answer for one target, and how many renders it took.
 
     The three arms are **nested**, which is what makes the comparison mean anything:
@@ -745,14 +844,20 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
     budget for `full`; `compare_baselines` then adds the final render that scores
     each answer. The question is what the extra renders buy, so every cost has to
     travel with the answer.
-    """
-    if arm == "recipe":
-        return dict(seed), 0, []
 
-    inverted, spent = _invert_from(renderer, target, probe_di, space, seed, profile,
+    The atlas arms are the same three stages from a different start: the atlas's
+    nearest stored entry to the target, which costs no renders to find.
+    """
+    start = seed
+    if arm in ATLAS_ARMS:
+        start = atlas_start(space, seed, atlas_document, target, profile)
+    if arm in ("recipe", "atlas"):
+        return dict(start), 0, []
+
+    inverted, spent = _invert_from(renderer, target, probe_di, space, start, profile,
                                    invert, search, pack_id, amp,
                                    reference_audio=reference_audio)
-    if arm == "inversion":
+    if arm in ("inversion", "atlas-inversion"):
         return inverted, spent, []
 
     outcome = search.search(renderer, target, probe_di, space, inverted,
@@ -797,6 +902,102 @@ def _invert_from(renderer, target, probe_di, space, seed, profile, invert, searc
     return invert.apply_to(seed, calculated.as_settings(), space), 1
 
 
+# --- atlas starts -------------------------------------------------------------
+
+
+def _atlas_dimensions(document: Mapping, space: Space, pack_id: str,
+                      amp: Optional[str], profile: str, supported):
+    """The atlas's sampled controls as this space's dimensions, or a refusal."""
+    from analysis.compare import load_profile
+    from match import atlas as atlas_module
+
+    try:
+        atlas_module.validate(document)
+    except atlas_module.AtlasError as error:
+        raise BenchmarkError(str(error)) from error
+    if document["pack"] != pack_id:
+        raise BenchmarkError(
+            f"the atlas is for pack {document['pack']!r}, not {pack_id!r}")
+    if amp is not None and document["amp"] != amp:
+        raise BenchmarkError(f"the atlas covers {document['amp']!r}, not {amp!r}")
+    weights = load_profile(profile).get("weights", {})
+    if float(weights.get("residual", 0.0) or 0.0) > 0.0:
+        raise BenchmarkError(
+            f"loss profile {profile!r} weights a sample-for-sample residual, but an "
+            f"atlas stores fingerprints rather than waveforms")
+    by_path = {dimension.path: dimension for dimension in space.dimensions}
+    dimensions = []
+    for path in document["dimensions"]:
+        dimension = by_path.get(path)
+        if dimension is None or not dimension.continuous:
+            raise BenchmarkError(
+                f"atlas dimension {path!r} is not a continuous control of "
+                f"{pack_id}/{document['amp']}")
+        if supported is not None and path not in supported:
+            raise BenchmarkError(
+                f"the renderer cannot drive atlas dimension {path!r}, so targets "
+                f"could not vary it")
+        dimensions.append(dimension)
+    return dimensions
+
+
+def atlas_seed(space: Space, seed: Mapping, document: Mapping,
+               dimensions: Sequence) -> Dict[Any, Any]:
+    """`seed` in the atlas's topology, with its sampled controls centred.
+
+    The neutral settings the atlas's own gates measure against, spelled the way
+    the benchmark spells a vector. `seed` supplies whatever the atlas does not
+    fix — controls the renderer that built it could not drive — so every
+    dimension still has a value.
+    """
+    from match import atlas as atlas_module, invert
+
+    return invert.apply_to(
+        seed, atlas_module.neutral_settings(document["fixed_settings"], dimensions),
+        space)
+
+
+def atlas_start(space: Space, seed: Mapping, document: Mapping, target,
+                profile: str) -> Dict[Any, Any]:
+    """The atlas entry nearest `target`, as a complete starting vector."""
+    from match import atlas as atlas_module, invert
+
+    matches = atlas_module.nearest(document, target, profile=profile, limit=1)
+    if not matches:
+        raise BenchmarkError("no atlas entry was comparable with the target")
+    return invert.apply_to(seed, matches[0].settings, space)
+
+
+def atlas_vector(dimensions: Sequence, rng) -> Dict[Any, Any]:
+    """One target inside an atlas's topology.
+
+    Each sampled control uniform over its declared range and on its step grid —
+    `random_vector`'s continuous branch and nothing else, because everything else
+    is what the atlas fixed. A target outside that topology would measure how
+    far the fixed switches are from it, not whether the atlas start helps.
+    """
+    values: Dict[Any, Any] = {}
+    for dimension in dimensions:
+        low, high = dimension.bounds()
+        values[(dimension.module, dimension.key)] = dimension.quantise(
+            float(low + rng.random() * (high - low)))
+    return values
+
+
+def _arm_order(arms: Sequence[str], index: int, alternate: bool) -> List[str]:
+    """The order a target runs its arms in.
+
+    Unchanged without an atlas. With one, odd targets run the atlas arms first:
+    on a reused plugin instance a render can depend on what preceded it, and a
+    fixed order would hand that to the same pipeline every time.
+    """
+    order = list(arms)
+    if not alternate or index % 2 == 0:
+        return order
+    return ([arm for arm in order if arm in ATLAS_ARMS]
+            + [arm for arm in order if arm not in ATLAS_ARMS])
+
+
 # --- helpers ----------------------------------------------------------------
 
 
@@ -828,7 +1029,7 @@ def _show(value: Optional[float]) -> str:
 
 def format_table(result: BenchmarkResult, arms: Sequence[str] = ARMS) -> str:
     """The four numbers per arm, in a table, never collapsed into a score."""
-    columns = [("arm", 10), ("targets", 8), ("fail%", 7), ("param MAE", 13),
+    columns = [("arm", 15), ("targets", 8), ("fail%", 7), ("param MAE", 13),
                ("selector", 13), ("objective", 13), ("median", 13), ("renders", 8),
                ("wall s", 8)]
     lines = ["  ".join(name.ljust(width) for name, width in columns),
@@ -874,7 +1075,16 @@ def format_table(result: BenchmarkResult, arms: Sequence[str] = ARMS) -> str:
     ships, reasons = result.verdict()
     lines.append("")
     lines.append("SHIPS" if ships else "DOES NOT SHIP")
+    if any(arm in ATLAS_ARMS for arm in arms):
+        # M4's gate, on targets M4 does not sample. Informative about the
+        # pipeline, not M4's verdict.
+        lines[-1] += " (on this atlas's fixed-topology targets, not M4's)"
     lines.extend(f"  - {reason}" for reason in reasons)
+    if any(arm in ATLAS_ARMS for arm in arms):
+        helps, atlas_reasons = result.atlas_verdict()
+        lines.append("")
+        lines.append("ATLAS START HELPS" if helps else "ATLAS START DOES NOT HELP")
+        lines.extend(f"  - {reason}" for reason in atlas_reasons)
     if result.caveats:
         lines.append("")
         lines.extend(f"  ! {caveat}" for caveat in result.caveats)
