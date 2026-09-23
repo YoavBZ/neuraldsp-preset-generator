@@ -82,6 +82,36 @@ def test_failed_rescore_never_counts_stale_agreement(record):
     assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
 
 
+@pytest.mark.parametrize("missing_component", [False, True])
+def test_unequal_objective_coverage_is_not_decisive(record, monkeypatch, missing_component):
+    import analysis.listening as listening
+    original_compare = listening.compare
+    calls = 0
+
+    def uneven_compare(*args, **kwargs):
+        nonlocal calls
+        result = original_compare(*args, **kwargs)
+        calls += 1
+        if calls == 2:
+            if missing_component:
+                result.detail["timbre"].pop(next(iter(result.detail["timbre"])))
+            else:
+                result.values["timbre"] = None
+                result.detail["timbre"] = {}
+        return result
+
+    monkeypatch.setattr(listening, "compare", uneven_compare)
+    scored = score_record(record)
+    assert not scored["objective_scoring"]["prediction_comparable"]
+    assert scored["agreement"]["closer"] == {"status": "unequal_coverage", "agrees": None}
+    assert scored["agreement"]["preferred"] == {"status": "unequal_coverage", "agrees": None}
+    # A previously written agreement must not bypass the report's coverage gate.
+    scored["agreement"]["closer"] = {"status": "agree", "agrees": True}
+    report = agreement_report([scored])
+    assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
+    assert report["target_groups"]["song"]["closer"]["diagnostic_counts_not_independent_n"] == {"unequal_coverage": 1}
+
+
 def test_missing_reference_regime_is_not_inferred(record):
     del record["reference"]["regime"]
     with pytest.raises(KeyError):
@@ -117,6 +147,40 @@ def test_cli_retains_failed_record_but_discards_stale_scores(record, tmp_path):
     report = json.loads((output / "report.json").read_text())
     assert report["scored_count"] == 0
     assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
+
+
+def test_cli_refuses_unignored_private_audit_inside_git(record, tmp_path):
+    import pathlib
+    import subprocess
+    import sys
+    repository = tmp_path / "repo"
+    repository.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(repository)], check=True)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"comparisons": [record]}))
+    output = repository / "private" / "audit"
+    command = [sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / "scripts/score_listening.py"),
+               "--manifest", str(manifest), "--out-dir", str(output)]
+    refused = subprocess.run(command, capture_output=True, text=True)
+    assert refused.returncode != 0 and "not Git-ignored" in refused.stderr
+    assert not output.exists()
+    (repository / ".gitignore").write_text("private/audit/report.json\nprivate/audit/comparison-001.json\n")
+    partial = subprocess.run(command, capture_output=True, text=True)
+    assert partial.returncode != 0 and "not Git-ignored" in partial.stderr
+    assert not output.exists()
+    (repository / ".gitignore").write_text("private/\n")
+    allowed = subprocess.run(command, capture_output=True, text=True)
+    assert allowed.returncode == 0, allowed.stderr
+    assert (output / "report.json").exists()
+
+
+def test_private_objective_verdict_sidecar_is_git_ignored():
+    import pathlib
+    import subprocess
+    root = pathlib.Path(__file__).resolve().parents[1]
+    # Check the pattern outside runs/ too; the verdict tool follows its key.
+    sidecar = root / "example.flac.key.json.123.objective-verdict.json"
+    subprocess.run(["git", "-C", str(root), "check-ignore", "--quiet", "--", str(sidecar)], check=True)
 
 
 def test_ac20_history_remains_uncertain_without_bound_fresh_proof(record, tmp_path):

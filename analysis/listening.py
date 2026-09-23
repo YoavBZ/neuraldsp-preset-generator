@@ -129,6 +129,14 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
     prediction = "indistinguishable" if math.isclose(score_a, score_b, rel_tol=0, abs_tol=1e-9) else ("A" if score_a < score_b else "B")
     full_a, full_b = (scores[label]["distance_with_level"] for label in ("A", "B"))
     with_level_prediction = "indistinguishable" if math.isclose(full_a, full_b, rel_tol=0, abs_tol=1e-9) else ("A" if full_a < full_b else "B")
+    term_coverage_equal = {
+        dimension: set(scores["A"]["objectives"]["detail"].get(dimension, {})) ==
+                   set(scores["B"]["objectives"]["detail"].get(dimension, {}))
+        for dimension in (set(scores["A"]["objectives"]["detail"]) |
+                          set(scores["B"]["objectives"]["detail"]))
+    }
+    coverage_equal = scores["A"]["effective_weights"] == scores["B"]["effective_weights"]
+    comparable_coverage = coverage_equal and all(term_coverage_equal.values())
     result["objective_scoring"] = {
         "schema": "listening-objective-v1", "profile": profile,
         "scope": "audio-only; same profile and compare/scalar code as matching; not the full optimizer score",
@@ -139,12 +147,11 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         "reference_fingerprint": target.to_dict(), "alternatives": scores,
         "prediction": prediction, "distance_B_minus_A": score_b - score_a,
         "prediction_with_level": with_level_prediction,
+        "prediction_comparable": comparable_coverage,
         "level_changes_prediction": prediction != with_level_prediction,
         "tie_policy": "1e-9 numerical equality only; not a perceptual or backend-noise threshold",
-        "coverage_equal": scores["A"]["effective_weights"] == scores["B"]["effective_weights"],
-        "term_coverage_equal": {dimension: set(scores["A"]["objectives"]["detail"].get(dimension, {})) ==
-                                 set(scores["B"]["objectives"]["detail"].get(dimension, {}))
-                                for dimension in scores["A"]["objectives"]["detail"]},
+        "coverage_equal": coverage_equal,
+        "term_coverage_equal": term_coverage_equal,
     }
     provenance = record.get("render_provenance") or {}
     result["objective_scoring"]["amp_model_unknown"] = [
@@ -165,6 +172,8 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
             raise ValueError(f"invalid {question} verdict: {answer!r}")
         if answer is None:
             status, agrees = "no_verdict", None
+        elif not comparable_coverage:
+            status, agrees = "unequal_coverage", None
         elif answer == "indistinguishable":
             status, agrees = "listener_tie", prediction == answer
         elif prediction == "indistinguishable":
@@ -175,6 +184,8 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         result["agreement"][question] = {"status": status, "agrees": agrees}
         if answer is None:
             status, agrees = "no_verdict", None
+        elif not comparable_coverage:
+            status, agrees = "unequal_coverage", None
         elif answer == "indistinguishable":
             status, agrees = "listener_tie", with_level_prediction == answer
         elif with_level_prediction == "indistinguishable":
@@ -205,7 +216,16 @@ def agreement_report(records: list[dict]) -> dict:
         group["amp_model_unknown_count_not_independent_n"] = (
             group.get("amp_model_unknown_count_not_independent_n", 0) + int(unknown))
         for question in ("closer", "preferred"):
-            status = "unscored" if "scoring_error" in record else record.get("agreement", {}).get(question, {}).get("status", "unscored")
+            scoring = record.get("objective_scoring", {})
+            unequal = (scoring.get("coverage_equal") is False or
+                       scoring.get("prediction_comparable") is False or
+                       any(value is False for value in scoring.get("term_coverage_equal", {}).values()))
+            if "scoring_error" in record:
+                status = "unscored"
+            elif unequal:
+                status = "unequal_coverage"
+            else:
+                status = record.get("agreement", {}).get(question, {}).get("status", "unscored")
             counts = group[question].setdefault("diagnostic_counts_not_independent_n", {})
             counts[status] = counts.get(status, 0) + 1
     for group in groups.values():
@@ -223,4 +243,4 @@ def agreement_report(records: list[dict]) -> dict:
     return {"schema": "listening-agreement-v1", "target_groups": groups, "summary": summary,
             "ungrouped_comparisons": [r["id"] for r in records if r["target_id"] == "unassigned"],
             "interpretation": "Descriptive audit only. Repeats and backed revisits share their target's single weight. Target independence must be justified externally; shared songs/listeners are not independent replicates. No significance claim, calibration or plateau is established.",
-            "tie_policy": "Listener and objective ties reported separately, excluded from decisive fractions; unknown preferences are not inferred."}
+            "tie_policy": "Listener and objective ties reported separately, excluded from decisive fractions; unequal objective coverage is inconclusive; unknown preferences are not inferred."}

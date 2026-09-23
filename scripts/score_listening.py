@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -19,6 +20,34 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import guarded
 from build_rab_audition import _write_text
+
+
+def _require_private_out_dir(directory: pathlib.Path) -> pathlib.Path:
+    """Refuse audit JSON in a Git worktree unless Git ignores the output files."""
+    directory = directory.expanduser().resolve()
+    existing = directory.parent
+    while not existing.exists():
+        existing = existing.parent
+    try:
+        repository = subprocess.run(
+            ["git", "-C", str(existing), "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=False,
+        )
+    except FileNotFoundError as error:
+        raise ValueError("git is needed to verify that the private audit output is ignored") from error
+    if repository.returncode == 0:
+        # The directory itself must be ignored, not only one predicted filename:
+        # a per-file rule could miss comparison-002.json or future sidecars.
+        ignored = subprocess.run(
+            ["git", "-C", str(existing), "check-ignore", "--quiet", "--",
+             str(directory) + "/"], check=False,
+        )
+        if ignored.returncode != 0:
+            raise ValueError(
+                f"private audit output directory is not Git-ignored: {directory}; "
+                "choose an ignored directory such as runs/ or one outside a Git worktree"
+            )
+    return directory
 
 
 def main():
@@ -33,9 +62,10 @@ def main():
         raise ValueError("duplicate comparison ids")
     if any(not row.get("target_id") for row in comparisons):
         raise ValueError("each comparison needs target_id (or explicit unassigned)")
-    if args.out_dir.exists():
+    out_dir = _require_private_out_dir(args.out_dir)
+    if out_dir.exists():
         raise ValueError("use a new output directory; prior audits are immutable")
-    args.out_dir.mkdir(parents=True)
+    out_dir.mkdir(parents=True)
     rows, cache = [], {}
     for index, comparison in enumerate(comparisons):
         try:
@@ -44,7 +74,7 @@ def main():
             row = {key: value for key, value in comparison.items() if key not in ("objective_scoring", "agreement", "agreement_with_level", "scoring_error")}
             row["scoring_error"] = f"{type(error).__name__}: {error}"
         rows.append(row)
-        _write_text(args.out_dir / f"comparison-{index + 1:03d}.json", json.dumps(row, indent=2, allow_nan=False) + "\n")
+        _write_text(out_dir / f"comparison-{index + 1:03d}.json", json.dumps(row, indent=2, allow_nan=False) + "\n")
         print(f"{comparison['id']}: {'UNSCORED ' + row['scoring_error'] if 'scoring_error' in row else 'scored'}", flush=True)
     report = agreement_report(rows)
     report["with_level_sensitivity"] = agreement_report([
@@ -52,7 +82,7 @@ def main():
     report["manifest_sha256"] = sha256(args.manifest)
     report["comparison_count_not_independent_n"] = len(rows)
     report["scored_count"] = sum("objective_scoring" in row for row in rows)
-    _write_text(args.out_dir / "report.json", json.dumps(report, indent=2, allow_nan=False) + "\n")
+    _write_text(out_dir / "report.json", json.dumps(report, indent=2, allow_nan=False) + "\n")
     print(json.dumps(report["summary"], indent=2))
 
 

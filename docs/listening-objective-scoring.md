@@ -33,6 +33,9 @@ standard audio distance with `level`, its fingerprint, individual objectives,
 effective weights, source hashes, and scorer/profile hashes. Preset-prior and
 complexity penalties cannot be recovered from audio alone: these are audio
 distances, not full optimization scores. Matching weights are not changed.
+If the alternatives have different measurable objectives or component terms,
+the distances remain diagnostic but the objective comparison is inconclusive;
+it does not count toward the agreement fraction.
 The builder scores cropped and gained source samples before montage encoding;
 24-bit FLAC quantization can make the decoded listening file differ minutely.
 
@@ -72,6 +75,10 @@ corrections. Run:
 ```sh
 python scripts/score_listening.py --manifest PRIVATE_MANIFEST.json --out-dir NEW_PRIVATE_AUDIT
 ```
+
+When the output is inside a Git worktree, the tool requires the audit files to
+be Git-ignored (for example, under this project's `runs/`). Verdict sidecars
+next to private blind keys are ignored too. Keep all audit outputs private.
 
 The audit keeps failures visible and never silently reuses stale scores. Its
 per-target agreement fractions are descriptive: within-target comparison counts
