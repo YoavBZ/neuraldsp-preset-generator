@@ -26,19 +26,22 @@ def implementation_hashes():
 
 
 def verified_fresh_render(source: dict, audio_spec: dict) -> bool:
-    """A declaration alone is not proof that the exact audio is fresh."""
+    """Check our render record's file bindings; it is not remote attestation."""
     binding = source.get("render_record")
     if binding is None:
         return False
     if source.get("process_policy") != "fresh":
         raise ValueError("render provenance declaration conflicts with its fresh-process record")
+    pack_id = source.get("pack", "morgan")
+    if pack_id not in ("morgan", "toneking"):
+        raise ValueError(f"unknown pack in fresh render provenance: {pack_id!r}")
     import json
     record_path = Path(binding["path"]).expanduser().resolve()
     if sha256(record_path) != binding.get("sha256"):
         raise ValueError("fresh render record hash changed")
     proof = json.loads(record_path.read_text())
     if (proof.get("schema") != "listening-fresh-render-v1" or
-            proof.get("pack") != "morgan" or
+            proof.get("pack") != pack_id or
             proof.get("amp_model") != source.get("amp_model") or
             proof.get("process_policy") != "fresh" or
             "process=fresh" not in proof.get("renderer", {}).get("quality_mode", "") or
@@ -46,7 +49,25 @@ def verified_fresh_render(source: dict, audio_spec: dict) -> bool:
             Path(audio_spec["path"]).expanduser().resolve() or
             proof.get("audio", {}).get("sha256") != audio_spec.get("sha256") or
             sha256(audio_spec["path"]) != audio_spec.get("sha256")):
-        raise ValueError("fresh render record does not prove exact AC20 audio and renderer policy")
+        raise ValueError("fresh render record does not prove exact audio and renderer policy")
+    if pack_id == "toneking":
+        from match.renderer_preset import AudioUnitError, toneking_channel
+        preset = proof.get("preset") or {}
+        preset_path = Path(preset.get("path", "")).expanduser().resolve()
+        preset_sha = preset.get("sha256")
+        if (proof.get("state_source") != "exact_preset_blob" or
+                not preset_path.is_file() or sha256(preset_path) != preset_sha or
+                not proof["renderer"].get("renderer_build", "").startswith(
+                    "audio-unit-preset-renderer-") or
+                f"state_template_sha256={preset_sha}" not in
+                proof["renderer"]["quality_mode"].split(";")):
+            raise ValueError("Tone King render record does not prove the exact preset state")
+        try:
+            actual_channel = toneking_channel(preset_path.read_bytes())
+        except (AudioUnitError, ValueError) as error:
+            raise ValueError("Tone King render record does not contain a valid preset") from error
+        if actual_channel != proof.get("amp_model"):
+            raise ValueError("Tone King render record channel differs from its preset")
     return True
 
 
@@ -154,9 +175,13 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         "term_coverage_equal": term_coverage_equal,
     }
     provenance = record.get("render_provenance") or {}
+    known_models = {"morgan": {"AC20", "PR12", "SW50R"},
+                    "toneking": {"Rhythm Channel", "Lead Channel"}}
     result["objective_scoring"]["amp_model_unknown"] = [
         label for label in ("A", "B")
-        if provenance.get(label, {}).get("amp_model") not in ("AC20", "PR12", "SW50R", "non-Morgan")
+        if provenance.get(label, {}).get("amp_model") != "non-Morgan"
+        and provenance.get(label, {}).get("amp_model") not in
+        known_models.get(provenance.get(label, {}).get("pack", "morgan"), set())
     ]
     result["objective_scoring"]["ac20_history_uncertain"] = [
         label for label in ("A", "B")

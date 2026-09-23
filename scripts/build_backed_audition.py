@@ -4,7 +4,8 @@
 
 The manifest fixes crops and mix balance before listening. Output is a short
 Reference–A–B FLAC plus a separate private key with frozen objective scores.
-This never renders a plugin; AC20 inputs need exact fresh-process render proof.
+This never renders a plugin; AC20 and Tone King inputs need exact fresh-process
+render proof.
 Audio inputs must be WAV, FLAC, AIFF or Ogg; convert an MP3 reference to a
 private WAV first and bind that converted file's hash in the manifest.
 """
@@ -67,17 +68,24 @@ def _provenance(spec: dict, path: pathlib.Path):
     from analysis.listening import sha256, verified_fresh_render
 
     model = spec.get("amp_model")
-    if model not in ("AC20", "PR12", "SW50R", "non-Morgan"):
-        raise ValueError("each alternative needs an explicit amp_model")
+    pack_id = spec.get("pack", "morgan")
+    allowed = {"morgan": ("AC20", "PR12", "SW50R"),
+               "toneking": ("Rhythm Channel", "Lead Channel")}
+    if model == "non-Morgan" and "pack" not in spec:
+        pack_id = "unknown"  # Preserve older, explicitly unverified inputs.
+    elif pack_id not in allowed or model not in allowed[pack_id]:
+        raise ValueError("each alternative needs an amp_model valid for its pack")
     record = spec.get("render_record")
     if record is None:
-        if model == "AC20":
-            raise ValueError("AC20 requires a fresh-process record for this exact audio")
-        return {"amp_model": model, "process_policy": "unknown"}
+        if model == "AC20" or pack_id == "toneking":
+            raise ValueError(f"{model} requires a fresh-process record for this exact audio")
+        return {"pack": pack_id, "amp_model": model, "process_policy": "unknown"}
+    if pack_id == "unknown":
+        raise ValueError("an unknown pack cannot have a verified fresh-process record")
     record_path = pathlib.Path(record).expanduser().resolve()
     if not record_path.is_file():
         raise ValueError(f"missing render record: {record_path}")
-    source = {"amp_model": model, "process_policy": "fresh",
+    source = {"pack": pack_id, "amp_model": model, "process_policy": "fresh",
               "render_record": {"path": str(record_path), "sha256": sha256(record_path)}}
     if not verified_fresh_render(source, {"path": str(path), "sha256": sha256(path)}):
         raise ValueError("render record does not bind this fresh-process audio")

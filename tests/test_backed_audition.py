@@ -109,6 +109,72 @@ def test_refuses_unproven_ac20_and_changed_audio(tmp_path):
     assert not out.exists()
 
 
+def test_toneking_requires_exact_fresh_process_proof(tmp_path):
+    from tests.test_records import preset, record as binary_record
+
+    manifest_path, manifest = _fixture(tmp_path)
+    first = manifest["alternatives"]["first"]
+    first.update({"pack": "toneking", "amp_model": "Lead Channel"})
+    manifest_path.write_text(json.dumps(manifest))
+    out = tmp_path / "audition"
+    refused = _run(manifest_path, out)
+    assert refused.returncode != 0 and "fresh-process record" in refused.stderr
+    assert not out.exists()
+
+    preset_path = tmp_path / "synthetic-toneking.xml"
+    preset_path.write_bytes(preset(binary_record("ampType", 1),
+                                   binary_record("drive1Treble")))
+    preset_sha = sha256(preset_path)
+    proof = {"schema": "listening-fresh-render-v1", "pack": "toneking",
+             "amp_model": "Lead Channel", "process_policy": "fresh",
+             "state_source": "exact_preset_blob",
+             "preset": {"path": str(preset_path), "sha256": preset_sha},
+             "renderer": {"renderer_build": "audio-unit-preset-renderer-test",
+                          "quality_mode": f"process=fresh;state_template_sha256={preset_sha}"},
+             "audio": {"path": first["path"], "sha256": first["sha256"]}}
+    proof_path = tmp_path / "fresh-render.json"
+    proof_path.write_text(json.dumps(proof))
+    first["render_record"] = str(proof_path)
+    manifest_path.write_text(json.dumps(manifest))
+    built = _run(manifest_path, out)
+    assert built.returncode == 0, built.stderr
+    key = json.loads((out / "private-key.json").read_text())
+    label = next(label for label, role in key["blind_key"].items() if role == "first")
+    assert key["objective_record"]["render_provenance"][label]["pack"] == "toneking"
+    assert key["objective_record"]["render_provenance"][label]["amp_model"] == "Lead Channel"
+
+    preset_path.write_bytes(preset(binary_record("ampType", 0)))
+    wrong_channel_sha = sha256(preset_path)
+    proof["preset"]["sha256"] = wrong_channel_sha
+    proof["renderer"]["quality_mode"] = (
+        f"process=fresh;state_template_sha256={wrong_channel_sha}")
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "wrong-channel")
+    assert rejected.returncode != 0 and "channel differs" in rejected.stderr
+
+    preset_path.write_bytes(b"synthetic private preset fixture")
+    invalid_sha = sha256(preset_path)
+    proof["preset"]["sha256"] = invalid_sha
+    proof["renderer"]["quality_mode"] = f"process=fresh;state_template_sha256={invalid_sha}"
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "invalid-preset")
+    assert rejected.returncode != 0 and "valid preset" in rejected.stderr
+    preset_path.write_bytes(preset(binary_record("ampType", 1),
+                                   binary_record("drive1Treble")))
+    proof["preset"]["sha256"] = preset_sha
+    proof["renderer"]["quality_mode"] = f"process=fresh;state_template_sha256={preset_sha}"
+
+    proof["pack"] = "morgan"
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "wrong-pack")
+    assert rejected.returncode != 0 and "does not prove exact audio" in rejected.stderr
+    proof["pack"] = "toneking"
+    preset_path.write_bytes(b"changed")
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "changed-preset")
+    assert rejected.returncode != 0 and "exact preset state" in rejected.stderr
+
+
 def test_rejects_loudness_confounded_pair_and_never_overwrites(tmp_path):
     manifest_path, manifest = _fixture(tmp_path)
     manifest["mix"]["max_ab_lufs_delta"] = 0.0

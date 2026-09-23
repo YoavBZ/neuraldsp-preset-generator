@@ -277,3 +277,37 @@ def test_fresh_renderer_rejects_a_parseable_preset_missing_one_control(tmp_path)
     assert ("parameters", "transpose") not in build(parse_file(str(incomplete))).by_path
     with pytest.raises(ValueError, match="preset omits 1 writable control.*parameters/transpose"):
         _settings_from_preset(incomplete, load_pack("morgan"), None)
+
+
+def test_toneking_channel_and_record_preset_are_read_without_morgan_assumptions(tmp_path):
+    from packs.loader import load_pack
+    from scripts.render_listening_guitar import _all_writable_settings, _amp, _settings_from_preset
+    from match.renderer_preset import toneking_channel
+    from tests.test_records import preset, record as binary_record
+
+    pack = load_pack("toneking")
+    assert _amp({"ampType": "Lead Channel"}, pack) == "Lead Channel"
+    assert _all_writable_settings({"/ampType": 1, "/leadAmpMidBite": .5}, pack, None) == {
+        "ampType": 1, "leadAmpMidBite": .5}
+    with pytest.raises(ValueError, match="omit ampType"):
+        _all_writable_settings({"leadAmpMidBite": .5}, pack, None)
+
+    # Keep this fixture synthetic: the installed factory preset is not ours to
+    # commit. A small pack still exercises the production record-state parser.
+    path = tmp_path / "toneking.xml"
+    path.write_bytes(preset(binary_record("ampType", 1),
+                            binary_record("drive1Treble"),
+                            binary_record("opaqueFutureControl", .5)))
+    assert toneking_channel(path.read_bytes()) == "Lead Channel"
+    with pytest.raises(ValueError, match="only Morgan"):
+        _settings_from_preset(path, pack, None)
+    path.write_bytes(preset(binary_record("ampType", 0)))
+    assert toneking_channel(path.read_bytes()) == "Rhythm Channel"
+
+
+def test_toneking_objective_diagnostic_knows_verified_channels(record):
+    record["render_provenance"] = {
+        "A": {"pack": "toneking", "amp_model": "Lead Channel"},
+        "B": {"pack": "toneking", "amp_model": "Rhythm Channel"},
+    }
+    assert score_record(record)["objective_scoring"]["amp_model_unknown"] == []

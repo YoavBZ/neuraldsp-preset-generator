@@ -431,6 +431,52 @@ def test_each_record_render_starts_from_the_plugins_own_state(tmp_path):
     assert values["ampTremoloDepth"] == "0.1", values
 
 
+def test_toneking_state_template_is_sent_byte_exact_and_part_of_cache_identity(tmp_path):
+    from pathlib import Path
+    from match.renderer_preset import ToneKingPresetRenderer
+    from tests.test_records import preset, record
+
+    template = tmp_path / "toneking.xml"
+    raw = preset(record("ampType", 1), record("ampReverb", .25),
+                 record("unmappedAlternate", .75))
+    template.write_bytes(raw)
+    made = ToneKingPresetRenderer(template, workdir=tmp_path)
+    made._xml_state = False
+    assert Path(made._state_command({})["state"]).read_bytes() == raw
+    made._xml_state = True
+    with pytest.raises(AudioUnitError, match="requires record-state"):
+        made._state_command({})
+    assert Path(made._record_command({})["state"]).read_bytes() == raw
+    first_identity = made._quality_identity()
+    assert "state_template_sha256=" in first_identity
+    assert made._renderer_build().startswith("audio-unit-preset-renderer-")
+    assert made._renderer_build() != AudioUnitRenderer("toneking", workdir=tmp_path)._renderer_build()
+    with pytest.raises(AudioUnitError, match="does not accept knob edits"):
+        made._record_command({"/ampReverb": .5})
+    template.write_bytes(preset(record("ampType", 0), record("ampReverb", .25)))
+    assert made._quality_identity() == first_identity, "the renderer pins its input bytes"
+    changed = ToneKingPresetRenderer(template, workdir=tmp_path)
+    assert changed._quality_identity() != first_identity
+    with pytest.raises(AudioUnitError, match="requires process_policy=fresh"):
+        ToneKingPresetRenderer(template, workdir=tmp_path, process_policy="reuse")
+
+
+def test_toneking_state_template_rejects_a_different_pack(tmp_path):
+    from pathlib import Path
+    from match.renderer_preset import ToneKingPresetRenderer, toneking_channel
+    from tests.test_records import preset, record
+
+    wrong = Path(__file__).resolve().parents[1] / "samples/Example_Clean_PR12.xml"
+    with pytest.raises(AudioUnitError, match="not a Tone King preset"):
+        ToneKingPresetRenderer(wrong, workdir=tmp_path)
+    with pytest.raises(AudioUnitError, match="exactly one valued ampType"):
+        toneking_channel(preset(record("drive1Treble")))
+    with pytest.raises(AudioUnitError, match="exactly one valued ampType"):
+        toneking_channel(preset(record("ampType", 0), record("ampType", 1)))
+    with pytest.raises(AudioUnitError, match="invalid ampType"):
+        toneking_channel(preset(record("ampType", 7)))
+
+
 # --- deciding how the plugin has to be driven -------------------------------
 
 def _silence_decision(monkeypatch, results):

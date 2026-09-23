@@ -1,11 +1,13 @@
-"""Render a Morgan listening alternative in a fresh Audio Unit process.
+"""Render a Morgan or Tone King listening alternative in a fresh AU process.
 
 Use before building a comparison whenever the active amp may be AC20. The
 private output record binds the exact DI, settings, audio and renderer policy.
 No earlier audition or judgment is changed by a new render.
 
-Supply either a full effective settings JSON object or a plugin XML preset.
-The XML path reads every declared writable control, not just search dimensions.
+Supply either a full effective settings JSON object or a plugin preset.
+Morgan's preset path reads every declared writable control, not just search
+dimensions. Tone King's preset is loaded as the exact state blob, preserving
+even absent-value and opaque records; settings JSON is supported only for Morgan.
 """
 from __future__ import annotations
 
@@ -26,12 +28,18 @@ def _sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
+def _selector(pack):
+    name = "selectedAmp" if pack.pack_id == "morgan" else "ampType"
+    return pack.parameters["/" + name]
+
+
 def _amp(settings, pack):
-    selected = settings.get("/selectedAmp", settings.get("selectedAmp"))
+    selector = _selector(pack)
+    selected = settings.get(selector.path, settings.get("/" + selector.path))
     if selected is None:
-        raise ValueError("Morgan settings need an explicit selectedAmp")
-    stored = pack.to_stored(pack.parameters["/selectedAmp"], selected)
-    return pack.parameters["/selectedAmp"].members[stored]
+        raise ValueError(f"{pack.display_name} settings need an explicit {selector.path}")
+    stored = pack.to_stored(selector, selected)
+    return selector.members[stored]
 
 
 def _all_writable_settings(settings, pack, supported, *, warnings=None):
@@ -50,13 +58,16 @@ def _all_writable_settings(settings, pack, supported, *, warnings=None):
             raise ValueError(f"conflicting spellings for setting {path!r}")
         pack.to_stored(spec, value, warnings=warnings)
         applied[path] = value
-    if "selectedAmp" not in applied:
-        raise ValueError("effective settings omit selectedAmp")
+    selector = _selector(pack).path
+    if selector not in applied:
+        raise ValueError(f"effective settings omit {selector}")
     return applied
 
 
 def _settings_from_preset(path, pack, supported, *, warnings=None):
-    """Read the complete writable state, refusing an unknown or undrivable slot."""
+    """Read a complete Morgan preset before applying knob edits."""
+    if pack.pack_id != "morgan":
+        raise ValueError("only Morgan presets are converted to knob edits")
     from format.parser import parse_file
     from format.structured import build
     from format.translate import from_binary
@@ -80,8 +91,9 @@ def _settings_from_preset(path, pack, supported, *, warnings=None):
         if name in values and values[name] != value:
             raise ValueError(f"preset states conflicting values for {name}")
         values[name] = value
-    if "selectedAmp" not in values:
-        raise ValueError("Morgan preset omits selectedAmp")
+    selector = _selector(pack).path
+    if selector not in values:
+        raise ValueError(f"{pack.display_name} preset omits {selector}")
     required = {spec.path for spec in pack.parameters.values() if spec.writable}
     missing = sorted(required - values.keys())
     if missing:
@@ -97,12 +109,13 @@ def _settings_from_preset(path, pack, supported, *, warnings=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--pack", choices=("morgan", "toneking"), default="morgan")
     parser.add_argument("--di", required=True, type=pathlib.Path)
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument("--settings-json", type=pathlib.Path,
                              help="full effective Morgan settings as one JSON object")
     input_group.add_argument("--preset", type=pathlib.Path,
-                             help="Morgan XML preset; render all its writable controls")
+                             help="Morgan: apply all writable controls; Tone King: replay the exact preset state")
     parser.add_argument("--settings-key", help="dot-separated object path within settings JSON, e.g. settings.ac20")
     parser.add_argument("--out", required=True, type=pathlib.Path,
                         help="new private WAV under runs/")
@@ -112,6 +125,8 @@ def main():
     out = args.out.expanduser().resolve()
     if args.settings_key and args.preset:
         raise ValueError("--settings-key applies only to --settings-json")
+    if args.pack == "toneking" and args.settings_json:
+        raise ValueError("Tone King needs --preset to preserve its opaque state")
     if out.suffix.lower() != ".wav" or ROOT / "runs" not in out.parents:
         raise ValueError("--out must be a new private WAV under this project's runs/")
     sidecar = out.with_suffix(out.suffix + ".render.json")
@@ -130,35 +145,55 @@ def main():
         if not isinstance(settings, dict):
             raise ValueError("settings JSON must be an object")
     from packs.loader import load_pack
-    pack = load_pack("morgan")
+    pack = load_pack(args.pack)
     from analysis import io
     from match.renderer import _hash_audio
     from match.renderer_au import AudioUnitRenderer
+    from match.renderer_preset import ToneKingPresetRenderer
 
+    exact_state = args.pack == "toneking" and args.preset is not None
+    source_sha = _sha(source_path)
+    di_sha = _sha(di_path)
+    source_warnings = []
+    if exact_state:
+        from match.renderer_preset import toneking_channel
+        amp = toneking_channel(source_path.read_bytes())
+        mapped = {}  # The untouched blob is applied; no knobs are edited.
+    else:
+        mapped = (_settings_from_preset(source_path, pack, None,
+                                        warnings=source_warnings) if args.preset
+                  else _all_writable_settings(settings, pack, None))
+        amp = _amp(mapped, pack)
     di = io.load(di_path).mono()
-    renderer = AudioUnitRenderer("morgan", process_policy="fresh")
+    renderer = (ToneKingPresetRenderer(source_path, process_policy="fresh") if exact_state
+                else AudioUnitRenderer(args.pack, process_policy="fresh"))
     try:
         metadata = renderer.metadata()
         if "process=fresh" not in metadata.quality_mode:
             raise ValueError("renderer did not report a fresh process")
         supported = renderer_paths(renderer)
-        source_warnings = []
-        mapped = (_settings_from_preset(source_path, pack, supported,
-                                        warnings=source_warnings) if args.preset
-                  else _all_writable_settings(settings, pack, supported))
-        amp = _amp(mapped, pack)
-        result = renderer.render(di, mapped, di_sha256=_hash_audio(di))
+        if supported is not None and not exact_state:
+            unsupported = sorted(set(mapped) - supported)
+            if unsupported:
+                raise ValueError(f"preset control cannot be rendered: {unsupported[0]}")
+        render_settings = {} if exact_state else mapped
+        result = renderer.render(di, render_settings, di_sha256=_hash_audio(di))
+        if result.silent:
+            raise ValueError("the preset rendered silence; no listening alternative was written")
+        if _sha(source_path) != source_sha or _sha(di_path) != di_sha:
+            raise ValueError("the preset/settings or DI changed during rendering")
         out.parent.mkdir(parents=True, exist_ok=True)
         _write_audio(out, result.audio, metadata.sample_rate)
         record = {"schema": "listening-fresh-render-v1", "amp_model": amp,
-                  "process_policy": "fresh", "pack": "morgan",
+                  "process_policy": "fresh", "pack": args.pack,
                   "audio": {"path": str(out), "sha256": _sha(out)},
-                  "di": {"path": str(di_path), "sha256": _sha(di_path),
+                  "di": {"path": str(di_path), "sha256": di_sha,
                          "audio_sha256": _hash_audio(di)},
-                  "settings": ({"path": str(source_path), "sha256": _sha(source_path),
+                  "settings": ({"path": str(source_path), "sha256": source_sha,
                                 "key": args.settings_key} if args.settings_json else None),
-                  "preset": ({"path": str(source_path), "sha256": _sha(source_path)}
+                  "preset": ({"path": str(source_path), "sha256": source_sha}
                              if args.preset else None),
+                  "state_source": "exact_preset_blob" if exact_state else "plugin_base_with_edits",
                   "applied_settings": mapped,
                   "source_warnings": source_warnings,
                   "renderer": metadata.as_dict()}
