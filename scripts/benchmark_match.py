@@ -387,7 +387,10 @@ def main() -> None:
             # never to write down.
             "backend": metadata.as_dict(),
             "summaries": {arm: result.summarise(arm) for arm in arms},
-            "ships": result.verdict()[0], "reasons": result.verdict()[1],
+            # M4's gate is only M4's verdict on M4's own targets. An atlas run
+            # samples inside the atlas topology, so it records no verdict here.
+            "ships": (result.verdict()[0] if atlas_document is None else None),
+            "reasons": result.verdict()[1],
             # Which atlas, and whether it was built on the probe these targets
             # were rendered from — the difference between the two questions an
             # atlas benchmark can answer.

@@ -794,7 +794,10 @@ def test_an_atlas_benchmark_reports_whether_the_atlas_start_helped(tmp_path):
             or "ATLAS START DOES NOT HELP" in done.stdout)
     assert "different probe" not in done.stdout
 
+    assert "not M4's" in done.stdout, "M4's gate is labelled as not M4's verdict"
+
     written = json.loads(out.read_text())
+    assert written["ships"] is None, "an atlas run records no M4 verdict"
     assert set(written["summaries"]) == {
         "recipe", "inversion", "full", "atlas", "atlas-inversion", "atlas-full"}
     assert len(written["outcomes"]) == 12, "two targets by six arms"
@@ -822,12 +825,38 @@ def test_an_atlas_on_another_probe_is_run_and_says_so(tmp_path):
     (("--amp", "pr12"), "contradicts the atlas"),
     (("--pack", "toneking"), "contradicts the atlas"),
     (("--arms", "full"), "needs both the full and atlas-full arms"),
+    (("--list-enumerable",), "do not apply with --atlas"),
+    (("--budget-per-topology",), "does not apply with --atlas"),
 ])
 def test_an_atlas_benchmark_refuses_what_it_cannot_answer(tmp_path, extra, message):
     done = run("benchmark_match.py", "--atlas", _synthetic_atlas(tmp_path, 1.5),
                "--targets", "1", *extra)
     assert done.returncode != 0
     assert message in done.stderr
+
+
+def test_an_atlas_from_another_backend_is_refused():
+    """The committed atlases are the plugin's renders. Looked up against the
+    synthetic chain's they describe another backend, so the run is refused
+    rather than caveated."""
+    done = run("benchmark_match.py", "--atlas",
+               ROOT / "packs" / "morgan" / "response_atlas_sw50r_1024.json",
+               "--targets", "1")
+    assert done.returncode != 0
+    assert "built by the swift renderer" in done.stderr
+
+
+def test_an_atlas_from_another_build_is_a_caveat_not_a_refusal(tmp_path):
+    """Both searches render on this build, so the comparison stays fair; only the
+    lookup reads responses measured on another one."""
+    atlas_path = _synthetic_atlas(tmp_path, 1.5)
+    document = json.loads(atlas_path.read_text())
+    document["renderer"]["renderer_build"] = "an-older-build"
+    atlas_path.write_text(json.dumps(document))
+    done = run("benchmark_match.py", "--atlas", atlas_path, "--targets", "1",
+               "--budget", "30", "--seconds", "1.5", "--arms", "full,atlas-full")
+    assert done.returncode in (0, 1), done.stdout + done.stderr
+    assert "differs in renderer_build" in done.stdout
 
 
 def test_the_atlas_arms_need_an_atlas(tmp_path):

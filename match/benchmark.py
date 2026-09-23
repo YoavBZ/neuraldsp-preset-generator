@@ -237,6 +237,18 @@ class BenchmarkResult:
         if not ours:
             return False, ["no target was scored by both atlas-full and full, so "
                            "there is nothing to compare"]
+        # The same guards `verdict()` applies: a comparison resting on the few
+        # targets that survived is not a comparison of the arms.
+        summaries = [self.summarise(arm) for arm in ("full", "atlas-full")]
+        for summary in summaries:
+            if summary["failure_rate"] > 0.1:
+                return False, [f"{summary['arm']} failed "
+                               f"{100 * summary['failure_rate']:.0f}% of targets, "
+                               f"too many to compare its mean"]
+        targets = max(summary["targets"] for summary in summaries)
+        if len(ours) < 0.7 * targets:
+            return False, [f"only {len(ours)} of {targets} targets were scored by "
+                           f"both searches"]
         mine = sum(o.objective for o in ours) / len(ours)
         against = sum(o.objective for o in theirs) / len(theirs)
         wins = sum(a.objective < b.objective for a, b in zip(ours, theirs))
@@ -1063,6 +1075,10 @@ def format_table(result: BenchmarkResult, arms: Sequence[str] = ARMS) -> str:
     ships, reasons = result.verdict()
     lines.append("")
     lines.append("SHIPS" if ships else "DOES NOT SHIP")
+    if any(arm in ATLAS_ARMS for arm in arms):
+        # M4's gate, on targets M4 does not sample. Informative about the
+        # pipeline, not M4's verdict.
+        lines[-1] += " (on this atlas's fixed-topology targets, not M4's)"
     lines.extend(f"  - {reason}" for reason in reasons)
     if any(arm in ATLAS_ARMS for arm in arms):
         helps, atlas_reasons = result.atlas_verdict()

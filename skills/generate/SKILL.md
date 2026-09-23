@@ -132,8 +132,8 @@ the mapping — that is the guess this project exists to avoid.
 **Response atlases are not a starting point yet.** `show.py` reports
 `response_atlases`, but they were measured with a synthetic noise probe, and
 against a played guitar the three that were checked picked an entry better than
-neutral settings only a little over half the time, and a search started from one
-finished further away than one started from neutral settings. The
+neutral settings only a little over half the time, and on SW50R a search started
+from one finished further away than one started from neutral settings. The
 [match skill](../match/SKILL.md) has the numbers. Build from recipes, as below,
 whether or not an atlas covers the amp.
 

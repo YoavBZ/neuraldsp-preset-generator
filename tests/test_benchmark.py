@@ -1192,3 +1192,17 @@ def test_the_atlas_verdict_needs_the_mean_and_most_targets():
     assert tie.atlas_verdict()[0] is False, "a tie is not helping"
 
     assert B.BenchmarkResult().atlas_verdict()[0] is False
+
+
+def test_the_atlas_verdict_refuses_a_comparison_resting_on_survivors():
+    """`verdict()`'s guards, for the same reason: if the atlas search failed on
+    most targets, the two it finished cannot say it helps."""
+    result = _paired_result([(1.0, 0.1), (1.0, 0.1)])
+    for index in range(2, 6):
+        result.outcomes.append(B.Outcome(arm="full", target_index=index,
+                                         objective=1.0))
+        result.outcomes.append(B.Outcome(arm="atlas-full", target_index=index,
+                                         failed=True, error="boom"))
+    helps, reasons = result.atlas_verdict()
+    assert helps is False
+    assert "failed" in reasons[0]
