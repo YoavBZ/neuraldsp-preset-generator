@@ -131,9 +131,10 @@ the mapping — that is the guess this project exists to avoid.
 
 **Response atlases are not a starting point yet.** `show.py` reports
 `response_atlases`, but they were measured with a synthetic noise probe, and
-against a played guitar their nearest entry beat neutral settings only about
-half the time. The [match skill](../match/SKILL.md) has the numbers. Build from
-recipes, as below, whether or not an atlas covers the amp.
+against a played guitar the three that were checked picked an entry better than
+neutral settings only a little over half the time. The
+[match skill](../match/SKILL.md) has the numbers. Build from recipes, as below,
+whether or not an atlas covers the amp.
 
 **Build from recipes, then adapt.** `${CLAUDE_PLUGIN_ROOT}/packs/<id>/recipes.json` holds composable
 layers — amp, compressor, drive, eq, cab, delay, reverb, output. Pick one per

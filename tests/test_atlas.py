@@ -375,10 +375,11 @@ def test_query_cli_writes_ranked_specs_without_a_plugin(tmp_path):
 
 def test_query_warns_that_a_noise_probe_atlas_does_not_transfer_to_a_guitar(
         tmp_path):
-    """A played guitar looked up in an atlas built on the noise probe beat the
-    amp's neutral settings on 27 of 48 targets, so the tool says so to anyone who
-    runs it on a recording — and only then: a probe-regime target is the lookup
-    the atlas's own gates measured."""
+    """Looked up with renders of a played guitar, noise-probe atlases picked an
+    entry better than neutral settings on 27 or 28 of 48, so the tool says so.
+    Whatever the reference mode: `probe` means a controlled render of a known
+    chain, and the guitar targets in that very measurement were one. Only an
+    atlas built from a DI records no probe caveat, and only it is exempt."""
     document = _document()
     document["build"] = {"probe_caveat": "no --probe-di was given"}
     atlas_path = tmp_path / "atlas.json"
@@ -396,19 +397,22 @@ def test_query_warns_that_a_noise_probe_atlas_does_not_transfer_to_a_guitar(
             cwd=ROOT, capture_output=True, text=True,
         )
 
-    warning = "measured with a synthetic noise probe"
-    stem = query("separated_stem")
-    assert stem.returncode == 0, stem.stderr
-    assert warning in stem.stdout
-    probe = query("probe")
-    assert probe.returncode == 0, probe.stderr
-    assert warning not in probe.stdout
+    warning = "stores a synthetic noise probe"
+    ranges = "a reference inside or outside them says little"
+    for mode in ("separated_stem", "probe"):
+        done = query(mode)
+        assert done.returncode == 0, done.stderr
+        assert warning in done.stdout, mode
+        assert ranges in done.stdout, mode
+        assert "evidence to distrust the topology" not in done.stdout, mode
 
     # An atlas built with --probe-di records no probe caveat and gets no warning.
     document["build"] = {"probe_caveat": None}
     real_di = tmp_path / "real-di-atlas.json"
     real_di.write_text(json.dumps(document))
-    assert warning not in query("separated_stem", real_di).stdout
+    done = query("separated_stem", real_di)
+    assert warning not in done.stdout
+    assert "evidence to distrust the topology" in done.stdout
 
 
 def test_every_committed_atlas_is_the_noise_probe_the_warning_keys_on():
@@ -420,14 +424,17 @@ def test_every_committed_atlas_is_the_noise_probe_the_warning_keys_on():
     from analysis import io
     from scripts._cli import probe_di
 
-    for pack in ("morgan", "toneking"):
-        for path in sorted((ROOT / "packs" / pack).glob("response_atlas_*.json")):
-            document = json.loads(path.read_text())
-            assert document["build"]["probe_caveat"], path
-            probe = document["probe"]
-            noise, _ = probe_di(None, probe["duration_s"])
-            assert io.from_samples(noise, probe["sample_rate"]).sha256 == (
-                probe["sha256"]), path
+    committed = sorted((ROOT / "packs").glob("*/response_atlas_*.json"))
+    # Five amps or channels, a pilot and a scaled atlas each. A glob that
+    # matched nothing would pass the loop below without checking anything.
+    assert len(committed) == 10, [path.name for path in committed]
+    for path in committed:
+        document = json.loads(path.read_text())
+        assert document["build"]["probe_caveat"], path
+        probe = document["probe"]
+        noise, _ = probe_di(None, probe["duration_s"])
+        assert io.from_samples(noise, probe["sample_rate"]).sha256 == (
+            probe["sha256"]), path
 
 
 def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):

@@ -79,16 +79,17 @@ template, amp/channel and discrete topology before matching. Keep source links.
 at 128 or 1,024 sampled settings, which a query tool searches for the settings
 nearest a reference without rendering anything. **Do not start a match from
 one.** Start from the template, as the rest of this skill describes. Two
-measurements say why:
+reasons:
 
 - **They were measured with a noise probe, not a guitar.** Every committed atlas
-  stores a synthetic noise-burst sequence played through the amp. On held-out
-  settings rendered from that same probe, its nearest entry beats the amp's
-  neutral settings on 22 to 24 of 24. On held-out settings rendered from a
-  played guitar DI — which is what a reference is — it beat them on 27 of 48:
-  11 of 16 on SW50R, 9 of 16 on Tone King's rhythm channel, and 7 of 16 on PR12,
-  where it averaged further away than neutral. That is one played passage per
-  amp, and it is close to a coin flip.
+  stores a synthetic noise-burst sequence played through the amp, and its gates
+  were measured on that same probe. Against held-out settings rendered from a
+  played guitar DI — which is what a reference is — the entry a lookup picks
+  beat the amp's neutral settings on 27 or 28 of 48: it helped on SW50R
+  (11 of 16), was about even on Tone King's rhythm channel (9 or 10 of 16,
+  varying between runs), and hurt on PR12 (7 of 16, further away than neutral
+  on average). That is one played passage per amp, and AC20, Tone King's lead
+  channel and the 128-point pilots were not measured on a guitar at all.
 - **No search has been shown to finish better from one.** Beating neutral
   settings is a claim about where a search starts. Whether a search started from
   an atlas entry ends closer than the normal pipeline, for the same number of
@@ -171,9 +172,15 @@ Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
-Use the user's own DI as `--probe-di` when available. Without one, omit the flag;
-the tool uses a six-second sequence of decaying white-noise bursts and records that
-limitation. It is transient and aperiodic, not a played or pitched guitar part.
+Use the user's own DI as `--probe-di` when available, and ask for one before
+matching without it. Without one, omit the flag; the tool uses a six-second
+sequence of decaying white-noise bursts and records that limitation. It is
+transient and aperiodic, not a played or pitched guitar part, and it is 6–10 dB
+louder than the two played DIs it has been measured against, so it drives the amp
+harder. Every candidate is then noise through the amp compared with a guitar —
+the same mismatch that made atlas lookups unreliable above. A search has not been
+measured under it, so report a match made without a DI as weaker evidence than
+one rendered from the user's playing.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
