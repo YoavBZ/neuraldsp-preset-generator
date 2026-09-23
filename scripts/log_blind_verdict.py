@@ -112,6 +112,30 @@ def main() -> None:
     from match.verdict import record_verdict
     from packs.paths import data_root_warning, set_data_root
 
+    objective = key.get("objective_record")
+    if objective is not None:
+        from analysis.listening import score_record
+        from build_rab_audition import _write_text
+        identity = hashlib.sha256(args.listener.strip().encode()).hexdigest()
+        sidecar = args.key.with_name(args.key.name + f".{identity}.objective-verdict.json")
+        submission = {**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
+            "closer": args.choice, "preferred": args.prefer},
+            "listener": args.listener.strip(),
+            "heard_audio": {"path": str(montage), "sha256": output["sha256"]}}
+        try:
+            scored = score_record(submission)
+        except Exception as error:
+            # The listener's verdict belongs to the verified montage, not to
+            # the continued availability of its raw sources for rescoring.
+            scored = {field: value for field, value in submission.items()
+                      if field not in ("objective_scoring", "agreement", "agreement_with_level", "scoring_error")}
+            scored["scoring_error"] = f"{type(error).__name__}: {error}"
+        if sidecar.exists():
+            previous = json.loads(sidecar.read_text())
+            for field in ("verdict", "listener", "heard_audio", "alternatives", "reference"):
+                if previous.get(field) != scored.get(field):
+                    die(f"conflicting objective verdict at {sidecar}; use a distinct listener/session")
+
     set_data_root(args.data_dir)
     warning = data_root_warning()
     if warning:
@@ -132,6 +156,17 @@ def main() -> None:
         print(f"separate preference: {preference!r}")
     print(f"recorded trial {recorded.trial_id} in run {recorded.run_id}")
     print(f"learned notes: {recorded.notes_path}")
+    if objective is not None:
+        # Separate sidecar preserves the immutable audition key and its bindings.
+        if not sidecar.exists():
+            try:
+                _write_text(sidecar, json.dumps(scored, indent=2, allow_nan=False) + "\n")
+            except OSError as error:
+                print(f"warning: verdict recorded, but cannot write objective sidecar: {error}", file=sys.stderr)
+        if sidecar.exists():
+            print(f"objective and listener verdict: {sidecar}")
+        if "scoring_error" in scored:
+            print(f"warning: verdict recorded; objective unscored: {scored['scoring_error']}", file=sys.stderr)
 
 
 if __name__ == "__main__":

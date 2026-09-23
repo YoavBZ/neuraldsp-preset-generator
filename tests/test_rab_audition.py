@@ -20,7 +20,8 @@ SCRIPT = ROOT / "scripts" / "build_rab_audition.py"
 
 
 def _run(*args):
-    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)],
+    return subprocess.run([sys.executable, str(SCRIPT), "--reference-regime", "probe",
+                           "--a-amp-model", "non-Morgan", "--b-amp-model", "non-Morgan", *map(str, args)],
                           cwd=ROOT, capture_output=True, text=True)
 
 
@@ -60,6 +61,13 @@ def test_builds_one_level_matched_blind_file_and_key(tmp_path):
     expected = 6 * 1.0 + 4 * 0.5 + 1.0
     assert rendered.duration_s == pytest.approx(expected, abs=1 / 48000)
     assert record["output"]["sha256"]
+    scored = record["objective_record"]
+    assert scored["reference"]["gain_db"] == pytest.approx(
+        record["sources"][0]["static_gain_db"], abs=0.001)
+    for label, role in record["blind_key"].items():
+        entry = next(source for source in record["sources"] if source["role"] == role)
+        assert scored["alternatives"][label]["gain_db"] == pytest.approx(
+            entry["static_gain_db"], abs=0.001)
     original = io.load(reference).mono()
     gain = 10 ** (record["sources"][0]["static_gain_db"] / 20.0)
     assert rendered.mono()[:len(original)] == pytest.approx(
@@ -141,6 +149,15 @@ def test_refuses_to_overwrite_either_artifact(tmp_path):
     assert done.returncode != 0
     assert "already exists" in done.stderr
     assert out.read_bytes() == b"keep me"
+
+
+def test_ac20_requires_a_fresh_process_render_record(tmp_path):
+    reference, first, second = _inputs(tmp_path)
+    done = _run("--reference", reference, "--a", first, "--b", second,
+                "--out", tmp_path / "listen.wav", "--a-amp-model", "AC20")
+    assert done.returncode != 0
+    assert "AC20 comparison requires a fresh-process render record" in done.stderr
+    assert not (tmp_path / "listen.wav").exists()
 
 
 def test_refuses_a_peak_ceiling_that_can_clip(tmp_path):

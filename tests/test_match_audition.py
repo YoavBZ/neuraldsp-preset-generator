@@ -158,6 +158,24 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     notes = data_dir / "packs" / "morgan" / "learned-tones.md"
     assert "preference=template" in notes.read_text()
 
+    sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
+    assert len(sidecars) == 1
+    before = sidecars[0].read_bytes()
+    repeated = run("log_blind_verdict.py", "--key", key_path,
+                   "--choice", candidate_label, "--prefer", template_label,
+                   "--listener", "blind-test", "--comment", "candidate is closer but template feels softer",
+                   "--data-dir", data_dir)
+    assert repeated.returncode != 0
+    assert "already recorded" in repeated.stderr
+    assert sidecars[0].read_bytes() == before
+    another = run("log_blind_verdict.py", "--key", key_path,
+                  "--choice", template_label, "--listener", "another-session", "--data-dir", data_dir)
+    assert another.returncode == 0, another.stderr
+    sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
+    assert len(sidecars) == 2
+    ids = {json.loads(path.read_text())["id"] for path in sidecars}
+    assert len(ids) == 2
+
     montage.write_bytes(montage.read_bytes() + b"tampered")
     refused = run(
         "log_blind_verdict.py",
@@ -168,6 +186,33 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     )
     assert refused.returncode != 0
     assert "missing or no longer matches the key" in refused.stderr
+
+
+def test_missing_raw_source_does_not_erase_a_valid_listening_verdict(completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    audition_dir = tmp_path / "audition"
+    exported = run("export_match_audition.py", "--run-dir", run_dir,
+                   "--candidate", "1", "--probe-di", probe_path,
+                   "--renderer", "synthetic", "--seed", "123",
+                   "--out-dir", audition_dir)
+    assert exported.returncode == 0, exported.stderr
+    key_path = audition_dir / "audition.flac.key.json"
+    key = json.loads(key_path.read_text())
+    missing = pathlib.Path(key["objective_record"]["alternatives"]["A"]["path"])
+    missing.rename(tmp_path / "moved-source.wav")
+
+    recorded = run("log_blind_verdict.py", "--key", key_path, "--choice", "A",
+                   "--listener", "source-moved", "--data-dir", tmp_path / "data")
+    assert recorded.returncode == 0, recorded.stdout + recorded.stderr
+    assert "objective unscored" in recorded.stderr
+    sidecar, = audition_dir.glob("*.objective-verdict.json")
+    result = json.loads(sidecar.read_text())
+    assert result["verdict"]["closer"] == "A"
+    assert "scoring_error" in result
+    assert "objective_scoring" not in result and "agreement" not in result
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        verdicts = store.verdicts(key["match"]["run_id"])
+    assert len(verdicts) == 1
 
 
 def test_an_unpaired_run_is_refused_without_an_explicit_override(
