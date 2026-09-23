@@ -1943,7 +1943,8 @@ instance matches them exactly; every later render on that instance lands 0.13 to
 resources around each render. Warm-up narrows back-to-back repeats but not the
 gap after other settings. State that only a new instance resets and that
 neither warm-up nor reallocation clears is what a free-running modulation
-oscillator would leave — the tremolo's did exactly this. A played, pitched DI
+oscillator would leave, as the tremolo's appears to (its fresh-process, warm-up
+and reallocation controls were not run). A played, pitched DI
 exposes it where the noise does not. So a match with the rack reverb or the
 tremolo on, on a played DI, needs `--process-policy fresh` as AC20 does: about
 2 s per render against 0.9 s reused with a 6 s DI.
