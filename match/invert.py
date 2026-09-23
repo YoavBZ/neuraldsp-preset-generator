@@ -53,7 +53,7 @@ TREMOLO_RATE_TOLERANCE_HZ = 0.4
 # noise-burst probe's bursts repeat every 0.9 s and the detector reads a harmonic
 # of that — 2.25 Hz from the 4 s probe, 2.17 or 3.33 Hz from the 6 s one. The
 # probe alone measures 0.55; renders of it through the chains measured so far
-# read 0.54 to 0.96. So the margin under this threshold is small, about 0.05.
+# read 0.54 to 0.96. So the margin above this threshold is small, 0.04.
 SOURCE_AM_MIN_CONFIDENCE = 0.5
 
 # The regimes whose target was rendered from the same DI as the current render,
@@ -1086,8 +1086,8 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
                     f"measurement separates the DI's own rhythm, or the template's "
                     f"tremolo, from a tremolo the reference needs at that rate, so "
                     f"the tremolo is left as the template has it — if the reference "
-                    f"really does have one at this rate, run the search with "
-                    f"--enumerate tremolo/tremoloActive."
+                    f"really does have one at this rate, enumerate the tremolo switch "
+                    f"(--enumerate tremolo/tremoloActive in match_preset.py)."
                 ],
                 detail={"am_confidence": round(confidence, 3),
                         "am_indistinguishable_from": "the current render"},
