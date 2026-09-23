@@ -128,11 +128,11 @@ Report the result as an experiment, and keep six more limits in view:
   If the part needs any of those the other way, an atlas start is working against
   you and no refinement inside the atlas can move it — set the switch yourself
   after applying the spec.
-- **AC20's atlas carries render history.** On a reused plugin instance AC20's
-  output depends on what was rendered before it — the same settings move by up to
-  ~0.1 depending only on the predecessor, and warm-up does not clear it. Every
-  point in the committed AC20 atlas carries that, so treat an AC20 start as
-  approximate. PR12 and SW50R are barely affected.
+- **AC20's atlas is built one plugin process per render.** On a reused
+  instance AC20's output depends on what was rendered before it, by up to ~0.1,
+  so its atlas was rebuilt with `--process-policy fresh` and carries no render
+  history. A search on AC20 needs the same policy — see step 3. PR12 and SW50R
+  are barely affected.
 - **A start, not an answer.** The stored settings are a place to search from.
   Say so when reporting; a nearest-neighbour hit is not a match.
 - **Do not expect it to fit a full `mix`.** Every stored response is the noise
@@ -149,8 +149,9 @@ Report the result as an experiment, and keep six more limits in view:
   inside or outside them says little. Do not tell anyone "this amp cannot get
   darker than X".
 
-Everything an atlas reports inherits `reproducible=false` from the backend that
-built it.
+Everything an atlas reports inherits its backend's `reproducible` flag: `false`
+for every atlas built on a reused plugin instance, `true` for AC20's, which was
+rebuilt one process per render.
 
 Do not enumerate switches or selectors casually. Enumeration divides the budget
 among complete inner searches, and M5 did not demonstrate an accuracy benefit on

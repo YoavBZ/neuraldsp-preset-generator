@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "neuraldsp-preset-generator",
   "displayName": "Neural DSP Preset Generator",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Generate, match, and edit Neural DSP amp-sim presets from a song, reference recording, or plain-English change. Personal interoperability with your own licensed copy of the plugin.",
   "author": {
     "name": "YoavBZ",
