@@ -179,8 +179,10 @@ def test_private_objective_verdict_sidecar_is_git_ignored():
     import subprocess
     root = pathlib.Path(__file__).resolve().parents[1]
     # Check the pattern outside runs/ too; the verdict tool follows its key.
-    sidecar = root / "example.flac.key.json.123.objective-verdict.json"
-    subprocess.run(["git", "-C", str(root), "check-ignore", "--quiet", "--", str(sidecar)], check=True)
+    for name in ("example.flac.key.json.123.objective-verdict.json",
+                 "custom.json.123.objective-verdict.json"):
+        sidecar = root / name
+        subprocess.run(["git", "-C", str(root), "check-ignore", "--quiet", "--", str(sidecar)], check=True)
 
 
 def test_ac20_history_remains_uncertain_without_bound_fresh_proof(record, tmp_path):

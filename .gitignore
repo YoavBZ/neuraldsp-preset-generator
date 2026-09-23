@@ -55,7 +55,7 @@ out/
 *.flac.key.json
 *.wav.key.json
 # Blind-verdict sidecars include listener identity, private paths and judgments.
-*.key.json.*.objective-verdict.json
+*.objective-verdict.json
 
 # --- Python ---------------------------------------------------------------
 __pycache__/
