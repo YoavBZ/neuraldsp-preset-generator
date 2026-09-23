@@ -1934,12 +1934,21 @@ in `unpaired-v1`, and 0.27 to 0.57 after other settings; a 6 s warm-up (which
 plays the DI through the new settings before capture) brought the back-to-back
 gap to 0.106 but left 0.17 to 0.63 after other settings. Through the noise probe
 the same gaps are 0.01 to 0.04. The spring reverb's own carry-over, by contrast,
-is a tail running into the next render, and the warm-up clears it completely.
-Whether the rack reverb's variation is state carried between renders — plausibly
-modulated delay lines, as the tremolo's oscillator was — or randomness inside
-each render is not settled: the control that would separate them, one fresh
-plugin process per render, was not run. Either way a played, pitched DI exposes
-it where the noise does not.
+is a tail running into the next render — at most 0.15 through the played DI after
+other settings, with the rack reverb off — and the warm-up clears it completely.
+It is state carried between renders, not randomness inside one. With a fresh
+plugin process per render, four renders of the same rack-reverb setting through
+the played DI came out bit-identical, and the first render on a new reused
+instance matches them exactly; every later render on that instance lands 0.13 to
+0.58 from it, whether or not `isolate` frees and reallocates the plugin's render
+resources around each render. Warm-up narrows back-to-back repeats but not the
+gap after other settings. State that only a new instance resets and that
+neither warm-up nor reallocation clears is what a free-running modulation
+oscillator would leave, as the tremolo's appears to (its fresh-process, warm-up
+and reallocation controls were not run). A played, pitched DI
+exposes it where the noise does not. So a match with the tremolo on (any DI), or
+the rack reverb on with a played DI, needs `--process-policy fresh` as AC20 does,
+at AC20's cost.
 
 The tremolo's fix — leave the effect alone when a render of the current settings
 through the same DI already carries it — was tried and not adopted, because one

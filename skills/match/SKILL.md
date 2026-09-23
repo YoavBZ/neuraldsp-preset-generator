@@ -102,6 +102,22 @@ renderer's own measurements), and the only thing that removes it. Other amps
 and Tone King do not need it; Tone King's variation is per-render noise, which
 the replicated shortlist scoring already handles.
 
+**Pass it too when Morgan's tremolo or rack reverb is on** — `tremolo/tremoloActive`
+or `reverb/reverbActive` true in the template, or switched on by the inversion
+(the report lists what it calculated) or by `--enumerate`; if the inversion turned
+one on, rerun with fresh. Not the amp's own spring reverb: its carry-over is a
+short tail, at most 0.15 in the same measurements. Both carry state from one
+render to the next on a reused instance, likely a modulation oscillator, so the
+same settings come out differently each time and the search ranks noise:
+- the tremolo's renders of one setting came out several dB apart, measured
+  through the noise probe, so it needs fresh whatever the DI;
+- the rack reverb's landed 0.1 to 0.6 apart through a played DI and 0.01 to 0.04
+  through the noise probe, so it needs fresh when you match with a played DI.
+  Only a new instance resets it; warm-up and `isolate` do not.
+
+The cost is AC20's: about 1.5 s of plugin start added to every render on an idle
+machine, far more under load.
+
 Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
