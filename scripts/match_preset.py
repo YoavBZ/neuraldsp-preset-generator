@@ -151,6 +151,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="how many candidates to return (default: 3)")
     ap.add_argument("--renderer", default="synthetic", choices=RENDERERS,
                     help="which backend renders a candidate (default: synthetic)")
+    ap.add_argument("--process-policy", choices=("reuse", "fresh"), default="reuse",
+                    help="with --renderer swift: reuse one plugin instance, or start "
+                         "a fresh one per render. On Morgan's AC20 a reused instance's "
+                         "output depends on what it rendered before, so the same "
+                         "candidate scores differently along different search paths; "
+                         "fresh removes that at roughly 7x the time per render "
+                         "(default: reuse)")
     ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
                     metavar="PATH",
                     help="try every position of this switch or selector, each with "
@@ -245,7 +252,11 @@ def main() -> None:
     seed = template_name = None
     if not args.list_enumerable:
         seed, template_name = _seed_from_template(args.template, space, args.pack)
-    renderer = _renderer(args.renderer, args.pack)
+    if args.process_policy != "reuse" and args.renderer != "swift":
+        die("--process-policy applies to the plugin renderer only; the synthetic "
+            "chain has no instance to reuse.\n  Drop --process-policy, or use "
+            "--renderer swift.")
+    renderer = _renderer(args.renderer, args.pack, process_policy=args.process_policy)
     supported = renderer_paths(renderer)
     if supported is not None and not any(
         dimension.path in supported for dimension in space.dimensions
@@ -804,7 +815,7 @@ def _paired_reference(args, reference_samples, probe_samples, metadata, document
     }
 
 
-def _renderer(name: str, pack_id: str = "morgan"):
+def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse"):
     """The backend, refusing the one that is still not built by name.
 
     `pedalboard` remains unbuilt. Accepting the flag and silently substituting the
@@ -819,7 +830,7 @@ def _renderer(name: str, pack_id: str = "morgan"):
     if name == "swift":
         from match.renderer_au import AudioUnitError, AudioUnitRenderer
 
-        renderer = AudioUnitRenderer(pack_id)
+        renderer = AudioUnitRenderer(pack_id, process_policy=process_policy)
         try:
             # Instantiating here rather than at the first render: the plugin is
             # the one thing that can be missing, unlicensed or a different

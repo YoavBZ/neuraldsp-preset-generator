@@ -235,68 +235,82 @@ def test_python_provenance_is_portable_without_rewriting_external_interpreters(
     assert atlas_builder._portable_executable() == str(external)
 
 
-def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance():
-    """Every atlas, not a named two.
+# Every amp each pack is expected to ship an atlas for, and the plugin build each
+# was rendered on — the audited versions, so an atlas rendered on an unaudited
+# plugin cannot slip in unnoticed.
+ATLASED = {"morgan": {"pr12", "sw50r", "ac20"}, "toneking": {"rhythm", "lead"}}
+PLUGIN_VERSION = {"morgan": "1.1.1", "toneking": "1.0.3"}
+
+
+@pytest.mark.parametrize("pack", sorted(ATLASED))
+def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(pack):
+    """Every atlas of every pack, not a named few.
 
     This hardcoded the PR12 filenames, so the SW50R pair shipped 9 MB with none
     of these assertions applied to it — and its `build.command` pointed at a
     scratchpad, which is exactly what the `--out` assertion below exists to
-    catch. A test that names its subjects cannot cover the next one.
+    catch. A test that names its subjects cannot cover the next one; it was then
+    Morgan-only, and would have waved Tone King's through the same way.
     """
     from packs import paths
 
-    found = paths.response_atlases("morgan")
-    assert len(found) >= 2, "morgan ships a pilot and a scaled atlas per amp"
+    found = paths.response_atlases(pack)
     documents = {}
     for path in found:
         samples = int(json.loads(path.read_text())["sample_count"])
         document = atlas.load(path)
         documents.setdefault(document["amp"], {})[samples] = document
 
+        assert document["pack"] == pack
         assert document["sample_count"] == samples
         assert document["dimensions"], "an atlas with no swept dimension is a point"
-        assert document["renderer"]["plugin_version"] == "1.1.1"
+        assert document["renderer"]["plugin_version"] == PLUGIN_VERSION[pack]
         assert document["renderer"]["reproducible"] is False
         assert "reproducible=False" in document["measurement_caveat"]
         validation = document["build"]["validation"]
         assert validation["samples"] == 24
         assert validation["beats_neutral"] is True
+        # A requirement, not a result. This asserted a 100% win rate, which was
+        # every atlas's result at the time copied down as if it were the rule —
+        # the same mistake as pinning the scale gate at PR12's score. Tone King's
+        # lead pilot wins 22 of 24 and passes its gate.
+        assert validation["atlas_win_rate"] * validation["samples"] >= 20, path.name
         command = shlex.split(document["build"]["command"])
         assert command[0] == document["build"]["python_executable"]
         assert document["build"]["python_executable"] == ".venv/bin/python"
         assert command[command.index("--out") + 1] == str(path.relative_to(ROOT))
         # The template half of the same bug. A scratchpad `--out` was caught by
         # the line above; a scratchpad `--template` was not, and an atlas whose
-        # topology nobody has is exactly as unreproducible.
-        template = command[command.index("--template") + 1]
-        assert (ROOT / template).is_file(), (
-            f"{path.name} records --template {template}, which is not in the "
-            f"repository — commit the topology or the atlas cannot be rebuilt"
-        )
-        assert document["build"]["template"] == template
+        # topology nobody has is exactly as unreproducible. With no template the
+        # topology is the pack's own neutral seed, which needs nothing outside the
+        # repository — Tone King's atlases are built that way, since none of its
+        # presets may ship.
+        if "--template" in command:
+            template = command[command.index("--template") + 1]
+            assert (ROOT / template).is_file(), (
+                f"{path.name} records --template {template}, which is not in the "
+                f"repository — commit the topology or the atlas cannot be rebuilt"
+            )
+            assert document["build"]["template"] == template
+        else:
+            assert document["build"]["template"] is None
+            assert document["build"]["template_name"] == f"{pack} neutral seed"
 
     # Each amp's own pilot-to-scale comparison. Deliberately never across amps:
     # `compare_scale` refuses that pair, and the refusal is the point.
-    assert set(documents) >= {"pr12", "sw50r", "ac20"}, "every Morgan amp is covered"
+    assert set(documents) >= ATLASED[pack], f"{pack} is missing an amp"
     for amp, by_count in documents.items():
         assert {128, 1024} <= set(by_count), f"{amp} is missing a gate"
         comparison = atlas.compare_scale(by_count[128], by_count[1024])
         # What the scale gate asks is that more points help, clearly and on most
-        # targets. The bound was 23 because PR12 scored 23 — which is copying a
-        # result, not stating a requirement; SW50R and AC20 score 22 and pass the
-        # gate. 20 of 24 is far enough above chance to catch a scale step that
+        # targets. 20 of 24 is far enough above chance to catch a scale step that
         # did not work.
         assert comparison["candidate_better_targets"] >= 20, amp
-        # A bound, not a recorded result. `origin/main` pinned PR12's exact
-        # 0.2836220902, which cannot survive a second amp: the three measured
-        # gains are 28.4%, 20.2% and 30.1%. 0.15 sits below the lowest of those
-        # and well above zero, so it still fails a scale step that did nothing.
+        # A bound, not a recorded result: well below every measured scale gain
+        # across both packs (20.2% to 30.1%) and well above zero, so it still fails
+        # a scale step that did nothing. Loosening it to 0.10 for Tone King's noise
+        # was considered and turned out unnecessary — no result comes near 0.15.
         assert comparison["mean_reduction_fraction"] > 0.15, amp
-
-        # The figure the skill quotes to users ("beat neutral on 24 of 24") had
-        # no test behind it: `beats_neutral` only compares means.
-        for document in by_count.values():
-            assert document["build"]["validation"]["atlas_win_rate"] == 1.0, amp
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert '"*/response_atlas_*.json"' in package_data
@@ -397,7 +411,10 @@ def test_show_reports_each_atlas_with_the_amp_and_density_it_covers():
             "every atlas here was built on a backend that does not repeat itself, "
             "and anything derived from one inherits that"
         )
-    assert _atlases("toneking") == [], "no atlas exists for Tone King"
+    toneking = _atlases("toneking")
+    assert {entry["amp"] for entry in toneking} == {"rhythm", "lead"}, (
+        "Tone King's channels are reported by their signal-path names"
+    )
 
 
 def test_show_skips_a_file_it_cannot_read_rather_than_failing(monkeypatch, tmp_path):
@@ -447,3 +464,221 @@ def test_show_actually_emits_the_atlases_it_discovers():
     assert text.returncode == 0, text.stderr
     assert "response atlas:" in text.stdout, "the human view has to show them too"
     assert str(reported[0]["sample_count"]) in text.stdout
+
+
+# --- Tone King, through the pack's own signal paths ------------------------
+#
+# The atlas used to resolve an amp through `space.amp_prefix`, which reads Morgan's
+# `selectedAmp` and nothing else, so it refused every Tone King topology while the
+# search — which goes through `packs.calibration.signal_paths` — handled Tone King
+# channels fine. None of these need a Tone King preset: none may ship, and the
+# atlas no longer needs one.
+
+
+def _toneking_topology(amp):
+    space = space_module.build("toneking", amp=amp)
+    fixed = atlas.tone_topology(atlas.fixed_topology_seed(space, amp), space, amp)
+    return space, fixed
+
+
+@pytest.mark.parametrize("amp,own,other", [
+    ("rhythm", "rhythmAmp", "leadAmp"),
+    ("lead", "leadAmp", "rhythmAmp"),
+])
+def test_a_tone_king_channel_sweeps_its_own_amp_and_not_the_other(amp, own, other):
+    space, fixed = _toneking_topology(amp)
+    assert atlas.selected_path(space, fixed) == amp
+    swept = {dimension.path for dimension in atlas.sampling_dimensions(space, fixed)}
+    assert any(path.startswith(own) for path in swept), swept
+    assert not any(path.startswith(other) for path in swept), (
+        "the silent channel's controls cannot change the audio; sweeping them would "
+        "spend samples on nothing"
+    )
+
+
+def test_tone_king_topology_holds_effects_off_and_keeps_both_cabinets_live():
+    space, fixed = _toneking_topology("rhythm")
+    for key in ("compActive", "drive1Active", "drive2Active", "wahActive",
+                "chorusActive", "delayActive", "reverbActive"):
+        assert fixed[("", key)] is False, key
+    # The pack's neutral seed turns both cabinets off, which would make this the
+    # amp with no speaker. Morgan's atlases have both cab mics on.
+    assert fixed[("", "cab1Active")] is True
+    assert fixed[("", "cab2Active")] is True
+    swept = {dimension.path for dimension in atlas.sampling_dimensions(space, fixed)}
+    assert {"cab1Level", "cab2Level"} <= swept
+    # Pinned continuous controls must not be re-swept, or the hypercube undoes the
+    # bypass: gate off at its floor, tremolo off at zero depth (and speed then dead).
+    assert not {"gateThreshold", "ampTremoloDepth", "ampTremoloSpeed"} & swept
+    # ...and that they hold the value that turns them off. Checking only that they
+    # were unswept let a pin loop that skipped continuous controls leave the gate
+    # at -48 dB and the tremolo at half depth in every atlas point, with the whole
+    # suite green.
+    assert fixed[("", "gateThreshold")] == -96.0
+    assert fixed[("", "ampTremoloDepth")] == 0.0
+    assert fixed[("", "ampTremoloSpeed")] == 0.0
+
+
+def test_a_templates_attenuator_does_not_become_the_atlas_amp():
+    """The first real Tone King template pinned the attenuator at -24 dB. Same
+    failure as a recipe switching SW50R's Bright off: the template's taste becoming
+    the atlas's definition of the amp."""
+    space = space_module.build("toneking", amp="rhythm")
+    seed = atlas.fixed_topology_seed(space, "rhythm")
+    seed[("", "ampAttenuation")] = "1"  # -24 dB
+    fixed = atlas.tone_topology(seed, space, "rhythm")
+    assert fixed[("", "ampAttenuation")] == "5", "0 dB, the pack's calibration neutral"
+
+
+def test_an_undeclared_pack_is_refused_rather_than_left_unbypassed():
+    """An atlas with no bypass table would keep the template's delay and reverb and
+    still call itself a tone atlas."""
+    with pytest.raises(atlas.AtlasError, match="no atlas topology is declared"):
+        atlas.atlas_pins("gojira")
+
+
+def test_morgan_topology_is_unchanged_by_the_generic_path_resolution():
+    """Regression for the refactor: recompute every committed Morgan atlas's topology
+    from the template it recorded and require the fixed settings it recorded."""
+    from packs import paths
+
+    for path in paths.response_atlases("morgan"):
+        document = atlas.load(path)
+        space = space_module.build("morgan", amp=document["amp"])
+        values, _ = _seed_from_template(
+            ROOT / document["build"]["template"], space, "morgan")
+        recomputed = {
+            atlas._path(key): value
+            for key, value in atlas.tone_topology(values, space, document["amp"]).items()
+        }
+        for key, recorded in document["fixed_settings"].items():
+            assert recomputed.get(key) == recorded, f"{path.name}: {key}"
+
+
+class _OneOddRender:
+    """Delegates to a renderer but spoils one chosen call — a stand-in for the one
+    unlucky baseline render that shifted every AC20 target together."""
+
+    def __init__(self, inner, odd_call):
+        self.inner, self.odd_call, self.calls = inner, odd_call, 0
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+    def render(self, probe_di, settings):
+        import dataclasses
+
+        import numpy as np
+
+        self.calls += 1
+        result = self.inner.render(probe_di, settings)
+        if self.calls != self.odd_call:
+            return result
+        frames = np.asarray(result.audio)
+        t = np.arange(frames.shape[0]) / result.metadata.sample_rate
+        rumble = 0.5 * np.sin(2 * np.pi * 70.0 * t)[:, None]
+        return dataclasses.replace(result, audio=(frames + rumble).astype(frames.dtype))
+
+
+@pytest.mark.parametrize("odd_call", [1, 3])
+def test_a_replicated_baseline_absorbs_one_odd_render(odd_call):
+    """The spoiled render is the first replicate in one case and the last in the
+    other, so an implementation that took either end instead of the median fails
+    one of them. (With the spoil in the middle, first and last both passed.)"""
+    from tests.fixtures_audio import plucks
+
+    space = space_module.build("morgan", amp="pr12")
+    values, _ = _seed_from_template(ROOT / "samples/Example_Clean_PR12.xml", space, "morgan")
+    fixed = atlas.tone_topology(values, space, "pr12")
+    probe = plucks(seconds=1.5, gap=0.4, seed=5)
+    document = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 8, 17,
+                           fixed=fixed)
+
+    clean = atlas.held_out(SyntheticRenderer(), space, probe, document, 4, 29)
+    # With one replicate the baseline is call 1.
+    spoiled_one = atlas.held_out(_OneOddRender(SyntheticRenderer(), 1),
+                                 space, probe, document, 4, 29)
+    # held_out renders every baseline replicate before any target, so with three
+    # replicates the baseline is calls 1-3. Spoil the first (1) or the last (3).
+    spoiled_of_three = atlas.held_out(_OneOddRender(SyntheticRenderer(), odd_call),
+                                      space, probe, document, 4, 29,
+                                      neutral_replicates=3)
+
+    scores = lambda result: [row["neutral_score"] for row in result["outcomes"]]
+    assert spoiled_of_three["neutral_replicates"] == 3
+    assert clean["neutral_replicates"] == 1
+    assert scores(spoiled_one) != pytest.approx(scores(clean)), (
+        "the premise: one spoiled single baseline moves every target's score"
+    )
+    assert scores(spoiled_of_three) == pytest.approx(scores(clean)), (
+        "two good replicates out of three put the median back on the clean value"
+    )
+
+
+def test_zero_baseline_replicates_is_refused():
+    space = space_module.build("morgan", amp="pr12")
+    values, _ = _seed_from_template(ROOT / "samples/Example_Clean_PR12.xml", space, "morgan")
+    fixed = atlas.tone_topology(values, space, "pr12")
+    from tests.fixtures_audio import plucks
+
+    probe = plucks(seconds=1.0, gap=0.4, seed=5)
+    document = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 4, 17,
+                           fixed=fixed)
+    with pytest.raises(atlas.AtlasError, match="at least 1"):
+        atlas.held_out(SyntheticRenderer(), space, probe, document, 2, 29,
+                       neutral_replicates=0)
+
+
+def test_a_tone_king_atlas_needs_no_preset_in_a_dry_run(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+         "--pack", "toneking", "--amp", "lead", "--renderer", "swift",
+         "--samples", "16", "--held-out", "4", "--neutral-replicates", "3",
+         "--out", str(tmp_path / "atlas.json"), "--dry-run"],
+        capture_output=True, text=True, cwd=ROOT)
+    assert result.returncode == 0, result.stderr
+    assert "toneking neutral seed" in result.stdout
+    assert "23 renders total" in result.stdout, "16 + 4 held-out + 3 baseline"
+    assert "ampAttenuation=0 dB" in result.stdout
+
+
+def test_a_process_policy_without_the_plugin_is_refused_not_ignored(tmp_path):
+    """The synthetic chain has no instance to reuse, so `--process-policy fresh`
+    there would be accepted and do nothing — a run whose provenance claims a
+    render policy it never had."""
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+         "--renderer", "synthetic", "--process-policy", "fresh",
+         "--out", str(tmp_path / "atlas.json"), "--dry-run"],
+        capture_output=True, text=True, cwd=ROOT)
+    assert result.returncode != 0
+    assert "plugin renderer only" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("amp", ["pr12", "sw50r", "ac20"])
+def test_a_morgan_atlas_without_a_template_still_has_a_speaker(amp):
+    """The neutral seed turns Morgan's cab mics off, and an amp with no cabinet
+    renders loud and non-silent, so nothing downstream would refuse it. With the
+    template optional, that became a one-flag way to build a wrong atlas."""
+    space = space_module.build("morgan", amp=amp)
+    fixed = atlas.tone_topology(atlas.fixed_topology_seed(space, amp), space, amp)
+    assert fixed[("cabParameters", "leftCabActive")] is True
+    assert fixed[("cabParameters", "rightCabActive")] is True
+    swept = {dimension.path for dimension in atlas.sampling_dimensions(space, fixed)}
+    assert "cabParameters/leftCabDistance" in swept
+
+
+def test_build_with_no_topology_applies_the_pins():
+    """`atlas.build(fixed=None)` used the raw neutral seed — gate on, tremolo at
+    half depth, no cabinets — rather than the pinned topology."""
+    from tests.fixtures_audio import plucks
+
+    space = space_module.build("morgan", amp="pr12")
+    probe = plucks(seconds=1.0, gap=0.4, seed=5)
+    default = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 4, 17)
+    pinned = atlas.tone_topology(atlas.fixed_topology_seed(space, "pr12"), space, "pr12")
+    explicit = atlas.build(SyntheticRenderer(), space, probe, "morgan", "pr12", 4, 17,
+                           fixed=pinned)
+    assert default["fixed_settings"] == explicit["fixed_settings"]
+    assert default["dimensions"] == explicit["dimensions"]

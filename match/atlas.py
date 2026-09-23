@@ -25,19 +25,112 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 SCHEMA = "response-atlas-1"
 
 # A response atlas is about the amp/cab response, not every effect chain that can
-# be placed around it.  Cab lanes, microphones, amp voicing switches and section
-# switches stay exactly as the topology template chose them; these effect bypasses
-# are the only choices normalized by the pilot.
-TONE_EFFECT_BYPASSES = frozenset({
-    "parameters/gateActive",
-    "parameters/doublerActive",
-    "compressor/compressorActive",
-    "drive1/drive1Active",
-    "drive2/drive2Active",
-    "tremolo/tremoloActive",
-    "reverb/reverbActive",
-    "delay/delayActive",
-})
+# be placed around it. The topology comes from a template, or from the pack's own
+# neutral seed when there is none; the table below then overrides whatever it says
+# for the controls it names. Everything else — microphone choices, amp voicing
+# switches the table does not name — stays as the topology chose it.
+# What an atlas topology pins, per pack, and to what. Mostly effects held off; for
+# Tone King also two amp options its user-supplied template would otherwise decide.
+# Tone-shaping controls stay live — amp, EQ, level, cabinet — while anything that
+# adds time, movement or dynamics processing is bypassed, so a fingerprint describes
+# the voice rather than a delay tail or a tremolo phase.
+#
+# Morgan bypasses everything with switches. Tone King has no gate switch and no
+# tremolo switch: its gate is off at the bottom of its threshold and its tremolo is
+# off at zero depth, which is how its own manifest's calibration neutral turns them
+# off. Those two are continuous, so pinning them also takes them out of the swept
+# set — otherwise the Latin hypercube would put them straight back.
+#
+# Deliberately an explicit table rather than the pack's calibration neutral
+# (`packs.calibration.signal_paths(...).settings`). That neutral exists to measure
+# an amp alone, so for Tone King it also pins input gain, the amp's spring reverb
+# and the whole EQ — all of which Morgan's atlases sweep. Using it would give the
+# two packs' atlases different definitions of "the tone controls".
+ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
+    "morgan": {
+        "parameters/gateActive": False,
+        "parameters/doublerActive": False,
+        "compressor/compressorActive": False,
+        "drive1/drive1Active": False,
+        "drive2/drive2Active": False,
+        "tremolo/tremoloActive": False,
+        "reverb/reverbActive": False,
+        "delay/delayActive": False,
+        # Both cab mics on, which is what every committed Morgan atlas already has
+        # from the bundled example. Pinned because the neutral seed turns them off,
+        # so an atlas built without a template would otherwise be the amp with no
+        # speaker — and would render loud and non-silent, so nothing would refuse it.
+        "cabParameters/leftCabActive": True,
+        "cabParameters/rightCabActive": True,
+    },
+    "toneking": {
+        "gateThreshold": -96.0,
+        "compActive": False,
+        "wahActive": False,
+        "drive1Active": False,
+        "drive2Active": False,
+        "ampTremoloDepth": 0.0,
+        # Dead once depth is zero. Sweeping it would spend a dimension of every
+        # sample on a control that cannot change the audio, and the atlas would
+        # claim coverage of tremolo speed that it does not have.
+        "ampTremoloSpeed": 0.0,
+        "chorusActive": False,
+        "delayActive": False,
+        "reverbActive": False,
+        # Not effects: amp options. Tone King ships no preset, and the first user
+        # preset tried as a template pinned the attenuator at -24 dB — a heavily
+        # attenuated power amp baked into every atlas point, the same failure as a
+        # tone recipe switching SW50R's Bright off. Pinned to the pack's own
+        # calibration neutral, so an atlas does not depend on which preset (if any)
+        # was the template. The committed Tone King atlases use no template at all.
+        "ampAttenuation": "0 dB",
+        "ampHfc": "NORMAL",
+        # Both cabinets on, as both of Morgan's cab mics are in its atlases. The
+        # pack's neutral seed leaves them off, which would make a template-free
+        # atlas the amp with no speaker at all.
+        "cab1Active": True,
+        "cab2Active": True,
+    },
+}
+
+#: Morgan's effect bypasses, as this name always meant: the controls pinned *off*.
+#: Not every Morgan pin — the cab mics are pinned *on*, and are not effects.
+TONE_EFFECT_BYPASSES = frozenset(
+    path for path, value in ATLAS_PINS_BY_PACK["morgan"].items() if value is False)
+
+
+def atlas_pins(pack_id: str) -> Dict[str, Any]:
+    """The controls an atlas for ``pack_id`` holds off, or a refusal.
+
+    Refused rather than defaulted: an atlas with no bypass declared would keep the
+    template's delay and reverb and still call itself a tone atlas.
+    """
+    try:
+        return dict(ATLAS_PINS_BY_PACK[pack_id])
+    except KeyError:
+        raise AtlasError(
+            f"no atlas topology is declared for pack {pack_id!r}: add its tone-effect "
+            f"bypasses to ATLAS_PINS_BY_PACK in match/atlas.py"
+        ) from None
+
+
+def selected_path(space, values: Mapping) -> Optional[str]:
+    """The amp or signal path ``values`` select, for any pack.
+
+    Through `packs.calibration`, which already answers this for both packs:
+    Tone King declares `calibration.signal_paths` selected by `ampType`, and Morgan's
+    paths are derived from `amp_modules` and selected by `selectedAmp`. The atlas
+    used to ask `space.amp_prefix` instead, which only knows `selectedAmp`, so it
+    refused every Tone King topology — while `match_preset.py --amp lead` worked,
+    because the search already went through this route.
+    """
+    from packs.calibration import CalibrationError, selected_signal_path
+    from packs.loader import load_pack
+
+    try:
+        return selected_signal_path(load_pack(space.pack_id), values)
+    except CalibrationError as error:
+        raise AtlasError(str(error)) from error
 
 
 class AtlasError(ValueError):
@@ -54,29 +147,47 @@ class AtlasMatch:
 
 def fixed_topology_seed(space, amp: str) -> Dict[Any, Any]:
     """A complete neutral seed with ``amp`` selected and effects frozen off."""
+    from match import invert
     from match.benchmark import centre_seed
 
     seed = centre_seed(space)
-    selected = [int(index) for index, prefix in space.amp_by_index.items()
-                if prefix == amp]
-    if len(selected) != 1:
-        available = ", ".join(sorted(set(space.amp_by_index.values()))) or "none"
-        raise AtlasError(f"{amp!r} is not one amp in this space. Available: {available}")
-    seed[("", "selectedAmp")] = selected[0]
+    try:
+        selection = invert.signal_path_selection(space.pack_id, amp)
+    except invert.InversionError as error:
+        raise AtlasError(str(error)) from error
+    seed = invert.apply_to(seed, selection, space)
+    if selected_path(space, seed) != amp:
+        raise AtlasError(f"{amp!r} could not be selected in pack {space.pack_id!r}")
     return seed
 
 
 def tone_topology(values: Mapping, space, amp: str) -> Dict[Any, Any]:
     """Freeze a preset's topology and bypass non-tone effects for the atlas."""
     fixed = dict(values)
-    prefix = space.amp_prefix(fixed)
-    if prefix != amp:
+    selected = selected_path(space, fixed)
+    if selected != amp:
         raise AtlasError(
-            f"the topology selects {prefix or 'no recognised amp'}, not {amp}"
+            f"the topology selects {selected or 'no recognised amp or signal path'}, "
+            f"not {amp}"
         )
+    pins = atlas_pins(space.pack_id)
+    pack = None
     for dimension in space.dimensions:
-        if dimension.path in TONE_EFFECT_BYPASSES:
-            fixed[(dimension.module, dimension.key)] = False
+        if dimension.path not in pins:
+            continue
+        value = pins[dimension.path]
+        if dimension.kind == "enum":
+            # Written as a label for readability and converted to the pack's stored
+            # form. Not necessarily the form every other value in a topology takes —
+            # a decoded seed can hold an enum as an index or a label — but every
+            # consumer (query, spec, apply) goes through the pack and accepts all of
+            # them.
+            from packs.loader import load_pack
+
+            pack = pack or load_pack(space.pack_id)
+            spec = pack.parameters[f"{dimension.module}/{dimension.key}"]
+            value = pack.to_stored(spec, value, warnings=[])
+        fixed[(dimension.module, dimension.key)] = value
     return fixed
 
 
@@ -84,8 +195,12 @@ def sampling_dimensions(space, fixed: Mapping,
                         supported: Optional[Iterable] = None):
     """Continuous, live dimensions accepted by this renderer."""
     paths = _supported_paths(supported)
+    # A bypass pinned on a continuous control (Tone King's gate threshold and
+    # tremolo depth) must not be swept, or the hypercube undoes the bypass.
+    pinned = set(ATLAS_PINS_BY_PACK.get(space.pack_id, {}))
     return [dimension for dimension in space.active(fixed)
             if dimension.continuous
+            and dimension.path not in pinned
             and (paths is None or dimension.path in paths)]
 
 
@@ -134,8 +249,12 @@ def build(renderer, space, probe_di, pack: str, amp: str, samples: int,
     from analysis.fingerprint import fingerprint
 
     metadata = renderer.metadata()
-    fixed = fixed_topology_seed(space, amp) if fixed is None else dict(fixed)
-    if space.amp_prefix(fixed) != amp:
+    # No topology given: the neutral seed, *with* the pins. The raw seed alone has
+    # the gate on, tremolo at half depth, Tone King's attenuator at -36 dB and no
+    # cabinets, and would have been rendered as-is.
+    fixed = (tone_topology(fixed_topology_seed(space, amp), space, amp)
+             if fixed is None else dict(fixed))
+    if selected_path(space, fixed) != amp:
         raise AtlasError(f"fixed topology does not select requested amp {amp!r}")
     supported = renderer.parameter_specs()
     supported_paths = _supported_paths(supported) or set()
@@ -324,8 +443,19 @@ def uncomparable_features(document: Mapping[str, Any], target) -> List[str]:
 
 
 def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: int,
-             seed: int, profile: str = "unpaired-v1", progress=None) -> Dict[str, Any]:
-    """Compare nearest-atlas initialization with the fixed neutral topology."""
+             seed: int, profile: str = "unpaired-v1", progress=None,
+             neutral_replicates: int = 1) -> Dict[str, Any]:
+    """Compare nearest-atlas initialization with the fixed neutral topology.
+
+    Every target is scored against the same neutral baseline, so one odd baseline
+    render shifts all of them together — which reads as a systematic offset, not
+    as noise, and cannot be averaged away across targets. That happened: two AC20
+    builds' baselines differed by +0.042 on 20 of 24 targets. ``neutral_replicates``
+    renders the baseline more than once and scores each target against the median
+    distance, which absorbs per-render noise (Tone King's). It does not fix history
+    dependence on a reused instance (AC20's): back-to-back renders of one setting
+    agree there, so replicates agree too. Use a fresh process for that.
+    """
     from analysis import io
     from analysis.compare import compare, scalar
     from analysis.fingerprint import fingerprint
@@ -341,14 +471,18 @@ def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: in
         raise AtlasError("held-out renderer exposes a different sampled dimension set")
     rows = latin_hypercube(dimensions, samples, seed)
 
-    neutral = neutral_settings(fixed_render, dimensions)
-    neutral_render = renderer.render(probe_di, neutral)
-    if neutral_render.silent:
-        raise AtlasError("the neutral held-out baseline rendered digital silence")
-    neutral = fingerprint(
-        io.from_samples(neutral_render.audio, neutral_render.metadata.sample_rate),
-        regime="probe", excerpt_s=None,
-    )
+    if int(neutral_replicates) < 1:
+        raise AtlasError("neutral_replicates must be at least 1")
+    neutral_values = neutral_settings(fixed_render, dimensions)
+    neutrals = []
+    for _ in range(int(neutral_replicates)):
+        neutral_render = renderer.render(probe_di, neutral_values)
+        if neutral_render.silent:
+            raise AtlasError("the neutral held-out baseline rendered digital silence")
+        neutrals.append(fingerprint(
+            io.from_samples(neutral_render.audio, neutral_render.metadata.sample_rate),
+            regime="probe", excerpt_s=None,
+        ))
 
     outcomes = []
     for index, overrides in enumerate(rows):
@@ -364,9 +498,11 @@ def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: in
         matches = nearest(document, target, profile=profile, limit=1)
         if not matches:
             raise AtlasError(f"held-out sample {index} had no comparable atlas entry")
-        neutral_score = scalar(compare(target, neutral, profile=profile), profile)
-        if neutral_score is None:
+        per_replicate = [scalar(compare(target, neutral, profile=profile), profile)
+                         for neutral in neutrals]
+        if any(score is None for score in per_replicate):
             raise AtlasError(f"held-out sample {index} had no comparable neutral score")
+        neutral_score = statistics.median(per_replicate)
         best = matches[0]
         outcomes.append({
             "index": index,
@@ -388,6 +524,7 @@ def held_out(renderer, space, probe_di, document: Mapping[str, Any], samples: in
         "samples": samples,
         "seed": int(seed),
         "profile": profile,
+        "neutral_replicates": int(neutral_replicates),
         "neutral_mean": statistics.fmean(neutral_scores),
         "atlas_mean": statistics.fmean(atlas_scores),
         "neutral_median": statistics.median(neutral_scores),

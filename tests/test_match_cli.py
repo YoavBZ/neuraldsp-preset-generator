@@ -223,7 +223,7 @@ def test_a_stateful_run_replicates_the_template_and_accounts_for_it(
                            band_noise_db=0.23)
 
     renderer = StatefulSynthetic()
-    monkeypatch.setattr(cli, "_renderer", lambda name, pack: renderer)
+    monkeypatch.setattr(cli, "_renderer", lambda name, pack, **_: renderer)
     out = tmp_path / "stateful"
     monkeypatch.setattr(sys, "argv", [
         "match_preset.py",
@@ -1020,3 +1020,17 @@ def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):
     refused = run("benchmark_match.py", "--enumerate", "nope")
     assert refused.returncode != 0
     assert "--list-enumerable" in refused.stderr
+
+
+def test_a_process_policy_without_the_plugin_is_refused(audio, tmp_path):
+    """On AC20 a reused instance's output depends on what it rendered before, and
+    `--process-policy fresh` is how a match avoids that. The synthetic chain has no
+    instance, so accepting the flag there would record a policy the run never had."""
+    result = run("match_preset.py", "--template", TEMPLATE,
+                 "--reference", audio / "paired-ref.wav",
+                 "--reference-mode", "probe", "--probe-di", audio / "probe.wav",
+                 "--renderer", "synthetic", "--process-policy", "fresh",
+                 "--out-dir", tmp_path / "run")
+    assert result.returncode != 0
+    assert "plugin renderer only" in result.stderr
+    assert "Traceback" not in result.stderr

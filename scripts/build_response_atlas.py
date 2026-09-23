@@ -40,9 +40,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="which plugin pack to sample (default: morgan)")
     parser.add_argument("--amp", default="pr12",
                         help="the fixed amp topology (default: pr12)")
-    parser.add_argument("--template", required=True, type=pathlib.Path,
+    parser.add_argument("--template", type=pathlib.Path, default=None,
                         help="preset whose amp, cab, microphones, and switches define "
-                             "the fixed topology")
+                             "the fixed topology (default: the pack's own neutral "
+                             "seed, which needs no preset and reproduces anywhere)")
     parser.add_argument("--renderer", choices=("synthetic", "swift"),
                         default="synthetic", help="render backend (default: synthetic)")
     parser.add_argument("--samples", type=positive_int, default=128,
@@ -61,6 +62,16 @@ def build_parser() -> argparse.ArgumentParser:
                         help="synthetic probe length when no DI is given (default: 4)")
     parser.add_argument("--out", required=True, type=pathlib.Path,
                         help="atlas JSON destination")
+    parser.add_argument("--neutral-replicates", type=positive_int, default=1,
+                        help="render the held-out neutral baseline this many times "
+                             "and score each target against the median (default: 1, "
+                             "which is what every committed Morgan atlas used)")
+    parser.add_argument("--process-policy", choices=("reuse", "fresh"),
+                        default="reuse",
+                        help="reuse one plugin instance, or start a fresh one per "
+                             "render. Fresh is slower and is the only way to remove "
+                             "history dependence — see docs/tone-matching-plan.md "
+                             "on AC20 (default: reuse)")
     parser.add_argument("--dry-run", action="store_true",
                         help="show the topology and render count without rendering")
     return parser
@@ -70,6 +81,9 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.held_out < 0:
         raise ValueError("--held-out must be zero or greater")
+    if args.process_policy != "reuse" and args.renderer != "swift":
+        raise ValueError("--process-policy applies to the plugin renderer only; the "
+                         "synthetic chain has no instance to reuse")
 
     from analysis import require
 
@@ -79,8 +93,15 @@ def main() -> None:
     from match_preset import _seed_from_template
 
     space = space_module.build(args.pack, amp=args.amp)
-    template_values, template_name = _seed_from_template(
-        args.template, space, args.pack)
+    if args.template is not None:
+        template_values, template_name = _seed_from_template(
+            args.template, space, args.pack)
+    else:
+        # No preset: the pack's centre seed with the path selected. Tone King ships
+        # no preset at all, and a user's preset would put its own cab, attenuator
+        # and taste into the atlas and its provenance outside the repository.
+        template_values = atlas.fixed_topology_seed(space, args.amp)
+        template_name = f"{args.pack} neutral seed"
     fixed = atlas.tone_topology(template_values, space, args.amp)
     # A dry run stays plugin-free. The real backend exposes every writable manifest
     # parameter, while the synthetic one intentionally models only a subset.
@@ -90,12 +111,17 @@ def main() -> None:
 
         supported = SyntheticRenderer().parameter_specs()
     dimensions = atlas.sampling_dimensions(space, fixed, supported)
-    total = args.samples + args.held_out + (1 if args.held_out else 0)
+    baseline = args.neutral_replicates if args.held_out else 0
+    total = args.samples + args.held_out + baseline
     print(f"{args.pack}/{args.amp}: fixed topology from {template_name!r}, "
           f"{len(dimensions)} continuous dimensions")
-    print("  gate, doubler, compressor, drives, tremolo, reverb, and delay bypassed")
+    # Generated from the pack's own pin table: this line used to be Morgan's list in
+    # prose, and printed "doubler" for a Tone King run that has none.
+    pins = atlas.atlas_pins(args.pack)
+    print("  pinned: " + ", ".join(f"{path}={value}" for path, value in pins.items()))
     print(f"  {args.samples} atlas renders + {args.held_out} held-out renders"
-          + (" + 1 neutral baseline" if args.held_out else ""))
+          + (f" + {baseline} neutral baseline render"
+             + ("s" if baseline != 1 else "") if args.held_out else ""))
     print(f"  {total} renders total; Latin-hypercube seed {args.seed}")
     for dimension in dimensions:
         print(f"  {dimension.path}: {dimension.bounds()[0]:g}..{dimension.bounds()[1]:g}")
@@ -103,7 +129,7 @@ def main() -> None:
         print(f"\n--dry-run: would write {args.out}")
         return
 
-    renderer = _renderer(args.renderer, args.pack)
+    renderer = _renderer(args.renderer, args.pack, process_policy=args.process_policy)
     metadata = renderer.metadata()
     caveat = _backend_caveat(metadata)
     if caveat:
@@ -130,6 +156,7 @@ def main() -> None:
                 renderer, space, di, document, args.held_out,
                 args.held_out_seed, args.loss_profile,
                 progress=progress("held-out"),
+                neutral_replicates=args.neutral_replicates,
             )
     finally:
         close = getattr(renderer, "close", None)
@@ -144,7 +171,7 @@ def main() -> None:
             _portable_executable(), *sys.argv]),
         "python_executable": _portable_executable(),
         "argv": list(sys.argv),
-        "template": str(args.template),
+        "template": None if args.template is None else str(args.template),
         "template_name": template_name,
         "probe_caveat": probe_caveat,
         "validation": validation,
