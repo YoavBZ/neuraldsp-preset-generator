@@ -1171,6 +1171,64 @@ print(f"source loudness: guitar {io.loudness_lufs(io.from_samples(guitar, 48000)
 EOF
 ```
 
+#### M7-1 at equal budget — an atlas start hurts a search on a played guitar
+
+Beating neutral settings is a claim about where a search starts. The question an
+atlas has to answer is whether a search that starts there *ends* closer, for the
+same number of renders. `benchmark_match.py --atlas` runs the benchmark's three
+nested stages twice on each target — from the atlas topology's neutral settings
+(`recipe`, `inversion`, `full`) and from the atlas's nearest entry (`atlas`,
+`atlas-inversion`, `atlas-full`) — with the same budget and the same random
+numbers for both searches. Targets are sampled inside the atlas's fixed topology,
+so the two searches differ only in where they start. Odd targets run the atlas
+arms first, so render order cannot favour one side.
+
+SW50R's 1,024-point atlas, 12 targets, a 300-render budget, two workers,
+Morgan 1.1.1 through the reused Swift server (`reproducible=False`). Once with the
+atlas's own 4 s noise-burst probe, once with the played How Long passage used in
+the section above (6 s from 10.66 s). Mean / median `unpaired-v1`:
+
+| arm | noise probe | played DI |
+|---|---:|---:|
+| `recipe` (neutral settings) | 1.714 / 1.731 | 1.648 / 1.804 |
+| `inversion` | 0.739 / 0.707 | 0.859 / 0.799 |
+| `full` (neutral → inversion → search) | 0.330 / 0.329 | **0.449 / 0.436** |
+| `atlas` (lookup alone) | 0.640 / 0.633 | 1.320 / 1.247 |
+| `atlas-inversion` | 0.512 / 0.477 | 0.833 / 0.828 |
+| `atlas-full` (atlas → inversion → search) | 0.289 / 0.264 | **0.609 / 0.641** |
+| `atlas-full` closer than `full` | 9 of 12 | **3 of 12** |
+| lookup closer than neutral | 12 of 12 | 8 of 12 |
+
+**On the probe it was built from, an atlas start helps; on a played guitar it
+hurts.** From the noise probe, a search starting at the atlas ended 12% closer
+and won 9 of 12. From the played DI, it ended 36% further away and won 3 of 12 —
+although its starting point was closer than neutral settings on 8 of them. A
+start that is closer but in the wrong place is worse than a neutral one, likely
+because the search stays near where it starts: the screen freezes its weakest
+controls at the start's values, and the loss's prior-deviation term charges for
+moving away. The lookup alone never beat either full search (0 of 12 both
+times), so an atlas is not a shortcut past the search either. The skills do not
+start from an atlas, and now for a measured reason.
+
+Seven targets in the probe run and nine in the played-DI run have selector
+accuracy 0.93–0.96 in one or both searches: the inversion switched an effect on
+that the target did not have. Both runs predate the regime gate in the tremolo rule above;
+their targets are `probe` regime, which the gate does not change.
+
+```bash
+.venv/bin/python scripts/benchmark_match.py --renderer swift \
+  --atlas packs/morgan/response_atlas_sw50r_1024.json --targets 12 --budget 300 \
+  --seconds 4 --workers 2 --json docs/atlas-benchmark-sw50r-probe.json
+.venv/bin/python scripts/benchmark_match.py --renderer swift \
+  --atlas packs/morgan/response_atlas_sw50r_1024.json --probe-di how-long-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 --json docs/atlas-benchmark-sw50r-guitar.json
+```
+
+`how-long-di-6s.wav` is six seconds of the user's dry DI from 10.66 s, mono at
+48 kHz; it is not in the repository. The two runs took 52 and 86 minutes. Both
+JSON files record every outcome, the backend, and the pre-squash commit they ran
+at.
+
 #### M7-2 warm-start regressor — measured negative result
 
 The warm-start experiment fits one standardized multi-output ridge model directly

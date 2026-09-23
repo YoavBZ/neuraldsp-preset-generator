@@ -739,7 +739,7 @@ def test_the_benchmark_runs_and_reports_every_number_separately(tmp_path):
     assert "mean absolute error" in done.stdout
 
     written = json.loads(out.read_text())
-    assert written["schema"] == "benchmark-match-2"
+    assert written["schema"] == "benchmark-match-3"
     assert len(written["source_commit"]) == 40
     assert written["elapsed_s"] > 0
     assert written["target_sampler"] == "seed-sequence-spawn-1"
@@ -766,6 +766,74 @@ def test_the_benchmarks_exit_code_is_the_verdict(tmp_path):
                "--seconds", "1.5", "--arms", "full")
     assert done.returncode == 1, "with no baseline there is nothing to beat"
     assert "was not run" in done.stdout
+
+
+def _synthetic_atlas(tmp_path, seconds: float) -> pathlib.Path:
+    """A small SW50R atlas on the synthetic chain, built on the benchmark's own
+    synthetic probe at this length."""
+    from match import atlas, space as space_module
+    from match.renderer_synth import SyntheticRenderer
+    from scripts._cli import probe_di
+
+    space = space_module.build("morgan", amp="sw50r")
+    di, _ = probe_di(None, seconds)
+    document = atlas.build(SyntheticRenderer(), space, di, "morgan", "sw50r",
+                           samples=8, seed=17)
+    path = tmp_path / "atlas.json"
+    path.write_text(json.dumps(document))
+    return path
+
+
+def test_an_atlas_benchmark_reports_whether_the_atlas_start_helped(tmp_path):
+    atlas_path = _synthetic_atlas(tmp_path, 1.5)
+    out = tmp_path / "bench.json"
+    done = run("benchmark_match.py", "--atlas", atlas_path, "--targets", "2",
+               "--budget", "30", "--seconds", "1.5", "--json", out)
+    assert done.returncode in (0, 1), done.stdout + done.stderr
+    assert ("ATLAS START HELPS" in done.stdout
+            or "ATLAS START DOES NOT HELP" in done.stdout)
+    assert "different probe" not in done.stdout
+
+    written = json.loads(out.read_text())
+    assert set(written["summaries"]) == {
+        "recipe", "inversion", "full", "atlas", "atlas-inversion", "atlas-full"}
+    assert len(written["outcomes"]) == 12, "two targets by six arms"
+    assert {row["position"] for row in written["outcomes"]} == set(range(6))
+    assert written["atlas"]["probe_matches"] is True
+    assert written["atlas"]["amp"] == "sw50r"
+    assert isinstance(written["atlas_helps"], bool)
+    assert done.returncode == (0 if written["atlas_helps"] else 1), (
+        "with --atlas the exit status is whether the atlas start helped")
+
+
+def test_an_atlas_on_another_probe_is_run_and_says_so(tmp_path):
+    atlas_path = _synthetic_atlas(tmp_path, 1.5)
+    out = tmp_path / "bench.json"
+    done = run("benchmark_match.py", "--atlas", atlas_path, "--targets", "1",
+               "--budget", "30", "--seconds", "2", "--arms", "full,atlas-full",
+               "--json", out)
+    assert done.returncode in (0, 1), done.stdout + done.stderr
+    assert "different probe than the atlas" in done.stdout
+    assert json.loads(out.read_text())["atlas"]["probe_matches"] is False
+
+
+@pytest.mark.parametrize("extra, message", [
+    (("--enumerate", "cabParameters/leftCabActive"), "do not apply with --atlas"),
+    (("--amp", "pr12"), "contradicts the atlas"),
+    (("--pack", "toneking"), "contradicts the atlas"),
+    (("--arms", "full"), "needs both the full and atlas-full arms"),
+])
+def test_an_atlas_benchmark_refuses_what_it_cannot_answer(tmp_path, extra, message):
+    done = run("benchmark_match.py", "--atlas", _synthetic_atlas(tmp_path, 1.5),
+               "--targets", "1", *extra)
+    assert done.returncode != 0
+    assert message in done.stderr
+
+
+def test_the_atlas_arms_need_an_atlas(tmp_path):
+    done = run("benchmark_match.py", "--targets", "1", "--arms", "full,atlas-full")
+    assert done.returncode != 0
+    assert "need --atlas" in done.stderr
 
 
 def test_an_unknown_arm_is_refused_by_name(tmp_path):

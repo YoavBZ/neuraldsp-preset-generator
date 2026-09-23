@@ -90,10 +90,12 @@ reasons:
   varying between runs), and hurt on PR12 (7 of 16, further away than neutral
   on average). That is one played passage per amp, and AC20, Tone King's lead
   channel and the 128-point pilots were not measured on a guitar at all.
-- **No search has been shown to finish better from one.** Beating neutral
-  settings is a claim about where a search starts. Whether a search started from
-  an atlas entry ends closer than the normal pipeline, for the same number of
-  renders, has not been measured.
+- **A search started from one finished worse.** With the same 300-render
+  budget, SW50R searches started at the atlas's nearest entry ended further from
+  targets rendered from a played DI than searches started at neutral settings —
+  0.609 against 0.449, closer on only 3 of 12 — although the atlas entry started
+  closer on 8 of them. On the atlas's own noise probe the same comparison came
+  out the other way (9 of 12), which is why its gates looked good.
 
 If the user asks for an atlas start anyway, this is the query. It writes ordinary
 specs; apply one with `apply_spec.py` and pass the result to `match_preset.py` as

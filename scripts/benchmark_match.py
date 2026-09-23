@@ -2,12 +2,19 @@
 
     python scripts/benchmark_match.py --targets 50 --budget 300
     python scripts/benchmark_match.py --targets 6 --budget 60 --json out.json
+    python scripts/benchmark_match.py --renderer swift --targets 12 \
+      --atlas packs/morgan/response_atlas_sw50r_1024.json --json atlas.json
 
 Samples random legal parameter vectors, renders each one, throws the vector away,
 and tries to recover it from the audio alone — once with the recipe stack alone,
 once with the calculated step added, and once with the whole pipeline. Reports
 parameter MAE, objective distance, cost and failure rate **separately**, and says
 whether M4 ships.
+
+With `--atlas`, it also runs the same three stages from the atlas's nearest
+entry, with the same budget, and says whether that start helps the search. The
+targets are then sampled inside the atlas's fixed topology, and the exit status
+is that answer rather than M4's.
 
 This is a local check, not CI. Fifty targets at a 300-render budget is about
 15,000 renders and an hour on the synthetic chain; the defaults are the plan's
@@ -20,6 +27,7 @@ Needs the analysis and match extras:  pip install -e '.[analysis,match]'
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
 import subprocess
@@ -48,11 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "target allowance to V × --budget so each topology keeps "
                          "roughly one-topology search depth. Without this flag all "
                          "variants share one budget")
-    ap.add_argument("--pack", default="morgan",
+    ap.add_argument("--pack", default=None,
                     help="which plugin pack the targets are sampled from "
-                         "(default: morgan)")
-    ap.add_argument("--amp", default="sw50r",
-                    help="which amp to benchmark (default: sw50r)")
+                         "(default: morgan, or the --atlas's pack)")
+    ap.add_argument("--amp", default=None,
+                    help="which amp to benchmark (default: sw50r, or the "
+                         "--atlas's amp)")
     ap.add_argument("--loss-profile", default="unpaired-v1",
                     help="how the objective dimensions are weighted; this is what the "
                          "'objective' column measures (unpaired-v1, paired-v1)")
@@ -64,8 +73,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="length of the synthetic DI, if one is used (default: 4)")
     ap.add_argument("--seed", type=int, default=11,
                     help="the sampler's seed, so a run repeats (default: 11)")
-    ap.add_argument("--arms", default="recipe,inversion,full",
-                    help="which arms to run, comma-separated (default: all three)")
+    ap.add_argument("--arms", default=None,
+                    help="which arms to run, comma-separated (default: recipe,"
+                         "inversion,full, and with --atlas also atlas,"
+                         "atlas-inversion,atlas-full)")
+    ap.add_argument("--atlas", type=pathlib.Path,
+                    help="a response atlas to start the same pipeline from, with "
+                         "the same budget, to measure whether its nearest entry "
+                         "helps a search. Targets are sampled inside its fixed "
+                         "topology and every arm starts from that topology, so "
+                         "the two searches differ only in where they start. The "
+                         "exit status is then whether the atlas start helped")
     ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
                     metavar="PATH",
                     help="enumerate this switch or selector in the full arm, each "
@@ -140,13 +158,49 @@ def main() -> None:
 
     import numpy as np
 
+    from match import atlas as atlas_module
     from match import benchmark, invert, search, space as space_module
 
-    arms = tuple(name.strip() for name in args.arms.split(",") if name.strip())
-    unknown = [name for name in arms if name not in benchmark.ARMS]
+    atlas_document = None
+    if args.atlas is not None:
+        try:
+            atlas_document = atlas_module.load(args.atlas)
+        except (OSError, ValueError) as error:
+            die(f"cannot use --atlas {args.atlas}: {error}")
+        if args.pack is not None and args.pack != atlas_document["pack"]:
+            die(f"--pack {args.pack} contradicts the atlas, which is for "
+                f"{atlas_document['pack']}")
+        args.pack = atlas_document["pack"]
+        if args.amp is not None:
+            try:
+                named = invert.resolve_signal_path(args.pack, args.amp)
+            except invert.InversionError as error:
+                die(str(error))
+            if named != atlas_document["amp"]:
+                die(f"--amp {args.amp} contradicts the atlas, which covers "
+                    f"{atlas_document['amp']}")
+        args.amp = atlas_document["amp"]
+        if args.enumerated or args.list_enumerable:
+            die("--enumerate and --list-enumerable do not apply with --atlas: an "
+                "atlas has one fixed topology")
+        if args.budget_per_topology:
+            die("--budget-per-topology does not apply with --atlas: an atlas has "
+                "one fixed topology")
+    args.pack = args.pack or "morgan"
+    args.amp = args.amp or "sw50r"
+
+    arms_text = args.arms or ("recipe,inversion,full" + (
+        ",atlas,atlas-inversion,atlas-full" if atlas_document is not None else ""))
+    arms = tuple(name.strip() for name in arms_text.split(",") if name.strip())
+    unknown = [name for name in arms if name not in benchmark.ALL_ARMS]
     if unknown:
         die(f"unknown arm(s) {', '.join(unknown)}. "
-            f"Available: {', '.join(benchmark.ARMS)}")
+            f"Available: {', '.join(benchmark.ALL_ARMS)}")
+    if atlas_document is None and any(name in benchmark.ATLAS_ARMS for name in arms):
+        die("the atlas arms need --atlas")
+    if atlas_document is not None and not {"full", "atlas-full"} <= set(arms):
+        die("an --atlas run answers whether the atlas start helps the search, "
+            "which needs both the full and atlas-full arms")
 
     try:
         signal_path = invert.resolve_signal_path(args.pack, args.amp)
@@ -154,6 +208,25 @@ def main() -> None:
         die(str(error))
     space = space_module.build(args.pack, amp=signal_path)
     renderer = _renderer(args.renderer, args.pack)
+    atlas_caveats = []
+    if atlas_document is not None:
+        mismatched = atlas_module.renderer_mismatches(
+            atlas_document, renderer.metadata())
+        if "renderer_id" in mismatched:
+            close = getattr(renderer, "close", None)
+            if close is not None:
+                close()
+            die(f"the atlas was built by the "
+                f"{atlas_document['renderer'].get('renderer_id')} renderer, not "
+                f"{args.renderer}; its stored responses describe another backend")
+        if mismatched:
+            # A caveat, not a refusal: both searches render on this build, so the
+            # comparison stays fair; only the lookup reads responses measured on
+            # another one.
+            atlas_caveats.append(
+                f"the atlas was built on a renderer that differs in "
+                f"{', '.join(mismatched)}, so its lookup reads responses this build "
+                f"may not reproduce exactly")
     supported = renderer_paths(renderer)
     if supported is not None and not any(
         dimension.path in supported for dimension in space.dimensions
@@ -196,6 +269,19 @@ def main() -> None:
         seed=seed, replicates=search.shortlist_replicates(renderer.metadata()),
         budget_scale=(variant_count if args.budget_per_topology else 1))
     di, di_caveat = probe_di(args.probe_di, args.seconds)
+    probe_matches = None
+    if atlas_document is not None:
+        from analysis import io
+
+        probe_matches = (io.from_samples(di, renderer.metadata().sample_rate).sha256
+                         == atlas_document["probe"]["sha256"])
+        if not probe_matches:
+            atlas_caveats.insert(0, (
+                "these targets are rendered from a different probe than the atlas "
+                "was built on, so its lookup compares fingerprints across probes — "
+                "the case \"M7-1 on a played guitar\" in docs/tone-matching-plan.md "
+                "measured, where a played guitar's lookup was close to a coin flip "
+                "against neutral settings"))
 
     started = time.time()
 
@@ -223,6 +309,7 @@ def main() -> None:
             progress=progress, workers=args.workers,
             renderer_factory=(None if args.workers < 2
                               else lambda: _renderer(args.renderer, args.pack)),
+            atlas_document=atlas_document,
         )
     finally:
         # The plugin instance goes back even if the run raised or was interrupted.
@@ -231,6 +318,7 @@ def main() -> None:
             close()
     if di_caveat:
         result.caveats.insert(0, di_caveat)
+    result.caveats[0:0] = atlas_caveats
     if args.budget_per_topology and variant_count > 1:
         result.caveats.insert(
             0, f"--budget {args.budget} was multiplied by {variant_count} "
@@ -254,15 +342,19 @@ def main() -> None:
              else "") + ", "
           f"{args.pack}/{signal_path}, {args.loss_profile}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, "
-          f"{elapsed_s:.0f}s total\n")
+          f"{elapsed_s:.0f}s total"
+          + (f", atlas {args.atlas} ({atlas_document['sample_count']} points)"
+             if atlas_document is not None else "") + "\n")
     print(benchmark.format_table(result, arms=arms))
     if backend_caveat:
         print(f"\n  {backend_caveat}.")
 
+    atlas_helps, atlas_reasons = (result.atlas_verdict()
+                                  if atlas_document is not None else (None, []))
     if args.json:
         rows = [vars(outcome) for outcome in result.outcomes]
         args.json.write_text(json.dumps({
-            "schema": "benchmark-match-2",
+            "schema": "benchmark-match-3",
             "source_commit": _source_commit(),
             "elapsed_s": round(elapsed_s, 3),
             "targets": args.targets,
@@ -296,12 +388,26 @@ def main() -> None:
             "backend": metadata.as_dict(),
             "summaries": {arm: result.summarise(arm) for arm in arms},
             "ships": result.verdict()[0], "reasons": result.verdict()[1],
+            # Which atlas, and whether it was built on the probe these targets
+            # were rendered from — the difference between the two questions an
+            # atlas benchmark can answer.
+            "atlas": (None if atlas_document is None else {
+                "path": str(args.atlas),
+                "sha256": hashlib.sha256(args.atlas.read_bytes()).hexdigest(),
+                "pack": atlas_document["pack"],
+                "amp": atlas_document["amp"],
+                "sample_count": atlas_document["sample_count"],
+                "probe_sha256": atlas_document["probe"]["sha256"],
+                "probe_matches": probe_matches,
+                "renderer": atlas_document["renderer"],
+            }),
+            "atlas_helps": atlas_helps, "atlas_reasons": atlas_reasons,
             "caveats": result.caveats, "outcomes": rows,
         }, indent=2) + "\n", encoding="utf-8")
         print(f"\nwrote {args.json}")
 
     ships, _ = result.verdict()
-    sys.exit(0 if ships else 1)
+    sys.exit(0 if (atlas_helps if atlas_document is not None else ships) else 1)
 
 
 def _source_commit():

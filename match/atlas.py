@@ -606,6 +606,26 @@ def compare_scale(baseline: Mapping[str, Any],
     }
 
 
+#: The renderer fields two sets of renders must share to be compared at all.
+RENDERER_IDENTITY_FIELDS = (
+    "renderer_id", "plugin_version", "renderer_build", "sample_rate",
+    "block_size", "quality_mode", "reproducible", "band_noise_db",
+)
+
+
+def renderer_mismatches(document: Mapping[str, Any], metadata) -> List[str]:
+    """The identity fields where ``metadata`` differs from the atlas's renderer.
+
+    An atlas's stored fingerprints are renders. Comparing them with renders from
+    another plugin version or renderer build measures the difference between
+    builds along with everything else.
+    """
+    current = metadata.as_dict()
+    recorded = document["renderer"]
+    return [field for field in RENDERER_IDENTITY_FIELDS
+            if current.get(field) != recorded.get(field)]
+
+
 def _measurement_caveat(metadata) -> Optional[str]:
     if metadata.reproducible:
         return None

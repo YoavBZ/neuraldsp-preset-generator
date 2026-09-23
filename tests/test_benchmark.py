@@ -1004,3 +1004,191 @@ def test_all_failed_final_observations_fail_the_outcome(space, seed):
     assert outcome.objective_observations == 0
     assert outcome.objective_spread is None
     assert outcome.renders == 3
+
+
+# --- starting from a response atlas ------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def atlas_probe():
+    return fx.plucks(seconds=1.2, gap=0.7, seed=21)
+
+
+@pytest.fixture(scope="module")
+def small_atlas(space, atlas_probe):
+    """A 16-point SW50R atlas on the synthetic chain, built the way the real ones
+    are: the pack's neutral seed with the atlas pins, and a Latin hypercube."""
+    from match import atlas
+
+    return atlas.build(SyntheticRenderer(), space, atlas_probe, "morgan", AMP,
+                       samples=16, seed=17)
+
+
+def _atlas_run(space, seed, probe, document, **overrides):
+    options = dict(targets=2, budget=30, rng=np.random.default_rng(3), amp=AMP,
+                   arms=B.ALL_ARMS, atlas_document=document)
+    options.update(overrides)
+    return B.compare_baselines(SyntheticRenderer(), space, probe, seed, **options)
+
+
+def _target(space, probe, values):
+    from analysis import io
+    from analysis.fingerprint import fingerprint
+
+    renderer = SyntheticRenderer()
+    rendered = renderer.render(probe, S.Evaluator(renderer, None, probe, space)
+                               ._settings(values))
+    return fingerprint(io.from_samples(rendered.audio, 48000), regime="probe",
+                       excerpt_s=None)
+
+
+def test_atlas_arms_are_nested_like_the_baselines_and_share_their_budget(
+        space, seed, atlas_probe, small_atlas):
+    """`atlas-full` must be `full` with nothing changed but its start, or the
+    comparison measures the harness. So the render counts line up stage by stage:
+    a lookup costs nothing, the inversion one render, and the search the same
+    budget either way."""
+    result = _atlas_run(space, seed, atlas_probe, small_atlas)
+
+    summaries = {arm: result.summarise(arm) for arm in B.ALL_ARMS}
+    assert all(summary["targets"] == 2 for summary in summaries.values())
+    assert summaries["atlas"]["renders"] == summaries["recipe"]["renders"] == 2, (
+        "a lookup is free; one final scoring render per target")
+    assert (summaries["atlas-inversion"]["renders"]
+            == summaries["inversion"]["renders"] == 4)
+    assert summaries["atlas-full"]["renders"] == summaries["full"]["renders"] > 4, (
+        "the two searches must spend the same budget, and more than the inversion")
+    helps, reasons = result.atlas_verdict()
+    assert isinstance(helps, bool)
+    assert "for the same budget" in reasons[0]
+
+
+def test_the_atlas_arm_answers_with_the_nearest_stored_entry(
+        space, seed, atlas_probe, small_atlas):
+    """Structural, not by score: the lookup's answer is an atlas entry, laid over
+    the atlas topology's neutral seed."""
+    from match import atlas, invert, search
+
+    start_seed = B.atlas_seed(space, seed, small_atlas, B._atlas_dimensions(
+        small_atlas, space, "morgan", AMP, "unpaired-v1", None))
+    truth = dict(start_seed)
+    truth[("sw50rAmp", "sw50rTreble")] = 90.0
+    target = _target(space, atlas_probe, truth)
+
+    found, renders, _ = B._run_arm(
+        "atlas", SyntheticRenderer(), target, atlas_probe, space, start_seed, 30,
+        "unpaired-v1", invert, search, np.random.default_rng(0), "morgan", AMP,
+        atlas_document=small_atlas)
+
+    nearest = atlas.nearest(small_atlas, target)[0]
+    assert renders == 0
+    for path, value in small_atlas["entries"][nearest.index]["settings"].items():
+        module, _, key = path.rpartition("/")
+        assert found[(module, key)] == value, path
+
+
+def test_atlas_targets_vary_only_what_the_atlas_sampled(space, small_atlas):
+    """A target outside the atlas's topology would measure its fixed switches,
+    not its start."""
+    dimensions = B._atlas_dimensions(small_atlas, space, "morgan", AMP,
+                                     "unpaired-v1", None)
+    values = B.atlas_vector(dimensions, np.random.default_rng(9))
+
+    assert set(values) == {(d.module, d.key) for d in dimensions}
+    for dimension in dimensions:
+        value = values[(dimension.module, dimension.key)]
+        low, high = dimension.bounds()
+        assert low <= value <= high
+        assert value == dimension.quantise(value)
+    seeded = B.atlas_seed(space, {}, small_atlas, dimensions)
+    for path, value in small_atlas["fixed_settings"].items():
+        module, _, key = path.rpartition("/")
+        if path not in small_atlas["dimensions"]:
+            assert seeded[(module, key)] == value, path
+
+
+def test_both_searches_draw_the_same_random_numbers(
+        space, seed, atlas_probe, small_atlas, monkeypatch):
+    """Common random numbers: on one target, `full` and `atlas-full` differ only
+    in where they start, so their optimisers must start from one stream state."""
+    from match import search as search_module
+
+    real = search_module.search
+    states = []
+
+    def recording(*args, **kwargs):
+        states.append(kwargs["rng"].bit_generator.state["state"]["state"])
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(search_module, "search", recording)
+    _atlas_run(space, seed, atlas_probe, small_atlas, targets=2,
+               arms=("full", "atlas-full"))
+
+    assert len(states) == 4, "two searches per target"
+    assert states[0] == states[1], "target 0's searches drew different numbers"
+    assert states[2] == states[3], "target 1's searches drew different numbers"
+    assert states[0] != states[2], "each target has its own stream"
+
+
+def test_odd_targets_run_the_atlas_pipeline_first(
+        space, seed, atlas_probe, small_atlas):
+    """A reused plugin instance can remember what it rendered, so a fixed order
+    would hand that to one pipeline on every target."""
+    result = _atlas_run(space, seed, atlas_probe, small_atlas,
+                        arms=("full", "atlas-full"))
+
+    positions = {(o.target_index, o.arm): o.position for o in result.outcomes}
+    assert positions[(0, "full")] < positions[(0, "atlas-full")]
+    assert positions[(1, "atlas-full")] < positions[(1, "full")]
+
+
+def test_without_an_atlas_the_order_and_positions_are_unchanged(space, seed):
+    result = B.compare_baselines(SyntheticRenderer(), space,
+                                 fx.plucks(seconds=1.2, gap=0.7, seed=21), seed,
+                                 targets=2, budget=30, arms=("recipe", "full"),
+                                 rng=np.random.default_rng(3), amp=AMP)
+    for outcome in result.outcomes:
+        assert outcome.position == ("recipe", "full").index(outcome.arm)
+
+
+@pytest.mark.parametrize("change, message", [
+    (dict(atlas_document=None), "none was given"),
+    (dict(switches=["delay/delayActive"]), "cannot enumerate"),
+    (dict(profile="paired-v1"), "stores fingerprints rather than waveforms"),
+])
+def test_an_atlas_run_that_cannot_mean_anything_is_refused(
+        space, seed, atlas_probe, small_atlas, change, message):
+    with pytest.raises(B.BenchmarkError, match=message):
+        _atlas_run(space, seed, atlas_probe, small_atlas, targets=1, **change)
+
+
+def test_an_atlas_for_another_amp_is_refused(space, seed, atlas_probe, small_atlas):
+    other = dict(small_atlas, amp="pr12")
+    with pytest.raises(B.BenchmarkError, match="covers 'pr12', not 'sw50r'"):
+        _atlas_run(space, seed, atlas_probe, other, targets=1)
+
+
+def _paired_result(pairs):
+    result = B.BenchmarkResult()
+    for index, (full, atlas_full) in enumerate(pairs):
+        result.outcomes.append(B.Outcome(arm="full", target_index=index,
+                                         objective=full))
+        result.outcomes.append(B.Outcome(arm="atlas-full", target_index=index,
+                                         objective=atlas_full))
+    return result
+
+
+def test_the_atlas_verdict_needs_the_mean_and_most_targets():
+    """One lucky target must not carry the mean."""
+    lucky = _paired_result([(1.0, 0.1), (1.0, 1.1), (1.0, 1.1)])
+    assert lucky.atlas_verdict()[0] is False, "better mean on one target of three"
+
+    steady = _paired_result([(1.0, 0.9), (1.0, 0.9), (1.0, 1.1)])
+    helps, reasons = steady.atlas_verdict()
+    assert helps is True
+    assert "closer on 2 of 3" in reasons[0]
+
+    tie = _paired_result([(1.0, 1.0), (1.0, 1.0)])
+    assert tie.atlas_verdict()[0] is False, "a tie is not helping"
+
+    assert B.BenchmarkResult().atlas_verdict()[0] is False

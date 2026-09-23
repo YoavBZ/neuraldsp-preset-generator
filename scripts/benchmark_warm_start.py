@@ -37,10 +37,6 @@ from build_response_atlas import _portable_executable
 SCHEMA = "warm-start-benchmark-1"
 DEFAULT_BLENDS = (0.0, 0.25, 0.5, 0.75, 1.0)
 RENDERER_ID_TO_CLI = {"synthetic": "synthetic", "swift": "swift"}
-RENDERER_IDENTITY_FIELDS = (
-    "renderer_id", "plugin_version", "renderer_build", "sample_rate",
-    "block_size", "quality_mode", "reproducible", "band_noise_db",
-)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -364,10 +360,7 @@ def _validated_blends(blends):
 def _require_matching_renderer(atlas_document, metadata) -> None:
     from match import atlas
 
-    current = metadata.as_dict()
-    recorded = atlas_document["renderer"]
-    differences = [field for field in RENDERER_IDENTITY_FIELDS
-                   if current.get(field) != recorded.get(field)]
+    differences = atlas.renderer_mismatches(atlas_document, metadata)
     if differences:
         raise atlas.AtlasError(
             "benchmark renderer does not match atlas renderer: "
