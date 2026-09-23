@@ -74,7 +74,7 @@ def _signals(specs, target, sample_rate):
     from analysis import io
 
     target_lufs = io.loudness_lufs(io.from_samples(target, sample_rate))
-    signals, described = {}, {}
+    signals, described, files = {}, {}, {}
     for spec in specs:
         if spec == "same":
             name, samples, kind = "same", target, "the target DI itself"
@@ -94,15 +94,20 @@ def _signals(specs, target, sample_rate):
                 die(f"--signal {spec}: give the recording its own name")
             samples = io.load(path).mono()
             kind = f"recording {path}"
+            files[name] = hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
         else:
             die(f"--signal {spec!r} is not same, noise, noise-at-di-level or NAME=PATH")
         if name in signals:
             die(f"--signal {name} is given twice")
         signals[name] = samples
         audio = io.from_samples(samples, sample_rate)
-        described[name] = {"kind": kind, "sha256": audio.sha256,
+        # `samples_sha256` is of the decoded 48 kHz mono samples the search used;
+        # a recording also gets the hash of its file, as --target-di does.
+        described[name] = {"kind": kind, "samples_sha256": audio.sha256,
                            "seconds": round(audio.duration_s, 3),
                            "lufs": round(io.loudness_lufs(audio), 2)}
+        if name in files:
+            described[name]["file_sha256"] = files[name]
     return signals, described
 
 

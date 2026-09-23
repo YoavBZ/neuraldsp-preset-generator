@@ -1396,17 +1396,23 @@ same 12 targets, setting for setting, are the ones in the played-DI run of "M7-1
 at equal budget", where the neutral start scored 1.665 and the inversion alone
 0.871 — another run, so context rather than pairs.
 
-**Without a DI a search barely leaves its start.** Through the noise probe it
-ended at 1.48, about a tenth closer than the neutral settings it began from and
-three times the distance a search through the target's own passage reached. It
-did not know: its own best scores through the noise averaged 1.05, because it was
-measuring noise through the amp against a guitar. A DI of a *different song* by
-the same player ended 38% closer than no DI (0.92). Level is not the problem —
-turned down to the passage's loudness the probe did no better (1.43), although in
-a two-target smoke run on the synthetic chain the same change had closed most of
-the gap, which is one more reason that chain's answers are not facts about the
-plugin. What a played DI carries that noise lacks — pitch, sustain, a player's
-attack — is not separated here. One amp, one target passage, one player.
+**Without a DI a search ends no closer than neutral settings.** Through the noise
+probe it ended at 1.48 against the neutral start's 1.665 on the same targets —
+closer on only 6 of 12 (paired Wilcoxon p = 0.47), so no gain is shown at all —
+and at three times the distance a search through the target's own passage
+reached. Its own best scores, measured through the noise, read 1.05 on average,
+0.43 under where its answers landed through the guitar; the same gap is 0.06 for
+a search through the target's own passage, so the noise misleads it by far more
+than the scale difference between the two scores (the search's includes a
+prior-deviation term and is its best render of about 300). A DI of a *different
+song* by the same player ended 38% closer than no DI (0.92) and closer than
+neutral on 11 of 12 (p = 0.007), though still no better on average than the
+inversion alone through the right DI (0.871). Matching the probe's loudness to
+the passage did not help on average — closer than plain noise on 6 of 12,
+p = 0.97 — although it moved individual targets by a lot in both directions, and
+only integrated loudness was matched, not peak level into the amp. What a played
+DI carries that noise lacks — pitch, sustain, a player's attack — is not
+separated here. One amp, one target passage, one player.
 
 So the match skill now tells the user plainly that a match made without a DI is
 close to a starting point, and that a DI of anything they play would change that.
@@ -1421,7 +1427,10 @@ close to a starting point, and that a DI of anything they play would change that
 
 `how-long-di-6s.wav` and `hotel-di-6s.wav` are six seconds of the user's dry DIs,
 from 10.66 s and 18.9 s, mono at 48 kHz; neither is in the repository. The run
-took 150 minutes.
+took 150 minutes. Its JSON records a pre-squash commit whose measurement code is
+the code merged here; since then only the worker path's error handling, the
+JSON's hash fields (it still says `sha256` for what is now `samples_sha256`), the
+docs and the tests changed.
 
 ---
 

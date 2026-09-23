@@ -213,3 +213,49 @@ def test_the_cli_refuses_a_signal_it_cannot_name(tmp_path, spec, message):
                 "--targets", "1", "--budget", "30")
     assert done.returncode != 0
     assert message in done.stderr
+
+
+def test_two_workers_give_the_serial_answer_and_need_a_factory(
+        space, topology, signals):
+    target, named = signals
+    serial = _run(space, topology, target, named)
+    pooled = _run(space, topology, target, named, workers=2,
+                  renderer_factory=SyntheticRenderer)
+    key = lambda o: (o.target_index, o.signal)
+    assert [(key(o), o.objective) for o in sorted(serial, key=key)] == [
+        (key(o), o.objective) for o in sorted(pooled, key=key)]
+    with pytest.raises(SB.SignalBenchmarkError, match="renderer_factory"):
+        _run(space, topology, target, named, workers=2)
+
+
+def test_the_summary_leaves_failed_rows_out_and_tests_the_pairs():
+    outcomes = []
+    pairs = [(0.3, 0.6), (0.4, 0.7), (0.5, 0.9), (0.2, 0.4), (0.6, 0.8)]
+    for index, (same, noise) in enumerate(pairs):
+        outcomes.append(SB.SignalOutcome("same", index, 0, objective=same))
+        outcomes.append(SB.SignalOutcome("noise", index, 1, objective=noise))
+    outcomes.append(SB.SignalOutcome("same", 5, 0, objective=0.1))
+    outcomes.append(SB.SignalOutcome("noise", 5, 1, failed=True, error="boom"))
+    noise = SB.summarise(outcomes, reference="same")["noise"]
+
+    assert noise["failures"] == 1
+    assert noise["paired_targets"] == 5, "a failed row is not a pair"
+    assert noise["closer_than_reference"] == 0
+    assert noise["wilcoxon_p"] == pytest.approx(0.0625)
+
+
+def test_the_cli_takes_a_named_recording_and_hashes_its_file(tmp_path):
+    target, other = tmp_path / "target.wav", tmp_path / "other.wav"
+    fx.write_wav(target, fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3)
+    fx.write_wav(other, fx.plucks(seconds=1.2, gap=0.5, seed=9) * 0.3)
+    out = tmp_path / "signals.json"
+    done = _cli("--amp", AMP, "--target-di", target, "--signal", "same",
+                "--signal", f"other={other}", "--targets", "1", "--budget", "30",
+                "--json", out)
+    assert done.returncode == 0, done.stderr
+    written = json.loads(out.read_text())["signals"]
+    import hashlib
+
+    assert written["other"]["file_sha256"] == hashlib.sha256(
+        other.read_bytes()).hexdigest()
+    assert "samples_sha256" in written["same"]

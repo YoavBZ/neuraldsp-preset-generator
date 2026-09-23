@@ -188,11 +188,18 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
             pending.put(index)
         lock = threading.Lock()
         failures: List[BaseException] = []
-        members = [renderer] + [renderer_factory() for _ in range(workers - 1)]
+        stop = threading.Event()
+        members = [renderer]
+        try:
+            for _ in range(workers - 1):
+                members.append(renderer_factory())
+        except BaseException:
+            _close(members[1:])
+            raise
 
         def work(member):
             try:
-                while True:
+                while not stop.is_set():
                     try:
                         index = pending.get_nowait()
                     except queue.Empty:
@@ -203,6 +210,9 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                         if progress is not None:
                             progress(len(results), int(targets))
             except BaseException as error:   # noqa: BLE001 — re-raised below
+                # One failed target ends the run; the others stop taking new ones
+                # rather than rendering for an hour into a result that is dropped.
+                stop.set()
                 with lock:
                     failures.append(error)
 
@@ -212,10 +222,7 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
             thread.start()
         for thread in threads:
             thread.join()
-        for member in members[1:]:
-            close = getattr(member, "close", None)
-            if close is not None:
-                close()
+        _close(members[1:])
         if failures:
             raise failures[0]
     return [outcome for index in sorted(results) for outcome in results[index]]
@@ -258,6 +265,13 @@ def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, An
                     if len(pairs) > 1 and any(a != b for a, b in pairs) else None)
         summary[name] = entry
     return summary
+
+
+def _close(renderers) -> None:
+    for member in renderers:
+        close = getattr(member, "close", None)
+        if close is not None:
+            close()
 
 
 def _mean(values) -> Optional[float]:
