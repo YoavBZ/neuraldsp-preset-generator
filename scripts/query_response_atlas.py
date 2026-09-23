@@ -10,6 +10,11 @@ This does not render the plugin.  It fingerprints the reference, compares it wit
 the stored fingerprints under the normal loss profile, and writes ordinary specs
 that ``apply_spec.py`` accepts.  They are starts for local refinement, not claims
 that a finite atlas found the final preset.
+
+Every committed atlas was built on the synthetic noise probe.  Looked up with
+renders of a played guitar, the three measured picked an entry that beat neutral
+settings on only 27 or 28 of 48 held-out targets ("M7-1 on a played guitar" in
+docs/tone-matching-plan.md).  The skills therefore do not start from one.
 """
 
 from __future__ import annotations
@@ -85,6 +90,23 @@ def main() -> None:
     caveat = document.get("measurement_caveat")
     if caveat:
         print(f"CAUTION: {caveat}\n")
+    # Every committed atlas was built without --probe-di, so it stores a noise
+    # burst through the amp. Looked up with renders of a played guitar DI, the
+    # three atlases measured (SW50R, PR12, Tone King rhythm) picked an entry that
+    # beat the amp's neutral settings on 27-28 of 48 held-out targets, where a lookup
+    # made with the noise probe won 39 (docs/tone-matching-plan.md, "M7-1 on a
+    # played guitar"). Warned whatever --reference-mode says: `probe` means a
+    # controlled render of a known chain, and that measurement's own guitar
+    # targets were exactly that. Only a render of this atlas's own probe escapes
+    # the mismatch, and nothing here can tell one from the rest.
+    noise_probe = bool((document.get("build") or {}).get("probe_caveat"))
+    if noise_probe:
+        print("CAUTION: this atlas stores a synthetic noise probe through the amp. "
+              "Unless the reference was rendered from that same probe, the lookup "
+              "compares different source signals: on a played guitar, the atlases "
+              "measured picked an entry better than neutral settings only a little "
+              "over half the time. Treat these specs as an experiment, not a "
+              "measured start.\n")
     print(f"{document['pack']}/{document['amp']}: {document['sample_count']} "
           f"stored responses, {len(document['dimensions'])} continuous dimensions")
     print(f"reference: {args.reference} ({args.reference_mode})")
@@ -119,9 +141,14 @@ def main() -> None:
     if skipped:
         print("not compared — the atlas or the reference has no reading for: "
               + ", ".join(skipped))
-    print("these are observed ranges on the atlas probe, not mathematical limits; "
-          "a target outside one is evidence to distrust the topology, not proof "
-          "that no denser sample can reach it")
+    if noise_probe:
+        print("these are observed ranges on the atlas's noise probe, not limits on "
+              "the plugin, and a played instrument has its own spectrum, rhythm and "
+              "level, so a reference inside or outside them says little")
+    else:
+        print("these are observed ranges on the atlas probe, not mathematical "
+              "limits; a target outside one is evidence to distrust the topology, "
+              "not proof that no denser sample can reach it")
     print("\napply one spec to the topology template, then use match_preset.py for "
           "local refinement")
 
