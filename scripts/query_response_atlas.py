@@ -97,8 +97,8 @@ def main() -> None:
     # made with the noise probe won 39 (docs/tone-matching-plan.md, "M7-1 on a
     # played guitar"). Warned whatever --reference-mode says: `probe` means a
     # controlled render of a known chain, and that measurement's own guitar
-    # targets were exactly that. Only a render of this atlas's probe is exempt,
-    # and nothing here can tell one from the rest.
+    # targets were exactly that. Only a render of this atlas's own probe escapes
+    # the mismatch, and nothing here can tell one from the rest.
     noise_probe = bool((document.get("build") or {}).get("probe_caveat"))
     if noise_probe:
         print("CAUTION: this atlas stores a synthetic noise probe through the amp. "

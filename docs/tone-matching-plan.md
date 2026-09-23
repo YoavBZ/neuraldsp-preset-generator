@@ -1084,7 +1084,10 @@ atlas entry ends closer than the normal pipeline, for the same number of
 renders, is the next measurement.
 
 **What might fix it, cheapest first — none of it tested.** A lookup scored on
-timbre alone would drop the terms the probe's rhythm dominates. A probe at a
+timbre alone would drop the terms the probe's rhythm dominates, but keep the
+timbre part of the gap, which is the largest single part and on its own about
+as large as a target's distance from neutral — so it is probably the least
+promising of the three. A probe at a
 played guitar's level would stop driving the amp harder than a player does. An
 atlas built from a played guitar goes furthest, and the noise lookup's 39 of 48
 suggests it would work where these do not; but whether one guitar's atlas
@@ -1093,8 +1096,11 @@ renders, which would have to earn its place inside a search's budget. Until one
 of these is measured, both skills tell agents not to start from an atlas.
 
 **A match run without `--probe-di` has the same mismatch**: every candidate is
-noise through the amp, compared with a guitar. No search has been measured under
-it, so the match skill now says to ask for a DI first and to report a match made
+noise through the amp, compared with a guitar. M6 ran two such matches ("The two
+supplied WAVs through the M6 workflow": 2.133 → 1.287 and 2.215 → 1.424), but
+those scores are noise-against-guitar distances, so how much the mismatch costs
+a search has not been measured, and a falling score is not evidence of a closer
+tone. The match skill now says to ask for a DI first and to report a match made
 without one as weaker evidence.
 
 Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,

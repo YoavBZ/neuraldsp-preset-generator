@@ -178,9 +178,10 @@ sequence of decaying white-noise bursts and records that limitation. It is
 transient and aperiodic, not a played or pitched guitar part, and it is 6–10 dB
 louder than the two played DIs it has been measured against, so it drives the amp
 harder. Every candidate is then noise through the amp compared with a guitar —
-the same mismatch that made atlas lookups unreliable above. A search has not been
-measured under it, so report a match made without a DI as weaker evidence than
-one rendered from the user's playing.
+the same mismatch that made atlas lookups unreliable above. What that costs a
+search has not been measured, and a no-DI run's own scores are noise-against-guitar
+distances, so a falling score is not evidence the tone got closer. Report a match
+made without a DI as weaker evidence than one rendered from the user's playing.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
