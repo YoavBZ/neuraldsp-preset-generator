@@ -10,7 +10,7 @@ pytest.importorskip("pyloudnorm")
 from analysis import io
 from analysis.compare import Objectives, compare, scalar
 from analysis.fingerprint import fingerprint
-from analysis.listening import score_record, agreement_report, sha256
+from analysis.listening import attach_verdict, score_record, agreement_report, sha256
 from analysis.listening import verified_fresh_ac20
 
 
@@ -38,6 +38,22 @@ def test_exact_profile_parity_and_separate_questions(record):
     assert result["objective_scoring"]["prediction"] == "A"
     assert result["agreement"]["closer"]["status"] == "agree"
     assert result["agreement"]["preferred"]["status"] == "disagree"
+
+
+def test_post_listening_verdict_uses_frozen_scores_without_audio_analysis(record, monkeypatch):
+    import analysis.listening as listening
+
+    frozen = score_record({**record, "verdict": {}})
+
+    def must_not_rescore(*args, **kwargs):
+        raise AssertionError("a listener answer must not change the prediction")
+
+    monkeypatch.setattr(listening, "compare", must_not_rescore)
+    finished = attach_verdict(frozen, {"closer": "A", "preferred": "B"})
+    assert finished["objective_scoring"] == frozen["objective_scoring"]
+    assert finished["agreement"]["closer"]["status"] == "agree"
+    assert finished["agreement"]["preferred"]["status"] == "disagree"
+    assert frozen["agreement"]["closer"]["status"] == "no_verdict"
 
 
 def test_hash_verified_even_with_cache(record):
@@ -220,7 +236,44 @@ def test_fresh_renderer_keeps_every_writable_setting():
     mapped = _all_writable_settings(values, pack, {"selectedAmp", "parameters/transpose", "ac20Amp/ac20Volume"})
     assert mapped == {"selectedAmp": "AC20", "parameters/transpose": 2, "ac20Amp/ac20Volume": 30}
     assert _amp(mapped, pack) == "AC20"
+    assert _all_writable_settings({"/selectedAmp": "AC20", "/parameters/transpose": 2},
+                                  pack, None) == {"selectedAmp": "AC20", "parameters/transpose": 2}
     with pytest.raises(ValueError, match="unsupported"):
         _all_writable_settings({**values, "invented/control": 1}, pack, None)
     with pytest.raises(ValueError, match="unsupported"):
         _all_writable_settings(values, pack, {"selectedAmp", "ac20Amp/ac20Volume"})
+
+
+def test_fresh_renderer_reads_full_xml_preset_not_only_search_dimensions():
+    import pathlib
+    from packs.loader import load_pack
+    from scripts.render_listening_guitar import _settings_from_preset
+
+    pack = load_pack("morgan")
+    root = pathlib.Path(__file__).resolve().parents[1]
+    values = _settings_from_preset(root / "samples/Example_Clean_PR12.xml", pack, None)
+    assert values["selectedAmp"] == "1"
+    assert "name" in values
+    assert "parameters/transpose" in values
+    assert len(values) > 100
+    assert "version" not in values
+
+
+def test_fresh_renderer_rejects_a_parseable_preset_missing_one_control(tmp_path):
+    import pathlib
+    from format.parser import parse_file
+    from format.structured import build
+    from format.writer import write_file
+    from packs.loader import load_pack
+    from scripts.render_listening_guitar import _settings_from_preset
+
+    sample = pathlib.Path(__file__).resolve().parents[1] / "samples/Example_Clean_PR12.xml"
+    tokens = parse_file(str(sample))
+    parameter = build(tokens).by_path[("parameters", "transpose")]
+    omitted = {parameter.key_index, parameter.value_index}
+    incomplete = tmp_path / "incomplete.xml"
+    write_file(str(incomplete), (token for index, token in enumerate(tokens)
+                                 if index not in omitted))
+    assert ("parameters", "transpose") not in build(parse_file(str(incomplete))).by_path
+    with pytest.raises(ValueError, match="preset omits 1 writable control.*parameters/transpose"):
+        _settings_from_preset(incomplete, load_pack("morgan"), None)
