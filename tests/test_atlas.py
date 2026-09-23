@@ -265,8 +265,23 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         assert document["sample_count"] == samples
         assert document["dimensions"], "an atlas with no swept dimension is a point"
         assert document["renderer"]["plugin_version"] == PLUGIN_VERSION[pack]
-        assert document["renderer"]["reproducible"] is False
-        assert "reproducible=False" in document["measurement_caveat"]
+        # A reused plugin instance does not repeat itself; one process per render
+        # does, bit for bit, and says so. Either way the flag and the caveat
+        # agree. AC20 is the fresh one, because only its history was large.
+        fresh = "process=fresh" in document["renderer"]["quality_mode"]
+        assert fresh is (document["amp"] == "ac20"), path
+        assert document["renderer"]["reproducible"] is fresh
+        # And the recorded command rebuilds the same thing: a fresh atlas whose
+        # command lacked the flag would come back reused if re-run.
+        command = shlex.split(document["build"]["command"])
+        assert ("--process-policy" in command
+                and command[command.index("--process-policy") + 1] == "fresh"
+                ) is fresh, path
+        if fresh:
+            assert document["measurement_caveat"] is None
+            assert document["renderer"]["band_noise_db"] == 0
+        else:
+            assert "reproducible=False" in document["measurement_caveat"]
         validation = document["build"]["validation"]
         assert validation["samples"] == 24
         assert validation["beats_neutral"] is True
@@ -307,7 +322,7 @@ def test_every_committed_atlas_is_valid_qualified_and_records_exact_provenance(p
         # did not work.
         assert comparison["candidate_better_targets"] >= 20, amp
         # A bound, not a recorded result: well below every measured scale gain
-        # across both packs (20.2% to 30.1%) and well above zero, so it still fails
+        # across both packs (20.2% to 32.3%) and well above zero, so it still fails
         # a scale step that did nothing. Loosening it to 0.10 for Tone King's noise
         # was considered and turned out unnecessary — no result comes near 0.15.
         assert comparison["mean_reduction_fraction"] > 0.15, amp
@@ -471,10 +486,9 @@ def test_show_reports_each_atlas_with_the_amp_and_density_it_covers():
         assert entry["amp"], "the amp is what decides whether it applies"
         assert entry["sample_count"] > 0
         assert pathlib.Path(entry["path"]).exists()
-        assert entry["reproducible"] is False, (
-            "every atlas here was built on a backend that does not repeat itself, "
-            "and anything derived from one inherits that"
-        )
+        # Built on a reused instance, which does not repeat itself, except AC20's,
+        # rebuilt one process per render. Whatever the build says reaches the skill.
+        assert entry["reproducible"] is (entry["amp"] == "ac20"), entry
     toneking = _atlases("toneking")
     assert {entry["amp"] for entry in toneking} == {"rhythm", "lead"}, (
         "Tone King's channels are reported by their signal-path names"

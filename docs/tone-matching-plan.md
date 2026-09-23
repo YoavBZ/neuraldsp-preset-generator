@@ -818,7 +818,9 @@ renderer (`audio-unit-renderer-edd93e0965a1`, no `process=reuse` in
 `quality_mode`) than SW50R's and AC20's. `atlas.compare_scale` treats a differing
 renderer build as disqualifying, so PR12 is strictly a third run rather than a
 third arm — including in the repeatability comparison above, where only the
-AC20-versus-SW50R half shares a build.
+AC20-versus-SW50R half shares a build. AC20's atlases have since been rebuilt one
+plugin process per render (`process=fresh`, below), so today that half shares a
+build but not a process policy.
 
 **The topology template sets `selectedAmp` and nothing else.** This matters more
 than it sounds. The first SW50R attempt built its template from
@@ -842,26 +844,30 @@ parallel.
 ```
 
 Morgan 1.1.1 through the reused Swift server, `reproducible=False`, per-band
-repeats within 0.23 dB. Every number here carries that.
+repeats within 0.23 dB. Every number here carries that, except AC20's row: it is
+the fresh-process rebuild described below, `reproducible=True` with no band-noise
+floor.
 
 | amp | swept dims | neutral | pilot (128) | scaled (1,024) | closes | scale gain |
 |---|---:|---:|---:|---:|---:|---:|
 | PR12 | 26 | 1.640 | 0.814 | **0.583** | 64.5% | 28.4% |
 | SW50R | 27 | 1.525 | 0.754 | **0.602** | 60.5% | 20.2% |
-| AC20 | 24 | 2.6–2.7 | 0.915 | **0.640** | 76.1% | 30.1% |
+| AC20 | 24 | 2.715 | 0.924 | **0.625** | 77.0% | 32.3% |
 
 All three beat neutral on 24 of 24 held-out targets at both densities, and each
-scale step wins 22–23 of 24 targets.
+scale step wins 22–23 of 24 targets. AC20's row is its fresh-process rebuild
+(below); the reused-instance builds it replaced scored 0.915 and 0.640 against a
+neutral that moved between 2.6 and 2.7.
 
 **What three amps do and do not establish.** Each independently clears both
 gates, on one method, which is the result. It is not a demonstration that the
 amps agree: `atlas.compare_scale` refuses any cross-amp pair — different amp,
 different swept dimensions, different fixed settings — and that refusal exists to
 stop merely similar runs being read as a trend. The fraction of neutral distance
-closed spans 60.5% to 76.1%, so they do not agree in any case.
+closed spans 60.5% to 77.0%, so they do not agree in any case.
 
-**AC20's baseline offset is history dependence, and it contaminates the AC20
-atlas.** Two AC20 builds' neutral baselines differed by +0.0422 ± 0.0042 on 20 of
+**AC20's baseline offset is history dependence, and it contaminated the
+reused-instance AC20 atlases.** Two AC20 builds' neutral baselines differed by +0.0422 ± 0.0042 on 20 of
 24 targets. The cause, measured afterwards on Morgan 1.1.1 through the reused
 Swift server:
 
@@ -930,10 +936,28 @@ and the pilot's was rendered after atlas row 127 while the scaled build's came
 after row 1023 — different histories, different neutral, the same shift on every
 target it is compared with. It also means **every AC20 atlas entry carries
 whatever was rendered before it**, and so does every AC20 candidate in a search on
-a reused instance. The committed AC20 atlases are left in place with that stated;
-rebuilding them with `--process-policy fresh` (one plugin process per render —
-about 2 s each against 0.3 s reused, from `match/renderer_au.py`'s own timings,
-so roughly 7× slower) is the fix, and is not done here.
+a reused instance.
+
+**The AC20 atlases are rebuilt one plugin process per render.** With
+`--process-policy fresh` every render starts from a new instance, so no entry
+carries another's history. Fresh renders are bit-identical to each other and to
+the first render of a new reused instance. Measured during these builds, a
+fresh render cost 1.8 s on an idle machine and about 15 s under load; the pilot
+took 5 minutes and the 1,024-point atlas 38, about 2.2 s per render.
+`benchmark_warm_start.py` and `benchmark_match.py --atlas` have no
+`--process-policy`, so against these atlases they render on a reused instance:
+warm-start refuses that as a renderer mismatch, and the match benchmark reports it
+as a caveat. The offset is gone: both builds' neutral baselines are now 2.7152, where the
+reused builds' differed by 0.042. The pilot scores 0.924 and the scaled atlas
+0.625, both beating neutral on 24 of 24; the scale step is 32.3% (median 0.897
+to 0.601), better on 23 of 24 targets, with one target 48.5% worse.
+
+```bash
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp ac20 \
+  --template samples/AC20_Atlas_Topology.xml --renderer swift \
+  --process-policy fresh --samples 1024 --held-out 24 --seconds 4 --seed 17 \
+  --held-out-seed 29 --out packs/morgan/response_atlas_ac20_1024.json
+```
 
 `--neutral-replicates` does not help AC20: its replicates agree with each other
 because they share a history. It exists for noise, which is Tone King's problem.
