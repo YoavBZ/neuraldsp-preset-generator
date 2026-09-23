@@ -1228,6 +1228,7 @@ def test_an_atlas_run_holds_the_topology_the_inversion_would_change(
     monkeypatch.setattr(invert, "invert", switching)
     held = _atlas_run(space, seed, atlas_probe, small_atlas, targets=1,
                       arms=("inversion", "atlas-inversion"))
+    assert len(held.outcomes) == 2
     assert all(o.selector_accuracy == 1.0 for o in held.outcomes), [
         (o.arm, o.selector_accuracy) for o in held.outcomes]
 

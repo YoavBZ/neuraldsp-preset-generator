@@ -1195,7 +1195,7 @@ print(f"source loudness: guitar {io.loudness_lufs(io.from_samples(guitar, 48000)
 EOF
 ```
 
-#### M7-1 at equal budget — an atlas start does not help a search
+#### M7-1 at equal budget — on SW50R an atlas start did not help a search
 
 Beating neutral settings is a claim about where a search starts. The question an
 atlas has to answer is whether a search that starts there *ends* closer, for the
@@ -1237,11 +1237,14 @@ same played targets. Mean / median `unpaired-v1`:
 | paired Wilcoxon p | 0.30 | **0.034** | 0.85 |
 | lookup closer than neutral | 12 of 12 | 9 of 12 | 11 of 12 |
 
-**No atlas made a search end measurably closer.** From its own noise probe the
-committed atlas leaned 10% closer, 8 of 12, not significant. Against played
-targets it made the search end 23% further away, 2 of 12 (p = 0.034) — a start
-closer than neutral on 9 of 12 that is nonetheless in the wrong place, which a
-search that stays near its start cannot leave. An atlas built from the played DI
+**No atlas made a search end measurably closer.** One amp, one played passage,
+twelve targets per run. From its own noise probe the committed atlas leaned 10%
+closer, 8 of 12, not significant at this size. Against played targets it made the
+search end 22% further away, 2 of 12 (p = 0.034). Its lookup was closer than
+neutral on 9 of 12, but the vector the search actually starts from is the lookup
+after the inversion, and that beat the neutral side's inversion on only 3 of 12
+(0.786 against 0.871) — and a search plausibly stays near where it starts. An
+atlas built from the played DI
 itself fixes the start — its lookup beat neutral on 11 of 12 and its inversion
 started 28% closer than the neutral one — and still ended exactly where the
 neutral search did (0.479 against 0.480, 6 of 12): 300 renders recover what the
@@ -1280,7 +1283,8 @@ and still not a better start for a search.
 `how-long-di-6s.wav` is six seconds of the user's dry DI from 10.66 s, mono at
 48 kHz, and the played-DI atlas was built from it; neither is in the repository.
 The three runs took 53, 83 and 80 minutes; the atlas took 3. The JSON files record
-every outcome, the backend, and the commit they ran at; their `ships` field is
+every outcome, the backend, and the pre-squash commit they ran at, whose `match/`
+is the one merged here; their `ships` field is
 `null`, because M4's gate on atlas-topology targets is not M4's verdict.
 
 #### M7-2 warm-start regressor — measured negative result
@@ -1893,8 +1897,10 @@ plays the DI through the new settings before capture) brought the back-to-back
 gap to 0.106 but left 0.17 to 0.63 after other settings. Through the noise probe
 the same gaps are 0.01 to 0.04. The spring reverb's own carry-over, by contrast,
 is a tail running into the next render, and the warm-up clears it completely.
-Something in the rack reverb keeps running between renders — plausibly modulated
-delay lines, as the tremolo's oscillator did — and a played, pitched DI exposes
+Whether the rack reverb's variation is state carried between renders — plausibly
+modulated delay lines, as the tremolo's oscillator was — or randomness inside
+each render is not settled: the control that would separate them, one fresh
+plugin process per render, was not run. Either way a played, pitched DI exposes
 it where the noise does not.
 
 The tremolo's fix — leave the effect alone when a render of the current settings

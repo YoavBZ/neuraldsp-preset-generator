@@ -133,7 +133,7 @@
     "parameter MAE is 0.2214 and selector accuracy 1.0000; neither is part of this gate, because the plugin's controls are not identifiable from its output and a match that sounds right with different numbers is still a match"
   ],
   "atlas": {
-    "path": "/private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/atlas_sw50r_howlong_128.json",
+    "path": "atlas_sw50r_howlong_128.json",
     "sha256": "6b8770a216100ff701654769de6dfb2eab8a74fc9c30e4f63f8cea0f0a2f88b8",
     "pack": "morgan",
     "amp": "sw50r",
