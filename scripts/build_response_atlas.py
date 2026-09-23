@@ -65,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--neutral-replicates", type=positive_int, default=1,
                         help="render the held-out neutral baseline this many times "
                              "and score each target against the median (default: 1, "
-                             "which is what every committed Morgan atlas used)")
+                             "which is what the Morgan atlases in git history used)")
     parser.add_argument("--process-policy", choices=("reuse", "fresh"),
                         default="reuse",
                         help="reuse one plugin instance, or start a fresh one per "

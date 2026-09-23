@@ -724,6 +724,10 @@ installed.
 
 ### M7 — Research, only after M5 lands
 
+> **Status:** M7-1's atlases were built, measured and then removed from the
+> repository — see "M7-1 closed" at the end of this section. M7-2 is a negative
+> result.
+
 In priority order, each independently justifiable:
 
 1. **Response atlas** — Latin-hypercube sample of the parameter space rendered
@@ -1287,32 +1291,6 @@ every outcome, the backend, and the pre-squash commit they ran at, whose `match/
 is the one merged here; their `ships` field is
 `null`, because M4's gate on atlas-topology targets is not M4's verdict.
 
-#### M7-1 closed — the committed atlases are removed
-
-The ten atlases were 44 of the plugin's 47 MB (8.7 of 9.5 MB compressed), every
-install downloaded them, and nothing used them: the skills had stopped starting
-from one, the listening work never did, and each was tied to the plugin version
-it was rendered on. Against that, every use the plan gave them failed its
-measurement — as a start for a search (above), as an achievability check on a
-played guitar ("M7-1 on a played guitar"), and as training data for a warm-start
-model (M7-2, below). So they are no longer in the repository, `show.py` no longer
-reports atlases, and the skills say not to build one to start a match from.
-
-The tools stay: `build_response_atlas.py`, `query_response_atlas.py`,
-`compare_response_atlases.py`, `benchmark_warm_start.py` and
-`benchmark_match.py --atlas` all take explicit files, and every build command in
-this section still rebuilds its atlas — 3 to 40 minutes each on an idle machine.
-The sections above describe files that are now in git history; to have them back
-exactly as measured:
-
-```bash
-git checkout 55490f9 -- 'packs/*/response_atlas_*.json'
-```
-
-Building an atlas on the synthetic chain without `--template` fails its own
-held-out step ("held-out renderer exposes a different sampled dimension set");
-with the bundled PR12 template it works, which is what the tests use.
-
 #### M7-2 warm-start regressor — measured negative result
 
 The warm-start experiment fits one standardized multi-output ridge model directly
@@ -1354,9 +1332,43 @@ was evaluated there.
 
 M7-2 consequently does **not** ship a regressor into the matching path. The result
 is still useful: the benchmark and bounded model remain as reproducible research
-infrastructure, while nearest lookup stays the product behavior. Any later model
+infrastructure, while nearest lookup stayed the product behavior — until the
+atlases were removed (M7-1 closed, below). Any later model
 must beat this gate on a new tuning seed before it earns a fresh untouched test
 seed; lowering parameter error alone is not sufficient.
+
+#### M7-1 closed — the committed atlases are removed
+
+The ten atlases were 44 of the plugin's 47 MB (8.7 of 9.5 MB compressed), every
+install downloaded them, and nothing used them: the skills had stopped starting
+from one, the listening work never did, and each was tied to the plugin version
+it was rendered on. Against that, every use the plan gave them failed its
+measurement — as a start for a search (above), as an achievability check on a
+played guitar ("M7-1 on a played guitar"), and as training data for a warm-start
+model (M7-2, below). So they are no longer in the repository, `show.py` no longer
+reports atlases, and the skills say not to build one to start a match from.
+
+The tools stay: `build_response_atlas.py`, `query_response_atlas.py`,
+`compare_response_atlases.py`, `benchmark_warm_start.py` and
+`benchmark_match.py --atlas` all take explicit files, and every build command in
+this section still rebuilds its atlas — 3 to 40 minutes each on an idle machine.
+The M7 sections above describe files that are now in git history, and so does
+`packs/morgan/warm_start_benchmark_pr12.json`, which stays as M7-2's record and
+names the PR12 atlas it was measured on. To have the atlases back exactly as
+measured, without staging them:
+
+```bash
+git restore --source=55490f9 --worktree -- 'packs/*/response_atlas_*.json'
+```
+
+`.gitignore` keeps them from being committed again. The three Morgan topologies
+they were built on are frozen in `tests/atlas_topologies.json` and checked against
+the templates, so the build commands above still rebuild the same atlases.
+
+On the synthetic chain, building without `--template` works for PR12 and AC20,
+fails its own held-out step for SW50R ("held-out renderer exposes a different
+sampled dimension set"), and refuses Tone King outright ("no live continuous
+dimensions"), because the synthetic chain does not model Tone King at all.
 
 ---
 
@@ -1450,7 +1462,7 @@ signal is off by a factor of two.
 | Overfit to one DI / one input level | High | Robustness re-rank at ±6 dB and on held-out excerpts is part of M4's exit, not an afterthought. |
 | Plugin renders non-deterministically | Low | Cache validates by render hash; a repeat-render check runs before every session. |
 | Search budget makes the feature unusably slow | Medium | D3 is addressed first; direct inversion removes most dimensions; budget tiers (preview 40–80 / standard 200–400) are user-facing. |
-| The target is unmatchable — layered guitars, mix-bus processing, mastering | **Certain, for commercial masters** | Say so. The atlas (M7-1) turns this from a vague disclaimer into a specific statement about what the plugin can reach. A preset is not a mix. |
+| The target is unmatchable — layered guitars, mix-bus processing, mastering | **Certain, for commercial masters** | Say so. The atlas (M7-1) was meant to turn this into a specific statement about what the plugin can reach; measured on a played guitar it could not, and it was removed. A preset is not a mix. |
 | Feature creep into the ML research track before the basics land | Medium | §4 non-goals; M7 is gated on M5. |
 
 ---

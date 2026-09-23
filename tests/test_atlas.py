@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import pathlib
-import shlex
 import subprocess
 import sys
 
@@ -243,8 +242,11 @@ def test_no_response_atlas_ships_with_the_plugin():
     package_data = (ROOT / "pyproject.toml").read_text().split(
         "[tool.setuptools.package-data]", 1)[1].split("\n[", 1)[0]
     assert "response_atlas" not in package_data
-    tracked = subprocess.run(
-        ["git", "ls-files", "packs"], cwd=ROOT, capture_output=True, text=True)
+    try:
+        tracked = subprocess.run(
+            ["git", "ls-files", "packs"], cwd=ROOT, capture_output=True, text=True)
+    except FileNotFoundError:
+        pytest.skip("git is not installed")
     if tracked.returncode != 0:
         pytest.skip("not a git checkout")
     assert not [line for line in tracked.stdout.splitlines()
@@ -575,3 +577,17 @@ def test_build_with_no_topology_applies_the_pins():
                            fixed=pinned)
     assert default["fixed_settings"] == explicit["fixed_settings"]
     assert default["dimensions"] == explicit["dimensions"]
+
+
+def test_the_templates_still_give_the_topologies_the_removed_atlases_recorded():
+    """The atlases are gone but their build commands are documented, and those only
+    rebuild the same atlases if each template still yields the fixed settings the
+    atlas recorded. Frozen from the files in git history (commit 55490f9)."""
+    frozen = json.loads((ROOT / "tests" / "atlas_topologies.json").read_text())
+    for amp, recorded in frozen.items():
+        space = space_module.build("morgan", amp=amp)
+        values, _ = _seed_from_template(ROOT / recorded["template"], space, "morgan")
+        recomputed = {atlas._path(key): value for key, value in
+                      atlas.tone_topology(values, space, amp).items()}
+        for key, value in recorded["fixed_settings"].items():
+            assert recomputed.get(key) == value, f"{amp}: {key}"

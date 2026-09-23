@@ -56,7 +56,7 @@ ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
         "tremolo/tremoloActive": False,
         "reverb/reverbActive": False,
         "delay/delayActive": False,
-        # Both cab mics on, which is what every committed Morgan atlas already has
+        # Both cab mics on, which is what every Morgan atlas built so far has
         # from the bundled example. Pinned because the neutral seed turns them off,
         # so an atlas built without a template would otherwise be the amp with no
         # speaker — and would render loud and non-silent, so nothing would refuse it.
@@ -82,7 +82,7 @@ ATLAS_PINS_BY_PACK: Dict[str, Dict[str, Any]] = {
         # attenuated power amp baked into every atlas point, the same failure as a
         # tone recipe switching SW50R's Bright off. Pinned to the pack's own
         # calibration neutral, so an atlas does not depend on which preset (if any)
-        # was the template. The committed Tone King atlases use no template at all.
+        # was the template. The Tone King atlases built so far used no template.
         "ampAttenuation": "0 dB",
         "ampHfc": "NORMAL",
         # Both cabinets on, as both of Morgan's cab mics are in its atlases. The

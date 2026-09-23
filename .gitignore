@@ -31,7 +31,7 @@ packs/*/.learned-tones.md.lock
 !samples/Example_Clean_PR12.xml
 # Each generated from the line above by `apply_spec.py` setting only `selectedAmp`, so
 # they carry no plugin content that file does not already ship. Committed because they
-# are the topologies `packs/morgan/response_atlas_*.json` record as their `--template`:
+# are the `--template` the Morgan atlases in git history record, and what rebuilds them:
 # an atlas whose provenance names a path nobody has cannot be reproduced.
 !samples/SW50R_Atlas_Topology.xml
 !samples/AC20_Atlas_Topology.xml
@@ -96,3 +96,8 @@ schema/
 
 # Agent worktrees created by the Agent tool; never part of the repo.
 .claude/worktrees/
+
+# Response atlases are research data, not plugin content: 8 MB each, and removed
+# from the repository in PR #55 (M7-1 in docs/tone-matching-plan.md). Build or
+# restore them locally without committing them again.
+packs/*/response_atlas_*.json
