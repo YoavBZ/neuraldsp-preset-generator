@@ -475,6 +475,62 @@ def test_toneking_state_template_rejects_a_different_pack(tmp_path):
         toneking_channel(preset(record("ampType", 0), record("ampType", 1)))
     with pytest.raises(AudioUnitError, match="invalid ampType"):
         toneking_channel(preset(record("ampType", 7)))
+    with pytest.raises(AudioUnitError, match="invalid ampType"):
+        toneking_channel(preset(record("ampType", 0.49)))
+    with pytest.raises(AudioUnitError, match="invalid ampType"):
+        toneking_channel(preset(record("ampType", 0.51)))
+
+
+def test_toneking_preflight_requires_complete_state_and_plugin_readback(tmp_path, monkeypatch):
+    import subprocess
+    from pathlib import Path
+
+    import match.renderer_preset as preset_renderer
+    from packs.loader import load_pack
+    from tests.test_records import preset, record
+
+    pack = load_pack("toneking")
+    def state(eq_band1=0.0, amp_view=0.0):
+        return preset(*(record(spec.key, None if spec.key == "drive1Treble"
+                               else 1 if spec.key == "ampType"
+                               else eq_band1 if spec.key == "eqBand1"
+                               else amp_view if spec.key == "ampView" else 0)
+                        for spec in pack.parameters.values()))
+
+    partial = tmp_path / "partial.xml"
+    partial.write_bytes(preset(record("ampType", 1)))
+    with pytest.raises(AudioUnitError, match="omits .*declared state slot"):
+        preset_renderer.ToneKingPresetRenderer(partial, workdir=tmp_path).verify_preset_state()
+
+    complete = tmp_path / "complete.xml"
+    complete.write_bytes(state())
+    (tmp_path / "au_probe").write_bytes(b"fake probe binary")
+    applied = [state()]
+
+    def fake_probe(command, **kwargs):
+        assert command[4] == "setstate"
+        assert Path(command[5]).read_text().strip() == str(tmp_path / "preset-preflight.bin")
+        capture = Path(command[6])
+        capture.mkdir(exist_ok=True)
+        (capture / "0.bin").write_bytes(applied[0])
+        return subprocess.CompletedProcess(command, 0, "[]", "")
+
+    monkeypatch.setattr(preset_renderer.subprocess, "run", fake_probe)
+    renderer = preset_renderer.ToneKingPresetRenderer(complete, workdir=tmp_path)
+    evidence = renderer.verify_preset_state()
+    assert evidence["compared_valued_controls"] == len(pack.parameters) - 1
+    assert evidence["compared_valueless_controls"] == 1
+    assert renderer.verify_preset_state() == evidence
+
+    applied[0] = state(eq_band1=0.25)
+    changed = preset_renderer.ToneKingPresetRenderer(complete, workdir=tmp_path)
+    with pytest.raises(AudioUnitError, match="changed preset control eqBand1"):
+        changed.verify_preset_state()
+
+    applied[0] = state(amp_view=1e-9)
+    changed_opaque = preset_renderer.ToneKingPresetRenderer(complete, workdir=tmp_path)
+    with pytest.raises(AudioUnitError, match="changed preset control ampView"):
+        changed_opaque.verify_preset_state()
 
 
 # --- deciding how the plugin has to be driven -------------------------------

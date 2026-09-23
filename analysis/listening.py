@@ -51,23 +51,38 @@ def verified_fresh_render(source: dict, audio_spec: dict) -> bool:
             sha256(audio_spec["path"]) != audio_spec.get("sha256")):
         raise ValueError("fresh render record does not prove exact audio and renderer policy")
     if pack_id == "toneking":
-        from match.renderer_preset import AudioUnitError, toneking_channel
+        from match.renderer_preset import (
+            AudioUnitError, complete_toneking_state, toneking_channel)
         preset = proof.get("preset") or {}
+        preflight = proof.get("state_preflight") or {}
+        di = proof.get("di") or {}
+        di_path = Path(di.get("path", "")).expanduser().resolve()
         preset_path = Path(preset.get("path", "")).expanduser().resolve()
         preset_sha = preset.get("sha256")
         if (proof.get("state_source") != "exact_preset_blob" or
                 not preset_path.is_file() or sha256(preset_path) != preset_sha or
+                preflight.get("schema") != "toneking-state-preflight-v1" or
+                preflight.get("source_sha256") != preset_sha or
+                not isinstance(preflight.get("retained_sha256"), str) or
+                len(preflight["retained_sha256"]) != 64 or
+                any(char not in "0123456789abcdef" for char in preflight["retained_sha256"]) or
+                not di_path.is_file() or sha256(di_path) != di.get("sha256") or
                 not proof["renderer"].get("renderer_build", "").startswith(
                     "audio-unit-preset-renderer-") or
                 f"state_template_sha256={preset_sha}" not in
                 proof["renderer"]["quality_mode"].split(";")):
             raise ValueError("Tone King render record does not prove the exact preset state")
         try:
-            actual_channel = toneking_channel(preset_path.read_bytes())
+            preset_blob = preset_path.read_bytes()
+            actual_channel = toneking_channel(preset_blob)
+            valued, valueless = complete_toneking_state(preset_blob)
         except (AudioUnitError, ValueError) as error:
             raise ValueError("Tone King render record does not contain a valid preset") from error
         if actual_channel != proof.get("amp_model"):
             raise ValueError("Tone King render record channel differs from its preset")
+        if (preflight.get("compared_valued_controls") != valued or
+                preflight.get("compared_valueless_controls") != valueless):
+            raise ValueError("Tone King render record preflight does not match its preset")
     return True
 
 

@@ -168,6 +168,7 @@ def main():
     renderer = (ToneKingPresetRenderer(source_path, process_policy="fresh") if exact_state
                 else AudioUnitRenderer(args.pack, process_policy="fresh"))
     try:
+        preflight = renderer.verify_preset_state() if exact_state else None
         metadata = renderer.metadata()
         if "process=fresh" not in metadata.quality_mode:
             raise ValueError("renderer did not report a fresh process")
@@ -194,6 +195,7 @@ def main():
                   "preset": ({"path": str(source_path), "sha256": source_sha}
                              if args.preset else None),
                   "state_source": "exact_preset_blob" if exact_state else "plugin_base_with_edits",
+                  "state_preflight": preflight,
                   "applied_settings": mapped,
                   "source_warnings": source_warnings,
                   "renderer": metadata.as_dict()}

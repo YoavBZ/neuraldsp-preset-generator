@@ -110,7 +110,16 @@ def test_refuses_unproven_ac20_and_changed_audio(tmp_path):
 
 
 def test_toneking_requires_exact_fresh_process_proof(tmp_path):
+    from packs.loader import load_pack
     from tests.test_records import preset, record as binary_record
+
+    pack = load_pack("toneking")
+
+    def synthetic_state(channel):
+        return preset(*(binary_record(
+            spec.key, None if spec.key == "drive1Treble"
+            else channel if spec.key == "ampType" else 0)
+            for spec in pack.parameters.values()))
 
     manifest_path, manifest = _fixture(tmp_path)
     first = manifest["alternatives"]["first"]
@@ -122,13 +131,18 @@ def test_toneking_requires_exact_fresh_process_proof(tmp_path):
     assert not out.exists()
 
     preset_path = tmp_path / "synthetic-toneking.xml"
-    preset_path.write_bytes(preset(binary_record("ampType", 1),
-                                   binary_record("drive1Treble")))
+    preset_path.write_bytes(synthetic_state(1))
     preset_sha = sha256(preset_path)
     proof = {"schema": "listening-fresh-render-v1", "pack": "toneking",
              "amp_model": "Lead Channel", "process_policy": "fresh",
              "state_source": "exact_preset_blob",
              "preset": {"path": str(preset_path), "sha256": preset_sha},
+             "di": {"path": first["path"], "sha256": first["sha256"]},
+             "state_preflight": {"schema": "toneking-state-preflight-v1",
+                                 "source_sha256": preset_sha,
+                                 "retained_sha256": preset_sha,
+                                 "compared_valued_controls": len(pack.parameters) - 1,
+                                 "compared_valueless_controls": 1},
              "renderer": {"renderer_build": "audio-unit-preset-renderer-test",
                           "quality_mode": f"process=fresh;state_template_sha256={preset_sha}"},
              "audio": {"path": first["path"], "sha256": first["sha256"]}}
@@ -143,9 +157,22 @@ def test_toneking_requires_exact_fresh_process_proof(tmp_path):
     assert key["objective_record"]["render_provenance"][label]["pack"] == "toneking"
     assert key["objective_record"]["render_provenance"][label]["amp_model"] == "Lead Channel"
 
-    preset_path.write_bytes(preset(binary_record("ampType", 0)))
+    proof["state_preflight"]["compared_valued_controls"] = 1
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "wrong-count")
+    assert rejected.returncode != 0 and "preflight does not match" in rejected.stderr
+    proof["state_preflight"]["compared_valued_controls"] = len(pack.parameters) - 1
+
+    proof["di"]["sha256"] = "incorrect"
+    proof_path.write_text(json.dumps(proof))
+    rejected = _run(manifest_path, tmp_path / "wrong-di")
+    assert rejected.returncode != 0 and "exact preset state" in rejected.stderr
+    proof["di"]["sha256"] = first["sha256"]
+
+    preset_path.write_bytes(synthetic_state(0))
     wrong_channel_sha = sha256(preset_path)
     proof["preset"]["sha256"] = wrong_channel_sha
+    proof["state_preflight"]["source_sha256"] = wrong_channel_sha
     proof["renderer"]["quality_mode"] = (
         f"process=fresh;state_template_sha256={wrong_channel_sha}")
     proof_path.write_text(json.dumps(proof))
@@ -155,13 +182,14 @@ def test_toneking_requires_exact_fresh_process_proof(tmp_path):
     preset_path.write_bytes(b"synthetic private preset fixture")
     invalid_sha = sha256(preset_path)
     proof["preset"]["sha256"] = invalid_sha
+    proof["state_preflight"]["source_sha256"] = invalid_sha
     proof["renderer"]["quality_mode"] = f"process=fresh;state_template_sha256={invalid_sha}"
     proof_path.write_text(json.dumps(proof))
     rejected = _run(manifest_path, tmp_path / "invalid-preset")
     assert rejected.returncode != 0 and "valid preset" in rejected.stderr
-    preset_path.write_bytes(preset(binary_record("ampType", 1),
-                                   binary_record("drive1Treble")))
+    preset_path.write_bytes(synthetic_state(1))
     proof["preset"]["sha256"] = preset_sha
+    proof["state_preflight"]["source_sha256"] = preset_sha
     proof["renderer"]["quality_mode"] = f"process=fresh;state_template_sha256={preset_sha}"
 
     proof["pack"] = "morgan"
