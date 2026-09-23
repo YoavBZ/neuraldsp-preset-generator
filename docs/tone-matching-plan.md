@@ -1126,10 +1126,9 @@ of these is measured, both skills tell agents not to start from an atlas.
 **A match run without `--probe-di` has the same mismatch**: every candidate is
 noise through the amp, compared with a guitar. M6 ran two such matches ("The two
 supplied WAVs through the M6 workflow": 2.133 → 1.287 and 2.215 → 1.424), but
-those scores are noise-against-guitar distances, so how much the mismatch costs
-a search has not been measured, and a falling score is not evidence of a closer
-tone. The match skill now says to ask for a DI first and to report a match made
-without one as weaker evidence.
+those scores are noise-against-guitar distances, and a falling score is not
+evidence of a closer tone. What the mismatch costs a search is measured in
+"Matching without a DI — measured", at the end of M7: a lot.
 
 Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,
 `reproducible=False`. The Morgan rows repeat to three decimals across four runs.
@@ -1369,6 +1368,71 @@ On the synthetic chain, building without `--template` works for PR12 and AC20,
 fails its own held-out step for SW50R ("held-out renderer exposes a different
 sampled dimension set"), and refuses Tone King outright ("no live continuous
 dimensions"), because the synthetic chain does not model Tone King at all.
+
+#### Matching without a DI — measured
+
+A match renders every candidate through a DI, and with none it uses the six-second
+noise-burst probe. `scripts/benchmark_search_signal.py` measures what that costs.
+Known settings rendered from one played passage stand in for the reference; the
+same pipeline — neutral settings, inversion, a 300-render search, the template's
+switches held — runs once per search signal with the same random numbers; and
+every answer is scored by rendering it from that passage, which is what the player
+hears through the preset.
+
+SW50R on its atlas topology template, 12 targets, targets and scoring through the
+played How Long passage (6 s from 10.66 s, −18.4 LUFS), Morgan 1.1.1 through the
+reused Swift server, `reproducible=False`. Mean / median `unpaired-v1`, and each
+signal paired against the target's own passage:
+
+| searched through | final distance | closer than own passage |
+|---|---:|---:|
+| the target's own passage — a paired DI | 0.471 / 0.349 | — |
+| the same player's Hotel California passage (−14.2 LUFS) | 0.916 / 0.933 | 0 of 12 |
+| the noise probe, as with no DI (−8.4 LUFS) | 1.479 / 1.301 | 0 of 12 |
+| the noise probe turned down 9.9 dB to the passage's loudness | 1.427 / 1.401 | 0 of 12 |
+
+Each of the last three is further away on every target (Wilcoxon p < 0.001). The
+same 12 targets, setting for setting, are the ones in the played-DI run of "M7-1
+at equal budget", where the neutral start scored 1.665 and the inversion alone
+0.871. That is another run, but a neutral render hardly moves between runs (the
+same targets' neutral scores differ by 0.046 on average between the two
+played-DI runs there), so the comparisons below pair them target by target.
+
+**Without a DI a search ends no closer than neutral settings.** Through the noise
+probe it ended at 1.48 against the neutral start's 1.665 on the same targets —
+closer on only 6 of 12 (paired Wilcoxon p = 0.47), so no gain is shown at all —
+and at three times the distance a search through the target's own passage
+reached. Its own best scores, measured through the noise, read 1.05 on average,
+0.43 under where its answers landed through the guitar; the same gap is 0.06 for
+a search through the target's own passage, so the noise misleads it by far more
+than the scale difference between the two scores (the search's includes a
+prior-deviation term and is its best render of about 300). A DI of a *different
+song* by the same player ended 38% closer than no DI (0.92) and closer than
+neutral on 11 of 12 (p = 0.007), though still no better on average than the
+inversion alone through the right DI (0.871). Matching the probe's loudness to
+the passage did not help on average — closer than plain noise on 6 of 12,
+p = 0.97 — although it moved individual targets by a lot in both directions, and
+only integrated loudness was matched, not peak level into the amp. What a played
+DI carries that noise lacks — pitch, sustain, a player's attack — is not
+separated here. One amp, one target passage, one player.
+
+So the match skill now tells the user plainly that a match made without a DI is
+close to a starting point, and that a DI of anything they play would change that.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
+  --signal same --signal other=hotel-di-6s.wav --signal noise \
+  --signal noise-at-di-level --targets 12 --budget 300 --workers 2 \
+  --json docs/search-signal-sw50r.json
+```
+
+`how-long-di-6s.wav` and `hotel-di-6s.wav` are six seconds of the user's dry DIs,
+from 10.66 s and 18.9 s, mono at 48 kHz; neither is in the repository. The run
+took 150 minutes. Its JSON records a pre-squash commit whose measurement code is
+the code merged here; since then only the worker path's error handling, the
+JSON's hash fields (it still says `sha256` for what is now `samples_sha256`), the
+docs and the tests changed, plus #56's help text and docs merged underneath.
 
 ---
 

@@ -123,15 +123,18 @@ workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
-matching without it. Without one, omit the flag; the tool uses a six-second
-sequence of decaying white-noise bursts and records that limitation. It is
-transient and aperiodic, not a played or pitched guitar part, and it is 6–10 dB
-louder than the two played DIs it has been measured against, so it drives the amp
-harder. Every candidate is then noise through the amp compared with a guitar —
-the mismatch that made the old response atlases unreliable. What that costs a
-search has not been measured, and a no-DI run's own scores are noise-against-guitar
-distances, so a falling score is not evidence the tone got closer. Report a match
-made without a DI as weaker evidence than one rendered from the user's playing.
+matching without it — a DI of anything they play, not necessarily this part.
+Measured on SW50R (one amp, one passage, one player), searches through the
+target's own passage ended at 0.47, through a different song by the same player
+at 0.92, and through the noise probe the tool uses without a DI at 1.48 — no
+closer on average than the neutral settings themselves (1.66), and further away
+on half the targets. Matching that probe's loudness to a guitar's did not help.
+Without a DI, omit the flag; the tool uses a six-second sequence of decaying
+white-noise bursts and records that limitation. Every candidate is then noise
+through the amp compared with a guitar, so a no-DI run's own scores are
+noise-against-guitar distances and a falling score is not evidence the tone got
+closer. Tell the user a match made without a DI is close to a starting point, not
+a measured match, and that a DI of their playing would change that.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
