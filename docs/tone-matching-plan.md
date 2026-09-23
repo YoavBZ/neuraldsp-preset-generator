@@ -1195,7 +1195,7 @@ print(f"source loudness: guitar {io.loudness_lufs(io.from_samples(guitar, 48000)
 EOF
 ```
 
-#### M7-1 at equal budget — on a played guitar an atlas start ended further away
+#### M7-1 at equal budget — on SW50R an atlas start did not help a search
 
 Beating neutral settings is a claim about where a search starts. The question an
 atlas has to answer is whether a search that starts there *ends* closer, for the
@@ -1204,55 +1204,64 @@ nested stages twice on each target — from the atlas topology's neutral setting
 (`recipe`, `inversion`, `full`) and from the atlas's nearest entry (`atlas`,
 `atlas-inversion`, `atlas-full`) — with the same budget and the same random
 numbers for both searches. Targets are sampled inside the atlas's fixed topology,
-so the two searches differ only in where they start. Odd targets run the atlas
-arms first, so render order cannot favour one side. One structural bias is left:
-targets are uniform over each control's range and the neutral start is the
-centre of it, which favours the neutral start on any control the search leaves
-frozen.
+and the atlas's switch and selector positions are put back after the inversion
+in every arm, so the two searches differ only in their starting values. Odd
+targets run the atlas arms first, so render order cannot favour one side. One
+structural bias is left: targets are uniform over each control's range and the
+neutral start is the centre of it, which favours the neutral start on any
+control the search leaves frozen.
 
-SW50R's 1,024-point atlas, 12 targets, a 300-render budget, two workers,
-Morgan 1.1.1 through the reused Swift server (`reproducible=False`). Once with the
-atlas's own 4 s noise-burst probe, once with the played How Long passage used in
-the section above (6 s from 10.66 s). Mean / median `unpaired-v1`:
+Holding the topology is not optional. The first runs let the inversion switch
+effects on, and in half of the played-DI searches it added a rack reverb the
+targets did not have — which on a played DI does not repeat itself on a reused
+instance (the rack reverb note further down), so the screen froze a third to
+four-fifths of the controls against its noise. Those runs pointed the same way
+as the ones below; the numbers here are the reruns with the topology held.
 
-| arm | noise probe | played DI |
-|---|---:|---:|
-| `recipe` (neutral settings) | 1.714 / 1.731 | 1.648 / 1.804 |
-| `inversion` | 0.739 / 0.707 | 0.859 / 0.799 |
-| `full` (neutral → inversion → search) | 0.330 / 0.329 | **0.449 / 0.436** |
-| `atlas` (lookup alone) | 0.640 / 0.633 | 1.320 / 1.247 |
-| `atlas-inversion` | 0.512 / 0.477 | 0.833 / 0.828 |
-| `atlas-full` (atlas → inversion → search) | 0.289 / 0.264 | **0.609 / 0.641** |
-| `atlas-full` closer than `full` | 9 of 12 | **3 of 12** |
-| lookup closer than neutral | 12 of 12 | 8 of 12 |
+SW50R, 12 targets, a 300-render budget, two workers, Morgan 1.1.1 through the
+reused Swift server (`reproducible=False`). Three runs: the committed 1,024-point
+noise-probe atlas against targets from its own noise probe, the same atlas
+against targets from the played How Long passage used above (6 s from 10.66 s),
+and a 128-point atlas built from that same played passage (below) against the
+same played targets. Mean / median `unpaired-v1`:
 
-**On the played DI, searches started at the atlas ended 36% further away** —
-closer on only 3 of 12, although the atlas entry started closer than neutral on
-8 of them (paired Wilcoxon p = 0.009; the win count alone, p = 0.15). **On the
-noise probe they leaned the other way**, 13% closer and 9 of 12, which at this
-size is not significant (Wilcoxon p = 0.20, sign test p = 0.15). One amp, one
-played passage, twelve targets. The lookup alone never beat either full search
-(0 of 12 both times), so an atlas is not a shortcut past the search either.
+| arm | noise atlas, noise targets | noise atlas, played targets | played atlas, played targets |
+|---|---:|---:|---:|
+| `recipe` (neutral settings) | 1.700 / 1.747 | 1.665 / 1.807 | 1.676 / 1.802 |
+| `inversion` | 0.713 / 0.665 | 0.871 / 0.766 | 0.886 / 0.801 |
+| `full` (neutral → inversion → search) | 0.311 / 0.326 | **0.447 / 0.453** | **0.480 / 0.429** |
+| `atlas` (lookup alone) | 0.621 / 0.633 | 1.319 / 1.329 | 0.865 / 0.710 |
+| `atlas-inversion` | 0.448 / 0.390 | 0.786 / 0.773 | 0.642 / 0.602 |
+| `atlas-full` (atlas → inversion → search) | 0.280 / 0.266 | **0.548 / 0.581** | **0.479 / 0.437** |
+| `atlas-full` closer than `full` | 8 of 12 | **2 of 12** | 6 of 12 |
+| paired Wilcoxon p | 0.30 | **0.034** | 0.85 |
+| lookup closer than neutral | 12 of 12 | 9 of 12 | 11 of 12 |
 
-**The played-DI result is tangled up with a reverb the inversion added.** In half
-of that run's searches — 12 of 24, six from each start, so both sides alike — the
-inversion had switched the rack reverb on: they cover 32 controls instead of 27,
-the five extra being the reverb's, while the targets'
-reverb came from the amp's own spring reverb, which the atlas sweeps. A switch
-the target does not have is what the selector-accuracy misses record (0.93–0.96,
-in seven probe-run targets and nine played-DI ones). With it on, repeated renders of one setting varied far
-more: the screen's freezing cutoff reached 0.06 to 0.71, against about 0.01 on
-the probe, so a third to four-fifths of the controls — some worth more than
-`full`'s whole final distance — were left at their starting values, in both
-searches, which plausibly costs more from a wrong-but-close start than from the
-centre. So the comparison measures the pipeline as it stands, and why a reverb makes
-repeated renders vary this much is not yet measured. The skills do not start from
-an atlas either way.
+**No atlas made a search end measurably closer.** One amp, one played passage,
+twelve targets per run. From its own noise probe the committed atlas leaned 10%
+closer, 8 of 12, not significant at this size. Against played targets it made the
+search end 22% further away, 2 of 12 (p = 0.034). Its lookup was closer than
+neutral on 9 of 12, but the vector the search actually starts from is the lookup
+after the inversion, and that beat the neutral side's inversion on only 3 of 12
+(0.786 against 0.871) — and a search plausibly stays near where it starts. An
+atlas built from the played DI
+itself fixes the start — its lookup beat neutral on 11 of 12 and its inversion
+started 28% closer than the neutral one — and still ended exactly where the
+neutral search did (0.479 against 0.480, 6 of 12): 300 renders recover what the
+better start gave, and building that atlas cost 128 renders before any search.
+The lookup alone never beat a full search in any run. Between runs, the same
+targets' `full` arm moved by 0.11 on average, so only the within-run pairings are
+comparisons.
 
-Both runs predate the regime gate in the tremolo rule above; their targets are
-`probe` regime, which the gate does not change. Their JSON's `ships` field is
-M4's gate computed on these atlas-topology targets, not M4's own, and means
-nothing here; the benchmark now writes `null` there in an atlas run.
+**The played-DI atlas.** Built exactly as the committed atlases, with the played
+passage as `--probe-di`: it clears its own gate, 0.799 against 1.991 neutral on
+24 of 24. Looked up against targets rendered from a *different* played passage —
+the Hotel California DI, 6 s from 18.9 s — it beat neutral on 12 of 16, where the
+committed noise atlases managed 8 (128 points) and 6 (1,024); but a few large
+misses left its mean worse than neutral (1.620 against 1.483). On its own passage
+it beat neutral on 15 of 16 (0.946 against 1.959), against 10 and 12 for the noise
+atlases. So a guitar-built atlas is a much better lookup than a noise-built one,
+and still not a better start for a search.
 
 ```bash
 .venv/bin/python scripts/benchmark_match.py --renderer swift \
@@ -1261,12 +1270,22 @@ nothing here; the benchmark now writes `null` there in an atlas run.
 .venv/bin/python scripts/benchmark_match.py --renderer swift \
   --atlas packs/morgan/response_atlas_sw50r_1024.json --probe-di how-long-di-6s.wav \
   --targets 12 --budget 300 --workers 2 --json docs/atlas-benchmark-sw50r-guitar.json
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --renderer swift \
+  --probe-di how-long-di-6s.wav --samples 128 --held-out 24 --seed 17 \
+  --held-out-seed 29 --out atlas_sw50r_howlong_128.json
+.venv/bin/python scripts/benchmark_match.py --renderer swift \
+  --atlas atlas_sw50r_howlong_128.json --probe-di how-long-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 \
+  --json docs/atlas-benchmark-sw50r-guitar-built-atlas.json
 ```
 
 `how-long-di-6s.wav` is six seconds of the user's dry DI from 10.66 s, mono at
-48 kHz; it is not in the repository, and the JSON records the relative path the
-run used. The two runs took 52 and 86 minutes. Both JSON files record every
-outcome, the backend, and the pre-squash commit they ran at.
+48 kHz, and the played-DI atlas was built from it; neither is in the repository.
+The three runs took 53, 83 and 80 minutes; the atlas took 3. The JSON files record
+every outcome, the backend, and the pre-squash commit they ran at, whose `match/`
+is the one merged here; their `ships` field is
+`null`, because M4's gate on atlas-topology targets is not M4's verdict.
 
 #### M7-2 warm-start regressor — measured negative result
 
@@ -1865,6 +1884,34 @@ runs, which is render noise. Like the delay rule, this cannot see a real tremolo
 at the DI's own rate, and the search can only find that one with the tremolo
 switch enumerated. Every benchmark above that renders its targets from the
 probe — M4's and M5's included — was measured with the old rule.
+
+**The rack reverb has the same shape of problem, and the same fix does not work
+for it.** `reverb_settings` switches the rack reverb on for any confident tail of
+a second or more, and an amp's own spring reverb makes one: from twelve SW50R
+atlas-topology targets with the rack reverb off, it switched the rack reverb on
+for 7 through the noise probe and 8 through the played How Long DI. On the
+plugin the rack reverb then does not repeat itself. Identical settings through
+the played DI, rendered back to back on a reused instance, came out 0.435 apart
+in `unpaired-v1`, and 0.27 to 0.57 after other settings; a 6 s warm-up (which
+plays the DI through the new settings before capture) brought the back-to-back
+gap to 0.106 but left 0.17 to 0.63 after other settings. Through the noise probe
+the same gaps are 0.01 to 0.04. The spring reverb's own carry-over, by contrast,
+is a tail running into the next render, and the warm-up clears it completely.
+Whether the rack reverb's variation is state carried between renders — plausibly
+modulated delay lines, as the tremolo's oscillator was — or randomness inside
+each render is not settled: the control that would separate them, one fresh
+plugin process per render, was not run. Either way a played, pitched DI exposes
+it where the noise does not.
+
+The tremolo's fix — leave the effect alone when a render of the current settings
+through the same DI already carries it — was tried and not adopted, because one
+tail reading cannot tell a spring from a rack reverb. With the neutral render
+reading a confident 1.30 s tail through the probe, it stopped all 7 spurious
+switch-ons and also dropped 11 of 11 targets that really had a rack reverb;
+through the played DI the neutral render's tail was not confident (0.165), so it
+changed nothing either way. The rule is unchanged. The atlas benchmark holds its
+topology fixed instead ("M7-1 at equal budget"), because what it measures is
+starting values.
 
 Two structural mistakes in the conditioning, both found by checking the second pack:
 

@@ -1206,3 +1206,34 @@ def test_the_atlas_verdict_refuses_a_comparison_resting_on_survivors():
     helps, reasons = result.atlas_verdict()
     assert helps is False
     assert "failed" in reasons[0]
+
+
+def test_an_atlas_run_holds_the_topology_the_inversion_would_change(
+        space, seed, atlas_probe, small_atlas, monkeypatch):
+    """An atlas run compares starting values inside one fixed topology. The
+    inversion switching an effect on is a different experiment — on the plugin it
+    put a rack reverb into half the searches of the first played-DI run — so the
+    atlas's switch positions go back after it, in both pipelines. The ordinary
+    benchmark keeps whatever the inversion decides."""
+    from match import invert
+
+    real = invert.invert
+
+    def switching(*args, **kwargs):
+        result = real(*args, **kwargs)
+        result.values["tremolo/tremoloActive"] = True
+        result.values["reverb/reverbActive"] = True
+        return result
+
+    monkeypatch.setattr(invert, "invert", switching)
+    held = _atlas_run(space, seed, atlas_probe, small_atlas, targets=1,
+                      arms=("inversion", "atlas-inversion"))
+    assert len(held.outcomes) == 2
+    assert all(o.selector_accuracy == 1.0 for o in held.outcomes), [
+        (o.arm, o.selector_accuracy) for o in held.outcomes]
+
+    free = B.compare_baselines(SyntheticRenderer(), space, atlas_probe, seed,
+                               targets=1, budget=30, arms=("inversion",),
+                               rng=np.random.default_rng(3), amp=AMP)
+    assert free.outcomes[0].selector_accuracy < 1.0, (
+        "without an atlas the inversion's switches stand")

@@ -93,10 +93,10 @@ reasons:
 - **A search started from one finished worse.** With the same 300-render
   budget, SW50R searches started at the atlas's nearest entry ended further from
   targets rendered from a played DI than searches started at neutral settings —
-  0.609 against 0.449, closer on only 3 of 12 — although the atlas entry started
-  closer on 8 of them. One amp, one played passage, twelve targets. On the noise
-  probe its gates were measured on, the same comparison leaned the other way
-  (9 of 12, not significant at that size).
+  0.548 against 0.447, closer on only 2 of 12 — although the atlas entry itself
+  was closer than neutral on 9 of them. Even an atlas built from that played DI
+  itself ended no closer than the normal search (0.479 against 0.480), after
+  costing 128 renders to build. One amp, one played passage, twelve targets each.
 
 If the user asks for an atlas start anyway, this is the query. It writes ordinary
 specs; apply one with `apply_spec.py` and pass the result to `match_preset.py` as

@@ -507,10 +507,12 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
             "a benchmark would sample no target settings"
         )
     atlas_dimensions = None
+    topology = None
     if atlas_document is not None:
         atlas_dimensions = _atlas_dimensions(
             atlas_document, space, pack_id, amp, profile, supported)
         seed = atlas_seed(space, seed, atlas_document, atlas_dimensions)
+        topology = atlas_topology(space, atlas_document)
     scorer = search.Evaluator(renderer, fingerprint(
         io.from_samples(probe_di, renderer.metadata().sample_rate),
         regime="probe", excerpt_s=None), probe_di, space, profile=profile,
@@ -596,7 +598,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                     profile, invert, search, copy.deepcopy(search_state),
                     pack_id, amp, switches, selectors,
                     reference_audio=rendered.audio,
-                    atlas_document=atlas_document)
+                    atlas_document=atlas_document, topology=topology)
             except (ValueError, RuntimeError) as e:
                 outcome.failed = True
                 outcome.error = f"{type(e).__name__}: {e}"
@@ -828,7 +830,8 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
              invert, search, rng, pack_id: str, amp: Optional[str],
              switches: Optional[Sequence[str]] = None,
              selectors: Optional[Sequence[str]] = None,
-             reference_audio=None, atlas_document: Optional[Mapping] = None):
+             reference_audio=None, atlas_document: Optional[Mapping] = None,
+             topology: Optional[Mapping] = None):
     """One arm's answer for one target, and how many renders it took.
 
     The three arms are **nested**, which is what makes the comparison mean anything:
@@ -847,6 +850,13 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
 
     The atlas arms are the same three stages from a different start: the atlas's
     nearest stored entry to the target, which costs no renders to find.
+
+    `topology`, in an atlas run, is the atlas's switch and selector positions, put
+    back after the inversion in every arm. The question an atlas run asks is about
+    starting values inside one fixed topology, and the inversion switching an
+    effect on is a different experiment: measured, it put a rack reverb into half
+    the searches of the first played-DI run, and on a reused instance that reverb
+    does not repeat itself.
     """
     start = seed
     if arm in ATLAS_ARMS:
@@ -857,6 +867,8 @@ def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
     inverted, spent = _invert_from(renderer, target, probe_di, space, start, profile,
                                    invert, search, pack_id, amp,
                                    reference_audio=reference_audio)
+    if topology:
+        inverted = invert.apply_to(inverted, topology, space)
     if arm in ("inversion", "atlas-inversion"):
         return inverted, spent, []
 
@@ -955,6 +967,18 @@ def atlas_seed(space: Space, seed: Mapping, document: Mapping,
     return invert.apply_to(
         seed, atlas_module.neutral_settings(document["fixed_settings"], dimensions),
         space)
+
+
+def atlas_topology(space: Space, document: Mapping) -> Dict[str, Any]:
+    """The atlas's discrete positions — every switch and selector it fixed.
+
+    What an atlas run holds still. Continuous controls are left out, because the
+    inversion calculating them is the point of the inversion stage.
+    """
+    discrete = {dimension.path for dimension in space.dimensions
+                if not dimension.continuous}
+    return {path: value for path, value in document["fixed_settings"].items()
+            if path in discrete}
 
 
 def atlas_start(space: Space, seed: Mapping, document: Mapping, target,
