@@ -102,20 +102,41 @@ renderer's own measurements), and the only thing that removes it. Other amps
 and Tone King do not need it; Tone King's variation is per-render noise, which
 the replicated shortlist scoring already handles.
 
+**Pass it too when Morgan's tremolo or rack reverb is on** — `tremolo/tremoloActive`
+or `reverb/reverbActive` true in the template, or switched on by the inversion
+(the report lists what it calculated) or by `--enumerate`; if the inversion turned
+one on, rerun with fresh. Not the amp's own spring reverb: its carry-over is a
+short tail, at most 0.15 in the same measurements. Both carry state from one
+render to the next on a reused instance, likely a modulation oscillator, so the
+same settings come out differently each time and the search ranks noise:
+- the tremolo's renders of one setting came out several dB apart, measured
+  through the noise probe, so it needs fresh whatever the DI;
+- the rack reverb's landed 0.1 to 0.6 apart through a played DI and 0.01 to 0.04
+  through the noise probe, so it needs fresh when you match with a played DI.
+  Only a new instance resets it; warm-up and `isolate` do not.
+
+The cost is AC20's: about 1.5 s of plugin start added to every render on an idle
+machine, far more under load.
+
 Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
-matching without it. Without one, omit the flag; the tool uses a six-second
-sequence of decaying white-noise bursts and records that limitation. It is
-transient and aperiodic, not a played or pitched guitar part, and it is 6–10 dB
-louder than the two played DIs it has been measured against, so it drives the amp
-harder. Every candidate is then noise through the amp compared with a guitar —
-the mismatch that made the old response atlases unreliable. What that costs a
-search has not been measured, and a no-DI run's own scores are noise-against-guitar
-distances, so a falling score is not evidence the tone got closer. Report a match
-made without a DI as weaker evidence than one rendered from the user's playing.
+matching without it — a DI of anything they play, not necessarily this part.
+Measured on SW50R (one amp, one player, two songs), searches through the
+target's own passage ended at 0.44–0.47, through the player's other song at
+0.76–0.96 — closer than noise on at least 11 of 12 targets in every run, either
+way round — and through the noise probe the tool uses without a DI at 1.43–1.53,
+no closer on average than the neutral settings themselves (1.66 on the How Long
+targets). Neither matching that probe's loudness to a guitar's nor replacing it
+with a synthetic strummed guitar helped reliably.
+Without a DI, omit the flag; the tool uses a six-second sequence of decaying
+white-noise bursts and records that limitation. Every candidate is then noise
+through the amp compared with a guitar, so a no-DI run's own scores are
+noise-against-guitar distances and a falling score is not evidence the tone got
+closer. Tell the user a match made without a DI is close to a starting point, not
+a measured match, and that a DI of their playing would change that.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform

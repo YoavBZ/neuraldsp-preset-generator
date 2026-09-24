@@ -155,9 +155,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="with --renderer swift: reuse one plugin instance, or start "
                          "a fresh one per render. On Morgan's AC20 a reused instance's "
                          "output depends on what it rendered before, so the same "
-                         "candidate scores differently along different search paths; "
-                         "fresh removes that at roughly 7x the time per render "
-                         "(default: reuse)")
+                         "candidate scores differently along different search paths, "
+                         "and Morgan's tremolo and rack reverb carry state between "
+                         "renders too; fresh removes that at roughly 7x the time per "
+                         "render (default: reuse)")
     ap.add_argument("--enumerate", dest="enumerated", action="append", default=[],
                     metavar="PATH",
                     help="try every position of this switch or selector, each with "
