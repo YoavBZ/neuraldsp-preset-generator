@@ -11,7 +11,8 @@ from analysis import io
 from analysis.compare import Objectives, compare, scalar
 from analysis.fingerprint import fingerprint
 from analysis.listening import attach_verdict, score_record, agreement_report, sha256
-from analysis.listening import verified_fresh_ac20
+from analysis.listening import common_term_sensitivity, verified_fresh_ac20
+from analysis.compare import PROFILE_PATH
 
 
 @pytest.fixture
@@ -38,6 +39,54 @@ def test_exact_profile_parity_and_separate_questions(record):
     assert result["objective_scoring"]["prediction"] == "A"
     assert result["agreement"]["closer"]["status"] == "agree"
     assert result["agreement"]["preferred"]["status"] == "disagree"
+    sensitivity = result["objective_scoring"]["common_term_sensitivity"]
+    assert sensitivity["use_for_agreement"] is False
+    assert sensitivity["prediction"] == result["objective_scoring"]["prediction"]
+    for label in ("A", "B"):
+        assert sensitivity["distances"][label] == pytest.approx(
+            result["objective_scoring"]["alternatives"][label]["distance"])
+
+
+def test_common_terms_are_only_a_diagnostic_when_coverage_differs():
+    scoring = {
+        "schema": "listening-objective-v1", "profile": "unpaired-v1",
+        "profile_sha256": sha256(PROFILE_PATH),
+        "alternatives": {
+            "A": {"objectives": {"profile": "unpaired-v1", "detail": {
+                "timbre": {"band_shape": 1.0, "tilt": 5.0},
+                "ambience": {"rt60": 20.0, "delay_present": 1.0},
+            }}},
+            "B": {"objectives": {"profile": "unpaired-v1", "detail": {
+                "timbre": {"band_shape": 2.0},
+                "ambience": {"delay_present": 1.0},
+            }}},
+        },
+    }
+    sensitivity = common_term_sensitivity(scoring)
+    assert sensitivity["use_for_agreement"] is False
+    assert sensitivity["excluded_terms"] == {
+        "A": {"timbre": ["tilt"], "ambience": ["rt60"]}, "B": {}}
+    assert sensitivity["shared_terms"] == {
+        "timbre": ["band_shape"], "ambience": ["delay_present"]}
+    assert sensitivity["distances"] == pytest.approx({"A": 1.0, "B": 5 / 3})
+    assert sensitivity["prediction"] == "A"
+
+    scoring["alternatives"]["B"]["objectives"]["detail"] = {}
+    unavailable = common_term_sensitivity(scoring)
+    assert unavailable["status"] == "no_common_weighted_terms"
+    assert unavailable["prediction"] is None
+    scoring["profile_sha256"] = "changed"
+    with pytest.raises(ValueError, match="profile differs"):
+        common_term_sensitivity(scoring)
+
+    scoring["profile_sha256"] = sha256(PROFILE_PATH)
+    scoring["profile"] = "paired-v1"
+    with pytest.raises(ValueError, match="must use unpaired-v1"):
+        common_term_sensitivity(scoring)
+    scoring["profile"] = "unpaired-v1"
+    scoring["alternatives"]["B"]["objectives"]["profile"] = "paired-v1"
+    with pytest.raises(ValueError, match="alternatives disagree"):
+        common_term_sensitivity(scoring)
 
 
 def test_post_listening_verdict_uses_frozen_scores_without_audio_analysis(record, monkeypatch):
@@ -121,11 +170,29 @@ def test_unequal_objective_coverage_is_not_decisive(record, monkeypatch, missing
     assert not scored["objective_scoring"]["prediction_comparable"]
     assert scored["agreement"]["closer"] == {"status": "unequal_coverage", "agrees": None}
     assert scored["agreement"]["preferred"] == {"status": "unequal_coverage", "agrees": None}
+    assert scored["objective_scoring"]["common_term_sensitivity"]["use_for_agreement"] is False
     # A previously written agreement must not bypass the report's coverage gate.
     scored["agreement"]["closer"] = {"status": "agree", "agrees": True}
     report = agreement_report([scored])
     assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
     assert report["target_groups"]["song"]["closer"]["diagnostic_counts_not_independent_n"] == {"unequal_coverage": 1}
+
+
+def test_frozen_coverage_inspector_does_not_need_audio(record, tmp_path):
+    import pathlib
+    import subprocess
+    import sys
+
+    frozen = score_record(record)
+    key = tmp_path / "private-key.json"
+    key.write_text(json.dumps({"objective_record": frozen}))
+    for spec in (record["reference"], *record["alternatives"].values()):
+        pathlib.Path(spec["path"]).unlink()
+    script = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "inspect_listening_coverage.py"
+    done = subprocess.run([sys.executable, str(script), "--record", str(key)],
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert json.loads(done.stdout) == frozen["objective_scoring"]["common_term_sensitivity"]
 
 
 def test_missing_reference_regime_is_not_inferred(record):
