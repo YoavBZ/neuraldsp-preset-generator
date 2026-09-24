@@ -121,6 +121,66 @@ def _audio(spec):
     return audio
 
 
+def common_term_sensitivity(scoring: dict) -> dict:
+    """Compare frozen A/B terms on shared coverage, strictly as a diagnostic.
+
+    A missing term may itself be evidence of a different sound. Dropping it is
+    therefore *not* a corrected objective, a new prediction for agreement, or
+    a reason to relabel an inconclusive comparison. No audio is rescored here.
+    """
+    if scoring.get("schema") != "listening-objective-v1":
+        raise ValueError("a frozen listening-objective-v1 score is required")
+    if scoring.get("profile_sha256") != sha256(PROFILE_PATH):
+        raise ValueError("the frozen score's loss profile differs from the current profile")
+    alternatives = scoring.get("alternatives") or {}
+    if set(alternatives) != {"A", "B"}:
+        raise ValueError("frozen scores for both A and B are required")
+    weights = load_profile(scoring["profile"])["weights"]
+    detail = {label: alternatives[label]["objectives"]["detail"]
+              for label in ("A", "B")}
+    shared, omitted = {}, {"A": {}, "B": {}}
+    totals = {"A": 0.0, "B": 0.0}
+    used_weight = 0.0
+    for dimension, weight in weights.items():
+        weight = float(weight)
+        if dimension == "level" or weight <= 0:
+            continue
+        terms = {label: detail[label].get(dimension, {}) for label in ("A", "B")}
+        common = sorted(set(terms["A"]) & set(terms["B"]))
+        for label in ("A", "B"):
+            missing = sorted(set(terms[label]) - set(common))
+            if missing:
+                omitted[label][dimension] = missing
+        if not common:
+            continue
+        shared[dimension] = common
+        for label in ("A", "B"):
+            values = [float(terms[label][term]) for term in common]
+            if not all(math.isfinite(value) for value in values):
+                raise ValueError("frozen objective terms must be finite")
+            totals[label] += weight * (sum(values) / len(values))
+        used_weight += weight
+    if used_weight:
+        distances = {label: totals[label] / used_weight for label in ("A", "B")}
+        gap = distances["B"] - distances["A"]
+        prediction = ("indistinguishable" if math.isclose(gap, 0.0, rel_tol=0,
+                                                          abs_tol=1e-9)
+                      else "A" if gap > 0 else "B")
+    else:
+        distances, gap, prediction = {"A": None, "B": None}, None, None
+    return {
+        "schema": "listening-common-terms-v1",
+        "status": "available" if used_weight else "no_common_weighted_terms",
+        "use_for_agreement": False,
+        "basis": "frozen per-term scores only; no audio rescore or change to the primary objective",
+        "shared_terms": shared,
+        "excluded_terms": omitted,
+        "distances": distances,
+        "distance_B_minus_A": gap,
+        "prediction": prediction,
+    }
+
+
 def score_record(record: dict, cache: dict | None = None) -> dict:
     """Return a score sidecar; preserve the caller's verdict and source descriptors.
 
@@ -189,6 +249,8 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         "coverage_equal": coverage_equal,
         "term_coverage_equal": term_coverage_equal,
     }
+    result["objective_scoring"]["common_term_sensitivity"] = common_term_sensitivity(
+        result["objective_scoring"])
     provenance = record.get("render_provenance") or {}
     known_models = {"morgan": {"AC20", "PR12", "SW50R"},
                     "toneking": {"Rhythm Channel", "Lead Channel"}}

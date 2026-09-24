@@ -36,6 +36,23 @@ distances, not full optimization scores. Matching weights are not changed.
 If the alternatives have different measurable objectives or component terms,
 the distances remain diagnostic but the objective comparison is inconclusive;
 it does not count toward the agreement fraction.
+The sidecar also records a **common-term sensitivity check**: it recomputes
+each distance from only term names measured on both alternatives, retaining the
+same dimension weights and excluding `level`. This is a post-hoc diagnostic,
+not the match objective or a replacement prediction. An absent term can itself
+reflect an audible difference, and dropping it does not make the original
+comparison valid for agreement. The primary distances, verdict, and target
+count remain unchanged. For an older immutable key, inspect its frozen terms
+without opening or modifying it:
+
+```sh
+python scripts/inspect_listening_coverage.py --record PRIVATE_KEY.json
+```
+
+The inspector needs no raw audio but cannot verify that the archived audio was
+the audio heard. It refuses to recompute with a changed loss profile. In Tone
+King, the RT60 estimator has also produced implausible, history-sensitive values
+on guitar passages; a common-term check is not a repair for that estimator.
 The builder scores cropped and gained source samples before montage encoding;
 24-bit FLAC quantization can make the decoded listening file differ minutely.
 
