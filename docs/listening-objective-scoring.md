@@ -47,9 +47,12 @@ measurement gap. The gap is part of the experiment. Reference regime must be
 explicit: generated probe, paired DI, isolated/separated stem, or full mix.
 
 `log_blind_verdict.py` writes a separate immutable objective/verdict sidecar per
-listener/session, leaving the original blind key untouched. Closeness and
-preference remain separate. Missing preferences are not guessed. Unknown target
-groups stay `unassigned` and are excluded from target-level summaries.
+listener/session, leaving the original blind key untouched. Ask only which
+alternative is closer. Historical preference fields remain readable for schema
+compatibility, but new rounds leave them null and never infer them. The command-line
+audit summary displays closeness only; archived JSON retains historical preference
+results. Unknown target groups stay `unassigned` and are excluded from target-level
+summaries.
 If a raw source is later unavailable, the intact hashed audition still permits
 the subjective verdict; its objective sidecar is marked unscored.
 

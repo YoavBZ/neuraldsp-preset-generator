@@ -4214,9 +4214,9 @@ requiring the user to open the key. It verifies the montage hash and recomputes 
 binding over the summary, spec, store run/trial, effective settings, renderer and
 excerpt before resolving the blind label and calling the validated verdict path. A
 reused run directory or edited result is therefore refused rather than receiving a
-stale listening verdict. A separate optional
-`--prefer` label is recorded in the comment as structured `preference=...` context;
-it does not replace the closeness verdict that future objective calibration needs.
+stale listening verdict. An earlier logger also accepted a separate preference
+answer; historical records retain it, but the current listening protocol asks and
+records only closeness to the reference.
 
 No plugin-quality result is claimed here. The implementation is workflow
 infrastructure, tested end to end on the synthetic renderer: completed match,
@@ -4239,8 +4239,9 @@ human guitar-tone comparisons require source verification and recorded playing.
 Private recording paths, content hashes, preset names, run identifiers, audio,
 answer keys, and individual listener responses belong in local ignored artifacts.
 Keep the public plan limited to the protocol and results explicitly approved for
-publication. Closeness and preference are separate questions, and repeated
-comparisons on one target must not be counted as independent targets.
+publication. Ask only which alternative is closer to the reference; do not
+solicit a preference. Repeated comparisons on one target must not be counted as
+independent targets.
 
 ## 13. Reading list, in the order it becomes relevant
 

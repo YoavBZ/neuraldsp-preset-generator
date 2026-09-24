@@ -163,6 +163,8 @@ def test_cli_retains_failed_record_but_discards_stale_scores(record, tmp_path):
     report = json.loads((output / "report.json").read_text())
     assert report["scored_count"] == 0
     assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
+    printed_summary = json.loads(done.stdout.split("\n", 1)[1])
+    assert printed_summary == {"closer": report["summary"]["closer"]}
 
 
 def test_cli_refuses_unignored_private_audit_inside_git(record, tmp_path):

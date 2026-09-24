@@ -1,11 +1,12 @@
-"""Bind separate closer/preferred answers to an immutable backed audition.
+"""Bind a closeness answer to an immutable backed audition.
 
     python scripts/log_backed_verdict.py --key runs/.../private-key.json \
-      --closer A --preferred B
+      --closer A
 
 Run only after the listener answers. No audio is rescored and the blind key is
 not revealed on stdout. The separate private sidecar preserves the original
-audition and the prediction frozen before listening.
+audition and the prediction frozen before listening. The audit can still read
+historical preference answers, but this logger accepts only closeness.
 """
 
 from __future__ import annotations
@@ -43,8 +44,6 @@ def main() -> None:
     parser.add_argument("--key", required=True, type=pathlib.Path)
     parser.add_argument("--closer", required=True,
                         choices=("A", "B", "indistinguishable"))
-    parser.add_argument("--preferred", required=True,
-                        choices=("A", "B", "indistinguishable", "none"))
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
     key_path = args.key.expanduser().resolve()
@@ -65,8 +64,7 @@ def main() -> None:
     output_path = key_path.parent / "verdict.json"
     if output_path.exists() or output_path.is_symlink():
         raise ValueError("verdict already exists; never overwrite a listener answer")
-    verdict = {"closer": args.closer,
-               "preferred": None if args.preferred == "none" else args.preferred}
+    verdict = {"closer": args.closer, "preferred": None}
     scored = attach_verdict(key["objective_record"], verdict)
     record = {"schema": "prospective-backed-verdict-v1",
               "audition_key": {"path": str(key_path), "sha256": sha256(key_path)},
@@ -74,7 +72,7 @@ def main() -> None:
               "verdict": verdict, "listener_notes": args.notes,
               "frozen_scored_record": scored}
     _publish_verdict(output_path, json.dumps(record, indent=2, allow_nan=False) + "\n")
-    print(f"recorded closer={args.closer}, preferred={args.preferred} in {output_path}")
+    print(f"recorded closer={args.closer} in {output_path}")
     print("objective agreement is in the private verdict; no audio was rescored")
 
 
