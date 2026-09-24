@@ -188,12 +188,13 @@ def main() -> None:
                       f"{entry['paired_targets']}, "
                       f"{100 * entry['mean_change_fraction']:+.0f}%"
                       + (f", p={p:.3f}" if p is not None else ""))
-        print(f"{name:20} {entry['objective_mean']!s:>8} / "
-              f"{entry['objective_median']!s:<8} {entry['search_belief_mean']!s:>14} "
-              f"{entry['parameter_mae']!s:>10} "
-              f"{entry['inversion_objective_mean']!s:>16} {paired:>22}")
+        shown = {key: "—" if value is None else value for key, value in entry.items()}
+        print(f"{name:20} {shown['objective_mean']!s:>8} / "
+              f"{shown['objective_median']!s:<8} {shown['search_belief_mean']!s:>14} "
+              f"{shown['parameter_mae']!s:>10} "
+              f"{shown['inversion_objective_mean']!s:>16} {paired:>22}")
     neutral = summary[reference]["neutral_objective_mean"]
-    print(f"{'neutral start':20} {neutral!s:>8}")
+    print(f"{'neutral start':20} {'—' if neutral is None else neutral!s:>8}")
     print("\nobjective is the answer rendered from the target DI, mean / median; "
           "search belief is the search's own best score through its own signal; "
           "inversion alone and the neutral start are rendered from the target DI "

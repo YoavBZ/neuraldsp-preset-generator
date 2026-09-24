@@ -1398,12 +1398,14 @@ at equal budget", where the neutral start scored 1.665 and the inversion alone
 same targets' neutral scores differ by 0.046 on average between the two
 played-DI runs there), so the comparisons below pair them target by target.
 
-**Without a DI a search ends no closer than neutral settings.** Through the noise
+**On SW50R, without a DI a search ends no closer than neutral settings** (on
+Tone King a measurement fault leaves it open — see below). Through the noise
 probe it ended at 1.48 against the neutral start's 1.665 on the same targets —
-closer on only 6 of 12 (paired Wilcoxon p = 0.47), so no gain is shown at all —
-and at three times the distance a search through the target's own passage
-reached. Its own best scores, measured through the noise, read 1.05 on average,
-0.43 under where its answers landed through the guitar; the same gap is 0.06 for
+closer on only 6 of 12
+(paired Wilcoxon p = 0.47), so no gain is shown at all — and at three times
+the distance a search through the target's own passage reached. Its own best
+scores, measured through the noise, read 1.05 on average, 0.43 under where its
+answers landed through the guitar; the same gap is 0.06 for
 a search through the target's own passage, so the noise misleads it by far more
 than the scale difference between the two scores (the search's includes a
 prior-deviation term and is its best render of about 300). A DI of a *different
@@ -1487,49 +1489,73 @@ the first run was repeated on Tone King with the same two DIs: the rhythm
 channel on the pack's neutral seed topology (no template: amp, both cabs and the
 EQ, no pedals, no rack effects), the same 12-target, 300-render design, scored
 through How Long, Tone King 1.0.3 through the reused Swift server,
-`reproducible=False`. The neutral start and the inversion alone were not arms of
-that run; they were scored afterwards on the same 12 targets, rebuilt from the
-same seed in a separate process (method and rows in the baselines JSON), so as in
-the SW50R comparisons above they are paired target by target across two runs.
+`reproducible=False`. The noise-at-DI-level arm was left out. Mean / median
+`unpaired-v1`:
 
 | searched through | final distance | closer than noise |
 |---|---:|---:|
 | the target's own passage — a paired DI | 0.308 / 0.245 | 12 of 12 |
 | the same player's Hotel California passage | 0.609 / 0.605 | 12 of 12 |
 | the noise probe, as with no DI | 1.056 / 1.072 | — |
-| *no search:* neutral settings | 1.660 / 1.434 | 2 of 12 |
-| *no search:* the inversion alone, through the target's own passage | 0.635 / 0.596 | 12 of 12 |
-| *no search:* the inversion alone, through the noise probe | 1.500 / 1.227 | 2 of 12 |
+| *no search:* neutral settings | 1.690 / 1.482 | 2 of 12 |
+| *no search:* the inversion alone, through the target's own passage | 0.640 / 0.612 | 12 of 12 |
+| *no search:* the inversion alone, through the noise probe | 1.458 / 1.242 | 2 of 12 |
+
+The search rows are one run. The benchmark did not yet score the neutral start
+or the inversion alone, so it was taught to (every target now records both
+beside its searches, in the instance that rendered it, and `--no-search` scores
+only those), and the three *no search* rows come from a separate `--no-search`
+pass over the same 12 targets, paired with the search run target by target.
 
 **The ordering replicates.** The other song's DI ended 42% closer than noise, on
 every target (Wilcoxon p < 0.001; SW50R: 38%), and the target's own passage
 closer than both on every target. As on SW50R, a search through the other song
 ended about where the inversion alone through the right DI did (0.609 against
-0.635, closer on 6 of 12, p = 0.91).
+0.640, closer on 7 of 12, p = 0.79).
 
-**What does not replicate is "no closer than neutral".** Here the search through
-noise ended 36% closer than the neutral start (10 of 12, p = 0.007), where on
-SW50R it was 6 of 12. Its own inversion through noise was no better than neutral
-(7 of 12, p = 0.34), so the gain is the search's. Its best scores through the
-noise read 0.95, 0.11 under where its answers landed through the guitar, against
-0.43 on SW50R: noise misled this search less. So without a DI a search is not
-useless on every amp, but on both it ended far from what a DI of any song by the
-same player reached — 1.06 against 0.61 here, 1.48 against 0.92 on SW50R. The
-match skill's advice stands, now on two amps; the neutral comparison is stated
-per amp.
+**Whether a search without a DI beats neutral is not settled here**, and the
+reason is a measurement fault rather than the amp. Taken at face value, the
+search through noise ended 38% closer than neutral (10 of 12, p = 0.009), unlike
+SW50R's 6 of 12. But the fingerprint's RT60 on this six-second passage is not a
+reverb measurement: the neutral render — no rack reverb, the amp's spring at
+half — reads 7–8 s at confidence about 0.43, and target 10's own render read
+27.0 s at 0.85 in one process and 5.1 s at 0.20 in a fresh one. Depending on
+which side of the 0.3 confidence gate two renders fall, the `rt60` term —
+|Δ| / 0.4 s, with no cap — is absent or worth 15 to 50. Tracing a one-worker
+`--no-search` pass render by render, it was 15–50 in the neutral scores of four
+of the 12 targets (4, 7, 8 and 10: three targets reading about 1 s against the
+neutral render's 7–8 s, and target 10's 27 s), and on target 10 it alone took
+the neutral score from 0.67 — its value in fresh processes, where the term
+dropped out — to 3.0. Which targets it hits depends on the instance's history:
+target 4's neutral score was 2.36–2.37 in five baseline passes and 1.63 in a
+sixth. On the eight targets it did not hit in that trace, the noise search
+was closer than neutral on 6 of 8, two of them ties, 23% on average (p = 0.15) —
+no gain shown, as on SW50R — while the other song's DI still beat noise on all 8.
+
+The same fault can move any unpaired score, a real match's included, whenever
+the reference and a candidate both pass the gate with estimates seconds apart.
+It is not fixed here: bounding that term changes the objective every number in
+this document was measured with, and needs its own measurement first — starting
+with how often it fires on SW50R, whose runs above were not traced.
 
 ```bash
 .venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
   --renderer swift --target-di how-long-di-6s.wav --signal same \
   --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
   --workers 2 --json docs/search-signal-toneking-rhythm.json
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --no-search \
+  --workers 2 --json docs/search-signal-toneking-rhythm-baselines.json
 ```
 
-The run took 103 minutes from 9944e67, whose measurement code is unchanged on
-this branch. The neutral and inversion-only scores are in
-`docs/search-signal-toneking-rhythm-baselines.json`; each is the mean of three
-observations, as the run scores its answers. The two processes rendered the
-targets separately, so those targets are other samples of the same settings.
+The search run took 103 minutes from 9944e67, before the benchmark scored
+baselines, so its JSON has neither those fields nor the `search` flag and is
+schema `search-signal-benchmark-1`; the baseline pass took 3 minutes from
+db48981, the pre-squash commit that added `--no-search`, and its JSON records a
+scratchpad path in its `command`. A second two-worker baseline pass agreed with it to 0.009 per target
+on average for the neutral scores (at most 0.08) and 0.009–0.013 for the
+inversion-only ones (at most 0.14).
 
 ---
 
