@@ -1482,6 +1482,55 @@ written to a file and passed as `synth=PATH`, so their JSON names that signal
 JSON uses that version's field names (`sha256` for the samples hash) and records
 scratchpad paths in its `command`.
 
+**On a second amp — Tone King's rhythm channel.** Everything above is SW50R, so
+the first run was repeated on Tone King with the same two DIs: the rhythm
+channel on the pack's neutral seed topology (no template: amp, both cabs and the
+EQ, no pedals, no rack effects), the same 12-target, 300-render design, scored
+through How Long, Tone King 1.0.3 through the reused Swift server,
+`reproducible=False`. The neutral start and the inversion alone were not arms of
+that run; they were scored afterwards on the same 12 targets, rebuilt from the
+same seed in a separate process (method and rows in the baselines JSON), so as in
+the SW50R comparisons above they are paired target by target across two runs.
+
+| searched through | final distance | closer than noise |
+|---|---:|---:|
+| the target's own passage — a paired DI | 0.308 / 0.245 | 12 of 12 |
+| the same player's Hotel California passage | 0.609 / 0.605 | 12 of 12 |
+| the noise probe, as with no DI | 1.056 / 1.072 | — |
+| *no search:* neutral settings | 1.660 / 1.434 | 2 of 12 |
+| *no search:* the inversion alone, through the target's own passage | 0.635 / 0.596 | 12 of 12 |
+| *no search:* the inversion alone, through the noise probe | 1.500 / 1.227 | 2 of 12 |
+
+**The ordering replicates.** The other song's DI ended 42% closer than noise, on
+every target (Wilcoxon p < 0.001; SW50R: 38%), and the target's own passage
+closer than both on every target. As on SW50R, a search through the other song
+ended about where the inversion alone through the right DI did (0.609 against
+0.635, closer on 6 of 12, p = 0.91).
+
+**What does not replicate is "no closer than neutral".** Here the search through
+noise ended 36% closer than the neutral start (10 of 12, p = 0.007), where on
+SW50R it was 6 of 12. Its own inversion through noise was no better than neutral
+(7 of 12, p = 0.34), so the gain is the search's. Its best scores through the
+noise read 0.95, 0.11 under where its answers landed through the guitar, against
+0.43 on SW50R: noise misled this search less. So without a DI a search is not
+useless on every amp, but on both it ended far from what a DI of any song by the
+same player reached — 1.06 against 0.61 here, 1.48 against 0.92 on SW50R. The
+match skill's advice stands, now on two amps; the neutral comparison is stated
+per amp.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
+  --workers 2 --json docs/search-signal-toneking-rhythm.json
+```
+
+The run took 103 minutes from 9944e67, whose measurement code is unchanged on
+this branch. The neutral and inversion-only scores are in
+`docs/search-signal-toneking-rhythm-baselines.json`; each is the mean of three
+observations, as the run scores its answers. The two processes rendered the
+targets separately, so those targets are other samples of the same settings.
+
 ---
 
 ## 8. Dependency and CI policy
