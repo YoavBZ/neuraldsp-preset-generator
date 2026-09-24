@@ -321,3 +321,22 @@ def test_the_v2_profiles_are_v1_without_the_rt60_term():
     assert min(short.time_fx["rt60_confidence"], long.time_fx["rt60_confidence"]) >= 0.3
     assert "rt60" in compare(short, long, profile="unpaired-v1").detail["ambience"]
     assert "rt60" not in compare(short, long, profile="unpaired-v2").detail["ambience"]
+
+
+def test_later_profiles_leave_the_frozen_file_alone(tmp_path, monkeypatch):
+    """-v1 numbers and frozen listening scores depend on `loss_profiles.json`
+    byte for byte, so newer profiles live beside it — and a name defined in two
+    files is refused rather than silently shadowed."""
+    import json
+
+    from analysis import compare as C
+
+    frozen = json.loads(C.PROFILE_PATH.read_text())
+    assert "unpaired-v2" not in frozen and "paired-v2" not in frozen
+    assert {"unpaired-v2", "paired-v2"} <= set(list_profiles())
+
+    clash = tmp_path / "clash.json"
+    clash.write_text(json.dumps({"unpaired-v1": frozen["unpaired-v1"]}))
+    monkeypatch.setattr(C, "PROFILE_PATHS", (C.PROFILE_PATH, clash))
+    with pytest.raises(ProfileError, match="defined twice"):
+        list_profiles()

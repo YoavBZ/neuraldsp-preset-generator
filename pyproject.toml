@@ -45,7 +45,7 @@ packages = ["format", "packs", "analysis", "match", "scripts"]
 # FileNotFoundError, and `packs/*/manifest.json` — the file the whole project
 # calls its contract — was missing too.
 [tool.setuptools.package-data]
-analysis = ["loss_profiles.json"]
+analysis = ["loss_profiles.json", "loss_profiles-v2.json"]
 packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json", "*/drive_curve.json", "*/warm_start_benchmark_*.json"]
 scripts = ["au_probe.swift", "au_render.swift", "au_render_server.swift"]
 

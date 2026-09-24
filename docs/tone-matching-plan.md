@@ -1652,12 +1652,14 @@ in this section carries it too, mostly as a fixed offset per target, since
 Morgan's renders nearly repeat.
 
 **The -v2 profiles are the -v1 ones without `rt60_s`**, so the term never enters
-`ambience`; nothing else changes. `match_preset.py` and `compare_audio.py`
-default to them, and the match skill names `paired-v2` for a reamp. The research
-tools keep their -v1 defaults so every command above reproduces its numbers;
-pass `--loss-profile unpaired-v2` to measure afresh. What -v2 gives up is a
-reverb measurement it never had: reverb goes unmeasured by the loss until
-something that tracks it replaces this.
+`ambience`; nothing else changes. They live in `analysis/loss_profiles-v2.json`,
+beside a `loss_profiles.json` left byte for byte as it was: every -v1 number
+reproduces from it, and frozen listening scores are checked against its hash.
+`match_preset.py` and `compare_audio.py` default to them, and the match skill
+names `paired-v2` for a reamp. The research tools keep their -v1 defaults so
+every command above reproduces its numbers; pass `--loss-profile unpaired-v2` to
+measure afresh. What -v2 gives up is a reverb measurement it never had: reverb
+goes unmeasured by the loss until something that tracks it replaces this.
 
 Two measurements of what that changes, on Tone King's 12 targets. **Stability:**
 the `--no-search` baselines, once with one worker and once with two — the same
