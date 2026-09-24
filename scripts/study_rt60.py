@@ -112,6 +112,9 @@ def main() -> None:
     if (args.pack, amp) not in CASES:
         die(f"reverb steps are defined for {', '.join('/'.join(k) for k in CASES)}, "
             f"not {args.pack}/{amp}")
+    if args.switches and not invert._declares_all(args.pack, REVERB_CONTROLS):
+        die(f"the inversion does not set {args.pack}'s reverb, so --switches has "
+            f"nothing to ask")
     commit = _source_commit()
     dis, described = {}, {}
     for spec in args.di:
@@ -168,9 +171,6 @@ def main() -> None:
         if close is not None:
             close()
 
-    if args.switches and not invert._declares_all(args.pack, REVERB_CONTROLS):
-        die(f"the inversion does not set {args.pack}'s reverb, so --switches has "
-            f"nothing to ask")
     tracks, switches = [], []
     fresh = _renderer(args.renderer, args.pack, process_policy="fresh")
     try:

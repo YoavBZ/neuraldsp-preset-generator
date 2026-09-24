@@ -33,7 +33,7 @@ def test_the_study_records_where_the_term_fires_and_what_each_reverb_reads(tmp_p
     assert done.returncode == 0, done.stderr
 
     written = json.loads(out.read_text())
-    assert written["schema"] == "rt60-study-1"
+    assert written["schema"] == "rt60-study-2"
     assert len(written["fires"]) == 1
     assert len(written["fires"][0]["term_target_vs_neutral"]) == 2
     assert "term_target_vs_itself" in written["fires"][0]
@@ -60,3 +60,29 @@ def test_the_study_refuses_a_passage_named_twice(tmp_path):
     done = _cli("--amp", "sw50r", "--di", f"a={a}", "--di", f"a={a}", "--targets", "1")
     assert done.returncode != 0
     assert "given twice" in done.stderr
+
+
+def test_the_study_asks_whether_the_reverb_rule_tells_reverb_from_none(tmp_path):
+    a = tmp_path / "a.wav"
+    fx.write_wav(a, fx.plucks(seconds=1.5, gap=0.6, seed=3) * 0.3)
+    out = tmp_path / "rt60.json"
+    done = _cli("--amp", "sw50r", "--template",
+                ROOT / "samples" / "SW50R_Atlas_Topology.xml", "--di", f"a={a}",
+                "--targets", "1", "--switches", "2", "--json", out)
+    assert done.returncode == 0, done.stderr
+    assert "switched the rack reverb on for" in done.stdout
+
+    rows = json.loads(out.read_text())["switches"]
+    assert [row["reverb"] for row in rows] == [False, True, False, True]
+    assert all(row["decay"] is None for row in rows if not row["reverb"])
+    assert all(1.0 <= row["decay"] <= 20.0 for row in rows if row["reverb"])
+    assert all("switched_on" in row["a"] for row in rows)
+
+
+def test_the_switches_question_needs_a_pack_whose_inversion_sets_the_reverb(tmp_path):
+    a = tmp_path / "a.wav"
+    fx.write_wav(a, fx.plucks(seconds=1.0, gap=0.6, seed=3) * 0.3)
+    done = _cli("--pack", "toneking", "--amp", "rhythm", "--di", f"a={a}",
+                "--targets", "1", "--switches", "1")
+    assert done.returncode != 0
+    assert "does not set" in done.stderr
