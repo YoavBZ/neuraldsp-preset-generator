@@ -204,8 +204,23 @@ class Fingerprint:
             )
         if float(self.time_fx.get("delay_confidence") or 0.0) < 0.3:
             notes.append("no delay repeat was detected above the noise")
-        if float(self.time_fx.get("rt60_confidence") or 0.0) < 0.4:
-            notes.append("reverb decay is uncertain: release segments disagree")
+        rt60 = self.time_fx.get("rt60_s")
+        rt60_agreement = float(self.time_fx.get("rt60_confidence") or 0.0)
+        if rt60 is None:
+            notes.append("no usable release decay was measured")
+        elif rt60_agreement >= 0.3:
+            # compare._ambience and invert.reverb_settings both accept 0.3. The
+            # number measures agreement among release slopes, not whether those
+            # slopes belong to a room. Even a direct guitar DI can clear the gate.
+            notes.append(
+                f"the {float(rt60):.2f} s RT60 estimate has release-slope agreement "
+                f"{rt60_agreement:.2f}, but agreeing dry notes can produce the same "
+                "reading. It is not proof of reverb; check any ambience score or "
+                "reverb setting based on it by listening"
+            )
+        else:
+            notes.append("release-slope decay is uncertain: only one usable "
+                         "segment supported it or the measured slopes disagreed")
         if (self.modulation.get("am_rate_hz") is not None
                 and float(self.modulation.get("am_confidence") or 0.0) < 0.75):
             notes.append(
