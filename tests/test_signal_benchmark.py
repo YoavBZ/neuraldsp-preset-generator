@@ -136,7 +136,62 @@ def test_the_inversion_cannot_change_the_topology(
     monkeypatch.setattr(B, "scorer_scores", recording)
     _run(space, topology, target, named, targets=1)
 
-    assert answers == [False, False]
+    # The neutral start, then each arm's inversion alone and its answer.
+    assert answers == [False] * 5
+
+
+def test_the_baselines_are_scored_beside_the_search_on_the_same_targets(
+        space, topology, signals, monkeypatch):
+    """The neutral start and each signal's inversion alone are heard through the
+    target's own signal, and the inversion scored is the vector that signal's
+    search starts from — so a search is paired with its own start, in-run."""
+    from match import search as search_module
+
+    target, named = signals
+    real_search, real_scores = search_module.search, B.scorer_scores
+    starts, scored = [], []
+
+    def recording_search(renderer, target_fp, probe, space_, start, **kwargs):
+        starts.append(dict(start))
+        return real_search(renderer, target_fp, probe, space_, start, **kwargs)
+
+    def recording_scores(scorer, target_fp, values, *args, **kwargs):
+        scored.append(dict(values))
+        return real_scores(scorer, target_fp, values, *args, **kwargs)
+
+    monkeypatch.setattr(search_module, "search", recording_search)
+    monkeypatch.setattr(B, "scorer_scores", recording_scores)
+    outcomes = _run(space, topology, target, named, targets=1)
+
+    assert scored[0] == topology["seed"], "the neutral start is scored first"
+    assert starts == [scored[1], scored[3]], "each inversion is its search's start"
+    neutral = {o.neutral_objective for o in outcomes}
+    assert len(neutral) == 1 and None not in neutral, "one neutral score per target"
+    assert all(o.inversion_objective is not None for o in outcomes)
+    summary = SB.summarise(outcomes, reference="same")
+    assert summary["other"]["neutral_objective_mean"] == round(neutral.pop(), 4)
+
+
+def test_without_the_search_only_the_baselines_are_scored(
+        space, topology, signals, monkeypatch):
+    from match import search as search_module
+
+    target, named = signals
+
+    def refusing(*args, **kwargs):
+        raise AssertionError("no search runs with run_search=False")
+
+    monkeypatch.setattr(search_module, "search", refusing)
+    outcomes = _run(space, topology, target, named, run_search=False)
+
+    assert len(outcomes) == 4 and not any(o.failed for o in outcomes)
+    assert all(o.objective is None and o.search_belief is None for o in outcomes)
+    assert all(o.inversion_objective is not None and o.neutral_objective is not None
+               for o in outcomes)
+    summary = SB.summarise(outcomes, reference="same")
+    assert summary["other"]["objective_mean"] is None
+    assert "paired_against" not in summary["other"], "nothing to pair without answers"
+    assert summary["other"]["inversion_objective_mean"] is not None
 
 
 def test_arms_take_turns_going_first(space, topology, signals):
@@ -190,7 +245,8 @@ def test_the_cli_writes_every_signal_and_pairs_them_with_the_first(tmp_path):
     assert done.returncode == 0, done.stderr
 
     written = json.loads(out.read_text())
-    assert written["schema"] == "search-signal-benchmark-1"
+    assert written["schema"] == "search-signal-benchmark-2"
+    assert written["search"] is True and written["budget"] == 30
     assert written["reference"] == "same"
     assert list(written["signals"]) == ["same", "noise", "noise-at-di-level"]
     assert written["summary"]["noise"]["paired_against"] == "same"
@@ -200,6 +256,23 @@ def test_the_cli_writes_every_signal_and_pairs_them_with_the_first(tmp_path):
         signals["same"]["lufs"], abs=0.1)
     assert signals["noise"]["lufs"] > signals["same"]["lufs"] + 3
     assert len(written["outcomes"]) == 3
+    assert all(o["inversion_objective"] is not None and o["neutral_objective"]
+               is not None for o in written["outcomes"])
+
+
+def test_the_cli_can_score_only_the_baselines(tmp_path):
+    target = tmp_path / "target.wav"
+    fx.write_wav(target, fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3)
+    out = tmp_path / "baselines.json"
+    done = _cli("--amp", AMP, "--target-di", target, "--signal", "same",
+                "--signal", "noise", "--targets", "1", "--no-search", "--json", out)
+    assert done.returncode == 0, done.stderr
+    assert "no search" in done.stdout and "neutral start" in done.stdout
+
+    written = json.loads(out.read_text())
+    assert written["search"] is False and written["budget"] is None
+    assert all(o["objective"] is None and o["inversion_objective"] is not None
+               for o in written["outcomes"])
 
 
 @pytest.mark.parametrize("spec, message", [

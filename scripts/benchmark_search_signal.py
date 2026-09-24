@@ -12,6 +12,8 @@ reference recording. Each --signal runs the same pipeline — neutral settings,
 inversion, search — with the same budget and the same random numbers, and every
 answer is scored by rendering it from --target-di: what the player hears through
 the preset. The template's switches and selectors are held fixed throughout.
+Each target's neutral start and each signal's inversion alone are scored the same
+way, beside the searches; --no-search scores only those.
 
 Signals:
   same               --target-di itself: a paired DI, the upper bound
@@ -40,7 +42,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import die, guarded, positive_int, probe_di
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
-SCHEMA = "search-signal-benchmark-1"
+SCHEMA = "search-signal-benchmark-2"   # 2: the neutral and inversion-only scores
 NO_DI_SECONDS = 6.0   # what match_preset.py renders through when no DI is given
 
 
@@ -62,6 +64,9 @@ def build_parser() -> argparse.ArgumentParser:
                          "the reference")
     ap.add_argument("--targets", type=positive_int, default=12)
     ap.add_argument("--budget", type=positive_int, default=300)
+    ap.add_argument("--no-search", action="store_true",
+                    help="score only each target's neutral start and each signal's "
+                         "inversion alone: minutes, where the searches take hours")
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--loss-profile", default="unpaired-v1")
     ap.add_argument("--workers", type=positive_int, default=1,
@@ -156,7 +161,8 @@ def main() -> None:
             rng=np.random.default_rng(args.seed), pack_id=args.pack, amp=amp,
             progress=progress, workers=args.workers,
             renderer_factory=(None if args.workers < 2
-                              else lambda: _renderer(args.renderer, args.pack)))
+                              else lambda: _renderer(args.renderer, args.pack)),
+            run_search=not args.no_search)
     finally:
         close = getattr(renderer, "close", None)
         if close is not None:
@@ -166,11 +172,12 @@ def main() -> None:
     summary = signal_benchmark.summarise(outcomes, reference)
     caveat = _backend_caveat(metadata)
     elapsed = time.time() - started
-    print(f"\n{args.targets} targets, budget {args.budget}, {args.pack}/{amp}, "
+    budget = "no search" if args.no_search else f"budget {args.budget}"
+    print(f"\n{args.targets} targets, {budget}, {args.pack}/{amp}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, {elapsed:.0f}s; "
           f"answers scored through {args.target_di}\n")
     header = (f"{'signal':20} {'objective':>18} {'search belief':>14} "
-              f"{'param MAE':>10} {'vs ' + reference:>22}")
+              f"{'param MAE':>10} {'inversion alone':>16} {'vs ' + reference:>22}")
     print(header)
     print("-" * len(header))
     for name, entry in summary.items():
@@ -183,9 +190,14 @@ def main() -> None:
                       + (f", p={p:.3f}" if p is not None else ""))
         print(f"{name:20} {entry['objective_mean']!s:>8} / "
               f"{entry['objective_median']!s:<8} {entry['search_belief_mean']!s:>14} "
-              f"{entry['parameter_mae']!s:>10} {paired:>22}")
+              f"{entry['parameter_mae']!s:>10} "
+              f"{entry['inversion_objective_mean']!s:>16} {paired:>22}")
+    neutral = summary[reference]["neutral_objective_mean"]
+    print(f"{'neutral start':20} {neutral!s:>8}")
     print("\nobjective is the answer rendered from the target DI, mean / median; "
-          "search belief is the search's own best score through its own signal")
+          "search belief is the search's own best score through its own signal; "
+          "inversion alone and the neutral start are rendered from the target DI "
+          "too, with no search")
     if caveat:
         print(f"\n  {caveat}.")
 
@@ -201,7 +213,8 @@ def main() -> None:
                           "sha256": hashlib.sha256(
                               args.target_di.read_bytes()).hexdigest()},
             "signals": described, "reference": reference,
-            "targets": args.targets, "budget": args.budget, "seed": args.seed,
+            "targets": args.targets, "search": not args.no_search,
+            "budget": None if args.no_search else args.budget, "seed": args.seed,
             "loss_profile": args.loss_profile, "workers": args.workers,
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,
             "summary": summary,

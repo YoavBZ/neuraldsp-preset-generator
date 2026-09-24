@@ -14,6 +14,12 @@ The topology is fixed: a template's switches and selectors, put back after the
 inversion in every arm, so the arms differ only in the continuous values their
 searches found. The targets are fingerprinted as `isolated_stem`, as a recording
 would be, so no inversion rule treats them as sharing a DI with any search.
+
+Each target also records, in the same instance, what the pipeline gives without
+its search: the neutral start, and each signal's inversion alone — the vector
+that signal's search starts from. Those are the baselines a search has to beat,
+and scoring them beside it means no comparison has to pair two processes' renders
+of the same settings.
 """
 
 from __future__ import annotations
@@ -46,6 +52,11 @@ class SignalOutcome:
     # Beside `objective` it shows how far that signal misled it.
     search_belief: Optional[float] = None
     parameter_mae: Optional[float] = None
+    # Without the search, heard the same way as `objective`: this signal's
+    # inversion alone, and the neutral start — one score per target, repeated on
+    # each of its outcomes so every row can be paired on its own.
+    inversion_objective: Optional[float] = None
+    neutral_objective: Optional[float] = None
     renders: int = 0
     failed: bool = False
     error: Optional[str] = None
@@ -86,13 +97,15 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                            profile: str = "unpaired-v1", rng=None,
                            pack_id: str = "morgan", amp: Optional[str] = None,
                            progress=None, workers: int = 1,
-                           renderer_factory=None) -> List[SignalOutcome]:
+                           renderer_factory=None,
+                           run_search: bool = True) -> List[SignalOutcome]:
     """Run the pipeline once per search signal on every target.
 
     `signals` maps a name to the samples a search renders its candidates through.
     `topology` is `fixed_topology(...)`. Each target is scored in the instance
     that rendered it, and every arm's final score renders its answer from
-    `target_di` — never from the signal it searched with.
+    `target_di` — never from the signal it searched with. With `run_search`
+    false only the baselines are scored: minutes, where the searches take hours.
     """
     from analysis import io, require
 
@@ -137,17 +150,32 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                                              rendered.metadata.sample_rate),
                              regime="isolated_stem", excerpt_s=None)
         observations = search.shortlist_replicates(own.metadata())
+
+        def heard(values) -> Optional[float]:
+            scores = benchmark.scorer_scores(scorer, target, values,
+                                             observations=observations)
+            return sum(scores) / len(scores) if scores else None
+
+        # Shared by every arm, so its renders are counted in none of them.
+        neutral = heard(seed)
         rotation = index % len(names)
         order = names[rotation:] + names[:rotation]
         outcomes = []
         for position, name in enumerate(order):
             outcome = SignalOutcome(signal=name, target_index=index,
-                                    position=position)
+                                    position=position, neutral_objective=neutral)
             try:
                 inverted, spent = benchmark._invert_from(
                     own, target, signals[name], space, seed, profile, invert,
                     search, pack_id, amp)
                 inverted = invert.apply_to(inverted, discrete, space)
+                before = scorer.renders
+                outcome.inversion_objective = heard(inverted)
+                spent += scorer.renders - before
+                if not run_search:
+                    outcome.renders = spent
+                    outcomes.append(outcome)
+                    continue
                 found = search.search(own, target, signals[name], space, inverted,
                                       budget=budget, profile=profile, shortlist=1,
                                       rng=copy.deepcopy(search_state))
@@ -245,12 +273,16 @@ def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, An
             "objective_median": _median(row.objective for row in good),
             "search_belief_mean": _mean(row.search_belief for row in good),
             "parameter_mae": _mean(row.parameter_mae for row in good),
+            "inversion_objective_mean": _mean(row.inversion_objective for row in good),
+            "neutral_objective_mean": _mean(row.neutral_objective for row in good),
             "renders": sum(row.renders for row in rows.values()),
         }
         if name != reference and reference in by:
             pairs = [(rows[i].objective, by[reference][i].objective)
                      for i in rows if i in by[reference]
-                     and not rows[i].failed and not by[reference][i].failed]
+                     and not rows[i].failed and not by[reference][i].failed
+                     and rows[i].objective is not None
+                     and by[reference][i].objective is not None]
             if pairs:
                 mine = [a for a, _ in pairs]
                 theirs = [b for _, b in pairs]
