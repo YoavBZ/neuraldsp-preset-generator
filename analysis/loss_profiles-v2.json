@@ -13,7 +13,7 @@
     "scores (analysis/listening.py) are checked against its hash."
   ],
   "unpaired-v2": {
-    "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted. As -v1, without the rt60 term: the RT60 estimate does not measure reverb on played material.",
+    "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted. As -v1, without the rt60 term: on played material the RT60 estimate reads seconds apart between passages and jumps at its confidence gate.",
     "weights": {
       "timbre": 1.0,
       "dynamics": 0.4,
@@ -51,7 +51,7 @@
     }
   },
   "paired-v2": {
-    "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up. As -v1, without the rt60 term: the RT60 estimate does not measure reverb on played material.",
+    "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up. As -v1, without the rt60 term: on played material the RT60 estimate reads seconds apart between passages and jumps at its confidence gate.",
     "weights": {
       "timbre": 1.0,
       "dynamics": 0.8,

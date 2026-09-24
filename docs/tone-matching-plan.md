@@ -1646,24 +1646,26 @@ passages (SW50R dry: 1.55 against 6.54 s; Tone King's 0.5 s reverb: 6.09 against
 a reverberant one (SW50R dry through Hotel California, 6.54 s, against 4.85 s at
 full spring), and even a confident reading is off in size (Tone King's 4 s
 reverb reads 2.69 s at 0.82). Tone King's fresh renders do not repeat either: an
-earlier run of this study, in this change's history (e9edd0f), read its 4 s
-reverb through How Long as 6.60 s rather than 22.5 s. So in an unpaired
-comparison — a recording against a render through another passage, every -v1
-unpaired score — a difference between two estimates is mostly a difference
-between the passages.
+earlier run of this study, in this change's history (e9edd0f), read its 8 s
+reverb through Hotel California as 17.9 s (0.46) rather than 11.0 s (0.71). So
+in an unpaired comparison — a recording against a render through another
+passage, every -v1 unpaired score — a difference between two estimates is mostly
+a difference between the passages.
 
 Second, how often does it reach a score? Each of the search-signal targets and
 the neutral start, rendered twice from How Long in one reused instance: on SW50R
 the term was present between target and neutral on 8 of 12 targets, at 0.2 to
-14.3; four targets always read under the gate, so for them it never fires. It
-repeats for fixed settings within one instance — the neutral start read 4.56 s
-at 0.38 on all 24 of its reused renders — but not between processes: the same
-neutral settings (the tracks table's "spring 50" row) read 3.38 s at 0.42 fresh,
-a 3.0 difference in the term. On Tone King it fired on 2 of 12 targets (13.8 to
-16.4), where the traced pass above found 4. How much it moved the SW50R searches
-themselves was not recorded — their runs predate the per-dimension breakdown,
-and an answer below the gate drops the term altogether — but those numbers were
-all measured with it.
+14.3; four targets always read under the gate, so for them it never fires.
+Within one instance it repeated on 11 of 12 targets and on the neutral start,
+which read 4.56 s at 0.38 on all 24 of its reused renders — target 0's two
+renders read 3.11 s (0.43) and 2.31 s (0.56), a term of 2.0 between identical
+settings — and it does not repeat between processes: the same neutral settings
+(the tracks table's "spring 50" row) read 3.38 s at 0.42 fresh, a 3.0 difference
+in the term. On Tone King it fired on 2 of 12 targets (13.8 to 16.4), where the
+traced pass above found 4. How much it moved the SW50R searches themselves was
+not recorded — their runs predate the per-dimension breakdown, and an answer
+below the gate drops the term altogether — but those numbers were all measured
+with it.
 
 **The -v2 profiles are the -v1 ones without `rt60_s`**, so the term never enters
 `ambience`; nothing else changes. They live in `analysis/loss_profiles-v2.json`,
@@ -1671,17 +1673,17 @@ beside a `loss_profiles.json` left byte for byte as it was: every -v1 number
 reproduces from it, and frozen listening scores are checked against its hash.
 For `unpaired-v2` the case is the passage dependence above. For `paired-v2`,
 where both sides come through the same passage, the evidence is mixed — some
-series rise, SW50R through Hotel California does not, and Tone King's readings
-move between processes — and the term still switches between absent and large at
-the confidence gate; a paired match keeps the waveform residual, which sees a
-reverb tail directly. `match_preset.py` and `compare_audio.py` default to the
--v2 profiles, and the match skill names `paired-v2` for a reamp. The research
-tools keep their -v1 defaults so every command in this document reproduces its
-numbers (the match commands above that relied on the old default now say
-`--loss-profile unpaired-v1`); pass `--loss-profile unpaired-v2` to measure
-afresh. No -v2 term is meant to measure reverb: it reaches an unpaired score only
-indirectly, through `dynamics` and `spatial`, and delay and modulation keep
-their own `ambience` terms.
+series rise, SW50R's spring through Hotel California does not, and Tone King's
+readings move between processes — and the term still switches between absent and
+large at the confidence gate; a paired match keeps the waveform residual, which
+sees a reverb tail directly. `match_preset.py` and `compare_audio.py` default to
+the -v2 profiles, and the match skill names `paired-v2` for a reamp. The
+research tools keep their -v1 defaults so every command in this document
+reproduces its numbers (the match commands above that relied on the old default
+now say `--loss-profile unpaired-v1`); pass `--loss-profile unpaired-v2` to
+measure afresh. No -v2 term is meant to measure reverb: it reaches an unpaired
+score only indirectly, through `dynamics` and `spatial`, and delay and
+modulation keep their own `ambience` terms.
 
 Two measurements of what that changes, on Tone King's 12 targets. **Stability:**
 the `--no-search` baselines, once with one worker and once with two — the same
@@ -1710,7 +1712,8 @@ from their targets through the guitar. The highest `ambience` in the run is
 2.07, where -v1's second run had eight scores from 2.3 to 4.7. Parameter MAE
 came out at 0.210, 0.233 and 0.273 against -v1's 0.208, 0.238 and 0.267: means
 within about 2% (p ≥ 0.57 for each signal), with single targets moving about as
-much as they did between the two -v1 runs. Removing the term cost no measurable
+much as they did between the two -v1 runs through the own passage and noise, and
+about twice as much through the other song. Removing the term cost no measurable
 recovery of the settings — with the caveat that only one of the sampled
 controls, the spring, is a reverb control.
 
@@ -1741,12 +1744,12 @@ command with `--workers 1` or `2` and `--loss-profile unpaired-v1` or
 about three minutes each; their `command` fields record scratchpad paths. They
 record 147bde6, and the v2 search (110 minutes) b62086d, the commit checked out
 when it finished; both are commits of this change from before a rebase onto #62
-and #63 (now 54f31a6 and e9edd0f), which touched no measured code. At 147bde6 the
--v2 profiles still sat inside `loss_profiles.json`, with the same content; the
-commit between it and b62086d changed the match and compare defaults, the skill
-and tests, and added evidence files. `analysis/listening.py` still scores
-listening comparisons with `unpaired-v1`, so its objective-versus-listener
-agreement carries the term too.
+and #63 (now 54f31a6 and e9edd0f), which touched no measured code. At 147bde6
+the -v2 profiles still sat inside `loss_profiles.json`, with the same content;
+the next commit, b62086d, changed the match and compare defaults, the skill and
+tests, and added evidence files. `analysis/listening.py` still scores listening
+comparisons with `unpaired-v1`, so its objective-versus-listener agreement
+carries the term too.
 
 ---
 
