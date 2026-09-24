@@ -64,7 +64,7 @@ def _profiles() -> Dict[str, Any]:
     """Every profile in every profile file, refusing a name defined twice."""
     profiles: Dict[str, Any] = {}
     for path in PROFILE_PATHS:
-        for key, value in json.loads(path.read_text()).items():
+        for key, value in json.loads(path.read_text(encoding="utf-8")).items():
             if key.startswith("_"):
                 continue
             if key in profiles:
@@ -88,6 +88,16 @@ def load_profile(name: str = "unpaired-v1") -> Dict[str, Any]:
 
 def list_profiles() -> List[str]:
     return list(_profiles())
+
+
+def unpaired_counterpart(name: str) -> str:
+    """The profile to suggest when `name` needs a paired reamp that is not there:
+    the unpaired one of the same version, or the current default."""
+    if name.startswith("paired-"):
+        candidate = "un" + name
+        if candidate in _profiles():
+            return candidate
+    return "unpaired-v2"
 
 
 # --- term helpers -----------------------------------------------------------

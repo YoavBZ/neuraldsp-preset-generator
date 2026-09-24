@@ -19,6 +19,7 @@ Two questions, both about the `rt60` term `analysis.compare` puts in `ambience`:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
 import shlex
@@ -100,12 +101,19 @@ def main() -> None:
     if (args.pack, amp) not in CASES:
         die(f"reverb steps are defined for {', '.join('/'.join(k) for k in CASES)}, "
             f"not {args.pack}/{amp}")
-    dis = {}
+    commit = _source_commit()
+    dis, described = {}, {}
     for spec in args.di:
         name, _, path = spec.partition("=")
         if not name or not path:
             die(f"--di {spec!r}: give it as NAME=PATH")
+        if name in dis:
+            die(f"--di {name} is given twice")
         dis[name] = io.load(path).mono()
+        described[name] = {
+            "path": path,
+            "sha256": hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest(),
+            "samples_sha256": io.from_samples(dis[name], 48000).sha256}
     first = next(iter(dis))
     space = space_module.build(args.pack, amp=amp)
     template_values = None
@@ -152,6 +160,7 @@ def main() -> None:
     tracks = []
     fresh = _renderer(args.renderer, args.pack, process_policy="fresh")
     try:
+        fresh_metadata = fresh.metadata()
         dimensions = {dimension.path: dimension for dimension in space.dimensions}
         scorer = search.Evaluator(fresh, None, dis[first], space,
                                   profile=args.loss_profile)
@@ -173,8 +182,9 @@ def main() -> None:
 
     fired = [row for row in fires
              if any(value is not None for value in row["term_target_vs_neutral"])]
+    elapsed = time.time() - started
     print(f"\n{args.pack}/{amp}, {metadata.renderer_id} {metadata.plugin_version}, "
-          f"{time.time() - started:.0f}s")
+          f"{elapsed:.0f}s")
     print(f"fires: the rt60 term was present between a target and the neutral start "
           f"on {len(fired)} of {len(fires)} targets")
     for row in fires:
@@ -194,15 +204,18 @@ def main() -> None:
     if args.json:
         args.json.write_text(json.dumps({
             "schema": SCHEMA,
-            "source_commit": _source_commit(),
+            "source_commit": commit,
             "command": " ".join(shlex.quote(arg) for arg in sys.argv),
+            "elapsed_s": round(elapsed, 1),
             "pack": args.pack, "amp": amp,
             "template": None if args.template is None else str(args.template),
-            "dis": {name: path for name, _, path in
-                    (spec.partition("=") for spec in args.di)},
+            "dis": described,
             "targets": args.targets, "seed": args.seed,
             "loss_profile": args.loss_profile,
+            # `fires` used one reused instance; `tracks` one fresh process per render.
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,
+            "tracks_backend": fresh_metadata.as_dict(),
+            "tracks_measurement_caveat": _backend_caveat(fresh_metadata) or None,
             "fires": fires, "tracks": tracks,
         }, indent=2) + "\n", encoding="utf-8")
         print(f"\nwrote {args.json}")

@@ -204,7 +204,7 @@ def main() -> None:
     import numpy as np
 
     from analysis import io
-    from analysis.compare import list_profiles, load_profile
+    from analysis.compare import list_profiles, load_profile, unpaired_counterpart
     from analysis.fingerprint import fingerprint
     from match import invert, report, search
     from match import space as space_module
@@ -224,7 +224,8 @@ def main() -> None:
             f"{args.reference_mode!r}. That term is only meaningful when "
             "--reference is a reamp of the exact --probe-di performance.\n"
             "  Use --reference-mode paired_di with that pair, or use "
-            "--loss-profile unpaired-v2 for a different performance.")
+            f"--loss-profile {unpaired_counterpart(args.loss_profile)} "
+            "for a different performance.")
     excerpt_s = resolved_excerpt(args.excerpt, args.reference_mode)
     if residual_weighted and excerpt_s is not None:
         die("a paired waveform residual must compare the complete reamp and DI; "

@@ -36,6 +36,11 @@ def test_the_study_records_where_the_term_fires_and_what_each_reverb_reads(tmp_p
     assert written["schema"] == "rt60-study-1"
     assert len(written["fires"]) == 1
     assert len(written["fires"][0]["term_target_vs_neutral"]) == 2
+    assert "term_target_vs_itself" in written["fires"][0]
+    assert set(written["dis"]) == {"a", "b"} and written["dis"]["a"]["sha256"]
+    assert written["tracks_backend"] and written["elapsed_s"] >= 0
+    rack = next(row for row in written["tracks"] if row["case"].startswith("rack"))
+    assert rack["settings"]["reverb/reverbActive"] is True
     cases = [row["case"] for row in written["tracks"]]
     assert cases[0] == "dry" and any(case.startswith("rack decay") for case in cases)
     assert all({"a", "b"} <= set(row) for row in written["tracks"])
@@ -47,3 +52,11 @@ def test_the_study_refuses_a_signal_path_without_reverb_steps(tmp_path):
     done = _cli("--amp", "pr12", "--di", f"a={a}", "--targets", "1")
     assert done.returncode != 0
     assert "reverb steps are defined for" in done.stderr
+
+
+def test_the_study_refuses_a_passage_named_twice(tmp_path):
+    a = tmp_path / "a.wav"
+    fx.write_wav(a, fx.plucks(seconds=1.0, gap=0.6, seed=3) * 0.3)
+    done = _cli("--amp", "sw50r", "--di", f"a={a}", "--di", f"a={a}", "--targets", "1")
+    assert done.returncode != 0
+    assert "given twice" in done.stderr

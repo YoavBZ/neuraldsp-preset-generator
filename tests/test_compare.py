@@ -331,7 +331,12 @@ def test_later_profiles_leave_the_frozen_file_alone(tmp_path, monkeypatch):
 
     from analysis import compare as C
 
-    frozen = json.loads(C.PROFILE_PATH.read_text())
+    import hashlib
+
+    # The hash every -v1 number and every frozen listening score was made with.
+    assert hashlib.sha256(C.PROFILE_PATH.read_bytes()).hexdigest() == (
+        "5ba11bffadc2cb1210e3d515949c67f21be0cd4e92287253690730ab3dcfd183")
+    frozen = json.loads(C.PROFILE_PATH.read_text(encoding="utf-8"))
     assert "unpaired-v2" not in frozen and "paired-v2" not in frozen
     assert {"unpaired-v2", "paired-v2"} <= set(list_profiles())
 
@@ -340,3 +345,28 @@ def test_later_profiles_leave_the_frozen_file_alone(tmp_path, monkeypatch):
     monkeypatch.setattr(C, "PROFILE_PATHS", (C.PROFILE_PATH, clash))
     with pytest.raises(ProfileError, match="defined twice"):
         list_profiles()
+
+
+def test_a_missing_reamp_suggests_the_unpaired_profile_of_the_same_version():
+    from analysis.compare import unpaired_counterpart
+
+    assert unpaired_counterpart("paired-v1") == "unpaired-v1"
+    assert unpaired_counterpart("paired-v2") == "unpaired-v2"
+    assert unpaired_counterpart("something-else") == "unpaired-v2"
+
+
+def test_every_profile_file_ships_with_the_package():
+    """An installed plugin reads the profiles from package data; a file left out
+    there is a FileNotFoundError on the first comparison."""
+    import pathlib
+    import re
+
+    from analysis import compare as C
+
+    # tomllib is 3.11+, and CI still runs 3.10: read the one line by pattern.
+    root = pathlib.Path(__file__).resolve().parents[1]
+    text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    section = text.split("[tool.setuptools.package-data]", 1)[1]
+    line = re.search(r'^analysis = \[(.*)\]$', section, re.MULTILINE).group(1)
+    shipped = set(re.findall(r'"([^"]+)"', line))
+    assert {path.name for path in C.PROFILE_PATHS} <= shipped

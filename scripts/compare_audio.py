@@ -110,7 +110,7 @@ def main() -> None:
 
     from analysis import AnalysisUnavailable
     from analysis.compare import (ProfileError, band_delta, compare, load_profile,
-                                  scalar)
+                                  scalar, unpaired_counterpart)
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError
 
     try:
@@ -132,8 +132,8 @@ def main() -> None:
             if target_audio is None or candidate_audio is None:
                 die(f"loss profile {args.profile!r} weights waveform residual, "
                     "which requires both arguments to be audio files. A stored "
-                    "fingerprint contains no samples; use --profile unpaired-v2 "
-                    "to compare fingerprints.")
+                    "fingerprint contains no samples; use --profile "
+                    f"{unpaired_counterpart(args.profile)} to compare fingerprints.")
             from analysis.align import align, residual_db
 
             aligned_target, aligned_candidate, alignment = align(
