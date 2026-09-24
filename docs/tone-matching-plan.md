@@ -1571,9 +1571,8 @@ on all 9.
 
 The same fault can move any unpaired score, a real match's included, whenever
 the reference and a candidate both pass the gate with estimates seconds apart.
-It is not fixed here: bounding that term changes the objective every number in
-this document was measured with, and needs its own measurement first — starting
-with how often it fires on SW50R, whose runs above were not broken down.
+The next subsection measures it on both amps and drops it from the -v2
+profiles, which new matches now use.
 
 ```bash
 .venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
@@ -1598,6 +1597,125 @@ for pairing with either run. The traced RT60s are
 `docs/search-signal-toneking-rt60-trace.json`, from the same db48981, whose
 `method` says how they were recorded; the wrapper that kept the renders is not
 committed.
+
+#### The RT60 term — measured, and dropped from the -v2 profiles
+
+`analysis.features._detect_rt60` fits each note's decay from its peak to the next
+onset, between 5 and 25 dB down, and reports the median across notes with their
+agreement as its confidence. A played passage rarely lets a note ring into
+silence, so what it fits is mostly the note's sustain through the amp. It was
+validated on decaying noise bursts, where that is the reverb.
+
+`scripts/study_rt60.py` asks two things, on SW50R's atlas topology template and
+on Tone King's rhythm channel with its neutral seed, through the same two
+passages. First, does the estimate follow a reverb that is really there? The
+neutral start with the amp's spring and then the rack reverb turned up, one
+fresh process per render, estimate in seconds (confidence):
+
+| SW50R | How Long | Hotel California |
+|---|---:|---:|
+| dry | 1.55 (0.37) | 6.54 (0.37) |
+| spring 50 | 3.38 (0.42) | 2.23 (0.65) |
+| spring 100 | 4.21 (0.86) | 4.85 (0.83) |
+| rack reverb, decay 1 | 2.06 (0.72) | 7.76 (0.29) |
+| rack reverb, decay 5 | 9.07 (0.60) | 5.45 (0.91) |
+| rack reverb, decay 15 | 6.69 (0.20) | 15.6 (0.62) |
+| rack reverb, decay 30 | 16.2 (0.57) | — |
+| rack reverb, decay 60 | 13.9 (0.20) | — |
+
+| Tone King | How Long | Hotel California |
+|---|---:|---:|
+| dry | — | 20.9 (0.20) |
+| spring 0.5 | 14.4 (0.20) | 4.42 (0.20) |
+| spring 1.0 | 7.14 (0.83) | 7.19 (0.54) |
+| rack reverb, decay 0.5 s | 5.82 (0.46) | 1.83 (0.61) |
+| rack reverb, decay 1 s | 4.66 (0.46) | 1.29 (0.64) |
+| rack reverb, decay 2 s | 6.15 (0.33) | 2.08 (0.53) |
+| rack reverb, decay 4 s | 6.60 (0.20) | 2.30 (0.94) |
+| rack reverb, decay 8 s | — | 17.9 (0.46) |
+
+(Morgan's decay is the plugin's 1–60 scale; Tone King's is seconds; mix 50%,
+spring off.) It does not. The same dry SW50R reads 1.55 s through one passage
+and 6.54 s through the other; Tone King's 0.5 s reverb reads 5.82 s through How
+Long; neither passage rises with the decay, and a confidence of 0.8 or 0.9 comes
+with readings as wrong as the rest. So a difference between two estimates is
+not a difference in reverb — least of all across two different performances,
+which is every unpaired comparison.
+
+Second, how often does it reach the score? Each of the search-signal targets and
+the neutral start, rendered twice from How Long in one reused instance: on SW50R
+the term was present between target and neutral on 8 of 12 targets, at 0.2 to
+14.3 (the neutral start reads 4.56 s at 0.38, and one target's two renders of
+the same settings differed by 2.0 on their own); on Tone King on 2 of 12 this
+time (13.8 to 16.4), where the traced pass above found 4. So every SW50R number
+in this section carries it too, mostly as a fixed offset per target, since
+Morgan's renders nearly repeat.
+
+**The -v2 profiles are the -v1 ones without `rt60_s`**, so the term never enters
+`ambience`; nothing else changes. `match_preset.py` and `compare_audio.py`
+default to them, and the match skill names `paired-v2` for a reamp. The research
+tools keep their -v1 defaults so every command above reproduces its numbers;
+pass `--loss-profile unpaired-v2` to measure afresh. What -v2 gives up is a
+reverb measurement it never had: reverb goes unmeasured by the loss until
+something that tracks it replaces this.
+
+Two measurements of what that changes, on Tone King's 12 targets. **Stability:**
+the `--no-search` baselines, once with one worker and once with two — the same
+settings after different render histories — moved by 0.100 on average (at most
+0.735) for the neutral start and 0.035 (at most 0.375) for the inversions under
+`unpaired-v1`, and by 0.012 (at most 0.051) and 0.010 (at most 0.067) under
+`unpaired-v2`. **The search:** the run above repeated under `unpaired-v2`, mean /
+median:
+
+| searched through | final distance | closer than the noise search |
+|---|---:|---:|
+| the target's own passage | 0.333 / 0.270 | 12 of 12 |
+| the Hotel California passage | 0.623 / 0.580 | 12 of 12 |
+| the noise probe | 1.122 / 1.147 | — |
+| *no search:* neutral settings | 1.304 / 1.224 | 4 of 12 |
+| *no search:* the inversion alone, through the target's own passage | 0.641 / 0.562 | 12 of 12 |
+| *no search:* the inversion alone, through Hotel California | 0.779 / 0.727 | 11 of 12 |
+| *no search:* the inversion alone, through the noise probe | 1.193 / 1.203 | 3 of 12 |
+
+The other song's DI beat noise on every target again (44% closer, p < 0.001).
+The noise search was closer than neutral on 8 of 12 (14%, p = 0.27), and with
+`level` left out on 6 of 12 (p = 1.0): without a DI, the search gained nothing
+over neutral settings but loudness, and its answers still played 3.5 to 14.5 LU
+from their targets through the guitar. The highest `ambience` in the run is
+2.07, where -v1's second run had eight scores from 2.3 to 4.7. Recovery of the
+settings did not change: parameter MAE 0.210, 0.233 and 0.273 against -v1's
+0.208, 0.238 and 0.267, target by target within 2% and p ≥ 0.57 for each signal
+— the term was noise to the search, not information.
+
+```bash
+.venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml \
+  --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
+  --json docs/rt60-study-sw50r.json
+.venv/bin/python scripts/study_rt60.py --renderer swift --pack toneking \
+  --amp rhythm --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
+  --json docs/rt60-study-toneking.json
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --no-search \
+  --workers 1 --loss-profile unpaired-v2 \
+  --json docs/search-signal-toneking-baselines-v2-w1.json
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
+  --workers 2 --loss-profile unpaired-v2 \
+  --json docs/search-signal-toneking-rhythm-v2.json
+```
+
+The baseline passes are the third command with `--workers 1` or `2` and
+`--loss-profile unpaired-v1` or `unpaired-v2`, in
+`docs/search-signal-toneking-baselines-{v1,v2}-w{1,2}.json`; their `command`
+fields record scratchpad paths. The studies took about three minutes each, the
+four baseline passes about three each, and the search 110 minutes. The v2 search
+started from 147bde6 and its JSON records b62086d, the commit checked out when it
+finished; the one between changed only the match and compare defaults, the skill
+and tests. `analysis/listening.py` still scores listening comparisons with
+`unpaired-v1`, so its objective-versus-listener agreement carries the term too.
 
 ---
 
