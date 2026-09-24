@@ -36,8 +36,6 @@ def main() -> None:
     parser.add_argument("--choice", required=True,
                         choices=("A", "B", "indistinguishable"),
                         help="which alternative sounded closer to Reference")
-    parser.add_argument("--prefer", choices=("A", "B", "indistinguishable"),
-                        help=argparse.SUPPRESS)
     parser.add_argument("--listener", required=True)
     parser.add_argument("--comment")
     add_data_dir_arg(parser)
@@ -102,10 +100,7 @@ def main() -> None:
         die(f"the heard audition trial no longer validates: {error}")
 
     choice = _answer(key, args.choice)
-    preference = None if args.prefer is None else _answer(key, args.prefer)
     details = []
-    if preference is not None:
-        details.append(f"preference={preference}")
     if args.comment and args.comment.strip():
         details.append(args.comment.strip())
 
@@ -119,7 +114,7 @@ def main() -> None:
         identity = hashlib.sha256(args.listener.strip().encode()).hexdigest()
         sidecar = args.key.with_name(args.key.name + f".{identity}.objective-verdict.json")
         submission = {**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
-            "closer": args.choice, "preferred": args.prefer},
+            "closer": args.choice, "preferred": None},
             "listener": args.listener.strip(),
             "heard_audio": {"path": str(montage), "sha256": output["sha256"]}}
         try:
@@ -152,8 +147,6 @@ def main() -> None:
         audition_trial_sha=match["audition_trial_sha256"],
     )
     print(f"blind label {args.choice!r} resolved after listening to {choice!r}")
-    if preference is not None:
-        print(f"separate preference: {preference!r}")
     print(f"recorded trial {recorded.trial_id} in run {recorded.run_id}")
     print(f"learned notes: {recorded.notes_path}")
     if objective is not None:

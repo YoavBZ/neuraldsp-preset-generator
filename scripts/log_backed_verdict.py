@@ -5,8 +5,8 @@
 
 Run only after the listener answers. No audio is rescored and the blind key is
 not revealed on stdout. The separate private sidecar preserves the original
-audition and the prediction frozen before listening. Historical preference
-answers remain readable, but new comparisons ask only which sound is closer.
+audition and the prediction frozen before listening. The audit can still read
+historical preference answers, but this logger accepts only closeness.
 """
 
 from __future__ import annotations
@@ -44,9 +44,6 @@ def main() -> None:
     parser.add_argument("--key", required=True, type=pathlib.Path)
     parser.add_argument("--closer", required=True,
                         choices=("A", "B", "indistinguishable"))
-    parser.add_argument("--preferred", default="none",
-                        choices=("A", "B", "indistinguishable", "none"),
-                        help=argparse.SUPPRESS)
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
     key_path = args.key.expanduser().resolve()
@@ -67,8 +64,7 @@ def main() -> None:
     output_path = key_path.parent / "verdict.json"
     if output_path.exists() or output_path.is_symlink():
         raise ValueError("verdict already exists; never overwrite a listener answer")
-    verdict = {"closer": args.closer,
-               "preferred": None if args.preferred == "none" else args.preferred}
+    verdict = {"closer": args.closer, "preferred": None}
     scored = attach_verdict(key["objective_record"], verdict)
     record = {"schema": "prospective-backed-verdict-v1",
               "audition_key": {"path": str(key_path), "sha256": sha256(key_path)},

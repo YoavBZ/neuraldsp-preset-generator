@@ -127,18 +127,23 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     )
     template_label = "B" if candidate_label == "A" else "A"
     data_dir = tmp_path / "data"
+    rejected_preference = run(
+        "log_blind_verdict.py", "--key", key_path, "--choice", candidate_label,
+        "--prefer", template_label, "--listener", "blind-test", "--data-dir", data_dir,
+    )
+    assert rejected_preference.returncode != 0
+    assert "unrecognized arguments: --prefer" in rejected_preference.stderr
     recorded = run(
         "log_blind_verdict.py",
         "--key", key_path,
         "--choice", candidate_label,
-        "--prefer", template_label,
         "--listener", "blind-test",
-        "--comment", "candidate is closer but template feels softer",
+        "--comment", "candidate is closer but low mids remain thick",
         "--data-dir", data_dir,
     )
     assert recorded.returncode == 0, recorded.stdout + recorded.stderr
     assert "resolved after listening to 'candidate'" in recorded.stdout
-    assert "separate preference: 'template'" in recorded.stdout
+    assert "preference" not in recorded.stdout
 
     with Store(str(run_dir / "trials.sqlite3")) as store:
         verdict, = store.verdicts(json.loads((run_dir / "summary.json").read_text())[
@@ -153,17 +158,20 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert heard_trial.objective_key == source_trial.objective_key
     assert heard_trial.objectives == pytest.approx(source_trial.objectives)
     assert verdict["listener"] == "blind-test"
-    assert verdict["comment"].startswith("preference=template;")
+    assert verdict["comment"] == "candidate is closer but low mids remain thick"
 
     notes = data_dir / "packs" / "morgan" / "learned-tones.md"
-    assert "preference=template" in notes.read_text()
+    assert "candidate is closer but low mids remain thick" in notes.read_text()
 
     sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
     assert len(sidecars) == 1
+    first_record = json.loads(sidecars[0].read_text())
+    assert first_record["verdict"] == {"closer": candidate_label, "preferred": None}
+    assert first_record["agreement"]["preferred"]["status"] == "no_verdict"
     before = sidecars[0].read_bytes()
     repeated = run("log_blind_verdict.py", "--key", key_path,
-                   "--choice", candidate_label, "--prefer", template_label,
-                   "--listener", "blind-test", "--comment", "candidate is closer but template feels softer",
+                   "--choice", candidate_label,
+                   "--listener", "blind-test", "--comment", "candidate is closer but low mids remain thick",
                    "--data-dir", data_dir)
     assert repeated.returncode != 0
     assert "already recorded" in repeated.stderr

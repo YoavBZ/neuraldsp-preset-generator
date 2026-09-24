@@ -255,22 +255,28 @@ def test_listener_answers_bind_to_frozen_scores_without_rescoring(tmp_path):
     assert _run(manifest_path, out).returncode == 0
     key_path = out / "private-key.json"
     key = json.loads(key_path.read_text())
+    rejected_preference = subprocess.run(
+        [sys.executable, str(VERDICT_SCRIPT), "--key", str(key_path),
+         "--closer", "A", "--preferred", "B"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert rejected_preference.returncode != 0
+    assert "unrecognized arguments: --preferred" in rejected_preference.stderr
+    assert not (out / "verdict.json").exists()
     submitted = subprocess.run(
         [sys.executable, str(VERDICT_SCRIPT), "--key", str(key_path),
-         "--closer", "A", "--preferred", "B", "--notes", "separate questions"],
+         "--closer", "A", "--notes", "the low mids remain thick"],
         cwd=ROOT, capture_output=True, text=True)
     assert submitted.returncode == 0, submitted.stderr
     record = json.loads((out / "verdict.json").read_text())
     assert record["audition_key"]["sha256"] == sha256(key_path)
-    assert record["verdict"] == {"closer": "A", "preferred": "B"}
+    assert record["verdict"] == {"closer": "A", "preferred": None}
     assert record["frozen_scored_record"]["objective_scoring"] == key["objective_record"]["objective_scoring"]
     assert record["frozen_scored_record"]["agreement"]["closer"]["status"] in (
         "agree", "disagree", "unequal_coverage", "objective_tie")
-    assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] in (
-        "agree", "disagree", "unequal_coverage", "objective_tie")
+    assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] == "no_verdict"
     again = subprocess.run(
         [sys.executable, str(VERDICT_SCRIPT), "--key", str(key_path),
-         "--closer", "B", "--preferred", "A"],
+         "--closer", "B"],
         cwd=ROOT, capture_output=True, text=True)
     assert again.returncode != 0 and "never overwrite" in again.stderr
     assert json.loads((out / "verdict.json").read_text())["verdict"]["closer"] == "A"
@@ -351,7 +357,7 @@ def test_output_must_be_private_and_verdict_checks_the_heard_audio(tmp_path):
     (out / "audition.flac").write_bytes(b"changed")
     verdict = subprocess.run(
         [sys.executable, str(VERDICT_SCRIPT), "--key", str(out / "private-key.json"),
-         "--closer", "A", "--preferred", "none"],
+         "--closer", "A"],
         cwd=ROOT, capture_output=True, text=True)
     assert verdict.returncode != 0 and "changed" in verdict.stderr
     assert not (out / "verdict.json").exists()
