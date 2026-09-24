@@ -549,12 +549,12 @@ def _monophonic_segment(mono, sample_rate: int):
 
 
 def time_effects(mono, sample_rate: int) -> Dict[str, object]:
-    """Delay time and feedback, reverb decay, and the tempo they relate to.
+    """Measure delay, release decay and related tempo from the audio.
 
-    None of this needs a render: an echo repeats the envelope at a fixed
-    interval and a reverb decays at a fixed rate, and both are visible in the
-    target audio alone. That is the point of measuring them — every one of these
-    is a preset parameter that can be set without searching for it.
+    Echo repeats can support a delay setting. A release slope can also be
+    fitted without a render, but it cannot by itself tell reverb from a dry
+    note decaying at that rate. Its confidence is slope agreement, not a
+    probability that the recording contains reverb.
     """
     require("time-effect analysis")
     import numpy as np
@@ -875,11 +875,11 @@ def _normalised_autocorrelation(signal_1d):
 
 
 def _detect_rt60(mono, sample_rate: int, env, env_rate: float):
-    """Fit the decay of every release segment; report the median and the spread.
+    """Fit release-envelope slopes; report their median and agreement.
 
-    Music is not an impulse. A note that is simply short looks exactly like a
-    dry room, so the confidence — how much the segments agree — is not
-    decoration, and a single segment is never enough to be sure.
+    This is an RT60-shaped estimate, not proof of an audible reverb tail.
+    Consistently decaying *dry* notes can produce a high agreement score too.
+    A single segment is never enough even to establish slope agreement.
     """
     import numpy as np
 

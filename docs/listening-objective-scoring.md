@@ -53,6 +53,8 @@ The inspector needs no raw audio but cannot verify that the archived audio was
 the audio heard. It refuses to recompute with a changed loss profile. In Tone
 King, the RT60 estimator has also produced implausible, history-sensitive values
 on guitar passages; a common-term check is not a repair for that estimator.
+Even a dry guitar DI can pass the RT60 scoring gate: its confidence measures
+agreement among release slopes, not evidence that the sound contains reverb.
 The builder scores cropped and gained source samples before montage encoding;
 24-bit FLAC quantization can make the decoded listening file differ minutely.
 

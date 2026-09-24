@@ -55,6 +55,17 @@ def test_fingerprint_text_mode_is_readable(dark):
     assert "0.000000–4.000000 s of 4.000000 s" in out
 
 
+def test_fingerprint_text_does_not_call_dry_note_decay_reverb(tmp_path):
+    dry = fx.write_wav(
+        tmp_path / "dry-plucks.wav",
+        fx.plucks(seconds=10.0, gap=1.0, decay=5.0, length=0.8),
+    )
+    out = run(FINGERPRINT, dry, "--text").stdout
+    assert "slope agreement" in out
+    assert "agreeing dry notes" in out
+    assert "not proof of reverb" in out
+
+
 def test_fingerprint_writes_a_file(dark, tmp_path):
     out = tmp_path / "fp.json"
     run(FINGERPRINT, dark, "--out", out)

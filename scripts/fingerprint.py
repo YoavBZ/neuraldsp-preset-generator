@@ -84,7 +84,7 @@ def print_text(fp) -> None:
           + f"  confidence {_format(time_fx.get('delay_confidence'))}")
     print(f"  feedback    {_format(time_fx.get('delay_feedback_est'))}")
     print(f"  rt60        {_format(time_fx.get('rt60_s'))} s  "
-          f"confidence {_format(time_fx.get('rt60_confidence'))}")
+          f"slope agreement {_format(time_fx.get('rt60_confidence'))}")
     print(f"  tremolo     {_format(fp.modulation.get('am_rate_hz'), 1)} Hz, "
           f"depth {_format(fp.modulation.get('am_depth'))}")
 

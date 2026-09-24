@@ -97,6 +97,20 @@ def test_caveats_name_what_was_not_measured():
     assert "monophonic" in text
 
 
+def test_dry_notes_with_consistent_decay_do_not_claim_reverb_evidence():
+    """The RT60 confidence is slope agreement, not a reverb detector.
+
+    These generated plucks have no room or reverb effect. If their release
+    slopes clear the 0.3 scoring gate, the user must still hear the caveat.
+    """
+    fp = make(fx.plucks(seconds=10.0, gap=1.0, decay=5.0, length=0.8))
+    assert fp.time_fx["rt60_s"] is not None
+    assert fp.time_fx["rt60_confidence"] >= 0.3
+    note = " ".join(fp.caveats())
+    assert "agreeing dry notes" in note
+    assert "not proof of reverb" in note
+
+
 def test_band_db_lookup():
     fp = make(fx.band_limited(seconds=2.0))
     assert fp.band_db(1000) is not None
