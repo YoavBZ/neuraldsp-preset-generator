@@ -23,7 +23,7 @@ live amp or channel, `tone_knowledge`, and `learned_notes` paths.
 Choose the most conservative true reference regime:
 
 - `paired_di` (confidence 1.0): the reference is a reamp of the exact
-  `--probe-di` performance. Use `paired-v1` only here.
+  `--probe-di` performance. Use `paired-v2` only here.
 - `isolated_stem` (0.85): an original multitrack guitar stem.
 - `separated_stem` (0.55): guitar extracted from a mix by source separation.
 - `mix` (0.35): a finished mix containing other instruments and mastering.
@@ -165,7 +165,7 @@ asks for a quicker exploratory pass:
 python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
   --template TEMPLATE.xml \
   --reference REFERENCE.wav --reference-mode separated_stem \
-  --probe-di PROBE.wav --loss-profile unpaired-v1 \
+  --probe-di PROBE.wav --loss-profile unpaired-v2 \
   --pack morgan --amp sw50r --renderer synthetic \
   --budget 300 --shortlist 3 --out-dir RUN_DIR
 ```

@@ -304,3 +304,20 @@ def test_the_residual_reaches_the_scalar_only_when_the_profile_wants_it():
     assert unpaired_with == pytest.approx(unpaired_without), (
         "weighted zero, so it must not move the unpaired scalar at all"
     )
+
+
+def test_the_v2_profiles_are_v1_without_the_rt60_term():
+    """-v2 changes one thing: the RT60 estimate, which on played material follows
+    note sustain rather than reverb, no longer enters `ambience`. Everything else
+    stays as -v1 measured it."""
+    for base in ("unpaired", "paired"):
+        v1, v2 = load_profile(f"{base}-v1"), load_profile(f"{base}-v2")
+        assert v2["weights"] == v1["weights"]
+        assert "rt60_s" in v1["scales"] and "rt60_s" not in v2["scales"]
+        assert {k: v for k, v in v1["scales"].items() if k != "rt60_s"} == v2["scales"]
+
+    short = make(fx.decaying_bursts(rt60_s=0.6, seconds=8.0, seed=2))
+    long = make(fx.decaying_bursts(rt60_s=2.4, seconds=8.0, seed=2))
+    assert min(short.time_fx["rt60_confidence"], long.time_fx["rt60_confidence"]) >= 0.3
+    assert "rt60" in compare(short, long, profile="unpaired-v1").detail["ambience"]
+    assert "rt60" not in compare(short, long, profile="unpaired-v2").detail["ambience"]

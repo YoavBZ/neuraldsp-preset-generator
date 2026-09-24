@@ -1,0 +1,497 @@
+{
+  "schema": "rt60-study-1",
+  "source_commit": "3c01ade5a796e06a8b7a9244c7ee173e819441fa",
+  "command": "scripts/study_rt60.py --renderer swift --pack toneking --amp rhythm --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --json docs/rt60-study-toneking.json",
+  "pack": "toneking",
+  "amp": "rhythm",
+  "template": null,
+  "dis": {
+    "howlong": "how-long-di-6s.wav",
+    "hotel": "hotel-di-6s.wav"
+  },
+  "targets": 12,
+  "seed": 11,
+  "loss_profile": "unpaired-v1",
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.0.3",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 5.228794,
+    "notes": [
+      "toneking through aumf TKI2 NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "measurement_caveat": "rendered by swift (plugin 1.0.3), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 5.228794 dB. Every number below carries that, and none of them may be committed without it",
+  "fires": [
+    {
+      "target_index": 0,
+      "target": [
+        {
+          "rt60_s": 2.975,
+          "confidence": 0.16
+        },
+        {
+          "rt60_s": 1.905,
+          "confidence": 0.113
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 6.974,
+          "confidence": 0.486
+        },
+        {
+          "rt60_s": 7.783,
+          "confidence": 0.415
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 1,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 8.109,
+          "confidence": 0.387
+        },
+        {
+          "rt60_s": 7.588,
+          "confidence": 0.412
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 2,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.205,
+          "confidence": 0.444
+        },
+        {
+          "rt60_s": 7.813,
+          "confidence": 0.436
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 3,
+      "target": [
+        {
+          "rt60_s": 36.794,
+          "confidence": 0.2
+        },
+        {
+          "rt60_s": 28.934,
+          "confidence": 0.2
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.644,
+          "confidence": 0.421
+        },
+        {
+          "rt60_s": 9.094,
+          "confidence": 0.345
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 4,
+      "target": [
+        {
+          "rt60_s": 1.47,
+          "confidence": 0.264
+        },
+        {
+          "rt60_s": 1.474,
+          "confidence": 0.264
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.944,
+          "confidence": 0.411
+        },
+        {
+          "rt60_s": 7.394,
+          "confidence": 0.443
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 5,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.381,
+          "confidence": 0.434
+        },
+        {
+          "rt60_s": 7.76,
+          "confidence": 0.449
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 6,
+      "target": [
+        {
+          "rt60_s": 4.909,
+          "confidence": 0.2
+        },
+        {
+          "rt60_s": 4.946,
+          "confidence": 0.2
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 8.136,
+          "confidence": 0.407
+        },
+        {
+          "rt60_s": 7.755,
+          "confidence": 0.433
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 7,
+      "target": [
+        {
+          "rt60_s": 1.446,
+          "confidence": 0.634
+        },
+        {
+          "rt60_s": 1.245,
+          "confidence": 0.741
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 6.98,
+          "confidence": 0.481
+        },
+        {
+          "rt60_s": 7.79,
+          "confidence": 0.406
+        }
+      ],
+      "term_target_vs_neutral": [
+        13.83375,
+        16.362499999999997
+      ],
+      "term_target_vs_itself": 0.5032500000000001
+    },
+    {
+      "target_index": 8,
+      "target": [
+        {
+          "rt60_s": 0.667,
+          "confidence": 0.275
+        },
+        {
+          "rt60_s": 1.026,
+          "confidence": 0.368
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.158,
+          "confidence": 0.444
+        },
+        {
+          "rt60_s": 7.407,
+          "confidence": 0.439
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        15.953
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 9,
+      "target": [
+        {
+          "rt60_s": 6.601,
+          "confidence": 0.239
+        },
+        {
+          "rt60_s": 6.475,
+          "confidence": 0.246
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 8.063,
+          "confidence": 0.414
+        },
+        {
+          "rt60_s": 7.424,
+          "confidence": 0.483
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 10,
+      "target": [
+        {
+          "rt60_s": 17.34,
+          "confidence": 0.292
+        },
+        {
+          "rt60_s": 20.783,
+          "confidence": 0.22
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 7.285,
+          "confidence": 0.465
+        },
+        {
+          "rt60_s": 7.809,
+          "confidence": 0.389
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 11,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 8.152,
+          "confidence": 0.385
+        },
+        {
+          "rt60_s": 7.605,
+          "confidence": 0.447
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    }
+  ],
+  "tracks": [
+    {
+      "case": "dry",
+      "settings": {
+        "ampReverb": 0.0
+      },
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0
+      },
+      "hotel": {
+        "rt60_s": 20.916,
+        "confidence": 0.2
+      }
+    },
+    {
+      "case": "spring 0.5",
+      "settings": {
+        "ampReverb": 0.5
+      },
+      "howlong": {
+        "rt60_s": 14.421,
+        "confidence": 0.2
+      },
+      "hotel": {
+        "rt60_s": 4.416,
+        "confidence": 0.2
+      }
+    },
+    {
+      "case": "spring 1.0",
+      "settings": {
+        "ampReverb": 1.0
+      },
+      "howlong": {
+        "rt60_s": 7.141,
+        "confidence": 0.832
+      },
+      "hotel": {
+        "rt60_s": 7.192,
+        "confidence": 0.543
+      }
+    },
+    {
+      "case": "rack decay 0.5",
+      "settings": {
+        "ampReverb": 0.0,
+        "reverbActive": true,
+        "reverbMix": 0.5,
+        "reverbDecay": 0.5
+      },
+      "howlong": {
+        "rt60_s": 5.822,
+        "confidence": 0.462
+      },
+      "hotel": {
+        "rt60_s": 1.831,
+        "confidence": 0.609
+      }
+    },
+    {
+      "case": "rack decay 1.0",
+      "settings": {
+        "ampReverb": 0.0,
+        "reverbActive": true,
+        "reverbMix": 0.5,
+        "reverbDecay": 1.0
+      },
+      "howlong": {
+        "rt60_s": 4.664,
+        "confidence": 0.464
+      },
+      "hotel": {
+        "rt60_s": 1.29,
+        "confidence": 0.644
+      }
+    },
+    {
+      "case": "rack decay 2.0",
+      "settings": {
+        "ampReverb": 0.0,
+        "reverbActive": true,
+        "reverbMix": 0.5,
+        "reverbDecay": 2.0
+      },
+      "howlong": {
+        "rt60_s": 6.147,
+        "confidence": 0.33
+      },
+      "hotel": {
+        "rt60_s": 2.083,
+        "confidence": 0.532
+      }
+    },
+    {
+      "case": "rack decay 4.0",
+      "settings": {
+        "ampReverb": 0.0,
+        "reverbActive": true,
+        "reverbMix": 0.5,
+        "reverbDecay": 4.0
+      },
+      "howlong": {
+        "rt60_s": 6.604,
+        "confidence": 0.2
+      },
+      "hotel": {
+        "rt60_s": 2.301,
+        "confidence": 0.937
+      }
+    },
+    {
+      "case": "rack decay 8.0",
+      "settings": {
+        "ampReverb": 0.0,
+        "reverbActive": true,
+        "reverbMix": 0.5,
+        "reverbDecay": 8.0
+      },
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0
+      },
+      "hotel": {
+        "rt60_s": 17.937,
+        "confidence": 0.457
+      }
+    }
+  ]
+}
