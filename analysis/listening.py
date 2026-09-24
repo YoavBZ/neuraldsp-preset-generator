@@ -130,11 +130,16 @@ def common_term_sensitivity(scoring: dict) -> dict:
     """
     if scoring.get("schema") != "listening-objective-v1":
         raise ValueError("a frozen listening-objective-v1 score is required")
+    if scoring.get("profile") != "unpaired-v1":
+        raise ValueError("frozen listening scores must use unpaired-v1")
     if scoring.get("profile_sha256") != sha256(PROFILE_PATH):
         raise ValueError("the frozen score's loss profile differs from the current profile")
     alternatives = scoring.get("alternatives") or {}
     if set(alternatives) != {"A", "B"}:
         raise ValueError("frozen scores for both A and B are required")
+    if any(alternatives[label].get("objectives", {}).get("profile") != scoring["profile"]
+           for label in ("A", "B")):
+        raise ValueError("frozen alternatives disagree with the listening loss profile")
     weights = load_profile(scoring["profile"])["weights"]
     detail = {label: alternatives[label]["objectives"]["detail"]
               for label in ("A", "B")}

@@ -52,11 +52,11 @@ def test_common_terms_are_only_a_diagnostic_when_coverage_differs():
         "schema": "listening-objective-v1", "profile": "unpaired-v1",
         "profile_sha256": sha256(PROFILE_PATH),
         "alternatives": {
-            "A": {"objectives": {"detail": {
+            "A": {"objectives": {"profile": "unpaired-v1", "detail": {
                 "timbre": {"band_shape": 1.0, "tilt": 5.0},
                 "ambience": {"rt60": 20.0, "delay_present": 1.0},
             }}},
-            "B": {"objectives": {"detail": {
+            "B": {"objectives": {"profile": "unpaired-v1", "detail": {
                 "timbre": {"band_shape": 2.0},
                 "ambience": {"delay_present": 1.0},
             }}},
@@ -77,6 +77,15 @@ def test_common_terms_are_only_a_diagnostic_when_coverage_differs():
     assert unavailable["prediction"] is None
     scoring["profile_sha256"] = "changed"
     with pytest.raises(ValueError, match="profile differs"):
+        common_term_sensitivity(scoring)
+
+    scoring["profile_sha256"] = sha256(PROFILE_PATH)
+    scoring["profile"] = "paired-v1"
+    with pytest.raises(ValueError, match="must use unpaired-v1"):
+        common_term_sensitivity(scoring)
+    scoring["profile"] = "unpaired-v1"
+    scoring["alternatives"]["B"]["objectives"]["profile"] = "paired-v1"
+    with pytest.raises(ValueError, match="alternatives disagree"):
         common_term_sensitivity(scoring)
 
 
