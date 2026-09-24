@@ -37,7 +37,7 @@ def main() -> None:
                         choices=("A", "B", "indistinguishable"),
                         help="which alternative sounded closer to Reference")
     parser.add_argument("--prefer", choices=("A", "B", "indistinguishable"),
-                        help="optional separate preference; closeness remains the verdict")
+                        help=argparse.SUPPRESS)
     parser.add_argument("--listener", required=True)
     parser.add_argument("--comment")
     add_data_dir_arg(parser)

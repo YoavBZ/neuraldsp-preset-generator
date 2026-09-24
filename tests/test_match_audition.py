@@ -171,10 +171,15 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     another = run("log_blind_verdict.py", "--key", key_path,
                   "--choice", template_label, "--listener", "another-session", "--data-dir", data_dir)
     assert another.returncode == 0, another.stderr
+    assert "preference" not in another.stdout
     sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
     assert len(sidecars) == 2
     ids = {json.loads(path.read_text())["id"] for path in sidecars}
     assert len(ids) == 2
+    closeness_only = next(record for path in sidecars
+                          if (record := json.loads(path.read_text()))["listener"] == "another-session")
+    assert closeness_only["verdict"] == {"closer": template_label, "preferred": None}
+    assert closeness_only["agreement"]["preferred"]["status"] == "no_verdict"
 
     montage.write_bytes(montage.read_bytes() + b"tampered")
     refused = run(

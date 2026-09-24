@@ -266,7 +266,7 @@ def main() -> None:
             raise ValueError("choose a new private output directory; auditions are immutable")
         os.rename(staged, out)
     print(f"wrote {audio_path} (Reference–A–B; key kept separately)")
-    print("record closeness and preference before opening private-key.json")
+    print("record which alternative is closer before opening private-key.json")
 
 
 if __name__ == "__main__":

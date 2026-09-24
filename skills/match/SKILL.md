@@ -232,30 +232,29 @@ fresh candidate render as its own scored trial under the search's exact post-inv
 recipe. That last step matters on a stateful plugin: the heard waveform, not an
 earlier observation of the same settings, receives the verdict. The complete audition
 trial is hashed into the blind key, which stays separate. Do not open it until the
-listener answers both questions independently:
+listener answers: which is closer to the reference, A, B, or indistinguishable?
+Do not ask for preference; closeness is the target of this workflow.
 
-1. Which is closer to the reference: A, B, or indistinguishable?
-2. Which do you prefer: A, B, or indistinguishable?
-
-Overall loudness is allowed to affect neither answer here. If output level needs
+Overall loudness should not affect the closeness answer here. If output level needs
 judgment, play the untouched raw renders afterward and record that separately.
 
 After the user listens, record the blind label rather than manually opening and
 translating the key. The logger verifies the audition file's SHA-256, resolves the
 label only after the answer is supplied, then revalidates the run, trial, summary,
 spec, settings, renderer and excerpt before attaching the database verdict and
-learned note. Closeness and preference remain separate inputs:
+learned note. Record only the closer blind label:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/log_blind_verdict.py" \
   --key RUN_DIR/audition-candidate-1/audition.flac.key.json \
-  --choice A --prefer B --listener LISTENER \
+  --choice A --listener LISTENER \
   --comment "the low mids are still too thick"
 ```
 
-`--choice` is the closer blind label: `A`, `B`, or `indistinguishable`. `--prefer`
-uses the same labels and is optional; the learned note records it separately from
-closeness. Pass the same `--data-dir` used for the preset library when one was used.
+`--choice` is the closer blind label: `A`, `B`, or `indistinguishable`.
+Historical preference answers remain readable, but do not ask for or infer a new
+preference. Pass the same `--data-dir`
+used for the preset library when one was used.
 Other regimes, including `probe`, do not prove that the reference and DI are the
 same performance; export them only with an explicit `--allow-unpaired` limitation.
 The appended note includes:
@@ -267,9 +266,8 @@ The appended note includes:
   target's own peak, so a band buried in the noise floor cannot outrank an audible
   one. The full array stays in the run's `summary.json`, because this file is read
   whole by the generate and edit skills;
-- which candidate was closer, plus preference and any pushback in the comment, such
-  as "closer candidate; prefer template because it is less harsh" or "delay is right
-  but the low mids are too thick".
+- which candidate was closer, plus any specific mismatch in the comment, such
+  as "delay is right but the low mids are too thick".
 
 Keep the entry concise. Never copy the user's audio into the plugin or commit the
 local run database, report, summary, generated preset, or learned notes.

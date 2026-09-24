@@ -12,8 +12,7 @@ no EQ, compression, limiting, or other processing is applied. If the requested
 level would exceed the peak ceiling, the shared target is lowered for all three.
 
 Use this file to judge which option is closer to the reference. Judge raw renders
-separately when output level itself is the question, and record "closer" and
-"prefer" as separate answers.
+separately when output level itself is the question. Do not ask for preference.
 
 Needs the analysis extra:  pip install -e '.[analysis]'
 """
@@ -386,7 +385,7 @@ def _write_text(path: pathlib.Path, contents: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Build a blind, static-gain-matched R-A-B-R-A-B audition file.",
-        epilog="Judge closer and prefer separately. Use raw renders for output level.",
+        epilog="Judge only which is closer. Use raw renders for output level.",
     )
     ap.add_argument("--reference", required=True, type=pathlib.Path)
     ap.add_argument("--reference-regime", choices=("probe", "paired_di", "isolated_stem", "separated_stem", "mix"), required=True)
@@ -488,7 +487,7 @@ def main() -> None:
           "LUFS with static gain only")
     print(f"channels: {metadata['channel_handling']}")
     print("listen without opening the key: Reference -> A -> B, repeated once")
-    print("answer separately: which is closer to the reference, and which do you prefer?")
+    print("answer only which is closer to the reference: A, B, or indistinguishable")
     print("use the untouched raw renders if you are judging output level itself")
     print(f"reproducible blind assignment seed: {seed}")
     print(f"invocation: {shlex.join(metadata['invocation'])}")

@@ -276,6 +276,23 @@ def test_listener_answers_bind_to_frozen_scores_without_rescoring(tmp_path):
     assert json.loads((out / "verdict.json").read_text())["verdict"]["closer"] == "A"
 
 
+def test_new_verdict_records_closeness_without_asking_for_preference(tmp_path):
+    manifest_path, _ = _fixture(tmp_path)
+    out = tmp_path / "audition"
+    built = _run(manifest_path, out)
+    assert built.returncode == 0, built.stderr
+    assert "closer" in built.stdout and "prefer" not in built.stdout
+    submitted = subprocess.run(
+        [sys.executable, str(VERDICT_SCRIPT), "--key", str(out / "private-key.json"),
+         "--closer", "B"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert submitted.returncode == 0, submitted.stderr
+    assert "closer=B" in submitted.stdout and "prefer" not in submitted.stdout
+    record = json.loads((out / "verdict.json").read_text())
+    assert record["verdict"] == {"closer": "B", "preferred": None}
+    assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] == "no_verdict"
+
+
 def test_simultaneous_verdict_publication_cannot_replace_the_first(tmp_path, monkeypatch):
     from scripts import log_backed_verdict
 

@@ -811,11 +811,24 @@ def _add_argument_flags(node) -> set:
         for call in ast.walk(node)
         if isinstance(call, ast.Call)
         and getattr(call.func, "attr", None) == "add_argument"
+        # argparse hides legacy-only flags from --help. The source-side flag
+        # extractor must compare the same public surface as the help test.
+        and not any(keyword.arg == "help"
+                    and isinstance(keyword.value, ast.Attribute)
+                    and isinstance(keyword.value.value, ast.Name)
+                    and keyword.value.value.id == "argparse"
+                    and keyword.value.attr == "SUPPRESS"
+                    for keyword in call.keywords)
         for arg in call.args
         if isinstance(arg, ast.Constant)
         and isinstance(arg.value, str)
         and arg.value.startswith("--")
     }
+
+
+def test_hidden_legacy_flags_are_excluded_from_public_help_surface():
+    assert "--prefer" not in flags_of("log_blind_verdict.py")
+    assert "--preferred" not in flags_of("log_backed_verdict.py")
 
 
 @functools.lru_cache(maxsize=None)

@@ -4,8 +4,9 @@
 
 The manifest contains a `comparisons` list. Each entry declares id, target_id,
 reference and alternatives A/B (path, sha256, optional start_s/duration_s/gain_db/
-mono), listening_context, and optional verdict (closer/preferred). Reference
-regime is explicit. Records and results belong in private storage, not Git.
+mono), listening_context, and optional closer verdict. Historical preferred
+answers may be present but are not solicited. Reference regime is explicit.
+Records and results belong in private storage, not Git.
 """
 from __future__ import annotations
 
@@ -83,7 +84,7 @@ def main():
     report["comparison_count_not_independent_n"] = len(rows)
     report["scored_count"] = sum("objective_scoring" in row for row in rows)
     _write_text(out_dir / "report.json", json.dumps(report, indent=2, allow_nan=False) + "\n")
-    print(json.dumps(report["summary"], indent=2))
+    print(json.dumps({"closer": report["summary"]["closer"]}, indent=2))
 
 
 if __name__ == "__main__":

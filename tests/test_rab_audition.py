@@ -73,7 +73,7 @@ def test_builds_one_level_matched_blind_file_and_key(tmp_path):
     assert rendered.mono()[:len(original)] == pytest.approx(
         original * gain, abs=2e-6
     ), "the reference segment received static gain and no other processing"
-    assert "closer" in done.stdout and "prefer" in done.stdout
+    assert "closer" in done.stdout and "prefer" not in done.stdout
     assert "raw renders" in done.stdout
 
 
