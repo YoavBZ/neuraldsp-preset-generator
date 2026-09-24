@@ -8,6 +8,9 @@ Supply either a full effective settings JSON object or a plugin preset.
 Morgan's preset path reads every declared writable control, not just search
 dimensions. Tone King's preset is loaded as the exact state blob, preserving
 even absent-value and opaque records; settings JSON is supported only for Morgan.
+For a plugin that omits opening notes while starting, --preroll-s renders
+silence before the DI and crops exactly those frames from the output. The
+sidecar records both the audible DI and the longer render-input hash.
 """
 from __future__ import annotations
 
@@ -26,6 +29,18 @@ from build_rab_audition import _write_audio, _write_text
 
 def _sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def _silent_preroll(di, sample_rate: int, seconds: float):
+    """Start the plugin on silence without replaying or shifting the audible DI."""
+    import numpy as np
+
+    if not 0.0 <= seconds <= 10.0:
+        raise ValueError("--preroll-s must be between 0 and 10 seconds")
+    frames = round(seconds * sample_rate)
+    if frames == 0:
+        return di, 0
+    return np.concatenate((np.zeros(frames, dtype=np.asarray(di).dtype), di)), frames
 
 
 def _selector(pack):
@@ -117,9 +132,13 @@ def main():
     input_group.add_argument("--preset", type=pathlib.Path,
                              help="Morgan: apply all writable controls; Tone King: replay the exact preset state")
     parser.add_argument("--settings-key", help="dot-separated object path within settings JSON, e.g. settings.ac20")
+    parser.add_argument("--preroll-s", type=float, default=0.0,
+                        help="render this much silence before the DI, then crop it from the output")
     parser.add_argument("--out", required=True, type=pathlib.Path,
                         help="new private WAV under runs/")
     args = parser.parse_args()
+    if not 0.0 <= args.preroll_s <= 10.0:
+        raise ValueError("--preroll-s must be between 0 and 10 seconds")
     di_path = args.di.expanduser().resolve()
     source_path = (args.settings_json or args.preset).expanduser().resolve()
     out = args.out.expanduser().resolve()
@@ -164,7 +183,8 @@ def main():
                                         warnings=source_warnings) if args.preset
                   else _all_writable_settings(settings, pack, None))
         amp = _amp(mapped, pack)
-    di = io.load(di_path).mono()
+    di_audio = io.load(di_path)
+    di = di_audio.mono()
     renderer = (ToneKingPresetRenderer(source_path, process_policy="fresh") if exact_state
                 else AudioUnitRenderer(args.pack, process_policy="fresh"))
     try:
@@ -172,24 +192,33 @@ def main():
         metadata = renderer.metadata()
         if "process=fresh" not in metadata.quality_mode:
             raise ValueError("renderer did not report a fresh process")
+        if di_audio.sample_rate != metadata.sample_rate:
+            raise ValueError("DI and renderer sample rates differ")
+        render_di, preroll_frames = _silent_preroll(di, metadata.sample_rate, args.preroll_s)
         supported = renderer_paths(renderer)
         if supported is not None and not exact_state:
             unsupported = sorted(set(mapped) - supported)
             if unsupported:
                 raise ValueError(f"preset control cannot be rendered: {unsupported[0]}")
         render_settings = {} if exact_state else mapped
-        result = renderer.render(di, render_settings, di_sha256=_hash_audio(di))
-        if result.silent:
+        result = renderer.render(render_di, render_settings, di_sha256=_hash_audio(render_di))
+        if len(result.audio) != len(render_di):
+            raise ValueError("renderer returned the wrong number of frames")
+        audible = result.audio[preroll_frames:]
+        if not len(audible) or not bool(audible.any()):
             raise ValueError("the preset rendered silence; no listening alternative was written")
         if _sha(source_path) != source_sha or _sha(di_path) != di_sha:
             raise ValueError("the preset/settings or DI changed during rendering")
         out.parent.mkdir(parents=True, exist_ok=True)
-        _write_audio(out, result.audio, metadata.sample_rate)
+        _write_audio(out, audible, metadata.sample_rate)
         record = {"schema": "listening-fresh-render-v1", "amp_model": amp,
                   "process_policy": "fresh", "pack": args.pack,
                   "audio": {"path": str(out), "sha256": _sha(out)},
                   "di": {"path": str(di_path), "sha256": di_sha,
                          "audio_sha256": _hash_audio(di)},
+                  "render_input": {"audio_sha256": _hash_audio(render_di),
+                                   "leading_silence_frames": preroll_frames,
+                                   "cropped_start_frame": preroll_frames},
                   "settings": ({"path": str(source_path), "sha256": source_sha,
                                 "key": args.settings_key} if args.settings_json else None),
                   "preset": ({"path": str(source_path), "sha256": source_sha}
