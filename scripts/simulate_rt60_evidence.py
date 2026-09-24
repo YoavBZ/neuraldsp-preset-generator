@@ -6,7 +6,7 @@ identifiability check, not a prediction of what the real Tone King or a listener
 will do. It neither changes nor recommends a loss-profile weight.
 
     python scripts/simulate_rt60_evidence.py
-    python scripts/simulate_rt60_evidence.py --out docs/rt60-synthetic-evidence.json
+    python scripts/simulate_rt60_evidence.py --out /tmp/rt60-check.json
 """
 
 from __future__ import annotations
