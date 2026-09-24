@@ -32,9 +32,9 @@ def test_committed_rt60_synthetic_control_matches_the_protocol():
     assert current["schema"] == recorded["schema"]
     assert current["sample_rate"] == recorded["sample_rate"]
     assert current["loss_profile"] == recorded["loss_profile"]
-    assert [row["input"] for row in current["rows"]] == [
-        "noise-short", "noise-long", "synthetic-guitar"
-    ]
+    expected_inputs = ["noise-short", "noise-long", "synthetic-guitar"]
+    assert [row["input"] for row in current["rows"]] == expected_inputs
+    assert [row["input"] for row in recorded["rows"]] == expected_inputs
     for actual, expected in zip(current["rows"], recorded["rows"]):
         _same_reading(actual["dry_input"], expected["dry_input"])
         _same_reading(actual["rack_reverb_off"], expected["rack_reverb_off"])

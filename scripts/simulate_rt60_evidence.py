@@ -78,7 +78,7 @@ def experiment() -> dict:
     return {
         "schema": "rt60-synthetic-evidence-1",
         "method": "Deterministic synthetic DI; Morgan reference chain, identical settings "
-                  "except rack reverb. Historical unpaired-v1 RT60 term; v2 omits it. "
+                  "except rack reverb. Frozen unpaired-v1 RT60 term; v2 omits it. "
                   "No real plugin or listener involved.",
         "sample_rate": SAMPLE_RATE,
         "loss_profile": "unpaired-v1",

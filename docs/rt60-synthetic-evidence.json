@@ -1,6 +1,6 @@
 {
   "schema": "rt60-synthetic-evidence-1",
-  "method": "Deterministic synthetic DI; Morgan reference chain, identical settings except rack reverb. Historical unpaired-v1 RT60 term; v2 omits it. No real plugin or listener involved.",
+  "method": "Deterministic synthetic DI; Morgan reference chain, identical settings except rack reverb. Frozen unpaired-v1 RT60 term; v2 omits it. No real plugin or listener involved.",
   "sample_rate": 48000,
   "loss_profile": "unpaired-v1",
   "runtime_versions": {
