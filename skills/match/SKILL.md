@@ -63,7 +63,8 @@ what each regime's confidence buys, and which bands of a `mix` or `separated_ste
 measurement are the guitar rather than the rhythm section.
 
 Report the regime, confidence, duration, channel count, level, spectral tilt and
-roll-off, dynamics, delay/reverb measurements, harmonic confidence, and every
+roll-off, dynamics, delay measurements, the RT60 estimate (not a reverb
+measurement on played material — say so), harmonic confidence, and every
 caveat. A missing measurement is not zero.
 
 ## 2. Choose topology from evidence
@@ -141,7 +142,7 @@ through the amp compared with a guitar, so a no-DI run's own scores are
 noise-against-guitar distances and a falling score is not evidence the tone got
 closer. Tell the user a match made without a DI is close to a starting point, not
 a measured match, that its output level may need setting by ear (on Tone King
-such matches played 8–15 LU from their targets), and that a DI of their playing
+such matches played 3.5–15 LU from their targets), and that a DI of their playing
 would change that.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial

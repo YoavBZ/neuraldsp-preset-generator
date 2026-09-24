@@ -1,13 +1,22 @@
 {
   "schema": "rt60-study-1",
-  "source_commit": "3c01ade5a796e06a8b7a9244c7ee173e819441fa",
+  "source_commit": "640ee3ff8f6fd94b71248f9eb7fd7f3d05b60700",
   "command": "scripts/study_rt60.py --renderer swift --amp sw50r --template samples/SW50R_Atlas_Topology.xml --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --json docs/rt60-study-sw50r.json",
+  "elapsed_s": 170.2,
   "pack": "morgan",
   "amp": "sw50r",
   "template": "samples/SW50R_Atlas_Topology.xml",
   "dis": {
-    "howlong": "how-long-di-6s.wav",
-    "hotel": "hotel-di-6s.wav"
+    "howlong": {
+      "path": "how-long-di-6s.wav",
+      "sha256": "87cbca70c20fd9838b4c22025638e20adc5804ba0b5479ac55acf63b7366c355",
+      "samples_sha256": "42b38a4bff7108d342378f7910bd3c19b96beb6904b95aa8142dac406e5238cd"
+    },
+    "hotel": {
+      "path": "hotel-di-6s.wav",
+      "sha256": "57469c6b85ada837a4c7d938048addbd6f7f1397f847542321343dd9a952c8e2",
+      "samples_sha256": "f5dd041e33151db970c33f28c84bb230378426d8f6fe7f3740cf232927f98006"
+    }
   },
   "targets": 12,
   "seed": 11,
@@ -27,6 +36,21 @@
     ]
   },
   "measurement_caveat": "rendered by swift (plugin 1.1.1), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 0.23 dB. Every number below carries that, and none of them may be committed without it",
+  "tracks_backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.1.1",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=fresh",
+    "reproducible": true,
+    "band_noise_db": 0.0,
+    "notes": [
+      "morgan through aumf NMAS NDSP, one fresh plugin process per render",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "tracks_measurement_caveat": null,
   "fires": [
     {
       "target_index": 0,
