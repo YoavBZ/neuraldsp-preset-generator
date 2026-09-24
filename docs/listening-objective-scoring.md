@@ -50,11 +50,16 @@ python scripts/inspect_listening_coverage.py --record PRIVATE_KEY.json
 ```
 
 The inspector needs no raw audio but cannot verify that the archived audio was
-the audio heard. It refuses to recompute with a changed loss profile. In Tone
-King, the RT60 estimator has also produced implausible, history-sensitive values
-on guitar passages; a common-term check is not a repair for that estimator.
-Even a dry guitar DI can pass the RT60 scoring gate: its confidence measures
+the audio heard. It refuses to recompute with a changed loss profile. On played
+guitar passages, the RT60 estimator can produce implausible, history-sensitive
+values; a common-term check does not repair it. The current `-v2` loss profiles
+omit RT60. Historical `-v1` scores can still include it: its confidence measures
 agreement among release slopes, not evidence that the sound contains reverb.
+A deterministic [synthetic control](rt60-synthetic-evidence.json), reproduced by
+`scripts/simulate_rt60_evidence.py`, makes that limitation checkable without a
+plugin: all three no-reverb inputs clear the `-v1` gate. On the guitar-like
+input, a 1.2 s rack-reverb setting measures as 2.85 s. This control alone does
+not validate an estimator or explain what a listener would hear.
 The builder scores cropped and gained source samples before montage encoding;
 24-bit FLAC quantization can make the decoded listening file differ minutely.
 

@@ -1,0 +1,155 @@
+{
+  "schema": "rt60-synthetic-evidence-1",
+  "method": "Deterministic synthetic DI; Morgan reference chain, identical settings except rack reverb. Historical unpaired-v1 RT60 term; v2 omits it. No real plugin or listener involved.",
+  "sample_rate": 48000,
+  "loss_profile": "unpaired-v1",
+  "runtime_versions": {
+    "python": "3.14.6",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pyloudnorm": "0.2.0"
+  },
+  "rows": [
+    {
+      "input": "noise-short",
+      "dry_input": {
+        "rt60_s": 0.3857,
+        "release_slope_agreement": 0.9831,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_off": {
+        "rt60_s": 0.4351,
+        "release_slope_agreement": 0.9327,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_on": [
+        {
+          "rack_decay_s": 1.2,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 1.2084,
+            "release_slope_agreement": 0.9891,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 1.9332499999999997,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 1.9332499999999997,
+            "am_depth": 0.0,
+            "am_rate": 1.47275
+          },
+          "dry_vs_wet_ambience": 1.1353333333333333
+        },
+        {
+          "rack_decay_s": 2.4,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 2.4143,
+            "release_slope_agreement": 0.9828,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 4.9479999999999995,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 4.9479999999999995,
+            "am_depth": 0.3319578666666669,
+            "am_rate": 1.394
+          },
+          "dry_vs_wet_ambience": 2.224652622222222
+        }
+      ]
+    },
+    {
+      "input": "noise-long",
+      "dry_input": {
+        "rt60_s": 1.388,
+        "release_slope_agreement": 0.9946,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_off": {
+        "rt60_s": 1.4985,
+        "release_slope_agreement": 0.9849,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_on": [
+        {
+          "rack_decay_s": 1.2,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 1.6203,
+            "release_slope_agreement": 0.9875,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 0.3045000000000003,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 0.3045000000000003,
+            "am_depth": 0.33815466666666677,
+            "am_rate": 0.0
+          },
+          "dry_vs_wet_ambience": 0.21421822222222234
+        },
+        {
+          "rack_decay_s": 2.4,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 2.4516,
+            "release_slope_agreement": 0.984,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 2.38275,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 2.38275,
+            "am_depth": 1.3655876666666666,
+            "am_rate": 0.0
+          },
+          "dry_vs_wet_ambience": 1.249445888888889
+        }
+      ]
+    },
+    {
+      "input": "synthetic-guitar",
+      "dry_input": {
+        "rt60_s": 2.2234,
+        "release_slope_agreement": 0.7681,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_off": {
+        "rt60_s": 2.4724,
+        "release_slope_agreement": 0.6707,
+        "passes_v1_rt60_gate": true
+      },
+      "rack_reverb_on": [
+        {
+          "rack_decay_s": 1.2,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 2.8547,
+            "release_slope_agreement": 0.7729,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 0.9557499999999997,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 0.9557499999999997,
+            "am_depth": 0.3162937333333333,
+            "am_rate": 0.0
+          },
+          "dry_vs_wet_ambience": 0.4240145777777777
+        },
+        {
+          "rack_decay_s": 2.4,
+          "rack_mix_percent": 50.0,
+          "reading": {
+            "rt60_s": 4.33,
+            "release_slope_agreement": 0.6921,
+            "passes_v1_rt60_gate": true
+          },
+          "dry_vs_wet_rt60_term": 4.644,
+          "dry_vs_wet_ambience_terms": {
+            "rt60": 4.644,
+            "am_depth": 0.4998448,
+            "am_rate": 0.0
+          },
+          "dry_vs_wet_ambience": 1.7146149333333334
+        }
+      ]
+    }
+  ]
+}
