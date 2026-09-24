@@ -42,7 +42,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import die, guarded, positive_int, probe_di
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
-SCHEMA = "search-signal-benchmark-2"   # 2: the neutral and inversion-only scores
+# 2: each target's neutral start and each signal's inversion alone are scored,
+# every score is broken down by dimension, and an arm's `renders` now include
+# scoring its inversion (the neutral start's are counted in no arm).
+SCHEMA = "search-signal-benchmark-2"
 NO_DI_SECONDS = 6.0   # what match_preset.py renders through when no DI is given
 
 
@@ -66,7 +69,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--budget", type=positive_int, default=300)
     ap.add_argument("--no-search", action="store_true",
                     help="score only each target's neutral start and each signal's "
-                         "inversion alone: minutes, where the searches take hours")
+                         "inversion alone: minutes, where the searches take hours "
+                         "(--budget is then unused)")
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--loss-profile", default="unpaired-v1")
     ap.add_argument("--workers", type=positive_int, default=1,
@@ -176,29 +180,63 @@ def main() -> None:
     print(f"\n{args.targets} targets, {budget}, {args.pack}/{amp}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, {elapsed:.0f}s; "
           f"answers scored through {args.target_di}\n")
-    header = (f"{'signal':20} {'objective':>18} {'search belief':>14} "
-              f"{'param MAE':>10} {'inversion alone':>16} {'vs ' + reference:>22}")
-    print(header)
-    print("-" * len(header))
-    for name, entry in summary.items():
-        paired = ""
-        if "closer_than_reference" in entry:
-            p = entry.get("wilcoxon_p")
-            paired = (f"closer {entry['closer_than_reference']}/"
-                      f"{entry['paired_targets']}, "
-                      f"{100 * entry['mean_change_fraction']:+.0f}%"
-                      + (f", p={p:.3f}" if p is not None else ""))
-        shown = {key: "—" if value is None else value for key, value in entry.items()}
-        print(f"{name:20} {shown['objective_mean']!s:>8} / "
-              f"{shown['objective_median']!s:<8} {shown['search_belief_mean']!s:>14} "
-              f"{shown['parameter_mae']!s:>10} "
-              f"{shown['inversion_objective_mean']!s:>16} {paired:>22}")
-    neutral = summary[reference]["neutral_objective_mean"]
-    print(f"{'neutral start':20} {'—' if neutral is None else neutral!s:>8}")
-    print("\nobjective is the answer rendered from the target DI, mean / median; "
-          "search belief is the search's own best score through its own signal; "
-          "inversion alone and the neutral start are rendered from the target DI "
-          "too, with no search")
+    def dash(value):
+        return "—" if value is None else value
+
+    def versus(paired):
+        if not paired:
+            return ""
+        p = paired.get("wilcoxon_p")
+        return (f"closer {paired['closer']}/{paired['targets']}, "
+                f"{100 * paired['mean_change_fraction']:+.0f}%"
+                + (f", p={p:.3f}" if p is not None else ""))
+
+    neutral = summary[reference]
+    if args.no_search:
+        header = f"{'signal':20} {'inversion alone':>20}"
+        print(header)
+        print("-" * len(header))
+        for name, entry in summary.items():
+            print(f"{name:20} {dash(entry['inversion_objective_mean'])!s:>9} / "
+                  f"{dash(entry['inversion_objective_median'])!s:<9}")
+        print(f"{'neutral start':20} {dash(neutral['neutral_objective_mean'])!s:>9} / "
+              f"{dash(neutral['neutral_objective_median'])!s:<9}")
+        print("\nmean / median, each rendered from the target DI with no search")
+    else:
+        header = (f"{'signal':20} {'objective':>18} {'search belief':>14} "
+                  f"{'param MAE':>10} {'vs ' + reference:>22}")
+        print(header)
+        print("-" * len(header))
+        for name, entry in summary.items():
+            paired = versus({"closer": entry["closer_than_reference"],
+                             "targets": entry["paired_targets"],
+                             "mean_change_fraction": entry["mean_change_fraction"],
+                             "wilcoxon_p": entry["wilcoxon_p"]}
+                            if "closer_than_reference" in entry else None)
+            print(f"{name:20} {dash(entry['objective_mean'])!s:>8} / "
+                  f"{dash(entry['objective_median'])!s:<8} "
+                  f"{dash(entry['search_belief_mean'])!s:>14} "
+                  f"{dash(entry['parameter_mae'])!s:>10} {paired:>22}")
+        print("\nobjective is the answer rendered from the target DI, mean / median; "
+              "search belief is the search's own best score through its own signal")
+
+        header = (f"\n{'without the search':20} {'score':>18} "
+                  f"{'answer vs it':>26}")
+        print(header)
+        print("-" * (len(header) - 1))
+        print(f"{'neutral start':20} {dash(neutral['neutral_objective_mean'])!s:>8} / "
+              f"{dash(neutral['neutral_objective_median'])!s:<8}")
+        for name, entry in summary.items():
+            print(f"{'  ' + name + ' answer':20} {'':18} "
+                  f"{versus(entry.get('against_neutral')):>26}")
+        for name, entry in summary.items():
+            print(f"{name + ' inversion':20} "
+                  f"{dash(entry['inversion_objective_mean'])!s:>8} / "
+                  f"{dash(entry['inversion_objective_median'])!s:<8} "
+                  f"{versus(entry.get('against_inversion')):>26}")
+        print("\neach rendered from the target DI; the answer is paired with the same "
+              "target's neutral start and with its own search's starting inversion, "
+              "all in one instance")
     if caveat:
         print(f"\n  {caveat}.")
 

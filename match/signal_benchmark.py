@@ -57,6 +57,12 @@ class SignalOutcome:
     # each of its outcomes so every row can be paired on its own.
     inversion_objective: Optional[float] = None
     neutral_objective: Optional[float] = None
+    # Each of those three scores by dimension (timbre, dynamics, ambience, ...),
+    # averaged over the same observations: which part of the loss a distance
+    # came from.
+    objective_dimensions: Optional[Dict[str, float]] = None
+    inversion_dimensions: Optional[Dict[str, float]] = None
+    neutral_dimensions: Optional[Dict[str, float]] = None
     renders: int = 0
     failed: bool = False
     error: Optional[str] = None
@@ -151,29 +157,44 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                              regime="isolated_stem", excerpt_s=None)
         observations = search.shortlist_replicates(own.metadata())
 
-        def heard(values) -> Optional[float]:
-            scores = benchmark.scorer_scores(scorer, target, values,
-                                             observations=observations)
-            return sum(scores) / len(scores) if scores else None
+        def heard(values):
+            """Mean total, mean per dimension and spread, or Nones."""
+            scored = benchmark.scorer_candidates(scorer, target, values,
+                                                 observations=observations)
+            if not scored:
+                return None, None, None
+            totals = [candidate.total for candidate in scored]
+            names = {name for candidate in scored for name in candidate.objectives
+                     if name != "total"}
+            dimensions = {name: statistics.fmean(
+                candidate.objectives[name] for candidate in scored
+                if name in candidate.objectives) for name in sorted(names)}
+            spread = max(totals) - min(totals) if len(totals) > 1 else None
+            return statistics.fmean(totals), dimensions, spread
 
         # Shared by every arm, so its renders are counted in none of them.
-        neutral = heard(seed)
+        neutral, neutral_dimensions, _ = heard(seed)
         rotation = index % len(names)
         order = names[rotation:] + names[:rotation]
         outcomes = []
         for position, name in enumerate(order):
             outcome = SignalOutcome(signal=name, target_index=index,
-                                    position=position, neutral_objective=neutral)
+                                    position=position, neutral_objective=neutral,
+                                    neutral_dimensions=neutral_dimensions)
             try:
                 inverted, spent = benchmark._invert_from(
                     own, target, signals[name], space, seed, profile, invert,
                     search, pack_id, amp)
                 inverted = invert.apply_to(inverted, discrete, space)
                 before = scorer.renders
-                outcome.inversion_objective = heard(inverted)
+                (outcome.inversion_objective, outcome.inversion_dimensions,
+                 _) = heard(inverted)
                 spent += scorer.renders - before
                 if not run_search:
                     outcome.renders = spent
+                    if outcome.inversion_objective is None or neutral is None:
+                        outcome.failed = True
+                        outcome.error = "a baseline produced no comparable objective"
                     outcomes.append(outcome)
                     continue
                 found = search.search(own, target, signals[name], space, inverted,
@@ -185,15 +206,11 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                         f"renders")
                 best = found.shortlist[0]
                 before = scorer.renders
-                scores = benchmark.scorer_scores(scorer, target, best.values,
-                                                 observations=observations)
+                (outcome.objective, outcome.objective_dimensions,
+                 outcome.objective_spread) = heard(best.values)
                 outcome.renders = spent + found.renders + (scorer.renders - before)
                 outcome.search_belief = best.total
-                if scores:
-                    outcome.objective = sum(scores) / len(scores)
-                    outcome.objective_spread = (max(scores) - min(scores)
-                                                if len(scores) > 1 else None)
-                else:
+                if outcome.objective is None:
                     outcome.failed = True
                     outcome.error = "the answer produced no comparable objective"
                 outcome.parameter_mae, _ = benchmark.parameter_error(
@@ -257,9 +274,14 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
 
 
 def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, Any]:
-    """Per-signal means, and each signal paired against `reference` by target."""
-    from scipy import stats
+    """Per-signal means, and each signal's answers paired by target.
 
+    Every signal but `reference` is paired against it (the flat
+    `closer_than_reference` keys). Every signal's answers are also paired against
+    the same target's neutral start and against that signal's own inversion alone
+    (`against_neutral`, `against_inversion`): did the search beat what the
+    pipeline gives without it? Those pairs are within one instance's renders.
+    """
     by = {}
     for outcome in outcomes:
         by.setdefault(outcome.signal, {})[outcome.target_index] = outcome
@@ -274,29 +296,49 @@ def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, An
             "search_belief_mean": _mean(row.search_belief for row in good),
             "parameter_mae": _mean(row.parameter_mae for row in good),
             "inversion_objective_mean": _mean(row.inversion_objective for row in good),
+            "inversion_objective_median": _median(
+                row.inversion_objective for row in good),
             "neutral_objective_mean": _mean(row.neutral_objective for row in good),
+            "neutral_objective_median": _median(row.neutral_objective for row in good),
             "renders": sum(row.renders for row in rows.values()),
         }
+        for key, field in (("against_neutral", "neutral_objective"),
+                           ("against_inversion", "inversion_objective")):
+            paired = _paired([(row.objective, getattr(row, field)) for row in good])
+            if paired:
+                entry[key] = paired
         if name != reference and reference in by:
-            pairs = [(rows[i].objective, by[reference][i].objective)
-                     for i in rows if i in by[reference]
-                     and not rows[i].failed and not by[reference][i].failed
-                     and rows[i].objective is not None
-                     and by[reference][i].objective is not None]
-            if pairs:
-                mine = [a for a, _ in pairs]
-                theirs = [b for _, b in pairs]
+            theirs = by[reference]
+            paired = _paired([(rows[i].objective, theirs[i].objective) for i in rows
+                              if i in theirs and not rows[i].failed
+                              and not theirs[i].failed])
+            if paired:
                 entry["paired_against"] = reference
-                entry["paired_targets"] = len(pairs)
-                entry["closer_than_reference"] = sum(a < b for a, b in pairs)
-                entry["mean_change_fraction"] = (
-                    (statistics.fmean(mine) - statistics.fmean(theirs))
-                    / statistics.fmean(theirs))
-                entry["wilcoxon_p"] = (
-                    float(stats.wilcoxon(mine, theirs).pvalue)
-                    if len(pairs) > 1 and any(a != b for a, b in pairs) else None)
+                entry["paired_targets"] = paired["targets"]
+                entry["closer_than_reference"] = paired["closer"]
+                entry["mean_change_fraction"] = paired["mean_change_fraction"]
+                entry["wilcoxon_p"] = paired["wilcoxon_p"]
         summary[name] = entry
     return summary
+
+
+def _paired(pairs) -> Optional[Dict[str, Any]]:
+    """How often, by how much and how surely the first of each pair was closer."""
+    from scipy import stats
+
+    pairs = [(a, b) for a, b in pairs if a is not None and b is not None]
+    if not pairs:
+        return None
+    mine = [a for a, _ in pairs]
+    theirs = [b for _, b in pairs]
+    return {
+        "targets": len(pairs),
+        "closer": sum(a < b for a, b in pairs),
+        "mean_change_fraction": ((statistics.fmean(mine) - statistics.fmean(theirs))
+                                 / statistics.fmean(theirs)),
+        "wilcoxon_p": (float(stats.wilcoxon(mine, theirs).pvalue)
+                       if len(pairs) > 1 and any(a != b for a, b in pairs) else None),
+    }
 
 
 def _close(renderers) -> None:

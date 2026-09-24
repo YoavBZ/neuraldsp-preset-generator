@@ -76,14 +76,14 @@ def test_every_answer_is_heard_through_the_targets_own_signal(
     """The whole point: an answer found through the noise probe is judged by how
     it sounds played through the guitar, not by how it sounds through noise."""
     target, named = signals
-    real = B.scorer_scores
+    real = B.scorer_candidates
     seen = []
 
     def checking(scorer, *args, **kwargs):
         seen.append(scorer.probe_di is target)
         return real(scorer, *args, **kwargs)
 
-    monkeypatch.setattr(B, "scorer_scores", checking)
+    monkeypatch.setattr(B, "scorer_candidates", checking)
     outcomes = _run(space, topology, target, named)
 
     assert len(outcomes) == 4, "two targets by two signals"
@@ -120,7 +120,7 @@ def test_the_inversion_cannot_change_the_topology(
     from match import invert
 
     target, named = signals
-    real_invert, real_scores = invert.invert, B.scorer_scores
+    real_invert, real_scores = invert.invert, B.scorer_candidates
     answers = []
 
     def switching(*args, **kwargs):
@@ -133,7 +133,7 @@ def test_the_inversion_cannot_change_the_topology(
         return real_scores(scorer, target_fp, values, *args, **kwargs)
 
     monkeypatch.setattr(invert, "invert", switching)
-    monkeypatch.setattr(B, "scorer_scores", recording)
+    monkeypatch.setattr(B, "scorer_candidates", recording)
     _run(space, topology, target, named, targets=1)
 
     # The neutral start, then each arm's inversion alone and its answer.
@@ -148,7 +148,7 @@ def test_the_baselines_are_scored_beside_the_search_on_the_same_targets(
     from match import search as search_module
 
     target, named = signals
-    real_search, real_scores = search_module.search, B.scorer_scores
+    real_search, real_scores = search_module.search, B.scorer_candidates
     starts, scored = [], []
 
     def recording_search(renderer, target_fp, probe, space_, start, **kwargs):
@@ -160,7 +160,7 @@ def test_the_baselines_are_scored_beside_the_search_on_the_same_targets(
         return real_scores(scorer, target_fp, values, *args, **kwargs)
 
     monkeypatch.setattr(search_module, "search", recording_search)
-    monkeypatch.setattr(B, "scorer_scores", recording_scores)
+    monkeypatch.setattr(B, "scorer_candidates", recording_scores)
     outcomes = _run(space, topology, target, named, targets=1)
 
     assert scored[0] == topology["seed"], "the neutral start is scored first"
@@ -170,6 +170,15 @@ def test_the_baselines_are_scored_beside_the_search_on_the_same_targets(
     assert all(o.inversion_objective is not None for o in outcomes)
     summary = SB.summarise(outcomes, reference="same")
     assert summary["other"]["neutral_objective_mean"] == round(neutral.pop(), 4)
+    # Every score says which dimensions it came from, and they are the loss's own.
+    for o in outcomes:
+        for dimensions in (o.objective_dimensions, o.inversion_dimensions,
+                           o.neutral_dimensions):
+            assert "total" not in dimensions and {"timbre", "level"} <= set(dimensions)
+    # And each answer is paired with its own baselines, in-run.
+    for name in named:
+        assert summary[name]["against_neutral"]["targets"] == 1
+        assert summary[name]["against_inversion"]["targets"] == 1
 
 
 def test_without_the_search_only_the_baselines_are_scored(
@@ -192,6 +201,35 @@ def test_without_the_search_only_the_baselines_are_scored(
     assert summary["other"]["objective_mean"] is None
     assert "paired_against" not in summary["other"], "nothing to pair without answers"
     assert summary["other"]["inversion_objective_mean"] is not None
+
+
+def test_a_baseline_that_cannot_be_scored_fails_its_row(
+        space, topology, signals, monkeypatch):
+    """Without the search, a row whose baseline produced no objective is a
+    failure the summary counts, not a row that quietly leaves the mean."""
+    target, named = signals
+    monkeypatch.setattr(B, "scorer_candidates", lambda *args, **kwargs: [])
+    outcomes = _run(space, topology, target, named, targets=1, run_search=False)
+
+    assert all(o.failed and "baseline" in o.error for o in outcomes)
+    assert SB.summarise(outcomes, reference="same")["other"]["failures"] == 1
+
+
+def test_the_summary_pairs_each_answer_with_its_own_baselines():
+    outcomes = []
+    for index, (answer, inversion, neutral) in enumerate(
+            [(0.3, 0.5, 1.0), (0.6, 0.5, 1.2), (0.2, 0.4, 0.9)]):
+        outcomes.append(SB.SignalOutcome(
+            "noise", index, 0, objective=answer, inversion_objective=inversion,
+            neutral_objective=neutral))
+    noise = SB.summarise(outcomes, reference="noise")["noise"]
+
+    assert noise["against_neutral"]["closer"] == 3
+    assert noise["against_inversion"]["closer"] == 2
+    assert noise["against_inversion"]["mean_change_fraction"] == pytest.approx(
+        (1.1 - 1.4) / 1.4)
+    assert noise["neutral_objective_median"] == 1.0
+    assert "paired_against" not in noise, "the reference is not paired with itself"
 
 
 def test_arms_take_turns_going_first(space, topology, signals):
@@ -269,6 +307,7 @@ def test_the_cli_can_score_only_the_baselines(tmp_path):
     assert done.returncode == 0, done.stderr
     assert "no search" in done.stdout and "neutral start" in done.stdout
 
+    assert "inversion alone" in done.stdout and "—" not in done.stdout
     written = json.loads(out.read_text())
     assert written["search"] is False and written["budget"] is None
     assert all(o["objective"] is None and o["inversion_objective"] is not None
@@ -295,8 +334,10 @@ def test_two_workers_give_the_serial_answer_and_need_a_factory(
     pooled = _run(space, topology, target, named, workers=2,
                   renderer_factory=SyntheticRenderer)
     key = lambda o: (o.target_index, o.signal)
-    assert [(key(o), o.objective) for o in sorted(serial, key=key)] == [
-        (key(o), o.objective) for o in sorted(pooled, key=key)]
+    scored = lambda o: (key(o), o.objective, o.inversion_objective,
+                        o.neutral_objective)
+    assert [scored(o) for o in sorted(serial, key=key)] == [
+        scored(o) for o in sorted(pooled, key=key)]
     with pytest.raises(SB.SignalBenchmarkError, match="renderer_factory"):
         _run(space, topology, target, named, workers=2)
 

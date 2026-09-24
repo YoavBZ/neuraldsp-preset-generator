@@ -817,13 +817,26 @@ def scorer_scores(scorer, target, values: Mapping, observations: int = 1,
     like a better match" bug §12c records, and the reason it has not bitten is that
     there is exactly one caller.
     """
+    return [scored.total for scored in scorer_candidates(
+        scorer, target, values, observations=observations,
+        reference_audio=reference_audio)]
+
+
+def scorer_candidates(scorer, target, values: Mapping, observations: int = 1,
+                      reference_audio=None) -> list:
+    """`scorer_scores`, keeping each observation's candidate and its objectives.
+
+    For a caller that needs to know which dimension a distance came from, not
+    only its total. Observations that produced no objective are left out, as
+    there.
+    """
     scorer.set_reference(target, reference_audio)
-    scores = []
+    scored = []
     for _ in range(max(1, int(observations))):
-        scored = scorer.evaluate(values)
-        if scored.objectives:
-            scores.append(scored.total)
-    return scores
+        candidate = scorer.evaluate(values)
+        if candidate.objectives:
+            scored.append(candidate)
+    return scored
 
 
 def _run_arm(arm: str, renderer, target, probe_di, space, seed, budget, profile,
