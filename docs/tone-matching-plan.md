@@ -1434,6 +1434,48 @@ the code merged here; since then only the worker path's error handling, the
 JSON's hash fields (it still says `sha256` for what is now `samples_sha256`), the
 docs and the tests changed, plus #56's help text and docs merged underneath.
 
+**A synthetic guitar instead of noise — tried, not adopted.** If a real DI of
+another song helps that much, a guitar-like stand-in might recover some of it for
+users with none. `analysis.probes.synthetic_guitar` is Karplus-Strong strings —
+strummed open chords and short single-note runs — through a rough single-coil
+response, at a played DI's loudness. It was chosen against the two played DIs on
+loudness, spectral tilt and crest factor (it is brighter than both by spectral
+centroid), fixed, and then measured with the same tool, once scored through each
+played passage, with the other passage as the "different song":
+
+| scored through | own passage | other song | synthetic guitar | noise probe |
+|---|---:|---:|---:|---:|
+| How Long | 0.442 / 0.317 | 0.764 / 0.670 | 0.994 / 0.994 | 1.433 / 1.307 |
+| Hotel California | 0.440 / 0.365 | 0.959 / 0.965 | 1.602 / 1.555 | 1.534 / 1.448 |
+
+Through How Long the synthetic guitar ended 31% closer than noise (9 of 12,
+p = 0.007); through Hotel California it was no better (7 of 12, p = 1.0). So its
+first result was a property of that passage, not of guitar-likeness, and matches
+keep the noise probe. It stays in the repository as `--signal guitar` so this is
+reproducible. The real DI of the other song, by contrast, beat noise in every run
+and both directions — on 11, 12 and 11 of 12 targets (p ≤ 0.002) — which is the
+robust finding: a DI of anything the player plays is worth asking for. The same
+tool's `same` and `other` arms moved by up to 0.15 between the two How Long runs,
+so only within-run pairs are comparisons.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
+  --signal same --signal guitar --signal noise --signal other=hotel-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 \
+  --json docs/search-signal-sw50r-guitar-probe-howlong.json
+.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --target-di hotel-di-6s.wav \
+  --signal same --signal guitar --signal noise --signal other=how-long-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 \
+  --json docs/search-signal-sw50r-guitar-probe-hotel.json
+```
+
+Both runs were made before `--signal guitar` existed, with the generator's output
+written to a file and passed as `synth=PATH`, so their JSON names that signal
+`synth`; `synthetic_guitar()` reproduces that file bit for bit. They took 148 and
+149 minutes.
+
 ---
 
 ## 8. Dependency and CI policy

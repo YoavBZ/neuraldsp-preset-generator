@@ -29,3 +29,19 @@ def test_fallback_names_noise_bursts_not_guitar_plucks():
     assert len(samples) == 2 * fx.SAMPLE_RATE
     assert "noise-burst" in caveat
     assert "pluck" not in caveat
+
+
+def test_the_synthetic_guitar_is_a_played_di_by_its_level_and_repeats_exactly():
+    """A research search signal whose negative result the plan doc records, so it
+    has to repeat bit for bit to be reproducible, sit at a played DI's loudness,
+    and never clip the way the noise probe (+10.5 dBFS peaks) does."""
+    from analysis import io
+    from analysis.probes import synthetic_guitar
+
+    first, again = synthetic_guitar(), synthetic_guitar()
+    assert np.array_equal(first, again)
+    assert len(first) == 6 * fx.SAMPLE_RATE
+    audio = io.from_samples(first, fx.SAMPLE_RATE)
+    assert io.loudness_lufs(audio) == pytest.approx(-17.0, abs=0.1)
+    assert np.abs(first).max() < 1.0
+    assert not np.array_equal(first, synthetic_guitar(seed=14)), "the seed matters"
