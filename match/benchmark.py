@@ -814,8 +814,8 @@ def scorer_scores(scorer, target, values: Mapping, observations: int = 1,
     and every target, so a caller that forgets either the fingerprint or, for a paired
     profile, its waveform scores against the previous one. `set_reference` updates the
     pair together. That is the same class of hidden state as the "a quieter DI looked
-    like a better match" bug §12c records, and the reason it has not bitten is that
-    there is exactly one caller.
+    like a better match" bug §12c records. Both this and `scorer_candidates`, which
+    does the work, set the reference on every call for that reason.
     """
     return [scored.total for scored in scorer_candidates(
         scorer, target, values, observations=observations,

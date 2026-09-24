@@ -57,12 +57,17 @@ class SignalOutcome:
     # each of its outcomes so every row can be paired on its own.
     inversion_objective: Optional[float] = None
     neutral_objective: Optional[float] = None
+    inversion_spread: Optional[float] = None
+    neutral_spread: Optional[float] = None
     # Each of those three scores by dimension (timbre, dynamics, ambience, ...),
-    # averaged over the same observations: which part of the loss a distance
-    # came from.
+    # each dimension averaged over the observations that measured it: which part
+    # of the loss a distance came from.
     objective_dimensions: Optional[Dict[str, float]] = None
     inversion_dimensions: Optional[Dict[str, float]] = None
     neutral_dimensions: Optional[Dict[str, float]] = None
+    # This arm's own renders: its inversion, scoring that inversion, its search
+    # and scoring its answer. The neutral start's are shared by every arm of a
+    # target and counted in none.
     renders: int = 0
     failed: bool = False
     error: Optional[str] = None
@@ -164,22 +169,23 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
             if not scored:
                 return None, None, None
             totals = [candidate.total for candidate in scored]
-            names = {name for candidate in scored for name in candidate.objectives
-                     if name != "total"}
-            dimensions = {name: statistics.fmean(
-                candidate.objectives[name] for candidate in scored
-                if name in candidate.objectives) for name in sorted(names)}
+            measured = {term for candidate in scored for term in candidate.objectives
+                        if term != "total"}
+            per_dimension = {term: statistics.fmean(
+                candidate.objectives[term] for candidate in scored
+                if term in candidate.objectives) for term in sorted(measured)}
             spread = max(totals) - min(totals) if len(totals) > 1 else None
-            return statistics.fmean(totals), dimensions, spread
+            return statistics.fmean(totals), per_dimension, spread
 
         # Shared by every arm, so its renders are counted in none of them.
-        neutral, neutral_dimensions, _ = heard(seed)
+        neutral, neutral_dimensions, neutral_spread = heard(seed)
         rotation = index % len(names)
         order = names[rotation:] + names[:rotation]
         outcomes = []
         for position, name in enumerate(order):
             outcome = SignalOutcome(signal=name, target_index=index,
                                     position=position, neutral_objective=neutral,
+                                    neutral_spread=neutral_spread,
                                     neutral_dimensions=neutral_dimensions)
             try:
                 inverted, spent = benchmark._invert_from(
@@ -188,7 +194,7 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                 inverted = invert.apply_to(inverted, discrete, space)
                 before = scorer.renders
                 (outcome.inversion_objective, outcome.inversion_dimensions,
-                 _) = heard(inverted)
+                 outcome.inversion_spread) = heard(inverted)
                 spent += scorer.renders - before
                 if not run_search:
                     outcome.renders = spent
@@ -295,11 +301,20 @@ def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, An
             "objective_median": _median(row.objective for row in good),
             "search_belief_mean": _mean(row.search_belief for row in good),
             "parameter_mae": _mean(row.parameter_mae for row in good),
-            "inversion_objective_mean": _mean(row.inversion_objective for row in good),
+            # A baseline is measured before the search, so a row whose search
+            # failed still has one; a row whose baseline failed still has an
+            # answer, and is counted here rather than failed.
+            "inversion_objective_mean": _mean(
+                row.inversion_objective for row in rows.values()),
             "inversion_objective_median": _median(
-                row.inversion_objective for row in good),
-            "neutral_objective_mean": _mean(row.neutral_objective for row in good),
-            "neutral_objective_median": _median(row.neutral_objective for row in good),
+                row.inversion_objective for row in rows.values()),
+            "neutral_objective_mean": _mean(
+                row.neutral_objective for row in rows.values()),
+            "neutral_objective_median": _median(
+                row.neutral_objective for row in rows.values()),
+            "baseline_failures": sum(
+                row.inversion_objective is None or row.neutral_objective is None
+                for row in rows.values()),
             "renders": sum(row.renders for row in rows.values()),
         }
         for key, field in (("against_neutral", "neutral_objective"),

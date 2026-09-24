@@ -215,6 +215,32 @@ def test_a_baseline_that_cannot_be_scored_fails_its_row(
     assert SB.summarise(outcomes, reference="same")["other"]["failures"] == 1
 
 
+def test_a_baseline_lost_beside_a_search_is_counted_not_failed(
+        space, topology, signals, monkeypatch):
+    """With the search on, an answer whose baselines could not be scored is still
+    an answer; the summary says how many rows lack a baseline."""
+    target, named = signals
+    real = B.scorer_candidates
+    calls = []
+
+    def losing_baselines(scorer, target_fp, values, *args, **kwargs):
+        calls.append(values)
+        # The first scoring of a target is its neutral start.
+        return [] if len(calls) == 1 else real(scorer, target_fp, values,
+                                               *args, **kwargs)
+
+    monkeypatch.setattr(B, "scorer_candidates", losing_baselines)
+    outcomes = _run(space, topology, target, named, targets=1)
+
+    assert not any(o.failed for o in outcomes)
+    assert all(o.neutral_objective is None and o.objective is not None
+               for o in outcomes)
+    summary = SB.summarise(outcomes, reference="same")
+    assert summary["other"]["baseline_failures"] == 1
+    assert "against_neutral" not in summary["other"]
+    assert summary["other"]["against_inversion"]["targets"] == 1
+
+
 def test_the_summary_pairs_each_answer_with_its_own_baselines():
     outcomes = []
     for index, (answer, inversion, neutral) in enumerate(
@@ -296,6 +322,7 @@ def test_the_cli_writes_every_signal_and_pairs_them_with_the_first(tmp_path):
     assert len(written["outcomes"]) == 3
     assert all(o["inversion_objective"] is not None and o["neutral_objective"]
                is not None for o in written["outcomes"])
+    assert "without the search" in done.stdout and "answer vs it" in done.stdout
 
 
 def test_the_cli_can_score_only_the_baselines(tmp_path):

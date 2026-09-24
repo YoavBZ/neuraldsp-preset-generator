@@ -133,7 +133,8 @@ targets). On SW50R, neither matching that probe's loudness to a guitar's nor
 replacing it with a synthetic strummed guitar helped reliably. On Tone King's
 rhythm channel, with the same DIs over two runs, the ordering held: own passage
 0.31–0.33, other song 0.61–0.72 (closer than noise on all 12 targets both
-times), noise 1.06–1.13.
+times), noise 1.06–1.13; whether the noise search beat neutral settings there was
+not settled.
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
 white-noise bursts and records that limitation. Every candidate is then noise
 through the amp compared with a guitar, so a no-DI run's own scores are

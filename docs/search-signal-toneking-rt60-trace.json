@@ -1,0 +1,349 @@
+{
+  "description": "RT60 estimates behind the rt60 term on Tone King's rhythm channel, from one traced one-worker --no-search pass over the 12 targets of the search-signal runs (signal 'same' only), plus one fresh-process render of target 10's truth. Not for pairing with the search runs: which scores the term hits depends on the instance's history.",
+  "method": "The renderer's render() was wrapped to keep every render of signal_benchmark.compare_search_signals(run_search=False, targets=12, signals={'same'}, workers=1, seed 11) through one reused Swift instance, Tone King 1.0.3. Each target's render (fingerprinted isolated_stem) is compared with its three neutral renders (fingerprinted probe, as Evaluator scores them) by analysis.compare with unpaired-v1. The fresh render is AudioUnitRenderer(process_policy='fresh') of the same truth.",
+  "source_commit": "db48981106d5b36b736717c80100ab168c665135",
+  "loss_profile": "unpaired-v1",
+  "target_di": "how-long-di-6s.wav",
+  "targets": [
+    {
+      "target_index": 0,
+      "target_rt60_s": 2.975,
+      "target_rt60_confidence": 0.16,
+      "neutral": [
+        {
+          "rt60_s": 6.974,
+          "rt60_confidence": 0.486,
+          "rt60_term": null,
+          "ambience": 0.77,
+          "total": 2.406
+        },
+        {
+          "rt60_s": 7.413,
+          "rt60_confidence": 0.436,
+          "rt60_term": null,
+          "ambience": 0.77,
+          "total": 2.381
+        },
+        {
+          "rt60_s": 7.783,
+          "rt60_confidence": 0.415,
+          "rt60_term": null,
+          "ambience": 0.77,
+          "total": 2.36
+        }
+      ]
+    },
+    {
+      "target_index": 1,
+      "target_rt60_s": null,
+      "target_rt60_confidence": 0.0,
+      "neutral": [
+        {
+          "rt60_s": 7.205,
+          "rt60_confidence": 0.444,
+          "rt60_term": null,
+          "ambience": 0.564,
+          "total": 1.237
+        },
+        {
+          "rt60_s": 8.418,
+          "rt60_confidence": 0.381,
+          "rt60_term": null,
+          "ambience": 0.564,
+          "total": 1.234
+        },
+        {
+          "rt60_s": 7.813,
+          "rt60_confidence": 0.436,
+          "rt60_term": null,
+          "ambience": 0.566,
+          "total": 1.235
+        }
+      ]
+    },
+    {
+      "target_index": 2,
+      "target_rt60_s": null,
+      "target_rt60_confidence": 0.0,
+      "neutral": [
+        {
+          "rt60_s": 7.945,
+          "rt60_confidence": 0.41,
+          "rt60_term": null,
+          "ambience": 0.705,
+          "total": 1.138
+        },
+        {
+          "rt60_s": 7.894,
+          "rt60_confidence": 0.413,
+          "rt60_term": null,
+          "ambience": 0.704,
+          "total": 1.146
+        },
+        {
+          "rt60_s": 7.393,
+          "rt60_confidence": 0.443,
+          "rt60_term": null,
+          "ambience": 0.704,
+          "total": 1.172
+        }
+      ]
+    },
+    {
+      "target_index": 3,
+      "target_rt60_s": 32.278,
+      "target_rt60_confidence": 0.2,
+      "neutral": [
+        {
+          "rt60_s": 8.137,
+          "rt60_confidence": 0.407,
+          "rt60_term": null,
+          "ambience": 0.64,
+          "total": 0.921
+        },
+        {
+          "rt60_s": 7.59,
+          "rt60_confidence": 0.438,
+          "rt60_term": null,
+          "ambience": 0.64,
+          "total": 0.875
+        },
+        {
+          "rt60_s": 7.756,
+          "rt60_confidence": 0.433,
+          "rt60_term": null,
+          "ambience": 0.641,
+          "total": 0.914
+        }
+      ]
+    },
+    {
+      "target_index": 4,
+      "target_rt60_s": 1.031,
+      "target_rt60_confidence": 0.361,
+      "neutral": [
+        {
+          "rt60_s": 7.158,
+          "rt60_confidence": 0.444,
+          "rt60_term": 15.319,
+          "ambience": 4.252,
+          "total": 2.318
+        },
+        {
+          "rt60_s": 8.168,
+          "rt60_confidence": 0.41,
+          "rt60_term": 17.842,
+          "ambience": 4.882,
+          "total": 2.432
+        },
+        {
+          "rt60_s": 7.406,
+          "rt60_confidence": 0.439,
+          "rt60_term": 15.939,
+          "ambience": 4.406,
+          "total": 2.354
+        }
+      ]
+    },
+    {
+      "target_index": 5,
+      "target_rt60_s": null,
+      "target_rt60_confidence": 0.0,
+      "neutral": [
+        {
+          "rt60_s": 7.284,
+          "rt60_confidence": 0.465,
+          "rt60_term": null,
+          "ambience": 1.417,
+          "total": 1.226
+        },
+        {
+          "rt60_s": 7.186,
+          "rt60_confidence": 0.466,
+          "rt60_term": null,
+          "ambience": 1.42,
+          "total": 1.233
+        },
+        {
+          "rt60_s": 7.808,
+          "rt60_confidence": 0.389,
+          "rt60_term": null,
+          "ambience": 1.419,
+          "total": 1.235
+        }
+      ]
+    },
+    {
+      "target_index": 6,
+      "target_rt60_s": 4.768,
+      "target_rt60_confidence": 0.2,
+      "neutral": [
+        {
+          "rt60_s": 7.736,
+          "rt60_confidence": 0.421,
+          "rt60_term": null,
+          "ambience": 0.601,
+          "total": 1.713
+        },
+        {
+          "rt60_s": 7.411,
+          "rt60_confidence": 0.43,
+          "rt60_term": null,
+          "ambience": 0.601,
+          "total": 1.707
+        },
+        {
+          "rt60_s": 7.917,
+          "rt60_confidence": 0.427,
+          "rt60_term": null,
+          "ambience": 0.602,
+          "total": 1.711
+        }
+      ]
+    },
+    {
+      "target_index": 7,
+      "target_rt60_s": 1.194,
+      "target_rt60_confidence": 0.788,
+      "neutral": [
+        {
+          "rt60_s": 7.745,
+          "rt60_confidence": 0.428,
+          "rt60_term": 16.379,
+          "ambience": 4.44,
+          "total": 2.092
+        },
+        {
+          "rt60_s": 7.617,
+          "rt60_confidence": 0.435,
+          "rt60_term": 16.059,
+          "ambience": 4.361,
+          "total": 2.08
+        },
+        {
+          "rt60_s": 7.785,
+          "rt60_confidence": 0.424,
+          "rt60_term": 16.479,
+          "ambience": 4.466,
+          "total": 2.091
+        }
+      ]
+    },
+    {
+      "target_index": 8,
+      "target_rt60_s": 1.039,
+      "target_rt60_confidence": 0.361,
+      "neutral": [
+        {
+          "rt60_s": 8.374,
+          "rt60_confidence": 0.385,
+          "rt60_term": 18.338,
+          "ambience": 4.991,
+          "total": 2.094
+        },
+        {
+          "rt60_s": 8.123,
+          "rt60_confidence": 0.401,
+          "rt60_term": 17.711,
+          "ambience": 4.834,
+          "total": 2.072
+        },
+        {
+          "rt60_s": 8.588,
+          "rt60_confidence": 0.372,
+          "rt60_term": 18.874,
+          "ambience": 5.124,
+          "total": 2.124
+        }
+      ]
+    },
+    {
+      "target_index": 9,
+      "target_rt60_s": 6.522,
+      "target_rt60_confidence": 0.245,
+      "neutral": [
+        {
+          "rt60_s": 7.596,
+          "rt60_confidence": 0.455,
+          "rt60_term": null,
+          "ambience": 0.333,
+          "total": 0.931
+        },
+        {
+          "rt60_s": 7.822,
+          "rt60_confidence": 0.398,
+          "rt60_term": null,
+          "ambience": 0.337,
+          "total": 0.924
+        },
+        {
+          "rt60_s": 7.839,
+          "rt60_confidence": 0.397,
+          "rt60_term": null,
+          "ambience": 0.334,
+          "total": 0.918
+        }
+      ]
+    },
+    {
+      "target_index": 10,
+      "target_rt60_s": 26.967,
+      "target_rt60_confidence": 0.845,
+      "neutral": [
+        {
+          "rt60_s": 7.465,
+          "rt60_confidence": 0.455,
+          "rt60_term": 48.757,
+          "ambience": 12.531,
+          "total": 2.995
+        },
+        {
+          "rt60_s": 7.055,
+          "rt60_confidence": 0.449,
+          "rt60_term": 49.781,
+          "ambience": 12.787,
+          "total": 3.045
+        },
+        {
+          "rt60_s": 7.591,
+          "rt60_confidence": 0.423,
+          "rt60_term": 48.441,
+          "ambience": 12.452,
+          "total": 2.978
+        }
+      ]
+    },
+    {
+      "target_index": 11,
+      "target_rt60_s": null,
+      "target_rt60_confidence": 0.0,
+      "neutral": [
+        {
+          "rt60_s": 7.974,
+          "rt60_confidence": 0.418,
+          "rt60_term": null,
+          "ambience": 0.557,
+          "total": 1.245
+        },
+        {
+          "rt60_s": 7.798,
+          "rt60_confidence": 0.413,
+          "rt60_term": null,
+          "ambience": 0.557,
+          "total": 1.242
+        },
+        {
+          "rt60_s": 6.954,
+          "rt60_confidence": 0.474,
+          "rt60_term": null,
+          "ambience": 0.557,
+          "total": 1.238
+        }
+      ]
+    }
+  ],
+  "fresh_target_10": {
+    "rt60_s": 5.091,
+    "rt60_confidence": 0.2
+  }
+}
