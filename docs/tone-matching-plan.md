@@ -1514,7 +1514,7 @@ own passage, 0.609 / 0.605 through the other song and 1.056 / 1.072 through
 noise. In the second, all three arms ended a little further away on average (by
 0.03, 0.11 and 0.08), possibly because each instance now renders the baselines
 before every search, and single targets moved by up to 0.11 (own passage), 0.52
-(other song) and 0.53 (noise) — less than SW50R's 0.36, 0.52 and 0.91, but why
+(other song) and 0.53 (noise) — SW50R's were 0.36, 0.52 and 0.91 — which is why
 only within-run pairs are compared below.
 
 **The ordering replicates, in both runs.** The other song's DI ended closer than
@@ -1566,8 +1566,8 @@ and the cut between the bands is narrow — target 5's neutral score, its three
 inversions and its other-song and noise answers all sit at 1.4 to 2.07. Leaving
 out targets 6, 7 and 8, the noise search was closer than neutral on 5 of 9 (13%,
 p = 0.50); leaving out target 5 as well, 5 of 8 (p = 0.46); leaving out the
-trace's 4 and 10 too, 4 of 7 (p = 0.58). The other song's DI beat noise on all
-9.
+trace's 4 and 10 instead of 5, 4 of 7 (p = 0.58). The other song's DI beat noise
+on all 9.
 
 The same fault can move any unpaired score, a real match's included, whenever
 the reference and a candidate both pass the gate with estimates seconds apart.
@@ -1589,13 +1589,15 @@ before baselines existed, so its JSON
 (`docs/search-signal-toneking-rhythm-run1.json`) is schema
 `search-signal-benchmark-1` with no baseline or dimension fields. Its command
 was the same but for the JSON path, which it records under the file's name
-before a rename; run today it would also score baselines,
-which changes each instance's render history. The separate `--no-search` process
-is `docs/search-signal-toneking-rhythm-separate-baselines.json` (db48981, so
-without dimension fields; its `command` records a scratchpad path), kept to show how far baselines move
-between processes and not for pairing with either run. The traced RT60s are
-`docs/search-signal-toneking-rt60-trace.json`, whose `method` says how they were
-recorded; the wrapper that kept the renders is not committed.
+before a rename; run today it would also score baselines, which changes each
+instance's render history. The separate `--no-search` process is
+`docs/search-signal-toneking-rhythm-separate-baselines.json` (db48981, a
+pre-squash copy of c1f79fb, so without dimension fields; its `command` records a
+scratchpad path), kept to show how far baselines move between processes and not
+for pairing with either run. The traced RT60s are
+`docs/search-signal-toneking-rt60-trace.json`, from the same db48981, whose
+`method` says how they were recorded; the wrapper that kept the renders is not
+committed.
 
 ---
 
