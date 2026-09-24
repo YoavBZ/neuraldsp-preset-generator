@@ -111,6 +111,15 @@ def test_dry_notes_with_consistent_decay_do_not_claim_reverb_evidence():
     assert "not proof of reverb" in note
 
 
+def test_one_release_slope_is_not_reported_as_disagreement_or_absence():
+    fp = make(fx.plucks(seconds=10.0, gap=1.0, decay=5.0, length=0.8))
+    fp.time_fx["rt60_s"] = 1.2
+    fp.time_fx["rt60_confidence"] = 0.2
+    note = " ".join(fp.caveats())
+    assert "only one usable segment" in note
+    assert "no usable release decay was measured" not in note
+
+
 def test_band_db_lookup():
     fp = make(fx.band_limited(seconds=2.0))
     assert fp.band_db(1000) is not None
