@@ -1449,14 +1449,18 @@ played passage, with the other passage as the "different song":
 | Hotel California | 0.440 / 0.365 | 0.959 / 0.965 | 1.602 / 1.555 | 1.534 / 1.448 |
 
 Through How Long the synthetic guitar ended 31% closer than noise (9 of 12,
-p = 0.007); through Hotel California it was no better (7 of 12, p = 1.0). So its
-first result was a property of that passage, not of guitar-likeness, and matches
-keep the noise probe. It stays in the repository as `--signal guitar` so this is
-reproducible. The real DI of the other song, by contrast, beat noise in every run
-and both directions — on 11, 12 and 11 of 12 targets (p ≤ 0.002) — which is the
-robust finding: a DI of anything the player plays is worth asking for. The same
-tool's `same` and `other` arms moved by up to 0.15 between the two How Long runs,
-so only within-run pairs are comparisons.
+Wilcoxon p = 0.007, though only p = 0.15 by a sign test); through Hotel California
+it was no better (7 of 12, p = 1.0). Its first result did not replicate through
+the second passage, and two passages cannot say why — chance, the passage, or
+loudness (the synthetic guitar sits 1.4 dB above How Long and 2.8 dB below Hotel
+California) — so matches keep the noise probe. It stays in the repository as
+`--signal guitar` so this is reproducible. The real DI of the other song, by
+contrast, beat noise in every run and both directions — on 11, 12 and 11 of 12
+targets (p ≤ 0.002): for one player and two songs on one amp, a DI of another
+part was worth asking for. Between the two How Long runs the arms' means moved by
+up to 0.15, but single targets by up to 0.36 (own passage), 0.52 (other song) and
+0.91 (noise), which is why only within-run pairs are comparisons and why a single
+9 of 12 is fragile.
 
 ```bash
 .venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
@@ -1474,7 +1478,9 @@ so only within-run pairs are comparisons.
 Both runs were made before `--signal guitar` existed, with the generator's output
 written to a file and passed as `synth=PATH`, so their JSON names that signal
 `synth`; `synthetic_guitar()` reproduces that file bit for bit. They took 148 and
-149 minutes.
+149 minutes. The How Long run was made from a pre-squash commit of #57 and its
+JSON uses that version's field names (`sha256` for the samples hash) and records
+scratchpad paths in its `command`.
 
 ---
 

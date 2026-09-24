@@ -34,7 +34,8 @@ def test_fallback_names_noise_bursts_not_guitar_plucks():
 def test_the_synthetic_guitar_is_a_played_di_by_its_level_and_repeats_exactly():
     """A research search signal whose negative result the plan doc records, so it
     has to repeat bit for bit to be reproducible, sit at a played DI's loudness,
-    and never clip the way the noise probe (+10.5 dBFS peaks) does."""
+    and — at its default seed — stay under full scale, where the noise probe peaks
+    at +10.5 dBFS. Other seeds can clip; only the default is measured."""
     from analysis import io
     from analysis.probes import synthetic_guitar
 
@@ -45,3 +46,10 @@ def test_the_synthetic_guitar_is_a_played_di_by_its_level_and_repeats_exactly():
     assert io.loudness_lufs(audio) == pytest.approx(-17.0, abs=0.1)
     assert np.abs(first).max() < 1.0
     assert not np.array_equal(first, synthetic_guitar(seed=14)), "the seed matters"
+    # Pinned to the signal the two committed runs used (samples sha256
+    # b08146d9...), by value rather than by hash so a platform's last-bit
+    # rounding does not fail it while a changed random stream or filter does.
+    signal = first.astype(np.float64)
+    assert float(np.sqrt(np.mean(signal ** 2))) == pytest.approx(0.1207730743, rel=1e-6)
+    assert float(signal[1000]) == pytest.approx(0.0956163555, rel=1e-6)
+    assert float(signal[150000]) == pytest.approx(0.0409496017, rel=1e-6)

@@ -261,14 +261,10 @@ def test_the_cli_takes_a_named_recording_and_hashes_its_file(tmp_path):
     assert "samples_sha256" in written["same"]
 
 
-def test_the_cli_offers_the_synthetic_guitar_as_a_signal(tmp_path):
-    target = tmp_path / "target.wav"
-    fx.write_wav(target, fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3)
-    out = tmp_path / "signals.json"
-    done = _cli("--amp", AMP, "--target-di", target, "--signal", "same",
-                "--signal", "guitar", "--targets", "1", "--budget", "30",
-                "--json", out)
-    assert done.returncode == 0, done.stderr
-    written = json.loads(out.read_text())["signals"]["guitar"]
-    assert written["kind"].startswith("synthetic strummed guitar")
-    assert written["lufs"] == pytest.approx(-17.0, abs=0.1)
+def test_the_benchmark_offers_the_synthetic_guitar_as_a_signal():
+    from scripts.benchmark_search_signal import _signals
+
+    target = fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3
+    signals, described = _signals(["same", "guitar"], target, fx.SAMPLE_RATE)
+    assert list(signals) == ["same", "guitar"]
+    assert described["guitar"]["kind"].startswith("synthetic strummed guitar")
