@@ -203,7 +203,7 @@ def test_the_cli_writes_every_signal_and_pairs_them_with_the_first(tmp_path):
 
 
 @pytest.mark.parametrize("spec, message", [
-    ("wobble", "is not same, noise"),
+    ("wobble", "is not same, guitar, noise"),
     ("noise=elsewhere.wav", "its own name"),
 ])
 def test_the_cli_refuses_a_signal_it_cannot_name(tmp_path, spec, message):
@@ -259,3 +259,12 @@ def test_the_cli_takes_a_named_recording_and_hashes_its_file(tmp_path):
     assert written["other"]["file_sha256"] == hashlib.sha256(
         other.read_bytes()).hexdigest()
     assert "samples_sha256" in written["same"]
+
+
+def test_the_benchmark_offers_the_synthetic_guitar_as_a_signal():
+    from scripts.benchmark_search_signal import _signals
+
+    target = fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3
+    signals, described = _signals(["same", "guitar"], target, fx.SAMPLE_RATE)
+    assert list(signals) == ["same", "guitar"]
+    assert described["guitar"]["kind"].startswith("synthetic strummed guitar")

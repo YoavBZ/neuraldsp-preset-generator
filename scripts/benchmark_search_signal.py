@@ -16,6 +16,7 @@ the preset. The template's switches and selectors are held fixed throughout.
 Signals:
   same               --target-di itself: a paired DI, the upper bound
   NAME=PATH          another recording, e.g. a different passage by the same player
+  guitar             a synthetic strummed guitar (tried as the no-DI probe; not adopted)
   noise              the synthetic noise-burst probe match_preset.py uses with no DI
   noise-at-di-level  that probe scaled to --target-di's integrated loudness
 
@@ -78,6 +79,11 @@ def _signals(specs, target, sample_rate):
     for spec in specs:
         if spec == "same":
             name, samples, kind = "same", target, "the target DI itself"
+        elif spec == "guitar":
+            from analysis.probes import synthetic_guitar
+
+            name, kind = "guitar", f"synthetic strummed guitar, {NO_DI_SECONDS:g} s"
+            samples = synthetic_guitar(seconds=NO_DI_SECONDS)
         elif spec == "noise":
             name, kind = "noise", f"synthetic noise-burst probe, {NO_DI_SECONDS:g} s"
             samples, _ = probe_di(None, NO_DI_SECONDS)
@@ -90,13 +96,14 @@ def _signals(specs, target, sample_rate):
                     f"{gain_db:+.1f} dB to the target DI's loudness")
         elif "=" in spec:
             name, path = spec.split("=", 1)
-            if not name or name in ("same", "noise", "noise-at-di-level"):
+            if not name or name in ("same", "guitar", "noise", "noise-at-di-level"):
                 die(f"--signal {spec}: give the recording its own name")
             samples = io.load(path).mono()
             kind = f"recording {path}"
             files[name] = hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
         else:
-            die(f"--signal {spec!r} is not same, noise, noise-at-di-level or NAME=PATH")
+            die(f"--signal {spec!r} is not same, guitar, noise, noise-at-di-level "
+                f"or NAME=PATH")
         if name in signals:
             die(f"--signal {name} is given twice")
         signals[name] = samples

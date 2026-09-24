@@ -124,11 +124,13 @@ the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
 matching without it — a DI of anything they play, not necessarily this part.
-Measured on SW50R (one amp, one passage, one player), searches through the
-target's own passage ended at 0.47, through a different song by the same player
-at 0.92, and through the noise probe the tool uses without a DI at 1.48 — no
-closer on average than the neutral settings themselves (1.66), and further away
-on half the targets. Matching that probe's loudness to a guitar's did not help.
+Measured on SW50R (one amp, one player, two songs), searches through the
+target's own passage ended at 0.44–0.47, through the player's other song at
+0.76–0.96 — closer than noise on at least 11 of 12 targets in every run, either
+way round — and through the noise probe the tool uses without a DI at 1.43–1.53,
+no closer on average than the neutral settings themselves (1.66 on the How Long
+targets). Neither matching that probe's loudness to a guitar's nor replacing it
+with a synthetic strummed guitar helped reliably.
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
 white-noise bursts and records that limitation. Every candidate is then noise
 through the amp compared with a guitar, so a no-DI run's own scores are
