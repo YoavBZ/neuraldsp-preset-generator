@@ -22,7 +22,15 @@
     "master from a render measures the difference between two performances.",
     "residual_floor_db is where a correct answer bottoms out rather than zero --",
     "M0 measured two renders of identical parameters differing by about -17 dB,",
-    "so anything below that is the plugin's own per-render variation."
+    "so anything below that is the plugin's own per-render variation.",
+    "",
+    "The -v2 profiles are the -v1 ones without an rt60_s scale, so the rt60 term",
+    "never enters ambience. On a played passage the RT60 estimate follows note",
+    "sustain, not reverb: it neither rises with a reverb's decay nor agrees",
+    "between two passages through the same settings, yet passes its confidence",
+    "gate often enough to add up to 50 units to ambience (scripts/study_rt60.py;",
+    "'The fingerprint's RT60 is not a reverb measurement' in the plan doc). The",
+    "-v1 profiles stay unchanged so every number measured with them reproduces."
   ],
   "unpaired-v1": {
     "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted.",
@@ -63,6 +71,44 @@
       "residual_floor_db": -17.0
     }
   },
+  "unpaired-v2": {
+    "description": "A commercial recording against a render. Different performance, different notes, so only playing-invariant statistics are trusted. As -v1, without the rt60 term: the RT60 estimate does not measure reverb on played material.",
+    "weights": {
+      "timbre": 1.0,
+      "dynamics": 0.4,
+      "ambience": 0.5,
+      "level": 0.15,
+      "harmonic": 0.4,
+      "spatial": 0.2,
+      "residual": 0.0,
+      "prior_deviation": 0.15,
+      "complexity": 0.0
+    },
+    "scales": {
+      "band_db": 3.0,
+      "tilt_db_per_decade": 2.0,
+      "centroid_hz": 600.0,
+      "rolloff85_hz": 1500.0,
+      "mfcc": 12.0,
+      "crest_db": 3.0,
+      "attack_ms": 20.0,
+      "decay_db_per_s": 6.0,
+      "lra_lu": 3.0,
+      "rms_spread_db": 4.0,
+      "delay_ms": 40.0,
+      "delay_feedback": 0.2,
+      "am_rate_hz": 0.8,
+      "am_depth": 0.15,
+      "lufs_i": 3.0,
+      "hnr_db": 6.0,
+      "odd_even_ratio": 0.6,
+      "hf_residual_index": 0.05,
+      "width": 0.15,
+      "correlation": 0.3,
+      "residual_db": 6.0,
+      "residual_floor_db": -17.0
+    }
+  },
   "paired-v1": {
     "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up.",
     "weights": {
@@ -88,6 +134,44 @@
       "lra_lu": 2.0,
       "rms_spread_db": 3.0,
       "rt60_s": 0.25,
+      "delay_ms": 20.0,
+      "delay_feedback": 0.12,
+      "am_rate_hz": 0.4,
+      "am_depth": 0.1,
+      "lufs_i": 2.0,
+      "hnr_db": 4.0,
+      "odd_even_ratio": 0.4,
+      "hf_residual_index": 0.03,
+      "width": 0.1,
+      "correlation": 0.2,
+      "residual_db": 6.0,
+      "residual_floor_db": -17.0
+    }
+  },
+  "paired-v2": {
+    "description": "The same DI through both sides. The performance is identical, so envelope and time-domain features mean what they say and are weighted up. As -v1, without the rt60 term: the RT60 estimate does not measure reverb on played material.",
+    "weights": {
+      "timbre": 1.0,
+      "dynamics": 0.8,
+      "ambience": 0.8,
+      "level": 0.3,
+      "harmonic": 0.7,
+      "spatial": 0.3,
+      "residual": 0.9,
+      "prior_deviation": 0.1,
+      "complexity": 0.0
+    },
+    "scales": {
+      "band_db": 2.0,
+      "tilt_db_per_decade": 1.5,
+      "centroid_hz": 400.0,
+      "rolloff85_hz": 1000.0,
+      "mfcc": 8.0,
+      "crest_db": 2.0,
+      "attack_ms": 10.0,
+      "decay_db_per_s": 4.0,
+      "lra_lu": 2.0,
+      "rms_spread_db": 3.0,
       "delay_ms": 20.0,
       "delay_feedback": 0.12,
       "am_rate_hz": 0.4,
