@@ -244,6 +244,21 @@ def test_fresh_renderer_keeps_every_writable_setting():
         _all_writable_settings(values, pack, {"selectedAmp", "ac20Amp/ac20Volume"})
 
 
+def test_silent_preroll_preserves_the_di_and_has_an_exact_crop():
+    import numpy as np
+    from scripts.render_listening_guitar import _silent_preroll
+
+    di = np.array([.2, -.3, .4], dtype=np.float64)
+    rendered, crop = _silent_preroll(di, 10, .3)
+    assert crop == 3
+    np.testing.assert_array_equal(rendered[:crop], np.zeros(3))
+    np.testing.assert_array_equal(rendered[crop:], di)
+    unchanged, zero_crop = _silent_preroll(di, 10, 0)
+    assert unchanged is di and zero_crop == 0
+    with pytest.raises(ValueError, match="preroll-s"):
+        _silent_preroll(di, 10, -1)
+
+
 def test_fresh_renderer_reads_full_xml_preset_not_only_search_dimensions():
     import pathlib
     from packs.loader import load_pack
