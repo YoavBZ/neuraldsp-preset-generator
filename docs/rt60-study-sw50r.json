@@ -1,0 +1,521 @@
+{
+  "schema": "rt60-study-1",
+  "source_commit": "640ee3ff8f6fd94b71248f9eb7fd7f3d05b60700",
+  "command": "scripts/study_rt60.py --renderer swift --amp sw50r --template samples/SW50R_Atlas_Topology.xml --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --json docs/rt60-study-sw50r.json",
+  "elapsed_s": 170.2,
+  "pack": "morgan",
+  "amp": "sw50r",
+  "template": "samples/SW50R_Atlas_Topology.xml",
+  "dis": {
+    "howlong": {
+      "path": "how-long-di-6s.wav",
+      "sha256": "87cbca70c20fd9838b4c22025638e20adc5804ba0b5479ac55acf63b7366c355",
+      "samples_sha256": "42b38a4bff7108d342378f7910bd3c19b96beb6904b95aa8142dac406e5238cd"
+    },
+    "hotel": {
+      "path": "hotel-di-6s.wav",
+      "sha256": "57469c6b85ada837a4c7d938048addbd6f7f1397f847542321343dd9a952c8e2",
+      "samples_sha256": "f5dd041e33151db970c33f28c84bb230378426d8f6fe7f3740cf232927f98006"
+    }
+  },
+  "targets": 12,
+  "seed": 11,
+  "loss_profile": "unpaired-v1",
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.1.1",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 0.23,
+    "notes": [
+      "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "measurement_caveat": "rendered by swift (plugin 1.1.1), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 0.23 dB. Every number below carries that, and none of them may be committed without it",
+  "tracks_backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.1.1",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=fresh",
+    "reproducible": true,
+    "band_noise_db": 0.0,
+    "notes": [
+      "morgan through aumf NMAS NDSP, one fresh plugin process per render",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "tracks_measurement_caveat": null,
+  "fires": [
+    {
+      "target_index": 0,
+      "target": [
+        {
+          "rt60_s": 3.114,
+          "confidence": 0.43
+        },
+        {
+          "rt60_s": 2.31,
+          "confidence": 0.561
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        3.6267499999999995,
+        5.636249999999999
+      ],
+      "term_target_vs_itself": 2.0094999999999996
+    },
+    {
+      "target_index": 1,
+      "target": [
+        {
+          "rt60_s": 4.782,
+          "confidence": 0.349
+        },
+        {
+          "rt60_s": 4.782,
+          "confidence": 0.349
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        0.5414999999999992,
+        0.5414999999999992
+      ],
+      "term_target_vs_itself": 0.0
+    },
+    {
+      "target_index": 2,
+      "target": [
+        {
+          "rt60_s": 1.085,
+          "confidence": 0.452
+        },
+        {
+          "rt60_s": 1.085,
+          "confidence": 0.452
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.563,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.563,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        8.694,
+        8.694
+      ],
+      "term_target_vs_itself": 0.0
+    },
+    {
+      "target_index": 3,
+      "target": [
+        {
+          "rt60_s": 0.618,
+          "confidence": 0.449
+        },
+        {
+          "rt60_s": 0.618,
+          "confidence": 0.449
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.562,
+          "confidence": 0.381
+        },
+        {
+          "rt60_s": 4.562,
+          "confidence": 0.381
+        }
+      ],
+      "term_target_vs_neutral": [
+        9.86025,
+        9.86025
+      ],
+      "term_target_vs_itself": 0.0
+    },
+    {
+      "target_index": 4,
+      "target": [
+        {
+          "rt60_s": 2.171,
+          "confidence": 0.868
+        },
+        {
+          "rt60_s": 2.171,
+          "confidence": 0.868
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.562,
+          "confidence": 0.381
+        },
+        {
+          "rt60_s": 4.562,
+          "confidence": 0.381
+        }
+      ],
+      "term_target_vs_neutral": [
+        5.97775,
+        5.976999999999999
+      ],
+      "term_target_vs_itself": 0.0007500000000004725
+    },
+    {
+      "target_index": 5,
+      "target": [
+        {
+          "rt60_s": 4.628,
+          "confidence": 0.805
+        },
+        {
+          "rt60_s": 4.628,
+          "confidence": 0.805
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        0.15549999999999953,
+        0.15549999999999953
+      ],
+      "term_target_vs_itself": 0.0
+    },
+    {
+      "target_index": 6,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 7,
+      "target": [
+        {
+          "rt60_s": 10.305,
+          "confidence": 0.51
+        },
+        {
+          "rt60_s": 10.304,
+          "confidence": 0.51
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.383
+        },
+        {
+          "rt60_s": 4.566,
+          "confidence": 0.383
+        }
+      ],
+      "term_target_vs_neutral": [
+        14.346000000000002,
+        14.345749999999999
+      ],
+      "term_target_vs_itself": 0.00025000000000385825
+    },
+    {
+      "target_index": 8,
+      "target": [
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        },
+        {
+          "rt60_s": null,
+          "confidence": 0.0
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 9,
+      "target": [
+        {
+          "rt60_s": 0.941,
+          "confidence": 0.256
+        },
+        {
+          "rt60_s": 0.941,
+          "confidence": 0.256
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.561,
+          "confidence": 0.381
+        },
+        {
+          "rt60_s": 4.561,
+          "confidence": 0.381
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    },
+    {
+      "target_index": 10,
+      "target": [
+        {
+          "rt60_s": 2.121,
+          "confidence": 0.534
+        },
+        {
+          "rt60_s": 2.121,
+          "confidence": 0.534
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.56,
+          "confidence": 0.381
+        },
+        {
+          "rt60_s": 4.56,
+          "confidence": 0.381
+        }
+      ],
+      "term_target_vs_neutral": [
+        6.099249999999999,
+        6.099249999999999
+      ],
+      "term_target_vs_itself": 0.0
+    },
+    {
+      "target_index": 11,
+      "target": [
+        {
+          "rt60_s": 1.323,
+          "confidence": 0.212
+        },
+        {
+          "rt60_s": 1.323,
+          "confidence": 0.212
+        }
+      ],
+      "neutral": [
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        },
+        {
+          "rt60_s": 4.565,
+          "confidence": 0.382
+        }
+      ],
+      "term_target_vs_neutral": [
+        null,
+        null
+      ],
+      "term_target_vs_itself": null
+    }
+  ],
+  "tracks": [
+    {
+      "case": "dry",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0
+      },
+      "howlong": {
+        "rt60_s": 1.546,
+        "confidence": 0.37
+      },
+      "hotel": {
+        "rt60_s": 6.544,
+        "confidence": 0.372
+      }
+    },
+    {
+      "case": "spring 50",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 50.0
+      },
+      "howlong": {
+        "rt60_s": 3.379,
+        "confidence": 0.417
+      },
+      "hotel": {
+        "rt60_s": 2.23,
+        "confidence": 0.652
+      }
+    },
+    {
+      "case": "spring 100",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 100.0
+      },
+      "howlong": {
+        "rt60_s": 4.206,
+        "confidence": 0.863
+      },
+      "hotel": {
+        "rt60_s": 4.849,
+        "confidence": 0.834
+      }
+    },
+    {
+      "case": "rack decay 1",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0,
+        "reverb/reverbActive": true,
+        "reverb/reverbMix": 50.0,
+        "reverb/reverbDecay": 1.0
+      },
+      "howlong": {
+        "rt60_s": 2.058,
+        "confidence": 0.72
+      },
+      "hotel": {
+        "rt60_s": 7.763,
+        "confidence": 0.286
+      }
+    },
+    {
+      "case": "rack decay 5",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0,
+        "reverb/reverbActive": true,
+        "reverb/reverbMix": 50.0,
+        "reverb/reverbDecay": 5.0
+      },
+      "howlong": {
+        "rt60_s": 9.068,
+        "confidence": 0.595
+      },
+      "hotel": {
+        "rt60_s": 5.454,
+        "confidence": 0.913
+      }
+    },
+    {
+      "case": "rack decay 15",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0,
+        "reverb/reverbActive": true,
+        "reverb/reverbMix": 50.0,
+        "reverb/reverbDecay": 15.0
+      },
+      "howlong": {
+        "rt60_s": 6.685,
+        "confidence": 0.2
+      },
+      "hotel": {
+        "rt60_s": 15.6,
+        "confidence": 0.622
+      }
+    },
+    {
+      "case": "rack decay 30",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0,
+        "reverb/reverbActive": true,
+        "reverb/reverbMix": 50.0,
+        "reverb/reverbDecay": 30.0
+      },
+      "howlong": {
+        "rt60_s": 16.204,
+        "confidence": 0.574
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0
+      }
+    },
+    {
+      "case": "rack decay 60",
+      "settings": {
+        "sw50rAmp/sw50rReverb": 0.0,
+        "reverb/reverbActive": true,
+        "reverb/reverbMix": 50.0,
+        "reverb/reverbDecay": 60.0
+      },
+      "howlong": {
+        "rt60_s": 13.899,
+        "confidence": 0.2
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0
+      }
+    }
+  ]
+}

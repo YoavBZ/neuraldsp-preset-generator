@@ -1,7 +1,7 @@
 """Compare two recordings, or two fingerprints, and say how they differ.
 
     python scripts/compare_audio.py reference.wav render.wav
-    python scripts/compare_audio.py reamp.wav candidate.wav --profile paired-v1
+    python scripts/compare_audio.py reamp.wav candidate.wav --profile paired-v2
     python scripts/compare_audio.py a.wav b.wav --json
 
 The first argument is the target and the second is the candidate, and the band
@@ -96,7 +96,7 @@ def main() -> None:
     )
     ap.add_argument("target", type=pathlib.Path, help="what you want it to sound like")
     ap.add_argument("candidate", type=pathlib.Path, help="what it sounds like now")
-    ap.add_argument("--profile", default="unpaired-v1")
+    ap.add_argument("--profile", default="unpaired-v2")
     ap.add_argument("--target-regime", default="mix")
     ap.add_argument("--candidate-regime", default="probe")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None,
@@ -110,7 +110,7 @@ def main() -> None:
 
     from analysis import AnalysisUnavailable
     from analysis.compare import (ProfileError, band_delta, compare, load_profile,
-                                  scalar)
+                                  scalar, unpaired_counterpart)
     from analysis.fingerprint import DEFAULT_EXCERPT_S, FingerprintError
 
     try:
@@ -132,8 +132,8 @@ def main() -> None:
             if target_audio is None or candidate_audio is None:
                 die(f"loss profile {args.profile!r} weights waveform residual, "
                     "which requires both arguments to be audio files. A stored "
-                    "fingerprint contains no samples; use --profile unpaired-v1 "
-                    "to compare fingerprints.")
+                    "fingerprint contains no samples; use --profile "
+                    f"{unpaired_counterpart(args.profile)} to compare fingerprints.")
             from analysis.align import align, residual_db
 
             aligned_target, aligned_candidate, alignment = align(

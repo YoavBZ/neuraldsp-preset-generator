@@ -22,6 +22,10 @@ from typing import Any, Dict, List, Optional
 from .fingerprint import Fingerprint
 
 PROFILE_PATH = pathlib.Path(__file__).with_name("loss_profiles.json")
+# Later profiles go in files of their own beside it, because that one is frozen:
+# every number measured with a -v1 profile reproduces from it, and frozen
+# listening scores are checked against its hash (`analysis.listening`).
+PROFILE_PATHS = (PROFILE_PATH, PROFILE_PATH.with_name("loss_profiles-v2.json"))
 
 DIMENSIONS = (
     "timbre", "dynamics", "ambience", "level",
@@ -56,11 +60,24 @@ class Objectives:
         return {"profile": self.profile, "values": self.values, "detail": self.detail}
 
 
+def _profiles() -> Dict[str, Any]:
+    """Every profile in every profile file, refusing a name defined twice."""
+    profiles: Dict[str, Any] = {}
+    for path in PROFILE_PATHS:
+        for key, value in json.loads(path.read_text(encoding="utf-8")).items():
+            if key.startswith("_"):
+                continue
+            if key in profiles:
+                raise ProfileError(f"loss profile {key!r} is defined twice")
+            profiles[key] = value
+    return profiles
+
+
 def load_profile(name: str = "unpaired-v1") -> Dict[str, Any]:
-    """Read one named profile out of `loss_profiles.json`."""
-    profiles = json.loads(PROFILE_PATH.read_text())
+    """Read one named profile out of the profile files."""
+    profiles = _profiles()
     if name not in profiles:
-        available = ", ".join(k for k in profiles if not k.startswith("_"))
+        available = ", ".join(profiles)
         raise ProfileError(f"unknown loss profile {name!r}. Available: {available}")
     profile = profiles[name]
     for required in ("weights", "scales"):
@@ -70,7 +87,17 @@ def load_profile(name: str = "unpaired-v1") -> Dict[str, Any]:
 
 
 def list_profiles() -> List[str]:
-    return [k for k in json.loads(PROFILE_PATH.read_text()) if not k.startswith("_")]
+    return list(_profiles())
+
+
+def unpaired_counterpart(name: str) -> str:
+    """The profile to suggest when `name` needs a paired reamp that is not there:
+    the unpaired one of the same version, or the current default."""
+    if name.startswith("paired-"):
+        candidate = "un" + name
+        if candidate in _profiles():
+            return candidate
+    return "unpaired-v2"
 
 
 # --- term helpers -----------------------------------------------------------

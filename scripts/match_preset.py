@@ -4,7 +4,7 @@
       --template samples/Example_Clean_PR12.xml \\
       --reference ~/audio/song-excerpt.wav --reference-mode mix \\
       --probe-di data/di/probe.wav \\
-      --loss-profile unpaired-v1 --budget 300 --shortlist 3 \\
+      --loss-profile unpaired-v2 --budget 300 --shortlist 3 \\
       --renderer synthetic \\
       --out-dir "$NDSP_PRESET_DATA/runs/hotel-california-001"
 
@@ -123,9 +123,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--amp", default=None,
                     help="signal path to invert, e.g. sw50r or lead (default: read "
                          "the template's amp/channel selector)")
-    ap.add_argument("--loss-profile", default="unpaired-v1",
+    ap.add_argument("--loss-profile", default="unpaired-v2",
                     help="how the objective dimensions are weighted "
-                         "(unpaired-v1, paired-v1)")
+                         "(unpaired-v2, paired-v2; the -v1 profiles, which also "
+                         "compare an RT60 that does not measure reverb on played "
+                         "material, remain for reproducing earlier runs)")
     # "about 60" was the wrong shape of answer: it is a number the user cannot check
     # and, on Morgan with 18 searchable parameters, one that leaves the optimiser
     # unable to take a single step. The arithmetic is short, so give the arithmetic.
@@ -202,7 +204,7 @@ def main() -> None:
     import numpy as np
 
     from analysis import io
-    from analysis.compare import list_profiles, load_profile
+    from analysis.compare import list_profiles, load_profile, unpaired_counterpart
     from analysis.fingerprint import fingerprint
     from match import invert, report, search
     from match import space as space_module
@@ -222,7 +224,8 @@ def main() -> None:
             f"{args.reference_mode!r}. That term is only meaningful when "
             "--reference is a reamp of the exact --probe-di performance.\n"
             "  Use --reference-mode paired_di with that pair, or use "
-            "--loss-profile unpaired-v1 for a different performance.")
+            f"--loss-profile {unpaired_counterpart(args.loss_profile)} "
+            "for a different performance.")
     excerpt_s = resolved_excerpt(args.excerpt, args.reference_mode)
     if residual_weighted and excerpt_s is not None:
         die("a paired waveform residual must compare the complete reamp and DI; "
