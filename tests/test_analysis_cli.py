@@ -66,6 +66,24 @@ def test_fingerprint_text_does_not_call_dry_note_decay_reverb(tmp_path):
     assert "not proof of reverb" in out
 
 
+def test_fingerprint_text_distinguishes_weak_and_missing_rt60(capsys):
+    from analysis import io
+    from analysis.fingerprint import fingerprint
+    from scripts.fingerprint import print_text
+
+    fp = fingerprint(io.from_samples(fx.plucks(seconds=10.0), fx.SAMPLE_RATE))
+    fp.time_fx.update(rt60_s=1.2, rt60_confidence=0.2)
+    print_text(fp)
+    out = capsys.readouterr().out
+    assert "weak release-fit evidence (score 0.20)" in out
+    assert "slope agreement 0.20" not in out
+
+    fp.time_fx.update(rt60_s=None, rt60_confidence=0.0)
+    print_text(fp)
+    out = capsys.readouterr().out
+    assert "rt60        — s  not measured" in out
+
+
 def test_fingerprint_writes_a_file(dark, tmp_path):
     out = tmp_path / "fp.json"
     run(FINGERPRINT, dark, "--out", out)

@@ -83,8 +83,18 @@ def print_text(fp) -> None:
           + (f" ({division} at {_format(time_fx.get('bpm_est'), 0)} BPM)" if division else "")
           + f"  confidence {_format(time_fx.get('delay_confidence'))}")
     print(f"  feedback    {_format(time_fx.get('delay_feedback_est'))}")
-    print(f"  rt60        {_format(time_fx.get('rt60_s'))} s  "
-          f"slope agreement {_format(time_fx.get('rt60_confidence'))}")
+    rt60 = time_fx.get("rt60_s")
+    rt60_score = float(time_fx.get("rt60_confidence") or 0.0)
+    if rt60 is None:
+        rt60_evidence = "not measured"
+    elif rt60_score < 0.3:
+        # A lone usable segment gets a fixed 0.20. That is not agreement
+        # between slopes; disagreement among multiple segments can also score
+        # below 0.3, so the display cannot name which one happened.
+        rt60_evidence = f"weak release-fit evidence (score {rt60_score:.2f})"
+    else:
+        rt60_evidence = f"slope agreement {rt60_score:.2f}"
+    print(f"  rt60        {_format(rt60)} s  {rt60_evidence}")
     print(f"  tremolo     {_format(fp.modulation.get('am_rate_hz'), 1)} Hz, "
           f"depth {_format(fp.modulation.get('am_depth'))}")
 
