@@ -86,3 +86,11 @@ def test_the_switches_question_needs_a_pack_whose_inversion_sets_the_reverb(tmp_
                 "--targets", "1", "--switches", "1")
     assert done.returncode != 0
     assert "does not set" in done.stderr
+
+
+def test_a_negative_switch_count_is_refused(tmp_path):
+    a = tmp_path / "a.wav"
+    fx.write_wav(a, fx.plucks(seconds=1.0, gap=0.6, seed=3) * 0.3)
+    done = _cli("--amp", "sw50r", "--di", f"a={a}", "--switches", "-3")
+    assert done.returncode != 0
+    assert "0 or more" in done.stderr

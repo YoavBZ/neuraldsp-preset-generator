@@ -1758,8 +1758,8 @@ second or more it switches Morgan's rack reverb on at that decay, and otherwise
 switches it off. `scripts/study_rt60.py --switches 12` asks whether that tells a
 reverb from none on played material: twelve SW50R atlas-topology targets, each
 rendered with the rack reverb off and again with it on (mix 26.5 to 74%, decay
-4.4 to 18 on the plugin's scale), one fresh process per render, through both
-passages, each fingerprinted as a stem would be.
+4.4 to 17.95 s), one fresh process per render, through both passages, each
+fingerprinted as a stem would be.
 
 | | switched on, with a rack reverb | switched on, without one |
 |---|---:|---:|
@@ -1767,11 +1767,12 @@ passages, each fingerprinted as a stem would be.
 | Hotel California | 5 of 12 | 4 of 12 |
 
 No better than chance (Fisher's exact p = 1.0 through each passage). The decay
-it set was no closer: 20.2 for a true 8.75 and 2.2 to 2.3 for true 5.5 and 5.95,
-among others, and 1.5 to 15.4 for targets with no rack reverb at all. Earlier,
-through the noise probe, the same rule switched the reverb on for 7 of 12 targets
-without one and 11 of 11 with one ("The rack reverb has the same shape of
-problem", above) — some information where the notes are noise bursts, none
+it set was not reliably close either: for a true 8.75 s it set 20.2 through How
+Long and 8.43 through Hotel California, 2.2 to 2.3 for true 5.5 and 5.95, 15.8
+for 10.2, and 1.5 to 15.4 for targets with no rack reverb at all. Earlier,
+through the noise probe, the same rule switched the reverb on for 7 of 12
+targets without one and 11 of 11 with one ("The rack reverb has the same shape
+of problem", above) — some information where the notes are noise bursts, none
 here.
 
 So `reverb_settings` now applies the rule — `reverb_from_rt60`, which the study
@@ -1785,7 +1786,9 @@ is then found only by a second template or an enumeration — which this estimat
 never reliably did. Every earlier inversion of a played target was made with the
 old rule, among them the first played-DI runs of "M7-1 at equal budget", before
 they held their topology; the search-signal benchmark holds its topology, so its
-numbers are unaffected.
+numbers are unaffected. `benchmark_match.py` labels every target it renders
+`probe` — a played `--probe-di` included — so its runs keep the rule; with
+`--atlas` the held topology puts the reverb back, without it nothing does.
 
 ```bash
 .venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
@@ -1794,7 +1797,8 @@ numbers are unaffected.
   --json docs/rt60-study-sw50r.json
 ```
 
-That run, from 7e6b2f3 (292 s), replaces the SW50R study JSON above. It called
+That run, from 7e6b2f3 (292 s; rebased as 003380b with the same study and
+inversion code), replaces the SW50R study JSON above. It called
 `reverb_settings` before the regime gate existed, which was the same rule
 `reverb_from_rt60` now holds; its `fires` and `tracks` repeat the earlier run's
 exactly, as Morgan's renders do.

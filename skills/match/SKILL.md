@@ -78,7 +78,11 @@ Decide the rack reverb here, not in the match. The inversion leaves Morgan's rac
 reverb as the template has it for any recording, stem or reamp: the decay it can
 measure on played guitar is mostly the notes' own sustain, and a rule reading it
 switched the reverb on as often for targets without one as with one. Only a
-`probe` reference, rendered through the noise-burst probe, still sets it.
+`probe` reference, rendered through the noise-burst probe, still sets it. So a
+template with the rack reverb on keeps it even against a dry recording: use a
+template, or an edited copy of one, with `reverb/reverbActive` set the way the
+evidence says, or try both with `--enumerate reverb/reverbActive`, and add
+`--process-policy fresh` whenever it is on (below).
 
 ### No response atlas
 

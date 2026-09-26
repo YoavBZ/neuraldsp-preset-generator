@@ -37,7 +37,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded, positive_int
+from _cli import die, guarded, nonnegative_int, positive_int
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
 SCHEMA = "rt60-study-2"   # 2: the optional `switches` question
@@ -73,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a played passage; repeatable. The first renders the targets")
     ap.add_argument("--targets", type=positive_int, default=12)
     ap.add_argument("--seed", type=int, default=11)
-    ap.add_argument("--switches", type=int, default=0, metavar="N",
+    ap.add_argument("--switches", type=nonnegative_int, default=0, metavar="N",
                     help="also ask whether the inversion's reverb rule tells N "
                          "targets with a rack reverb from the same N without")
     ap.add_argument("--loss-profile", default="unpaired-v1",
