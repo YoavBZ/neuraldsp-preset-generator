@@ -1177,7 +1177,6 @@ def test_a_paired_run_on_an_excerpt_is_not_trimmed(audio, tmp_path):
     assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []
 
 
-
 def test_the_printed_apply_command_survives_a_path_with_spaces(audio, tmp_path):
     """The plugin's User presets live under "Neural DSP/Morgan Amps Suite", so the
     template path a user passes usually has spaces; the printed command must run

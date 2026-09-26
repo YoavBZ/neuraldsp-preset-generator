@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import os
 import pathlib
+import shlex
 import sys
 from typing import Optional
 
@@ -308,7 +309,7 @@ def resolve_pack(pack_id: Optional[str], file_header: str, source: pathlib.Path)
             f"{source} identifies itself as {file_header!r}, which has no pack.\n"
             f"  Known packs: {', '.join(list_packs()) or 'none'}.\n"
             f"  Pass --pack <id> to force one, or draft a new pack with\n"
-            f"  python scripts/bootstrap_pack.py --preset {source}"
+            f"  python scripts/bootstrap_pack.py --preset {shlex.quote(str(source))}"
         )
     return pack
 

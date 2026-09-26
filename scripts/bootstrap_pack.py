@@ -29,6 +29,7 @@ import collections
 import json
 import pathlib
 import re
+import shlex
 import sys
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -243,7 +244,8 @@ def report(pack_id, manifest_path, parameters, review, selectors, preset_path):
             print(f"     … and {len(review) - 8} more")
 
     print("\nThen: drop the preset in your templates directory, run")
-    print(f"  python scripts/show.py {preset_path} --pack {pack_id} --text")
+    print(f"  python scripts/show.py {shlex.quote(str(preset_path))} --pack {pack_id} "
+          f"--text")
     print("and check the values look like what the plugin shows you.")
     print("\nRemove `\"draft\": true` from the manifest when you trust it.")
 
