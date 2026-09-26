@@ -62,6 +62,8 @@ def test_builds_one_level_matched_blind_file_and_key(tmp_path):
     assert rendered.duration_s == pytest.approx(expected, abs=1 / 48000)
     assert record["output"]["sha256"]
     scored = record["objective_record"]
+    assert scored["objective_scoring"]["match_v2"]["profile"] == "unpaired-v2"
+    assert scored["agreement_match_v2"]["closer"]["status"] == "no_verdict"
     assert scored["reference"]["gain_db"] == pytest.approx(
         record["sources"][0]["static_gain_db"], abs=0.001)
     for label, role in record["blind_key"].items():

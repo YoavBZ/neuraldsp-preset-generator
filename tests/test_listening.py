@@ -11,8 +11,9 @@ from analysis import io
 from analysis.compare import Objectives, compare, scalar
 from analysis.fingerprint import fingerprint
 from analysis.listening import attach_verdict, score_record, agreement_report, sha256
-from analysis.listening import common_term_sensitivity, verified_fresh_ac20
-from analysis.compare import PROFILE_PATH
+from analysis.listening import (common_term_sensitivity, verified_fresh_ac20,
+                                verify_frozen_prediction, match_v2_agreement_report)
+from analysis.compare import PROFILE_PATH, PROFILE_PATHS
 
 
 @pytest.fixture
@@ -45,6 +46,55 @@ def test_exact_profile_parity_and_separate_questions(record):
     for label in ("A", "B"):
         assert sensitivity["distances"][label] == pytest.approx(
             result["objective_scoring"]["alternatives"][label]["distance"])
+
+
+def test_new_audition_can_freeze_current_matching_profile_beside_v1(record):
+    original = score_record(record)
+    scored = score_record(record, include_match_v2=True)
+    assert "match_v2" not in original["objective_scoring"]
+    assert "agreement_match_v2" not in original
+    v2 = scored["objective_scoring"]["match_v2"]
+    assert v2["profile"] == "unpaired-v2"
+    assert v2["profile_sha256"] == sha256(PROFILE_PATHS[1])
+    target = fingerprint(io.load(record["reference"]["path"]), regime="probe",
+                         excerpt_s=None)
+    for label in ("A", "B"):
+        source = fingerprint(io.load(record["alternatives"][label]["path"]),
+                             regime="probe", excerpt_s=None)
+        expected = compare(target, source, profile="unpaired-v2")
+        expected.values["level"] = None
+        assert v2["alternatives"][label]["distance"] == scalar(expected)
+    assert scored["objective_scoring"]["alternatives"] == original[
+        "objective_scoring"]["alternatives"]
+    assert scored["agreement_match_v2"]["closer"]["status"] in (
+        "agree", "disagree", "unequal_coverage", "objective_tie")
+
+
+def test_a_rescore_cannot_replace_the_frozen_v1_or_v2_prediction(record):
+    frozen = score_record(record, include_match_v2=True)
+    recomputed = score_record(record, include_match_v2=True)
+    verify_frozen_prediction(frozen, recomputed)
+    changed = copy.deepcopy(recomputed)
+    changed["objective_scoring"]["alternatives"]["A"]["distance"] += 0.01
+    with pytest.raises(ValueError, match="A.distance"):
+        verify_frozen_prediction(frozen, changed)
+    changed = copy.deepcopy(recomputed)
+    changed["objective_scoring"]["match_v2"]["prediction"] = "B"
+    with pytest.raises(ValueError, match="match_v2"):
+        verify_frozen_prediction(frozen, changed)
+
+
+def test_v2_report_counts_targets_not_repeated_comparisons(record):
+    scored = score_record(record, include_match_v2=True)
+    repeats = [{**scored, "id": str(i)} for i in range(4)]
+    archived = score_record({**record, "id": "archived", "target_id": "other"})
+    report = match_v2_agreement_report(repeats + [archived])
+    assert report["profile"] == "unpaired-v2"
+    assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 1
+    assert report["target_groups"]["song"]["closer"][
+        "diagnostic_counts_not_independent_n"] in ({"agree": 4}, {"disagree": 4})
+    assert report["target_groups"]["other"]["closer"][
+        "diagnostic_counts_not_independent_n"] == {"unscored": 1}
 
 
 def test_common_terms_are_only_a_diagnostic_when_coverage_differs():

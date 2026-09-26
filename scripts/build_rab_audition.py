@@ -340,7 +340,9 @@ def build(
         "listening_context": "Bare, level-matched audition; all scored sources use their playback gain. No automatic target grouping.",
         "render_provenance": {label: provenance[role] for label, role in metadata["blind_key"].items()},
     }
-    scored = score_record(scoring_record)
+    # Freeze both the original listening profile and matching's current -v2
+    # prediction before any listener can see the blind key.
+    scored = score_record(scoring_record, include_match_v2=True)
     metadata["objective_record"] = scored
     return montage, metadata
 

@@ -271,6 +271,9 @@ def test_listener_answers_bind_to_frozen_scores_without_rescoring(tmp_path):
     assert record["audition_key"]["sha256"] == sha256(key_path)
     assert record["verdict"] == {"closer": "A", "preferred": None}
     assert record["frozen_scored_record"]["objective_scoring"] == key["objective_record"]["objective_scoring"]
+    assert key["objective_record"]["objective_scoring"]["match_v2"]["profile"] == "unpaired-v2"
+    assert record["frozen_scored_record"]["agreement_match_v2"]["closer"]["status"] in (
+        "agree", "disagree", "unequal_coverage", "objective_tie")
     assert record["frozen_scored_record"]["agreement"]["closer"]["status"] in (
         "agree", "disagree", "unequal_coverage", "objective_tie")
     assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] == "no_verdict"

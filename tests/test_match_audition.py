@@ -166,6 +166,10 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
     assert len(sidecars) == 1
     first_record = json.loads(sidecars[0].read_text())
+    assert first_record["objective_scoring"]["match_v2"] == key[
+        "objective_record"]["objective_scoring"]["match_v2"]
+    assert first_record["agreement_match_v2"]["closer"]["status"] in (
+        "agree", "disagree", "unequal_coverage", "objective_tie")
     assert first_record["verdict"] == {"closer": candidate_label, "preferred": None}
     assert first_record["agreement"]["preferred"]["status"] == "no_verdict"
     before = sidecars[0].read_bytes()
