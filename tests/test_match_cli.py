@@ -158,8 +158,8 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["renderer"]["renderer_id"] == "synthetic"
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
-    # A DI was given, so the shortlist's output level was checked against the
-    # reference: one record per shortlisted candidate, without its vector.
+    # A paired reamp measured whole, so the shortlist's output level was checked
+    # against the reference: one record per shortlisted candidate, without its vector.
     trims = summary["search"]["level_trims"]
     assert len(trims) == 2
     assert all("values_before" not in record for record in trims)
@@ -1158,5 +1158,20 @@ def test_only_a_paired_reamp_has_its_output_level_trimmed(audio, tmp_path, with_
                "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
                *di, "--amp", "sw50r", "--budget", "40", "--shortlist", "1",
                "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []
+
+
+
+def test_a_paired_run_on_an_excerpt_is_not_trimmed(audio, tmp_path):
+    """An excerpt's loudness is not the whole DI's, which every candidate renders."""
+    out = tmp_path / "run"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav",
+               "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--paired-provenance", audio / "paired-ref.wav.paired.json",
+               "--loss-profile", "unpaired-v2", "--excerpt", "1",
+               "--budget", "40", "--shortlist", "1", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
     assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []

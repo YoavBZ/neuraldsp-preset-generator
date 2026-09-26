@@ -465,7 +465,9 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
         die(f"{variants} topologies do not fit in a {budget_label}.\n"
             f"  {reserved} renders are spent before any searching: {screen_cost} on "
             f"the screen, {variants} on one starting point per topology, "
-            f"{rerank_cost} on the ±6 dB re-rank. That leaves "
+            f"{rerank_cost} on the ±6 dB re-rank"
+            + (f", {shortlist} on the output-level trim" if trim else "")
+            + f", 1 on the template as it arrived. That leaves "
             f"{max(budget - reserved, 0)} to split {variants} ways — about "
             f"{max(per_variant, 0):.0f} each, against the {round_cost} one round "
             f"of the optimiser costs.\n"

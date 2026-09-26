@@ -130,8 +130,8 @@ class Candidate:
     by_level_observations: Dict[float, int] = field(default_factory=dict)
     # How many were asked for. `by_level_observations` is what was obtained.
     replicates: int = 1
-    # The render's integrated loudness, when this candidate was rendered here rather
-    # than read from the cache. `level_trim` needs its sign, which the `level`
+    # The render's integrated loudness, from this render or, for a cache hit, from
+    # the stored fingerprint. `level_trim` needs its sign, which the `level`
     # objective (an absolute difference) does not keep.
     lufs: Optional[float] = None
     # Why this vector scored nothing, when a backend refused it outright. The
@@ -1205,7 +1205,10 @@ def level_trim(evaluator: Evaluator, shortlist: Sequence[Candidate], space: Spac
                 record["within_noise"] = True
             trimmed.append(scored)
         else:
-            record["reason"] = "the trimmed render did not score better"
+            record["reason"] = (
+                f"the trimmed render could not be scored: {scored.error}"
+                if not scored.objectives else
+                "the trimmed render did not score better")
             trimmed.append(candidate)
         records.append(record)
     return trimmed, records
@@ -1728,8 +1731,11 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             "Check the renderer: every trial either failed or came back silent."
         )
     if output_control is not None and front:
-        front, result.level_trims = level_trim(evaluator, front, space, output_control,
-                                               floor=result.floor)
+        # The measured repeat spread only: when a repeat failed, the floor falls back
+        # to the backend's declared noise, which is loose enough to keep a worse trim.
+        front, result.level_trims = level_trim(
+            evaluator, front, space, output_control,
+            floor=0.0 if screened.repeat_failures else result.floor)
         applied = [r for r in result.level_trims if r.get("applied")]
         if applied:
             gaps = ", ".join(f"{r['after'] - r['before']:+.2f}" for r in applied)

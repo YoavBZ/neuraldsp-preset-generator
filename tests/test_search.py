@@ -1882,6 +1882,56 @@ def test_every_skipped_trim_says_why(space, seed, target):
 
 
 def test_a_search_refuses_an_output_control_the_space_lacks(space, seed, target):
-    with pytest.raises(Exception):
-        S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
+    """Before spending anything: the check used to wait for the trim itself."""
+    renderer = SyntheticRenderer()
+    calls = []
+    real = renderer.render
+    renderer.render = lambda *args, **kwargs: calls.append(1) or real(*args, **kwargs)
+    with pytest.raises(SP.SpaceError):
+        S.search(renderer, target, di(), space, seed, budget=80,
                  output_control="parameters/noSuchGain")
+    assert calls == []
+
+
+def test_on_a_noisy_backend_a_trim_within_the_repeat_spread_is_kept(space, seed):
+    """The search's best is the lowest of many noisy renders, so one fresh render
+    of anything tends to lose to it. A trim whose level term improved is kept when
+    its total is within the measured repeat spread — and refused outside it, on a
+    render that failed, or on a backend that repeats itself."""
+    from dataclasses import replace
+
+    class Noisy(SyntheticRenderer):
+        def metadata(self):
+            return replace(super().metadata(), reproducible=False,
+                           band_noise_db=1.0)
+
+    probe = di()
+    louder = dict(seed)
+    louder[("parameters", "outputGain")] = 6.0
+    scorer = S.Evaluator(SyntheticRenderer(), None, probe, space)
+    target = printed(refchain.render(probe, scorer._settings(louder)))
+    evaluator = S.Evaluator(Noisy(), target, probe, space)
+    scored = evaluator.evaluate(seed)
+    # Pretend the search's render drew lucky: its total sits below any fresh one
+    # (the trimmed render here reproduces the target exactly and scores 0).
+    lucky = S.Candidate(values=dict(seed), objectives=dict(scored.objectives),
+                        total=-1.0, lufs=scored.lufs)
+
+    kept, records = S.level_trim(evaluator, [lucky], space, OUTPUT, floor=10.0)
+    assert records[0]["applied"] is True and records[0]["within_noise"] is True
+    kept, records = S.level_trim(evaluator, [lucky], space, OUTPUT, floor=0.0)
+    assert records[0]["applied"] is False and kept[0] is lucky
+
+    repeatable = S.Evaluator(SyntheticRenderer(), target, probe, space)
+    _, records = S.level_trim(repeatable, [lucky], space, OUTPUT, floor=10.0)
+    assert records[0]["applied"] is False, "a repeatable backend needs a better score"
+
+    def failing(*args, **kwargs):
+        from match.renderer import RenderError
+
+        raise RenderError("backend refused")
+
+    evaluator.renderer.render = failing
+    kept, records = S.level_trim(evaluator, [lucky], space, OUTPUT, floor=10.0)
+    assert records[0]["applied"] is False and kept[0] is lucky
+    assert "could not be scored" in records[0]["reason"]

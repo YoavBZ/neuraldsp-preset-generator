@@ -1862,8 +1862,8 @@ target's own passage, answers in the -v2 runs above landed a median of 0.6 to 1.
 LU from their targets' loudness, with 1 or 2 of 12 over 3 LU and one at 19.4. The
 output gain is a gain after the amp, so `search.level_trim` sets it from the
 loudness gap between the reference and each shortlisted candidate's render
-through the probe, spends one render to check, and keeps the trimmed vector only
-if it scores better.
+through the probe, spends one render to check, and keeps the trimmed vector if
+it scores better (on a noisy backend, see below).
 
 Measured with `--level-trim` on Tone King's 12 targets under `unpaired-v2`, each
 trim paired in-run with the answer it replaced:
@@ -1889,13 +1889,17 @@ decision in `summary.json` under `search.level_trims`, with the trial before and
 after and the reason for any skip. Other regimes leave the level to the search,
 and the skill's advice to set a no-DI match's level by ear stands.
 
-Three changes came after the run, none of them measured by it: a candidate
-served from the cache now carries its stored loudness (without it, a re-run into
-the same `--out-dir` skipped every trim); on a backend that does not repeat
-itself a trim is also kept when its `level` term improved and its total is within
-the screen's measured repeat spread of the original's; and the budget check
-counts the trim's renders. What was measured is Tone King under `unpaired-v2`; a
-paired match scores with `paired-v2`, and Morgan was not measured.
+Four changes came after the run, none of them measured by it: a candidate served
+from the cache now carries its stored loudness (without it, a re-run into the
+same `--out-dir` skipped every trim); on a backend that does not repeat itself a
+trim is also kept when its `level` term improved and its total is within the
+screen's measured repeat spread of the original's (not when a repeat failed and
+the spread is the backend's declared noise); the budget check counts the trim's
+renders; and the benchmark scores the untrimmed answer outside the arm's
+renders, alternately before and after the answer — this run always scored it
+just before, on the same instance, and counted it in each arm's `renders`. What
+was measured is Tone King under `unpaired-v2`; a paired match scores with
+`paired-v2`, and Morgan was not measured.
 
 ```bash
 .venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
@@ -1906,8 +1910,9 @@ paired match scores with `paired-v2`, and Morgan was not measured.
 ```
 
 It took 106 minutes from 1a4173b, a pre-squash commit that trimmed whenever a DI
-was given and kept a trim only when it scored better; its JSON has no
-`level_trim_record`, which the benchmark added afterwards.
+was given, kept a trim only when it scored better, and scored the untrimmed
+answer first and inside the arm's `renders`; its JSON has no `level_trim_record`,
+which the benchmark added afterwards.
 
 ---
 
