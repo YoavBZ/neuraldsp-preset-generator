@@ -1175,3 +1175,25 @@ def test_a_paired_run_on_an_excerpt_is_not_trimmed(audio, tmp_path):
                "--budget", "40", "--shortlist", "1", "--out-dir", out)
     assert done.returncode == 0, done.stdout + done.stderr
     assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []
+
+
+def test_the_printed_apply_command_survives_a_path_with_spaces(audio, tmp_path):
+    """The plugin's User presets live under "Neural DSP/Morgan Amps Suite", so the
+    template path a user passes usually has spaces; the printed command must run
+    as pasted."""
+    import shlex
+    import shutil
+
+    spaced = tmp_path / "My Presets" / "Autumn Leaves - Clapton.xml"
+    spaced.parent.mkdir()
+    shutil.copy(TEMPLATE, spaced)
+    out = tmp_path / "run dir"
+    done = run("match_preset.py", "--template", spaced,
+               "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
+               "--amp", "sw50r", "--budget", "40", "--shortlist", "1",
+               "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    lines = done.stdout.split("to hear it:")[1].strip().splitlines()[:3]
+    command = shlex.split(" ".join(line.rstrip("\\").strip() for line in lines))
+    assert command[command.index("--template") + 1] == str(spaced)
+    assert command[command.index("--out") + 1] == str(out / "match-1.xml")

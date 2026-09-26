@@ -639,9 +639,12 @@ def main() -> None:
     print(f"  report: {report_path}")
     print(f"  summary: {summary_path}")
     print("\nto hear it:")
-    print(f"  python3 scripts/apply_spec.py --template {args.template} \\")
-    print(f"    --spec {args.out_dir / 'match-1.json'} \\")
-    print(f"    --out {args.out_dir / 'match-1.xml'}")
+    # Quoted, like the audition hint below: a preset in the plugin's own User
+    # folder has spaces in its path, and the unquoted line failed when pasted.
+    print(f"  python3 scripts/apply_spec.py --template "
+          f"{shlex.quote(str(args.template))} \\")
+    print(f"    --spec {shlex.quote(str(args.out_dir / 'match-1.json'))} \\")
+    print(f"    --out {shlex.quote(str(args.out_dir / 'match-1.xml'))}")
     if (args.probe_di is not None and args.reference_mode == "paired_di"
             and pairing is not None):
         print("\nto audition it blind against the starting template:")
