@@ -1854,6 +1854,47 @@ a DI, and the match skill tells the user to set it by ear.
 
 It took 152 minutes from 49c602f.
 
+#### Trimming the output level after a search
+
+`level` is 0.15 of the loss's 2.65 weight, so a search can finish with the tone
+right and the output well off: through the target's own passage, answers in the
+-v2 runs above landed a median of 0.6 to 1.5 LU from their targets' loudness, with
+1 or 2 of 12 over 3 LU and one at 19.4. The output gain is a gain after the amp,
+so `search.level_trim` sets it from the loudness gap between the reference and
+each shortlisted candidate's render through the probe, spends one render to
+check, and keeps the trimmed vector only if it scores better.
+
+Measured with `--level-trim` on Tone King's 12 targets under `unpaired-v2`, each
+trim paired in-run with the answer it replaced:
+
+| searched through | trimmed | closer than untrimmed | loudness gap, before → after |
+|---|---:|---:|---|
+| the target's own passage | 4 of 12 | 3 of 4 (7%, p = 0.25) | 0.6–2.2 LU → 0.0–0.1 LU |
+| the Hotel California passage | 6 of 12 | 3 of 6 (1%, p = 0.69) | better on 3, worse on 3 |
+| the noise probe | 8 of 12 | 1 of 8 (2% further, p = 0.15) | 3.3–14.2 LU → 4.0–14.1 LU |
+
+Through the exact performance the trim closes the gap and leaves the tone alone
+(timbre unchanged to two decimals). Through another passage it is a coin toss —
+a loudness matched through one performance does not carry over to another — and
+through noise it is worse, as "SW50R under -v2" found for the probe's level. One
+own-passage answer 4.7 LU off was not trimmed, and this run did not record why
+(its gain at the control's limit, or a trimmed render that scored worse); the
+benchmark now records each trim's decision. So `match_preset.py` trims only a
+`paired_di` match, the reamp of the probe's own performance, and records every
+trim in `summary.json` under `search.level_trims`; other regimes leave the level
+to the search, and the skill's advice to set a no-DI match's level by ear stands.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
+  --workers 2 --loss-profile unpaired-v2 --level-trim \
+  --json docs/search-signal-toneking-rhythm-v2-trim.json
+```
+
+It took 106 minutes from 1a4173b, a pre-squash commit that trimmed whenever a DI
+was given; the benchmark path it measured is unchanged.
+
 ---
 
 ## 8. Dependency and CI policy

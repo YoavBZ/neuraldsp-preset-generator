@@ -421,6 +421,8 @@ def test_a_level_trim_is_paired_with_the_answer_it_replaced(space, topology, sig
         assert outcome.untrimmed_dimensions and "level" in outcome.untrimmed_dimensions
     untouched = [o for o in outcomes if o.level_trim_db is None]
     assert all(o.untrimmed_objective is None for o in untouched)
+    assert all(o.level_trim_record is not None and "values_before" not in
+               o.level_trim_record for o in outcomes)
     summary = SB.summarise(outcomes, reference="same")
     for name in named:
         count = sum(o.signal == name for o in trimmed)

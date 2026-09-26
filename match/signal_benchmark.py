@@ -69,6 +69,8 @@ class SignalOutcome:
     # search (None when none was), and the answer as it was before, heard the same
     # way as `objective` — so the trim is paired with its own untrimmed answer.
     level_trim_db: Optional[float] = None
+    # What `level_trim` recorded for this answer, applied or not, without the vector.
+    level_trim_record: Optional[Dict[str, Any]] = None
     untrimmed_objective: Optional[float] = None
     untrimmed_dimensions: Optional[Dict[str, float]] = None
     # This arm's own renders: its inversion, scoring that inversion, its search
@@ -222,6 +224,10 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                 best = found.shortlist[0]
                 before = scorer.renders
                 # One shortlisted candidate, so at most one trim, and it is this one.
+                if found.level_trims:
+                    outcome.level_trim_record = {
+                        key: value for key, value in found.level_trims[0].items()
+                        if key != "values_before"}
                 trim = next((record for record in found.level_trims
                              if record.get("applied")), None)
                 if trim is not None:

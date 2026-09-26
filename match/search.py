@@ -1710,9 +1710,7 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             result.caveats.append(
                 f"the output level of {len(applied)} of {len(front)} shortlisted "
                 f"candidates was trimmed after the search to match the reference's "
-                f"loudness through this DI ({gaps} dB). Without your own DI of the "
-                f"part, set the output by ear: a match's loudness through another "
-                f"signal does not carry over to your playing")
+                f"loudness through this DI ({gaps} dB)")
     reranked, rerank_caveats = robustness_rerank(evaluator, front)
     result.shortlist = reranked
     result.caveats.extend(rerank_caveats)

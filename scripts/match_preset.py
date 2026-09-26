@@ -482,11 +482,12 @@ def main() -> None:
         replicates=search.shortlist_replicates(metadata),
         budget_scale=(variant_count if args.budget_per_topology else 1))
 
-    # The output level is trimmed to the reference only through a DI of the
-    # user's playing: through the noise probe the loudness does not carry over to a
-    # guitar (docs/tone-matching-plan.md, "SW50R under -v2").
+    # The output level is trimmed to the reference only for a paired reamp, where
+    # the DI is the reference's own performance. Through another passage or the
+    # noise probe a loudness matched through the probe does not carry over
+    # (docs/tone-matching-plan.md, "Trimming the output level after a search").
     output_control = None
-    if args.probe_di is not None:
+    if args.probe_di is not None and args.reference_mode == "paired_di":
         trim_path = (signal_path_arg or space.amp_prefix(seed)
                      or invert.selected_signal_path(args.pack, seed))
         if trim_path is not None:
