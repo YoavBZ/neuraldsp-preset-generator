@@ -38,7 +38,7 @@ def _publish_verdict(path: pathlib.Path, content: str) -> None:
 
 
 def main() -> None:
-    from analysis.listening import attach_verdict, sha256
+    from analysis.listening import attach_verdict, sha256, valid_frozen_match_v2
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--key", required=True, type=pathlib.Path)
@@ -65,7 +65,23 @@ def main() -> None:
     if output_path.exists() or output_path.is_symlink():
         raise ValueError("verdict already exists; never overwrite a listener answer")
     verdict = {"closer": args.closer, "preferred": None}
-    scored = attach_verdict(key["objective_record"], verdict)
+    objective = key["objective_record"]
+    key_profiles = key.get("objective_profiles_frozen")
+    record_profiles = objective.get("objective_profiles_frozen")
+    old_v1_only = (key_profiles is None and record_profiles is None and
+                   "match_v2" not in (objective.get("objective_scoring") or {}))
+    valid_v2 = (key_profiles == record_profiles == ["unpaired-v1", "unpaired-v2"] and
+                valid_frozen_match_v2(objective) is not None)
+    if old_v1_only or valid_v2:
+        scored = attach_verdict(objective, verdict)
+    else:
+        # A damaged objective cannot invalidate what the listener heard. Keep
+        # the verdict, but do not publish a misleading prediction or agreement.
+        scored = {key: value for key, value in objective.items()
+                  if key not in ("objective_scoring", "agreement", "agreement_with_level",
+                                 "agreement_match_v2")}
+        scored["verdict"] = verdict
+        scored["scoring_error"] = "frozen v2 prediction or profile marker is invalid"
     record = {"schema": "prospective-backed-verdict-v1",
               "audition_key": {"path": str(key_path), "sha256": sha256(key_path)},
               "heard_audio_sha256": key["output"]["sha256"],

@@ -72,6 +72,8 @@ def test_backed_audio_uses_one_bed_and_scores_only_guitar(tmp_path):
     assert key["manifest"]["sha256"] == sha256(manifest_path)
     assert key["output"]["sha256"] == sha256(out / "audition.flac")
     scored = key["objective_record"]
+    assert key["objective_profiles_frozen"] == scored["objective_profiles_frozen"] == [
+        "unpaired-v1", "unpaired-v2"]
     assert scored["agreement"]["closer"]["status"] == "no_verdict"
     assert scored["agreement"]["preferred"]["status"] == "no_verdict"
     assert scored["objective_scoring"]["primary_excluded_audio_terms"] == ["level"]
@@ -271,6 +273,9 @@ def test_listener_answers_bind_to_frozen_scores_without_rescoring(tmp_path):
     assert record["audition_key"]["sha256"] == sha256(key_path)
     assert record["verdict"] == {"closer": "A", "preferred": None}
     assert record["frozen_scored_record"]["objective_scoring"] == key["objective_record"]["objective_scoring"]
+    assert key["objective_record"]["objective_scoring"]["match_v2"]["profile"] == "unpaired-v2"
+    assert record["frozen_scored_record"]["agreement_match_v2"]["closer"]["status"] in (
+        "agree", "disagree", "unequal_coverage", "objective_tie")
     assert record["frozen_scored_record"]["agreement"]["closer"]["status"] in (
         "agree", "disagree", "unequal_coverage", "objective_tie")
     assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] == "no_verdict"
@@ -297,6 +302,40 @@ def test_new_verdict_records_closeness_without_asking_for_preference(tmp_path):
     record = json.loads((out / "verdict.json").read_text())
     assert record["verdict"] == {"closer": "B", "preferred": None}
     assert record["frozen_scored_record"]["agreement"]["preferred"]["status"] == "no_verdict"
+
+
+@pytest.mark.parametrize("old_v1_only", (False, True))
+def test_backed_verdict_distinguishes_missing_v2_from_historical_key(tmp_path, old_v1_only):
+    manifest_path, _ = _fixture(tmp_path)
+    out = tmp_path / "audition"
+    built = _run(manifest_path, out)
+    assert built.returncode == 0, built.stderr
+    key_path = out / "private-key.json"
+    key = json.loads(key_path.read_text())
+    objective = key["objective_record"]
+    del objective["objective_scoring"]["match_v2"]
+    if old_v1_only:
+        del key["objective_profiles_frozen"]
+        del objective["objective_profiles_frozen"]
+        objective.pop("agreement_match_v2", None)
+    key_path.write_text(json.dumps(key))
+
+    submitted = subprocess.run(
+        [sys.executable, str(VERDICT_SCRIPT), "--key", str(key_path), "--closer", "B"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert submitted.returncode == 0, submitted.stderr
+    record = json.loads((out / "verdict.json").read_text())
+    scored = record["frozen_scored_record"]
+    assert record["verdict"] == {"closer": "B", "preferred": None}
+    if old_v1_only:
+        assert "scoring_error" not in scored
+        assert "objective_scoring" in scored
+        assert "agreement_match_v2" not in scored
+    else:
+        assert "invalid" in scored["scoring_error"]
+        assert "objective_scoring" not in scored
+        assert "agreement" not in scored
+        assert "agreement_match_v2" not in scored
 
 
 def test_simultaneous_verdict_publication_cannot_replace_the_first(tmp_path, monkeypatch):

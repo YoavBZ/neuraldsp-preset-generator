@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from . import io
-from .compare import PROFILE_PATH, Objectives, compare, load_profile, scalar
+from .compare import PROFILE_PATH, PROFILE_PATHS, Objectives, compare, load_profile, scalar
 from .fingerprint import fingerprint
 
 
@@ -186,14 +186,72 @@ def common_term_sensitivity(scoring: dict) -> dict:
     }
 
 
-def score_record(record: dict, cache: dict | None = None) -> dict:
+def _match_v2_prediction(target, alternatives: dict) -> dict:
+    """A separate audio-only prediction under matching's default unpaired profile.
+
+    The caller decides whether this was frozen before listening. Historical
+    audits must not acquire a post-hoc prediction by calling this implicitly.
+    """
+    profile = "unpaired-v2"
+    weights = load_profile(profile)["weights"]
+    scores = {}
+    for label in ("A", "B"):
+        objectives = compare(target, alternatives[label], profile=profile)
+        without_level = Objectives(
+            values={key: value for key, value in objectives.values.items() if key != "level"},
+            profile=profile,
+        )
+        distance = scalar(without_level)
+        with_level = scalar(objectives)
+        if distance is None or not math.isfinite(distance):
+            raise ValueError("no finite unpaired-v2 audio distance is measurable")
+        # Preserve objective order for stable floating-point summation across
+        # different hash seeds and verdict-time rescoring.
+        measured = {key: value for key, value in objectives.values.items()
+                    if key != "level" and value is not None and weights.get(key, 0) > 0}
+        denominator = sum(weights[key] for key in measured)
+        scores[label] = {
+            "distance": distance,
+            "distance_with_level": with_level,
+            "objectives": objectives.to_dict(),
+            "effective_weights": {key: weights[key] / denominator for key in measured},
+        }
+    detail = {label: scores[label]["objectives"]["detail"] for label in ("A", "B")}
+    term_coverage_equal = {
+        dimension: set(detail["A"].get(dimension, {})) ==
+                   set(detail["B"].get(dimension, {}))
+        for dimension in set(detail["A"]) | set(detail["B"])
+    }
+    coverage_equal = scores["A"]["effective_weights"] == scores["B"]["effective_weights"]
+    score_a, score_b = scores["A"]["distance"], scores["B"]["distance"]
+    gap = score_b - score_a
+    prediction = ("indistinguishable" if math.isclose(gap, 0.0, rel_tol=0,
+                                                       abs_tol=1e-9)
+                  else "A" if gap > 0 else "B")
+    return {
+        "schema": "listening-match-v2-prediction-1",
+        "profile": profile,
+        "profile_sha256": sha256(PROFILE_PATHS[1]),
+        "scope": "audio-only; level excluded for the primary distance; no preset penalties",
+        "alternatives": scores,
+        "prediction": prediction,
+        "distance_B_minus_A": gap,
+        "prediction_comparable": coverage_equal and all(term_coverage_equal.values()),
+        "coverage_equal": coverage_equal,
+        "term_coverage_equal": term_coverage_equal,
+    }
+
+
+def score_record(record: dict, cache: dict | None = None, *, include_match_v2: bool = False) -> dict:
     """Return a score sidecar; preserve the caller's verdict and source descriptors.
 
     Cache is process-local, content-addressed, and never substitutes for checking
     the files. Historical records without trustworthy sources remain unscored.
     """
     import json
-    result = {key: value for key, value in record.items() if key not in ("objective_scoring", "agreement", "agreement_with_level", "scoring_error")}
+    result = {key: value for key, value in record.items() if key not in
+              ("objective_scoring", "agreement", "agreement_with_level",
+               "agreement_match_v2", "objective_profiles_frozen", "scoring_error")}
     if set(record.get("alternatives", {})) != {"A", "B"}:
         raise ValueError("exactly two explicitly mapped alternatives A and B are required")
     if not record.get("target_id"):
@@ -211,9 +269,10 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
         return cache[key]
 
     target = printed(record["reference"], record["reference"]["regime"])
-    scores = {}
+    scores, alternative_fps = {}, {}
     for label, spec in record["alternatives"].items():
         fp = printed(spec, "probe")
+        alternative_fps[label] = fp
         objectives = compare(target, fp, profile=profile)
         without_level = Objectives(values={key: value for key, value in objectives.values.items() if key != "level"}, profile=profile)
         distance = scalar(without_level)
@@ -256,6 +315,10 @@ def score_record(record: dict, cache: dict | None = None) -> dict:
     }
     result["objective_scoring"]["common_term_sensitivity"] = common_term_sensitivity(
         result["objective_scoring"])
+    if include_match_v2:
+        result["objective_profiles_frozen"] = ["unpaired-v1", "unpaired-v2"]
+        result["objective_scoring"]["match_v2"] = _match_v2_prediction(
+            target, alternative_fps)
     provenance = record.get("render_provenance") or {}
     known_models = {"morgan": {"AC20", "PR12", "SW50R"},
                     "toneking": {"Rhythm Channel", "Lead Channel"}}
@@ -281,25 +344,152 @@ def attach_verdict(scored: dict, verdict: dict) -> dict:
     result = {**scored, "verdict": dict(verdict), "agreement": {},
               "agreement_with_level": {}}
     comparable_coverage = scoring["prediction_comparable"]
+    match_v2 = scoring.get("match_v2")
+    if match_v2 is not None:
+        result["agreement_match_v2"] = {}
+
+    def decision(answer, prediction, comparable):
+        if answer is None:
+            return {"status": "no_verdict", "agrees": None}
+        if not comparable:
+            return {"status": "unequal_coverage", "agrees": None}
+        if answer == "indistinguishable":
+            return {"status": "listener_tie", "agrees": prediction == answer}
+        if prediction == "indistinguishable":
+            return {"status": "objective_tie", "agrees": False}
+        agrees = answer == prediction
+        return {"status": "agree" if agrees else "disagree", "agrees": agrees}
+
     for question in ("closer", "preferred"):
         answer = verdict.get(question)
         if answer not in (None, "A", "B", "indistinguishable"):
             raise ValueError(f"invalid {question} verdict: {answer!r}")
         for field, prediction in (("agreement", scoring["prediction"]),
                                   ("agreement_with_level", scoring["prediction_with_level"])):
-            if answer is None:
-                status, agrees = "no_verdict", None
-            elif not comparable_coverage:
-                status, agrees = "unequal_coverage", None
-            elif answer == "indistinguishable":
-                status, agrees = "listener_tie", prediction == answer
-            elif prediction == "indistinguishable":
-                status, agrees = "objective_tie", False
-            else:
-                agrees = answer == prediction
-                status = "agree" if agrees else "disagree"
-            result[field][question] = {"status": status, "agrees": agrees}
+            result[field][question] = decision(answer, prediction, comparable_coverage)
+        if match_v2 is not None:
+            result["agreement_match_v2"][question] = decision(
+                answer, match_v2["prediction"], match_v2["prediction_comparable"])
     return result
+
+
+def verify_frozen_prediction(frozen: dict, recomputed: dict) -> None:
+    """Reject a rescore that would silently replace a pre-listening prediction.
+
+    The source hashes are checked by ``score_record`` first. This compares
+    objective results, not non-scoring metadata such as an implementation hash,
+    so old keys remain readable when code changes without changing a score.
+    """
+    if frozen.get("objective_profiles_frozen") != recomputed.get("objective_profiles_frozen"):
+        raise ValueError("frozen listening prediction changed: objective_profiles_frozen")
+    old = frozen.get("objective_scoring") or {}
+    new = recomputed.get("objective_scoring") or {}
+    for field in ("schema", "profile", "profile_sha256", "prediction",
+                  "prediction_with_level", "prediction_comparable",
+                  "coverage_equal", "term_coverage_equal", "distance_B_minus_A"):
+        if old.get(field) != new.get(field):
+            raise ValueError(f"frozen listening prediction changed: {field}")
+    for label in ("A", "B"):
+        before = (old.get("alternatives") or {}).get(label) or {}
+        after = (new.get("alternatives") or {}).get(label) or {}
+        for field in ("distance", "distance_with_level", "objectives", "effective_weights"):
+            if before.get(field) != after.get(field):
+                raise ValueError(f"frozen listening prediction changed: {label}.{field}")
+    if old.get("match_v2") != new.get("match_v2"):
+        raise ValueError("frozen listening prediction changed: match_v2")
+
+
+def valid_frozen_match_v2(record: dict) -> dict | None:
+    """Return a well-formed predeclared v2 prediction, otherwise no evidence.
+
+    A caller-supplied JSON field alone cannot prove when it was written. The
+    marker and structure checks prevent damaged or old records from silently
+    contributing to a prospective aggregate; the source key remains private.
+    """
+    if record.get("objective_profiles_frozen") != ["unpaired-v1", "unpaired-v2"]:
+        return None
+    scoring = record.get("objective_scoring")
+    if not isinstance(scoring, dict):
+        return None
+    v2 = scoring.get("match_v2")
+    if not isinstance(v2, dict) or (
+        v2.get("schema") != "listening-match-v2-prediction-1" or
+        v2.get("profile") != "unpaired-v2" or
+        v2.get("profile_sha256") != sha256(PROFILE_PATHS[1])
+    ):
+        return None
+    alternatives = v2.get("alternatives")
+    if not isinstance(alternatives, dict) or set(alternatives) != {"A", "B"}:
+        return None
+    profile_weights = load_profile("unpaired-v2")["weights"]
+    for label in ("A", "B"):
+        alternative = alternatives[label]
+        if not isinstance(alternative, dict):
+            return None
+        distance = alternative.get("distance")
+        objectives = alternative.get("objectives")
+        if (not isinstance(distance, (int, float)) or not math.isfinite(distance) or
+                not isinstance(objectives, dict) or
+                objectives.get("profile") != "unpaired-v2"):
+            return None
+        detail = objectives.get("detail")
+        values = objectives.get("values")
+        if (not isinstance(detail, dict) or not isinstance(values, dict) or
+                set(values) != set(detail) | {"prior_deviation", "complexity"} or
+                values["prior_deviation"] is not None or values["complexity"] is not None):
+            return None
+        for dimension, terms in detail.items():
+            if (not isinstance(terms, dict) or
+                    any(not isinstance(value, (int, float)) or not math.isfinite(value)
+                        for value in terms.values())):
+                return None
+            expected_value = sum(terms.values()) / len(terms) if terms else None
+            observed_value = values[dimension]
+            if expected_value is None:
+                if observed_value is not None:
+                    return None
+            elif (not isinstance(observed_value, (int, float)) or
+                  not math.isfinite(observed_value) or
+                  not math.isclose(expected_value, observed_value, rel_tol=0, abs_tol=1e-9)):
+                return None
+        measured = {name: value for name, value in values.items()
+                    if name != "level" and value is not None and profile_weights.get(name, 0) > 0}
+        denominator = sum(profile_weights[name] for name in measured)
+        if denominator <= 0:
+            return None
+        expected_weights = {name: profile_weights[name] / denominator for name in measured}
+        if alternative.get("effective_weights") != expected_weights:
+            return None
+        expected_distance = sum(profile_weights[name] * value for name, value in measured.items()) / denominator
+        if not math.isclose(distance, expected_distance, rel_tol=0, abs_tol=1e-9):
+            return None
+        with_level = scalar(Objectives(values=values, profile="unpaired-v2"))
+        stored_with_level = alternative.get("distance_with_level")
+        if (with_level is None or not isinstance(stored_with_level, (int, float)) or
+                not math.isclose(with_level, stored_with_level, rel_tol=0, abs_tol=1e-9)):
+            return None
+    detail = {label: alternatives[label]["objectives"]["detail"] for label in ("A", "B")}
+    dimensions = set(detail["A"]) | set(detail["B"])
+    if any(not isinstance(detail[label].get(dimension, {}), dict)
+           for label in ("A", "B") for dimension in dimensions):
+        return None
+    term_equal = {dimension: set(detail["A"].get(dimension, {})) ==
+                  set(detail["B"].get(dimension, {})) for dimension in dimensions}
+    coverage_equal = alternatives["A"]["effective_weights"] == alternatives["B"]["effective_weights"]
+    comparable = coverage_equal and all(term_equal.values())
+    gap = alternatives["B"]["distance"] - alternatives["A"]["distance"]
+    prediction = ("indistinguishable" if math.isclose(gap, 0.0, rel_tol=0,
+                                                       abs_tol=1e-9)
+                  else "A" if gap > 0 else "B")
+    stored_gap = v2.get("distance_B_minus_A")
+    if (not isinstance(stored_gap, (int, float)) or
+            not math.isclose(gap, stored_gap, rel_tol=0, abs_tol=1e-9) or
+            v2.get("prediction") != prediction or
+            v2.get("term_coverage_equal") != term_equal or
+            v2.get("coverage_equal") is not coverage_equal or
+            v2.get("prediction_comparable") is not comparable):
+        return None
+    return v2
 
 
 def agreement_report(records: list[dict]) -> dict:
@@ -349,3 +539,52 @@ def agreement_report(records: list[dict]) -> dict:
             "ungrouped_comparisons": [r["id"] for r in records if r["target_id"] == "unassigned"],
             "interpretation": "Descriptive audit only. Repeats and backed revisits share their target's single weight. Target independence must be justified externally; shared songs/listeners are not independent replicates. No significance claim, calibration or plateau is established.",
             "tie_policy": "Listener and objective ties reported separately, excluded from decisive fractions; unequal objective coverage is inconclusive; unknown preferences are not inferred."}
+
+
+def match_v2_agreement_report(records: list[dict]) -> dict:
+    """Report only v2 predictions frozen in the supplied listening records.
+
+    Old v1-only records remain unscored here. Do not add a v2 prediction to an
+    old listener judgment after hearing it and call the result prospective.
+    """
+    mapped = []
+    for record in records:
+        scoring = record.get("objective_scoring")
+        if not isinstance(scoring, dict):
+            scoring = {}
+        v2 = valid_frozen_match_v2(record)
+        verdict = record.get("verdict") or {}
+        answers = {question: verdict.get(question) for question in ("closer", "preferred")}
+        if any(answer not in (None, "A", "B", "indistinguishable")
+               for answer in answers.values()):
+            v2 = None
+        agreement = {}
+        if v2 is not None:
+            for question, answer in answers.items():
+                if answer is None:
+                    status, agrees = "no_verdict", None
+                elif not v2["prediction_comparable"]:
+                    status, agrees = "unequal_coverage", None
+                elif answer == "indistinguishable":
+                    status, agrees = "listener_tie", v2["prediction"] == answer
+                elif v2["prediction"] == "indistinguishable":
+                    status, agrees = "objective_tie", False
+                else:
+                    agrees = answer == v2["prediction"]
+                    status = "agree" if agrees else "disagree"
+                agreement[question] = {"status": status, "agrees": agrees}
+        mapped.append({
+            **record,
+            "objective_scoring": (
+                {**v2,
+                 "ac20_history_uncertain": scoring.get("ac20_history_uncertain", []),
+                 "amp_model_unknown": scoring.get("amp_model_unknown", [])}
+                if v2 is not None else {}
+            ),
+            "agreement": agreement,
+        })
+    result = agreement_report(mapped)
+    result["profile"] = "unpaired-v2"
+    result["basis"] = ("Only v2 predictions present in the input records; caller must verify "
+                       "they were frozen before listening; v1-only records are unscored")
+    return result
