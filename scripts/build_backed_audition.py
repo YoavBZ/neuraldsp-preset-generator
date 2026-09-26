@@ -205,6 +205,7 @@ def build(manifest: dict, *, seed: int):
     }, include_match_v2=True)
     evidence = {
         "schema": "prospective-backed-audition-v1", "seed": seed,
+        "objective_profiles_frozen": scored["objective_profiles_frozen"],
         "purpose": purpose, "limitations": manifest.get("limitations", []),
         "blind_key": blind, "sample_rate": io.SAMPLE_RATE, "channels": channels,
         "duration_s": duration, "timeline": timeline,

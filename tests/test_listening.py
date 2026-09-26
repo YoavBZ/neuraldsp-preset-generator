@@ -97,6 +97,33 @@ def test_v2_report_counts_targets_not_repeated_comparisons(record):
         "diagnostic_counts_not_independent_n"] == {"unscored": 1}
 
 
+@pytest.mark.parametrize("damage", ["missing", "empty", "wrong-profile", "wrong-gap",
+                                    "missing-marker", "no-measured-terms"])
+def test_damaged_v2_cannot_count_as_agreement(record, damage):
+    scored = score_record(record, include_match_v2=True)
+    scored["agreement_match_v2"]["closer"] = {"status": "agree", "agrees": True}
+    if damage == "missing":
+        del scored["objective_scoring"]["match_v2"]
+    elif damage == "empty":
+        scored["objective_scoring"]["match_v2"] = {}
+    elif damage == "wrong-profile":
+        scored["objective_scoring"]["match_v2"]["profile"] = "unpaired-v1"
+    elif damage == "wrong-gap":
+        scored["objective_scoring"]["match_v2"]["distance_B_minus_A"] = 100.0
+    elif damage == "no-measured-terms":
+        for alternative in scored["objective_scoring"]["match_v2"]["alternatives"].values():
+            alternative["objectives"]["detail"] = {}
+            alternative["objectives"]["values"] = {
+                "prior_deviation": None, "complexity": None}
+            alternative["effective_weights"] = {}
+    else:
+        del scored["objective_profiles_frozen"]
+    report = match_v2_agreement_report([scored])
+    assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
+    assert report["target_groups"]["song"]["closer"][
+        "diagnostic_counts_not_independent_n"] == {"unscored": 1}
+
+
 def test_common_terms_are_only_a_diagnostic_when_coverage_differs():
     scoring = {
         "schema": "listening-objective-v1", "profile": "unpaired-v1",

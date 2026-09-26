@@ -62,6 +62,8 @@ def test_builds_one_level_matched_blind_file_and_key(tmp_path):
     assert rendered.duration_s == pytest.approx(expected, abs=1 / 48000)
     assert record["output"]["sha256"]
     scored = record["objective_record"]
+    assert record["objective_profiles_frozen"] == scored["objective_profiles_frozen"] == [
+        "unpaired-v1", "unpaired-v2"]
     assert scored["objective_scoring"]["match_v2"]["profile"] == "unpaired-v2"
     assert scored["agreement_match_v2"]["closer"]["status"] == "no_verdict"
     assert scored["reference"]["gain_db"] == pytest.approx(

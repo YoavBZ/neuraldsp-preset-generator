@@ -343,6 +343,7 @@ def build(
     # Freeze both the original listening profile and matching's current -v2
     # prediction before any listener can see the blind key.
     scored = score_record(scoring_record, include_match_v2=True)
+    metadata["objective_profiles_frozen"] = scored["objective_profiles_frozen"]
     metadata["objective_record"] = scored
     return montage, metadata
 

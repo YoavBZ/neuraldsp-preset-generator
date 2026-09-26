@@ -118,9 +118,15 @@ def main() -> None:
             "listener": args.listener.strip(),
             "heard_audio": {"path": str(montage), "sha256": output["sha256"]}}
         try:
+            frozen_profiles = key.get("objective_profiles_frozen")
+            if frozen_profiles != objective.get("objective_profiles_frozen"):
+                raise ValueError("audition key and objective record disagree on frozen profiles")
+            if frozen_profiles not in (None, ["unpaired-v1", "unpaired-v2"]):
+                raise ValueError("unsupported frozen objective profiles")
             recomputed = score_record(
                 submission,
-                include_match_v2="match_v2" in (objective.get("objective_scoring") or {}),
+                include_match_v2=(frozen_profiles is not None or
+                                  "match_v2" in (objective.get("objective_scoring") or {})),
             )
             verify_frozen_prediction(objective, recomputed)
             scored = attach_verdict(submission, submission["verdict"])

@@ -36,6 +36,12 @@ distances, not full optimization scores. Matching weights are not changed.
 New blind auditions also freeze a separate `unpaired-v2` prediction before
 listening, with `level` excluded in the same way. The verdict sidecar reports
 agreement with v1 and v2 separately; neither rewrites the other's distances.
+The private audition key and its objective record both declare the frozen
+profiles. A missing or damaged v2 prediction in a key that declares v2 keeps
+the listener's answer but makes the objective result unscored; it must not be
+treated as an old v1-only key. The aggregate validates the frozen v2 fields
+and derives agreement from the listener answer, rather than trusting a stored
+agreement label alone.
 Older v1-only keys stay v1-only. Do not compute v2 after hearing a verdict and
 count it as a prospective test. When a match audition verifies its sources again
 at verdict time, a changed score is reported as unscored rather than silently
