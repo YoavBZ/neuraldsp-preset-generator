@@ -158,6 +158,11 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["renderer"]["renderer_id"] == "synthetic"
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
+    # A DI was given, so the shortlist's output level was checked against the
+    # reference: one record per shortlisted candidate, without its vector.
+    trims = summary["search"]["level_trims"]
+    assert len(trims) == 2
+    assert all("values_before" not in record for record in trims)
     assert summary["inversion"]["detail"]["signal_path"] == "sw50r"
     assert not any(change["path"] == "/selectedAmp"
                    for change in summary["inversion"]["changes"]), (
@@ -1139,3 +1144,16 @@ def test_a_match_scores_with_the_profile_that_drops_the_rt60_term_by_default():
     from scripts.match_preset import build_parser
 
     assert build_parser().get_default("loss_profile") == "unpaired-v2"
+
+
+
+def test_without_a_di_the_output_level_is_not_trimmed(audio, tmp_path):
+    """Through the noise probe a match's loudness does not carry over to a guitar,
+    so no trim runs and the summary says so by being empty."""
+    out = tmp_path / "run"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
+               "--amp", "sw50r", "--budget", "40", "--shortlist", "1",
+               "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []

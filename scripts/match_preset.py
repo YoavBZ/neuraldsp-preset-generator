@@ -482,6 +482,15 @@ def main() -> None:
         replicates=search.shortlist_replicates(metadata),
         budget_scale=(variant_count if args.budget_per_topology else 1))
 
+    # The output level is trimmed to the reference only through a DI of the
+    # user's playing: through the noise probe the loudness does not carry over to a
+    # guitar (docs/tone-matching-plan.md, "SW50R under -v2").
+    output_control = None
+    if args.probe_di is not None:
+        trim_path = (signal_path_arg or space.amp_prefix(seed)
+                     or invert.selected_signal_path(args.pack, seed))
+        if trim_path is not None:
+            output_control = invert.output_gain_control(args.pack, trim_path)
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=budget, profile=args.loss_profile,
@@ -490,7 +499,8 @@ def main() -> None:
                            switches=switches, selectors=selectors,
                            rng=np.random.default_rng(args.seed),
                            reference_audio=(reference.samples
-                                            if residual_weighted else None))
+                                            if residual_weighted else None),
+                           output_control=output_control)
     search_elapsed_s = time.monotonic() - search_started_at
     caveats.extend(result.caveats)
 
@@ -571,6 +581,7 @@ def main() -> None:
         profile=args.loss_profile,
         reference=str(args.reference.expanduser().resolve()), pack=args.pack,
         renderer=metadata.as_dict(), budget=budget, accounting=accounting,
+        level_trims=result.level_trims,
         elapsed_s=search_elapsed_s, command_accounting=command_accounting,
         out_dir=str(args.out_dir), template_source=template_source,
         search_seed=seed, reference_pairing=pairing,

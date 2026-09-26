@@ -409,3 +409,23 @@ def test_the_benchmark_offers_the_synthetic_guitar_as_a_signal():
     signals, described = _signals(["same", "guitar"], target, fx.SAMPLE_RATE)
     assert list(signals) == ["same", "guitar"]
     assert described["guitar"]["kind"].startswith("synthetic strummed guitar")
+
+
+
+def test_a_level_trim_is_paired_with_the_answer_it_replaced(space, topology, signals):
+    target, named = signals
+    outcomes = _run(space, topology, target, named, level_trim=True)
+    trimmed = [o for o in outcomes if o.level_trim_db is not None]
+    for outcome in trimmed:
+        assert outcome.untrimmed_objective is not None
+        assert outcome.untrimmed_dimensions and "level" in outcome.untrimmed_dimensions
+    untouched = [o for o in outcomes if o.level_trim_db is None]
+    assert all(o.untrimmed_objective is None for o in untouched)
+    summary = SB.summarise(outcomes, reference="same")
+    for name in named:
+        count = sum(o.signal == name for o in trimmed)
+        assert summary[name].get("level_trims", 0) == count
+        if count:
+            assert summary[name]["against_untrimmed"]["targets"] == count
+    assert not any(o.level_trim_db is not None for o in _run(space, topology, target,
+                                                              named, targets=1))

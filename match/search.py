@@ -130,6 +130,10 @@ class Candidate:
     by_level_observations: Dict[float, int] = field(default_factory=dict)
     # How many were asked for. `by_level_observations` is what was obtained.
     replicates: int = 1
+    # The render's integrated loudness, when this candidate was rendered here rather
+    # than read from the cache. `level_trim` needs its sign, which the `level`
+    # objective (an absolute difference) does not keep.
+    lufs: Optional[float] = None
     # Why this vector scored nothing, when a backend refused it outright. The
     # store has always recorded this; the candidate did not carry it, so the one
     # place that reads a failure — the screen's baseline — could only guess
@@ -212,6 +216,9 @@ class SearchResult:
     # ninth of eleven, below the note about palm-muted playing.
     unsearched: Optional[str] = None
     run_id: Optional[str] = None
+    # One entry per shortlisted candidate `level_trim` looked at: what it changed,
+    # and the vector as it was before, so a caller can score both.
+    level_trims: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def best(self) -> Optional[Candidate]:
@@ -361,7 +368,7 @@ class Evaluator:
 
         return Candidate(values=dict(values), objectives=objectives or {},
                          total=float((objectives or {}).get("total", float("inf"))),
-                         trial_id=trial_id, error=error)
+                         trial_id=trial_id, error=error, lufs=_lufs(printed))
 
     def record_rendered(self, values: Mapping, rendered, *, di=None,
                         offset_db: float = 0.0, wall_ms: float = 0.0) -> Candidate:
@@ -399,7 +406,7 @@ class Evaluator:
         return Candidate(
             values=dict(values), objectives=objectives or {},
             total=float((objectives or {}).get("total", float("inf"))),
-            trial_id=trial.trial_id, error=error,
+            trial_id=trial.trial_id, error=error, lufs=_lufs(printed),
         )
 
     def evaluate_many(self, jobs: Sequence[Mapping], di=None,
@@ -551,7 +558,7 @@ class Evaluator:
             results.append(Candidate(
                 values=dict(values), objectives=objectives or {},
                 total=float((objectives or {}).get("total", float("inf"))),
-                trial_id=trial_id, error=error))
+                trial_id=trial_id, error=error, lufs=_lufs(printed)))
         return results
 
     def _measure(self, rendered, values: Mapping, error):
@@ -1116,6 +1123,71 @@ def pareto(candidates: Sequence[Candidate], dimensions: Sequence[str],
     return kept
 
 
+# --- stage 3b: output level ---------------------------------------------------
+
+
+# Below this the loudness is already as close as a render's own variation allows,
+# and one more render buys nothing.
+LEVEL_TRIM_MIN_DB = 0.5
+
+
+def level_trim(evaluator: Evaluator, shortlist: Sequence[Candidate], space: Space,
+               control: str) -> Tuple[List[Candidate], List[Dict[str, Any]]]:
+    """Set each shortlisted candidate's output gain to close its loudness gap.
+
+    `level` carries little weight in the loss, so a search can finish with the
+    tone right and the output several dB off — measured, up to 19 dB with the exact
+    DI. The output gain is a gain after the amp: the gap in integrated loudness
+    between the reference and the candidate's render is the change it needs, which
+    is what `invert.output_level` computes before the search. One render per
+    candidate checks it, and the trimmed vector replaces the original only when it
+    scores better; otherwise the original stands and the attempt is recorded.
+    """
+    target_lufs = (getattr(evaluator.target, "source", {}) or {}).get("lufs_i")
+    dimension = _dimension(space, control)
+    low, high = dimension.bounds()
+    trimmed: List[Candidate] = []
+    records: List[Dict[str, Any]] = []
+    for candidate in shortlist:
+        current = _get(candidate.values, dimension)
+        if (target_lufs is None or candidate.lufs is None or current is None
+                or not candidate.objectives):
+            trimmed.append(candidate)
+            records.append({"applied": False, "reason": "no loudness to trim from"})
+            continue
+        gap = float(target_lufs) - float(candidate.lufs)
+        wanted = min(max(float(current) + gap, float(low)), float(high))
+        value = dimension.quantise(wanted)
+        record = {"control": control, "gap_db": round(gap, 2),
+                  "before": float(current), "after": float(value),
+                  "total_before": round(candidate.total, 4),
+                  "values_before": dict(candidate.values)}
+        if abs(gap) < LEVEL_TRIM_MIN_DB or value == current:
+            record.update(applied=False, reason="already within "
+                          f"{LEVEL_TRIM_MIN_DB} dB or at the control's limit")
+            trimmed.append(candidate)
+            records.append(record)
+            continue
+        from match.space import _spellings
+
+        key = (dimension.module, dimension.key)
+        values = {k: v for k, v in candidate.values.items()
+                  if k != key and k not in set(_spellings(key))}
+        values[key] = value
+        scored = evaluator.evaluate(values)
+        record["total_after"] = (round(scored.total, 4) if scored.objectives
+                                 else None)
+        if scored.objectives and scored.total < candidate.total:
+            record.update(applied=True)
+            trimmed.append(scored)
+        else:
+            record.update(applied=False, reason="the trimmed render did not score "
+                          "better")
+            trimmed.append(candidate)
+        records.append(record)
+    return trimmed, records
+
+
 # --- stage 4: robustness -----------------------------------------------------
 
 
@@ -1414,8 +1486,13 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
            run_id: Optional[str] = None,
            switches: Optional[Sequence[str]] = None,
            selectors: Optional[Sequence[str]] = None,
-           rng=None, reference_audio=None) -> SearchResult:
+           rng=None, reference_audio=None,
+           output_control: Optional[str] = None) -> SearchResult:
     """Screen, enumerate, refine, re-rank — the four stages in order.
+
+    With `output_control` — the signal path's output gain — the shortlist's output
+    level is trimmed to the reference's loudness before the re-rank (`level_trim`),
+    one render per shortlisted candidate, reserved like the other fixed costs.
 
     `seed` is the recipe stack plus whatever `invert()` calculated, and it is both
     the starting point and the prior: `prior_deviation` measures distance from it,
@@ -1560,7 +1637,8 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
     # spends more than the arithmetic says is the defect §12c's topology loop was.
     replicates = _shortlist_replicates(evaluator)
     rerank_cost = shortlist * (2 * replicates + (replicates - 1))
-    reserved = len(variants) + rerank_cost + len(fallbacks or ())
+    trim_cost = shortlist if output_control is not None else 0
+    reserved = len(variants) + rerank_cost + trim_cost + len(fallbacks or ())
     remaining = budget - spent - reserved
     # One whole generation is the granularity of the search, not one render: CMA-ES
     # samples λ points before it learns anything. A budget leaving 6 renders against a
@@ -1575,6 +1653,7 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             f"goes to costs that cannot be part-paid: {spent} to screen "
             f"{len(searched) + len(frozen)} parameters, {len(variants)} for the "
             f"starting point of each topology, {rerank_cost} for the ±6 dB re-rank"
+            + (f", {trim_cost} to trim the output level" if trim_cost else "")
             + (f" at {replicates} observations each" if replicates > 1 else "")
             + (f" and {len(fallbacks or ())} for the template as it arrived"
                if fallbacks else "")
@@ -1623,6 +1702,17 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             "no candidate produced a comparable render, so there is no shortlist. "
             "Check the renderer: every trial either failed or came back silent."
         )
+    if output_control is not None and front:
+        front, result.level_trims = level_trim(evaluator, front, space, output_control)
+        applied = [r for r in result.level_trims if r.get("applied")]
+        if applied:
+            gaps = ", ".join(f"{r['gap_db']:+.1f}" for r in applied)
+            result.caveats.append(
+                f"the output level of {len(applied)} of {len(front)} shortlisted "
+                f"candidates was trimmed after the search to match the reference's "
+                f"loudness through this DI ({gaps} dB). Without your own DI of the "
+                f"part, set the output by ear: a match's loudness through another "
+                f"signal does not carry over to your playing")
     reranked, rerank_caveats = robustness_rerank(evaluator, front)
     result.shortlist = reranked
     result.caveats.extend(rerank_caveats)
@@ -1672,6 +1762,11 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
 
 
 # --- helpers ----------------------------------------------------------------
+
+
+def _lufs(printed) -> Optional[float]:
+    value = None if printed is None else (printed.source or {}).get("lufs_i")
+    return None if value is None else float(value)
 
 
 def _dimension(space: Space, path: str) -> Dimension:

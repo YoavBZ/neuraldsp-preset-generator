@@ -178,6 +178,7 @@ def build_summary(
     renderer: Mapping[str, Any],
     budget: int,
     accounting: Mapping[str, Any],
+    level_trims: Optional[Sequence[Mapping[str, Any]]] = None,
     elapsed_s: float,
     command_accounting: Mapping[str, Any],
     out_dir: str,
@@ -293,6 +294,11 @@ def build_summary(
             "silences": {key: float(value) for key, value in silences.items()},
             "accounting": dict(accounting),
             "elapsed_s": float(elapsed_s),
+            # What the output-level trim did to each shortlisted candidate, without
+            # the vectors themselves: empty when no DI was given, so none ran.
+            "level_trims": [{key: value for key, value in record.items()
+                             if key != "values_before"}
+                            for record in (level_trims or ())],
         },
         "command_accounting": dict(command_accounting),
         "starting_point": {

@@ -1491,6 +1491,11 @@ def selected_signal_path(pack_id: str, values: Mapping) -> Optional[str]:
     return selected(load_pack(pack_id), values)
 
 
+def output_gain_control(pack_id: str, requested: str) -> Optional[str]:
+    """The control that sets this signal path's output loudness, if it declares one."""
+    return _validated_signal_path(pack_id, requested).output_gain_control
+
+
 def resolve_signal_path(pack_id: str, requested: str) -> str:
     """Canonical path id for a CLI-supplied id, amp name, or selector label."""
     return _validated_signal_path(pack_id, requested).name

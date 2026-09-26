@@ -1767,3 +1767,77 @@ def test_an_existing_renderer_counts_as_one_pool_member():
     assert all(member.closes == 1 for member in made)
     initial.close()
     assert initial.closes == 1
+
+
+# --- the output-level trim ------------------------------------------------------
+
+
+OUTPUT = "parameters/outputGain"
+
+
+def test_a_candidate_off_in_loudness_is_trimmed_by_the_gap(space, seed):
+    """The target is the seed 6 dB louder at the output. A candidate at the seed is
+    off by that much; the trim is the loudness gap, and the trimmed vector scores
+    better, so it replaces the original."""
+    probe = di()
+    louder = dict(seed)
+    louder[("parameters", "outputGain")] = 6.0
+    scorer = S.Evaluator(SyntheticRenderer(), None, probe, space)
+    target = printed(refchain.render(probe, scorer._settings(louder)))
+    evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space)
+    candidate = evaluator.evaluate(seed)
+    assert candidate.lufs is not None
+
+    trimmed, records = S.level_trim(evaluator, [candidate], space, OUTPUT)
+
+    record = records[0]
+    assert record["applied"] is True
+    assert record["gap_db"] == pytest.approx(6.0, abs=0.3)
+    assert record["after"] == pytest.approx(record["before"] + record["gap_db"], abs=0.1)
+    assert trimmed[0].total < candidate.total
+    assert trimmed[0].values[("parameters", "outputGain")] == pytest.approx(6.0, abs=0.3)
+    assert record["values_before"] == candidate.values
+
+
+def test_a_small_gap_is_left_alone_and_a_worse_trim_is_refused(space, seed, target,
+                                                               monkeypatch):
+    probe = di()
+    evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space)
+    candidate = evaluator.evaluate(seed)
+
+    close = S.Candidate(values=dict(seed), objectives=dict(candidate.objectives),
+                        total=candidate.total,
+                        lufs=target.source["lufs_i"] - 0.2)
+    kept, records = S.level_trim(evaluator, [close], space, OUTPUT)
+    assert kept[0] is close and records[0]["applied"] is False
+
+    far = S.Candidate(values=dict(seed), objectives=dict(candidate.objectives),
+                      total=-1.0, lufs=target.source["lufs_i"] - 9.0)
+    kept, records = S.level_trim(evaluator, [far], space, OUTPUT)
+    assert kept[0] is far, "a trim that scores worse does not replace the original"
+    assert records[0]["applied"] is False and records[0]["total_after"] is not None
+
+
+def test_the_trim_replaces_every_spelling_of_the_key(space, seed):
+    probe = di()
+    louder = dict(seed)
+    louder[("parameters", "outputGain")] = 9.0
+    scorer = S.Evaluator(SyntheticRenderer(), None, probe, space)
+    target = printed(refchain.render(probe, scorer._settings(louder)))
+    evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space)
+    spelled = {k: v for k, v in seed.items() if k != ("parameters", "outputGain")}
+    spelled["parameters/outputGain"] = 0.0
+    trimmed, records = S.level_trim(evaluator, [evaluator.evaluate(spelled)], space,
+                                    OUTPUT)
+    assert records[0]["applied"] is True
+    assert "parameters/outputGain" not in trimmed[0].values
+
+
+def test_the_search_reserves_and_reports_the_trim(space, seed, target):
+    result = S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
+                      shortlist=2, rng=np.random.default_rng(3),
+                      output_control=OUTPUT)
+    assert len(result.level_trims) == 2
+    assert result.renders <= 80
+    assert S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
+                    shortlist=2, rng=np.random.default_rng(3)).level_trims == []

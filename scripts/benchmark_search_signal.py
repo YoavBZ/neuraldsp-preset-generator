@@ -67,6 +67,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "the reference")
     ap.add_argument("--targets", type=positive_int, default=12)
     ap.add_argument("--budget", type=positive_int, default=300)
+    ap.add_argument("--level-trim", action="store_true",
+                    help="trim each answer's output gain to the target's loudness "
+                         "after its search, as match_preset.py does with a DI, and "
+                         "score the untrimmed answer beside it")
     ap.add_argument("--no-search", action="store_true",
                     help="score only each target's neutral start and each signal's "
                          "inversion alone: minutes, where the searches take hours "
@@ -166,7 +170,7 @@ def main() -> None:
             progress=progress, workers=args.workers,
             renderer_factory=(None if args.workers < 2
                               else lambda: _renderer(args.renderer, args.pack)),
-            run_search=not args.no_search)
+            run_search=not args.no_search, level_trim=args.level_trim)
     finally:
         close = getattr(renderer, "close", None)
         if close is not None:
@@ -237,6 +241,12 @@ def main() -> None:
         print("\neach rendered from the target DI; the answer is paired with the same "
               "target's neutral start and with its own search's starting inversion, "
               "all in one instance")
+        if args.level_trim:
+            print(f"\n{'level trim':20} {'answers trimmed':>18} "
+                  f"{'trimmed vs untrimmed':>26}")
+            for name, entry in summary.items():
+                print(f"{name:20} {entry.get('level_trims', 0):>18} "
+                      f"{versus(entry.get('against_untrimmed')):>26}")
     if caveat:
         print(f"\n  {caveat}.")
 
@@ -253,6 +263,7 @@ def main() -> None:
                               args.target_di.read_bytes()).hexdigest()},
             "signals": described, "reference": reference,
             "targets": args.targets, "search": not args.no_search,
+            "level_trim": args.level_trim,
             "budget": None if args.no_search else args.budget, "seed": args.seed,
             "loss_profile": args.loss_profile, "workers": args.workers,
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,
