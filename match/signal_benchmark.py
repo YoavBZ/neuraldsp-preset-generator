@@ -222,7 +222,6 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                         f"the search returned no candidate after {found.renders} "
                         f"renders")
                 best = found.shortlist[0]
-                before = scorer.renders
                 # One shortlisted candidate, so at most one trim, and it is this one.
                 if found.level_trims:
                     outcome.level_trim_record = {
@@ -230,13 +229,22 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                         if key != "values_before"}
                 trim = next((record for record in found.level_trims
                              if record.get("applied")), None)
+                # The untrimmed answer is a diagnostic, scored outside the arm's
+                # renders, and on alternate targets before the answer rather than
+                # after it, so neither of the pair always follows the other.
+                untrimmed_first = trim is not None and index % 2 == 1
                 if trim is not None:
                     outcome.level_trim_db = trim["after"] - trim["before"]
+                if untrimmed_first:
                     (outcome.untrimmed_objective, outcome.untrimmed_dimensions,
                      _) = heard(trim["values_before"])
+                before = scorer.renders
                 (outcome.objective, outcome.objective_dimensions,
                  outcome.objective_spread) = heard(best.values)
                 outcome.renders = spent + found.renders + (scorer.renders - before)
+                if trim is not None and not untrimmed_first:
+                    (outcome.untrimmed_objective, outcome.untrimmed_dimensions,
+                     _) = heard(trim["values_before"])
                 outcome.search_belief = best.total
                 if outcome.objective is None:
                     outcome.failed = True

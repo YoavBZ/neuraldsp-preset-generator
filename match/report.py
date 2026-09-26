@@ -295,7 +295,8 @@ def build_summary(
             "accounting": dict(accounting),
             "elapsed_s": float(elapsed_s),
             # What the output-level trim did to each shortlisted candidate, without
-            # the vectors themselves: empty when no DI was given, so none ran.
+            # the vectors themselves: empty unless a paired reamp was matched whole,
+            # the only case `match_preset.py` trims.
             "level_trims": [{key: value for key, value in record.items()
                              if key != "values_before"}
                             for record in (level_trims or ())],

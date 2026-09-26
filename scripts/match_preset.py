@@ -473,6 +473,20 @@ def main() -> None:
                 + (f" and {len(dropped) - 5} more" if len(dropped) > 5 else "")
             )
 
+    # The output level is trimmed to the reference only for a paired reamp
+    # measured whole, where the DI is the reference's own performance and both
+    # loudnesses cover the same notes. Through another passage or the noise probe a
+    # loudness matched through the probe does not carry over, and an excerpt of the
+    # reference is not the whole DI the candidates render
+    # (docs/tone-matching-plan.md, "Trimming the output level after a search").
+    output_control = None
+    if (args.probe_di is not None and args.reference_mode == "paired_di"
+            and excerpt_s is None and args.excerpt_start is None):
+        trim_path = (signal_path_arg or space.amp_prefix(seed)
+                     or invert.selected_signal_path(args.pack, seed))
+        if trim_path is not None:
+            output_control = invert.output_gain_control(args.pack, trim_path)
+
     # Validate the budget against the seed the screen will really see.  The
     # inversion can switch whole sections on and select a different amp, so doing
     # this against the template above overstated or understated the fixed cost.
@@ -480,18 +494,8 @@ def main() -> None:
         space, args.enumerated, budget, args.shortlist,
         supported=supported, seed=seed,
         replicates=search.shortlist_replicates(metadata),
-        budget_scale=(variant_count if args.budget_per_topology else 1))
-
-    # The output level is trimmed to the reference only for a paired reamp, where
-    # the DI is the reference's own performance. Through another passage or the
-    # noise probe a loudness matched through the probe does not carry over
-    # (docs/tone-matching-plan.md, "Trimming the output level after a search").
-    output_control = None
-    if args.probe_di is not None and args.reference_mode == "paired_di":
-        trim_path = (signal_path_arg or space.amp_prefix(seed)
-                     or invert.selected_signal_path(args.pack, seed))
-        if trim_path is not None:
-            output_control = invert.output_gain_control(args.pack, trim_path)
+        budget_scale=(variant_count if args.budget_per_topology else 1),
+        trim=output_control is not None)
     search_started_at = time.monotonic()
     result = search.search(renderer, target, probe_di, space, seed,
                            budget=budget, profile=args.loss_profile,

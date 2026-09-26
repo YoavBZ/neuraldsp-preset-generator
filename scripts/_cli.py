@@ -369,7 +369,7 @@ def print_enumerable(space, pack_id: str, amp, supported=None) -> None:
 
 def enumerated(space, paths, budget: Optional[int], shortlist: int,
                supported=None, seed=None, replicates: int = 1,
-               budget_scale: int = 1):
+               budget_scale: int = 1, trim: bool = False):
     """Split the requested paths into switches and selectors, and refuse the silly.
 
     Routed by the dimension's own kind rather than by asking the caller to know
@@ -445,7 +445,8 @@ def enumerated(space, paths, budget: Optional[int], shortlist: int,
     round_cost = generation_size(len(screened)) if screened else 1
     # `match_preset.py` always hands `search()` the template as a fallback, and that
     # is one more render the gate never counted.
-    reserved = screen_cost + variants + rerank_cost + 1
+    # And one render per shortlisted candidate when the output level is trimmed.
+    reserved = screen_cost + variants + rerank_cost + 1 + (shortlist if trim else 0)
     per_variant = (budget - reserved) / max(variants, 1)
     if per_variant < round_cost:
         budget_scale = max(1, int(budget_scale))

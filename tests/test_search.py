@@ -1841,3 +1841,47 @@ def test_the_search_reserves_and_reports_the_trim(space, seed, target):
     assert result.renders <= 80
     assert S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
                     shortlist=2, rng=np.random.default_rng(3)).level_trims == []
+
+
+def test_a_cached_candidate_still_knows_its_loudness(space, seed):
+    """Re-running into the same out-dir is what the interrupt note tells people to
+    do, and every candidate then comes from the cache: without the stored
+    fingerprint's loudness the trim would silently skip them all."""
+    probe = di()
+    louder = dict(seed)
+    louder[("parameters", "outputGain")] = 6.0
+    scorer = S.Evaluator(SyntheticRenderer(), None, probe, space)
+    target = printed(refchain.render(probe, scorer._settings(louder)))
+    with Store() as store:
+        store.start_run(Run(run_id="r"))
+        evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space,
+                                store=store, run_id="r")
+        first = evaluator.evaluate(seed)
+        cached = evaluator.evaluate(seed)
+        assert evaluator.cache_hits == 1
+        assert cached.lufs == pytest.approx(first.lufs)
+        assert evaluator.evaluate_many([seed])[0].lufs == pytest.approx(first.lufs)
+        _, records = S.level_trim(evaluator, [cached], space, OUTPUT)
+        assert records[0]["applied"] is True
+
+
+def test_every_skipped_trim_says_why(space, seed, target):
+    probe = di()
+    evaluator = S.Evaluator(SyntheticRenderer(), target, probe, space)
+    scored = evaluator.evaluate(seed)
+    unmeasured = S.Candidate(values=dict(seed), objectives=dict(scored.objectives),
+                             total=scored.total, lufs=None)
+    unset = S.Candidate(values={k: v for k, v in seed.items()
+                                if k != ("parameters", "outputGain")},
+                        objectives=dict(scored.objectives), total=scored.total,
+                        lufs=scored.lufs)
+    _, records = S.level_trim(evaluator, [unmeasured, unset], space, OUTPUT)
+    assert "no integrated loudness" in records[0]["reason"]
+    assert "does not set" in records[1]["reason"]
+    assert all(record["control"] == OUTPUT for record in records)
+
+
+def test_a_search_refuses_an_output_control_the_space_lacks(space, seed, target):
+    with pytest.raises(Exception):
+        S.search(SyntheticRenderer(), target, di(), space, seed, budget=80,
+                 output_control="parameters/noSuchGain")

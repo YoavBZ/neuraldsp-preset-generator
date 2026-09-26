@@ -69,7 +69,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--budget", type=positive_int, default=300)
     ap.add_argument("--level-trim", action="store_true",
                     help="trim each answer's output gain to the target's loudness "
-                         "after its search, as match_preset.py does with a DI, and "
+                         "after its search, as match_preset.py does for a paired "
+                         "reamp, and "
                          "score the untrimmed answer beside it")
     ap.add_argument("--no-search", action="store_true",
                     help="score only each target's neutral start and each signal's "
