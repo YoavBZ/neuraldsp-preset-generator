@@ -40,7 +40,8 @@ against the mix are in `autumn-leaves-clapton-264-316s.json` beside them.
 
 **The DI.** Recorded after the declaration time, playing along with the backing
 file above in a DAW, the backing placed on the timeline at some time T with
-silence before it for a count-in. `DI.wav` is the DI track exported from T to
+silence before it for a count-in. The DI file,
+`autumn-leaves-clapton-264-316s-di.wav`, is the DI track exported from T to
 T + 52 s: the backing's exact span, with the DAW's latency compensation on,
 mono, at the recording's own level — no gain change, normalisation, editing,
 comping or timing adjustment. The DAW's export is the alignment: the DI is a
