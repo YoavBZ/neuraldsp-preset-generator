@@ -1751,6 +1751,58 @@ tests, and added evidence files. `analysis/listening.py` still scores listening
 comparisons with `unpaired-v1`, so its objective-versus-listener agreement
 carries the term too.
 
+#### The inversion's reverb rule — left to the template on played material
+
+`invert.reverb_settings` reads the same estimate: for a confident decay of a
+second or more it switches Morgan's rack reverb on at that decay, and otherwise
+switches it off. `scripts/study_rt60.py --switches 12` asks whether that tells a
+reverb from none on played material: twelve SW50R atlas-topology targets, each
+rendered with the rack reverb off and again with it on (mix 26.5 to 74%, decay
+4.4 to 17.95 s), one fresh process per render, through both passages, each
+fingerprinted as a stem would be.
+
+| | switched on, with a rack reverb | switched on, without one |
+|---|---:|---:|
+| How Long | 4 of 12 | 5 of 12 |
+| Hotel California | 5 of 12 | 4 of 12 |
+
+No better than chance (Fisher's exact p = 1.0 through each passage). The decay
+it set was not reliably close either: for a true 8.75 s it set 20.2 through How
+Long and 8.43 through Hotel California, 2.2 to 2.3 for true 5.5 and 5.95, 15.8
+for 10.2, and 1.5 to 15.4 for targets with no rack reverb at all. Earlier,
+through the noise probe, the same rule switched the reverb on for 7 of 12
+targets without one and 11 of 11 with one ("The rack reverb has the same shape
+of problem", above) — some information where the notes are noise bursts, none
+here.
+
+So `reverb_settings` now applies the rule — `reverb_from_rt60`, which the study
+asks directly — only to a `probe` target (`RT60_REGIMES` in `match/invert.py`),
+where the estimate was validated; for a recording, stem or reamp — every real
+match — the inversion leaves the rack reverb exactly as the template has it,
+neither switching it on nor off, and says so, pointing at `--enumerate
+reverb/reverbActive`. The match skill now puts the rack reverb in the topology
+decision, from what the recording is known to use. A reverb the template lacks
+is then found only by a second template or an enumeration — which this estimate
+never reliably did. Every earlier inversion of a played target was made with the
+old rule, among them the first played-DI runs of "M7-1 at equal budget", before
+they held their topology; the search-signal benchmark holds its topology, so its
+numbers are unaffected. `benchmark_match.py` labels every target it renders
+`probe` — a played `--probe-di` included — so its runs keep the rule; with
+`--atlas` the held topology puts the reverb back, without it nothing does.
+
+```bash
+.venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml \
+  --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --switches 12 \
+  --json docs/rt60-study-sw50r.json
+```
+
+That run, from 7e6b2f3 (292 s; rebased as 003380b with the same study and
+inversion code), replaces the SW50R study JSON above. It called
+`reverb_settings` before the regime gate existed, which was the same rule
+`reverb_from_rt60` now holds; its `fires` and `tracks` repeat the earlier run's
+exactly, as Morgan's renders do.
+
 ---
 
 ## 8. Dependency and CI policy
@@ -2305,7 +2357,8 @@ switch enumerated. Every benchmark above that renders its targets from the
 probe — M4's and M5's included — was measured with the old rule.
 
 **The rack reverb has the same shape of problem, and the same fix does not work
-for it.** `reverb_settings` switches the rack reverb on for any confident tail of
+for it** (later settled for played material: "The inversion's reverb rule — left
+to the template on played material", at the end of M7). `reverb_settings` switches the rack reverb on for any confident tail of
 a second or more, and an amp's own spring reverb makes one: from twelve SW50R
 atlas-topology targets with the rack reverb off, it switched the rack reverb on
 for 7 through the noise probe and 8 through the played How Long DI. On the

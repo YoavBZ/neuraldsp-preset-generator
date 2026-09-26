@@ -5,7 +5,8 @@
       --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \\
       --json rt60-toneking.json
 
-Two questions, both about the `rt60` term `analysis.compare` puts in `ambience`:
+Questions about the estimate behind the `rt60` term `analysis.compare` puts in
+`ambience` and behind the inversion's reverb rule:
 
 - **fires**: the search-signal benchmark's targets (same seed, same topology),
   each rendered twice from the first --di beside the neutral start, one reused
@@ -14,6 +15,12 @@ Two questions, both about the `rt60` term `analysis.compare` puts in `ambience`:
 - **tracks**: the neutral start with the amp's spring and then the rack reverb
   turned up step by step, one fresh process per render, through every --di. A
   reverb measurement has to rise with the reverb and agree across passages.
+- **switches** (with --switches N, on a pack whose inversion sets the rack
+  reverb): N targets, each rendered with the rack reverb off and again with it
+  on at a random mix and decay, through every --di. Does the inversion's
+  estimate-driven rule (`invert.reverb_from_rt60`, which `reverb_settings` now
+  applies to probe targets only) switch the reverb on for the ones that have it
+  and leave it off for the ones that do not?
 """
 
 from __future__ import annotations
@@ -30,10 +37,12 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from _cli import die, guarded, positive_int
+from _cli import die, guarded, nonnegative_int, positive_int
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
-SCHEMA = "rt60-study-1"
+SCHEMA = "rt60-study-2"   # 2: the optional `switches` question
+# What the inversion's reverb rule sets, in its own module/key spelling.
+REVERB_CONTROLS = ("reverb/reverbActive", "reverb/reverbMix", "reverb/reverbDecay")
 
 # The reverb steps, per signal path: the amp's own spring, then the rack reverb
 # with the spring off. Values are in each parameter's own units (Tone King's
@@ -64,6 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="a played passage; repeatable. The first renders the targets")
     ap.add_argument("--targets", type=positive_int, default=12)
     ap.add_argument("--seed", type=int, default=11)
+    ap.add_argument("--switches", type=nonnegative_int, default=0, metavar="N",
+                    help="also ask whether the inversion's reverb rule tells N "
+                         "targets with a rack reverb from the same N without")
     ap.add_argument("--loss-profile", default="unpaired-v1",
                     help="whose rt60 gate and scale the term is computed with")
     ap.add_argument("--json", type=pathlib.Path)
@@ -101,6 +113,9 @@ def main() -> None:
     if (args.pack, amp) not in CASES:
         die(f"reverb steps are defined for {', '.join('/'.join(k) for k in CASES)}, "
             f"not {args.pack}/{amp}")
+    if args.switches and not invert._declares_all(args.pack, REVERB_CONTROLS):
+        die(f"the inversion does not set {args.pack}'s reverb, so --switches has "
+            f"nothing to ask")
     commit = _source_commit()
     dis, described = {}, {}
     for spec in args.di:
@@ -157,7 +172,7 @@ def main() -> None:
         if close is not None:
             close()
 
-    tracks = []
+    tracks, switches = [], []
     fresh = _renderer(args.renderer, args.pack, process_policy="fresh")
     try:
         fresh_metadata = fresh.metadata()
@@ -175,6 +190,37 @@ def main() -> None:
                 row[di_name] = _estimate(rendered.audio, rendered.metadata.sample_rate)[1]
             tracks.append(row)
             print(f"  {name}", file=sys.stderr, flush=True)
+        switch_rng = np.random.default_rng(args.seed + 1)
+        active, mix, decay = (dimensions[path] for path in REVERB_CONTROLS)
+        for index in range(args.switches):
+            # The template's topology (rack reverb off), with its continuous
+            # controls drawn as the benchmark draws a target, and the same
+            # vector again with the rack reverb on.
+            dry = dict(seed)
+            dry.update(benchmark.atlas_vector(topology["dimensions"], switch_rng))
+            wet = dict(dry)
+            wet[(active.module, active.key)] = True
+            wet[(mix.module, mix.key)] = mix.quantise(float(switch_rng.uniform(20, 80)))
+            wet[(decay.module, decay.key)] = decay.quantise(
+                float(switch_rng.uniform(1, 20)))
+            for has_reverb, values in ((False, dry), (True, wet)):
+                row = {"target_index": index, "reverb": has_reverb,
+                       "mix": values[(mix.module, mix.key)] if has_reverb else None,
+                       "decay": values[(decay.module, decay.key)] if has_reverb else None}
+                for di_name, di in dis.items():
+                    rendered = fresh.render(di, scorer._settings(values))
+                    printed, estimate = _estimate(rendered.audio,
+                                                  rendered.metadata.sample_rate)
+                    # The estimate-driven rule itself, as played targets got it
+                    # before `reverb_settings` stopped applying it to them.
+                    decided = invert.reverb_from_rt60(printed, pack_id=args.pack)
+                    estimate["switched_on"] = bool(
+                        decided.values.get("reverb/reverbActive"))
+                    estimate["decay_set"] = decided.values.get("reverb/reverbDecay")
+                    row[di_name] = estimate
+                switches.append(row)
+            print(f"  switches {index + 1}/{args.switches}", file=sys.stderr,
+                  flush=True)
     finally:
         close = getattr(fresh, "close", None)
         if close is not None:
@@ -197,6 +243,13 @@ def main() -> None:
             f"{name} {'—' if row[name]['rt60_s'] is None else row[name]['rt60_s']}"
             f" ({row[name]['confidence']})" for name in dis)
         print(f"  {row['case']:18} {cells}")
+    if switches:
+        print("switches: the inversion switched the rack reverb on for")
+        for name in dis:
+            wet = [row[name]["switched_on"] for row in switches if row["reverb"]]
+            dry = [row[name]["switched_on"] for row in switches if not row["reverb"]]
+            print(f"  {name}: {sum(wet)} of {len(wet)} targets with it, "
+                  f"{sum(dry)} of {len(dry)} without")
     caveat = _backend_caveat(metadata)
     if caveat:
         print(f"\n  {caveat}.")
@@ -216,7 +269,7 @@ def main() -> None:
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,
             "tracks_backend": fresh_metadata.as_dict(),
             "tracks_measurement_caveat": _backend_caveat(fresh_metadata) or None,
-            "fires": fires, "tracks": tracks,
+            "fires": fires, "tracks": tracks, "switches": switches,
         }, indent=2) + "\n", encoding="utf-8")
         print(f"\nwrote {args.json}")
 

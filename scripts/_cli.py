@@ -230,6 +230,17 @@ def positive_int(text: str) -> int:
     return value
 
 
+def nonnegative_int(text: str) -> int:
+    """A count where zero means "none"; a negative one is refused, not ignored."""
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"must be 0 or more, got {value}")
+    return value
+
+
 def add_data_dir_arg(parser) -> None:
     """For scripts that read or write anything under the data root."""
     parser.add_argument(

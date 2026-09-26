@@ -1623,3 +1623,35 @@ def test_the_fit_is_weighted_towards_the_range_a_guitar_occupies():
     # A 20 dB hole at 25 Hz must not pull the 65 Hz band down at all. Unweighted the
     # same input gives -1.09, so the sign is the discriminator, not a tolerance.
     assert below > 0.0, f"25-31.5 Hz pulled the lowest band to {below}"
+
+
+@pytest.mark.parametrize("regime", ["paired_di", "isolated_stem", "separated_stem", "mix"])
+def test_played_material_leaves_the_reverb_as_the_template_has_it(regime):
+    """On a played passage the fitted decay is mostly the notes' sustain: measured,
+    the rule switched the rack reverb on as often without one as with one. So only
+    a probe sets it; anything else leaves it alone — neither on nor off — and says
+    how to try it."""
+    confident = synthetic(source={"regime": regime},
+                          time_fx={"rt60_s": 4.5, "rt60_confidence": 0.8})
+    result = invert.reverb_settings(confident)
+    assert result.values == {}
+    assert any("--enumerate reverb/reverbActive" in caveat for caveat in result.caveats)
+    assert result.detail["rt60_measured_s"] == 4.5
+
+    probe = synthetic(source={"regime": "probe"}, time_fx={"rt60_s": 4.5, "rt60_confidence": 0.8})
+    assert invert.reverb_settings(probe).values["reverb/reverbActive"] is True
+    # The rule itself still decides for any regime, so the study can keep asking it.
+    assert invert.reverb_from_rt60(confident).values["reverb/reverbActive"] is True
+
+
+def test_a_pack_without_the_reverb_is_refused_whatever_the_regime():
+    played = synthetic(source={"regime": "mix"}, time_fx={"rt60_s": 3.0, "rt60_confidence": 0.8})
+    with pytest.raises(invert.InversionError, match="does not declare"):
+        invert.reverb_settings(played, pack_id="toneking")
+
+
+def test_a_whole_inversion_of_a_recording_does_not_touch_the_reverb():
+    target = fingerprint(io.from_samples(refchain.render(di(), {}), SR),
+                         regime="isolated_stem", excerpt_s=None)
+    inverted = invert.invert(target, measure(), amp=AMP)
+    assert not any(key.startswith("reverb/") for key in inverted.values)

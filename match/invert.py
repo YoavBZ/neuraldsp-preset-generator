@@ -61,6 +61,15 @@ SOURCE_AM_MIN_CONFIDENCE = 0.5
 # this DI, so what the render carries says nothing about the target's modulation.
 SAME_DI_REGIMES = ("probe", "paired_di")
 
+# The regimes whose RT60 estimate may set the reverb. The estimate fits each note's
+# decay, which is the reverb only when the notes are impulses — the noise-burst
+# probe it was validated on. On played material it largely follows the note's
+# sustain: on SW50R the rule below switched the rack reverb on for 4 and 5 of 12
+# played targets that had one and 5 and 4 of 12 that did not, through two
+# passages (`scripts/study_rt60.py --switches`). A recording, a stem or a reamp of
+# the user's playing leaves the reverb as the template has it.
+RT60_REGIMES = ("probe",)
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -904,15 +913,47 @@ def delay_settings(fingerprint, pack_id: str = "morgan",
 
 def reverb_settings(fingerprint, pack_id: str = "morgan",
                     min_confidence: float = 0.3) -> Inversion:
-    """Decay and pre-delay from the fingerprint's reverb estimates.
+    """The rack reverb for a target: from its RT60 estimate for a probe, else untouched.
 
-    Two separate confidences, so two separate decisions: a recording can support a
-    decay slope and not a pre-delay, and `predelay_ms` abstains far more often
-    than it answers by design.
+    Only a `probe` target sets the reverb (`RT60_REGIMES`), through
+    `reverb_from_rt60`; any other leaves it as the template has it and says so.
     """
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rt60 = time_fx.get("rt60_s")
     confidence = float(time_fx.get("rt60_confidence") or 0.0)
+    declared(pack_id, "reverb/reverbDecay")
+
+    regime = getattr(fingerprint, "regime", None)
+    if regime not in RT60_REGIMES:
+        return Inversion(
+            values={},
+            caveats=[
+                f"the reverb is left as the template has it: on {regime} material "
+                f"the decay the fingerprint measures is mostly the notes' own "
+                f"sustain, and it switched the rack reverb on as often without one "
+                f"as with one. Choose it from what the recording is known to use, "
+                f"or try both with --enumerate reverb/reverbActive"
+            ],
+            detail={"rt60_measured_s": None if rt60 is None else round(float(rt60), 3),
+                    "rt60_confidence": round(confidence, 3)},
+        )
+    return reverb_from_rt60(fingerprint, pack_id=pack_id, min_confidence=min_confidence)
+
+
+def reverb_from_rt60(fingerprint, pack_id: str = "morgan",
+                     min_confidence: float = 0.3) -> Inversion:
+    """Decay and pre-delay from the fingerprint's reverb estimates, whatever its regime.
+
+    The rule a `probe` target gets from `reverb_settings`. It is separate so
+    `scripts/study_rt60.py` can ask what it would decide on played material, which
+    is why played material no longer gets it. Two separate confidences make two
+    separate decisions: a render can support a decay slope and not a pre-delay,
+    and `predelay_ms` abstains far more often than it answers by design.
+    """
+    time_fx = getattr(fingerprint, "time_fx", {}) or {}
+    rt60 = time_fx.get("rt60_s")
+    confidence = float(time_fx.get("rt60_confidence") or 0.0)
+    decay = declared(pack_id, "reverb/reverbDecay")
 
     if rt60 is None:
         # Not the same thing as an unconfident reading, and it used to get the same
@@ -937,7 +978,6 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
     values: Dict[str, Any] = {"reverb/reverbActive": True}
     caveats: List[str] = []
 
-    decay = declared(pack_id, "reverb/reverbDecay")
     low, high = float(decay.min), float(decay.max)
 
     if float(rt60) < float(low):

@@ -74,6 +74,16 @@ names a song or artist, research the recorded amp, cabinet, microphone and effec
 with reliable sources. Use that evidence and the pack's `tone.md` to choose the
 template, amp/channel and discrete topology before matching. Keep source links.
 
+Decide the rack reverb here, not in the match. The inversion leaves Morgan's rack
+reverb as the template has it for any recording, stem or reamp: the decay it can
+measure on played guitar is mostly the notes' own sustain, and a rule reading it
+switched the reverb on as often for targets without one as with one. Only a
+`probe` reference, rendered through the noise-burst probe, still sets it. So a
+template with the rack reverb on keeps it even against a dry recording: use a
+template, or an edited copy of one, with `reverb/reverbActive` set the way the
+evidence says, or try both with `--enumerate reverb/reverbActive`, and add
+`--process-policy fresh` whenever it is on (below).
+
 ### No response atlas
 
 Earlier versions shipped response atlases — one amp's stored responses at sampled
@@ -104,9 +114,9 @@ and Tone King do not need it; Tone King's variation is per-render noise, which
 the replicated shortlist scoring already handles.
 
 **Pass it too when Morgan's tremolo or rack reverb is on** — `tremolo/tremoloActive`
-or `reverb/reverbActive` true in the template, or switched on by the inversion
-(the report lists what it calculated) or by `--enumerate`; if the inversion turned
-one on, rerun with fresh. Not the amp's own spring reverb: its carry-over is a
+or `reverb/reverbActive` true in the template, or switched on by `--enumerate`
+or, for a `probe` reference, by the inversion (the report lists what it
+calculated; if it turned one on, rerun with fresh). Not the amp's own spring reverb: its carry-over is a
 short tail, at most 0.15 in the same measurements. Both carry state from one
 render to the next on a reused instance, likely a modulation oscillator, so the
 same settings come out differently each time and the search ranks noise:

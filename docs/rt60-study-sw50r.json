@@ -1,8 +1,8 @@
 {
-  "schema": "rt60-study-1",
-  "source_commit": "640ee3ff8f6fd94b71248f9eb7fd7f3d05b60700",
-  "command": "scripts/study_rt60.py --renderer swift --amp sw50r --template samples/SW50R_Atlas_Topology.xml --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --json docs/rt60-study-sw50r.json",
-  "elapsed_s": 170.2,
+  "schema": "rt60-study-2",
+  "source_commit": "7e6b2f35acdc61066ed23f75ef559335f8954726",
+  "command": "scripts/study_rt60.py --renderer swift --amp sw50r --template samples/SW50R_Atlas_Topology.xml --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --switches 12 --json docs/rt60-study-sw50r.json",
+  "elapsed_s": 292.0,
   "pack": "morgan",
   "amp": "sw50r",
   "template": "samples/SW50R_Atlas_Topology.xml",
@@ -515,6 +515,440 @@
       "hotel": {
         "rt60_s": null,
         "confidence": 0.0
+      }
+    }
+  ],
+  "switches": [
+    {
+      "target_index": 0,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 1.716,
+        "confidence": 0.344,
+        "switched_on": true,
+        "decay_set": 1.72
+      },
+      "hotel": {
+        "rt60_s": 2.706,
+        "confidence": 0.246,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 0,
+      "reverb": true,
+      "mix": 72.5,
+      "decay": 8.75,
+      "howlong": {
+        "rt60_s": 20.237,
+        "confidence": 0.594,
+        "switched_on": true,
+        "decay_set": 20.24
+      },
+      "hotel": {
+        "rt60_s": 8.425,
+        "confidence": 0.446,
+        "switched_on": true,
+        "decay_set": 8.43
+      }
+    },
+    {
+      "target_index": 1,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 0.701,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 1.516,
+        "confidence": 0.441,
+        "switched_on": true,
+        "decay_set": 1.52
+      }
+    },
+    {
+      "target_index": 1,
+      "reverb": true,
+      "mix": 68.0,
+      "decay": 15.1,
+      "howlong": {
+        "rt60_s": 11.835,
+        "confidence": 0.307,
+        "switched_on": true,
+        "decay_set": 11.83
+      },
+      "hotel": {
+        "rt60_s": 12.05,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 2,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 15.401,
+        "confidence": 0.458,
+        "switched_on": true,
+        "decay_set": 15.4
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 2,
+      "reverb": true,
+      "mix": 72.5,
+      "decay": 14.2,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 3,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 1.623,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 9.145,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 3,
+      "reverb": true,
+      "mix": 50.0,
+      "decay": 10.2,
+      "howlong": {
+        "rt60_s": 4.53,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 15.813,
+        "confidence": 0.999,
+        "switched_on": true,
+        "decay_set": 15.81
+      }
+    },
+    {
+      "target_index": 4,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 6.557,
+        "confidence": 0.314,
+        "switched_on": true,
+        "decay_set": 6.56
+      },
+      "hotel": {
+        "rt60_s": 5.626,
+        "confidence": 0.25,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 4,
+      "reverb": true,
+      "mix": 67.5,
+      "decay": 9.9,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 7.638,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 5,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 5.619,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 5,
+      "reverb": true,
+      "mix": 37.5,
+      "decay": 4.4,
+      "howlong": {
+        "rt60_s": 8.383,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 14.669,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 6,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 1.988,
+        "confidence": 0.697,
+        "switched_on": true,
+        "decay_set": 1.99
+      },
+      "hotel": {
+        "rt60_s": 1.995,
+        "confidence": 0.832,
+        "switched_on": true,
+        "decay_set": 1.99
+      }
+    },
+    {
+      "target_index": 6,
+      "reverb": true,
+      "mix": 32.0,
+      "decay": 5.95,
+      "howlong": {
+        "rt60_s": 3.949,
+        "confidence": 0.48,
+        "switched_on": true,
+        "decay_set": 3.95
+      },
+      "hotel": {
+        "rt60_s": 2.321,
+        "confidence": 0.517,
+        "switched_on": true,
+        "decay_set": 2.32
+      }
+    },
+    {
+      "target_index": 7,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 7,
+      "reverb": true,
+      "mix": 67.0,
+      "decay": 9.65,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 8,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 3.777,
+        "confidence": 0.779,
+        "switched_on": true,
+        "decay_set": 3.78
+      },
+      "hotel": {
+        "rt60_s": 2.695,
+        "confidence": 0.658,
+        "switched_on": true,
+        "decay_set": 2.69
+      }
+    },
+    {
+      "target_index": 8,
+      "reverb": true,
+      "mix": 37.0,
+      "decay": 5.5,
+      "howlong": {
+        "rt60_s": 6.148,
+        "confidence": 0.714,
+        "switched_on": true,
+        "decay_set": 6.15
+      },
+      "hotel": {
+        "rt60_s": 2.236,
+        "confidence": 0.337,
+        "switched_on": true,
+        "decay_set": 2.24
+      }
+    },
+    {
+      "target_index": 9,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 9,
+      "reverb": true,
+      "mix": 73.5,
+      "decay": 17.95,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 8.585,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 10,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": 0.923,
+        "confidence": 0.2,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 4.158,
+        "confidence": 0.343,
+        "switched_on": true,
+        "decay_set": 4.16
+      }
+    },
+    {
+      "target_index": 10,
+      "reverb": true,
+      "mix": 74.0,
+      "decay": 7.55,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": 5.019,
+        "confidence": 0.537,
+        "switched_on": true,
+        "decay_set": 5.02
+      }
+    },
+    {
+      "target_index": 11,
+      "reverb": false,
+      "mix": null,
+      "decay": null,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      }
+    },
+    {
+      "target_index": 11,
+      "reverb": true,
+      "mix": 26.5,
+      "decay": 6.85,
+      "howlong": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
+      },
+      "hotel": {
+        "rt60_s": null,
+        "confidence": 0.0,
+        "switched_on": false,
+        "decay_set": null
       }
     }
   ]
