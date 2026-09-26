@@ -21,9 +21,12 @@ score or a verdict.
 ## Target and inputs
 
 Eric Clapton, "Autumn Leaves" (*Clapton*, 2010), 264–316 s, the guitar-forward
-lead section. Target id `autumn-leaves-clapton-264-316`, shared with the other
-comparison, so the two count as one song group; this comparison's id is
-`autumn-leaves-clapton-264-316-match-tool`.
+lead section. The hand-edit comparison is this song group's entry in the
+protocol's count, under target id `autumn-leaves-clapton-264-316`. This
+comparison, id `autumn-leaves-clapton-264-316-match-tool`, is built with target
+id `unassigned`, which `analysis.listening`'s agreement report never aggregates,
+so it cannot add a second entry for the same song or fold its in-sample
+predictions into the count; its verdict is recorded here instead.
 
 | input | file in `~/ndsp-presets/references/` | sha256 |
 |---|---|---|
@@ -38,16 +41,13 @@ against the mix are in `autumn-leaves-clapton-264-316s.json` beside them.
 **The DI.** Recorded after the declaration time, playing along with the backing
 file above in a DAW, the backing placed on the timeline at some time T with
 silence before it for a count-in. `DI.wav` is the DI track exported from T to
-T + 52 s: the backing's exact span, with the DAW's latency compensation on, mono,
-at the recording's own level — no gain change, normalisation, editing or
-comping. One take; if several are recorded, the player names the one to use
-before any of them is rendered through anything. The same file is used for B's
-match and for both alternatives' audition renders. The only timing adjustment
-allowed is mechanical: if the cross-correlation of the DI's and the lead stem's
-onset envelopes peaks more than 20 ms from zero within ±250 ms, the DI is shifted
-by that lag, and the lag is recorded; a peak farther than that means the timing
-is uncertain, and the comparison is reported as a failed preflight instead of
-being re-cropped by hand.
+T + 52 s: the backing's exact span, with the DAW's latency compensation on,
+mono, at the recording's own level — no gain change, normalisation, editing,
+comping or timing adjustment. The DAW's export is the alignment: the DI is a
+different performance from the recording, so no correlation with the lead stem
+can measure its timing, and none is used. One take; if several are recorded, the
+player names the one to use before any of them is rendered through anything. The
+same file is used for B's match and for both alternatives' audition renders.
 
 ## The two alternatives
 
@@ -58,7 +58,9 @@ being re-cropped by hand.
 - **B — the match tool's answer from A**, made once, with this repository at the
   commit that merges this file (plugin 0.7.23), Morgan Amps Suite 1.1.1 through
   the Swift renderer build `audio-unit-renderer-2af9432f77c6`, from a clean
-  worktree at that commit:
+  worktree at that commit run with the main checkout's interpreter,
+  `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python` (written
+  `.venv/bin/python` below):
 
   ```bash
   .venv/bin/python scripts/match_preset.py \
@@ -92,9 +94,10 @@ refusing the spec. One byte-identical rerun — same commit, seed and DI — is
 allowed only after a crash that happened before any spec was written. Otherwise
 B goes to the audition whatever its other caveats say.
 
-**Blinding.** Nobody loads, renders or hears B outside the audition builder
-before the verdict. A match of the same stem through the How Long DI already
-exists (`~/ndsp-presets/runs/autumn-leaves-lead-howlong-001`); it rehearsed the
+**Blinding.** Nobody loads, renders or hears B before the verdict outside the
+match run, `render_listening_guitar.py` and the audition builder. A match of the
+same stem through the How Long DI already exists
+(`~/ndsp-presets/runs/autumn-leaves-lead-howlong-001`); it rehearsed the
 command, nobody listens to it, and it is not compared.
 
 ## How it is judged
@@ -114,17 +117,17 @@ in the free-text notes and is not analysed. The manifest's values, fixed now:
   crop), `master_target_lufs` −20, `peak_ceiling_dbtp` −1, `max_ab_lufs_delta`
   0.5, `gap_s` 0.5, `cycles` 2
 - both alternatives rendered bare from the DI by `render_listening_guitar.py` in
-  fresh processes, each with its `render_record`
+  fresh processes with `--preroll-s 0`, each with its `render_record`
 
-Before any audition render, an addendum to this file records the DI's sha256, the
-commit B was made at, B's sha256 and its run's `summary.json` sha256.
+Before any audition render, an addendum to this file records the DI's sha256,
+the commit B was made at, a sha256 of that interpreter's `pip freeze`, B's
+sha256 and its run's `summary.json` sha256.
 
 **What the verdict means.** The hypothesis is that B sounds closer than A. B
-closer supports it for this song; A closer falsifies it for this song; no audible
-difference does not support it. The result is appended to this file, which is
-where the match tool's record across songs is kept. One verdict on one song is
-one observation: it adds a song group to the count the protocol needs, and it
-does not validate matching.
+closer supports it for this song; A closer falsifies it for this song; no
+audible difference does not support it. The result is appended to this file,
+which is where the match tool's record across songs is kept. One verdict on one
+song is one observation, and it does not validate matching.
 
 **The objective predictions are not independent here.** The builder freezes both
 predictions before listening — `unpaired-v1` without `level` primary,
@@ -132,8 +135,8 @@ predictions before listening — `unpaired-v1` without `level` primary,
 `unpaired-v2` distance to the lead stem through this same DI, and the
 predictions score against the mix over part of the same span, so they will
 favour B largely by construction. This comparison's objective-to-ear agreement is
-therefore recorded and reported but kept out of the agreement count the protocol
-builds across songs.
+therefore recorded and reported here but kept out of the agreement count the
+protocol builds across songs, by the `unassigned` target id above.
 
 The two comparisons share A and the listener. They are heard in separate
 sessions on different days, the hand-edit comparison first.
