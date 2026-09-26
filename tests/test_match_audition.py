@@ -232,6 +232,33 @@ def test_missing_raw_source_does_not_erase_a_valid_listening_verdict(completed_r
     assert len(verdicts) == 1
 
 
+def test_changed_frozen_v2_prediction_is_not_replaced_at_verdict_time(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    audition_dir = tmp_path / "audition"
+    exported = run("export_match_audition.py", "--run-dir", run_dir,
+                   "--candidate", "1", "--probe-di", probe_path,
+                   "--renderer", "synthetic", "--seed", "123",
+                   "--out-dir", audition_dir)
+    assert exported.returncode == 0, exported.stderr
+    key_path = audition_dir / "audition.flac.key.json"
+    key = json.loads(key_path.read_text())
+    v2 = key["objective_record"]["objective_scoring"]["match_v2"]
+    v2["prediction"] = "B" if v2["prediction"] != "B" else "A"
+    key_path.write_text(json.dumps(key))
+
+    recorded = run("log_blind_verdict.py", "--key", key_path, "--choice", "A",
+                   "--listener", "frozen-score-check", "--data-dir", tmp_path / "data")
+    assert recorded.returncode == 0, recorded.stdout + recorded.stderr
+    assert "objective unscored" in recorded.stderr
+    sidecar, = audition_dir.glob("*.objective-verdict.json")
+    result = json.loads(sidecar.read_text())
+    assert "frozen listening prediction changed: match_v2" in result["scoring_error"]
+    assert "objective_scoring" not in result and "agreement_match_v2" not in result
+    with Store(str(run_dir / "trials.sqlite3")) as store:
+        assert len(store.verdicts(key["match"]["run_id"])) == 1
+
+
 def test_an_unpaired_run_is_refused_without_an_explicit_override(
         completed_run, tmp_path):
     run_dir, probe_path = completed_run

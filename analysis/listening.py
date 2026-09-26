@@ -187,7 +187,7 @@ def common_term_sensitivity(scoring: dict) -> dict:
 
 
 def _match_v2_prediction(target, alternatives: dict) -> dict:
-    """A separate audio-only prediction under matching's current loss profile.
+    """A separate audio-only prediction under matching's default unpaired profile.
 
     The caller decides whether this was frozen before listening. Historical
     audits must not acquire a post-hoc prediction by calling this implicitly.
@@ -205,7 +205,9 @@ def _match_v2_prediction(target, alternatives: dict) -> dict:
         with_level = scalar(objectives)
         if distance is None or not math.isfinite(distance):
             raise ValueError("no finite unpaired-v2 audio distance is measurable")
-        measured = {key for key, value in objectives.values.items()
+        # Preserve objective order for stable floating-point summation across
+        # different hash seeds and verdict-time rescoring.
+        measured = {key: value for key, value in objectives.values.items()
                     if key != "level" and value is not None and weights.get(key, 0) > 0}
         denominator = sum(weights[key] for key in measured)
         scores[label] = {
@@ -465,5 +467,6 @@ def match_v2_agreement_report(records: list[dict]) -> dict:
         })
     result = agreement_report(mapped)
     result["profile"] = "unpaired-v2"
-    result["basis"] = "Only predictions frozen in the input records; v1-only records are unscored"
+    result["basis"] = ("Only v2 predictions present in the input records; caller must verify "
+                       "they were frozen before listening; v1-only records are unscored")
     return result

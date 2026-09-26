@@ -41,6 +41,7 @@ count it as a prospective test. When a match audition verifies its sources again
 at verdict time, a changed score is reported as unscored rather than silently
 replacing the pre-listening prediction. Per-target v2 summaries can be produced
 from frozen verdict records with `analysis.listening.match_v2_agreement_report`.
+Historical manifest backfills through `score_listening.py` remain v1-only.
 If the alternatives have different measurable objectives or component terms,
 the distances remain diagnostic but the objective comparison is inconclusive;
 it does not count toward the agreement fraction.
