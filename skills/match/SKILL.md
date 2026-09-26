@@ -135,13 +135,13 @@ the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
 matching without it — a DI of anything they play, not necessarily this part.
-Measured on SW50R and Tone King's rhythm channel (one player, two songs),
-searches through the target's own passage ended at 0.31–0.48, through the
-player's other song at 0.61–0.96 — closer than noise on at least 11 of 12 targets
-in every run — and through the noise probe the tool uses without a DI at
-1.06–1.53. Scored with `unpaired-v2` and with loudness set aside, the noise
-search ended no closer than the neutral settings themselves on either amp.
-Neither matching that probe's loudness to a guitar's nor replacing it with a
+Measured on SW50R and Tone King's rhythm channel (one player, two songs; runs
+under -v1 and -v2, scored through either passage), searches through the target's
+own passage ended at 0.31–0.48, through the player's other song at 0.61–0.96 —
+closer than noise on at least 11 of 12 targets in every run — and through the
+noise probe the tool uses without a DI at 1.06–1.53. Scored with `unpaired-v2` and with loudness set aside, the noise
+search ended no closer than the neutral settings themselves on either amp. On
+SW50R, neither matching that probe's loudness to a guitar's nor replacing it with a
 synthetic strummed guitar helped reliably.
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
 white-noise bursts and records that limitation. Every candidate is then noise
@@ -150,7 +150,7 @@ noise-against-guitar distances and a falling score is not evidence the tone got
 closer. Tell the user a match made without a DI is close to a starting point, not
 a measured match, that its output level may need setting by ear (such matches
 played 3.5–15 LU from their targets on both amps, and turning the probe down to a
-guitar's loudness did not change that), and that a DI of their playing would
+guitar's loudness on SW50R did not change that), and that a DI of their playing would
 change that.
 For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial

@@ -1821,26 +1821,28 @@ baselines and dimension breakdown. Mean / median:
 | *no search:* the inversion alone, through the noise probe | 1.436 / 1.416 | 3 of 12 |
 
 **What -v1 said about SW50R holds.** The other song's DI beat noise on 11 of 12
-(42% closer, p = 0.001; -v1: 38%, 12 of 12), and did so with `level` left out
+(42% closer, p = 0.001; -v1: 38%, 11 of 12), and did so with `level` left out
 too (11 of 12, 38%). The noise search was closer than neutral on 7 of 12 (7%,
 p = 0.42) and, with `level` left out, on 5 of 12 (p = 0.79): no gain, on SW50R
-as on Tone King. As before, a search through the other song ended about where the
-inversion alone through the right DI did (0.760 against 0.699, closer on 4 of 12,
-p = 0.23). The highest `ambience` in the run is 1.98. Parameter MAE matched -v1's
-within 3% for the own passage and both probes; through the other song it was 11.5%
-lower (0.236 against 0.267, 10 of 12, p = 0.005) — one comparison between two
-runs, not a finding on its own.
+as on Tone King. As before, a search through the other song ended about where
+the inversion alone through the right DI did (0.760 against 0.699, closer on 4
+of 12, p = 0.23). The highest `ambience` in the run is 1.98. Parameter MAE
+matched -v1's within 3% for the own passage and both probes; through the other
+song it was 11.5% lower (0.236 against 0.267, 10 of 12, p = 0.005) — one
+comparison between two runs, not a finding on its own.
 
-**A probe at a guitar's loudness does not fix the level of a no-DI match.** Every
-no-DI answer played well off its target's loudness through the guitar — a median
-of 7.0 LU (4.5 to 14.1) through the plain probe and 8.1 LU (6.1 to 14.8) through
-the one turned down to the passage's integrated loudness (off by less on 4 of 12,
-p = 0.38) — against 2.7 through the other song and 1.5 through the target's own
-passage. The overall distance did not improve either (3 of 12, p = 0.27). So the
-error is not the probe's level: an amp answers broadband noise and a played
-guitar differently, and a search that matches loudness through one lands off
-through the other. Without a DI the output level is not knowable from the
-reference alone; the match skill tells the user to set it by ear.
+**A probe at a guitar's loudness does not fix the level of a no-DI match.**
+Every no-DI answer played well off its target's loudness through the guitar — a
+median of 7.0 LU (4.5 to 14.1) through the plain probe and 8.1 LU (6.1 to 14.8)
+through the one turned down to the passage's integrated loudness (off by less on
+4 of 12, p = 0.38) — against a median of 2.7 through the other song and 1.5
+through the target's own passage (0.07 to 19.4: even the exact DI left one
+target far off, with `level` only 0.15 of the 2.65 weight). The overall distance
+did not improve either (3 of 12, p = 0.27). So the error is not the probe's
+integrated loudness (peak level into the amp was not matched). A likely reason
+is that the amp answers broadband noise and a played guitar differently; with
+`level` weighted lightly, this search does not recover the output level without
+a DI, and the match skill tells the user to set it by ear.
 
 ```bash
 .venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
