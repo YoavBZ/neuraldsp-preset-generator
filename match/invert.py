@@ -913,17 +913,15 @@ def delay_settings(fingerprint, pack_id: str = "morgan",
 
 def reverb_settings(fingerprint, pack_id: str = "morgan",
                     min_confidence: float = 0.3) -> Inversion:
-    """Decay and pre-delay from the fingerprint's reverb estimates, for a probe.
+    """The rack reverb for a target: from its RT60 estimate for a probe, else untouched.
 
-    Only a `probe` target sets the reverb (`RT60_REGIMES`); any other leaves it as
-    the template has it and says so. For a probe, two separate confidences make two
-    separate decisions: a render can support a decay slope and not a pre-delay, and
-    `predelay_ms` abstains far more often than it answers by design.
+    Only a `probe` target sets the reverb (`RT60_REGIMES`), through
+    `reverb_from_rt60`; any other leaves it as the template has it and says so.
     """
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rt60 = time_fx.get("rt60_s")
     confidence = float(time_fx.get("rt60_confidence") or 0.0)
-    decay = declared(pack_id, "reverb/reverbDecay")
+    declared(pack_id, "reverb/reverbDecay")
 
     regime = getattr(fingerprint, "regime", None)
     if regime not in RT60_REGIMES:
@@ -939,6 +937,23 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
             detail={"rt60_measured_s": None if rt60 is None else round(float(rt60), 3),
                     "rt60_confidence": round(confidence, 3)},
         )
+    return reverb_from_rt60(fingerprint, pack_id=pack_id, min_confidence=min_confidence)
+
+
+def reverb_from_rt60(fingerprint, pack_id: str = "morgan",
+                     min_confidence: float = 0.3) -> Inversion:
+    """Decay and pre-delay from the fingerprint's reverb estimates, whatever its regime.
+
+    The rule a `probe` target gets from `reverb_settings`. It is separate so
+    `scripts/study_rt60.py` can ask what it would decide on played material, which
+    is why played material no longer gets it. Two separate confidences make two
+    separate decisions: a render can support a decay slope and not a pre-delay,
+    and `predelay_ms` abstains far more often than it answers by design.
+    """
+    time_fx = getattr(fingerprint, "time_fx", {}) or {}
+    rt60 = time_fx.get("rt60_s")
+    confidence = float(time_fx.get("rt60_confidence") or 0.0)
+    decay = declared(pack_id, "reverb/reverbDecay")
 
     if rt60 is None:
         # Not the same thing as an unconfident reading, and it used to get the same

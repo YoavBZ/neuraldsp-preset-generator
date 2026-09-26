@@ -18,8 +18,9 @@ Questions about the estimate behind the `rt60` term `analysis.compare` puts in
 - **switches** (with --switches N, on a pack whose inversion sets the rack
   reverb): N targets, each rendered with the rack reverb off and again with it
   on at a random mix and decay, through every --di. Does the inversion's
-  `reverb_settings`, which reads this estimate, switch the reverb on for the ones
-  that have it and leave it off for the ones that do not?
+  estimate-driven rule (`invert.reverb_from_rt60`, which `reverb_settings` now
+  applies to probe targets only) switch the reverb on for the ones that have it
+  and leave it off for the ones that do not?
 """
 
 from __future__ import annotations
@@ -210,7 +211,9 @@ def main() -> None:
                     rendered = fresh.render(di, scorer._settings(values))
                     printed, estimate = _estimate(rendered.audio,
                                                   rendered.metadata.sample_rate)
-                    decided = invert.reverb_settings(printed, pack_id=args.pack)
+                    # The estimate-driven rule itself, as played targets got it
+                    # before `reverb_settings` stopped applying it to them.
+                    decided = invert.reverb_from_rt60(printed, pack_id=args.pack)
                     estimate["switched_on"] = bool(
                         decided.values.get("reverb/reverbActive"))
                     estimate["decay_set"] = decided.values.get("reverb/reverbDecay")

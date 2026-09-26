@@ -1640,6 +1640,8 @@ def test_played_material_leaves_the_reverb_as_the_template_has_it(regime):
 
     probe = synthetic(source={"regime": "probe"}, time_fx={"rt60_s": 4.5, "rt60_confidence": 0.8})
     assert invert.reverb_settings(probe).values["reverb/reverbActive"] is True
+    # The rule itself still decides for any regime, so the study can keep asking it.
+    assert invert.reverb_from_rt60(confident).values["reverb/reverbActive"] is True
 
 
 def test_a_pack_without_the_reverb_is_refused_whatever_the_regime():

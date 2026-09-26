@@ -1774,17 +1774,18 @@ without one and 11 of 11 with one ("The rack reverb has the same shape of
 problem", above) — some information where the notes are noise bursts, none
 here.
 
-So the rule now applies only to a `probe` target (`RT60_REGIMES` in
-`match/invert.py`), where the estimate was validated; for a recording, stem or
-reamp — every real match — the inversion leaves the rack reverb exactly as the
-template has it, neither switching it on nor off, and says so, pointing at
-`--enumerate reverb/reverbActive`. The match skill now puts the rack reverb in
-the topology decision, from what the recording is known to use. A reverb the
-template lacks is then found only by a second template or an enumeration — which
-this estimate never reliably did. Every earlier inversion of a played target was
-made with the old rule, among them the first played-DI runs of "M7-1 at equal
-budget", before they held their topology; the search-signal benchmark holds its
-topology, so its numbers are unaffected.
+So `reverb_settings` now applies the rule — `reverb_from_rt60`, which the study
+asks directly — only to a `probe` target (`RT60_REGIMES` in `match/invert.py`),
+where the estimate was validated; for a recording, stem or reamp — every real
+match — the inversion leaves the rack reverb exactly as the template has it,
+neither switching it on nor off, and says so, pointing at `--enumerate
+reverb/reverbActive`. The match skill now puts the rack reverb in the topology
+decision, from what the recording is known to use. A reverb the template lacks
+is then found only by a second template or an enumeration — which this estimate
+never reliably did. Every earlier inversion of a played target was made with the
+old rule, among them the first played-DI runs of "M7-1 at equal budget", before
+they held their topology; the search-signal benchmark holds its topology, so its
+numbers are unaffected.
 
 ```bash
 .venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
@@ -1793,8 +1794,10 @@ topology, so its numbers are unaffected.
   --json docs/rt60-study-sw50r.json
 ```
 
-That run, from 7e6b2f3 (292 s), replaces the SW50R study JSON above; its `fires`
-and `tracks` repeat the earlier run's exactly, as Morgan's renders do.
+That run, from 7e6b2f3 (292 s), replaces the SW50R study JSON above. It called
+`reverb_settings` before the regime gate existed, which was the same rule
+`reverb_from_rt60` now holds; its `fires` and `tracks` repeat the earlier run's
+exactly, as Morgan's renders do.
 
 ---
 
