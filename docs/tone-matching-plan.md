@@ -1803,6 +1803,55 @@ inversion code), replaces the SW50R study JSON above. It called
 `reverb_from_rt60` now holds; its `fires` and `tracks` repeat the earlier run's
 exactly, as Morgan's renders do.
 
+#### SW50R under -v2, and a probe at a guitar's loudness
+
+The SW50R search-signal run of "Matching without a DI — measured" repeated under
+`unpaired-v2` with the same targets, passages and signals, now with the in-run
+baselines and dimension breakdown. Mean / median:
+
+| searched through | final distance | closer than the noise search |
+|---|---:|---:|
+| the target's own passage | 0.476 / 0.428 | 12 of 12 |
+| the Hotel California passage | 0.760 / 0.787 | 11 of 12 |
+| the noise probe | 1.300 / 1.139 | — |
+| the noise probe turned down 9.9 dB to the passage's loudness | 1.317 / 1.201 | 3 of 12 |
+| *no search:* neutral settings | 1.405 / 1.411 | 5 of 12 |
+| *no search:* the inversion alone, through the target's own passage | 0.699 / 0.721 | 11 of 12 |
+| *no search:* the inversion alone, through Hotel California | 0.846 / 0.794 | 11 of 12 |
+| *no search:* the inversion alone, through the noise probe | 1.436 / 1.416 | 3 of 12 |
+
+**What -v1 said about SW50R holds.** The other song's DI beat noise on 11 of 12
+(42% closer, p = 0.001; -v1: 38%, 12 of 12), and did so with `level` left out
+too (11 of 12, 38%). The noise search was closer than neutral on 7 of 12 (7%,
+p = 0.42) and, with `level` left out, on 5 of 12 (p = 0.79): no gain, on SW50R
+as on Tone King. As before, a search through the other song ended about where the
+inversion alone through the right DI did (0.760 against 0.699, closer on 4 of 12,
+p = 0.23). The highest `ambience` in the run is 1.98. Parameter MAE matched -v1's
+within 3% for the own passage and both probes; through the other song it was 11.5%
+lower (0.236 against 0.267, 10 of 12, p = 0.005) — one comparison between two
+runs, not a finding on its own.
+
+**A probe at a guitar's loudness does not fix the level of a no-DI match.** Every
+no-DI answer played well off its target's loudness through the guitar — a median
+of 7.0 LU (4.5 to 14.1) through the plain probe and 8.1 LU (6.1 to 14.8) through
+the one turned down to the passage's integrated loudness (off by less on 4 of 12,
+p = 0.38) — against 2.7 through the other song and 1.5 through the target's own
+passage. The overall distance did not improve either (3 of 12, p = 0.27). So the
+error is not the probe's level: an amp answers broadband noise and a played
+guitar differently, and a search that matches loudness through one lands off
+through the other. Without a DI the output level is not knowable from the
+reference alone; the match skill tells the user to set it by ear.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
+  --signal same --signal other=hotel-di-6s.wav --signal noise \
+  --signal noise-at-di-level --targets 12 --budget 300 --workers 2 \
+  --loss-profile unpaired-v2 --json docs/search-signal-sw50r-v2.json
+```
+
+It took 152 minutes from 49c602f.
+
 ---
 
 ## 8. Dependency and CI policy
