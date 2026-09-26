@@ -152,7 +152,10 @@ a measured match, that its output level may need setting by ear (such matches
 played 3.5–15 LU from their targets on both amps, and turning the probe down to a
 guitar's loudness on SW50R did not change that), and that a DI of their playing would
 change that.
-For `paired_di`, the exact DI is mandatory. A residual-weighted paired run must
+For `paired_di`, the exact DI is mandatory, and after the search the tool trims
+the output gain to the reamp's loudness when the reference is measured whole
+(each decision is under `search.level_trims` in `summary.json`); other regimes
+leave the output level to the search. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
 residual.

@@ -1854,6 +1854,66 @@ a DI, and the match skill tells the user to set it by ear.
 
 It took 152 minutes from 49c602f.
 
+#### Trimming the output level after a search
+
+`level` is 0.15 of the 2.65 weight of the loss's audio terms (2.8 with the prior),
+so a search can finish with the tone right and the output well off: through the
+target's own passage, answers in the -v2 runs above landed a median of 0.6 to 1.5
+LU from their targets' loudness, with 1 or 2 of 12 over 3 LU and one at 19.4. The
+output gain is a gain after the amp, so `search.level_trim` sets it from the
+loudness gap between the reference and each shortlisted candidate's render
+through the probe, spends one render to check, and keeps the trimmed vector if
+it scores better (on a noisy backend, see below).
+
+Measured with `--level-trim` on Tone King's 12 targets under `unpaired-v2`, each
+trim paired in-run with the answer it replaced:
+
+| searched through | trimmed | closer than untrimmed | loudness gap, before → after |
+|---|---:|---:|---|
+| the target's own passage | 4 of 12 | 3 of 4 (7%, p = 0.25) | 0.6–2.2 LU → 0.0–0.1 LU |
+| the Hotel California passage | 6 of 12 | 3 of 6 (1%, p = 0.69) | better on 3, worse on 3 |
+| the noise probe | 8 of 12 | 1 of 8 (2% further, p = 0.15) | 3.3–14.2 LU → 4.0–14.1 LU |
+
+Through the exact performance the trim closed the loudness gap on all four and
+left timbre unchanged to two decimals; the score side cannot say more with four
+pairs (no Wilcoxon test on four can go below p = 0.125). Through another passage
+it is a coin toss — a loudness matched through one performance does not carry
+over to another — and through noise it is no better, further on 7 of 8, as "SW50R
+under -v2" found for the probe's level. Two own-passage answers were not trimmed
+— 4.7 LU and 0.7 LU off — and this run did not record why: the gain at its limit,
+or a single fresh render that lost to the search's best, which is the lowest of
+many noisy renders. So `match_preset.py` trims only a `paired_di` match measured
+whole — the reamp of the probe's own performance, with no `--excerpt`, which
+would compare an excerpt's loudness with the whole DI's — and records every
+decision in `summary.json` under `search.level_trims`, with the trial before and
+after and the reason for any skip. Other regimes leave the level to the search,
+and the skill's advice to set a no-DI match's level by ear stands.
+
+Four changes came after the run, none of them measured by it: a candidate served
+from the cache now carries its stored loudness (without it, a re-run into the
+same `--out-dir` skipped every trim); on a backend that does not repeat itself a
+trim is also kept when its `level` term improved and its total is within the
+screen's measured repeat spread of the original's (not when a repeat failed and
+the spread is the backend's declared noise); the budget check counts the trim's
+renders; and the benchmark scores the untrimmed answer outside the arm's
+renders, alternately before and after the answer — this run always scored it
+just before, on the same instance, and counted it in each arm's `renders`. What
+was measured is Tone King under `unpaired-v2`; a paired match scores with
+`paired-v2`, and Morgan was not measured.
+
+```bash
+.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+  --renderer swift --target-di how-long-di-6s.wav --signal same \
+  --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
+  --workers 2 --loss-profile unpaired-v2 --level-trim \
+  --json docs/search-signal-toneking-rhythm-v2-trim.json
+```
+
+It took 106 minutes from 1a4173b, a pre-squash commit that trimmed whenever a DI
+was given, kept a trim only when it scored better, and scored the untrimmed
+answer first and inside the arm's `renders`; its JSON has no `level_trim_record`,
+which the benchmark added afterwards.
+
 ---
 
 ## 8. Dependency and CI policy

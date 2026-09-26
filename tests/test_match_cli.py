@@ -158,6 +158,11 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
     assert summary["renderer"]["renderer_id"] == "synthetic"
     assert summary["inversion"]["used"] is True
     assert summary["inversion"]["changes"]
+    # A paired reamp measured whole, so the shortlist's output level was checked
+    # against the reference: one record per shortlisted candidate, without its vector.
+    trims = summary["search"]["level_trims"]
+    assert len(trims) == 2
+    assert all("values_before" not in record for record in trims)
     assert summary["inversion"]["detail"]["signal_path"] == "sw50r"
     assert not any(change["path"] == "/selectedAmp"
                    for change in summary["inversion"]["changes"]), (
@@ -1139,3 +1144,34 @@ def test_a_match_scores_with_the_profile_that_drops_the_rt60_term_by_default():
     from scripts.match_preset import build_parser
 
     assert build_parser().get_default("loss_profile") == "unpaired-v2"
+
+
+
+@pytest.mark.parametrize("with_di", [False, True])
+def test_only_a_paired_reamp_has_its_output_level_trimmed(audio, tmp_path, with_di):
+    """Measured on Tone King: through another passage's DI or the noise probe a
+    loudness matched through the probe does not carry over, so an unpaired match
+    runs no trim — with a DI or without — and the summary says so by being empty."""
+    out = tmp_path / "run"
+    di = ["--probe-di", audio / "probe.wav"] if with_di else []
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
+               *di, "--amp", "sw50r", "--budget", "40", "--shortlist", "1",
+               "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []
+
+
+
+def test_a_paired_run_on_an_excerpt_is_not_trimmed(audio, tmp_path):
+    """An excerpt's loudness is not the whole DI's, which every candidate renders."""
+    out = tmp_path / "run"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav",
+               "--reference-mode", "paired_di",
+               "--probe-di", audio / "probe.wav", "--amp", "sw50r",
+               "--paired-provenance", audio / "paired-ref.wav.paired.json",
+               "--loss-profile", "unpaired-v2", "--excerpt", "1",
+               "--budget", "40", "--shortlist", "1", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert json.loads((out / "summary.json").read_text())["search"]["level_trims"] == []

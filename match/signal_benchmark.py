@@ -65,6 +65,14 @@ class SignalOutcome:
     objective_dimensions: Optional[Dict[str, float]] = None
     inversion_dimensions: Optional[Dict[str, float]] = None
     neutral_dimensions: Optional[Dict[str, float]] = None
+    # With `level_trim`: the output-gain change applied to the answer after its
+    # search (None when none was), and the answer as it was before, heard the same
+    # way as `objective` — so the trim is paired with its own untrimmed answer.
+    level_trim_db: Optional[float] = None
+    # What `level_trim` recorded for this answer, applied or not, without the vector.
+    level_trim_record: Optional[Dict[str, Any]] = None
+    untrimmed_objective: Optional[float] = None
+    untrimmed_dimensions: Optional[Dict[str, float]] = None
     # This arm's own renders: its inversion, scoring that inversion, its search
     # and scoring its answer. The neutral start's are shared by every arm of a
     # target and counted in none.
@@ -109,7 +117,8 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                            pack_id: str = "morgan", amp: Optional[str] = None,
                            progress=None, workers: int = 1,
                            renderer_factory=None,
-                           run_search: bool = True) -> List[SignalOutcome]:
+                           run_search: bool = True,
+                           level_trim: bool = False) -> List[SignalOutcome]:
     """Run the pipeline once per search signal on every target.
 
     `signals` maps a name to the samples a search renders its candidates through.
@@ -143,6 +152,7 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
     seed = topology["seed"]
     discrete = topology["discrete"]
     sampled = [dimension.path for dimension in dimensions]
+    output_control = invert.output_gain_control(pack_id, amp) if level_trim else None
 
     def one_target(index: int, own) -> List[SignalOutcome]:
         stream = streams[index]
@@ -205,16 +215,36 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                     continue
                 found = search.search(own, target, signals[name], space, inverted,
                                       budget=budget, profile=profile, shortlist=1,
-                                      rng=copy.deepcopy(search_state))
+                                      rng=copy.deepcopy(search_state),
+                                      output_control=output_control)
                 if not found.shortlist:
                     raise SignalBenchmarkError(
                         f"the search returned no candidate after {found.renders} "
                         f"renders")
                 best = found.shortlist[0]
+                # One shortlisted candidate, so at most one trim, and it is this one.
+                if found.level_trims:
+                    outcome.level_trim_record = {
+                        key: value for key, value in found.level_trims[0].items()
+                        if key != "values_before"}
+                trim = next((record for record in found.level_trims
+                             if record.get("applied")), None)
+                # The untrimmed answer is a diagnostic, scored outside the arm's
+                # renders, and on alternate targets before the answer rather than
+                # after it, so neither of the pair always follows the other.
+                untrimmed_first = trim is not None and index % 2 == 1
+                if trim is not None:
+                    outcome.level_trim_db = trim["after"] - trim["before"]
+                if untrimmed_first:
+                    (outcome.untrimmed_objective, outcome.untrimmed_dimensions,
+                     _) = heard(trim["values_before"])
                 before = scorer.renders
                 (outcome.objective, outcome.objective_dimensions,
                  outcome.objective_spread) = heard(best.values)
                 outcome.renders = spent + found.renders + (scorer.renders - before)
+                if trim is not None and not untrimmed_first:
+                    (outcome.untrimmed_objective, outcome.untrimmed_dimensions,
+                     _) = heard(trim["values_before"])
                 outcome.search_belief = best.total
                 if outcome.objective is None:
                     outcome.failed = True
@@ -317,8 +347,12 @@ def summarise(outcomes: Sequence[SignalOutcome], reference: str) -> Dict[str, An
                 for row in rows.values()),
             "renders": sum(row.renders for row in rows.values()),
         }
+        trimmed = [row for row in good if row.level_trim_db is not None]
+        if trimmed:
+            entry["level_trims"] = len(trimmed)
         for key, field in (("against_neutral", "neutral_objective"),
-                           ("against_inversion", "inversion_objective")):
+                           ("against_inversion", "inversion_objective"),
+                           ("against_untrimmed", "untrimmed_objective")):
             paired = _paired([(row.objective, getattr(row, field)) for row in good])
             if paired:
                 entry[key] = paired
