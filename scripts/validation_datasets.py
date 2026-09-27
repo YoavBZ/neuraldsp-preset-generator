@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""Rebuild docs/validation-datasets.json from the recordings themselves.
+
+    python scripts/validation_datasets.py \\
+      --root ~/ndsp-presets/references/datasets --json docs/validation-datasets.json
+
+Hashes every file, measures how well each guitar part's DI and amp track are the
+same take kept in step (`pairing`, `windowed_pairing`), and draws the declared
+development / held-out split. `docs/validation-datasets.md` states the rules;
+this is them, so the committed numbers can be reproduced from the audio.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import pathlib
+import random
+import sys
+
+FRAME_S = 0.01          # envelope frame: 10 ms of mean absolute amplitude
+WHOLE_LAG_S = 0.02      # the whole-length test looks within ±20 ms
+WINDOW_S, HOP_S = 20.0, 10.0
+WINDOW_LAG_S = 0.2      # each window's own best lag, within ±200 ms
+ACTIVE_DB = 30.0        # a window counts when within 30 dB of the loudest
+PAIRED_MIN = 0.8        # whole-length correlation a usable part needs
+IN_STEP_FRACTION = 0.8  # share of active windows whose best lag is within ±20 ms
+WINDOW_MEDIAN_MIN = 0.6
+
+SPLIT_SEED = 20260927
+TELEFUNKEN_SONGS = ["57 Chevy", "Bourbon", "Collide With Me"]
+CAMBRIDGE_SONGS = ["Heather Jane", "That's How I Got To Memphis"]
+GUITAR_TECHS_EXCERPTS = [f"{i:02d}" for i in range(1, 13)]
+
+TELEFUNKEN_DIRS = {"57 Chevy": "Rebecca Haviland - 57 Chevy",
+                   "Bourbon": "Rebecca Haviland - Burbon",
+                   "Collide With Me": "Rebecaa Haviland - Collide With Me"}
+CAMBRIDGE_DIRS = {"Heather Jane": "ChrisColtraine_HeatherJane_Full",
+                  "That's How I Got To Memphis":
+                      "ChrisColtraine_ThatsHowIGotToMemphis_Full"}
+
+
+def draw_split():
+    """The held-out draw, exactly as declared: the drawn items are held out."""
+    rng = random.Random(SPLIT_SEED)
+    return {"telefunken": rng.choice(TELEFUNKEN_SONGS),
+            "cambridge": rng.choice(CAMBRIDGE_SONGS),
+            "guitar_techs": sorted(rng.sample(GUITAR_TECHS_EXCERPTS, 4))}
+
+
+def load_mono(path):
+    import numpy as np
+    import soundfile as sf
+
+    samples, rate = sf.read(str(path), always_2d=True, dtype="float64")
+    return samples.mean(axis=1), int(rate)
+
+
+def envelope(samples, rate):
+    import numpy as np
+
+    hop = int(round(FRAME_S * rate))
+    usable = len(samples) // hop * hop
+    return np.abs(samples[:usable]).reshape(-1, hop).mean(axis=1)
+
+
+def _zscore(values):
+    return (values - values.mean()) / (values.std() + 1e-12)
+
+
+def _best_lag(reference, di, max_frames):
+    """(correlation, lag in frames) at the best lag; positive: reference later."""
+    import numpy as np
+    from scipy import signal
+
+    a, b = _zscore(reference), _zscore(di)
+    full = signal.correlate(a, b, mode="full") / len(b)
+    lags = np.arange(-len(b) + 1, len(a))
+    window = np.abs(lags) <= max_frames
+    index = int(np.argmax(full[window]))
+    return float(full[window][index]), int(lags[window][index])
+
+
+def pairing(reference_path, di_path):
+    """Whole-length envelope correlation of the amp track against its DI.
+
+    Mono, 10 ms mean-absolute frames, both truncated to the shorter file and
+    z-scored, the peak within ±20 ms. `lag_ms` is positive when the amp track is
+    later than the DI. Whole-length agreement is lifted by shared silences and a
+    song's loudness arc, which is why `windowed_pairing` is asked as well.
+    """
+    reference, rate = load_mono(reference_path)
+    di, di_rate = load_mono(di_path)
+    if rate != di_rate:
+        raise ValueError(f"{reference_path} and {di_path} differ in sample rate")
+    a, b = envelope(reference, rate), envelope(di, rate)
+    size = min(len(a), len(b))
+    correlation, lag = _best_lag(a[:size], b[:size],
+                                 int(round(WHOLE_LAG_S / FRAME_S)))
+    return round(correlation, 3), int(round(lag * FRAME_S * 1000))
+
+
+def windowed_pairing(reference_path, di_path):
+    """Whether the take stays in step: 20 s windows every 10 s.
+
+    Windows whose reference envelope is within 30 dB of the loudest window count.
+    Each gets its own best lag within ±200 ms. Returns the share of counted
+    windows whose best lag is within ±20 ms, and the median of their
+    correlations at that best lag.
+    """
+    import numpy as np
+
+    reference, rate = load_mono(reference_path)
+    di, _ = load_mono(di_path)
+    a, b = envelope(reference, rate), envelope(di, rate)
+    size = min(len(a), len(b))
+    a, b = a[:size], b[:size]
+    width = int(round(WINDOW_S / FRAME_S))
+    hop = int(round(HOP_S / FRAME_S))
+    starts = list(range(0, max(size - width, 0) + 1, hop)) or [0]
+    levels = np.array([a[s:s + width].mean() for s in starts])
+    loudest = levels.max()
+    lags, correlations = [], []
+    for start, level in zip(starts, levels):
+        if level <= 0 or 20 * np.log10(level / loudest) < -ACTIVE_DB:
+            continue
+        correlation, lag = _best_lag(a[start:start + width], b[start:start + width],
+                                     int(round(WINDOW_LAG_S / FRAME_S)))
+        lags.append(lag * FRAME_S * 1000)
+        correlations.append(correlation)
+    in_step = [abs(lag) <= WHOLE_LAG_S * 1000 for lag in lags]
+    return {"windows": len(lags),
+            "in_step_fraction": round(sum(in_step) / len(lags), 3) if lags else None,
+            "median_correlation": (round(float(np.median(correlations)), 3)
+                                   if correlations else None)}
+
+
+def _usable(part):
+    window = part.get("windowed") or {}
+    return (part["di"] is not None and part["pairing_corr"] is not None
+            and part["pairing_corr"] >= PAIRED_MIN
+            and (window.get("in_step_fraction") or 0) >= IN_STEP_FRACTION
+            and (window.get("median_correlation") or 0) >= WINDOW_MEDIAN_MIN)
+
+
+def _sha(path):
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def _part(session_dir, name, reference, di, alternate=()):
+    part = {"part": name, "reference": reference, "alternate": list(alternate),
+            "di": di, "pairing_corr": None, "lag_ms": None, "windowed": None}
+    if di is not None:
+        part["pairing_corr"], part["lag_ms"] = pairing(session_dir / reference,
+                                                       session_dir / di)
+        part["windowed"] = windowed_pairing(session_dir / reference, session_dir / di)
+    part["usable"] = _usable(part)
+    return part
+
+
+def build(root: pathlib.Path):
+    split = draw_split()
+    sessions = []
+    for song, folder in TELEFUNKEN_DIRS.items():
+        directory = root / "telefunken" / folder
+        files = sorted(p.name for p in directory.glob("*.wav"))
+        parts = []
+        for guitar in ("GTR 1", "GTR 2"):
+            di = next(f for f in files if f.startswith(guitar) and "DI" in f)
+            amps = sorted(f for f in files if f.startswith(guitar) and "Amp" in f)
+            m80 = next(f for f in amps if "M 80" in f)
+            parts.append(_part(directory, guitar, m80, di,
+                               [f for f in amps if f != m80]))
+        sessions.append({"source": "telefunken", "song": song,
+                         "path": f"telefunken/{folder}",
+                         "split": "held_out" if song == split["telefunken"]
+                         else "development",
+                         "files": {f: _sha(directory / f) for f in files},
+                         "parts": parts})
+    for song, folder in CAMBRIDGE_DIRS.items():
+        directory = root / "cambridge" / folder
+        files = sorted(p.name for p in directory.glob("*.wav"))
+        stems = {pathlib.Path(f).stem.split("_", 1)[1]: f for f in files}
+        parts = [_part(directory, name, stems[name], stems.get(name + "DI"))
+                 for name in sorted(stems)
+                 if name.startswith("ElecGtr") and not name.endswith("DI")]
+        sessions.append({"source": "cambridge", "song": song,
+                         "path": f"cambridge/{folder}",
+                         "split": "held_out" if song == split["cambridge"]
+                         else "development",
+                         "files": {f: _sha(directory / f) for f in files},
+                         "parts": parts})
+    directory = root / "guitar-techs" / "P3_music"
+    for number in GUITAR_TECHS_EXCERPTS:
+        files = [f"audio/directinput/directinput_{number}.wav",
+                 f"audio/micamp/micamp_{number}.wav",
+                 f"midi/midi_{number}.mid",
+                 f"video/ego/ego_{number}.mp3", f"video/exo/exo_{number}.mp3"]
+        sessions.append({"source": "guitar-techs", "song": f"P3_music excerpt {number}",
+                         "path": "guitar-techs/P3_music",
+                         "split": ("held_out" if number in split["guitar_techs"]
+                                   else "development"),
+                         "files": {f: _sha(directory / f) for f in files},
+                         "parts": [_part(directory, number,
+                                         f"audio/micamp/micamp_{number}.wav",
+                                         f"audio/directinput/directinput_{number}.wav")]})
+    return {
+        "schema": "validation-datasets-2",
+        "root": "~/ndsp-presets/references/datasets",
+        "split_seed": SPLIT_SEED,
+        "split_draw": split,
+        "rules": {"paired_min": PAIRED_MIN, "in_step_fraction": IN_STEP_FRACTION,
+                  "window_median_min": WINDOW_MEDIAN_MIN,
+                  "lag_sign": "positive when the amp track is later than the DI"},
+        "sessions": sessions,
+        # Each use of a held-out session by a declared test: the declaring file,
+        # the commit it ran at and the date. Empty: nothing has used one yet.
+        "held_out_uses": [],
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--root", type=pathlib.Path, required=True)
+    ap.add_argument("--json", type=pathlib.Path, required=True)
+    args = ap.parse_args()
+    document = build(args.root.expanduser())
+    args.json.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n",
+                         encoding="utf-8")
+    for session in document["sessions"]:
+        for part in session["parts"]:
+            window = part["windowed"] or {}
+            print(f"{session['split']:12} {session['song'][:28]:28} {part['part']:10} "
+                  f"whole {part['pairing_corr']} lag {part['lag_ms']} | "
+                  f"in step {window.get('in_step_fraction')} of "
+                  f"{window.get('windows')} windows, median "
+                  f"{window.get('median_correlation')} | "
+                  f"{'usable' if part['usable'] else 'excluded'}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())
