@@ -26,6 +26,28 @@ Match audition exports take the reference regime from the
 completed run and accept the same grouping/identifier options. Do not reveal
 predictions before collecting the listener's answer.
 
+To measure whether a listener gives stable closeness answers, a blind audition
+can include hidden repeat blocks and an optional identical-alternative catch:
+
+```sh
+python scripts/build_rab_audition.py ... --hidden-repeats 1 --catch-trial
+python scripts/export_match_audition.py ... --hidden-repeats 1 --catch-trial
+```
+
+For a backed audition, put `"reliability": {"hidden_repeats": 1,
+"catch_trial": true}` in its private manifest. Builders number and randomize
+the blocks without revealing which is primary, repeated, or a catch. Ask for
+one closeness answer per numbered block, in order: use repeated
+`--trial-choice A|B|indistinguishable` with `log_blind_verdict.py`, or repeated
+`--trial-closer A|B|indistinguishable` with `log_backed_verdict.py`. The private
+key holds the answer mapping and must remain hidden until all answers are
+recorded. The first repeat reverses A/B labels; the catch plays one alternative
+twice. The audit recomputes role-consistency on repeats and the fraction of
+catch answers marked indistinguishable. These are descriptive within-listener
+checks, separate from objective agreement. Only the primary trial receives an
+objective score; hidden trials do not increase the comparison or independent
+target count. One session's checks cannot establish listener reliability.
+
 The primary prediction uses the existing `unpaired-v1` audio objectives, **with
 `level` excluded** and the remaining measured weights renormalized. Auditions
 deliberately remove loudness differences. Each alternative also retains the

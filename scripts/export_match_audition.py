@@ -23,6 +23,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded, positive_int, renderer_paths
 from build_rab_audition import _finite_float, _nonnegative_float, _nonpositive_float
+from _listening_trials import MAX_REPEATS
 
 
 def _sha256(path: pathlib.Path) -> str:
@@ -143,6 +144,10 @@ def main() -> None:
     parser.add_argument("--gap", type=_nonnegative_float, default=0.5)
     parser.add_argument("--cycle-gap", type=_nonnegative_float, default=1.0)
     parser.add_argument("--seed", type=int)
+    parser.add_argument("--hidden-repeats", type=int, default=0,
+                        help=f"hidden repeats of this pair (0-{MAX_REPEATS})")
+    parser.add_argument("--catch-trial", action="store_true",
+                        help="hide one identical-A/B block among the trials")
     parser.add_argument("--mono", action="store_true")
     parser.add_argument("--target-id", default="unassigned", help="private target group shared by repeats")
     parser.add_argument("--comparison-id", help="unique private comparison identifier")
@@ -152,6 +157,8 @@ def main() -> None:
                              "comparison is weak")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+    if not 0 <= args.hidden_repeats <= MAX_REPEATS:
+        die(f"--hidden-repeats must be between 0 and {MAX_REPEATS}")
 
     run_dir = args.run_dir.expanduser().resolve()
     summary = _read_object(run_dir / "summary.json", "summary")
@@ -337,6 +344,8 @@ def main() -> None:
             target_id=args.target_id,
             comparison_id=args.comparison_id,
             amp_models=amp_models,
+            hidden_repeats=args.hidden_repeats,
+            catch_trial=args.catch_trial,
         )
         _write_audio(montage_path, montage, key["sample_rate"])
 
@@ -404,10 +413,19 @@ def main() -> None:
 
     print(f"wrote blind audition: {montage_path}")
     print(f"private key: {key_path}")
-    print("listen without opening the key: Reference -> A -> B, repeated once")
+    if "trials" in key:
+        print(f"listen to {len(key['trials'])} numbered blocks without opening the key; "
+              "each is Reference -> A -> B, repeated once")
+    else:
+        print("listen without opening the key: Reference -> A -> B, repeated once")
     print("then record closeness with:")
     print("  python scripts/log_blind_verdict.py \\")
-    print(f"    --key {shlex.quote(str(key_path))} --choice A-or-B \\")
+    if "trials" in key:
+        answers = " ".join("--trial-choice A-or-B-or-indistinguishable"
+                           for _ in key["trials"])
+        print(f"    --key {shlex.quote(str(key_path))} {answers} \\")
+    else:
+        print(f"    --key {shlex.quote(str(key_path))} --choice A-or-B \\")
     print("    --listener YOUR_NAME")
 
 

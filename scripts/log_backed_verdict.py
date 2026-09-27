@@ -23,6 +23,7 @@ sys.path[:0] = [str(ROOT), str(pathlib.Path(__file__).resolve().parent)]
 
 from _cli import guarded
 from build_rab_audition import _write_text
+from _listening_trials import CHOICES, consistency, primary_answer
 from score_listening import _require_private_out_dir
 
 
@@ -42,8 +43,10 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--key", required=True, type=pathlib.Path)
-    parser.add_argument("--closer", required=True,
-                        choices=("A", "B", "indistinguishable"))
+    parser.add_argument("--closer", choices=CHOICES,
+                        help="single-trial closeness answer")
+    parser.add_argument("--trial-closer", action="append", choices=CHOICES,
+                        help="multi-trial answer in listening order; repeat per numbered block")
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
     key_path = args.key.expanduser().resolve()
@@ -53,6 +56,19 @@ def main() -> None:
         raise ValueError("this is not a prospective backed-audition key")
     if key.get("purpose") != "prospective":
         raise ValueError("workflow rehearsals cannot become listener evidence")
+    trials = key.get("trials")
+    if trials is None:
+        if args.closer is None or args.trial_closer:
+            raise ValueError("this audition needs exactly one --closer, not --trial-closer")
+        primary_label = args.closer
+        trial_answers = None
+        reliability = None
+    else:
+        if args.closer is not None or args.trial_closer is None:
+            raise ValueError("answer each numbered block with --trial-closer, not --closer")
+        trial_answers = args.trial_closer
+        primary_label = primary_answer(trials, trial_answers, key.get("blind_key"))
+        reliability = consistency(trials, trial_answers, key["blind_key"])
     for binding in (key["output"], key["manifest"]):
         path = pathlib.Path(binding["path"]).expanduser().resolve()
         if not path.is_file() or sha256(path) != binding["sha256"]:
@@ -64,7 +80,7 @@ def main() -> None:
     output_path = key_path.parent / "verdict.json"
     if output_path.exists() or output_path.is_symlink():
         raise ValueError("verdict already exists; never overwrite a listener answer")
-    verdict = {"closer": args.closer, "preferred": None}
+    verdict = {"closer": primary_label, "preferred": None}
     objective = key["objective_record"]
     key_profiles = key.get("objective_profiles_frozen")
     record_profiles = objective.get("objective_profiles_frozen")
@@ -87,8 +103,17 @@ def main() -> None:
               "heard_audio_sha256": key["output"]["sha256"],
               "verdict": verdict, "listener_notes": args.notes,
               "frozen_scored_record": scored}
+    if trial_answers is not None:
+        record["listener_trials"] = trial_answers
+        record["listener_consistency"] = reliability
     _publish_verdict(output_path, json.dumps(record, indent=2, allow_nan=False) + "\n")
-    print(f"recorded closer={args.closer} in {output_path}")
+    print(f"recorded primary closer={primary_label} in {output_path}")
+    if reliability is not None:
+        print("listener consistency (not objective agreement): "
+              f"repeats {reliability['repeat']['consistent']}/"
+              f"{reliability['repeat']['trials_not_independent_n']}, "
+              f"catch ties {reliability['catch']['indistinguishable']}/"
+              f"{reliability['catch']['trials_not_independent_n']}")
     print("objective agreement is in the private verdict; no audio was rescored")
 
 

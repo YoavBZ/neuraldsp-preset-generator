@@ -22,6 +22,7 @@ from tests import fixtures_audio as fx
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "build_backed_audition.py"
 VERDICT_SCRIPT = ROOT / "scripts" / "log_backed_verdict.py"
+AUDIT_SCRIPT = ROOT / "scripts" / "audit_frozen_listening.py"
 
 
 def _fixture(tmp_path):
@@ -93,6 +94,57 @@ def test_backed_audio_uses_one_bed_and_scores_only_guitar(tmp_path):
                           key["common_master_gain_db"]) / 20)
         assert segments[label] - guitar == pytest.approx(bed, abs=3e-6)
     assert key["output"]["true_peak_dbtp"] <= -0.98
+
+
+def test_hidden_repeat_and_identical_catch_report_consistency_separately(tmp_path):
+    manifest_path, manifest = _fixture(tmp_path)
+    manifest["reliability"] = {"hidden_repeats": 1, "catch_trial": True}
+    manifest_path.write_text(json.dumps(manifest))
+    out = tmp_path / "multi-trial"
+    built = _run(manifest_path, out)
+    assert built.returncode == 0, built.stderr
+    key_path = out / "private-key.json"
+    key = json.loads(key_path.read_text())
+    trials = key["trials"]
+    assert sorted(row["kind"] for row in trials) == ["catch", "primary", "repeat"]
+    assert len(key["timeline"]) == 9
+    assert io.load(out / "audition.flac").duration_s == pytest.approx(
+        3 * (3 + .2) + 2 * 2, abs=1 / fx.SAMPLE_RATE)
+    assert "catch" not in built.stdout.lower()
+
+    audio = io.load(out / "audition.flac").samples
+    catch = next(row for row in trials if row["kind"] == "catch")
+    def heard(label):
+        row = next(item for item in key["timeline"] if item["trial"] == catch["ordinal"]
+                   and item["label"] == label)
+        return audio[round(row["start_s"] * fx.SAMPLE_RATE):
+                     round(row["end_s"] * fx.SAMPLE_RATE)]
+    assert np.array_equal(heard("A"), heard("B"))
+
+    answers = ["indistinguishable" if trial["kind"] == "catch" else
+               next(label for label, role in trial["blind_key"].items() if role == "first")
+               for trial in trials]
+    args = [value for answer in answers for value in ("--trial-closer", answer)]
+    recorded = subprocess.run([sys.executable, str(VERDICT_SCRIPT), "--key", str(key_path),
+                               *args], cwd=ROOT, capture_output=True, text=True)
+    assert recorded.returncode == 0, recorded.stderr
+    verdict = json.loads((out / "verdict.json").read_text())
+    primary_index = next(i for i, trial in enumerate(trials) if trial["kind"] == "primary")
+    assert verdict["verdict"]["closer"] == answers[primary_index]
+    assert verdict["listener_consistency"]["repeat"]["consistent"] == 1
+    assert verdict["listener_consistency"]["catch"]["indistinguishable"] == 1
+    assert verdict["listener_trials"] == answers
+
+    audit_dir = tmp_path / "consistency-audit"
+    audited = subprocess.run([sys.executable, str(AUDIT_SCRIPT), "--record",
+                              str(out / "verdict.json"), "--out-dir", str(audit_dir)],
+                             cwd=ROOT, capture_output=True, text=True)
+    assert audited.returncode == 0, audited.stderr
+    report = json.loads((audit_dir / "report.json").read_text())
+    assert report["comparison_count_not_independent_n"] == 1
+    assert len(report["v2"]["target_groups"]["new-song"]["comparisons"]) == 1
+    assert report["listener_consistency"]["repeat"]["fraction"] == 1.0
+    assert report["listener_consistency"]["catch"]["fraction"] == 1.0
 
 
 def test_refuses_unproven_ac20_and_changed_audio(tmp_path):

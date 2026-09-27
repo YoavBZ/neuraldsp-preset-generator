@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import pathlib
 import subprocess
 import sys
@@ -79,6 +80,89 @@ def test_builds_one_level_matched_blind_file_and_key(tmp_path):
     ), "the reference segment received static gain and no other processing"
     assert "closer" in done.stdout and "prefer" not in done.stdout
     assert "raw renders" in done.stdout
+
+
+def test_hidden_repeats_and_catch_are_numbered_but_not_revealed(tmp_path):
+    reference, first, second = _inputs(tmp_path)
+    fx.write_wav(second, fx.band_limited(seconds=1.0, seed=89) * .05)
+    out = tmp_path / "reliability.flac"
+    built = _run("--reference", reference, "--a", first, "--b", second,
+                 "--out", out, "--seed", 23, "--hidden-repeats", 2,
+                 "--catch-trial")
+    assert built.returncode == 0, built.stderr
+    key = json.loads((tmp_path / "reliability.flac.key.json").read_text())
+    trials = key["trials"]
+    assert len(trials) == 4
+    assert sorted(row["kind"] for row in trials) == ["catch", "primary", "repeat", "repeat"]
+    assert {row["ordinal"] for row in trials} == {1, 2, 3, 4}
+    assert next(row for row in trials if row["kind"] == "primary")["blind_key"] == key["blind_key"]
+    assert key["objective_record"]["id"]
+    assert len(key["timeline"]) == 24
+    assert io.load(out).duration_s == pytest.approx(4 * 9 + 3 * 2, abs=1 / 48000)
+    assert not any("catch" in line.lower() for line in built.stdout.splitlines()
+                   if not line.startswith(("wrote ", "blind key: ")))
+    assert "--hidden-repeats" not in built.stdout
+    assert "seed: 23" not in built.stdout
+
+    audio = io.load(out).samples
+    rate = key["sample_rate"]
+    def segment(ordinal, label):
+        row = next(item for item in key["timeline"] if item["trial"] == ordinal
+                   and item["label"] == label)
+        return audio[round(row["start_s"] * rate):round(row["end_s"] * rate)]
+
+    catch = next(row for row in trials if row["kind"] == "catch")
+    assert np.array_equal(segment(catch["ordinal"], "A"),
+                          segment(catch["ordinal"], "B"))
+    primary = next(row for row in trials if row["kind"] == "primary")
+    for trial in trials:
+        if trial["kind"] == "catch":
+            continue
+        for label in ("A", "B"):
+            role = trial["blind_key"][label]
+            primary_label = next(name for name, source in primary["blind_key"].items()
+                                 if source == role)
+            assert np.array_equal(segment(trial["ordinal"], label),
+                                  segment(primary["ordinal"], primary_label))
+
+
+def test_standalone_hidden_trials_can_be_logged_and_audited_once(tmp_path):
+    reference, first, second = _inputs(tmp_path)
+    output = tmp_path / "blind.flac"
+    built = _run("--reference", reference, "--a", first, "--b", second,
+                 "--out", output, "--seed", 37, "--hidden-repeats", 1,
+                 "--catch-trial")
+    assert built.returncode == 0, built.stderr
+    key_path = tmp_path / "blind.flac.key.json"
+    key = json.loads(key_path.read_text())
+    answers = ["indistinguishable" if trial["kind"] == "catch" else
+               next(label for label, role in trial["blind_key"].items()
+                    if role == "first") for trial in key["trials"]]
+    command = [sys.executable, str(ROOT / "scripts" / "log_blind_verdict.py"),
+               "--key", str(key_path), "--listener", "test-listener"]
+    for answer in answers:
+        command.extend(("--trial-choice", answer))
+    logged = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    assert logged.returncode == 0, logged.stderr
+    digest = hashlib.sha256(b"test-listener").hexdigest()
+    sidecar = tmp_path / f"{key_path.name}.{digest}.objective-verdict.json"
+    verdict = json.loads(sidecar.read_text())
+    primary = next(i for i, trial in enumerate(key["trials"])
+                   if trial["kind"] == "primary")
+    assert verdict["verdict"]["closer"] == answers[primary]
+    assert verdict["listener_consistency"]["repeat"]["consistent"] == 1
+    assert verdict["listener_consistency"]["catch"]["indistinguishable"] == 1
+
+    audit_dir = tmp_path / "audit"
+    audited = subprocess.run([
+        sys.executable, str(ROOT / "scripts" / "audit_frozen_listening.py"),
+        "--record", str(sidecar), "--out-dir", str(audit_dir),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert audited.returncode == 0, audited.stderr
+    report = json.loads((audit_dir / "report.json").read_text())
+    assert report["comparison_count_not_independent_n"] == 1
+    assert report["listener_consistency"]["repeat"]["trials_not_independent_n"] == 1
+    assert report["listener_consistency"]["catch"]["trials_not_independent_n"] == 1
 
 
 def test_peak_headroom_lowers_one_shared_target_instead_of_limiting(tmp_path):

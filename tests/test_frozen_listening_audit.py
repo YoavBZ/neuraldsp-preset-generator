@@ -15,6 +15,7 @@ pytest.importorskip("scipy")
 pytest.importorskip("pyloudnorm")
 
 from analysis.listening import attach_verdict, score_record, sha256
+from scripts._listening_trials import consistency, plan_trials
 from tests import fixtures_audio as fx
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -107,6 +108,46 @@ def test_audit_counts_targets_not_repeats_and_keeps_v1_only_unscored(tmp_path):
         "diagnostic_counts_not_independent_n"] == {"unscored": 1}
     assert "preferred" not in completed.stdout
     assert "private-audition" not in completed.stdout
+
+
+@pytest.mark.parametrize("kind", ("blind", "backed"))
+def test_audit_recomputes_hidden_consistency_and_refuses_changed_answers(tmp_path, kind):
+    scored = _scored(tmp_path)
+    if kind == "blind":
+        path, key_path = _blind_verdict(tmp_path, scored)
+    else:
+        path, key_path = _backed_verdict(tmp_path, scored)
+    key = json.loads(key_path.read_text())
+    key.setdefault("blind_key", {"A": "first", "B": "second"})
+    trials = plan_trials(37, key["blind_key"], repeats=1, catch=True)
+    key["trials"] = trials
+    answers = ["indistinguishable" if trial["kind"] == "catch" else
+               next(label for label, role in trial["blind_key"].items() if role == "first")
+               for trial in trials]
+    measured = consistency(trials, answers, key["blind_key"])
+    key_path.write_text(json.dumps(key))
+    verdict = json.loads(path.read_text())
+    verdict["audition_key"]["sha256"] = sha256(key_path)
+    verdict["listener_trials"] = answers
+    verdict["listener_consistency"] = measured
+    path.write_text(json.dumps(verdict))
+    out = tmp_path / f"good-{kind}"
+    good = _run(path, out_dir=out)
+    assert good.returncode == 0, good.stderr
+    report = json.loads((out / "report.json").read_text())
+    assert report["comparison_count_not_independent_n"] == 1
+    assert report["listener_consistency"]["repeat"]["fraction"] == 1.0
+    assert report["listener_consistency"]["catch"]["fraction"] == 1.0
+
+    repeat_index = next(i for i, trial in enumerate(trials) if trial["kind"] == "repeat")
+    verdict["listener_trials"][repeat_index] = (
+        "B" if verdict["listener_trials"][repeat_index] == "A" else "A")
+    path.write_text(json.dumps(verdict))
+    bad_out = tmp_path / f"changed-{kind}"
+    rejected = _run(path, out_dir=bad_out)
+    assert rejected.returncode != 0
+    assert "consistency disagree" in rejected.stderr
+    assert not bad_out.exists()
 
 
 @pytest.mark.parametrize("damage", ("score", "heard-audio", "key"))
