@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import sqlite3
@@ -166,6 +167,10 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     sidecars = list(key_path.parent.glob("*.objective-verdict.json"))
     assert len(sidecars) == 1
     first_record = json.loads(sidecars[0].read_text())
+    assert first_record["audition_key"] == {
+        "path": str(key_path.resolve()),
+        "sha256": hashlib.sha256(key_path.read_bytes()).hexdigest(),
+    }
     assert first_record["objective_scoring"]["match_v2"] == key[
         "objective_record"]["objective_scoring"]["match_v2"]
     assert first_record["agreement_match_v2"]["closer"]["status"] in (

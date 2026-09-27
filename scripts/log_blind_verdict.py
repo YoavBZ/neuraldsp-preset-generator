@@ -137,6 +137,12 @@ def main() -> None:
                       if field not in ("objective_scoring", "agreement", "agreement_with_level",
                                        "agreement_match_v2", "scoring_error")}
             scored["scoring_error"] = f"{type(error).__name__}: {error}"
+        # Bind the sidecar to the entire private key, including the blind A/B
+        # mapping and completed-match provenance, not just its score fields.
+        scored["audition_key"] = {
+            "path": str(args.key.expanduser().resolve()),
+            "sha256": _sha256(args.key.expanduser()),
+        }
         if sidecar.exists():
             previous = json.loads(sidecar.read_text())
             for field in ("verdict", "listener", "heard_audio", "alternatives", "reference"):

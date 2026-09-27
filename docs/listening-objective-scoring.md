@@ -48,6 +48,27 @@ at verdict time, a changed score is reported as unscored rather than silently
 replacing the pre-listening prediction. Per-target v2 summaries can be produced
 from frozen verdict records with `analysis.listening.match_v2_agreement_report`.
 Historical manifest backfills through `score_listening.py` remain v1-only.
+To audit logger-produced blind and backed verdicts together, use the private,
+no-render command:
+
+```sh
+python scripts/audit_frozen_listening.py \
+  --record PRIVATE_BLIND_OBJECTIVE_VERDICT.json \
+  --record PRIVATE_BACKED_VERDICT.json \
+  --out-dir PRIVATE_NEW_IGNORED_DIRECTORY
+```
+
+New blind verdicts carry a hash of the entire private audition key, including
+the A/B mapping and match provenance. The audit checks that binding, the frozen
+scores and the recorded heard-audio binding, then reports closeness only,
+counting repeated comparisons within their target group. Older v1-only verdicts
+without a whole-key
+hash remain readable but unscored for v2. The
+private report contains target IDs; keep it out of Git. This binding does not
+prove when the key was created, authenticate the listener's answer, or show
+that target groups are independent. It does
+not reopen or rescore the raw audio, so a source can be archived after the
+verdict without changing the frozen audit.
 If the alternatives have different measurable objectives or component terms,
 the distances remain diagnostic but the objective comparison is inconclusive;
 it does not count toward the agreement fraction.
