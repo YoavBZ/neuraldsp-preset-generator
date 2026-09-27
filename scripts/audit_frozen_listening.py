@@ -23,6 +23,7 @@ sys.path[:0] = [str(ROOT), str(pathlib.Path(__file__).resolve().parent)]
 
 from _cli import guarded
 from build_rab_audition import _write_text
+from _listening_trials import consistency, primary_answer
 from score_listening import _require_private_out_dir
 
 
@@ -84,7 +85,33 @@ def _same_frozen_record(key_record: dict, verdict_record: dict, *, blind: bool) 
         raise ValueError("audition key and verdict disagree on frozen objectives")
 
 
-def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str]:
+def _bound_consistency(key: dict, verdict: dict, closer: str) -> dict | None:
+    """Recompute reliability from the hashed key and ordered listener answers."""
+    trials = key.get("trials")
+    if trials is None:
+        if "listener_trials" in verdict or "listener_consistency" in verdict:
+            raise ValueError("a single-trial key cannot carry hidden-trial answers")
+        return None
+    answers = verdict.get("listener_trials")
+    try:
+        primary = primary_answer(trials, answers, key.get("blind_key"))
+        measured = consistency(trials, answers, key["blind_key"])
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"invalid hidden-trial evidence: {error}") from error
+    if primary != closer or verdict.get("listener_consistency") != measured:
+        raise ValueError("hidden-trial answers or consistency disagree with the primary verdict")
+    return measured
+
+
+def _closer(record: dict) -> str:
+    verdict = record.get("verdict")
+    if not isinstance(verdict, dict) or verdict.get("closer") not in (
+            "A", "B", "indistinguishable"):
+        raise ValueError("each verdict needs a closeness answer")
+    return verdict["closer"]
+
+
+def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str, dict | None]:
     """Read a logger sidecar and its key, refusing a broken frozen-score binding."""
     from analysis.listening import sha256
 
@@ -112,7 +139,7 @@ def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str]:
                 not _digest(verdict.get("heard_audio_sha256")) or
                 verdict["heard_audio_sha256"] != output["sha256"]):
             raise ValueError("backed verdict disagrees with its listener answer or heard audio")
-        return record, "backed"
+        return record, "backed", _bound_consistency(key, verdict, _closer(record))
 
     match = _BLIND_SIDECAR.fullmatch(path.name)
     if not match:
@@ -143,14 +170,14 @@ def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str]:
                 isinstance(record.get("objective_scoring"), dict) and
                 "match_v2" in record["objective_scoring"]):
             raise ValueError("v2 blind verdict lacks a whole-key hash")
-        return record, "blind-legacy-v1-only"
+        return record, "blind-legacy-v1-only", _bound_consistency(key, record, _closer(record))
     if (not isinstance(binding, dict) or
             not isinstance(binding.get("path"), str) or not binding["path"] or
             not _digest(binding.get("sha256")) or
             pathlib.Path(binding["path"]).expanduser().resolve() != key_path or
             sha256(key_path) != binding["sha256"]):
         raise ValueError("blind verdict no longer matches its private audition key")
-    return record, "blind"
+    return record, "blind", _bound_consistency(key, record, _closer(record))
 
 
 def main() -> None:
@@ -168,9 +195,9 @@ def main() -> None:
     paths = [path.expanduser().resolve() for path in args.record]
     if len(set(paths)) != len(paths):
         raise ValueError("duplicate verdict path")
-    records, sources = [], []
+    records, sources, reliability_rows = [], [], []
     for path in paths:
-        record, kind = load_bound_verdict(path)
+        record, kind, reliability = load_bound_verdict(path)
         if not isinstance(record.get("id"), str) or not isinstance(record.get("target_id"), str):
             raise ValueError("each verdict needs an id and target_id")
         verdict = record.get("verdict")
@@ -179,18 +206,36 @@ def main() -> None:
             raise ValueError("each verdict needs a closeness answer")
         records.append(record)
         sources.append({"kind": kind, "sha256": sha256(path)})
+        if reliability is not None:
+            reliability_rows.append(reliability)
     v2 = match_v2_agreement_report(records)
     # New auditions ask only for closeness. Historical preference fields remain
     # readable in source records, but are not a question in this audit.
     v2["summary"] = {"closer": v2["summary"]["closer"]}
     for group in v2["target_groups"].values():
         group.pop("preferred", None)
+    repeat_total = sum(row["repeat"]["trials_not_independent_n"] for row in reliability_rows)
+    repeat_same = sum(row["repeat"]["consistent"] for row in reliability_rows)
+    catch_total = sum(row["catch"]["trials_not_independent_n"] for row in reliability_rows)
+    catch_ties = sum(row["catch"]["indistinguishable"] for row in reliability_rows)
+    listener_consistency = {
+        "auditions_with_probes_not_independent_n": len(reliability_rows),
+        "repeat": {"trials_not_independent_n": repeat_total,
+                   "consistent": repeat_same,
+                   "fraction": repeat_same / repeat_total if repeat_total else None},
+        "catch": {"trials_not_independent_n": catch_total,
+                  "indistinguishable": catch_ties,
+                  "fraction": catch_ties / catch_total if catch_total else None},
+        "interpretation": "Descriptive within-listener checks, not independent targets, "
+                          "objective agreement, or a validated perceptual threshold.",
+    }
     report = {
         "schema": "frozen-listening-audit-v1",
         "comparison_count_not_independent_n": len(records),
         "inputs": sources,
         "scoring_error_count": sum("scoring_error" in row for row in records),
         "v2": v2,
+        "listener_consistency": listener_consistency,
         "limitations": [
             "The key binding and frozen-score structure are checked; file timestamps do not prove pre-listening creation.",
             "Old v1-only blind sidecars without whole-key hashes remain unscored for v2.",
@@ -200,7 +245,8 @@ def main() -> None:
     }
     out_dir.mkdir(parents=True)
     _write_text(out_dir / "report.json", json.dumps(report, indent=2, allow_nan=False) + "\n")
-    print(json.dumps({"closer": report["v2"]["summary"]["closer"]}, indent=2))
+    print(json.dumps({"closer": report["v2"]["summary"]["closer"],
+                      "listener_consistency": listener_consistency}, indent=2))
 
 
 if __name__ == "__main__":

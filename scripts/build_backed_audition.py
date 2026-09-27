@@ -28,6 +28,7 @@ sys.path[:0] = [str(ROOT), str(pathlib.Path(__file__).resolve().parent)]
 from _cli import guarded
 from build_rab_audition import (_audition_channels, _slice, _static_gain_to_lufs,
                                 _write_audio, _write_text)
+from _listening_trials import plan_trials
 
 
 def _number(value, name: str, minimum: float | None = None) -> float:
@@ -134,6 +135,11 @@ def build(manifest: dict, *, seed: int):
     cycles = mix.get("cycles", 1)
     if ceiling > 0 or type(cycles) is not int or cycles not in (1, 2):
         raise ValueError("peak ceiling must be nonpositive and cycles must be 1 or 2")
+    reliability = manifest.get("reliability", {})
+    if not isinstance(reliability, dict) or set(reliability) - {"hidden_repeats", "catch_trial"}:
+        raise ValueError("reliability must contain only hidden_repeats and catch_trial")
+    hidden_repeats = reliability.get("hidden_repeats", 0)
+    catch_trial = reliability.get("catch_trial", False)
 
     roles = ("reference", "backing", "first", "second")
     specs = (reference, backing, alternatives["first"], alternatives["second"])
@@ -172,19 +178,31 @@ def build(manifest: dict, *, seed: int):
     # independently level-matched guitar signals differ.
     swap = bool(random.Random(seed).getrandbits(1))
     blind = {"A": "second" if swap else "first", "B": "first" if swap else "second"}
-    segment = {"Reference": reference_samples * scale,
-               "A": mixes[1 if swap else 0] * scale,
-               "B": mixes[0 if swap else 1] * scale}
+    trials = plan_trials(seed, blind, repeats=hidden_repeats, catch=catch_trial)
+    segment = {"reference": reference_samples * scale,
+               "first": mixes[0] * scale, "second": mixes[1] * scale}
     silence = np.zeros((round(gap_s * io.SAMPLE_RATE), channels))
+    trial_gap = np.zeros((round(2.0 * io.SAMPLE_RATE), channels))
     pieces, timeline, cursor = [], [], 0
-    for index, label in enumerate(("Reference", "A", "B") * cycles):
-        if index:
-            pieces.append(silence)
-            cursor += len(silence)
-        pieces.append(segment[label])
-        timeline.append({"label": label, "start_s": cursor / io.SAMPLE_RATE,
-                         "end_s": (cursor + len(segment[label])) / io.SAMPLE_RATE})
-        cursor += len(segment[label])
+    trial_blocks = trials or [{"ordinal": 1, "blind_key": blind}]
+    for trial_index, trial in enumerate(trial_blocks):
+        if trial_index:
+            pieces.append(trial_gap)
+            cursor += len(trial_gap)
+        labels = ("Reference", "A", "B") * cycles
+        for index, label in enumerate(labels):
+            if index:
+                pieces.append(silence)
+                cursor += len(silence)
+            role = "reference" if label == "Reference" else trial["blind_key"][label]
+            samples = segment[role]
+            pieces.append(samples)
+            row = {"label": label, "start_s": cursor / io.SAMPLE_RATE,
+                   "end_s": (cursor + len(samples)) / io.SAMPLE_RATE}
+            if trials is not None:
+                row["trial"] = trial["ordinal"]
+            timeline.append(row)
+            cursor += len(samples)
     montage = np.concatenate(pieces).astype(np.float32)
 
     def score_spec(spec, path, gain):
@@ -221,6 +239,9 @@ def build(manifest: dict, *, seed: int):
                           "guitar_removed is declared, not proven, and leakage remains possible",
         "objective_record": scored,
     }
+    if trials is not None:
+        evidence["trials"] = trials
+        evidence["trial_gap_s"] = 2.0
     return montage, evidence
 
 
@@ -267,7 +288,11 @@ def main() -> None:
             raise ValueError("choose a new private output directory; auditions are immutable")
         os.rename(staged, out)
     print(f"wrote {audio_path} (Reference–A–B; key kept separately)")
-    print("record which alternative is closer before opening private-key.json")
+    if "trials" in evidence:
+        print(f"listen to {len(evidence['trials'])} numbered blocks; record one closeness answer "
+              "per block in order before opening private-key.json")
+    else:
+        print("record which alternative is closer before opening private-key.json")
 
 
 if __name__ == "__main__":

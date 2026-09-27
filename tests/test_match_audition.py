@@ -210,6 +210,51 @@ def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):
     assert "missing or no longer matches the key" in refused.stderr
 
 
+def test_match_export_hidden_trials_bind_one_verdict_and_one_agreement_row(
+        completed_run, tmp_path):
+    run_dir, probe_path = completed_run
+    audition_dir = tmp_path / "reliability-audition"
+    exported = run("export_match_audition.py", "--run-dir", run_dir,
+                   "--candidate", "1", "--probe-di", probe_path,
+                   "--renderer", "synthetic", "--seed", "41",
+                   "--hidden-repeats", "1", "--catch-trial",
+                   "--target-id", "synthetic-song", "--out-dir", audition_dir)
+    assert exported.returncode == 0, exported.stderr
+    key_path = audition_dir / "audition.flac.key.json"
+    key = json.loads(key_path.read_text())
+    trials = key["trials"]
+    assert len(trials) == 3
+    assert key["objective_record"]["target_id"] == "synthetic-song"
+    answers = ["indistinguishable" if trial["kind"] == "catch" else
+               next(label for label, role in trial["blind_key"].items() if role == "second")
+               for trial in trials]
+    answer_args = [value for answer in answers for value in ("--trial-choice", answer)]
+    missing = run("log_blind_verdict.py", "--key", key_path,
+                  *answer_args[:-2], "--listener", "test-session",
+                  "--data-dir", tmp_path / "data")
+    assert missing.returncode != 0 and "exactly 3" in missing.stderr
+    assert not list(audition_dir.glob("*.objective-verdict.json"))
+    recorded = run("log_blind_verdict.py", "--key", key_path,
+                   *answer_args, "--listener", "test-session",
+                   "--data-dir", tmp_path / "data")
+    assert recorded.returncode == 0, recorded.stderr
+    assert "repeats 1/1, catch ties 1/1" in recorded.stdout
+    sidecar, = audition_dir.glob("*.objective-verdict.json")
+    verdict = json.loads(sidecar.read_text())
+    primary_index = next(i for i, row in enumerate(trials) if row["kind"] == "primary")
+    assert verdict["verdict"]["closer"] == answers[primary_index]
+    assert verdict["listener_trials"] == answers
+
+    audited = run("audit_frozen_listening.py", "--record", sidecar,
+                  "--out-dir", tmp_path / "private-audit")
+    assert audited.returncode == 0, audited.stderr
+    report = json.loads((tmp_path / "private-audit" / "report.json").read_text())
+    assert report["comparison_count_not_independent_n"] == 1
+    assert len(report["v2"]["target_groups"]["synthetic-song"]["comparisons"]) == 1
+    assert report["listener_consistency"]["repeat"]["consistent"] == 1
+    assert report["listener_consistency"]["catch"]["indistinguishable"] == 1
+
+
 def test_missing_raw_source_does_not_erase_a_valid_listening_verdict(completed_run, tmp_path):
     run_dir, probe_path = completed_run
     audition_dir = tmp_path / "audition"

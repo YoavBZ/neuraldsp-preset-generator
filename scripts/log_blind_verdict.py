@@ -14,6 +14,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import add_data_dir_arg, die, guarded
+from _listening_trials import CHOICES, consistency, primary_answer
 
 
 def _sha256(path: pathlib.Path) -> str:
@@ -30,35 +31,13 @@ def _answer(key, label: str) -> str:
     return result
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--key", required=True, type=pathlib.Path)
-    parser.add_argument("--choice", required=True,
-                        choices=("A", "B", "indistinguishable"),
-                        help="which alternative sounded closer to Reference")
-    parser.add_argument("--listener", required=True)
-    parser.add_argument("--comment")
-    add_data_dir_arg(parser)
-    args = parser.parse_args()
-
-    try:
-        key = json.loads(args.key.expanduser().read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        die(f"cannot read audition key {args.key}: {error}")
-    if key.get("schema") != "rab-audition-v1":
-        die(f"unsupported audition key schema {key.get('schema')!r}")
-    match = key.get("match") or {}
-    if match.get("schema") != "match-audition-1":
-        die("the key is not attached to a completed match run")
-    output = key.get("output") or {}
-    montage = pathlib.Path(str(output.get("path", ""))).expanduser().resolve()
-    if not montage.is_file() or _sha256(montage) != output.get("sha256"):
-        die("the audition audio is missing or no longer matches the key; refusing "
-            "to attach a verdict to different audio")
-
+def _validated_match(match: dict):
+    """Validate every completed-run binding before its verdict is recorded."""
     from match.verdict import (candidate_binding_sha256, validate_audition_trial,
                                validate_candidate)
 
+    if match.get("schema") != "match-audition-1":
+        die("the key's completed-match binding has an unsupported schema")
     try:
         candidate_rank = int(match["candidate_rank"])
         validated = validate_candidate(match["run_dir"], candidate_rank)
@@ -98,23 +77,69 @@ def main() -> None:
         )
     except (KeyError, TypeError, ValueError) as error:
         die(f"the heard audition trial no longer validates: {error}")
+    return candidate_rank, audition_trial
 
-    choice = _answer(key, args.choice)
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--key", required=True, type=pathlib.Path)
+    parser.add_argument("--choice", choices=CHOICES,
+                        help="single-trial answer: which alternative sounded closer")
+    parser.add_argument("--trial-choice", action="append", choices=CHOICES,
+                        help="multi-trial answer in listening order; repeat once per numbered block")
+    parser.add_argument("--listener", required=True)
+    parser.add_argument("--comment")
+    add_data_dir_arg(parser)
+    args = parser.parse_args()
+
+    try:
+        key = json.loads(args.key.expanduser().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        die(f"cannot read audition key {args.key}: {error}")
+    if key.get("schema") != "rab-audition-v1":
+        die(f"unsupported audition key schema {key.get('schema')!r}")
+    trials = key.get("trials")
+    if trials is None:
+        if args.choice is None or args.trial_choice:
+            die("this audition needs exactly one --choice, not --trial-choice")
+        primary_label = args.choice
+        trial_answers = None
+        reliability = None
+    else:
+        if args.choice is not None or args.trial_choice is None:
+            die("answer each numbered block with --trial-choice; do not use --choice")
+        trial_answers = args.trial_choice
+        try:
+            primary_label = primary_answer(trials, trial_answers, key.get("blind_key"))
+            reliability = consistency(trials, trial_answers, key["blind_key"])
+        except (TypeError, ValueError) as error:
+            die(f"invalid hidden-trial answer or key: {error}")
+    match = key.get("match")
+    if match is not None and not isinstance(match, dict):
+        die("the completed-match binding must be an object")
+    output = key.get("output") or {}
+    montage = pathlib.Path(str(output.get("path", ""))).expanduser().resolve()
+    if not montage.is_file() or _sha256(montage) != output.get("sha256"):
+        die("the audition audio is missing or no longer matches the key; refusing "
+            "to attach a verdict to different audio")
+
+    if match is not None:
+        candidate_rank, audition_trial = _validated_match(match)
+    choice = _answer(key, primary_label) if match is not None else primary_label
     details = []
     if args.comment and args.comment.strip():
         details.append(args.comment.strip())
 
-    from match.verdict import record_verdict
-    from packs.paths import data_root_warning, set_data_root
-
     objective = key.get("objective_record")
+    if match is None and not isinstance(objective, dict):
+        die("a standalone blind audition needs a frozen objective record")
     if objective is not None:
         from analysis.listening import attach_verdict, score_record, verify_frozen_prediction
         from build_rab_audition import _write_text
         identity = hashlib.sha256(args.listener.strip().encode()).hexdigest()
         sidecar = args.key.with_name(args.key.name + f".{identity}.objective-verdict.json")
         submission = {**objective, "id": f"{objective['id']}-{identity[:12]}", "verdict": {
-            "closer": args.choice, "preferred": None},
+            "closer": primary_label, "preferred": None},
             "listener": args.listener.strip(),
             "heard_audio": {"path": str(montage), "sha256": output["sha256"]}}
         try:
@@ -143,30 +168,46 @@ def main() -> None:
             "path": str(args.key.expanduser().resolve()),
             "sha256": _sha256(args.key.expanduser()),
         }
+        if trial_answers is not None:
+            scored["listener_trials"] = trial_answers
+            scored["listener_consistency"] = reliability
         if sidecar.exists():
             previous = json.loads(sidecar.read_text())
-            for field in ("verdict", "listener", "heard_audio", "alternatives", "reference"):
+            for field in ("verdict", "listener", "heard_audio", "alternatives", "reference",
+                          "listener_trials", "listener_consistency"):
                 if previous.get(field) != scored.get(field):
                     die(f"conflicting objective verdict at {sidecar}; use a distinct listener/session")
 
-    set_data_root(args.data_dir)
-    warning = data_root_warning()
-    if warning:
-        print(f"warning: {warning}", file=sys.stderr)
-    recorded = record_verdict(
-        match["run_dir"],
-        candidate_rank=candidate_rank,
-        choice=choice,
-        listener=args.listener,
-        comment="; ".join(details) or None,
-        audition_trial_id=audition_trial.trial_id,
-        audition_di_sha=audition_trial.di_sha,
-        audition_render_sha=audition_trial.render_sha,
-        audition_trial_sha=match["audition_trial_sha256"],
-    )
-    print(f"blind label {args.choice!r} resolved after listening to {choice!r}")
-    print(f"recorded trial {recorded.trial_id} in run {recorded.run_id}")
-    print(f"learned notes: {recorded.notes_path}")
+    if match is not None:
+        from match.verdict import record_verdict
+        from packs.paths import data_root_warning, set_data_root
+
+        set_data_root(args.data_dir)
+        warning = data_root_warning()
+        if warning:
+            print(f"warning: {warning}", file=sys.stderr)
+        recorded = record_verdict(
+            match["run_dir"],
+            candidate_rank=candidate_rank,
+            choice=choice,
+            listener=args.listener,
+            comment="; ".join(details) or None,
+            audition_trial_id=audition_trial.trial_id,
+            audition_di_sha=audition_trial.di_sha,
+            audition_render_sha=audition_trial.render_sha,
+            audition_trial_sha=match["audition_trial_sha256"],
+        )
+        print(f"the primary trial's blind label {primary_label!r} resolved after listening to {choice!r}")
+        print(f"recorded trial {recorded.trial_id} in run {recorded.run_id}")
+        print(f"learned notes: {recorded.notes_path}")
+    else:
+        print(f"recorded standalone primary closeness={primary_label!r}; no match run was changed")
+    if reliability is not None:
+        print("listener consistency (not objective agreement): "
+              f"repeats {reliability['repeat']['consistent']}/"
+              f"{reliability['repeat']['trials_not_independent_n']}, "
+              f"catch ties {reliability['catch']['indistinguishable']}/"
+              f"{reliability['catch']['trials_not_independent_n']}")
     if objective is not None:
         # Separate sidecar preserves the immutable audition key and its bindings.
         if not sidecar.exists():

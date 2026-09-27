@@ -37,6 +37,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded, positive_float
+from _listening_trials import MAX_REPEATS, plan_trials
 
 LOUDNESS_TOLERANCE_LU = 0.05
 PEAK_TOLERANCE_DB = 0.01
@@ -186,6 +187,8 @@ def build(
     target_id: str = "unassigned",
     comparison_id: str | None = None,
     render_records: tuple[pathlib.Path | None, pathlib.Path | None] = (None, None),
+    hidden_repeats: int = 0,
+    catch_trial: bool = False,
 ):
     """Return the montage samples and the complete blind-key metadata."""
     import numpy as np
@@ -244,33 +247,43 @@ def build(
     # The seed makes assignment reproducible while the separate key keeps a casual
     # audition blind. Reference is never randomised: it anchors every comparison.
     swap = bool(random.Random(seed).getrandbits(1))
-    a_index, b_index = ((2, 1) if swap else (1, 2))
+    blind = {"A": "second" if swap else "first", "B": "first" if swap else "second"}
+    trials = plan_trials(seed, blind, repeats=hidden_repeats, catch=catch_trial)
     gap = np.zeros(
         (round(gap_s * loaded[0].sample_rate), output_channels), dtype=np.float32
     )
     cycle_gap = np.zeros(
         (round(cycle_gap_s * loaded[0].sample_rate), output_channels), dtype=np.float32
     )
-    order = (0, a_index, b_index, 0, a_index, b_index)
     pieces = []
     timeline = []
     cursor = 0
-    labels = ("Reference", "A", "B", "Reference", "A", "B")
-    for position, (label, index) in enumerate(zip(labels, order)):
-        samples = levelled[index].samples
-        start_frame = cursor
-        pieces.append(samples)
-        cursor += len(samples)
-        timeline.append({
-            "label": label,
-            "source_role": ("reference", "first", "second")[index],
-            "start_s": round(start_frame / loaded[0].sample_rate, 6),
-            "end_s": round(cursor / loaded[0].sample_rate, 6),
-        })
-        if position < len(order) - 1:
-            silence = cycle_gap if position == 2 else gap
-            pieces.append(silence)
-            cursor += len(silence)
+    trial_blocks = trials or [{"ordinal": 1, "blind_key": blind}]
+    trial_gap = np.zeros((round(2.0 * loaded[0].sample_rate), output_channels),
+                         dtype=np.float32)
+    for trial_index, trial in enumerate(trial_blocks):
+        if trial_index:
+            pieces.append(trial_gap)
+            cursor += len(trial_gap)
+        mapping = trial["blind_key"]
+        labels = ("Reference", "A", "B", "Reference", "A", "B")
+        for position, label in enumerate(labels):
+            role = "reference" if label == "Reference" else mapping[label]
+            index = {"reference": 0, "first": 1, "second": 2}[role]
+            samples = levelled[index].samples
+            start_frame = cursor
+            pieces.append(samples)
+            cursor += len(samples)
+            row = {"label": label, "source_role": role,
+                   "start_s": round(start_frame / loaded[0].sample_rate, 6),
+                   "end_s": round(cursor / loaded[0].sample_rate, 6)}
+            if trials is not None:
+                row["trial"] = trial["ordinal"]
+            timeline.append(row)
+            if position < len(labels) - 1:
+                silence = cycle_gap if position == 2 else gap
+                pieces.append(silence)
+                cursor += len(silence)
 
     montage = np.concatenate(pieces, axis=0)
     entries = []
@@ -300,10 +313,7 @@ def build(
         "channels": output_channels,
         "segment_duration_s": round(used_duration, 6),
         "sequence": "Reference-A-B-Reference-A-B",
-        "blind_key": {
-            "A": ("second" if swap else "first"),
-            "B": ("first" if swap else "second"),
-        },
+        "blind_key": blind,
         "level_matching": {
             "method": "one static gain per source; no EQ, compression, or limiting",
             "requested_target_lufs": target_lufs,
@@ -318,6 +328,10 @@ def build(
         "sources": entries,
         "timeline": timeline,
     }
+    if trials is not None:
+        metadata["trials"] = trials
+        metadata["trial_gap_s"] = 2.0
+        metadata["sequence"] = f"{len(trials)} numbered Reference-A-B-Reference-A-B trials"
     # A private prediction alongside the key, never in the blind audio. Score
     # each bare source at its actual playback gain against the declared reference
     # crop, without inventing the optimizer's preset-prior penalty.
@@ -421,6 +435,10 @@ def main() -> None:
                     help="explicitly fold every input to channel-averaged mono")
     ap.add_argument("--seed", type=int,
                     help="blind assignment seed (default: generate and record one)")
+    ap.add_argument("--hidden-repeats", type=int, default=0,
+                    help=f"hidden repeats of the same pair with remapped labels (0-{MAX_REPEATS})")
+    ap.add_argument("--catch-trial", action="store_true",
+                    help="hide one identical-A/B catch among the numbered trials")
     ap.add_argument("--force", action="store_true",
                     help="replace existing output and key")
     args = ap.parse_args()
@@ -471,6 +489,8 @@ def main() -> None:
         comparison_id=args.comparison_id,
         amp_models=(args.a_amp_model, args.b_amp_model),
         render_records=(args.a_render_record, args.b_render_record),
+        hidden_repeats=args.hidden_repeats,
+        catch_trial=args.catch_trial,
     )
     metadata["invocation"] = [sys.executable, str(pathlib.Path(__file__)), *sys.argv[1:]]
     if args.seed is None:
@@ -489,11 +509,19 @@ def main() -> None:
     print(f"level matched to {metadata['level_matching']['effective_target_lufs']:.2f} "
           "LUFS with static gain only")
     print(f"channels: {metadata['channel_handling']}")
-    print("listen without opening the key: Reference -> A -> B, repeated once")
-    print("answer only which is closer to the reference: A, B, or indistinguishable")
+    if "trials" in metadata:
+        print(f"listen to {len(metadata['trials'])} numbered blocks without opening the key; "
+              "each block is Reference -> A -> B, repeated once")
+        print("record one closeness answer per block, in order: A, B, or indistinguishable")
+    else:
+        print("listen without opening the key: Reference -> A -> B, repeated once")
+        print("answer only which is closer to the reference: A, B, or indistinguishable")
     print("use the untouched raw renders if you are judging output level itself")
-    print(f"reproducible blind assignment seed: {seed}")
-    print(f"invocation: {shlex.join(metadata['invocation'])}")
+    if "trials" in metadata:
+        print("trial order, types, mappings and seed are in the separate private key only")
+    else:
+        print(f"reproducible blind assignment seed: {seed}")
+        print(f"invocation: {shlex.join(metadata['invocation'])}")
 
 
 if __name__ == "__main__":
