@@ -1369,6 +1369,66 @@ fails its own held-out step for SW50R ("held-out renderer exposes a different
 sampled dimension set"), and refuses Tone King outright ("no live continuous
 dimensions"), because the synthetic chain does not model Tone King at all.
 
+**Rechecked under `unpaired-v2`, and still closed.** Every atlas result above
+was scored with `unpaired-v1`, whose `rt60` term ("The RT60 term — measured",
+below) adds noise to exactly the distances an atlas lookup ranks by. So the two
+played-DI runs of "M7-1 at equal budget" were repeated with the profile changed
+— same targets, same passage, the committed 1,024-point noise atlas restored
+from git history, and the 128-point How Long atlas rebuilt with the same seeds,
+so the same sampled points but freshly rendered fingerprints (its own held-out
+gate: 0.781 against 1.459 neutral, 24 of 24) — against a verdict fixed before
+running: atlases come back only if `atlas-full` ends closer than `full` on at
+least 9 of 12 targets with p < 0.05 in either run. Mean / median `unpaired-v2`:
+
+| arm | noise atlas, played targets | played atlas, played targets |
+|---|---:|---:|
+| `recipe` (neutral settings) | 1.409 / 1.416 | 1.409 / 1.441 |
+| `inversion` | 0.692 / 0.665 | 0.685 / 0.623 |
+| `full` | 0.436 / 0.383 | 0.415 / 0.334 |
+| `atlas` (lookup alone) | 1.094 / 1.121 | 0.807 / 0.689 |
+| `atlas-inversion` | 0.718 / 0.672 | 0.570 / 0.560 |
+| `atlas-full` | 0.481 / 0.505 | 0.402 / 0.342 |
+| `atlas-full` closer than `full` | 5 of 12 (10% further, p = 0.27) | 6 of 12 (3% closer, p = 0.85) |
+| lookup closer than neutral | 7 of 12 | 10 of 12 |
+
+Neither run meets it. Under `-v1` the noise atlas had made the search end 22%
+further away (2 of 12, p = 0.034); under `-v2` it is no longer measurably worse.
+That is consistent with the `rt60` term having contributed, but one rerun per
+profile cannot separate the profile from run-to-run variation, which moved the
+same targets' `full` arm by 0.11 on average above. Either way it does not help.
+The played-DI atlas's lookup is a much better start than neutral, as before, and
+300 renders of search still recover the difference. Atlases stay closed. A
+further test on the amp-recorded material of `validation-datasets.md` would need
+a benchmark whose targets are recordings rather than renders; none exists yet.
+
+```bash
+git restore --source=55490f9 --worktree -- packs/morgan/response_atlas_sw50r_1024.json
+.venv/bin/python scripts/benchmark_match.py --renderer swift \
+  --atlas packs/morgan/response_atlas_sw50r_1024.json --probe-di how-long-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 --loss-profile unpaired-v2 \
+  --json docs/atlas-benchmark-sw50r-guitar-v2.json
+.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+  --template samples/SW50R_Atlas_Topology.xml --renderer swift \
+  --probe-di how-long-di-6s.wav --samples 128 --held-out 24 --seed 17 \
+  --held-out-seed 29 --loss-profile unpaired-v2 \
+  --out packs/morgan/response_atlas_sw50r_howlong_128_v2.json
+.venv/bin/python scripts/benchmark_match.py --renderer swift \
+  --atlas packs/morgan/response_atlas_sw50r_howlong_128_v2.json \
+  --probe-di how-long-di-6s.wav \
+  --targets 12 --budget 300 --workers 2 --loss-profile unpaired-v2 \
+  --json docs/atlas-benchmark-sw50r-guitar-built-atlas-v2.json
+```
+
+The runs took 88 and 77 minutes and the atlas 3. Both exited 1, which is the
+benchmark's atlas verdict ("does not help"). Their JSONs record 693c6d9, the
+commit checked out when each finished; they started from a branch whose code was
+the same, and the atlas was rebuilt with `unpaired-v2` where the original used
+the default, `unpaired-v1`, which changes its held-out gate's distances but not
+its sampled points; the benchmark's lookup uses its own `--loss-profile`, not
+the atlas's. The atlases were read from a scratch directory, whose absolute path
+the JSONs' `atlas.path` records beside each atlas's sha256; the commands above
+write them where `.gitignore` keeps them out of commits.
+
 #### Matching without a DI — measured
 
 A match renders every candidate through a DI, and with none it uses the six-second
