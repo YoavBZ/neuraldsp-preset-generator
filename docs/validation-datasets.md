@@ -90,7 +90,11 @@ otherwise before it runs.
 - **An excerpt** is the loudest 10 s of the mono reference by integrated loudness
   (`analysis.io.loudness_lufs`), searched at 0.5 s steps; the DI, the mix and the
   backing use the same sample span. Whether a test uses a whole part or its excerpt
-  is part of that test's declaration.
+  is part of that test's declaration. The match tool picks an excerpt of its own
+  unless told not to, and applies it to the reference only, so every use first
+  cuts the reference, the DI and any mix or backing to the declared span — or
+  keeps them whole — and then runs with `--excerpt 0`. The tool's own excerpt
+  choice is never used.
 - **The regime.** The DI and the reference are the same performance, so a match
   against the amp track alone runs with `--reference-mode paired_di` and, unless a
   test says otherwise, `--loss-profile unpaired-v2`: a mic'd amp cannot be reached
