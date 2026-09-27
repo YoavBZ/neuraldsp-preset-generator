@@ -1,0 +1,755 @@
+{
+ "schema": "validation-datasets-2",
+ "root": "~/ndsp-presets/references/datasets",
+ "split_seed": 20260927,
+ "split_draw": {
+  "telefunken": "57 Chevy",
+  "cambridge": "That's How I Got To Memphis",
+  "guitar_techs": [
+   "02",
+   "06",
+   "10",
+   "11"
+  ]
+ },
+ "rules": {
+  "paired_min": 0.8,
+  "in_step_fraction": 0.8,
+  "window_median_min": 0.6,
+  "lag_sign": "positive when the amp track is later than the DI"
+ },
+ "sessions": [
+  {
+   "source": "telefunken",
+   "song": "57 Chevy",
+   "path": "telefunken/Rebecca Haviland - 57 Chevy",
+   "split": "held_out",
+   "files": {
+    "Bass Amp_M82.wav": "155c65e1bcbe3189cfd0cdf5828bba7953344b98479013328a9b7ffe64903f47",
+    "Bass DI_TDA-1.wav": "037d2ffd41827becfb79636171395ff14a9860f0f00734fe98356fdee655c232",
+    "DRUM Floor Tom_M82.wav": "bfb0a775547bfe2f403be86349c7afb5eacade184b761ad058fb39c7c708693a",
+    "DRUM Hats_M62.wav": "c8360440c8a7dd9d5d10b8969a46a75c53e2a8383be9fa0acedefe5b725ec765",
+    "DRUM Kick In_M82.wav": "ed993cfa46150b02fa42cb699c09668295919c40ca26dda0c9a4cb64f6090dbe",
+    "DRUM Kick Out_LDC prototype.wav": "c905d39fa626f56504061f4d207d0b1db75cd9abeee0416b9e257bcecfe68946",
+    "DRUM OH_TF51 Stereo Set.wav": "928b6fa75e81bb864e7d1b8cc96f01e66a6ea7f4fa7f789f705d42ceea927325",
+    "DRUM Rack Tom_M81.wav": "46346f293fe8eda6e40e5cc28705a62699124f8703827080fac5b44ae6606728",
+    "DRUM Ride_M62.wav": "c1b6a6acdf52ae741501188d7d212c715a38ae0b6cfbc91416f901c8b5c6ae88",
+    "DRUM Snare Bottom_M81.wav": "043e3897de13c7a5d5d386fb42d806a5cee5143c7c93113b2a7bdf24195d9fa2",
+    "DRUM Snare Top_M80.wav": "82228e55845fcca3aa24bacd8aff3e7fb42efdbf40207f26bebec1d30ca2906d",
+    "GTR 1 Amp M 80_02.wav": "006797442032b83ab63f5df3f31a1957e5c2cc398a9aaa7ba37eb1f79f5d2d46",
+    "GTR 1 Amp TF 11_02.wav": "bb1746fbf988aa6f0931d07b582759dd2d02ebebc7cae0050bbdc41fe240476a",
+    "GTR 1 DI_TDP-1.wav": "6a228d9e0c0b7a6b7c271eb32eaca7eb13c3ea75085ea8a4073247f9bdc77c50",
+    "GTR 2 Amp M 80_02.wav": "fe9c78d28cce1823e140a5d25f50bb63427b3b7fbba527b4932c59447d63b086",
+    "GTR 2 Amp TF 11_02.wav": "9aa8813069c5bc9f94d068c7275daa5b6d62ce8f4dec872b4fbd419c9b8561ba",
+    "GTR 2 DI_TDP-1.wav": "e1b44807a7e2c9cfe4d075abd1f2f5f90116ca6811fc8ccdc148f89923830e9d",
+    "Leslie Bottom_LDC_Prototype.wav": "ee44736091b941cef0d3144f0c3db4acdd6b17368e0cde5bc542a44716998727",
+    "Leslie Top_TF39 Stereo Set.wav": "2545e20099fd6c6338c8723a1e50be938bef7aa0f9efdd4e3eff4011b5683df6",
+    "VOX Chris_M80.wav": "54b756579a3e2245a99d07c17827ba428ccbe09651617fdfe815a7d8e532a9ae",
+    "VOX Rebecca M81.wav": "fac6657c643dd306d02eaa38c09474c81befb82e4fdb251097e16fedee0440d1"
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "reference": "GTR 1 Amp M 80_02.wav",
+     "alternate": [
+      "GTR 1 Amp TF 11_02.wav"
+     ],
+     "di": "GTR 1 DI_TDP-1.wav",
+     "pairing_corr": 0.847,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 27,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.791
+     },
+     "usable": true
+    },
+    {
+     "part": "GTR 2",
+     "reference": "GTR 2 Amp M 80_02.wav",
+     "alternate": [
+      "GTR 2 Amp TF 11_02.wav"
+     ],
+     "di": "GTR 2 DI_TDP-1.wav",
+     "pairing_corr": 0.967,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 26,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.864
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "telefunken",
+   "song": "Bourbon",
+   "path": "telefunken/Rebecca Haviland - Burbon",
+   "split": "development",
+   "files": {
+    "Bass Amp_M82.wav": "cbfed1e000eb6bdee0b568fe6eb1188a52a9cc5d5472897aa71d92e8e47fc8ad",
+    "Bass DI TDA-1.wav": "fae417874d6814350c6827485d8d7f49f874b80e9a6c745c279352f8699d740f",
+    "DRUM Floor Tom_M82.wav": "7c1e214723e61c466726427b8f8518754e530008601e6a0bb9b3deeeac44df61",
+    "DRUM Hats_M60.wav": "9c7e0d26182339dd7ede1f6d23230289fdf9499081ab4205f3e4ee2cf1eb7bb5",
+    "DRUM Kick In_M82.wav": "ba194671b4ab40c72eb45699065b79326728dceb6da741b9a728a6d138c03e63",
+    "DRUM Kick Out LDC Prototype.wav": "1d1edff1283b03ee18d7e7f8b1680df28f7a8c561ae2beefdb93c570b03ee605",
+    "DRUM OH_TF51 Stereo Set.wav": "9fbe516c657d3814f7afcfdccaf0c86974304f8766b59a7307a6f6c1647a898e",
+    "DRUM Rack Tom_M81.wav": "ed029ed0b64f4b76616e8d20a9bc3d644af4309e3907e0851faf16ba4fcba090",
+    "DRUM Ride_M60.wav": "862bc63dcd63e5dbe0975d34d2494326217b8d6d9f3680897d66c50d26149f60",
+    "DRUM Snare Bottom_M81.wav": "c4f710be02656e0651d61621820a305716367fe08c8fb509f6f87919223e95ac",
+    "DRUM Snare Top_M80.wav": "5d41f2915f31073564781f9739984447422a6e5205378893ae2f8cf33cfd253d",
+    "GTR 1 Amp M 80.wav": "5a3a30424790a8ebba0a699bbebf25e7daea2ae496028b70f18c5705a83f837b",
+    "GTR 1 Amp TF 11.wav": "ebeb4c9236879497a7513015d503f466841c99794cc601e2395cdcbccead90fe",
+    "GTR 1 DI_TDP-1.wav": "4fb33fb643fbb9d509b66af09ad2b2384efe164a3578de66c996ae06f7a2cf14",
+    "GTR 2 Amp M 80.wav": "3f17bfd50b829da0b06429fc32220ae75080382ac1738fe6e0058f0744c1a84a",
+    "GTR 2 Amp TF 11.wav": "d39ccbd48a5b7e9ecb6c6a7e09dee327320d12be382ea193bb2681fdcd75d8e2",
+    "GTR 2 DI TDP-1.wav": "23b0a1721a75d1fdfd415209f09ae89883f14332ca918fd4b3361a53fbe083d9",
+    "Leslie Bottom LDC Prototype.wav": "55dd5cc8c3797d34d02eb92324af5d8f217a658df1b1c0b7dbc2b501a336594d",
+    "Leslie Top_TF39 Stereo Set.wav": "2d5f51ef955174b375a33e10409a9d6f6f3bfd31eb2e5f2c3ddc2eaa19ab1f6a",
+    "VOX Chris M80.wav": "f7ba4072f29302260b6ea0d2b4b9952259ad45e092f567bf894b3b53a79c5d08",
+    "VOX Lead M81.wav": "a2441bdc6ab9326c6513628396b6f9c12021bb134f5ab62a7e522b08f9d43c84"
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "reference": "GTR 1 Amp M 80.wav",
+     "alternate": [
+      "GTR 1 Amp TF 11.wav"
+     ],
+     "di": "GTR 1 DI_TDP-1.wav",
+     "pairing_corr": 0.935,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 26,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.883
+     },
+     "usable": true
+    },
+    {
+     "part": "GTR 2",
+     "reference": "GTR 2 Amp M 80.wav",
+     "alternate": [
+      "GTR 2 Amp TF 11.wav"
+     ],
+     "di": "GTR 2 DI TDP-1.wav",
+     "pairing_corr": 0.957,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 26,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.942
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "telefunken",
+   "song": "Collide With Me",
+   "path": "telefunken/Rebecaa Haviland - Collide With Me",
+   "split": "development",
+   "files": {
+    "Bass Amp_M82.wav": "65c3951813ce7346bf70d5201da62d9601e5b55d22ddd691c9df6f94f8a72469",
+    "Bass DI_TDA-1.wav": "89c5eb0d6b4b5b0387e1579d2652f55be6bac0dd2e1112b00aaacaa98ad869a3",
+    "DRUM Floor Tom_M82.wav": "5813112b3333169e3d98a34c8fdf208d610d8ace38ef9086b20ca1270c1b9cb1",
+    "DRUM Hats_M62.wav": "b6eb4bb2f28a8620e8fbe6c61a87690bd1a59276a31e0ff91e86851f36e9d818",
+    "DRUM Kick In_M82.wav": "bb55a556e36027cf6ed7d8865a6d25b9157c2f04f0fa48b39980808cc774ef5c",
+    "DRUM Kick Out LDC prototype.wav": "36f03fca89be305c7adc834dadc9fd9a617d32a7f87edbe27639b441ee5fc88c",
+    "DRUM OH_TF51 Stereo Set.wav": "2ccb832ffb841bfad2a18257a6ed168d0c0d81a5ddb0361c38c71701bf6c2459",
+    "DRUM Rack Tom_M81.wav": "e319b36b65c6653714d818e2ba83bdd4bca11044eb21b4440040cfd12bf10903",
+    "DRUM Ride_M62.wav": "2241a81dd10ae5a243c1577847853bc102ed98ab5d61109a60d5179a3af9c143",
+    "DRUM Snare Bottom_M81.wav": "e6f54bdfc894f850dd7473b1c4ebbf0da78ba08f66fbe8206030f53e2e25dc9b",
+    "DRUM Snare Top_M80.wav": "8738d6ee0173acdbfb6043c32ae8784dff0a5fc93bfed6fe48d274ccab66d42e",
+    "GTR 1 Amp M 80.wav": "ff195e31f1d2fc79a14c9b7679b469e2dcb66109408352b2668f009fdea804ec",
+    "GTR 1 Amp TF 11.wav": "1e3bd4949db725e6d8389a7e9c6991941641e0bc2252c0aad2d90d31ee440a7d",
+    "GTR 1 DI_TDP-1.wav": "e03f1bc3683c8c51301bc287487b08c4106fae516af0e8db191ebc53c1344331",
+    "GTR 2 Amp M 80.wav": "6b98dc39e16242945b1ce96714694cc9ba5f53f2b1ff7557920e503449ab1fd8",
+    "GTR 2 Amp TF 11.wav": "af76a9de5693ab6e18efbf8d2c294adee4e99554799f822b6a10a68085537452",
+    "GTR 2 DI_TDP-1.wav": "aa1f1e785dfb2cb6a141a879f894dc27f5e8396fe24a746830c5ce9e96714dbb",
+    "Leslie Bottom LDC prototype.wav": "8fc9c753602a3fd1dd4a66fb1de91c2a99f1081a35a605146cd94c25bbcea1ba",
+    "Leslie Top_TF39 Stereo Set.wav": "8f1c355d0fbbe42f95f7f550ead445237ff82591c0185dc4e433b8fcc76793b5",
+    "VOX Chris M80.wav": "dfc7202e385df8c2c89c925b21fee9bbd47024809576d3c25c36dd7672611e13",
+    "VOX Lead Rebecca M81.wav": "9ceb01e90e845885f072d96c80e9cf3f9c4292a477f7f79038d735bae3c898ec"
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "reference": "GTR 1 Amp M 80.wav",
+     "alternate": [
+      "GTR 1 Amp TF 11.wav"
+     ],
+     "di": "GTR 1 DI_TDP-1.wav",
+     "pairing_corr": 0.983,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 25,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.984
+     },
+     "usable": true
+    },
+    {
+     "part": "GTR 2",
+     "reference": "GTR 2 Amp M 80.wav",
+     "alternate": [
+      "GTR 2 Amp TF 11.wav"
+     ],
+     "di": "GTR 2 DI_TDP-1.wav",
+     "pairing_corr": 0.976,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 20,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.961
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "cambridge",
+   "song": "Heather Jane",
+   "path": "cambridge/ChrisColtraine_HeatherJane_Full",
+   "split": "development",
+   "files": {
+    "01_Kick.wav": "908ef71666b1bd20f786c66c087218cb7a6d04bb83fbecdaf6016f145fcda39b",
+    "02_SnareUp.wav": "41804dd850b90973ec4d750d9d17db77830829d184b55c809a0e69c7ae6e51f3",
+    "03_SnareDown.wav": "a708e0f5102f356b2fb568c79cf00e8a9a369b213792c07e65b6b0a47c1ae3d0",
+    "04_HiHat.wav": "eba6b4d4ba48575d42cc601318c5c6345d6df9d6b2aacc7dcded7610591b7c68",
+    "05_Toms.wav": "11f4fec1df1ba94635b3a82667b01b69c031634d472293551ebb5dba83862463",
+    "06_Overheads.wav": "3da9e2765ff1e017426e44dc66cb88696943cf3def100fcba2bb668846e017fe",
+    "07_DrumsRoom.wav": "e3c6cb9e45d5ad0259bf5ad9d95acb33e05591125cbe55e5aada2c8c42693f78",
+    "08_Bass.wav": "8952136c36f522676247d55f568a4d540fb12ad8e775f4f69c186a7ad832e5d4",
+    "09_ElecGtr1.wav": "b9f87232d87ccfb12456db2a5486918fe7bb9f7f0a525b2ccfbd7185755c17b6",
+    "10_ElecGtr1DI.wav": "29e65e991d6a8eab612cdfab76fe99463a11e2ed2cd6baa3bdbb444402197481",
+    "11_ElecGtr1DT.wav": "dd6236a30232c5745189dd0458a0a4ffe7c856a6b87d4863bf04b5f650a00315",
+    "12_ElecGtr1DTDI.wav": "82b9aef4f701de38ebf514386534aeffba90d2213458c8b3b6b2148ebf2440bd",
+    "13_ElecGtr2.wav": "8b48f46a7823e9bd7f93b678d32ede589c0dc175c98e93dc5bb79559dfdf4f90",
+    "14_ElecGtr2DI.wav": "38eb4fcd3c383d37d7f79440c6259a980ab4522a38491ca3899066607cfb1b4f",
+    "15_ElecGtr2DT.wav": "a6bc1d55f4f8e8939313a3781b667084c4113faef3d632c4201b0a6c3d20e78a",
+    "16_ElecGtr2DTDI.wav": "4fd831a67643073fc6b1d5e8c3bf6f5542f511b7de2a613713f4508f7211f637",
+    "17_ElecGtr3.wav": "bd46769862711446ed4ea3943a1fb61f0fec43527bf6ec8f53bf2f51ba75b966",
+    "18_ElecGtr3DI.wav": "8c2c2ad82b3538253fe120785bc079ec525854f02ab4bb18a32d13164d37e6d8",
+    "19_LeadVox.wav": "1b82af6a7447ce627d60f919c5910072ec30b73f20db9417a6ea8844b8d31f7c"
+   },
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "reference": "09_ElecGtr1.wav",
+     "alternate": [],
+     "di": "10_ElecGtr1DI.wav",
+     "pairing_corr": 0.945,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 24,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.929
+     },
+     "usable": true
+    },
+    {
+     "part": "ElecGtr1DT",
+     "reference": "11_ElecGtr1DT.wav",
+     "alternate": [],
+     "di": "12_ElecGtr1DTDI.wav",
+     "pairing_corr": 0.942,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 24,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.931
+     },
+     "usable": true
+    },
+    {
+     "part": "ElecGtr2",
+     "reference": "13_ElecGtr2.wav",
+     "alternate": [],
+     "di": "14_ElecGtr2DI.wav",
+     "pairing_corr": 0.832,
+     "lag_ms": 10,
+     "windowed": {
+      "windows": 24,
+      "in_step_fraction": 0.125,
+      "median_correlation": 0.632
+     },
+     "usable": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "reference": "15_ElecGtr2DT.wav",
+     "alternate": [],
+     "di": "16_ElecGtr2DTDI.wav",
+     "pairing_corr": 0.846,
+     "lag_ms": 10,
+     "windowed": {
+      "windows": 24,
+      "in_step_fraction": 0.417,
+      "median_correlation": 0.618
+     },
+     "usable": false
+    },
+    {
+     "part": "ElecGtr3",
+     "reference": "17_ElecGtr3.wav",
+     "alternate": [],
+     "di": "18_ElecGtr3DI.wav",
+     "pairing_corr": 0.647,
+     "lag_ms": -20,
+     "windowed": {
+      "windows": 16,
+      "in_step_fraction": 0.688,
+      "median_correlation": 0.536
+     },
+     "usable": false
+    }
+   ]
+  },
+  {
+   "source": "cambridge",
+   "song": "That's How I Got To Memphis",
+   "path": "cambridge/ChrisColtraine_ThatsHowIGotToMemphis_Full",
+   "split": "held_out",
+   "files": {
+    "01_Kick.wav": "c4ff096b5ea55153b16277b434cfcf1e8300beebeb53bf37c5edab12b44d7b4d",
+    "02_SnareUp.wav": "22767200e16d87e50cec055d7120f222fea5776b25baf7d0ea6bdb37b564b5d9",
+    "03_SnareDown.wav": "03a0336f9658c2f2750aff7260e1a0ae6ebccfd77c7312b74f5318e99833f2f0",
+    "04_HiHat.wav": "dd6bb34e36f3e3fe4dc30fda88bdc6c9a614350a6e08d76f196ef6dc7428c81d",
+    "05_Toms.wav": "cd73a63ab3edac891f7469d94ac6a613e8277f1bae9dc366609b9cc791da2aaf",
+    "06_Overheads.wav": "dee7e7ebc4045555a8b981493b4e33ee743e18af15dfa2955551e4294008e50c",
+    "07_Room.wav": "4b0b95e759462dffe3f7c9300352e9300a4d2c9e0b9567a8ea2b67c535919ee1",
+    "08_BassDI.wav": "2de925faa1d9b816748b4f641dc609be65ee92bddc81e7fb5e1565a94e9ace76",
+    "09_ElecGtr1.wav": "6b448e2f28941d8da90ec5fd1ce28dbace24c9e6c71a3b833699fa9d9d41f0b9",
+    "10_ElecGtr2.wav": "440bf12ef544e5b3e3a37ab0e94a9551b925d796569c8284cd5807a88eab879d",
+    "11_ElecGtr2DI.wav": "e1c24655e3b6dad375072fd187127e92fe24a390c63fb72dd12dffe323aef981",
+    "12_ElecGtr2DT.wav": "8fa11b25c7bcffa46381484c5084d094c3bf7ec72c54643a7ea3d110811d1d2d",
+    "13_ElecGtr2DTDI.wav": "5c9e9adfe36edd0d1a252f617bebff063d3b3f767333614fc0b163fc34b3ddbf",
+    "14_ElecGtr3.wav": "8c5ecf3dedb05a74107a9f7db1b74dcc7b98cef10e63a66d695ee2efc8d2fdda",
+    "15_ElecGtr3DI.wav": "181520e97ebd506e0e51b745d63f90f8d2cf08accc08958290d1bf4760b204aa",
+    "16_ElecGtr3DT.wav": "1bb3a2f9d4c94304dda982192992f512969b2632cb54d93fb0e16f1be3e1faa8",
+    "17_ElecGtr3DTDI.wav": "5081649f7dedb54ede1d5ab9814d0eed65e69954c3500b1a1434e0340c880cce",
+    "18_LeadVox.wav": "82aef04f76661112ea02a25b71bf83873b7fba01d980c3288e19b68cbac7ef81",
+    "19_BackingVox.wav": "d86b39a8aef018d70171fefbd9a9f8a3ab9da2649e2e4d09456e991217b78afa"
+   },
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "reference": "09_ElecGtr1.wav",
+     "alternate": [],
+     "di": null,
+     "pairing_corr": null,
+     "lag_ms": null,
+     "windowed": null,
+     "usable": false
+    },
+    {
+     "part": "ElecGtr2",
+     "reference": "10_ElecGtr2.wav",
+     "alternate": [],
+     "di": "11_ElecGtr2DI.wav",
+     "pairing_corr": 0.541,
+     "lag_ms": 10,
+     "windowed": {
+      "windows": 23,
+      "in_step_fraction": 0.696,
+      "median_correlation": 0.126
+     },
+     "usable": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "reference": "12_ElecGtr2DT.wav",
+     "alternate": [],
+     "di": "13_ElecGtr2DTDI.wav",
+     "pairing_corr": 0.546,
+     "lag_ms": 10,
+     "windowed": {
+      "windows": 23,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.214
+     },
+     "usable": false
+    },
+    {
+     "part": "ElecGtr3",
+     "reference": "14_ElecGtr3.wav",
+     "alternate": [],
+     "di": "15_ElecGtr3DI.wav",
+     "pairing_corr": 0.853,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 23,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.762
+     },
+     "usable": true
+    },
+    {
+     "part": "ElecGtr3DT",
+     "reference": "16_ElecGtr3DT.wav",
+     "alternate": [],
+     "di": "17_ElecGtr3DTDI.wav",
+     "pairing_corr": 0.806,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 23,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.733
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 01",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_01.wav": "b985af2acea79809f572c869a007bd4b5257d4684b0636f26bd09f6482f9d0eb",
+    "audio/micamp/micamp_01.wav": "41bf28b085781abdad7f27893a205fec769497eadc59b79db008fb37c081b66d",
+    "midi/midi_01.mid": "b34ed51b14d9fca7bc8637785e46a170bffac2ebb541a942ec57613fe474bc5c",
+    "video/ego/ego_01.mp3": "8a3f5db220d47a3af5a9f842f09a0bcb3d33df18d24aefbb40f30e03fbde78ed",
+    "video/exo/exo_01.mp3": "c7a0cb0de8ee1af521c4f9eba2ef3e4421f32fba4e12585c319af5f807c3a51d"
+   },
+   "parts": [
+    {
+     "part": "01",
+     "reference": "audio/micamp/micamp_01.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_01.wav",
+     "pairing_corr": 0.924,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 6,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.923
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 02",
+   "path": "guitar-techs/P3_music",
+   "split": "held_out",
+   "files": {
+    "audio/directinput/directinput_02.wav": "6443d2cf16732e3ee1ed266f2ae6a5d7a9a3a084f092aab0949f8b209ae231f0",
+    "audio/micamp/micamp_02.wav": "c7b2d5f65b00d1faa05be99262b5d6776993225f244f04242595edc438853328",
+    "midi/midi_02.mid": "9fdd15267c7e91696695c31f8174fa1bbc9dd43383df3d38edc2588e26597e28",
+    "video/ego/ego_02.mp3": "189e659ccac29884d2a720c7af39d9097142e7a729bcc0702b793e8433dc8b3a",
+    "video/exo/exo_02.mp3": "d011ce6035644b9d60b4661f333080c7539e4667c240d3cdbb92ee2fe1cb3327"
+   },
+   "parts": [
+    {
+     "part": "02",
+     "reference": "audio/micamp/micamp_02.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_02.wav",
+     "pairing_corr": 0.873,
+     "lag_ms": 10,
+     "windowed": {
+      "windows": 2,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.88
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 03",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_03.wav": "84980b5468f3315171e4e546a1d38d54e4c368ccb5fee72c759e0915f346fad0",
+    "audio/micamp/micamp_03.wav": "d43cbcb345a964bb1f0ceb492508926b0cb0b79ec65569ffca223c0e3d7a47e3",
+    "midi/midi_03.mid": "048f1a40e3c3d31b742c9ccccc7c05f6c73ceb87457f98d6837998451bbd568f",
+    "video/ego/ego_03.mp3": "9543ece1348c8c9c6387e3d80c3a8b14ef9be44af4a96245375d8bafb6035f69",
+    "video/exo/exo_03.mp3": "1ed8b9fe642407ef3fb659fdffdb1ec21d8b3def333a14515b4e7bef453e3686"
+   },
+   "parts": [
+    {
+     "part": "03",
+     "reference": "audio/micamp/micamp_03.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_03.wav",
+     "pairing_corr": 0.943,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 1,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.905
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 04",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_04.wav": "2d1337a6249757f2081bc9aa3eca003e7ff0a4c3f56c72e436aec366bbee3043",
+    "audio/micamp/micamp_04.wav": "276b7a83db540efdbf8cce5f698d1a07a5bbe3a44f3d4993ba4ab1275e8fdfbd",
+    "midi/midi_04.mid": "89bad9047cfa25b2b46229ea6104566e4b2e83654cbcf12cbf387987822823be",
+    "video/ego/ego_04.mp3": "d3f12c93f390b9499df8b2b515de1eb9ddf7aee76f014f492c00fee763119d8a",
+    "video/exo/exo_04.mp3": "60a3c817a14aaa331eb55b1d6bbf0c70db197349c4b44df21cc0d908e23e1b28"
+   },
+   "parts": [
+    {
+     "part": "04",
+     "reference": "audio/micamp/micamp_04.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_04.wav",
+     "pairing_corr": 0.804,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 2,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.799
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 05",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_05.wav": "71a6831d1c6280b305ad78f5cbeae58673191b7ac05a164b33ac9b5e4e8ace1e",
+    "audio/micamp/micamp_05.wav": "1f67541d71f64758dbf334e7ccbb48807dc66ba584827ee76b326c485cd1e77d",
+    "midi/midi_05.mid": "d99204f280b6074f4846e77477d8f6047152115ec9e2c14cfea5c0ead47d187b",
+    "video/ego/ego_05.mp3": "364261960970b7243b7d079ec293324c229ac5384c21edb3ea49dc75cfcefd20",
+    "video/exo/exo_05.mp3": "eecaff6a6c950d79e86d1740a982e247133ae33876a4f35be9cfc0af15b71c71"
+   },
+   "parts": [
+    {
+     "part": "05",
+     "reference": "audio/micamp/micamp_05.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_05.wav",
+     "pairing_corr": 0.956,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 4,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.95
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 06",
+   "path": "guitar-techs/P3_music",
+   "split": "held_out",
+   "files": {
+    "audio/directinput/directinput_06.wav": "2fd88dc725f475e13686f50ce6c88e7fed3d6b635b62147a69d42e29a5dd6254",
+    "audio/micamp/micamp_06.wav": "a1338a8629a7d429c7147308769aff7159c44e1772f23bbed07c9a70fc7bbbde",
+    "midi/midi_06.mid": "1847ab3c83c4a85027c8bf801a17ffc494f48d381723b39de908b29c99e094cd",
+    "video/ego/ego_06.mp3": "18361142a7437fd6d2094d46478677aa316be735828a4d50db3fb1099793929d",
+    "video/exo/exo_06.mp3": "5b42282b6c68c3231f81389c3f5b56019dfdc696d1dc13e38821c3f980ac246e"
+   },
+   "parts": [
+    {
+     "part": "06",
+     "reference": "audio/micamp/micamp_06.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_06.wav",
+     "pairing_corr": 0.925,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 2,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.929
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 07",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_07.wav": "73ddd8de2bda202eb896775d4264b65276f9be9e4bb45161d4fa86541bc8da99",
+    "audio/micamp/micamp_07.wav": "ba2c3e81a151f7f7628fd44a3ccb268417af71481bd2c2f144866c6c79e5fb67",
+    "midi/midi_07.mid": "0fe700944a025170ceddcd5110f37464864ce261b7bed3003d96e3c86d55acd9",
+    "video/ego/ego_07.mp3": "da250775d203bfbf609ff08d6119fe72e867b10342d26dc274978ad46a009b36",
+    "video/exo/exo_07.mp3": "5e482a29c82af1ff7ec1bebab4aab09e91f738d1391cc05164c3eadb02d3264d"
+   },
+   "parts": [
+    {
+     "part": "07",
+     "reference": "audio/micamp/micamp_07.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_07.wav",
+     "pairing_corr": 0.934,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 2,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.927
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 08",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_08.wav": "f58cd8dcd68eeec7c9e58839e7161671ba3af9963957e35f1f04a1f2644d3ff3",
+    "audio/micamp/micamp_08.wav": "d135b083b1e2083fd0536af22fc7f729885515d5b07d57183816aafba99d2d52",
+    "midi/midi_08.mid": "329b128e6cb86cc2c43502ecdf8ae89e0049f69b564e29e41ef55b7b54411250",
+    "video/ego/ego_08.mp3": "86cb208554644bb188fc17c2de45efb49576338793d03a0b574195666baaad02",
+    "video/exo/exo_08.mp3": "7a1009b4a2b2761996af6cd0f74dc6b0b0f09ddec27a3cc296670d25faf7325a"
+   },
+   "parts": [
+    {
+     "part": "08",
+     "reference": "audio/micamp/micamp_08.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_08.wav",
+     "pairing_corr": 0.912,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 1,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.897
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 09",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_09.wav": "849180cb93623d0acb4a3239072d8b96be16b6f7fe669fec629861f4bbe4bd1e",
+    "audio/micamp/micamp_09.wav": "ced85e52580a906ccd83e51b1ce871cfceebb59847af5975b1ac011ba25c7d7b",
+    "midi/midi_09.mid": "105ddff1d3535652ae7268ca253d81087a817242b1b88209ed75e72267888b36",
+    "video/ego/ego_09.mp3": "a3e9832a336c162bba6cd60e7da027f908b177688fb6c4fb846efb67ae728eac",
+    "video/exo/exo_09.mp3": "396158e7d53c2067866ba00675380e20314e8332f9c7af42bec31b3b590fe01f"
+   },
+   "parts": [
+    {
+     "part": "09",
+     "reference": "audio/micamp/micamp_09.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_09.wav",
+     "pairing_corr": 0.857,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 2,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.85
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 10",
+   "path": "guitar-techs/P3_music",
+   "split": "held_out",
+   "files": {
+    "audio/directinput/directinput_10.wav": "d50cc046c4d1d39899c534738377b9d0c5d5396bbed980a029c61b7e4a77d6b8",
+    "audio/micamp/micamp_10.wav": "16038f5c3d17c423b888e1d5c575439ae5a88b5d1905e84496ad5667e0323f30",
+    "midi/midi_10.mid": "b90b3903419a2536f922a4bdbf2644315653efc1ae96375d5e57e0c9b3af5331",
+    "video/ego/ego_10.mp3": "08012dc68de3806093b1021daf381abe11526e115619fe2afc2b0e3c052978c1",
+    "video/exo/exo_10.mp3": "1fcdd9cfab48fb974dc6136fbe33a1f5048ce9e530592daa5c5dee26dd92bfc3"
+   },
+   "parts": [
+    {
+     "part": "10",
+     "reference": "audio/micamp/micamp_10.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_10.wav",
+     "pairing_corr": 0.942,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 4,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.927
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 11",
+   "path": "guitar-techs/P3_music",
+   "split": "held_out",
+   "files": {
+    "audio/directinput/directinput_11.wav": "0842bfb4e73142205123d6d362ff8f007e277ce022a4e40dd70b824ecb7543d8",
+    "audio/micamp/micamp_11.wav": "673f074ef65d75219bd33c34385208070acf5f755b40808ced467a4e8d93b604",
+    "midi/midi_11.mid": "ea480b4134c5a150bea367a3b90374da73f871fa41c77af0397dd576cd81d5fc",
+    "video/ego/ego_11.mp3": "aab1e82cef486a88b65f4766e7a8e815d99c10ae4745ebb8483d69d5fdb78d64",
+    "video/exo/exo_11.mp3": "77dbac4ab2c2cbc29bf5e312de7100967269faf0d39505fb5dffe6c627b13a7d"
+   },
+   "parts": [
+    {
+     "part": "11",
+     "reference": "audio/micamp/micamp_11.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_11.wav",
+     "pairing_corr": 0.908,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 1,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.908
+     },
+     "usable": true
+    }
+   ]
+  },
+  {
+   "source": "guitar-techs",
+   "song": "P3_music excerpt 12",
+   "path": "guitar-techs/P3_music",
+   "split": "development",
+   "files": {
+    "audio/directinput/directinput_12.wav": "150ef466bf645ec076396810fbfc027f423294a5f49bf7c0887bcc1ff732930e",
+    "audio/micamp/micamp_12.wav": "556d45f86d6d0e0a62cb05ea88093a30c9f32ede31c64a579f3844a3308ac182",
+    "midi/midi_12.mid": "1a22cd193ac5fcc54258d3125f486bdaa7134c8bb131a7c3875d580a40ee6abe",
+    "video/ego/ego_12.mp3": "e3f179b887807d467c6833fbe3fc2312346827c6f055da00ac8f01cdee2f9c2f",
+    "video/exo/exo_12.mp3": "5365c28b5b30a39119949eebdbf4e77a359da558c816222a28792efa1a2d5eb5"
+   },
+   "parts": [
+    {
+     "part": "12",
+     "reference": "audio/micamp/micamp_12.wav",
+     "alternate": [],
+     "di": "audio/directinput/directinput_12.wav",
+     "pairing_corr": 0.95,
+     "lag_ms": 0,
+     "windowed": {
+      "windows": 3,
+      "in_step_fraction": 1.0,
+      "median_correlation": 0.941
+     },
+     "usable": true
+    }
+   ]
+  }
+ ],
+ "held_out_uses": []
+}
