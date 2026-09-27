@@ -118,8 +118,17 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                            progress=None, workers: int = 1,
                            renderer_factory=None,
                            run_search: bool = True,
-                           level_trim: bool = False) -> List[SignalOutcome]:
+                           level_trim: bool = False,
+                           recordings: Optional[Sequence[Mapping]] = None,
+                           ) -> List[SignalOutcome]:
     """Run the pipeline once per search signal on every target.
+
+    With `recordings` the targets are not renders of known settings but real
+    recordings: each is a mapping with `reference` (the amp track), `di` (the
+    same take's DI, which every answer is heard through, in place of
+    `target_di`) and `signals` (that recording's own search signals, with the
+    same names for every recording). `targets` is then their number, and there is
+    no truth, so `parameter_mae` stays None.
 
     `signals` maps a name to the samples a search renders its candidates through.
     `topology` is `fixed_topology(...)`. Each target is scored in the instance
@@ -135,6 +144,14 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
     from analysis.fingerprint import fingerprint
     from match import benchmark, invert, search
 
+    if recordings is not None:
+        recordings = list(recordings)
+        if not recordings:
+            raise SignalBenchmarkError("at least one recording is required")
+        signals = recordings[0]["signals"]
+        if any(list(item["signals"]) != list(signals) for item in recordings):
+            raise SignalBenchmarkError("every recording needs the same signal names")
+        targets = len(recordings)
     if not signals:
         raise SignalBenchmarkError("at least one search signal is required")
     if amp is None:
@@ -156,20 +173,33 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
 
     def one_target(index: int, own) -> List[SignalOutcome]:
         stream = streams[index]
-        truth = dict(seed)
-        truth.update(benchmark.atlas_vector(dimensions, stream))
+        if recordings is None:
+            truth = dict(seed)
+            truth.update(benchmark.atlas_vector(dimensions, stream))
+            heard_through, arm_signals = target_di, signals
+        else:
+            truth = None
+            heard_through = recordings[index]["di"]
+            arm_signals = recordings[index]["signals"]
         # Every search draws from a copy of this one state, so the arms get the
         # same random numbers and differ only in the signal they render through.
         search_state = copy.deepcopy(stream)
-        scorer = search.Evaluator(own, None, target_di, space, profile=profile)
-        rendered = own.render(target_di, scorer._settings(truth))
-        if rendered.silent:
-            return [SignalOutcome(signal=name, target_index=index, position=-1,
-                                  failed=True, error="the target rendered silent")
-                    for name in names]
-        target = fingerprint(io.from_samples(rendered.audio,
-                                             rendered.metadata.sample_rate),
-                             regime="isolated_stem", excerpt_s=None)
+        scorer = search.Evaluator(own, None, heard_through, space, profile=profile)
+        if recordings is None:
+            rendered = own.render(target_di, scorer._settings(truth))
+            if rendered.silent:
+                return [SignalOutcome(signal=name, target_index=index, position=-1,
+                                      failed=True, error="the target rendered silent")
+                        for name in names]
+            target = fingerprint(io.from_samples(rendered.audio,
+                                                 rendered.metadata.sample_rate),
+                                 regime="isolated_stem", excerpt_s=None)
+        else:
+            # A recording's amp track, measured as the isolated stem it is: no
+            # arm's inversion is told it shares a DI with the search.
+            target = fingerprint(io.from_samples(recordings[index]["reference"],
+                                                 io.SAMPLE_RATE),
+                                 regime="isolated_stem", excerpt_s=None)
         observations = search.shortlist_replicates(own.metadata())
 
         def heard(values):
@@ -199,7 +229,7 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                                     neutral_dimensions=neutral_dimensions)
             try:
                 inverted, spent = benchmark._invert_from(
-                    own, target, signals[name], space, seed, profile, invert,
+                    own, target, arm_signals[name], space, seed, profile, invert,
                     search, pack_id, amp)
                 inverted = invert.apply_to(inverted, discrete, space)
                 before = scorer.renders
@@ -213,7 +243,7 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                         outcome.error = "a baseline produced no comparable objective"
                     outcomes.append(outcome)
                     continue
-                found = search.search(own, target, signals[name], space, inverted,
+                found = search.search(own, target, arm_signals[name], space, inverted,
                                       budget=budget, profile=profile, shortlist=1,
                                       rng=copy.deepcopy(search_state),
                                       output_control=output_control)
@@ -249,8 +279,9 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                 if outcome.objective is None:
                     outcome.failed = True
                     outcome.error = "the answer produced no comparable objective"
-                outcome.parameter_mae, _ = benchmark.parameter_error(
-                    space, truth, best.values, only=sampled)
+                if truth is not None:
+                    outcome.parameter_mae, _ = benchmark.parameter_error(
+                        space, truth, best.values, only=sampled)
             except (ValueError, RuntimeError) as error:
                 outcome.failed = True
                 outcome.error = f"{type(error).__name__}: {error}"
