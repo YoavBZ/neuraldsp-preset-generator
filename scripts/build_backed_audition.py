@@ -93,6 +93,63 @@ def _provenance(spec: dict, path: pathlib.Path):
     return source
 
 
+def _validation_crop(manifest: dict, reference: dict, backing: dict,
+                     alternatives: dict) -> dict | None:
+    """Bind a crop-based audition to its mix, backing and exact fresh DI renders."""
+    from analysis.listening import sha256
+
+    named = manifest.get("validation_crop_record")
+    if named is None:
+        return None
+    path = pathlib.Path(named).expanduser().resolve()
+    if not path.is_file():
+        raise ValueError(f"missing validation crop record: {path}")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    outputs = record.get("outputs", {})
+    if record.get("schema") != "validation-crops-1" or not all(
+            isinstance(outputs.get(role), dict) for role in ("di", "mix", "backing")):
+        raise ValueError("invalid validation crop record")
+
+    def matches(spec: dict, role: str) -> bool:
+        output = outputs[role]
+        return (pathlib.Path(spec.get("path", "")).expanduser().resolve() ==
+                pathlib.Path(output.get("path", "")).expanduser().resolve()
+                and spec.get("sha256") == output.get("sha256")
+                and sha256(output["path"]) == output["sha256"])
+
+    if (not matches(reference, "mix") or not matches(backing, "backing")
+            or reference.get("regime") != "mix"
+            or float(reference.get("start_s", -1)) != 0
+            or float(reference.get("duration_s", -1)) != record.get("excerpt_duration_s")
+            or float(backing.get("start_s", -1)) != 0
+            or float(backing.get("gain_db", float("nan"))) != 0):
+        raise ValueError("validation audition must use the crop's whole mix and unchanged backing")
+    di = outputs["di"]
+    if sha256(di["path"]) != di["sha256"]:
+        raise ValueError("validation DI crop hash changed")
+    for label, spec in alternatives.items():
+        named_proof = spec.get("render_record")
+        if not named_proof:
+            raise ValueError(f"{label} needs a fresh-process render record from the crop DI")
+        proof_path = pathlib.Path(named_proof).expanduser().resolve()
+        if not proof_path.is_file():
+            raise ValueError(f"missing {label} fresh-process render record")
+        proof = json.loads(proof_path.read_text(encoding="utf-8"))
+        source_di = proof.get("di", {})
+        if (proof.get("process_policy") != "fresh"
+                or pathlib.Path(source_di.get("path", "")).expanduser().resolve() !=
+                pathlib.Path(di["path"]).expanduser().resolve()
+                or source_di.get("sha256") != di["sha256"]):
+            raise ValueError(f"{label} was not freshly rendered from this crop DI")
+    declaration = record.get("declaration")
+    if record.get("split") == "held_out":
+        if (not isinstance(declaration, dict)
+                or manifest.get("declared_test_id") != declaration.get("test_id")):
+            raise ValueError("held-out audition must name the crop's declared_test_id")
+    return {"path": str(path), "sha256": sha256(path),
+            "split": record.get("split"), "declaration": declaration}
+
+
 def build(manifest: dict, *, seed: int):
     """Compute the montage and private evidence before anything is written."""
     import numpy as np
@@ -114,6 +171,7 @@ def build(manifest: dict, *, seed: int):
         raise ValueError("reference, backing and alternatives must be objects")
     if set(alternatives) != {"first", "second"}:
         raise ValueError("alternatives must be exactly first and second")
+    crop_binding = _validation_crop(manifest, reference, backing, alternatives)
     if backing.get("guitar_removed") is not True:
         raise ValueError("backing must explicitly declare guitar_removed=true; "
                          "do not use the intact original as backing")
@@ -239,6 +297,8 @@ def build(manifest: dict, *, seed: int):
                           "guitar_removed is declared, not proven, and leakage remains possible",
         "objective_record": scored,
     }
+    if crop_binding is not None:
+        evidence["validation_crop_record"] = crop_binding
     if trials is not None:
         evidence["trials"] = trials
         evidence["trial_gap_s"] = 2.0

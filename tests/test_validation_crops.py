@@ -15,6 +15,7 @@ sf = pytest.importorskip("soundfile", reason="needs the analysis extra")
 pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
 
 from analysis import io
+from scripts.build_backed_audition import build as build_backed
 from scripts.build_validation_crops import build
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -70,6 +71,22 @@ def _run(catalog, data_root, out_dir):
     return build(catalog, data_root, "test", "song", "one", out_dir)
 
 
+def _declaration_repo(tmp_path, *, parts=("test/song/one",)):
+    repo = tmp_path / "declaration-repo"
+    docs = repo / "docs"
+    docs.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    path = docs / "prospective-test.md"
+    path.write_text("# Synthetic declared test\n\n```json\n" + json.dumps({
+        "schema": "held-out-listening-test-v1", "test_id": "synthetic-01",
+        "parts": list(parts)}) + "\n```\n")
+    subprocess.run(["git", "-C", str(repo), "add", "docs/prospective-test.md"], check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "declare synthetic test"], check=True)
+    return repo, path
+
+
 def test_builds_exact_unity_mix_and_backing_with_one_shared_excerpt(tmp_path):
     catalog, data_root, session_dir = _fixture(tmp_path)
     out = tmp_path / "private-crops"
@@ -119,6 +136,154 @@ def test_refuses_held_out_before_opening_any_audio(tmp_path):
     out = tmp_path / "must-not-exist"
     with pytest.raises(ValueError, match="held-out material"):
         _run(catalog, data_root, out)
+    assert not out.exists()
+
+
+def test_held_out_requires_unchanged_committed_declaration_for_exact_part(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path, split="held_out")
+    repo, declaration = _declaration_repo(tmp_path)
+    out = tmp_path / "private-crops"
+    record = build(catalog, data_root, "test", "song", "one", out,
+                   declaration, declaration_repo=repo)
+    proof = record["declaration"]
+    assert proof["path"] == "docs/prospective-test.md"
+    assert proof["test_id"] == "synthetic-01"
+    assert proof["commit"] == proof["head_commit"]
+    assert proof["sha256"] == _digest(declaration)
+    assert json.loads((out / "record.json").read_text())["declaration"] == proof
+
+
+def test_synthetic_held_out_crops_feed_backed_audition_with_fresh_di_proofs(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path, split="held_out")
+    repo, declaration = _declaration_repo(tmp_path)
+    crop_dir = tmp_path / "crops"
+    crops = build(catalog, data_root, "test", "song", "one", crop_dir,
+                  declaration, declaration_repo=repo)
+    frames = crops["outputs"]["di"]["frames"]
+    t = np.arange(frames) / RATE
+    alternatives = {}
+    for role, hz, amp in (("first", 440, "PR12"), ("second", 660, "SW50R")):
+        audio_path = tmp_path / f"{role}.wav"
+        sf.write(audio_path, .02 * np.sin(2 * np.pi * hz * t), RATE, subtype="FLOAT")
+        proof_path = tmp_path / f"{role}.render.json"
+        proof_path.write_text(json.dumps({
+            "schema": "listening-fresh-render-v1", "pack": "morgan",
+            "amp_model": amp, "process_policy": "fresh",
+            "renderer": {"quality_mode": "process=fresh"},
+            "di": crops["outputs"]["di"],
+            "audio": {"path": str(audio_path), "sha256": _digest(audio_path)},
+        }))
+        alternatives[role] = {"path": str(audio_path), "sha256": _digest(audio_path),
+                              "start_s": 0, "pack": "morgan", "amp_model": amp,
+                              "render_record": str(proof_path)}
+    manifest = {
+        "schema": "prospective-backed-listening-v1", "id": "synthetic-01-one",
+        "target_id": "test/song", "declared_test_id": "synthetic-01",
+        "validation_crop_record": str(crop_dir / "record.json"),
+        "reference": {**crops["outputs"]["mix"], "start_s": 0,
+                      "duration_s": 10, "regime": "mix"},
+        "backing": {**crops["outputs"]["backing"], "start_s": 0,
+                    "gain_db": 0, "guitar_removed": True},
+        "alternatives": alternatives,
+        "mix": {"guitar_target_lufs": -29, "master_target_lufs": -20,
+                "peak_ceiling_dbtp": -1, "max_ab_lufs_delta": 3,
+                "gap_s": .1, "cycles": 1},
+    }
+    montage, evidence = build_backed(manifest, seed=17)
+    assert len(montage) > 30 * RATE
+    assert evidence["objective_profiles_frozen"] == ["unpaired-v1", "unpaired-v2"]
+    assert evidence["validation_crop_record"]["declaration"]["test_id"] == "synthetic-01"
+    assert evidence["objective_record"]["reference"]["regime"] == "mix"
+    assert evidence["source_paths"]["reference"] == crops["outputs"]["mix"]["path"]
+    assert evidence["source_paths"]["backing"] == crops["outputs"]["backing"]["path"]
+    for label, role in evidence["blind_key"].items():
+        assert evidence["objective_record"]["render_provenance"][label]["process_policy"] == "fresh"
+        assert role in alternatives
+
+    no_proof = {**manifest, "alternatives": {**alternatives,
+                "second": {key: value for key, value in alternatives["second"].items()
+                           if key != "render_record"}}}
+    with pytest.raises(ValueError, match="fresh-process render record from the crop DI"):
+        build_backed(no_proof, seed=17)
+    wrong_mix = {**manifest, "reference": {**manifest["reference"],
+                 "path": crops["outputs"]["reference"]["path"],
+                 "sha256": crops["outputs"]["reference"]["sha256"]}}
+    with pytest.raises(ValueError, match="whole mix and unchanged backing"):
+        build_backed(wrong_mix, seed=17)
+
+    proof_path = pathlib.Path(alternatives["first"]["render_record"])
+    original_proof = proof_path.read_text()
+    wrong_di = json.loads(original_proof)
+    wrong_di["di"]["sha256"] = "wrong"
+    proof_path.write_text(json.dumps(wrong_di))
+    with pytest.raises(ValueError, match="not freshly rendered from this crop DI"):
+        build_backed(manifest, seed=17)
+    proof_path.write_text(original_proof)
+    manifest["declared_test_id"] = "a different test"
+    with pytest.raises(ValueError, match="crop's declared_test_id"):
+        build_backed(manifest, seed=17)
+
+
+@pytest.mark.parametrize("change, message", [
+    ("wrong-part", "does not name exact part"),
+    ("unstaged", "differs from its committed HEAD"),
+    ("staged", "differs from its committed HEAD"),
+    ("untracked", "committed regular file"),
+    ("outside-docs", "regular docs/\\*.md"),
+    ("symlink", "regular docs/\\*.md"),
+])
+def test_held_out_rejects_unapproved_declarations_before_audio(tmp_path, change, message):
+    catalog, data_root, session_dir = _fixture(tmp_path, split="held_out")
+    repo, declaration = _declaration_repo(
+        tmp_path, parts=("test/song/two",) if change == "wrong-part" else ("test/song/one",))
+    if change in ("unstaged", "staged"):
+        declaration.write_text(declaration.read_text() + "\nchanged after commit\n")
+        if change == "staged":
+            subprocess.run(["git", "-C", str(repo), "add", "docs/prospective-test.md"],
+                           check=True)
+    elif change == "untracked":
+        declaration = repo / "docs" / "new-test.md"
+        declaration.write_text("```json\n" + json.dumps({
+            "schema": "held-out-listening-test-v1", "test_id": "untracked",
+            "parts": ["test/song/one"]}) + "\n```\n")
+    elif change == "outside-docs":
+        declaration = repo / "other.md"
+        declaration.write_text("not a docs declaration")
+    elif change == "symlink":
+        link = repo / "docs" / "linked.md"
+        link.symlink_to(declaration)
+        declaration = link
+    for path in session_dir.glob("*.wav"):
+        path.unlink()
+    out = tmp_path / "must-not-exist"
+    with pytest.raises(ValueError, match=message):
+        build(catalog, data_root, "test", "song", "one", out,
+              declaration, declaration_repo=repo)
+    assert not out.exists()
+
+
+@pytest.mark.parametrize("invalid", ("duplicate", "malformed"))
+def test_held_out_refuses_ambiguous_or_malformed_committed_block(tmp_path, invalid):
+    catalog, data_root, session_dir = _fixture(tmp_path, split="held_out")
+    repo, declaration = _declaration_repo(tmp_path)
+    original = declaration.read_text()
+    block = original.split("```json\n", 1)[1].split("\n```", 1)[0]
+    if invalid == "duplicate":
+        declaration.write_text(original + "\n```json\n" + block + "\n```\n")
+        expected = "exactly one"
+    else:
+        declaration.write_text(original.replace(block, block[:-1]))
+        expected = "JSON is invalid"
+    subprocess.run(["git", "-C", str(repo), "add", "docs/prospective-test.md"], check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "alter synthetic declaration"], check=True)
+    for path in session_dir.glob("*.wav"):
+        path.unlink()
+    out = tmp_path / "must-not-exist"
+    with pytest.raises(ValueError, match=expected):
+        build(catalog, data_root, "test", "song", "one", out,
+              declaration, declaration_repo=repo)
     assert not out.exists()
 
 

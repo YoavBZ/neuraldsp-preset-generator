@@ -14,9 +14,18 @@ the declaration does not say how to treat partial or non-stem media files.
 The excerpt is the earliest maximum-integrated-loudness 10-second window of
 the mono reference on a 0.5-second grid. All four outputs use that same span.
 No normalization, limiter, or gain change is applied. Float32 WAV preserves
-out-of-range raw mix samples without integer clipping. The output is private;
-this tool deliberately refuses held-out parts until a separately committed
-prospective test declares their use.
+out-of-range raw mix samples without integer clipping. The output is private.
+Held-out parts require --declaration pointing to an unchanged, committed
+docs/*.md file containing one unambiguous fenced JSON authorization block:
+
+    ```json
+    {"schema":"held-out-listening-test-v1","test_id":"example-id",
+     "parts":["source/song/part"]}
+    ```
+
+The declaration must also describe the command, measurement, and interpretation
+of outcomes required by docs/validation-datasets.md. This tool checks the
+machine-readable authorization, not the quality of that prose.
 """
 
 from __future__ import annotations
@@ -26,6 +35,8 @@ import hashlib
 import json
 import os
 import pathlib
+import re
+import subprocess
 import sys
 import tempfile
 
@@ -53,13 +64,66 @@ def _entry(catalog: dict, source: str, song: str, part_name: str) -> tuple[dict,
     if len(sessions) != 1:
         raise ValueError("select exactly one declared source/song session")
     session = sessions[0]
-    if session.get("split") != "development":
-        raise ValueError("held-out material needs a separately committed test declaration; "
-                         "this development crop builder will not open it")
+    if session.get("split") not in ("development", "held_out"):
+        raise ValueError("unknown validation dataset split")
     parts = [item for item in session["parts"] if item.get("part") == part_name]
     if len(parts) != 1 or not parts[0].get("usable"):
         raise ValueError("select one usable declared part")
     return session, parts[0]
+
+
+def _git(repo: pathlib.Path, *args: str) -> bytes:
+    done = subprocess.run(("git", "-C", str(repo), *args), capture_output=True)
+    if done.returncode:
+        raise ValueError("held-out declaration must be committed and tracked at HEAD")
+    return done.stdout
+
+
+def _declaration(path: pathlib.Path, part_id: str, repo: pathlib.Path) -> dict:
+    """Bind an exact part to the unchanged HEAD version of a docs declaration."""
+    repo = repo.resolve()
+    path = path.expanduser()
+    if not path.is_absolute():
+        path = repo / path
+    absolute = path.absolute()
+    relative = absolute.relative_to(repo) if absolute.is_relative_to(repo) else None
+    if (relative is None or len(relative.parts) != 2 or relative.parts[0] != "docs"
+            or relative.suffix != ".md" or path.is_symlink() or not path.is_file()
+            or path.resolve() != repo / relative):
+        raise ValueError("held-out declaration must be a regular docs/*.md file in this repo")
+    name = relative.as_posix()
+    tree_entry = _git(repo, "ls-tree", "HEAD", "--", name)
+    if not tree_entry.startswith((b"100644 blob ", b"100755 blob ")):
+        raise ValueError("held-out declaration must be a committed regular file")
+    committed = _git(repo, "show", f"HEAD:{name}")
+    current = path.read_bytes()
+    changed = subprocess.run(("git", "-C", str(repo), "diff", "--quiet", "HEAD",
+                              "--", name), capture_output=True)
+    if current != committed or changed.returncode != 0:
+        raise ValueError("held-out declaration differs from its committed HEAD version")
+    blocks = re.findall(r"^```json[ \t]*\r?\n(.*?)^```[ \t]*$",
+                        current.decode("utf-8"), flags=re.MULTILINE | re.DOTALL)
+    marked = [block for block in blocks if "held-out-listening-test-v1" in block]
+    if len(marked) != 1:
+        raise ValueError("declaration needs exactly one held-out-listening-test-v1 JSON block")
+    try:
+        payload = json.loads(marked[0])
+    except json.JSONDecodeError as error:
+        raise ValueError("held-out declaration JSON is invalid") from error
+    if (not isinstance(payload, dict)
+            or set(payload) != {"schema", "test_id", "parts"}
+            or payload["schema"] != "held-out-listening-test-v1"
+            or not isinstance(payload["test_id"], str) or not payload["test_id"].strip()
+            or not isinstance(payload["parts"], list) or not payload["parts"]
+            or any(not isinstance(part, str) or not part for part in payload["parts"])
+            or len(payload["parts"]) != len(set(payload["parts"]))):
+        raise ValueError("held-out declaration must name one test_id and unique part IDs")
+    if part_id not in payload["parts"]:
+        raise ValueError(f"held-out declaration does not name exact part {part_id!r}")
+    return {"path": name,
+            "commit": _git(repo, "log", "-1", "--format=%H", "HEAD", "--", name).decode().strip(),
+            "head_commit": _git(repo, "rev-parse", "HEAD").decode().strip(),
+            "sha256": hashlib.sha256(current).hexdigest(), "test_id": payload["test_id"]}
 
 
 def _source_path(root: pathlib.Path, session_path: str, name: str) -> pathlib.Path:
@@ -99,7 +163,9 @@ def _window(reference, rate: int) -> tuple[int, int, float]:
 
 
 def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
-          song: str, part_name: str, out_dir: pathlib.Path) -> dict:
+          song: str, part_name: str, out_dir: pathlib.Path,
+          declaration_path: pathlib.Path | None = None,
+          *, declaration_repo: pathlib.Path = ROOT) -> dict:
     """Verify a trusted catalog and atomically publish four private WAVs and hashes.
 
     The CLI always passes the committed catalog. A catalog argument here permits
@@ -112,6 +178,14 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     catalog_path = catalog_path.expanduser().resolve()
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
     session, part = _entry(catalog, source, song, part_name)
+    declaration = None
+    if session["split"] == "held_out":
+        if declaration_path is None:
+            raise ValueError("held-out material needs --declaration in a separately committed test")
+        declaration = _declaration(declaration_path, f"{source}/{song}/{part_name}",
+                                   declaration_repo)
+    elif declaration_path is not None:
+        raise ValueError("--declaration applies only to held-out material")
     data_root = data_root.expanduser().resolve()
     out_dir = _require_private_out_dir(out_dir)
     if out_dir.exists() or out_dir.is_symlink():
@@ -176,6 +250,8 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         "verified_source_sha256": checked,
         "outputs": {},
     }
+    if declaration is not None:
+        record["declaration"] = declaration
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="validation-crops-", dir=out_dir.parent) as staged:
         stage = pathlib.Path(staged)
@@ -197,11 +273,14 @@ def main() -> None:
     parser.add_argument("--source", required=True)
     parser.add_argument("--song", required=True)
     parser.add_argument("--part", required=True)
+    parser.add_argument("--declaration", type=pathlib.Path,
+                        help="unchanged committed docs/*.md declaring this held-out test and part")
     parser.add_argument("--out-dir", required=True, type=pathlib.Path)
     args = parser.parse_args()
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     data_root = args.data_root or pathlib.Path(catalog["root"]).expanduser()
-    record = build(CATALOG, data_root, args.source, args.song, args.part, args.out_dir)
+    record = build(CATALOG, data_root, args.source, args.song, args.part, args.out_dir,
+                   args.declaration)
     print(f"wrote four private 10-second WAV crops and hashes to {args.out_dir}")
     print(f"reference excerpt: {record['excerpt_start_s']:.1f} s, "
           f"{record['reference_lufs']:.2f} LUFS; no gain or time shift applied")
