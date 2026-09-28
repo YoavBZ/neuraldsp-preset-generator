@@ -201,7 +201,7 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         raise ValueError("choose a new private output directory; crops are immutable")
 
     files = session["files"]
-    guitar_dis = {item["di"] for item in session["parts"]}
+    guitar_dis = {item["di"] for item in session["parts"] if item.get("di")}
     amp_tracks = {part["reference"], *part.get("alternate", [])}
     for name in (part["di"], *amp_tracks):
         if name not in files or pathlib.Path(name).suffix.lower() != ".wav":

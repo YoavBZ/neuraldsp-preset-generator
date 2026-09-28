@@ -58,11 +58,23 @@ def _source(spec: dict, role: str):
 def _crop(audio, spec: dict, role: str, duration: float):
     start = _number(spec.get("start_s"), f"{role}.start_s", 0)
     if start + duration > audio.duration_s + 1 / audio.sample_rate:
-        raise ValueError(f"{role} has less than {duration:g} s after {start:g} s")
+        raise ValueError(f"{role} is too short for the requested crop: "
+                         f"has less than {duration:g} s after {start:g} s")
     clip = _slice(audio, start, duration)
     if clip.frames != round(duration * audio.sample_rate):
-        raise ValueError(f"{role} crop is shorter than requested")
+        raise ValueError(f"{role} crop is too short")
     return clip
+
+
+def _unmeasurable_loudness(clip) -> str:
+    """Explain a missing loudness without treating faint audio as silence."""
+    import numpy as np
+
+    if not np.any(clip.samples):
+        return "silent"
+    if clip.duration_s < .4:
+        return "too short for the 0.4 s loudness gate"
+    return "non-silent but too quiet for the loudness gate"
 
 
 def _provenance(spec: dict, path: pathlib.Path):
@@ -243,9 +255,13 @@ def build(manifest: dict, *, seed: int):
     audible, channels = _audition_channels(loaded, force_mono=False)
     clips = [_crop(audio, spec, role, duration)
              for audio, spec, role in zip(audible, specs, roles)]
-    levels = [io.loudness_lufs(clip) for clip in (clips[0], clips[2], clips[3])]
-    if any(value is None for value in levels):
-        raise ValueError("reference and both guitars need measurable loudness")
+    metered = (("reference", clips[0]), ("first", clips[2]), ("second", clips[3]))
+    levels = [io.loudness_lufs(clip) for _, clip in metered]
+    failed = [f"{role} is {_unmeasurable_loudness(clip)}"
+              for (role, clip), value in zip(metered, levels) if value is None]
+    if failed:
+        raise ValueError("reference and both guitars need measurable loudness: "
+                         + "; ".join(failed))
     guitar_gains, guitars = [], []
     for clip, before in zip(clips[2:], levels[1:]):
         gain, matched, _ = _static_gain_to_lufs(clip, guitar_target, before)

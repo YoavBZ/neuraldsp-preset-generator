@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 np = pytest.importorskip("numpy")
-pytest.importorskip("soundfile")
+sf = pytest.importorskip("soundfile")
 pytest.importorskip("scipy")
 pytest.importorskip("pyloudnorm")
 
@@ -291,6 +291,70 @@ def test_rejects_loudness_confounded_pair_and_never_overwrites(tmp_path):
     refused = _run(manifest_path, out)
     assert refused.returncode != 0 and "immutable" in refused.stderr
     assert (out / "audition.flac").read_bytes() == original
+
+
+@pytest.mark.parametrize("role", ("reference", "first", "second"))
+@pytest.mark.parametrize("condition, reason", (
+    ("silent", "silent"),
+    ("quiet", "non-silent but too quiet for the loudness gate"),
+))
+def test_unmeasurable_loudness_names_input_and_reason(tmp_path, role, condition, reason):
+    manifest_path, manifest = _fixture(tmp_path)
+    spec = manifest["alternatives"].get(role) if role != "reference" else manifest[role]
+    path = pathlib.Path(spec["path"])
+    amplitude = 0.0 if condition == "silent" else 1e-8
+    samples = amplitude * np.sin(2 * np.pi * 440 * np.arange(2 * fx.SAMPLE_RATE)
+                                 / fx.SAMPLE_RATE)
+    sf.write(path, samples.astype(np.float32), fx.SAMPLE_RATE, subtype="FLOAT")
+    spec["sha256"] = sha256(path)
+    manifest_path.write_text(json.dumps(manifest))
+
+    out = tmp_path / "audition"
+    done = _run(manifest_path, out)
+    assert done.returncode != 0
+    assert f"{role} is {reason}" in done.stderr
+    assert not out.exists()
+
+
+def test_unmeasurable_loudness_names_every_failing_input(tmp_path):
+    manifest_path, manifest = _fixture(tmp_path)
+    for role in ("reference", "first", "second"):
+        spec = manifest["alternatives"].get(role) if role != "reference" else manifest[role]
+        path = pathlib.Path(spec["path"])
+        sf.write(path, np.zeros(2 * fx.SAMPLE_RATE, np.float32), fx.SAMPLE_RATE,
+                 subtype="FLOAT")
+        spec["sha256"] = sha256(path)
+    manifest_path.write_text(json.dumps(manifest))
+
+    done = _run(manifest_path, tmp_path / "audition")
+    assert done.returncode != 0
+    for role in ("reference", "first", "second"):
+        assert f"{role} is silent" in done.stderr
+
+
+def test_non_silent_clip_too_short_for_loudness_gate_is_identified():
+    from scripts.build_backed_audition import _unmeasurable_loudness
+
+    clip = io.from_samples(np.ones(round(.2 * fx.SAMPLE_RATE), np.float32))
+    assert io.loudness_lufs(clip) is None
+    assert _unmeasurable_loudness(clip) == "too short for the 0.4 s loudness gate"
+
+
+@pytest.mark.parametrize("role", ("reference", "first", "second"))
+def test_too_short_input_names_the_role_before_loudness_metering(tmp_path, role):
+    manifest_path, manifest = _fixture(tmp_path)
+    spec = manifest["alternatives"].get(role) if role != "reference" else manifest[role]
+    path = pathlib.Path(spec["path"])
+    sf.write(path, np.ones(round(.2 * fx.SAMPLE_RATE), np.float32),
+             fx.SAMPLE_RATE, subtype="FLOAT")
+    spec["sha256"] = sha256(path)
+    manifest_path.write_text(json.dumps(manifest))
+
+    out = tmp_path / "audition"
+    done = _run(manifest_path, out)
+    assert done.returncode != 0
+    assert f"{role} is too short for the requested crop" in done.stderr
+    assert not out.exists()
 
 
 def test_bad_crop_is_refused_before_any_output(tmp_path):
