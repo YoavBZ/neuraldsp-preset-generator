@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 
@@ -87,6 +88,17 @@ def _declaration_repo(tmp_path, *, parts=("test/song/one",)):
     return repo, path
 
 
+def _committed_catalog(repo, fixture_catalog):
+    path = repo / "docs" / "validation-datasets.json"
+    path.write_bytes(fixture_catalog.read_bytes())
+    subprocess.run(["git", "-C", str(repo), "add", "docs/validation-datasets.json"],
+                   check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "catalog synthetic data"], check=True)
+    return path
+
+
 def test_builds_exact_unity_mix_and_backing_with_one_shared_excerpt(tmp_path):
     catalog, data_root, session_dir = _fixture(tmp_path)
     out = tmp_path / "private-crops"
@@ -139,12 +151,37 @@ def test_refuses_held_out_before_opening_any_audio(tmp_path):
     assert not out.exists()
 
 
+def test_locally_resplitting_a_committed_held_out_catalog_cannot_bypass_gate(tmp_path):
+    fixture_catalog, data_root, session_dir = _fixture(tmp_path, split="held_out")
+    repo, _ = _declaration_repo(tmp_path)
+    catalog = _committed_catalog(repo, fixture_catalog)
+    edited = json.loads(catalog.read_text())
+    edited["sessions"][0]["split"] = "development"
+    catalog.write_text(json.dumps(edited))
+    for path in session_dir.glob("*.wav"):
+        path.unlink()
+    out = tmp_path / "must-not-exist"
+    with pytest.raises(ValueError, match="catalog differs from its committed HEAD"):
+        build(catalog, data_root, "test", "song", "one", out, repo_root=repo)
+    assert not out.exists()
+
+
+def test_unchanged_committed_development_catalog_needs_no_declaration(tmp_path):
+    fixture_catalog, data_root, _ = _fixture(tmp_path)
+    repo, _ = _declaration_repo(tmp_path)
+    catalog = _committed_catalog(repo, fixture_catalog)
+    out = tmp_path / "private-crops"
+    record = build(catalog, data_root, "test", "song", "one", out, repo_root=repo)
+    assert record["split"] == "development"
+    assert "declaration" not in record
+
+
 def test_held_out_requires_unchanged_committed_declaration_for_exact_part(tmp_path):
     catalog, data_root, _ = _fixture(tmp_path, split="held_out")
     repo, declaration = _declaration_repo(tmp_path)
     out = tmp_path / "private-crops"
     record = build(catalog, data_root, "test", "song", "one", out,
-                   declaration, declaration_repo=repo)
+                   declaration, repo_root=repo)
     proof = record["declaration"]
     assert proof["path"] == "docs/prospective-test.md"
     assert proof["test_id"] == "synthetic-01"
@@ -158,7 +195,7 @@ def test_synthetic_held_out_crops_feed_backed_audition_with_fresh_di_proofs(tmp_
     repo, declaration = _declaration_repo(tmp_path)
     crop_dir = tmp_path / "crops"
     crops = build(catalog, data_root, "test", "song", "one", crop_dir,
-                  declaration, declaration_repo=repo)
+                  declaration, repo_root=repo)
     frames = crops["outputs"]["di"]["frames"]
     t = np.arange(frames) / RATE
     alternatives = {}
@@ -179,6 +216,7 @@ def test_synthetic_held_out_crops_feed_backed_audition_with_fresh_di_proofs(tmp_
     manifest = {
         "schema": "prospective-backed-listening-v1", "id": "synthetic-01-one",
         "target_id": "test/song", "declared_test_id": "synthetic-01",
+        "validation_mode": "declared",
         "validation_crop_record": str(crop_dir / "record.json"),
         "reference": {**crops["outputs"]["mix"], "start_s": 0,
                       "duration_s": 10, "regime": "mix"},
@@ -199,6 +237,30 @@ def test_synthetic_held_out_crops_feed_backed_audition_with_fresh_di_proofs(tmp_
     for label, role in evidence["blind_key"].items():
         assert evidence["objective_record"]["render_provenance"][label]["process_policy"] == "fresh"
         assert role in alternatives
+
+    unbound = {key: value for key, value in manifest.items()
+               if key != "validation_crop_record"}
+    with pytest.raises(ValueError, match="declared validation mode needs validation_crop_record"):
+        build_backed(unbound, seed=17)
+    generic_fallback = {key: value for key, value in unbound.items()
+                        if key != "validation_mode"}
+    with pytest.raises(ValueError, match="needs its exact validation_crop_record"):
+        build_backed(generic_fallback, seed=17)
+    relocated = tmp_path / "relocated"
+    relocated.mkdir()
+    copied_reference = relocated / "mix.wav"
+    copied_backing = relocated / "backing.wav"
+    shutil.copyfile(crops["outputs"]["mix"]["path"], copied_reference)
+    shutil.copyfile(crops["outputs"]["backing"]["path"], copied_backing)
+    moved_manifest = {**unbound,
+                      "reference": {**manifest["reference"], "path": str(copied_reference)},
+                      "backing": {**manifest["backing"], "path": str(copied_backing)}}
+    with pytest.raises(ValueError, match="declared validation mode needs validation_crop_record"):
+        build_backed(moved_manifest, seed=17)
+    reused = {**manifest, "alternatives": {"first": alternatives["first"],
+                                           "second": alternatives["first"]}}
+    with pytest.raises(ValueError, match="two distinct fresh renders"):
+        build_backed(reused, seed=17)
 
     no_proof = {**manifest, "alternatives": {**alternatives,
                 "second": {key: value for key, value in alternatives["second"].items()
@@ -258,7 +320,7 @@ def test_held_out_rejects_unapproved_declarations_before_audio(tmp_path, change,
     out = tmp_path / "must-not-exist"
     with pytest.raises(ValueError, match=message):
         build(catalog, data_root, "test", "song", "one", out,
-              declaration, declaration_repo=repo)
+              declaration, repo_root=repo)
     assert not out.exists()
 
 
@@ -283,7 +345,7 @@ def test_held_out_refuses_ambiguous_or_malformed_committed_block(tmp_path, inval
     out = tmp_path / "must-not-exist"
     with pytest.raises(ValueError, match=expected):
         build(catalog, data_root, "test", "song", "one", out,
-              declaration, declaration_repo=repo)
+              declaration, repo_root=repo)
     assert not out.exists()
 
 

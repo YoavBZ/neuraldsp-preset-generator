@@ -96,6 +96,22 @@ def test_backed_audio_uses_one_bed_and_scores_only_guitar(tmp_path):
     assert key["output"]["true_peak_dbtp"] <= -0.98
 
 
+def test_unrelated_malformed_record_does_not_break_generic_audition(tmp_path):
+    manifest_path, _ = _fixture(tmp_path)
+    (tmp_path / "record.json").write_text("not JSON")
+    done = _run(manifest_path, tmp_path / "audition")
+    assert done.returncode == 0, done.stderr
+
+
+def test_unrelated_valid_crop_record_does_not_break_generic_audition(tmp_path):
+    manifest_path, _ = _fixture(tmp_path)
+    (tmp_path / "record.json").write_text(json.dumps({
+        "schema": "validation-crops-1",
+        "outputs": {"mix": {"path": str(tmp_path / "other-mix.wav")}}}))
+    done = _run(manifest_path, tmp_path / "audition")
+    assert done.returncode == 0, done.stderr
+
+
 def test_hidden_repeat_and_identical_catch_report_consistency_separately(tmp_path):
     manifest_path, manifest = _fixture(tmp_path)
     manifest["reliability"] = {"hidden_repeats": 1, "catch_trial": True}

@@ -165,25 +165,34 @@ def _window(reference, rate: int) -> tuple[int, int, float]:
 def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
           song: str, part_name: str, out_dir: pathlib.Path,
           declaration_path: pathlib.Path | None = None,
-          *, declaration_repo: pathlib.Path = ROOT) -> dict:
+          *, repo_root: pathlib.Path = ROOT) -> dict:
     """Verify a trusted catalog and atomically publish four private WAVs and hashes.
 
-    The CLI always passes the committed catalog. A catalog argument here permits
-    synthetic unit fixtures; it is not a way to authorize a held-out use.
+    The CLI accepts only the unchanged committed catalog. A different catalog
+    argument here permits synthetic unit fixtures, not held-out authorization.
     """
     import numpy as np
     import soundfile as sf
     from analysis import io
 
     catalog_path = catalog_path.expanduser().resolve()
-    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    repo_root = repo_root.resolve()
+    catalog_name = "docs/validation-datasets.json"
+    catalog_bytes = catalog_path.read_bytes()
+    if catalog_path == (repo_root / catalog_name).resolve():
+        committed = _git(repo_root, "show", f"HEAD:{catalog_name}")
+        changed = subprocess.run(("git", "-C", str(repo_root), "diff", "--quiet",
+                                  "HEAD", "--", catalog_name), capture_output=True)
+        if catalog_bytes != committed or changed.returncode != 0:
+            raise ValueError("validation catalog differs from its committed HEAD version")
+    catalog = json.loads(catalog_bytes.decode("utf-8"))
     session, part = _entry(catalog, source, song, part_name)
     declaration = None
     if session["split"] == "held_out":
         if declaration_path is None:
             raise ValueError("held-out material needs --declaration in a separately committed test")
         declaration = _declaration(declaration_path, f"{source}/{song}/{part_name}",
-                                   declaration_repo)
+                                   repo_root)
     elif declaration_path is not None:
         raise ValueError("--declaration applies only to held-out material")
     data_root = data_root.expanduser().resolve()

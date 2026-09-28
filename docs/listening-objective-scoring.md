@@ -137,6 +137,8 @@ required by `docs/validation-datasets.md`, it must contain one unambiguous fence
 `json` authorization block with `"schema": "held-out-listening-test-v1"`, a nonempty `test_id`,
 and `"parts": ["source/song/part", ...]`. The crop builder checks the exact
 part against the unchanged HEAD version of that file before reading any audio.
+It also refuses a locally edited validation catalog, so changing a held-out
+split in the working tree cannot turn it into a development crop.
 The crop record retains the declaration path, its last-changing commit, HEAD,
 hash, and test ID. Register the held-out use in `held_out_uses` of
 `docs/validation-datasets.json` as the dataset policy requires; the crop builder
@@ -162,6 +164,7 @@ record and fresh-render sidecars; this template shows the required mapping:
   "schema": "prospective-backed-listening-v1",
   "id": "ONE_COMPARISON_ID",
   "target_id": "ONE_INDEPENDENT_SONG_GROUP",
+  "validation_mode": "declared",
   "declared_test_id": "TEST_ID_FROM_DECLARATION",
   "validation_crop_record": "runs/CROPS/record.json",
   "reference": {"path": "runs/CROPS/mix.wav", "sha256": "MIX_HASH",
@@ -185,8 +188,15 @@ record and fresh-render sidecars; this template shows the required mapping:
 Use the actual pack and amp model from each sidecar; the example values are
 placeholders, not suggested tones or mix levels. Fix mix levels and the blind
 seed before listening. With `validation_crop_record` present, the builder
-requires the whole mix crop, unaltered backing, fresh-process records for both
-alternatives, and each record's DI binding to the crop DI. It freezes separate
+requires the whole mix crop, unaltered backing, two distinct fresh-process
+renders, and each record's DI binding to the crop DI. A crop WAV beside its
+record cannot silently use the generic manifest path without that binding.
+The explicit `validation_mode` keeps a declared test in this path even if
+files are moved; in that case restore the original crop locations and record,
+because the exact file paths are part of the binding. Audio copied elsewhere
+without its record and deliberately submitted as a generic audition has no
+recoverable provenance and is not a valid held-out test.
+The builder freezes separate
 unpaired-v1 and unpaired-v2 predictions before the verdict. The listener hears
 the backed mixes, while both objective scores compare bare guitars to the mix
 reference; this deliberate difference is recorded, not corrected away.

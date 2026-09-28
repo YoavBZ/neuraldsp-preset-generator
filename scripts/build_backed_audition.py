@@ -128,10 +128,16 @@ def _validation_crop(manifest: dict, reference: dict, backing: dict,
     if sha256(di["path"]) != di["sha256"]:
         raise ValueError("validation DI crop hash changed")
     for label, spec in alternatives.items():
-        named_proof = spec.get("render_record")
-        if not named_proof:
+        if not spec.get("render_record"):
             raise ValueError(f"{label} needs a fresh-process render record from the crop DI")
-        proof_path = pathlib.Path(named_proof).expanduser().resolve()
+    audio_paths = {pathlib.Path(spec["path"]).expanduser().resolve()
+                   for spec in alternatives.values()}
+    proof_paths = {pathlib.Path(spec["render_record"]).expanduser().resolve()
+                   for spec in alternatives.values() if spec.get("render_record")}
+    if len(audio_paths) != 2 or len(proof_paths) != 2:
+        raise ValueError("validation alternatives need two distinct fresh renders")
+    for label, spec in alternatives.items():
+        proof_path = pathlib.Path(spec["render_record"]).expanduser().resolve()
         if not proof_path.is_file():
             raise ValueError(f"missing {label} fresh-process render record")
         proof = json.loads(proof_path.read_text(encoding="utf-8"))
@@ -148,6 +154,35 @@ def _validation_crop(manifest: dict, reference: dict, backing: dict,
             raise ValueError("held-out audition must name the crop's declared_test_id")
     return {"path": str(path), "sha256": sha256(path),
             "split": record.get("split"), "declaration": declaration}
+
+
+def _require_crop_binding(manifest: dict, reference: dict, backing: dict) -> None:
+    """Do not silently treat crop WAVs as generic unverified mix inputs."""
+    named = manifest.get("validation_crop_record")
+    mode = manifest.get("validation_mode")
+    if mode not in (None, "declared"):
+        raise ValueError("validation_mode must be declared when present")
+    if mode == "declared" and named is None:
+        raise ValueError("declared validation mode needs validation_crop_record")
+    if named is not None and mode != "declared":
+        raise ValueError("validation_crop_record needs validation_mode=declared")
+    for spec in (reference, backing):
+        source = pathlib.Path(spec.get("path", "")).expanduser().resolve()
+        candidate = source.parent / "record.json"
+        if not candidate.is_file():
+            continue
+        try:
+            record = json.loads(candidate.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue  # An unrelated generic-audition directory may have a record.json.
+        if not isinstance(record, dict) or record.get("schema") != "validation-crops-1":
+            continue
+        outputs = record.get("outputs")
+        if (isinstance(outputs, dict)
+                and any(source == pathlib.Path(item.get("path", "")).expanduser().resolve()
+                        for item in outputs.values() if isinstance(item, dict))
+                and (named is None or pathlib.Path(named).expanduser().resolve() != candidate)):
+            raise ValueError("validation crop audio needs its exact validation_crop_record")
 
 
 def build(manifest: dict, *, seed: int):
@@ -171,6 +206,7 @@ def build(manifest: dict, *, seed: int):
         raise ValueError("reference, backing and alternatives must be objects")
     if set(alternatives) != {"first", "second"}:
         raise ValueError("alternatives must be exactly first and second")
+    _require_crop_binding(manifest, reference, backing)
     crop_binding = _validation_crop(manifest, reference, backing, alternatives)
     if backing.get("guitar_removed") is not True:
         raise ValueError("backing must explicitly declare guitar_removed=true; "
@@ -298,6 +334,7 @@ def build(manifest: dict, *, seed: int):
         "objective_record": scored,
     }
     if crop_binding is not None:
+        evidence["validation_mode"] = "declared"
         evidence["validation_crop_record"] = crop_binding
     if trials is not None:
         evidence["trials"] = trials
