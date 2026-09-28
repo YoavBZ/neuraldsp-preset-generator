@@ -1974,6 +1974,101 @@ was given, kept a trim only when it scored better, and scored the untrimmed
 answer first and inside the arm's `renders`; its JSON has no `level_trim_record`,
 which the benchmark added afterwards.
 
+#### Matching amp recordings — the development parts of `validation-datasets.md`
+
+The first benchmark whose targets are recordings rather than the plugin's renders.
+`scripts/benchmark_recordings.py` takes every usable development part of
+`validation-datasets.md` — Telefunken "Bourbon" and "Collide With Me" (two guitars
+each, the M80 track), Heather Jane ElecGtr1 and its double, and eight Guitar-TECHS
+excerpts: 14 parts — cuts its declared 10 s excerpt with
+`build_validation_crops.py`, and uses the amp track as the reference and the part's
+own DI as what every answer is heard through, as the player would hear it. The
+search-signal pipeline then runs three ways from the amp's neutral settings, switches
+held, 300 renders, `unpaired-v2`: through the same-take DI; through the DI of the
+next part from another session; and through the noise probe, as with no DI. "Another
+session" is not always another player or rig: for seven of the eight Guitar-TECHS
+parts it is another excerpt by the same player, guitar and amp setting, and for the
+two Bourbon parts it is a Collide With Me guitar, the same band and room. The other
+five are a different player or band. There is no truth to recover here, only
+distance to what a real amplifier recorded — and no plugin setting reproduces a
+particular amp, cabinet, microphone and room exactly, so none of these distances
+goes to zero. Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,
+`reproducible=False`; Tone King's band noise is 5.23 dB, SW50R's 0.23. Mean / median:
+
+| searched through | SW50R | Tone King rhythm |
+|---|---:|---:|
+| the part's own DI (same take) | 0.561 / 0.512 | 0.439 / 0.422 |
+| another session's DI | 1.014 / 1.091 | 1.056 / 0.987 |
+| … the same player and rig (7 parts) | 1.050 | 1.261 |
+| … not the same rig (7 parts: 5 another player or band, 2 the same band and room) | 0.978 | 0.851 |
+| the noise probe (no DI) | 2.524 / 1.330 | 1.453 / 1.485 |
+| *no search:* neutral settings | 1.573 / 1.552 | 1.060 / 1.045 |
+
+Paired by part, 14 each (7 and 7 in the subgroups):
+
+| | SW50R | Tone King rhythm |
+|---|---|---|
+| same-take DI closer than another session's | 13 (45%, p < 0.001) | 14 (58%, p < 0.001) |
+| another session's DI closer than no DI | 11 (60%, p = 0.005) | 13 (27%, p = 0.013) |
+| … same rig / different | 6 (p = 0.031) / 5 (p = 0.16) | 6 (p = 0.30) / 7 (p = 0.016) |
+| same-take DI closer than neutral | 14 | 14 |
+| another session's DI closer than neutral | 14 | 8 |
+| … same rig / different | 7 / 7 | 4 (8% further) / 4 (11% closer, p = 0.30) |
+| no DI closer than neutral | 10 (mean 60% further, median 14% closer, p = 0.15) | 0 (37% further, p < 0.001) |
+| … with `level` left out | 9 (p = 0.50) | 2 (18% further, p = 0.02) |
+
+The p-values are Wilcoxon signed-rank tests that treat the 14 parts as
+independent, and they are not: eight are one Guitar-TECHS tone, Heather Jane
+ElecGtr1 and its double are one tone, and the four Telefunken guitars share a band
+and a room. They overstate the evidence; the counts are the plainer reading.
+
+**What held from the plugin-render benchmarks.** The ordering does, on both amps
+and against real amplifiers: the part's own DI, then another session's, then none.
+So does the size of the first step: a DI of the same take ended at roughly half
+the distance another session's DI reached (45% and 58% closer), as it did on the
+renders (37–53% closer across the five runs above). **What is new.** Without a DI
+the search on Tone King ended further from the recording than its own starting
+settings on every part, and on 12 of 14 with loudness set aside; its answers
+played 6.6 to 21.5 LU off the recording (SW50R's 5.1 to 14.4), beyond the 3.5 to
+14.5 LU the renders showed. On SW50R the no-DI search was no better than the
+start. Another session's DI beat the start on every SW50R part and only tied it on
+Tone King (8 of 14; with `level` left out 7 of 14, p = 0.81) — and on Tone King the
+seven parts heard through another excerpt of the same rig did no better than the
+other seven; they ended 8% further than neutral. So
+whether a DI of the player's own rig and a different performance is worth more
+than any DI is not shown here. The "same take" arm is a paired reamp — the DI is
+the performance the amp recorded — which a player's own DI of the part, a
+different performance, is not; that case lies somewhere between the first two
+rows and was not measured.
+
+**A second unbounded term.** One part — Telefunken "Collide With Me", guitar 2 —
+produced a `harmonic` dimension of 101.6 in the SW50R no-DI answer, 85.6 in the
+SW50R noise inversion and 126 in the Tone King same-take inversion; every other
+`harmonic` score in both runs is 3.3 or less. The `odd_even` term divides odd- by
+even-harmonic power, measured on one monophonic segment; when the even harmonics
+nearly vanish the ratio has no ceiling, and `unpaired-v2` compares it linearly at
+a scale of 0.6. The part's DI alone reads 6.7 against 0.4 for its amp track. The
+medians above do not depend on it; three SW50R figures do. Without that part,
+another session's DI beat no DI by 22% rather than 60% (10 of 13, p = 0.011), and
+no DI beat neutral on 10 of 13 (17% closer, p = 0.033) — but with `level` left out
+on 9 of 13 (p = 0.22), so what the no-DI search gained over neutral on SW50R was
+loudness. The Tone King figures above do not use it: the outlier there is an
+inversion, which the tables do not report. It is the next measurement to make, as RT60 was.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp sw50r --signal same --signal other --signal noise --budget 300 \
+  --workers 2 --json docs/recordings-benchmark-sw50r.json
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack toneking \
+  --amp rhythm --signal same --signal other --signal noise --budget 300 \
+  --workers 2 --json docs/recordings-benchmark-toneking-rhythm.json
+```
+
+They took 191 and 173 minutes from 95a2a2d, a pre-squash commit of this change,
+run from a separate checkout pinned to it; the crops were built by the first run
+into `~/ndsp-presets/references/validation-crops/` and verified by hash by the
+second, and each JSON records every crop's hash.
+
 ---
 
 ## 8. Dependency and CI policy

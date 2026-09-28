@@ -1,0 +1,2011 @@
+{
+  "schema": "recordings-benchmark-1",
+  "source_commit": "95a2a2d4ace71fbf01497316f186d6a81568023b",
+  "command": "scripts/benchmark_recordings.py --renderer swift --pack toneking --amp rhythm --signal same --signal other --signal noise --budget 300 --workers 2 --json /private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator--claude-worktrees-plugin-local-install-a397e5/e574dc73-7eeb-4e8a-ab41-67a2cdf6a2df/scratchpad/recordings-run/recordings-toneking-rhythm.json",
+  "elapsed_s": 10404.6,
+  "catalog_sha256": "deb68f076cc9da2e568e4ad7e61247c4f426170ba7c0e1d1189723d046d03120",
+  "pack": "toneking",
+  "amp": "rhythm",
+  "signals": [
+    "same",
+    "other",
+    "noise"
+  ],
+  "reference": "same",
+  "budget": 300,
+  "seed": 11,
+  "loss_profile": "unpaired-v2",
+  "workers": 2,
+  "no_di_seconds": 6.0,
+  "parts": [
+    {
+      "source": "telefunken",
+      "song": "Bourbon",
+      "part": "GTR 1",
+      "other_di_from": "telefunken/Collide With Me/GTR 1",
+      "crops": {
+        "di": "97e6852479d766a7b38ac232c104ab409a6fbdc7949eef66fa7f8ab4dc6df331",
+        "reference": "21592477eb67a05ea5c3725050cc7567ea82d3b12088e28d7e75ed99e332e708",
+        "mix": "1363968ab8596a3667bc734d8353a4bbe7e56b997536554f46a1411e7ed09211",
+        "backing": "6ca080e419046bd6908c28a6dbe8c2f25396394478b1abf966f3208b07f54175"
+      },
+      "excerpt_start_s": 226.0
+    },
+    {
+      "source": "telefunken",
+      "song": "Bourbon",
+      "part": "GTR 2",
+      "other_di_from": "telefunken/Collide With Me/GTR 1",
+      "crops": {
+        "di": "d852344d7e398f3e4bb237dd0533897911d1391882311a68fbc6c199c71fbab4",
+        "reference": "2d21d90b079268773f713652dc1e964e092b89c6262831631804f459c42e8e08",
+        "mix": "9ce101a4624b6d5de091d9ebc9b5aa44f09c58f04555211124b9e2e5051ade20",
+        "backing": "12afa49eb3e2dc2aa3114a8526df6983dff8263638dacf932a0b9befaf74be10"
+      },
+      "excerpt_start_s": 185.0
+    },
+    {
+      "source": "telefunken",
+      "song": "Collide With Me",
+      "part": "GTR 1",
+      "other_di_from": "cambridge/Heather Jane/ElecGtr1",
+      "crops": {
+        "di": "b88dcf65e80edc4a1bdd51a0611d892ea4f60df6638f6a7c288cd02dca01f173",
+        "reference": "f79b2070f6431b120f81486b98682a6f1c3e6cc2585377e1b9d29756f173d1ad",
+        "mix": "2bea63c0131fe00ad855cddb5560436acd66eb5c8e4c406c403581e7b0fce46c",
+        "backing": "033ff67558f2c9f6da04af0e9b47d35648b49aa6a57a9bd695ba35b72264fa5c"
+      },
+      "excerpt_start_s": 225.0
+    },
+    {
+      "source": "telefunken",
+      "song": "Collide With Me",
+      "part": "GTR 2",
+      "other_di_from": "cambridge/Heather Jane/ElecGtr1",
+      "crops": {
+        "di": "acc2f3c1027e28d939357b5acb7d73b8bbc4364874d04feb1bf437bc42f9e511",
+        "reference": "3d5190e45c0458bc1ff79c1a23ab4a1ccd2afa2e17d9ef22491878e790000661",
+        "mix": "b9d9b8fbd6d60f91f036f11cbdc3b97d977a4b6bf6f2244c4d23168404b98931",
+        "backing": "271c36814b913deec63e9570888a807861cd293a1b16ce3c9152e4c020aa0968"
+      },
+      "excerpt_start_s": 218.5
+    },
+    {
+      "source": "cambridge",
+      "song": "Heather Jane",
+      "part": "ElecGtr1",
+      "other_di_from": "guitar-techs/P3_music excerpt 01/01",
+      "crops": {
+        "di": "a33b20c134e061226175565c50262f6d95bebe5bfcd571b60c231e38e7e1709d",
+        "reference": "873870a43c95e25731752abec8c52ff8b2d686c32c9df56c5a6a1825079f2d48",
+        "mix": "25b1c362739574f23151f3589b326808369d5a99350567dcabeb8d0e6f098d49",
+        "backing": "0a53bd3464180d80930bf34c93d6bceda02a7186c649ecef1ca7633e42cb509d"
+      },
+      "excerpt_start_s": 134.0
+    },
+    {
+      "source": "cambridge",
+      "song": "Heather Jane",
+      "part": "ElecGtr1DT",
+      "other_di_from": "guitar-techs/P3_music excerpt 01/01",
+      "crops": {
+        "di": "a0240e39ad0037a278dc3abd90fef6472b82b71499ff986b1b9dcec68338daf7",
+        "reference": "9deb8d13853e4a4da8729f5c80a817e70b2faf6db2dcaf752eb7cb6fd0a155cb",
+        "mix": "c919e15b5791cafc2c2f291d58817c6b8ff6a5827f01ecc5c2cdf381b8c8744d",
+        "backing": "21ebc9a3a8d1ca177788ccef34f24c1c18d9b05fcd73995863b30aefd2d58cb5"
+      },
+      "excerpt_start_s": 134.0
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 01",
+      "part": "01",
+      "other_di_from": "guitar-techs/P3_music excerpt 03/03",
+      "crops": {
+        "di": "630adf048060e24880b4d29606f0391e3cb411b313226aef8739729339403838",
+        "reference": "ea28ee96e3aa7636cd8d1cd2f1652b20401246e2a77cd081e041ca1323843b18",
+        "mix": "ea28ee96e3aa7636cd8d1cd2f1652b20401246e2a77cd081e041ca1323843b18",
+        "backing": "84e27a1771ba8503849cb0b98db02d9735afece265e8b6e7571334d6808fc536"
+      },
+      "excerpt_start_s": 16.5
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 03",
+      "part": "03",
+      "other_di_from": "guitar-techs/P3_music excerpt 04/04",
+      "crops": {
+        "di": "03a03d789d59998d14618ae9ca0857695abc30dfa5f2616b33d1c4826f1185a7",
+        "reference": "8dd8a3fb97bcddb067638e9b8aa95efbb53598fe44e9683a31a82507c18d180b",
+        "mix": "8dd8a3fb97bcddb067638e9b8aa95efbb53598fe44e9683a31a82507c18d180b",
+        "backing": "84e27a1771ba8503849cb0b98db02d9735afece265e8b6e7571334d6808fc536"
+      },
+      "excerpt_start_s": 2.5
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 04",
+      "part": "04",
+      "other_di_from": "guitar-techs/P3_music excerpt 05/05",
+      "crops": {
+        "di": "0940f6e99670e0280e00a62a2132e7d3cff17349cdffa9eba6caa38491459bf0",
+        "reference": "bc9f5ea9f13b77dcddb4c1d4edbfd7a91d367e0e1868080f923a7f729c96702a",
+        "mix": "bc9f5ea9f13b77dcddb4c1d4edbfd7a91d367e0e1868080f923a7f729c96702a",
+        "backing": "de577aa88cfa18ffeefe76951c8404f82a92544743aba0519f10395ecb662e8e"
+      },
+      "excerpt_start_s": 26.5
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 05",
+      "part": "05",
+      "other_di_from": "guitar-techs/P3_music excerpt 07/07",
+      "crops": {
+        "di": "263e96b8c72e369790ffefb841910b7e56012bf4a0d2e70a712660b73a5c1ad0",
+        "reference": "e44a4b84a102f552b8bfce7a5caf0b1a513bb1191255908d6086c4107508d1ee",
+        "mix": "e44a4b84a102f552b8bfce7a5caf0b1a513bb1191255908d6086c4107508d1ee",
+        "backing": "b4906c3fc83f9719dacc20dbe0e1f22484776a3a41ad9bbba11f910ff0f38df1"
+      },
+      "excerpt_start_s": 0.0
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 07",
+      "part": "07",
+      "other_di_from": "guitar-techs/P3_music excerpt 08/08",
+      "crops": {
+        "di": "1a0497abe28383988f384e2b58d0b7a4e92e2f3ebc736edd4e8ce417b7a963e1",
+        "reference": "b39075899be3fec7f50850016d372ee1afa41d1bd058ad042543ee50afc034e6",
+        "mix": "b39075899be3fec7f50850016d372ee1afa41d1bd058ad042543ee50afc034e6",
+        "backing": "b901a42249f179d374a1684b3d2e2542b44a210746ec42e61581fa08430070b0"
+      },
+      "excerpt_start_s": 9.5
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 08",
+      "part": "08",
+      "other_di_from": "guitar-techs/P3_music excerpt 09/09",
+      "crops": {
+        "di": "2c86ac1e7df532b747cbc04e25f2443cf0bf50da94ba01ead8301406eda1fb81",
+        "reference": "529111f7a076de7b9abe5820c2c8022c1d4552746a2bea05c08a46b3e67a5a44",
+        "mix": "529111f7a076de7b9abe5820c2c8022c1d4552746a2bea05c08a46b3e67a5a44",
+        "backing": "b901a42249f179d374a1684b3d2e2542b44a210746ec42e61581fa08430070b0"
+      },
+      "excerpt_start_s": 14.0
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 09",
+      "part": "09",
+      "other_di_from": "guitar-techs/P3_music excerpt 12/12",
+      "crops": {
+        "di": "997ec57e0600940a70955581ff48504fd7eaa91e996760de59143099ecd81d22",
+        "reference": "965a17b96429a970961dd3f1f7c36320e708f5930866d41a2d8755ae1b16614a",
+        "mix": "965a17b96429a970961dd3f1f7c36320e708f5930866d41a2d8755ae1b16614a",
+        "backing": "024e17ab2340f3244e2044787bbfc44da3e65a10131c004d4ca23bf140eed33c"
+      },
+      "excerpt_start_s": 27.0
+    },
+    {
+      "source": "guitar-techs",
+      "song": "P3_music excerpt 12",
+      "part": "12",
+      "other_di_from": "telefunken/Bourbon/GTR 1",
+      "crops": {
+        "di": "34e3aee0d6270e9d853a9654c1be70f58adc2e2b876a08e8a0711e152ac6af78",
+        "reference": "3a4cd5232f452ceb5fa9b1a2669d0fd3c95ab024df3f942ec12dfd6be46fd39d",
+        "mix": "3a4cd5232f452ceb5fa9b1a2669d0fd3c95ab024df3f942ec12dfd6be46fd39d",
+        "backing": "024e17ab2340f3244e2044787bbfc44da3e65a10131c004d4ca23bf140eed33c"
+      },
+      "excerpt_start_s": 31.0
+    }
+  ],
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.0.3",
+    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 5.228794,
+    "notes": [
+      "toneking through aumf TKI2 NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "measurement_caveat": "rendered by swift (plugin 1.0.3), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 5.228794 dB. Every number below carries that, and none of them may be committed without it",
+  "summary": {
+    "same": {
+      "targets": 14,
+      "failures": 0,
+      "objective_mean": 0.4391,
+      "objective_median": 0.4217,
+      "search_belief_mean": 0.4176,
+      "parameter_mae": null,
+      "inversion_objective_mean": 2.2084,
+      "inversion_objective_median": 0.7085,
+      "neutral_objective_mean": 1.0599,
+      "neutral_objective_median": 1.0446,
+      "baseline_failures": 0,
+      "renders": 4217,
+      "against_neutral": {
+        "targets": 14,
+        "closer": 14,
+        "mean_change_fraction": -0.5857095193066485,
+        "wilcoxon_p": 0.0001220703125
+      },
+      "against_inversion": {
+        "targets": 14,
+        "closer": 14,
+        "mean_change_fraction": -0.8011623404196284,
+        "wilcoxon_p": 0.0001220703125
+      }
+    },
+    "other": {
+      "targets": 14,
+      "failures": 0,
+      "objective_mean": 1.0558,
+      "objective_median": 0.9869,
+      "search_belief_mean": 0.7285,
+      "parameter_mae": null,
+      "inversion_objective_mean": 1.0897,
+      "inversion_objective_median": 0.9537,
+      "neutral_objective_mean": 1.0599,
+      "neutral_objective_median": 1.0446,
+      "baseline_failures": 0,
+      "renders": 4214,
+      "against_neutral": {
+        "targets": 14,
+        "closer": 8,
+        "mean_change_fraction": -0.0038447135914354996,
+        "wilcoxon_p": 0.71484375
+      },
+      "against_inversion": {
+        "targets": 14,
+        "closer": 5,
+        "mean_change_fraction": -0.031132707592139937,
+        "wilcoxon_p": 0.9031982421875
+      },
+      "paired_against": "same",
+      "paired_targets": 14,
+      "closer_than_reference": 0,
+      "mean_change_fraction": 1.4044850964024351,
+      "wilcoxon_p": 0.0001220703125
+    },
+    "noise": {
+      "targets": 14,
+      "failures": 0,
+      "objective_mean": 1.4533,
+      "objective_median": 1.4849,
+      "search_belief_mean": 1.1342,
+      "parameter_mae": null,
+      "inversion_objective_mean": 1.5265,
+      "inversion_objective_median": 1.5475,
+      "neutral_objective_mean": 1.0599,
+      "neutral_objective_median": 1.0446,
+      "baseline_failures": 0,
+      "renders": 4214,
+      "against_neutral": {
+        "targets": 14,
+        "closer": 0,
+        "mean_change_fraction": 0.3711705984507696,
+        "wilcoxon_p": 0.0001220703125
+      },
+      "against_inversion": {
+        "targets": 14,
+        "closer": 9,
+        "mean_change_fraction": -0.04798018408717421,
+        "wilcoxon_p": 0.0784912109375
+      },
+      "paired_against": "same",
+      "paired_targets": 14,
+      "closer_than_reference": 0,
+      "mean_change_fraction": 2.3096840558730563,
+      "wilcoxon_p": 0.0001220703125
+    }
+  },
+  "outcomes": [
+    {
+      "signal": "same",
+      "target_index": 0,
+      "position": 0,
+      "objective": 0.443493597541887,
+      "objective_spread": 0.0019046734905171503,
+      "search_belief": 0.434891650468455,
+      "parameter_mae": null,
+      "inversion_objective": 0.47038187742957543,
+      "neutral_objective": 1.0989031659534299,
+      "inversion_spread": 0.0027693303224146093,
+      "neutral_spread": 0.12564495342796356,
+      "objective_dimensions": {
+        "ambience": 0.2424333333333333,
+        "dynamics": 0.7785984285662808,
+        "level": 0.3600000000000006,
+        "timbre": 0.4225058368676892
+      },
+      "inversion_dimensions": {
+        "ambience": 0.09496459999999997,
+        "dynamics": 0.5248290354543407,
+        "level": 1.0599999999999998,
+        "timbre": 0.5478689345488933
+      },
+      "neutral_dimensions": {
+        "ambience": 0.30972589999999994,
+        "dynamics": 0.8414264588675575,
+        "harmonic": 1.2902375450712684,
+        "level": 1.8988888888888893,
+        "timbre": 1.3999508716770392
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 0,
+      "position": 1,
+      "objective": 0.6696243832380917,
+      "objective_spread": 0.0017406924436168536,
+      "search_belief": 0.6245081441044871,
+      "parameter_mae": null,
+      "inversion_objective": 0.515618003668475,
+      "neutral_objective": 1.0989031659534299,
+      "inversion_spread": 0.003521229788519431,
+      "neutral_spread": 0.12564495342796356,
+      "objective_dimensions": {
+        "ambience": 0.24084019999999995,
+        "dynamics": 0.4274664778456318,
+        "level": 1.6400000000000006,
+        "timbre": 0.8353232944998351
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3822817777777778,
+        "dynamics": 0.4506450851675437,
+        "level": 0.6766666666666659,
+        "timbre": 0.5841179845644673
+      },
+      "neutral_dimensions": {
+        "ambience": 0.30972589999999994,
+        "dynamics": 0.8414264588675575,
+        "harmonic": 1.2902375450712684,
+        "level": 1.8988888888888893,
+        "timbre": 1.3999508716770392
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 0,
+      "position": 2,
+      "objective": 1.490906632387072,
+      "objective_spread": 0.0010788778193491222,
+      "search_belief": 0.923643814606564,
+      "parameter_mae": null,
+      "inversion_objective": 1.5068851261837333,
+      "neutral_objective": 1.0989031659534299,
+      "inversion_spread": 0.0010872525471647965,
+      "neutral_spread": 0.12564495342796356,
+      "objective_dimensions": {
+        "ambience": 0.13139886666666664,
+        "dynamics": 0.8032848971796714,
+        "harmonic": 1.384942769961425,
+        "level": 3.6066666666666674,
+        "timbre": 2.170730749158554
+      },
+      "inversion_dimensions": {
+        "ambience": 0.2843743,
+        "dynamics": 0.9344648857731981,
+        "harmonic": 1.3640195144721066,
+        "level": 3.8300000000000005,
+        "timbre": 2.055787649052024
+      },
+      "neutral_dimensions": {
+        "ambience": 0.30972589999999994,
+        "dynamics": 0.8414264588675575,
+        "harmonic": 1.2902375450712684,
+        "level": 1.8988888888888893,
+        "timbre": 1.3999508716770392
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 1,
+      "position": 0,
+      "objective": 0.7134519620544711,
+      "objective_spread": 0.010671973947765312,
+      "search_belief": 0.4001628292650095,
+      "parameter_mae": null,
+      "inversion_objective": 0.6658899225229081,
+      "neutral_objective": 0.6713163199454498,
+      "inversion_spread": 0.0009185400615208117,
+      "neutral_spread": 0.018081565451117054,
+      "objective_dimensions": {
+        "ambience": 0.09895563888888893,
+        "dynamics": 0.34079825197294816,
+        "harmonic": 0.4101289806284248,
+        "level": 0.9933333333333335,
+        "timbre": 1.2491085945484606
+      },
+      "inversion_dimensions": {
+        "ambience": 0.11032600000000005,
+        "dynamics": 0.568388513810222,
+        "harmonic": 0.36503053925885354,
+        "level": 0.15333333333333243,
+        "timbre": 1.1798996889534947
+      },
+      "neutral_dimensions": {
+        "ambience": 0.14873508333333338,
+        "dynamics": 0.5327541309163714,
+        "harmonic": 0.08127025392797815,
+        "level": 1.2099999999999993,
+        "timbre": 1.1432476882619456
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 1,
+      "position": 1,
+      "objective": 1.0695689920865046,
+      "objective_spread": 0.02198827567738526,
+      "search_belief": 0.913491462730579,
+      "parameter_mae": null,
+      "inversion_objective": 1.1768091356020955,
+      "neutral_objective": 0.6713163199454498,
+      "inversion_spread": 0.0007346098002445345,
+      "neutral_spread": 0.018081565451117054,
+      "objective_dimensions": {
+        "ambience": 0.3144750888888889,
+        "dynamics": 0.7044735823767324,
+        "harmonic": 0.32738424165937824,
+        "level": 2.2099999999999995,
+        "timbre": 1.718963356553047
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3057129222222222,
+        "dynamics": 0.6164970837803635,
+        "harmonic": 0.4494806397259051,
+        "level": 4.043333333333333,
+        "timbre": 1.6974348317115158
+      },
+      "neutral_dimensions": {
+        "ambience": 0.14873508333333338,
+        "dynamics": 0.5327541309163714,
+        "harmonic": 0.08127025392797815,
+        "level": 1.2099999999999993,
+        "timbre": 1.1432476882619456
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 1,
+      "position": 2,
+      "objective": 0.2710070691252207,
+      "objective_spread": 0.009191843254082344,
+      "search_belief": 0.2567315429528371,
+      "parameter_mae": null,
+      "inversion_objective": 0.43657120348506134,
+      "neutral_objective": 0.6713163199454498,
+      "inversion_spread": 0.006317999558988707,
+      "neutral_spread": 0.018081565451117054,
+      "objective_dimensions": {
+        "ambience": 0.14323951111111113,
+        "dynamics": 0.4096618257150643,
+        "harmonic": 0.10835638339092662,
+        "level": 0.09999999999999905,
+        "timbre": 0.37014028015883876
+      },
+      "inversion_dimensions": {
+        "ambience": 0.15114801111111117,
+        "dynamics": 0.40069319058698843,
+        "harmonic": 0.06549023225625283,
+        "level": 1.0466666666666669,
+        "timbre": 0.650552073845548
+      },
+      "neutral_dimensions": {
+        "ambience": 0.14873508333333338,
+        "dynamics": 0.5327541309163714,
+        "harmonic": 0.08127025392797815,
+        "level": 1.2099999999999993,
+        "timbre": 1.1432476882619456
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 2,
+      "position": 0,
+      "objective": 1.1190014994231365,
+      "objective_spread": 0.01129336225385047,
+      "search_belief": 0.7615986713190285,
+      "parameter_mae": null,
+      "inversion_objective": 1.4269046943329904,
+      "neutral_objective": 0.8154053346056139,
+      "inversion_spread": 0.0006214112957001472,
+      "neutral_spread": 0.0022079359189379755,
+      "objective_dimensions": {
+        "ambience": 0.49035598333333336,
+        "dynamics": 1.13554060707237,
+        "harmonic": 0.1502776340192996,
+        "level": 3.1666666666666665,
+        "timbre": 1.5070483854833494
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3279032166666667,
+        "dynamics": 0.9049995740191306,
+        "harmonic": 0.15676621903215435,
+        "level": 4.6066666666666665,
+        "timbre": 2.2162585755619784
+      },
+      "neutral_dimensions": {
+        "ambience": 0.247038,
+        "dynamics": 0.8236253150089494,
+        "harmonic": 0.12932385618804218,
+        "level": 2.35,
+        "timbre": 1.140544401304957
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 2,
+      "position": 1,
+      "objective": 0.38943526694270664,
+      "objective_spread": 0.010606163721901207,
+      "search_belief": 0.3628241263874831,
+      "parameter_mae": null,
+      "inversion_objective": 0.4984302399648692,
+      "neutral_objective": 0.8154053346056139,
+      "inversion_spread": 0.0021931834471135003,
+      "neutral_spread": 0.0022079359189379755,
+      "objective_dimensions": {
+        "ambience": 0.0050775333333333466,
+        "dynamics": 0.09917455301552179,
+        "harmonic": 0.16913799960175827,
+        "level": 0.026666666666667282,
+        "timbre": 0.8402526162960524
+      },
+      "inversion_dimensions": {
+        "ambience": 0.24884383333333338,
+        "dynamics": 0.624475937284129,
+        "harmonic": 0.31359979263820653,
+        "level": 0.9233333333333332,
+        "timbre": 0.5830018792783284
+      },
+      "neutral_dimensions": {
+        "ambience": 0.247038,
+        "dynamics": 0.8236253150089494,
+        "harmonic": 0.12932385618804218,
+        "level": 2.35,
+        "timbre": 1.140544401304957
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 2,
+      "position": 2,
+      "objective": 0.5405379097071951,
+      "objective_spread": 0.0005831505792387448,
+      "search_belief": 0.3861483520451017,
+      "parameter_mae": null,
+      "inversion_objective": 0.540285876936547,
+      "neutral_objective": 0.8154053346056139,
+      "inversion_spread": 0.0019861741742817074,
+      "neutral_spread": 0.0022079359189379755,
+      "objective_dimensions": {
+        "ambience": 0.11535663333333339,
+        "dynamics": 0.22894481520343266,
+        "harmonic": 0.1352732115308122,
+        "level": 0.2699999999999996,
+        "timbre": 1.080452351422263
+      },
+      "inversion_dimensions": {
+        "ambience": 0.11528440000000006,
+        "dynamics": 0.2259768394342786,
+        "harmonic": 0.13530235669534774,
+        "level": 0.2699999999999996,
+        "timbre": 1.0810465200426895
+      },
+      "neutral_dimensions": {
+        "ambience": 0.247038,
+        "dynamics": 0.8236253150089494,
+        "harmonic": 0.12932385618804218,
+        "level": 2.35,
+        "timbre": 1.140544401304957
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 3,
+      "position": 0,
+      "objective": 0.5224023601432619,
+      "objective_spread": 0.000559373895088422,
+      "search_belief": 0.49678949291595,
+      "parameter_mae": null,
+      "inversion_objective": 21.35933205860594,
+      "neutral_objective": 1.0342726210217486,
+      "inversion_spread": 0.5339511852502099,
+      "neutral_spread": 0.010266703230395136,
+      "objective_dimensions": {
+        "ambience": 0.4949655555555555,
+        "dynamics": 1.0814330964211107,
+        "harmonic": 0.11482337083074072,
+        "level": 0.17222222222222192,
+        "timbre": 0.52806708433914
+      },
+      "inversion_dimensions": {
+        "ambience": 0.0426884888888889,
+        "dynamics": 2.8156541233809116,
+        "harmonic": 126.0868382267346,
+        "level": 0.4900000000000008,
+        "timbre": 0.6745223590938879
+      },
+      "neutral_dimensions": {
+        "ambience": 0.4965893444444443,
+        "dynamics": 3.1274612235967503,
+        "harmonic": 0.31835862792951314,
+        "level": 0.41333333333333283,
+        "timbre": 0.8453453086705567
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 304,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 3,
+      "position": 1,
+      "objective": 0.97169281876015,
+      "objective_spread": 0.00017196628837712336,
+      "search_belief": 1.3027797427800865,
+      "parameter_mae": null,
+      "inversion_objective": 0.9214825164869714,
+      "neutral_objective": 1.0342726210217486,
+      "inversion_spread": 0.03493237761788914,
+      "neutral_spread": 0.010266703230395136,
+      "objective_dimensions": {
+        "ambience": 0.8529093333333333,
+        "dynamics": 1.4402707044782936,
+        "harmonic": 0.3353510221496319,
+        "level": 0.04333333333333419,
+        "timbre": 1.2374440486445306
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3329954777777777,
+        "dynamics": 2.926984142190642,
+        "harmonic": 0.38011777918280937,
+        "level": 0.30555555555555597,
+        "timbre": 0.7224603246214768
+      },
+      "neutral_dimensions": {
+        "ambience": 0.4965893444444443,
+        "dynamics": 3.1274612235967503,
+        "harmonic": 0.31835862792951314,
+        "level": 0.41333333333333283,
+        "timbre": 0.8453453086705567
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 3,
+      "position": 2,
+      "objective": 1.401703680654135,
+      "objective_spread": 0.0027659142979721274,
+      "search_belief": 1.6235366904010293,
+      "parameter_mae": null,
+      "inversion_objective": 1.4790382766043926,
+      "neutral_objective": 1.0342726210217486,
+      "inversion_spread": 0.002092053157414231,
+      "neutral_spread": 0.010266703230395136,
+      "objective_dimensions": {
+        "ambience": 0.8936129611111112,
+        "dynamics": 2.241125544534035,
+        "harmonic": 0.22234886767262144,
+        "level": 4.636666666666667,
+        "timbre": 1.3064777721644119
+      },
+      "inversion_dimensions": {
+        "ambience": 0.5836923333333335,
+        "dynamics": 2.832175243533881,
+        "harmonic": 0.23713337506864396,
+        "level": 6.076666666666667,
+        "timbre": 1.1925741635730844
+      },
+      "neutral_dimensions": {
+        "ambience": 0.4965893444444443,
+        "dynamics": 3.1274612235967503,
+        "harmonic": 0.31835862792951314,
+        "level": 0.41333333333333283,
+        "timbre": 0.8453453086705567
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 4,
+      "position": 0,
+      "objective": 0.8328482921173803,
+      "objective_spread": 0.0010649141470712165,
+      "search_belief": 0.3950363380633534,
+      "parameter_mae": null,
+      "inversion_objective": 0.9674796925670908,
+      "neutral_objective": 0.9844565712044552,
+      "inversion_spread": 0.002973990435801044,
+      "neutral_spread": 0.0009987400159470194,
+      "objective_dimensions": {
+        "ambience": 0.45043850000000013,
+        "dynamics": 0.792405101883388,
+        "harmonic": 0.45558536202755623,
+        "level": 1.9966666666666668,
+        "timbre": 1.016562880123204
+      },
+      "inversion_dimensions": {
+        "ambience": 1.2032211000000002,
+        "dynamics": 0.6451911433813027,
+        "harmonic": 0.24208905427526028,
+        "level": 3.776666666666667,
+        "timbre": 0.8473026177267468
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.7834747240663992,
+        "harmonic": 0.9975852062891685,
+        "level": 0.5633333333333338,
+        "timbre": 1.1227663417064602
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 4,
+      "position": 1,
+      "objective": 1.353489998265399,
+      "objective_spread": 0.0043654219749396095,
+      "search_belief": 0.9663472924133983,
+      "parameter_mae": null,
+      "inversion_objective": 1.3924104755556854,
+      "neutral_objective": 0.9844565712044552,
+      "inversion_spread": 0.003951746312607307,
+      "neutral_spread": 0.0009987400159470194,
+      "objective_dimensions": {
+        "ambience": 1.2896478333333334,
+        "dynamics": 0.8206588981791031,
+        "harmonic": 0.22036329135172705,
+        "level": 6.096666666666667,
+        "timbre": 1.3403177032712286
+      },
+      "inversion_dimensions": {
+        "ambience": 1.2884904,
+        "dynamics": 0.7657694068902288,
+        "harmonic": 0.1613181972910024,
+        "level": 8.666666666666666,
+        "timbre": 1.0963254234389364
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.7834747240663992,
+        "harmonic": 0.9975852062891685,
+        "level": 0.5633333333333338,
+        "timbre": 1.1227663417064602
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 4,
+      "position": 2,
+      "objective": 0.39162875850416495,
+      "objective_spread": 0.002167308927521927,
+      "search_belief": 0.371412334150889,
+      "parameter_mae": null,
+      "inversion_objective": 0.6744834970319253,
+      "neutral_objective": 0.9844565712044552,
+      "inversion_spread": 0.000606763036754554,
+      "neutral_spread": 0.0009987400159470194,
+      "objective_dimensions": {
+        "ambience": 0.4035147111111111,
+        "dynamics": 0.5829572381526253,
+        "harmonic": 0.11125553318631459,
+        "level": 0.043333333333333,
+        "timbre": 0.47354799424407257
+      },
+      "inversion_dimensions": {
+        "dynamics": 0.7157311422918721,
+        "harmonic": 0.13446938823051108,
+        "level": 2.5566666666666666,
+        "timbre": 0.5916626070033009
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.7834747240663992,
+        "harmonic": 0.9975852062891685,
+        "level": 0.5633333333333338,
+        "timbre": 1.1227663417064602
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 5,
+      "position": 0,
+      "objective": 1.2391117594755379,
+      "objective_spread": 0.006630736307837504,
+      "search_belief": 0.9670080490347599,
+      "parameter_mae": null,
+      "inversion_objective": 1.588054663173775,
+      "neutral_objective": 0.8966633804227518,
+      "inversion_spread": 0.0029100208625814084,
+      "neutral_spread": 0.0035892879566833402,
+      "objective_dimensions": {
+        "dynamics": 1.121431823989034,
+        "harmonic": 0.4810304207114191,
+        "level": 4.63,
+        "timbre": 1.0807830330971173
+      },
+      "inversion_dimensions": {
+        "ambience": 0.6133654722222223,
+        "dynamics": 1.1760305397110067,
+        "harmonic": 1.0554672814250903,
+        "level": 8.353333333333333,
+        "timbre": 1.4384520602101982
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1042796576747584,
+        "harmonic": 0.21026023880777886,
+        "level": 0.6133333333333333,
+        "timbre": 1.1306776332313506
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 5,
+      "position": 1,
+      "objective": 0.3391225146861318,
+      "objective_spread": 0.03879088215394161,
+      "search_belief": 0.31351638955474936,
+      "parameter_mae": null,
+      "inversion_objective": 0.6837989602742661,
+      "neutral_objective": 0.8966633804227518,
+      "inversion_spread": 0.0023630443131823498,
+      "neutral_spread": 0.0035892879566833402,
+      "objective_dimensions": {
+        "ambience": 0.02856707777777777,
+        "dynamics": 0.18012807388584764,
+        "harmonic": 0.16050681506624767,
+        "level": 0.6799999999999997,
+        "timbre": 0.5783126665112958
+      },
+      "inversion_dimensions": {
+        "ambience": 0.6666558888888889,
+        "dynamics": 1.0474219420340054,
+        "harmonic": 0.007556413593653066,
+        "level": 2.4133333333333336,
+        "timbre": 0.5579881659764437
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1042796576747584,
+        "harmonic": 0.21026023880777886,
+        "level": 0.6133333333333333,
+        "timbre": 1.1306776332313506
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 5,
+      "position": 2,
+      "objective": 1.0020927442988707,
+      "objective_spread": 0.0019208316649030888,
+      "search_belief": 0.33888593863529265,
+      "parameter_mae": null,
+      "inversion_objective": 1.1621059612998887,
+      "neutral_objective": 0.8966633804227518,
+      "inversion_spread": 0.0013428370252264177,
+      "neutral_spread": 0.0035892879566833402,
+      "objective_dimensions": {
+        "ambience": 0.94119795,
+        "dynamics": 0.8345268018924329,
+        "harmonic": 0.2937945309445054,
+        "level": 1.6033333333333335,
+        "timbre": 1.292699715397458
+      },
+      "inversion_dimensions": {
+        "ambience": 0.9152028277777777,
+        "dynamics": 0.8652414100247139,
+        "harmonic": 0.3614510686295164,
+        "level": 3.6033333333333335,
+        "timbre": 1.358381199834146
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1042796576747584,
+        "harmonic": 0.21026023880777886,
+        "level": 0.6133333333333333,
+        "timbre": 1.1306776332313506
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 6,
+      "position": 0,
+      "objective": 0.46804028866228614,
+      "objective_spread": 0.0007640182836419207,
+      "search_belief": 0.44783843659733413,
+      "parameter_mae": null,
+      "inversion_objective": 0.9879187092462557,
+      "neutral_objective": 1.1701013981713109,
+      "inversion_spread": 0.0016011653484185873,
+      "neutral_spread": 0.003703846879128836,
+      "objective_dimensions": {
+        "ambience": 0.18683377777777777,
+        "dynamics": 0.34731012470186223,
+        "harmonic": 0.39221797243706163,
+        "level": 0.18333333333333357,
+        "timbre": 0.7299705794781425
+      },
+      "inversion_dimensions": {
+        "ambience": 1.544145833333333,
+        "dynamics": 0.774286368572653,
+        "harmonic": 0.5384026810969708,
+        "level": 0.6255555555555555,
+        "timbre": 1.0294189677854773
+      },
+      "neutral_dimensions": {
+        "ambience": 1.5456352222222218,
+        "dynamics": 0.6549026907257317,
+        "harmonic": 0.5768328504703111,
+        "level": 2.6,
+        "timbre": 1.2112365979301831
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 6,
+      "position": 1,
+      "objective": 1.0921072436042534,
+      "objective_spread": 0.000747679460086248,
+      "search_belief": 0.9031415227361297,
+      "parameter_mae": null,
+      "inversion_objective": 1.332789255891546,
+      "neutral_objective": 1.1701013981713109,
+      "inversion_spread": 0.0012861081658022133,
+      "neutral_spread": 0.003703846879128836,
+      "objective_dimensions": {
+        "ambience": 0.8917934999999999,
+        "dynamics": 0.5784899695353883,
+        "harmonic": 0.6020254756870186,
+        "level": 1.913333333333334,
+        "timbre": 1.4705598187414577
+      },
+      "inversion_dimensions": {
+        "ambience": 0.7732607555555555,
+        "dynamics": 0.5659063419944039,
+        "harmonic": 0.420492253111332,
+        "level": 2.1300000000000003,
+        "timbre": 2.164643861114215
+      },
+      "neutral_dimensions": {
+        "ambience": 1.5456352222222218,
+        "dynamics": 0.6549026907257317,
+        "harmonic": 0.5768328504703111,
+        "level": 2.6,
+        "timbre": 1.2112365979301831
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 6,
+      "position": 2,
+      "objective": 1.760970514278872,
+      "objective_spread": 0.08379357668342369,
+      "search_belief": 1.093863441081046,
+      "parameter_mae": null,
+      "inversion_objective": 1.7242264312795443,
+      "neutral_objective": 1.1701013981713109,
+      "inversion_spread": 0.0008012313331176024,
+      "neutral_spread": 0.003703846879128836,
+      "objective_dimensions": {
+        "ambience": 0.39887619999999996,
+        "dynamics": 0.7037478702657655,
+        "harmonic": 2.047066747643855,
+        "level": 5.743333333333333,
+        "timbre": 2.1531138128193876
+      },
+      "inversion_dimensions": {
+        "ambience": 0.4030105666666666,
+        "dynamics": 0.8309577416113797,
+        "harmonic": 0.46615632425668013,
+        "level": 7.0,
+        "timbre": 2.4540038469543255
+      },
+      "neutral_dimensions": {
+        "ambience": 1.5456352222222218,
+        "dynamics": 0.6549026907257317,
+        "harmonic": 0.5768328504703111,
+        "level": 2.6,
+        "timbre": 1.2112365979301831
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 7,
+      "position": 0,
+      "objective": 1.149441392497631,
+      "objective_spread": 0.002182576550569193,
+      "search_belief": 0.5155871229986777,
+      "parameter_mae": null,
+      "inversion_objective": 0.9399640234720246,
+      "neutral_objective": 1.1553294937586154,
+      "inversion_spread": 0.005008753480715611,
+      "neutral_spread": 0.0008145205429856972,
+      "objective_dimensions": {
+        "ambience": 0.1198580666666667,
+        "dynamics": 0.5157194600733346,
+        "harmonic": 0.5072591432524295,
+        "level": 0.6300000000000002,
+        "timbre": 2.2525109369555563
+      },
+      "inversion_dimensions": {
+        "ambience": 0.12331897777777782,
+        "dynamics": 0.746605171458083,
+        "harmonic": 1.3030260969834977,
+        "level": 1.3200000000000003,
+        "timbre": 1.223399861240939
+      },
+      "neutral_dimensions": {
+        "ambience": 0.6277298333333332,
+        "dynamics": 1.166197621707551,
+        "harmonic": 0.40679399577853276,
+        "level": 1.8033333333333335,
+        "timbre": 1.616995696047507
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 7,
+      "position": 1,
+      "objective": 1.7598881300052815,
+      "objective_spread": 0.002810407718509822,
+      "search_belief": 1.2838951974852775,
+      "parameter_mae": null,
+      "inversion_objective": 1.6625490680048207,
+      "neutral_objective": 1.1553294937586154,
+      "inversion_spread": 0.001770847218001137,
+      "neutral_spread": 0.0008145205429856972,
+      "objective_dimensions": {
+        "ambience": 0.09776593333333333,
+        "dynamics": 0.6069833246778634,
+        "harmonic": 0.6642314324533151,
+        "level": 6.25,
+        "timbre": 2.8168570489938016
+      },
+      "inversion_dimensions": {
+        "ambience": 0.7991911666666667,
+        "dynamics": 1.055115974666913,
+        "harmonic": 0.20152023193831978,
+        "level": 7.29,
+        "timbre": 2.077495150636384
+      },
+      "neutral_dimensions": {
+        "ambience": 0.6277298333333332,
+        "dynamics": 1.166197621707551,
+        "harmonic": 0.40679399577853276,
+        "level": 1.8033333333333335,
+        "timbre": 1.616995696047507
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 7,
+      "position": 2,
+      "objective": 0.6450053670970382,
+      "objective_spread": 0.0005350858632979794,
+      "search_belief": 0.6120127468899689,
+      "parameter_mae": null,
+      "inversion_objective": 0.9424447361071775,
+      "neutral_objective": 1.1553294937586154,
+      "inversion_spread": 0.0007778955129696952,
+      "neutral_spread": 0.0008145205429856972,
+      "objective_dimensions": {
+        "ambience": 0.13011202222222226,
+        "dynamics": 0.48378446099723,
+        "harmonic": 0.5144844661750092,
+        "level": 0.1733333333333332,
+        "timbre": 1.0898995674077365
+      },
+      "inversion_dimensions": {
+        "ambience": 0.8020763333333334,
+        "dynamics": 1.0606961058918773,
+        "harmonic": 0.1996539342331649,
+        "level": 1.0466666666666669,
+        "timbre": 1.246811420745901
+      },
+      "neutral_dimensions": {
+        "ambience": 0.6277298333333332,
+        "dynamics": 1.166197621707551,
+        "harmonic": 0.40679399577853276,
+        "level": 1.8033333333333335,
+        "timbre": 1.616995696047507
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 8,
+      "position": 0,
+      "objective": 1.5594744732711148,
+      "objective_spread": 0.007643520855643349,
+      "search_belief": 0.9441950071788766,
+      "parameter_mae": null,
+      "inversion_objective": 1.6759693999992809,
+      "neutral_objective": 1.2131180263658805,
+      "inversion_spread": 0.012391291069658195,
+      "neutral_spread": 0.0033082683120757572,
+      "objective_dimensions": {
+        "ambience": 0.25984425,
+        "dynamics": 1.0438607001962616,
+        "harmonic": 2.925853030244573,
+        "level": 5.876666666666666,
+        "timbre": 1.2214048423378971
+      },
+      "inversion_dimensions": {
+        "ambience": 0.49330110000000005,
+        "dynamics": 1.0004937153296054,
+        "harmonic": 2.022735903978131,
+        "level": 7.523333333333333,
+        "timbre": 1.5216826322751424
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1969115086508937,
+        "harmonic": 1.770913928785821,
+        "level": 1.5166666666666668,
+        "timbre": 0.9509499764387805
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 8,
+      "position": 1,
+      "objective": 0.4604658201850233,
+      "objective_spread": 0.0012822725201698248,
+      "search_belief": 0.4401669080109759,
+      "parameter_mae": null,
+      "inversion_objective": 0.8685282587516695,
+      "neutral_objective": 1.2131180263658805,
+      "inversion_spread": 0.00594050040805616,
+      "neutral_spread": 0.0033082683120757572,
+      "objective_dimensions": {
+        "ambience": 0.3236337,
+        "dynamics": 0.46194041181469564,
+        "harmonic": 0.47254344688374506,
+        "level": 0.6733333333333332,
+        "timbre": 0.49153086597393064
+      },
+      "inversion_dimensions": {
+        "ambience": 0.4930623,
+        "dynamics": 1.0490607961082774,
+        "harmonic": 1.8277874492952162,
+        "level": 0.9966666666666661,
+        "timbre": 0.5811237857801926
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1969115086508937,
+        "harmonic": 1.770913928785821,
+        "level": 1.5166666666666668,
+        "timbre": 0.9509499764387805
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 8,
+      "position": 2,
+      "objective": 1.2577377325347336,
+      "objective_spread": 0.008292867214273913,
+      "search_belief": 0.7891666349700854,
+      "parameter_mae": null,
+      "inversion_objective": 1.109725904225538,
+      "neutral_objective": 1.2131180263658805,
+      "inversion_spread": 0.312160219872502,
+      "neutral_spread": 0.0033082683120757572,
+      "objective_dimensions": {
+        "ambience": 0.4400487,
+        "dynamics": 0.7804405668817868,
+        "harmonic": 1.6029877656639435,
+        "level": 0.896666666666666,
+        "timbre": 1.773561761691805
+      },
+      "inversion_dimensions": {
+        "ambience": 0.5192109,
+        "dynamics": 1.0373479683658158,
+        "harmonic": 2.472133503816807,
+        "level": 0.9033333333333337,
+        "timbre": 0.9199304264795187
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.1969115086508937,
+        "harmonic": 1.770913928785821,
+        "level": 1.5166666666666668,
+        "timbre": 0.9509499764387805
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 9,
+      "position": 0,
+      "objective": 0.38136439605894806,
+      "objective_spread": 0.0006948121396008755,
+      "search_belief": 0.3668316973825315,
+      "parameter_mae": null,
+      "inversion_objective": 0.9257714274518234,
+      "neutral_objective": 1.6928722526540174,
+      "inversion_spread": 0.004352685486411101,
+      "neutral_spread": 0.0018380845064429607,
+      "objective_dimensions": {
+        "ambience": 0.0708181,
+        "dynamics": 0.20276115912261114,
+        "harmonic": 0.10459552387747191,
+        "level": 0.023333333333333428,
+        "timbre": 0.7724910471443893
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3041952333333333,
+        "dynamics": 1.385353980417821,
+        "harmonic": 1.986593076066401,
+        "level": 0.10666666666666676,
+        "timbre": 0.7512635579966118
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.2202107891733538,
+        "harmonic": 2.2107523381829224,
+        "level": 2.4133333333333327,
+        "timbre": 1.5667156417328234
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 9,
+      "position": 1,
+      "objective": 0.8467568611554789,
+      "objective_spread": 0.002404264908163367,
+      "search_belief": 0.6860298746375063,
+      "parameter_mae": null,
+      "inversion_objective": 0.6764954456923767,
+      "neutral_objective": 1.6928722526540174,
+      "inversion_spread": 0.002496585422082087,
+      "neutral_spread": 0.0018380845064429607,
+      "objective_dimensions": {
+        "ambience": 0.24491024999999997,
+        "dynamics": 1.0162556506800986,
+        "harmonic": 1.605712998786865,
+        "level": 0.11333333333333329,
+        "timbre": 0.8863117250441377
+      },
+      "inversion_dimensions": {
+        "ambience": 0.24885249999999992,
+        "dynamics": 0.9791286951681609,
+        "harmonic": 0.8963610640622891,
+        "level": 0.49666666666666615,
+        "timbre": 0.7082916882541427
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.2202107891733538,
+        "harmonic": 2.2107523381829224,
+        "level": 2.4133333333333327,
+        "timbre": 1.5667156417328234
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 9,
+      "position": 2,
+      "objective": 1.7661697813106345,
+      "objective_spread": 0.007051552277292261,
+      "search_belief": 1.1537444989140646,
+      "parameter_mae": null,
+      "inversion_objective": 1.761127894550896,
+      "neutral_objective": 1.6928722526540174,
+      "inversion_spread": 0.004883047983788025,
+      "neutral_spread": 0.0018380845064429607,
+      "objective_dimensions": {
+        "ambience": 0.17503124444444443,
+        "dynamics": 1.4190782020178274,
+        "harmonic": 1.4937375883966784,
+        "level": 7.173333333333333,
+        "timbre": 1.9984740258230298
+      },
+      "inversion_dimensions": {
+        "ambience": 0.1709710666666667,
+        "dynamics": 1.406988183563037,
+        "harmonic": 1.5115795366799782,
+        "level": 7.166666666666667,
+        "timbre": 1.9868507202191552
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.2202107891733538,
+        "harmonic": 2.2107523381829224,
+        "level": 2.4133333333333327,
+        "timbre": 1.5667156417328234
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 10,
+      "position": 0,
+      "objective": 1.5826450680104838,
+      "objective_spread": 0.0015779576667542816,
+      "search_belief": 0.5863319627183506,
+      "parameter_mae": null,
+      "inversion_objective": 1.5647889101327674,
+      "neutral_objective": 1.0548783844483784,
+      "inversion_spread": 0.0030646839393924097,
+      "neutral_spread": 0.015852941859729297,
+      "objective_dimensions": {
+        "ambience": 0.09408648333333329,
+        "dynamics": 0.7363558549332373,
+        "harmonic": 2.1460173020005375,
+        "level": 5.19,
+        "timbre": 1.8989879121855076
+      },
+      "inversion_dimensions": {
+        "ambience": 0.11023470555555553,
+        "dynamics": 1.4716701706317892,
+        "harmonic": 2.3488532308941124,
+        "level": 3.2433333333333336,
+        "timbre": 1.763906116437142
+      },
+      "neutral_dimensions": {
+        "ambience": 0.28401001666666664,
+        "dynamics": 1.5191660675591496,
+        "harmonic": 1.997897899654444,
+        "level": 1.1833333333333336,
+        "timbre": 0.858121446679756
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 10,
+      "position": 1,
+      "objective": 1.6429619124469272,
+      "objective_spread": 0.006195385416564392,
+      "search_belief": 0.8548547988851413,
+      "parameter_mae": null,
+      "inversion_objective": 1.6974644706477526,
+      "neutral_objective": 1.0548783844483784,
+      "inversion_spread": 0.004758257325617743,
+      "neutral_spread": 0.015852941859729297,
+      "objective_dimensions": {
+        "ambience": 0.27252614444444445,
+        "dynamics": 1.7994734281455873,
+        "harmonic": 0.4694542865838432,
+        "level": 6.513333333333333,
+        "timbre": 2.004422527380976
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3128156,
+        "dynamics": 1.8519653991058185,
+        "harmonic": 0.3009429244585467,
+        "level": 6.783333333333334,
+        "timbre": 2.1237168236612463
+      },
+      "neutral_dimensions": {
+        "ambience": 0.28401001666666664,
+        "dynamics": 1.5191660675591496,
+        "harmonic": 1.997897899654444,
+        "level": 1.1833333333333336,
+        "timbre": 0.858121446679756
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 10,
+      "position": 2,
+      "objective": 0.5727692220503521,
+      "objective_spread": 0.00179549376910082,
+      "search_belief": 0.5431512578069695,
+      "parameter_mae": null,
+      "inversion_objective": 1.05153338975881,
+      "neutral_objective": 1.0548783844483784,
+      "inversion_spread": 0.004138037230181579,
+      "neutral_spread": 0.015852941859729297,
+      "objective_dimensions": {
+        "ambience": 0.19803630000000003,
+        "dynamics": 1.4573797962185158,
+        "harmonic": 0.5314817192727675,
+        "level": 0.10000000000000024,
+        "timbre": 0.49372183782684886
+      },
+      "inversion_dimensions": {
+        "ambience": 0.3216400000000001,
+        "dynamics": 1.963481522292951,
+        "harmonic": 2.2592236512576243,
+        "level": 0.2600000000000004,
+        "timbre": 0.6873547354888533
+      },
+      "neutral_dimensions": {
+        "ambience": 0.28401001666666664,
+        "dynamics": 1.5191660675591496,
+        "harmonic": 1.997897899654444,
+        "level": 1.1833333333333336,
+        "timbre": 0.858121446679756
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 11,
+      "position": 0,
+      "objective": 1.724929498710786,
+      "objective_spread": 0.0012754326784256698,
+      "search_belief": 0.761965134952947,
+      "parameter_mae": null,
+      "inversion_objective": 1.663864198265818,
+      "neutral_objective": 0.914941846069949,
+      "inversion_spread": 0.0016051507890058048,
+      "neutral_spread": 0.002731718033211261,
+      "objective_dimensions": {
+        "ambience": 0.12547524999999982,
+        "dynamics": 1.4804571990925883,
+        "harmonic": 0.01927846584608438,
+        "level": 6.403333333333333,
+        "timbre": 2.602945380865956
+      },
+      "inversion_dimensions": {
+        "ambience": 0.12984252777777758,
+        "dynamics": 1.5084546238226355,
+        "harmonic": 0.012196677317033847,
+        "level": 6.753333333333333,
+        "timbre": 2.3902855014064976
+      },
+      "neutral_dimensions": {
+        "ambience": 0.2601659444444444,
+        "dynamics": 1.8882004477071226,
+        "harmonic": 0.11926859693519419,
+        "level": 1.8800000000000001,
+        "timbre": 1.0265369327922258
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 11,
+      "position": 1,
+      "objective": 0.39997880898477467,
+      "objective_spread": 0.0037068900203562904,
+      "search_belief": 0.3796690738079429,
+      "parameter_mae": null,
+      "inversion_objective": 0.6970006251350253,
+      "neutral_objective": 0.914941846069949,
+      "inversion_spread": 0.004771608039829123,
+      "neutral_spread": 0.002731718033211261,
+      "objective_dimensions": {
+        "ambience": 0.15796107777777785,
+        "dynamics": 0.7163944204284328,
+        "harmonic": 0.021917602244476888,
+        "level": 0.00111111111111089,
+        "timbre": 0.6054760673879783
+      },
+      "inversion_dimensions": {
+        "ambience": 0.2044221944444443,
+        "dynamics": 1.7616239419708684,
+        "harmonic": 0.06422213910961501,
+        "level": 0.8777777777777777,
+        "timbre": 0.7434353352597296
+      },
+      "neutral_dimensions": {
+        "ambience": 0.2601659444444444,
+        "dynamics": 1.8882004477071226,
+        "harmonic": 0.11926859693519419,
+        "level": 1.8800000000000001,
+        "timbre": 1.0265369327922258
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 11,
+      "position": 2,
+      "objective": 0.8853594813729213,
+      "objective_spread": 0.00757558073109732,
+      "search_belief": 0.9072326487483668,
+      "parameter_mae": null,
+      "inversion_objective": 0.7989656429296222,
+      "neutral_objective": 0.914941846069949,
+      "inversion_spread": 0.0007729551535143875,
+      "neutral_spread": 0.002731718033211261,
+      "objective_dimensions": {
+        "ambience": 0.45584301666666655,
+        "dynamics": 1.5601239844019463,
+        "harmonic": 0.34422244219746007,
+        "level": 1.4233333333333331,
+        "timbre": 0.9659706503905611
+      },
+      "inversion_dimensions": {
+        "ambience": 0.44603343888888874,
+        "dynamics": 1.5125055868052313,
+        "harmonic": 0.33716251885641807,
+        "level": 1.336666666666666,
+        "timbre": 0.79408186346847
+      },
+      "neutral_dimensions": {
+        "ambience": 0.2601659444444444,
+        "dynamics": 1.8882004477071226,
+        "harmonic": 0.11926859693519419,
+        "level": 1.8800000000000001,
+        "timbre": 1.0265369327922258
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 12,
+      "position": 0,
+      "objective": 0.38704520169924345,
+      "objective_spread": 0.0030099309809032415,
+      "search_belief": 0.36799485771648355,
+      "parameter_mae": null,
+      "inversion_objective": 0.6007334237830865,
+      "neutral_objective": 0.9631489159947435,
+      "inversion_spread": 0.009226877690374669,
+      "neutral_spread": 0.0007268764397764249,
+      "objective_dimensions": {
+        "ambience": 0.12527500000000005,
+        "dynamics": 0.5926801247710066,
+        "harmonic": 0.16043472395144584,
+        "level": 0.029999999999999954,
+        "timbre": 0.5798773046741654
+      },
+      "inversion_dimensions": {
+        "ambience": 0.22279362222222224,
+        "dynamics": 0.768905257325339,
+        "harmonic": 0.17769966704913565,
+        "level": 1.1866666666666674,
+        "timbre": 0.8037581074076606
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.125515344571209,
+        "harmonic": 0.3159695315861948,
+        "level": 0.4411111111111114,
+        "timbre": 1.2353797690601214
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 12,
+      "position": 1,
+      "objective": 2.010566103123304,
+      "objective_spread": 0.008283080781405605,
+      "search_belief": 1.630529982263599,
+      "parameter_mae": null,
+      "inversion_objective": 2.6922538807198877,
+      "neutral_objective": 0.9631489159947435,
+      "inversion_spread": 0.006146680478219313,
+      "neutral_spread": 0.0007268764397764249,
+      "objective_dimensions": {
+        "ambience": 5.244364429629629,
+        "dynamics": 0.7215321532435662,
+        "harmonic": 0.4096049356311166,
+        "level": 1.4233333333333331,
+        "timbre": 1.6377499022874054
+      },
+      "inversion_dimensions": {
+        "ambience": 8.515218444444443,
+        "dynamics": 0.6334549579490331,
+        "harmonic": 1.291906650372854,
+        "level": 2.3233333333333337,
+        "timbre": 1.2197681422127487
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.125515344571209,
+        "harmonic": 0.3159695315861948,
+        "level": 0.4411111111111114,
+        "timbre": 1.2353797690601214
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 12,
+      "position": 2,
+      "objective": 0.9790106786562626,
+      "objective_spread": 0.0008747774931857633,
+      "search_belief": 2.6938901802921458,
+      "parameter_mae": null,
+      "inversion_objective": 1.169567588779894,
+      "neutral_objective": 0.9631489159947435,
+      "inversion_spread": 0.0021058728386083025,
+      "neutral_spread": 0.0007268764397764249,
+      "objective_dimensions": {
+        "ambience": 0.22214904444444442,
+        "dynamics": 0.9305112837994943,
+        "harmonic": 0.6002742255171153,
+        "level": 6.053333333333334,
+        "timbre": 0.7671874367589772
+      },
+      "inversion_dimensions": {
+        "ambience": 0.20557271111111108,
+        "dynamics": 0.8211224332105438,
+        "harmonic": 0.458212601518097,
+        "level": 6.890000000000001,
+        "timbre": 1.2174202230637279
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.125515344571209,
+        "harmonic": 0.3159695315861948,
+        "level": 0.4411111111111114,
+        "timbre": 1.2353797690601214
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "other",
+      "target_index": 13,
+      "position": 0,
+      "objective": 1.2266158105231273,
+      "objective_spread": 0.24197435819313884,
+      "search_belief": 0.7329467591266358,
+      "parameter_mae": null,
+      "inversion_objective": 1.3686074403077024,
+      "neutral_objective": 1.173119981476427,
+      "inversion_spread": 0.013318056863021566,
+      "neutral_spread": 0.004931585619410539,
+      "objective_dimensions": {
+        "ambience": 0.9769457500000002,
+        "dynamics": 1.9539236761511798,
+        "harmonic": 0.35813559757596586,
+        "timbre": 1.4079197797123344
+      },
+      "inversion_dimensions": {
+        "ambience": 0.18517045555555556,
+        "dynamics": 2.977305024222329,
+        "harmonic": 0.261269283279753,
+        "level": 1.1900000000000002,
+        "timbre": 1.78657327797526
+      },
+      "neutral_dimensions": {
+        "ambience": 0.18038887777777776,
+        "dynamics": 1.8788731044891673,
+        "harmonic": 0.048550384816894006,
+        "level": 4.506666666666667,
+        "timbre": 1.3369801200059326
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "noise",
+      "target_index": 13,
+      "position": 1,
+      "objective": 1.4789653447234972,
+      "objective_spread": 0.002056617525454829,
+      "search_belief": 0.9362019724186555,
+      "parameter_mae": null,
+      "inversion_objective": 1.4466930713850676,
+      "neutral_objective": 1.173119981476427,
+      "inversion_spread": 0.014872448907317093,
+      "neutral_spread": 0.004931585619410539,
+      "objective_dimensions": {
+        "ambience": 0.21127632777777772,
+        "dynamics": 1.3240868789627838,
+        "harmonic": 0.12349841756036534,
+        "level": 5.136666666666667,
+        "timbre": 2.1682928120744185
+      },
+      "inversion_dimensions": {
+        "ambience": 0.03208284444444445,
+        "dynamics": 2.770673411294389,
+        "harmonic": 0.21058811607061267,
+        "level": 5.003333333333333,
+        "timbre": 1.5853519917251926
+      },
+      "neutral_dimensions": {
+        "ambience": 0.18038887777777776,
+        "dynamics": 1.8788731044891673,
+        "harmonic": 0.048550384816894006,
+        "level": 4.506666666666667,
+        "timbre": 1.3369801200059326
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "same",
+      "target_index": 13,
+      "position": 2,
+      "objective": 0.4757020986576837,
+      "objective_spread": 0.0032342691316210592,
+      "search_belief": 0.4527537913772484,
+      "parameter_mae": null,
+      "inversion_objective": 0.7200557463404683,
+      "neutral_objective": 1.173119981476427,
+      "inversion_spread": 0.0066371851293223205,
+      "neutral_spread": 0.004931585619410539,
+      "objective_dimensions": {
+        "ambience": 0.05521951111111114,
+        "dynamics": 0.9217989596664969,
+        "harmonic": 0.2334351492970843,
+        "level": 0.049999999999999524,
+        "timbre": 0.6682667425703369
+      },
+      "inversion_dimensions": {
+        "ambience": 0.09362637777777773,
+        "dynamics": 1.7232334418765112,
+        "harmonic": 0.09066135949771148,
+        "level": 1.2166666666666661,
+        "timbre": 0.8092654690955691
+      },
+      "neutral_dimensions": {
+        "ambience": 0.18038887777777776,
+        "dynamics": 1.8788731044891673,
+        "harmonic": 0.048550384816894006,
+        "level": 4.506666666666667,
+        "timbre": 1.3369801200059326
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "failed": false,
+      "error": null
+    }
+  ]
+}

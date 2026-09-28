@@ -431,3 +431,64 @@ def test_a_level_trim_is_paired_with_the_answer_it_replaced(space, topology, sig
             assert summary[name]["against_untrimmed"]["targets"] == count
     assert not any(o.level_trim_db is not None for o in _run(space, topology, target,
                                                               named, targets=1))
+
+
+def test_recordings_are_targets_heard_through_their_own_di(space, topology, monkeypatch):
+    """A real recording has no truth: its amp track is the target, its own DI is
+    what every answer is heard through, and each recording brings its own
+    signals under the same names."""
+    first_di = fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3
+    second_di = fx.plucks(seconds=1.2, gap=0.5, seed=9) * 0.3
+    third_di = fx.plucks(seconds=1.2, gap=0.6, seed=5) * 0.3
+    renderer = SyntheticRenderer()
+    scorer = __import__("match.search", fromlist=["x"]).Evaluator(
+        renderer, None, first_di, space)
+    amp = lambda di: renderer.render(di, scorer._settings(topology["seed"])).audio
+    recordings = [
+        {"reference": amp(first_di), "di": first_di,
+         "signals": {"same": first_di, "other": second_di}},
+        {"reference": amp(second_di), "di": second_di,
+         "signals": {"same": second_di, "other": third_di}},
+    ]
+    import analysis.fingerprint as F
+    import match.search as S
+
+    # Each target fingerprint, which recording's amp track it measured; then,
+    # per target, the DIs its answers were heard through and searched through.
+    measured, heard, searched = {}, {}, {}
+    real_fingerprint, real_scorer, real_search = F.fingerprint, B.scorer_candidates, S.search
+
+    def measuring(audio, *args, **kwargs):
+        result = real_fingerprint(audio, *args, **kwargs)
+        for index, item in enumerate(recordings):
+            samples, reference = np.ravel(audio.samples), np.ravel(item["reference"])
+            if len(samples) == len(reference) and np.allclose(samples, reference):
+                measured[id(result)] = index
+        return result
+
+    def checking(evaluator, target, *args, **kwargs):
+        heard.setdefault(measured[id(target)], set()).add(id(evaluator.probe_di))
+        return real_scorer(evaluator, target, *args, **kwargs)
+
+    def searching(renderer, target, probe, *args, **kwargs):
+        searched.setdefault(measured[id(target)], set()).add(id(probe))
+        return real_search(renderer, target, probe, *args, **kwargs)
+
+    monkeypatch.setattr(F, "fingerprint", measuring)
+    monkeypatch.setattr(B, "scorer_candidates", checking)
+    monkeypatch.setattr(S, "search", searching)
+    outcomes = SB.compare_search_signals(
+        SyntheticRenderer(), space, None, {}, topology, budget=30,
+        rng=np.random.default_rng(4), pack_id="morgan", amp=AMP,
+        recordings=recordings)
+
+    assert len(outcomes) == 4 and not any(o.failed for o in outcomes)
+    assert all(o.parameter_mae is None for o in outcomes), "no truth to recover"
+    assert heard == {0: {id(first_di)}, 1: {id(second_di)}}
+    assert searched == {0: {id(first_di), id(second_di)},
+                        1: {id(second_di), id(third_di)}}
+    with pytest.raises(SB.SignalBenchmarkError, match="same signal names"):
+        SB.compare_search_signals(
+            SyntheticRenderer(), space, None, {}, topology, budget=30,
+            pack_id="morgan", amp=AMP,
+            recordings=[recordings[0], {**recordings[1], "signals": {"same": second_di}}])

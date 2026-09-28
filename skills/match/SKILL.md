@@ -134,7 +134,16 @@ workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
-matching without it — a DI of anything they play, not necessarily this part.
+matching without it — of this part if they can, which is the nearest a player can
+get to the recorded take (a guess, not a measurement); otherwise of anything they
+play. Against real amp recordings (14 parts on each of SW50R and Tone King's
+rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of the very
+take the amp recorded ended about half as far as one through the DI of another
+session (13 and 14 of 14 closer), as on the plugin's own renders, and the other
+session's DI still beat no DI on 11 and 13 of 14. Half of those other DIs were
+another excerpt of the same player and rig, and they did no better than the
+rest. A user's own DI of the part is a different performance from
+the recording, so it lies somewhere between the first two; it was not measured.
 Measured on SW50R and Tone King's rhythm channel (one player, two songs; runs
 under -v1 and -v2, scored through either passage), searches through the target's
 own passage ended at 0.31–0.48, through the player's other song at 0.61–0.96 —
@@ -147,9 +156,13 @@ Without a DI, omit the flag; the tool uses a six-second sequence of decaying
 white-noise bursts and records that limitation. Every candidate is then noise
 through the amp compared with a guitar, so a no-DI run's own scores are
 noise-against-guitar distances and a falling score is not evidence the tone got
-closer. Tell the user a match made without a DI is close to a starting point, not
+closer. Against real amp recordings a no-DI search was no better than its
+starting settings on SW50R and ended further from the recording than them on
+Tone King on all 14 parts, and on 12 of 14 with loudness set aside — so without a
+DI, show the starting preset beside the searched one and do not present the
+search as an improvement. Tell the user a match made without a DI is at best a starting point, not
 a measured match, that its output level may need setting by ear (such matches
-played 3.5–15 LU from their targets on both amps, and turning the probe down to a
+played 3.5–21.5 LU from their targets on both amps, and turning the probe down to a
 guitar's loudness on SW50R did not change that), and that a DI of their playing would
 change that.
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
