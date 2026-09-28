@@ -207,7 +207,7 @@ a player's own DI of a part they did not record with (a different performance
 from the reference, which no test here has measured).
 
 **The objective predictions** frozen by the builder (`unpaired-v1` without
-`level` and `unpaired-v2`, bare guitar against the mix) are reported beside the
+`level`, `unpaired-v2` and `unpaired-v3`, bare guitar against the mix) are reported beside the
 verdicts and kept out of the listening protocol's agreement count — both
 alternatives were chosen by minimising distance to the amp track that is in that
 mix, which is what `target_id` `unassigned` does.
