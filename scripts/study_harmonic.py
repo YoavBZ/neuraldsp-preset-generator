@@ -26,7 +26,9 @@ fizz. `analysis.compare` turns them into the `harmonic` dimension. The questions
 - **recovers**: what a search against another performance asks of it. Treat
   one passage at one step as the target and another passage at every step as
   the candidates: is the candidate at the target's own step the closest?
-  Chance is one in the number of steps.
+  Chance is one in the number of steps. Every other dimension is asked the
+  same, as a control: if none can tell the steps apart across passages, the
+  question is too hard to say anything about `harmonic`.
 - **rescored** (with --recordings): the recordings benchmark's comparisons with
   the `harmonic` dimension left out of every total.
 """
@@ -351,7 +353,15 @@ def main() -> None:
                 "p90": round(float(np.percentile(present, 90)), 3),
                 "max": round(max(present), 3)}
 
-    recovers = recovery(harmonic, len(steps), names)
+    def dimension(name):
+        def distance(a, b):
+            return compare(printed[a], printed[b],
+                           profile=args.loss_profile).values.get(name)
+        return distance
+
+    measured = sorted({name for key in printed for name in compare(
+        printed[key], printed[key], profile=args.loss_profile).values})
+    recovers = {name: recovery(dimension(name), len(steps), names) for name in measured}
     rescored = [rescore(path, args.loss_profile) for path in args.recordings]
     elapsed = time.time() - started
 
@@ -389,10 +399,13 @@ def main() -> None:
     print("passage effect (two passages, same step), median:")
     for label, values in passage_effect.items():
         print(f"  {label:26} {line(values)}")
-    print(f"recovers: across two passages the target's own step was closest in "
-          f"{recovers['recovered']} of {recovers['of']} ({recovers['rate']:.1%}; "
-          f"chance {recovers['chance']:.1%}); its mean rank {recovers['mean_rank']} "
-          f"(chance {recovers['chance_rank']})")
+    print("recovers: across two passages, how often the target's own step was "
+          "closest, by dimension")
+    for name, result in recovers.items():
+        if result["of"]:
+            print(f"  {name:16} {result['recovered']} of {result['of']} "
+                  f"({result['rate']:.1%}; chance {result['chance']:.1%}); mean rank "
+                  f"{result['mean_rank']} (chance {result['chance_rank']})")
     for document in rescored:
         print(f"rescored {document['path']}:")
         for row in document["rows"]:
