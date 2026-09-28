@@ -314,7 +314,7 @@ def build(manifest: dict, *, seed: int):
         "render_provenance": {label: provenances[role] for label, role in blind.items()},
         "listening_context": "Listener hears common backing; objective scores bare guitar "
                              "against the reference. Primary distance excludes level.",
-    }, include_match_v2=True)
+    }, include_match_v3=True)
     evidence = {
         "schema": "prospective-backed-audition-v1", "seed": seed,
         "objective_profiles_frozen": scored["objective_profiles_frozen"],

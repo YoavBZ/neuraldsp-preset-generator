@@ -79,7 +79,7 @@ def _same_frozen_record(key_record: dict, verdict_record: dict, *, blind: bool) 
     if "scoring_error" in verdict_record:
         if any(field in verdict_record for field in
                ("objective_scoring", "agreement", "agreement_with_level",
-                "agreement_match_v2")):
+                "agreement_match_v2", "agreement_match_v3")):
             raise ValueError("an unscored verdict still contains objective evidence")
     elif key_record.get("objective_scoring") != verdict_record.get("objective_scoring"):
         raise ValueError("audition key and verdict disagree on frozen objectives")
@@ -165,11 +165,12 @@ def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str, dict | None]:
     binding = record.get("audition_key")
     if binding is None:
         # Old v1-only sidecars predate a digest over the whole blind key. They
-        # remain readable, but cannot be prospective v2 evidence.
+        # remain readable, but cannot be prospective v2/v3 evidence.
         if record.get("objective_profiles_frozen") is not None or (
                 isinstance(record.get("objective_scoring"), dict) and
-                "match_v2" in record["objective_scoring"]):
-            raise ValueError("v2 blind verdict lacks a whole-key hash")
+                any(field in record["objective_scoring"]
+                    for field in ("match_v2", "match_v3"))):
+            raise ValueError("v2/v3 blind verdict lacks a whole-key hash")
         return record, "blind-legacy-v1-only", _bound_consistency(key, record, _closer(record))
     if (not isinstance(binding, dict) or
             not isinstance(binding.get("path"), str) or not binding["path"] or
@@ -181,7 +182,8 @@ def load_bound_verdict(path: pathlib.Path) -> tuple[dict, str, dict | None]:
 
 
 def main() -> None:
-    from analysis.listening import match_v2_agreement_report, sha256
+    from analysis.listening import (match_v2_agreement_report,
+                                    match_v3_agreement_report, sha256)
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--record", required=True, action="append", type=pathlib.Path,
@@ -209,10 +211,14 @@ def main() -> None:
         if reliability is not None:
             reliability_rows.append(reliability)
     v2 = match_v2_agreement_report(records)
+    v3 = match_v3_agreement_report(records)
     # New auditions ask only for closeness. Historical preference fields remain
     # readable in source records, but are not a question in this audit.
     v2["summary"] = {"closer": v2["summary"]["closer"]}
     for group in v2["target_groups"].values():
+        group.pop("preferred", None)
+    v3["summary"] = {"closer": v3["summary"]["closer"]}
+    for group in v3["target_groups"].values():
         group.pop("preferred", None)
     repeat_total = sum(row["repeat"]["trials_not_independent_n"] for row in reliability_rows)
     repeat_same = sum(row["repeat"]["consistent"] for row in reliability_rows)
@@ -235,10 +241,12 @@ def main() -> None:
         "inputs": sources,
         "scoring_error_count": sum("scoring_error" in row for row in records),
         "v2": v2,
+        "v3": v3,
         "listener_consistency": listener_consistency,
         "limitations": [
             "The key binding and frozen-score structure are checked; file timestamps do not prove pre-listening creation.",
             "Old v1-only blind sidecars without whole-key hashes remain unscored for v2.",
+            "Old v1/v2 sidecars remain unscored for v3; no post-listening v3 score is inferred.",
             "Distinct target IDs and repeated verdicts do not establish independent songs or listeners.",
             "The listener heard an audition, sometimes with backing; the objective scored bare guitar. No audio was rescored here.",
         ],
@@ -246,6 +254,7 @@ def main() -> None:
     out_dir.mkdir(parents=True)
     _write_text(out_dir / "report.json", json.dumps(report, indent=2, allow_nan=False) + "\n")
     print(json.dumps({"closer": report["v2"]["summary"]["closer"],
+                      "closer_v3": report["v3"]["summary"]["closer"],
                       "listener_consistency": listener_consistency}, indent=2))
 
 

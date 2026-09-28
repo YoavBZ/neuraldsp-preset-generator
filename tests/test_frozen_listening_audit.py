@@ -22,7 +22,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "scripts" / "audit_frozen_listening.py"
 
 
-def _scored(tmp_path, *, comparison_id="first", target_id="song", v2=True):
+def _scored(tmp_path, *, comparison_id="first", target_id="song", v2=True,
+            v3=False):
     time = np.arange(48000) / 48000
     paths = []
     for index, frequency in enumerate((220, 220, 440)):
@@ -33,7 +34,7 @@ def _scored(tmp_path, *, comparison_id="first", target_id="song", v2=True):
         "id": comparison_id, "target_id": target_id,
         "reference": {**paths[0], "regime": "probe"},
         "alternatives": {"A": paths[1], "B": paths[2]},
-    }, include_match_v2=v2)
+    }, include_match_v2=v2, include_match_v3=v3)
 
 
 def _blind_verdict(tmp_path, scored, *, listener="listener", key_name="audition.flac.key.json"):
@@ -106,8 +107,37 @@ def test_audit_counts_targets_not_repeats_and_keeps_v1_only_unscored(tmp_path):
     assert len(report["v2"]["target_groups"]["song"]["comparisons"]) == 2
     assert report["v2"]["target_groups"]["other"]["closer"][
         "diagnostic_counts_not_independent_n"] == {"unscored": 1}
+    assert report["v3"]["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 0
     assert "preferred" not in completed.stdout
     assert "private-audition" not in completed.stdout
+
+
+def test_audit_shows_v3_only_for_newly_frozen_records(tmp_path):
+    current = _scored(tmp_path, comparison_id="current", v3=True)
+    old = _scored(tmp_path, comparison_id="old")
+    current_path, _ = _backed_verdict(tmp_path, current, name="current")
+    old_path, _ = _backed_verdict(tmp_path, old, name="old")
+    out = tmp_path / "v3-audit"
+    completed = _run(current_path, old_path, out_dir=out)
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads((out / "report.json").read_text())
+    assert report["v2"]["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 1
+    assert report["v3"]["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 1
+    assert report["v3"]["target_groups"]["song"]["closer"][
+        "diagnostic_counts_not_independent_n"]["unscored"] == 1
+    assert "preferred" not in report["v3"]["summary"]
+
+
+def test_audit_refuses_changed_v3_objective_in_bound_verdict(tmp_path):
+    scored = _scored(tmp_path, v3=True)
+    path, _ = _backed_verdict(tmp_path, scored)
+    wrapped = json.loads(path.read_text())
+    wrapped["frozen_scored_record"]["objective_scoring"]["match_v3"]["prediction"] = "B"
+    path.write_text(json.dumps(wrapped))
+    out = tmp_path / "tampered-v3"
+    completed = _run(path, out_dir=out)
+    assert completed.returncode != 0
+    assert not out.exists()
 
 
 @pytest.mark.parametrize("kind", ("blind", "backed"))

@@ -229,7 +229,8 @@ def test_synthetic_held_out_crops_feed_backed_audition_with_fresh_di_proofs(tmp_
     }
     montage, evidence = build_backed(manifest, seed=17)
     assert len(montage) > 30 * RATE
-    assert evidence["objective_profiles_frozen"] == ["unpaired-v1", "unpaired-v2"]
+    assert evidence["objective_profiles_frozen"] == [
+        "unpaired-v1", "unpaired-v2", "unpaired-v3"]
     assert evidence["validation_crop_record"]["declaration"]["test_id"] == "synthetic-01"
     assert evidence["objective_record"]["reference"]["regime"] == "mix"
     assert evidence["source_paths"]["reference"] == crops["outputs"]["mix"]["path"]
