@@ -24,7 +24,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts._cli import guarded
-from scripts._listening_trials import _validate_trials, primary_answer
+from scripts._listening_trials import CHOICES, _validate_trials, consistency, primary_answer
 from scripts.build_validation_crops import _declaration
 
 
@@ -125,6 +125,35 @@ def _published_auditions(run_dir: pathlib.Path, slugs: set[str]) -> dict[str, pa
     if incomplete:
         raise ValueError("verdict.json is missing for built audition(s): "
                          + ", ".join(incomplete) + "; no private keys were opened")
+    # A zero-byte or placeholder verdict is not a completed listener answer.
+    # Inspect *every* verdict before opening the first private key.
+    for slug, audition in found.items():
+        path = audition / "verdict.json"
+        try:
+            verdict = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise ValueError(f"{slug}: incomplete verdict; no private keys were opened") from error
+        answers = verdict.get("listener_trials") if isinstance(verdict, dict) else None
+        key_binding = (verdict.get("audition_key") or {}) if isinstance(verdict, dict) else {}
+        logged = (verdict.get("listener_consistency") or {}) if isinstance(verdict, dict) else {}
+        repeat = (logged.get("repeat") or {}) if isinstance(logged, dict) else {}
+        catch = (logged.get("catch") or {}) if isinstance(logged, dict) else {}
+        key_binding = key_binding if isinstance(key_binding, dict) else {}
+        repeat = repeat if isinstance(repeat, dict) else {}
+        catch = catch if isinstance(catch, dict) else {}
+        if (not isinstance(verdict, dict)
+                or verdict.get("schema") != "prospective-backed-verdict-v1"
+                or not isinstance(answers, list) or len(answers) != 2
+                or any(answer not in CHOICES for answer in answers)
+                or (verdict.get("verdict") or {}).get("closer") not in CHOICES
+                or key_binding.get("path") != str(audition / "private-key.json")
+                or not _is_sha256(key_binding.get("sha256"))
+                or not _is_sha256(verdict.get("heard_audio_sha256"))
+                or repeat.get("trials_not_independent_n") != 1
+                or repeat.get("consistent") not in (0, 1)
+                or catch.get("trials_not_independent_n") != 0
+                or not isinstance(verdict.get("frozen_scored_record"), dict)):
+            raise ValueError(f"{slug}: incomplete verdict; no private keys were opened")
     unexpected = sorted(set(found) - slugs)
     if unexpected:
         raise ValueError("audition directory is not a declared part: "
@@ -177,10 +206,19 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
         raise ValueError(f"{part_id}: audition manifest binding changed")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     alternatives = manifest.get("alternatives") or {}
+    expected_mix = {"guitar_target_lufs": crop.get("reference_lufs"),
+                    "master_target_lufs": -20, "peak_ceiling_dbtp": -1,
+                    "max_ab_lufs_delta": .5, "gap_s": .5, "cycles": 1}
     if (manifest.get("schema") != "prospective-backed-listening-v1"
             or manifest.get("id") != _slug(part_id)
+            or manifest.get("target_id") != "unassigned"
+            or manifest.get("purpose") != "prospective"
             or manifest.get("validation_mode") != "declared"
             or manifest.get("declared_test_id") != binding["test_id"]
+            or not isinstance(manifest.get("mix"), dict)
+            or any(manifest["mix"].get(field) != value
+                   for field, value in expected_mix.items())
+            or manifest.get("reliability") != {"hidden_repeats": 1, "catch_trial": False}
             or pathlib.Path(manifest.get("validation_crop_record", "")).resolve() != crop_path
             or any(pathlib.Path((alternatives.get(role) or {}).get("path", "")).resolve()
                    != audition.parent / f"{role}.wav" for role in ("first", "second"))):
@@ -193,14 +231,22 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
         if spec["sha256"] != expected["sha256"]:
             raise ValueError(f"{part_id}: manifest {role} is not its crop")
     if (manifest["reference"].get("regime") != "mix"
-            or manifest["backing"].get("gain_db") != 0):
+            or manifest["reference"].get("start_s") != 0
+            or manifest["reference"].get("duration_s") != crop.get("excerpt_duration_s")
+            or crop.get("excerpt_duration_s") != 10
+            or manifest["backing"].get("start_s") != 0
+            or manifest["backing"].get("gain_db") != 0
+            or manifest["backing"].get("guitar_removed") is not True):
         raise ValueError(f"{part_id}: manifest changed the listening conditions")
     for role in ("first", "second"):
         spec = alternatives[role]
         _checked_file(spec, audition.parent / f"{role}.wav",
                       f"{part_id}: manifest {role}")
-        if pathlib.Path(spec.get("render_record", "")).resolve() != (
-                audition.parent / f"{role}.wav.render.json"):
+        if (pathlib.Path(spec.get("render_record", "")).resolve() !=
+                audition.parent / f"{role}.wav.render.json"
+                or spec.get("start_s") != 0
+                or spec.get("pack") != "morgan"
+                or spec.get("amp_model") != "SW50R"):
             raise ValueError(f"{part_id}: manifest {role} lacks its fresh render")
     if (key.get("objective_record", {}).get("id") != _slug(part_id)
             or verdict.get("audition_key", {}).get("path") != str(key_path)
@@ -248,6 +294,9 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
     if verdict.get("verdict", {}).get("closer") != primary_answer(
             trials, answers, key["blind_key"]):
         raise ValueError(f"{part_id}: primary verdict disagrees with trial answers")
+    if verdict.get("listener_consistency") != consistency(trials, answers,
+                                                           key["blind_key"]):
+        raise ValueError(f"{part_id}: logged repeat consistency disagrees with answers")
     mapped = [trial["blind_key"][answer] if answer in ("A", "B") else None
               for trial, answer in zip(trials, answers)]
     winner = mapped[0] if mapped[0] == mapped[1] else None
@@ -266,6 +315,44 @@ def _checked_file(spec: dict | None, expected: pathlib.Path, context: str) -> No
             or expected.is_symlink() or not expected.is_file()
             or _digest(expected) != spec["sha256"]):
         raise ValueError(f"{context} is missing or differs from its recorded hash")
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def _match_outputs(part_dir: pathlib.Path, role: str) -> dict:
+    """Require both completed match outputs for a part to count as run."""
+    name = "with-di" if role == "first" else "no-di"
+    output_dir = part_dir / name
+    spec_path = output_dir / "match-1.json"
+    summary_path = output_dir / "summary.json"
+    if any(path.is_symlink() or not path.is_file() for path in (spec_path, summary_path)):
+        raise ValueError(f"{part_dir.name}: {name} match did not produce both outputs")
+    try:
+        spec = json.loads(spec_path.read_text(encoding="utf-8"))
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise ValueError(f"{part_dir.name}: invalid {name} match output") from error
+    search = summary.get("search") if isinstance(summary, dict) else None
+    renderer = summary.get("renderer") if isinstance(summary, dict) else None
+    reference = summary.get("reference") if isinstance(summary, dict) else None
+    if (not isinstance(spec, dict) or not isinstance(spec.get("parameters"), list)
+            or not isinstance(summary, dict)
+            or summary.get("schema") != "tone-match-summary-v1"
+            or summary.get("pack") != "morgan"
+            or summary.get("loss_profile") != "unpaired-v3"
+            or not isinstance(search, dict) or search.get("budget") != 300
+            or not isinstance(renderer, dict)
+            or "process=fresh" not in renderer.get("quality_mode", "")
+            or not isinstance(reference, dict)
+            or not isinstance(reference.get("path"), str)
+            or pathlib.Path(reference["path"]).resolve()
+            != part_dir / "crops" / "reference.wav"
+            or reference.get("regime") != (
+                "paired_di" if role == "first" else "isolated_stem")):
+        raise ValueError(f"{part_dir.name}: {name} match is not the declared run")
+    return {"spec_sha256": _digest(spec_path), "summary_sha256": _digest(summary_path)}
 
 
 def _checked_render(part_dir: pathlib.Path, role: str, di: dict) -> dict:
@@ -348,16 +435,27 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
     part_counts = {}
     for part_id in parts:
         slug = _slug(part_id)
+        part_dir = run_dir / slug
+        try:
+            matches = {role: _match_outputs(part_dir, role)
+                       for role in ("first", "second")}
+        except ValueError as error:
+            part_counts[part_id] = {
+                "status": "not_run", "reason": str(error),
+                "counts": {"first": 0, "second": 0}, "winner": None}
+            continue
         if slug in auditions:
             part_counts[part_id] = _read_audition(
                 part_id, auditions[slug], binding, rules["trials"])
         else:
-            identical = _identical_unheard(run_dir / slug, part_id, binding)
+            identical = _identical_unheard(part_dir, part_id, binding)
             part_counts[part_id] = ({
                 "status": "run_identical_settings", "counts": {"first": 0, "second": 0},
                 "winner": None, "evidence": identical} if identical else {
                 "status": "not_run", "counts": {"first": 0, "second": 0},
                 "winner": None})
+        if part_counts[part_id]["status"] != "not_run":
+            part_counts[part_id]["evidence"]["match_outputs"] = matches
     tone_counts = {}
     for tone, members in rules["tone_parts"].items():
         counts = {role: sum(part_counts[part]["counts"][role] for part in members)
@@ -373,7 +471,8 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         first_tones=sum(row["winner"] == "first" for row in tone_counts.values()))
     return {"schema": "declared-listening-tally-v1", "test_id": binding["test_id"],
             "declaration": binding, "alternatives": rules["alternatives"],
-            "not_verified_by_tally": ["step commits", "interpreter pip-freeze sha256"],
+            "not_verified_by_tally": ["step exit codes", "step commits",
+                                      "interpreter pip-freeze sha256"],
             "parts_run": run_parts,
             "not_run_parts": [part for part in parts if part not in run_parts],
             "part_counts": part_counts, "tone_counts": tone_counts,

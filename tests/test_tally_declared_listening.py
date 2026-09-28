@@ -14,6 +14,7 @@ import pytest
 sf = pytest.importorskip("soundfile")
 
 from scripts.build_validation_crops import _declaration
+from scripts._listening_trials import consistency
 from scripts.tally_declared_listening import RULES, _slug, tally
 
 
@@ -76,8 +77,24 @@ def _crop(repo, declaration, part_dir, part):
         outputs[role] = {"path": str(path), "sha256": _sha(path)}
     crop_path.write_text(json.dumps({"schema": "validation-crops-1", "split": "held_out",
                                      "source": source, "song": song, "part": part_name,
+                                     "reference_lufs": -18.0, "excerpt_duration_s": 10.0,
                                      "declaration": binding, "outputs": outputs}))
     return binding, crop_path, outputs
+
+
+def _matches(part_dir):
+    for name, regime in (("with-di", "paired_di"), ("no-di", "isolated_stem")):
+        match_dir = part_dir / name
+        match_dir.mkdir()
+        (match_dir / "match-1.json").write_text(json.dumps({
+            "name": "synthetic match", "parameters": [{"module": "", "key": "selectedAmp",
+                                                        "value": 1}]}))
+        (match_dir / "summary.json").write_text(json.dumps({
+            "schema": "tone-match-summary-v1", "pack": "morgan",
+            "loss_profile": "unpaired-v3", "search": {"budget": 300},
+            "renderer": {"quality_mode": "process=fresh"},
+            "reference": {"path": str(part_dir / "crops" / "reference.wav"),
+                          "regime": regime}}))
 
 
 def _render(part_dir, role, di, *, settings=None):
@@ -122,19 +139,28 @@ def _audition(repo, declaration, runs, part, choice, *, swap=False,
     audition = part_dir / "audition"
     audition.mkdir(parents=True)
     binding, crop_path, outputs = _crop(repo, declaration, part_dir, part)
+    _matches(part_dir)
     proofs = {role: _render(part_dir, role, outputs["di"])
               for role in ("first", "second")}
     manifest_path = part_dir / "audition.json"
     manifest_path.write_text(json.dumps({
         "schema": "prospective-backed-listening-v1", "id": slug,
+        "target_id": "unassigned", "purpose": "prospective",
         "validation_mode": "declared", "declared_test_id": TEST_ID,
         "validation_crop_record": str(crop_path),
-        "reference": {**outputs["mix"], "regime": "mix"},
-        "backing": {**outputs["backing"], "gain_db": 0},
+        "reference": {**outputs["mix"], "regime": "mix", "start_s": 0,
+                      "duration_s": 10},
+        "backing": {**outputs["backing"], "start_s": 0, "gain_db": 0,
+                    "guitar_removed": True},
         "alternatives": {role: {"path": str(part_dir / f"{role}.wav"),
                                 "sha256": _sha(part_dir / f"{role}.wav"),
-                                "render_record": str(proofs[role])}
-                         for role in ("first", "second")}}))
+                                "render_record": str(proofs[role]),
+                                "start_s": 0, "pack": "morgan", "amp_model": "SW50R"}
+                         for role in ("first", "second")},
+        "mix": {"guitar_target_lufs": -18.0, "master_target_lufs": -20,
+                "peak_ceiling_dbtp": -1, "max_ab_lufs_delta": .5,
+                "gap_s": .5, "cycles": 1},
+        "reliability": {"hidden_repeats": 1, "catch_trial": False}}))
     primary = {"A": "second", "B": "first"} if swap else {"A": "first", "B": "second"}
     repeat = {"A": primary["B"], "B": primary["A"]}
     order = (("repeat", repeat), ("primary", primary)) if primary_last else (
@@ -180,7 +206,9 @@ def _audition(repo, declaration, runs, part, choice, *, swap=False,
                "heard_audio_sha256": _sha(heard),
                "verdict": {"closer": next(answer for trial, answer in zip(trials, answers)
                                      if trial["kind"] == "primary"), "preferred": None},
-               "listener_trials": answers}
+               "listener_trials": answers,
+               "listener_consistency": consistency(trials, answers, primary),
+               "frozen_scored_record": {"schema": "synthetic-scored-record"}}
     (audition / "verdict.json").write_text(json.dumps(verdict))
     return audition
 
@@ -189,6 +217,7 @@ def _identical_unheard(repo, declaration, runs, part):
     part_dir = runs / _slug(part)
     part_dir.mkdir()
     _, _, outputs = _crop(repo, declaration, part_dir, part)
+    _matches(part_dir)
     for role in ("first", "second"):
         _render(part_dir, role, outputs["di"], settings={"gain": .5})
 
@@ -309,6 +338,86 @@ def test_preflight_includes_undeclared_built_auditions(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pathlib.Path, "read_text", refuse_key)
     with pytest.raises(ValueError, match="undeclared"):
+        _tally(declaration, runs, repo)
+
+
+def test_placeholder_verdict_cannot_unblind_any_part(tmp_path, monkeypatch):
+    repo, declaration, runs = _repo(tmp_path)
+    _audition(repo, declaration, runs, PARTS[0], "first")
+    other = _audition(repo, declaration, runs, PARTS[1], "second")
+    (other / "verdict.json").write_text("{}")
+    original = pathlib.Path.read_text
+    opened = []
+
+    def spy(path, *args, **kwargs):
+        if path.name == "private-key.json":
+            opened.append(path)
+            raise AssertionError("a private key was opened before the placeholder was rejected")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(pathlib.Path, "read_text", spy)
+    with pytest.raises(ValueError, match="incomplete verdict"):
+        _tally(declaration, runs, repo)
+    assert not opened
+
+
+@pytest.mark.parametrize("missing", ("match-1.json", "summary.json"))
+def test_a_built_audition_without_both_match_outputs_is_not_run(tmp_path, missing):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    (audition.parent / "with-di" / missing).unlink()
+    result = _tally(declaration, runs, repo)
+    assert result["part_counts"][PARTS[0]]["status"] == "not_run"
+    assert PARTS[0] in result["not_run_parts"]
+    assert result["total_part_counts"] == {"first": 0, "second": 0}
+
+
+def test_identical_settings_need_both_match_outputs_to_count_as_run(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    _identical_unheard(repo, declaration, runs, PARTS[0])
+    (runs / _slug(PARTS[0]) / "no-di" / "match-1.json").unlink()
+    result = _tally(declaration, runs, repo)
+    assert result["part_counts"][PARTS[0]]["status"] == "not_run"
+
+
+def test_failed_sixth_part_cannot_cross_the_decision_gate(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    for part in PARTS[:5]:
+        _audition(repo, declaration, runs, part, "second")
+    _identical_unheard(repo, declaration, runs, PARTS[5])
+    (runs / _slug(PARTS[5]) / "no-di" / "match-1.json").unlink()
+    result = _tally(declaration, runs, repo)
+    assert len(result["parts_run"]) == 5
+    assert result["outcome"] == "inconclusive"
+    assert result["applied_rule"] == 1
+
+
+@pytest.mark.parametrize("damage", ("target", "loudness", "delta", "cycles",
+                                   "reliability", "backing_gain"))
+def test_rejects_builder_valid_but_undeclared_listening_settings(tmp_path, damage):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    manifest_path = audition.parent / "audition.json"
+    manifest = json.loads(manifest_path.read_text())
+    if damage == "target":
+        manifest["target_id"] = "some-song"
+    elif damage == "loudness":
+        manifest["mix"]["master_target_lufs"] = -18
+    elif damage == "delta":
+        manifest["mix"]["max_ab_lufs_delta"] = .7
+    elif damage == "cycles":
+        manifest["mix"]["cycles"] = 2
+    elif damage == "reliability":
+        manifest["reliability"]["hidden_repeats"] = 2
+    else:
+        manifest["backing"]["gain_db"] = 1
+    manifest_path.write_text(json.dumps(manifest))
+    key_path = audition / "private-key.json"
+    key = json.loads(key_path.read_text())
+    key["manifest"]["sha256"] = _sha(manifest_path)
+    key_path.write_text(json.dumps(key))
+    _rebind_key(audition)
+    with pytest.raises(ValueError, match="manifest"):
         _tally(declaration, runs, repo)
 
 
