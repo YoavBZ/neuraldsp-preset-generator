@@ -344,7 +344,7 @@ The comparison prints a per-band difference — what the candidate would have to
 change to match the target — plus named distances for timbre, dynamics,
 ambience, level, harmonic character and stereo width (the default profile
 reports harmonic character but gives it no weight: measured on one note, it
-carried no information about the settings between two performances). It reports what it could
+did no better than chance at picking the setting between two performances). It reports what it could
 *not* measure just as plainly: a fingerprint of a chord says it found no
 sustained note to judge distortion from, and a match against a full mix says the
 guitar was never isolated.

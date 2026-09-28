@@ -2097,8 +2097,9 @@ one.
   middle one moved the dimension a median 0.15–0.32 on SW50R and 0.12–0.48 on
   Tone King, and the whole range — cleanest step against the loudest volume, and
   against the full drive pedal — 0.50 and 0.12 on SW50R, 0.43 and 0.52 on Tone
-  King. Much of that is the tracker changing notes: where a step kept the middle
-  step's pitch it moved a median 0.10–0.48, where it changed pitch 0.29–1.66.
+  King. The largest moves come where the tracker changes pitch (a median
+  0.29–1.66 against the middle step), but where it keeps the pitch, as most
+  passages do, the settings still move it 0.10–0.48.
   At one step, two passages differed by a median 0.61–0.80 on SW50R and 0.54–0.80
   on Tone King, and the largest passage differences reached 2.3–5.4. Rendering
   the same thing twice moved it under 0.0001 on SW50R and at most 0.008 on Tone
@@ -2110,8 +2111,11 @@ one.
   200 of 1485 on Tone King (13.5%), where picking a step at random gives 14.3%;
   the target's own step ranked 2.93 and 3.09 on average, chance 3.0. Asked the
   same, `timbre` found it in 26.5% and 22.7%, `dynamics` in 22.3% and 22.1% and
-  `level` in 33.6% and 29.2%. Across two performances, `harmonic` is the one
-  measured dimension that carries no information about the setting.
+  `level` in 33.6% and 29.2%, `ambience` (measurable in fewer cases) in 17.0% and
+  18.5%. Of those, `harmonic` is the only one no better than chance; `spatial`
+  ties on every candidate, since the renders have no stereo difference. One
+  seven-step sweep per amp, with overlapping cases, is not proof that it carries
+  nothing, but a search cannot use what it carries here.
 - **The benchmark without it.** The recordings benchmark's totals recomputed with
   `harmonic` left out, from its per-dimension scores; the same computation with it
   reproduces every published figure. Every ordering holds. On SW50R the no-DI
@@ -2122,16 +2126,17 @@ one.
   with `level` also left out: 4 of 14 closer rather than 2 (20% further, p =
   0.029).
 
-So a match against another performance scores, in `harmonic`, something the
-settings do not predict: which passage each side is, with its notes and its
-guitar. At a weight of 0.4 in `unpaired-v2`, 14% of the total, it adds about 0.1
+So between two performances, `harmonic` did no better than chance at picking
+the setting, while it differs by 0.5–0.8 between passages at one setting:
+in a match against another performance it mostly scores which passage each side
+is, with its notes and its guitar. At a weight of 0.4 in `unpaired-v2`, 14% of the total, it adds about 0.1
 to a typical score and far more in the tail, and `odd_even` can exceed 100.
 **`unpaired-v3`** is `unpaired-v2` with `harmonic` weighted zero and nothing else
 changed (`analysis/loss_profiles-v3.json`). `match_preset.py` and
 `compare_audio.py` now default to it, and a paired profile used without a reamp
 now suggests it; fingerprints still report the harmonic figures. `paired-v2` is
-left unchanged: through one passage the settings do move the dimension, mostly
-by moving the note, and whether it helps a match against a real reamp was not
+left unchanged: through one passage the settings do move the dimension, and
+whether it helps a match against a real reamp was not
 measured. The -v2 and -v1 profiles stay for reproducing earlier numbers; the
 frozen listening predictions keep theirs, and `validation-datasets.md`'s default
 for amp-track runs stays `unpaired-v2` as declared, so a test that wants -v3

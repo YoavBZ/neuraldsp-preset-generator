@@ -13,7 +13,7 @@
     "Its own file, as the -v2 ones: earlier files stay byte-identical."
   ],
   "unpaired-v3": {
-    "description": "A commercial recording against a render. As unpaired-v2, without the harmonic dimension: across two performances it carries no information about the settings.",
+    "description": "A commercial recording against a render. As unpaired-v2, without the harmonic dimension: between two performances it did no better than chance at picking the setting.",
     "weights": {
       "timbre": 1.0,
       "dynamics": 0.4,
