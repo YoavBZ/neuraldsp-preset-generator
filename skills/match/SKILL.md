@@ -65,7 +65,9 @@ measurement are the guitar rather than the rhythm section.
 Report the regime, confidence, duration, channel count, level, spectral tilt and
 roll-off, dynamics, delay measurements, the RT60 estimate (not a reverb
 measurement on played material — say so), harmonic confidence, and every
-caveat. A missing measurement is not zero.
+caveat. The harmonic figures (odd/even, HNR, fizz) are measured on one steady
+note and follow the playing more than the amp; the default `unpaired-v3` profile
+does not score them, so do not read distortion character from them. A missing measurement is not zero.
 
 ## 2. Choose topology from evidence
 
@@ -190,7 +192,7 @@ asks for a quicker exploratory pass:
 python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
   --template TEMPLATE.xml \
   --reference REFERENCE.wav --reference-mode separated_stem \
-  --probe-di PROBE.wav --loss-profile unpaired-v2 \
+  --probe-di PROBE.wav --loss-profile unpaired-v3 \
   --pack morgan --amp sw50r --renderer synthetic \
   --budget 300 --shortlist 3 --out-dir RUN_DIR
 ```

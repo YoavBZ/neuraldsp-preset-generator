@@ -1139,11 +1139,12 @@ def test_a_process_policy_without_the_plugin_is_refused(audio, tmp_path):
     assert "Traceback" not in result.stderr
 
 
-def test_a_match_scores_with_the_profile_that_drops_the_rt60_term_by_default():
-    """New matches use -v2; -v1 stays selectable to reproduce earlier runs."""
+def test_a_match_scores_with_the_profile_that_drops_rt60_and_harmonic_by_default():
+    """New matches use unpaired-v3; -v2 and -v1 stay selectable to reproduce
+    earlier runs."""
     from scripts.match_preset import build_parser
 
-    assert build_parser().get_default("loss_profile") == "unpaired-v2"
+    assert build_parser().get_default("loss_profile") == "unpaired-v3"
 
 
 

@@ -2053,7 +2053,7 @@ another session's DI beat no DI by 22% rather than 60% (10 of 13, p = 0.011), an
 no DI beat neutral on 10 of 13 (17% closer, p = 0.033) — but with `level` left out
 on 9 of 13 (p = 0.22), so what the no-DI search gained over neutral on SW50R was
 loudness. The Tone King figures above do not use it: the outlier there is an
-inversion, which the tables do not report. It is the next measurement to make, as RT60 was.
+inversion, which the tables do not report. It was measured next, below.
 
 ```bash
 .venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
@@ -2068,6 +2068,74 @@ They took 191 and 173 minutes from 95a2a2d, a pre-squash commit of this change,
 run from a separate checkout pinned to it; the crops were built by the first run
 into `~/ndsp-presets/references/validation-crops/` and verified by hash by the
 second, and each JSON records every crop's hash.
+
+#### The harmonic dimension — measured, and dropped from `unpaired-v3`
+
+The recordings benchmark found a second unbounded term, `odd_even`, and the
+question behind it is the one RT60 raised: does the dimension measure the amp at
+all on played material? `analysis.features.harmonic` finds the longest steady
+single note in a signal (an autocorrelation pitch between 60 and 1200 Hz) and
+measures its harmonic-to-noise ratio, its odd- against even-harmonic power and a
+high-frequency fizz index; `compare` makes those the `harmonic` dimension.
+`scripts/study_harmonic.py` asks it three ways, through 16 passages — the
+How Long and Hotel California DIs and the 14 development DI crops — on SW50R
+(Morgan 1.1.1) and Tone King's rhythm channel (1.0.3), one reused Swift
+instance each, `reproducible=False` (Tone King band noise 5.23 dB), all distances
+under `unpaired-v2`:
+
+- **The same take, heard twice.** A development part's DI and its amp track are
+  one performance, so the steady note should be the same on both. It was on 7 of
+  14 parts. On the others the tracker picked another note, an overtone (500 and
+  310 Hz against a 100 Hz DI) or the top of its range (1200 Hz, twice). Where the
+  note agreed, the dimension between DI and amp read a median 0.13; where it did
+  not, 1.52.
+- **The playing against the amp.** The neutral settings driven from clean to
+  dirty — the preamp volume from 10% to 90%, then a drive pedal at half and full
+  in front of the middle step — rendered through every passage. Within a passage
+  the dimension moved a median 0.06–0.32 on SW50R and 0.05–0.38 on Tone King
+  between a step and the middle one. At one step it differed between two passages
+  by a median 0.56–0.79 on SW50R and 0.60–0.88 on Tone King: step for step,
+  2 to 14 times as much. The render-to-render noise was 0 on SW50R (median 0.002 on Tone King, one
+  passage 0.78). The steps also moved the note itself: the tracker kept the middle
+  step's note on 9–14 of 16 passages on SW50R and 7–15 on Tone King.
+- **The benchmark without it.** The recordings benchmark's totals recomputed with
+  `harmonic` left out, from its per-dimension scores. Nothing it concluded
+  changes. On SW50R, the no-DI outlier goes and another session's DI beats no DI
+  by 27% instead of 60% (11 of 14, p = 0.020); no DI against neutral reads 10 of
+  14 closer (16%, p = 0.079), and with `level` also left out 9 of 14 (7%, p =
+  0.46). On Tone King every comparison stays within 4 percentage points and one
+  part of its published value.
+
+So, on played material, a match against another performance is scored largely
+on which note each side happened to hold, and a search cannot move that. At a
+weight of 0.4 in `unpaired-v2`, 14% of the total, a passage difference of the
+median size adds about 0.1 to every score whatever the settings, and the largest
+passage differences reach 2.3 to 5.6 before `odd_even` blows up. **`unpaired-v3`** is `unpaired-v2` with
+`harmonic` weighted zero and nothing else changed
+(`analysis/loss_profiles-v3.json`), and `match_preset.py` and `compare_audio.py`
+now default to it; fingerprints still report the harmonic figures. `paired-v2`
+keeps the dimension: through one passage it does follow the settings, although
+part of that is the tracker changing notes. The -v2 and -v1 profiles stay for
+reproducing earlier numbers, and the frozen listening predictions keep theirs.
+
+What this does not show: the rescoring reuses answers found by searches that
+chased `unpaired-v2`, so it is not a benchmark of `unpaired-v3`, and whether its
+answers sound closer is a question for listening. Nor is the tracker fixed — a
+pitch estimate that follows the same note on both sides would be the way to make
+the dimension usable again, and nothing here tried one.
+
+```bash
+.venv/bin/python scripts/study_harmonic.py --renderer swift --pack morgan \
+  --amp sw50r --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
+  --development-dis --recordings docs/recordings-benchmark-sw50r.json \
+  --json docs/harmonic-study-sw50r.json
+.venv/bin/python scripts/study_harmonic.py --renderer swift --pack toneking \
+  --amp rhythm --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
+  --development-dis --recordings docs/recordings-benchmark-toneking-rhythm.json \
+  --json docs/harmonic-study-toneking-rhythm.json
+```
+
+They took 8 minutes each from e1237a8, a pre-squash commit of this change.
 
 ---
 
