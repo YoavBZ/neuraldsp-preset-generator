@@ -66,8 +66,9 @@ Report the regime, confidence, duration, channel count, level, spectral tilt and
 roll-off, dynamics, delay measurements, the RT60 estimate (not a reverb
 measurement on played material — say so), harmonic confidence, and every
 caveat. The harmonic figures (odd/even, HNR, fizz) are measured on one steady
-note and follow the playing more than the amp; the default `unpaired-v3` profile
-does not score them, so do not read distortion character from them. A missing measurement is not zero.
+note, and between two performances they carried no information about the
+settings; the default `unpaired-v3` profile does not score them, so do not read
+distortion character from them. A missing measurement is not zero.
 
 ## 2. Choose topology from evidence
 

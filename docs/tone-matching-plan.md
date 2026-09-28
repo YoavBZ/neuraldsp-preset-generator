@@ -2077,52 +2077,71 @@ all on played material? `analysis.features.harmonic` finds the longest steady
 single note in a signal (an autocorrelation pitch between 60 and 1200 Hz) and
 measures its harmonic-to-noise ratio, its odd- against even-harmonic power and a
 high-frequency fizz index; `compare` makes those the `harmonic` dimension.
-`scripts/study_harmonic.py` asks it three ways, through 16 passages — the
-How Long and Hotel California DIs and the 14 development DI crops — on SW50R
-(Morgan 1.1.1) and Tone King's rhythm channel (1.0.3), one reused Swift
-instance each, `reproducible=False` (Tone King band noise 5.23 dB), all distances
-under `unpaired-v2`:
+`scripts/study_harmonic.py` asks it four ways, through 16 passages — the How Long
+and Hotel California DIs and the 14 development DI crops, each first scaled to
+−18 LUFS so that every one drives the amp equally hard — on SW50R (Morgan 1.1.1)
+and Tone King's rhythm channel (1.0.3), one reused Swift instance each,
+`reproducible=False` (Tone King band noise 5.23 dB), all distances under
+`unpaired-v2`. The steps are the neutral settings with the preamp volume at 10,
+30, 50, 70 and 90%, then a drive pedal at half and full in front of the middle
+one.
 
 - **The same take, heard twice.** A development part's DI and its amp track are
-  one performance, so the steady note should be the same on both. It was on 7 of
-  14 parts. On the others the tracker picked another note, an overtone (500 and
-  310 Hz against a 100 Hz DI) or the top of its range (1200 Hz, twice). Where the
-  note agreed, the dimension between DI and amp read a median 0.13; where it did
-  not, 1.52.
-- **The playing against the amp.** The neutral settings driven from clean to
-  dirty — the preamp volume from 10% to 90%, then a drive pedal at half and full
-  in front of the middle step — rendered through every passage. Within a passage
-  the dimension moved a median 0.06–0.32 on SW50R and 0.05–0.38 on Tone King
-  between a step and the middle one. At one step it differed between two passages
-  by a median 0.56–0.79 on SW50R and 0.60–0.88 on Tone King: step for step,
-  2 to 14 times as much. The render-to-render noise was 0 on SW50R (median 0.002 on Tone King, one
-  passage 0.78). The steps also moved the note itself: the tracker kept the middle
-  step's note on 9–14 of 16 passages on SW50R and 7–15 on Tone King.
+  one performance. The tracker measured them on the same pitch on 7 of 14 parts,
+  and on the same stretch of the take on 4. On the others it found another note,
+  a pitch near three and five times the DI's at another point in the take, or the
+  top of its range (1200 Hz, twice). The dimension between DI and amp read a
+  median 0.12 where the pitch agreed and 1.52 where it did not — both including
+  whatever the amp itself changes, so 0.12 is not a noise floor.
+- **The setting against the playing.** Within one passage, each step against the
+  middle one moved the dimension a median 0.15–0.32 on SW50R and 0.12–0.48 on
+  Tone King, and the whole range — cleanest step against the loudest volume, and
+  against the full drive pedal — 0.50 and 0.12 on SW50R, 0.43 and 0.52 on Tone
+  King. Much of that is the tracker changing notes: where a step kept the middle
+  step's pitch it moved a median 0.10–0.48, where it changed pitch 0.29–1.66.
+  At one step, two passages differed by a median 0.61–0.80 on SW50R and 0.54–0.80
+  on Tone King, and the largest passage differences reached 2.3–5.4. Rendering
+  the same thing twice moved it under 0.0001 on SW50R and at most 0.008 on Tone
+  King. On Tone King a confidence gate left 15 of 120 passage pairs unscored at
+  most steps.
+- **What a search asks of it.** One passage at one step is the target, another
+  passage at every step the candidates: is the candidate at the target's own step
+  the closest? For `harmonic` it was in 250 of 1680 cases on SW50R (14.9%) and
+  200 of 1485 on Tone King (13.5%), where picking a step at random gives 14.3%;
+  the target's own step ranked 2.93 and 3.09 on average, chance 3.0. Asked the
+  same, `timbre` found it in 26.5% and 22.7%, `dynamics` in 22.3% and 22.1% and
+  `level` in 33.6% and 29.2%. Across two performances, `harmonic` is the one
+  measured dimension that carries no information about the setting.
 - **The benchmark without it.** The recordings benchmark's totals recomputed with
-  `harmonic` left out, from its per-dimension scores. Nothing it concluded
-  changes. On SW50R, the no-DI outlier goes and another session's DI beats no DI
-  by 27% instead of 60% (11 of 14, p = 0.020); no DI against neutral reads 10 of
-  14 closer (16%, p = 0.079), and with `level` also left out 9 of 14 (7%, p =
-  0.46). On Tone King every comparison stays within 4 percentage points and one
-  part of its published value.
+  `harmonic` left out, from its per-dimension scores; the same computation with it
+  reproduces every published figure. Every ordering holds. On SW50R the no-DI
+  outlier goes: another session's DI beats no DI by 27% instead of 60% (11 of 14,
+  p = 0.020), and no DI against neutral reads 10 of 14 closer (16%, p = 0.079), 9
+  of 14 with `level` also left out (7%, p = 0.46). On Tone King the comparisons
+  move by up to 4 percentage points and one part, except no DI against neutral
+  with `level` also left out: 4 of 14 closer rather than 2 (20% further, p =
+  0.029).
 
-So, on played material, a match against another performance is scored largely
-on which note each side happened to hold, and a search cannot move that. At a
-weight of 0.4 in `unpaired-v2`, 14% of the total, a passage difference of the
-median size adds about 0.1 to every score whatever the settings, and the largest
-passage differences reach 2.3 to 5.6 before `odd_even` blows up. **`unpaired-v3`** is `unpaired-v2` with
-`harmonic` weighted zero and nothing else changed
-(`analysis/loss_profiles-v3.json`), and `match_preset.py` and `compare_audio.py`
-now default to it; fingerprints still report the harmonic figures. `paired-v2`
-keeps the dimension: through one passage it does follow the settings, although
-part of that is the tracker changing notes. The -v2 and -v1 profiles stay for
-reproducing earlier numbers, and the frozen listening predictions keep theirs.
+So a match against another performance scores, in `harmonic`, something the
+settings do not predict: which passage each side is, with its notes and its
+guitar. At a weight of 0.4 in `unpaired-v2`, 14% of the total, it adds about 0.1
+to a typical score and far more in the tail, and `odd_even` can exceed 100.
+**`unpaired-v3`** is `unpaired-v2` with `harmonic` weighted zero and nothing else
+changed (`analysis/loss_profiles-v3.json`). `match_preset.py` and
+`compare_audio.py` now default to it, and a paired profile used without a reamp
+now suggests it; fingerprints still report the harmonic figures. `paired-v2` is
+left unchanged: through one passage the settings do move the dimension, mostly
+by moving the note, and whether it helps a match against a real reamp was not
+measured. The -v2 and -v1 profiles stay for reproducing earlier numbers; the
+frozen listening predictions keep theirs, and `validation-datasets.md`'s default
+for amp-track runs stays `unpaired-v2` as declared, so a test that wants -v3
+names it.
 
 What this does not show: the rescoring reuses answers found by searches that
-chased `unpaired-v2`, so it is not a benchmark of `unpaired-v3`, and whether its
-answers sound closer is a question for listening. Nor is the tracker fixed — a
-pitch estimate that follows the same note on both sides would be the way to make
-the dimension usable again, and nothing here tried one.
+chased `unpaired-v2`, so it is not a benchmark of `unpaired-v3`, and whether -v3's
+answers sound closer is a question for listening. Nor is the tracker fixed; a
+pitch estimate that holds the same note on both sides might make the dimension
+usable again, and nothing here tried one.
 
 ```bash
 .venv/bin/python scripts/study_harmonic.py --renderer swift --pack morgan \
@@ -2135,7 +2154,7 @@ the dimension usable again, and nothing here tried one.
   --json docs/harmonic-study-toneking-rhythm.json
 ```
 
-They took 8 minutes each from e1237a8, a pre-squash commit of this change.
+They took 6 minutes each from 4b7a6a3, a pre-squash commit of this change.
 
 ---
 

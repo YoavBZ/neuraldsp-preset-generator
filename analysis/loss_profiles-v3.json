@@ -1,18 +1,19 @@
 {
   "_comment": [
     "unpaired-v3: unpaired-v2 with the harmonic dimension weighted zero. Its three",
-    "terms are measured on the longest steady note the pitch tracker finds; two",
-    "passages through the same settings differ on it by a median 0.56 to 0.88,",
-    "while the same passage through clean-to-driven settings moves it 0.05 to",
-    "0.38, and a DI and its own amp track picked the same note on 7 of 14 takes",
+    "terms are measured on the longest steady note the pitch tracker finds. Across",
+    "two performances it could not tell the settings apart: with one passage at",
+    "one setting as the target and another passage at every setting as the",
+    "candidates, the right setting scored closest 14.9% and 13.5% of the time on",
+    "SW50R and Tone King, chance 14.3%, where timbre managed 26.5% and 22.7%",
     "(scripts/study_harmonic.py; 'The harmonic dimension - measured, and dropped",
-    "from unpaired-v3' in docs/tone-matching-plan.md). Within one passage, as in",
-    "a paired reamp, it does follow the settings, so paired-v2 keeps it.",
+    "from unpaired-v3' in docs/tone-matching-plan.md). paired-v2 is unchanged:",
+    "whether the dimension helps a match against a real reamp was not measured.",
     "",
     "Its own file, as the -v2 ones: earlier files stay byte-identical."
   ],
   "unpaired-v3": {
-    "description": "A commercial recording against a render. As unpaired-v2, without the harmonic dimension: on played material its note, and so its odd/even ratio, HNR and fizz, follow the passage far more than the amp.",
+    "description": "A commercial recording against a render. As unpaired-v2, without the harmonic dimension: across two performances it carries no information about the settings.",
     "weights": {
       "timbre": 1.0,
       "dynamics": 0.4,

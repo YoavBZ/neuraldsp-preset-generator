@@ -1,8 +1,8 @@
 {
  "schema": "harmonic-study-2",
- "source_commit": "d851aefe2b3cfd8d44e765d91ec07d2f5aeafbee",
+ "source_commit": "4b7a6a392689e070e76243d7682249655cbe73a2",
  "command": "scripts/study_harmonic.py --renderer swift --pack morgan --amp sw50r --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --development-dis --recordings docs/recordings-benchmark-sw50r.json --json docs/harmonic-study-sw50r.json",
- "elapsed_s": 357.7,
+ "elapsed_s": 371.2,
  "pack": "morgan",
  "amp": "sw50r",
  "loss_profile": "unpaired-v2",
@@ -2312,12 +2312,78 @@
   "volume 50 + drive 100": 9
  },
  "recovers": {
-  "recovered": 250,
-  "of": 1680,
-  "rate": 0.1488,
-  "chance": 0.1429,
-  "mean_rank": 2.93,
-  "chance_rank": 3.0
+  "ambience": {
+   "recovered": 226,
+   "of": 1329,
+   "rate": 0.1701,
+   "chance": 0.1429,
+   "mean_rank": 2.769,
+   "chance_rank": 3.0
+  },
+  "complexity": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "dynamics": {
+   "recovered": 374,
+   "of": 1680,
+   "rate": 0.2226,
+   "chance": 0.1429,
+   "mean_rank": 2.451,
+   "chance_rank": 3.0
+  },
+  "harmonic": {
+   "recovered": 250,
+   "of": 1680,
+   "rate": 0.1488,
+   "chance": 0.1429,
+   "mean_rank": 2.93,
+   "chance_rank": 3.0
+  },
+  "level": {
+   "recovered": 564,
+   "of": 1680,
+   "rate": 0.3357,
+   "chance": 0.1429,
+   "mean_rank": 1.64,
+   "chance_rank": 3.0
+  },
+  "prior_deviation": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "residual": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "spatial": {
+   "recovered": 0,
+   "of": 1680,
+   "rate": 0.0,
+   "chance": 0.1429,
+   "mean_rank": 0.0,
+   "chance_rank": 3.0
+  },
+  "timbre": {
+   "recovered": 445,
+   "of": 1680,
+   "rate": 0.2649,
+   "chance": 0.1429,
+   "mean_rank": 1.939,
+   "chance_rank": 3.0
+  }
  },
  "rescored": [
   {
