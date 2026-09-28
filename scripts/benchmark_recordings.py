@@ -14,13 +14,15 @@ numbers, starting from the pack's neutral settings for `--amp` with its switches
 and selectors held:
 
   same    the part's own DI: a same-take DI, the best case
-  other   the DI of the next usable part from a different session: a DI of
-          another song, as a player without a DI of this part would give
+  other   the DI of the next usable part from a different session. For
+          Guitar-TECHS that is another excerpt of the same player and rig, and
+          for Telefunken often the same band and room, not another player
   noise   the synthetic noise-burst probe match_preset.py uses with no DI
 
 Each part's declared 10-second excerpt is cut by `build_validation_crops.py` into
 private WAVs under `--crops-dir` (built once, then reused after checking their
-hashes). Held-out parts are refused: this is a development benchmark.
+hashes). The catalog is always the committed `docs/validation-datasets.json`,
+and held-out parts are refused: this is a development benchmark.
 """
 
 from __future__ import annotations
@@ -60,8 +62,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workers", type=positive_int, default=1)
     ap.add_argument("--part", action="append", metavar="SOURCE/SONG/PART",
                     help="only these development parts (default: every usable one)")
-    ap.add_argument("--catalog", type=pathlib.Path, default=CATALOG,
-                    help=argparse.SUPPRESS)
     ap.add_argument("--data-root", type=pathlib.Path,
                     help="dataset root (default: the catalog's)")
     ap.add_argument("--crops-dir", type=pathlib.Path,
@@ -90,7 +90,11 @@ def _sha(path):
 
 
 def crops_for(catalog_path, data_root, crops_dir, source, song, part):
-    """The part's crop record, building it once and verifying it after."""
+    """The part's crop record, building it once and verifying it after.
+
+    A cached record must name this part as development and the catalog it was
+    cut from must be this one, byte for byte; its outputs must match their hashes.
+    """
     from build_validation_crops import build
 
     slug = "-".join(piece.replace("/", "_").replace(" ", "_")
@@ -100,6 +104,11 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     if not record_path.exists():
         build(catalog_path, data_root, source, song, part, out_dir)
     record = json.loads(record_path.read_text(encoding="utf-8"))
+    expected = {"source": source, "song": song, "part": part, "split": "development"}
+    found = {key: record.get(key) for key in expected}
+    if found != expected or record.get("catalog", {}).get("sha256") != _sha(catalog_path):
+        die(f"{record_path} was not cut from this catalog for {source}/{song}/{part}; "
+            f"delete {out_dir} to rebuild it")
     for role, output in record["outputs"].items():
         if _sha(output["path"]) != output["sha256"]:
             die(f"{output['path']} no longer matches its crop record; delete {out_dir} "
@@ -128,12 +137,12 @@ def main() -> None:
 
     from match import invert, signal_benchmark, space as space_module
 
-    catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
+    catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     data_root = (args.data_root or pathlib.Path(catalog["root"])).expanduser()
     parts = development_parts(catalog, args.part)
     if not parts:
         die("no usable development parts selected")
-    records = [crops_for(args.catalog, data_root, args.crops_dir, *part)
+    records = [crops_for(CATALOG, data_root, args.crops_dir, *part)
                for part in parts]
     load = lambda path: io.load(path).mono()
     dis = [load(record["outputs"]["di"]["path"]) for record in records]
@@ -207,7 +216,7 @@ def main() -> None:
             "source_commit": _source_commit(),
             "command": " ".join(shlex.quote(arg) for arg in sys.argv),
             "elapsed_s": round(elapsed, 1),
-            "catalog_sha256": _sha(args.catalog),
+            "catalog_sha256": _sha(CATALOG),
             "pack": args.pack, "amp": amp, "signals": args.signal,
             "reference": reference, "budget": args.budget, "seed": args.seed,
             "loss_profile": args.loss_profile, "workers": args.workers,
