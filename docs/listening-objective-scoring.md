@@ -129,6 +129,78 @@ a different reference, or align/normalize the signals to hide the listening vers
 measurement gap. The gap is part of the experiment. Reference regime must be
 explicit: generated probe, paired DI, isolated/separated stem, or full mix.
 
+## Declared validation-crop auditions
+
+For a held-out part, first commit a separate prospective test declaration in a
+`docs/*.md` file. Besides the test command, measured outcome, and interpretation
+required by `docs/validation-datasets.md`, it must contain one unambiguous fenced
+`json` authorization block with `"schema": "held-out-listening-test-v1"`, a nonempty `test_id`,
+and `"parts": ["source/song/part", ...]`. The crop builder checks the exact
+part against the unchanged HEAD version of that file before reading any audio.
+It also refuses a locally edited validation catalog, so changing a held-out
+split in the working tree cannot turn it into a development crop.
+The crop record retains the declaration path, its last-changing commit, HEAD,
+hash, and test ID. Register the held-out use in `held_out_uses` of
+`docs/validation-datasets.json` as the dataset policy requires; the crop builder
+does not write that ledger. Development parts need no declaration.
+
+Build one private crop set with `build_validation_crops.py --source SOURCE
+--song SONG --part PART --declaration docs/DECLARATION.md --out-dir runs/CROPS`.
+The record's `outputs.mix` is the reference, `outputs.backing` is the backing,
+and `outputs.di` is the *same* DI used to render both alternatives. Render each
+candidate preset separately with `render_listening_guitar.py --di runs/CROPS/di.wav
+--preset PRIVATE_PRESET --out runs/FIRST.wav` (and then `runs/SECOND.wav`). That
+script uses a fresh process for every alternative and writes a `.wav.render.json`
+sidecar. A preset found without a DI is still rendered through this same DI for
+the listening comparison; "without DI" describes how its settings were found.
+No plugin is run by the crop or backed-audition builder.
+
+Write a private `prospective-backed-listening-v1` manifest for
+`build_backed_audition.py`. Copy exact paths and SHA-256 values from the crop
+record and fresh-render sidecars; this template shows the required mapping:
+
+```json
+{
+  "schema": "prospective-backed-listening-v1",
+  "id": "ONE_COMPARISON_ID",
+  "target_id": "ONE_INDEPENDENT_SONG_GROUP",
+  "validation_mode": "declared",
+  "declared_test_id": "TEST_ID_FROM_DECLARATION",
+  "validation_crop_record": "runs/CROPS/record.json",
+  "reference": {"path": "runs/CROPS/mix.wav", "sha256": "MIX_HASH",
+                "start_s": 0, "duration_s": 10, "regime": "mix"},
+  "backing": {"path": "runs/CROPS/backing.wav", "sha256": "BACKING_HASH",
+              "start_s": 0, "gain_db": 0, "guitar_removed": true},
+  "alternatives": {
+    "first": {"path": "runs/FIRST.wav", "sha256": "FIRST_HASH", "start_s": 0,
+              "pack": "morgan", "amp_model": "PR12",
+              "render_record": "runs/FIRST.wav.render.json"},
+    "second": {"path": "runs/SECOND.wav", "sha256": "SECOND_HASH", "start_s": 0,
+               "pack": "morgan", "amp_model": "PR12",
+               "render_record": "runs/SECOND.wav.render.json"}
+  },
+  "mix": {"guitar_target_lufs": -29, "master_target_lufs": -20,
+          "peak_ceiling_dbtp": -1, "max_ab_lufs_delta": 0.5,
+          "gap_s": 0.5, "cycles": 1}
+}
+```
+
+Use the actual pack and amp model from each sidecar; the example values are
+placeholders, not suggested tones or mix levels. Fix mix levels and the blind
+seed before listening. With `validation_crop_record` present, the builder
+requires the whole mix crop, unaltered backing, two distinct fresh-process
+renders, and each record's DI binding to the crop DI. A crop WAV beside its
+record cannot silently use the generic manifest path without that binding.
+The explicit `validation_mode` keeps a declared test in this path even if
+files are moved; in that case restore the original crop locations and record,
+because the exact file paths are part of the binding. Audio copied elsewhere
+without its record and deliberately submitted as a generic audition has no
+recoverable provenance and is not a valid held-out test.
+The builder freezes separate
+unpaired-v1 and unpaired-v2 predictions before the verdict. The listener hears
+the backed mixes, while both objective scores compare bare guitars to the mix
+reference; this deliberate difference is recorded, not corrected away.
+
 `log_blind_verdict.py` writes a separate immutable objective/verdict sidecar per
 listener/session, leaving the original blind key untouched. Ask only which
 alternative is closer. Historical preference fields remain readable for schema
