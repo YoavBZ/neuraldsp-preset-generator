@@ -134,6 +134,20 @@ def test_v3_ignores_zero_weight_harmonic_coverage(record):
     assert valid_frozen_match_v3(altered) is None
 
 
+def test_backed_v3_cannot_swap_alternatives_against_the_frozen_v2_measurements(record):
+    scored = score_record(record, include_match_v3=True)
+    changed = copy.deepcopy(scored)
+    v3 = changed["objective_scoring"]["match_v3"]
+    v3["alternatives"]["A"], v3["alternatives"]["B"] = (
+        v3["alternatives"]["B"], v3["alternatives"]["A"])
+    v3["distance_B_minus_A"] *= -1
+    v3["prediction"] = "B"
+    assert valid_frozen_match_v3(changed) is None
+    report = match_v3_agreement_report([changed])
+    assert report["target_groups"]["song"]["closer"][
+        "diagnostic_counts_not_independent_n"] == {"unscored": 1}
+
+
 def test_a_rescore_cannot_replace_the_frozen_v1_or_v2_prediction(record):
     frozen = score_record(record, include_match_v2=True)
     recomputed = score_record(record, include_match_v2=True)

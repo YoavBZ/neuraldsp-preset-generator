@@ -536,9 +536,25 @@ def valid_frozen_match_v2(record: dict) -> dict | None:
 
 def valid_frozen_match_v3(record: dict) -> dict | None:
     """Read only a v3 prediction that was marked as frozen before listening."""
-    if valid_frozen_match_v2(record) is None:
+    v2 = valid_frozen_match_v2(record)
+    v3 = _valid_frozen_match(record, "unpaired-v3")
+    if v2 is None or v3 is None:
         return None
-    return _valid_frozen_match(record, "unpaired-v3")
+    # Both profiles measure the same fingerprints with the same scales. A
+    # backed verdict does not rescore audio, so a self-consistent but swapped
+    # v3 A/B block must not be accepted as frozen evidence. The harmonic and
+    # other zero-weight terms remain descriptive, not an agreement gate.
+    if load_profile("unpaired-v2")["scales"] != load_profile("unpaired-v3")["scales"]:
+        return None
+    weighted = {name for name, weight in load_profile("unpaired-v3")["weights"].items()
+                if weight > 0}
+    for label in ("A", "B"):
+        older = v2["alternatives"][label]["objectives"]
+        newer = v3["alternatives"][label]["objectives"]
+        if any(older[section].get(name) != newer[section].get(name)
+               for section in ("values", "detail") for name in weighted):
+            return None
+    return v3
 
 
 def agreement_report(records: list[dict]) -> dict:
