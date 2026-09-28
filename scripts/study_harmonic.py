@@ -23,6 +23,10 @@ fizz. `analysis.compare` turns them into the `harmonic` dimension. The questions
   between two passages, split by whether the two held the same pitch? A
   dimension that measures the amp moves with the setting more than with the
   playing. The middle step is rendered twice, for the render-to-render noise.
+- **recovers**: what a search against another performance asks of it. Treat
+  one passage at one step as the target and another passage at every step as
+  the candidates: is the candidate at the target's own step the closest?
+  Chance is one in the number of steps.
 - **rescored** (with --recordings): the recordings benchmark's comparisons with
   the `harmonic` dimension left out of every total.
 """
@@ -46,7 +50,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import die, guarded
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
-SCHEMA = "harmonic-study-2"   # 2: level-matched passages, full-range and split effects
+SCHEMA = "harmonic-study-2"   # 2: level-matched passages, split effects, recovers
 CROPS = pathlib.Path("~/ndsp-presets/references/validation-crops")
 PITCH_RANGE_HZ = (60.0, 1200.0)   # analysis.features._monophonic_segment's
 SAME_NOTE = 0.03                  # two pitches within 3% are one note
@@ -130,6 +134,33 @@ def same_stretch(a, b) -> bool:
     if not same_note(a, b) or None in (a["start_s"], b["start_s"]):
         return False
     return a["start_s"] < b["stop_s"] and b["start_s"] < a["stop_s"]
+
+
+def recovery(distance, steps: int, names):
+    """How often, across two passages, the target's own step scores closest.
+
+    `distance((step, passage), (step, passage))` is the dimension or None. A
+    target counts only when every candidate step was measurable; a tie for
+    closest counts as not recovered. Returns counts and the mean rank (0 is
+    closest) of the target's own step, beside chance.
+    """
+    recovered = counted = 0
+    ranks = []
+    for target, candidate in itertools.permutations(names, 2):
+        for step in range(steps):
+            scores = [distance((step, target), (other, candidate))
+                      for other in range(steps)]
+            if any(score is None for score in scores):
+                continue
+            counted += 1
+            own = scores[step]
+            recovered += sum(score <= own for score in scores) == 1
+            ranks.append(sum(score < own for score in scores))
+    return {"recovered": recovered, "of": counted,
+            "rate": round(recovered / counted, 4) if counted else None,
+            "chance": round(1 / steps, 4),
+            "mean_rank": round(statistics.fmean(ranks), 3) if ranks else None,
+            "chance_rank": (steps - 1) / 2}
 
 
 def pairs_question(records, profile):
@@ -320,6 +351,7 @@ def main() -> None:
                 "p90": round(float(np.percentile(present, 90)), 3),
                 "max": round(max(present), 3)}
 
+    recovers = recovery(harmonic, len(steps), names)
     rescored = [rescore(path, args.loss_profile) for path in args.recordings]
     elapsed = time.time() - started
 
@@ -357,6 +389,10 @@ def main() -> None:
     print("passage effect (two passages, same step), median:")
     for label, values in passage_effect.items():
         print(f"  {label:26} {line(values)}")
+    print(f"recovers: across two passages the target's own step was closest in "
+          f"{recovers['recovered']} of {recovers['of']} ({recovers['rate']:.1%}; "
+          f"chance {recovers['chance']:.1%}); its mean rank {recovers['mean_rank']} "
+          f"(chance {recovers['chance_rank']})")
     for document in rescored:
         print(f"rescored {document['path']}:")
         for row in document["rows"]:
@@ -382,7 +418,7 @@ def main() -> None:
             "setting_effect": {k: summary(v) for k, v in setting_effect.items()},
             "whole_range": {k: summary(v) for k, v in ranges.items()},
             "passage_effect": {k: summary(v) for k, v in passage_effect.items()},
-            "note_kept": note_kept, "rescored": rescored,
+            "note_kept": note_kept, "recovers": recovers, "rescored": rescored,
         }, indent=1) + "\n", encoding="utf-8")
         print(f"\nwrote {args.json}")
 

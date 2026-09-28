@@ -53,3 +53,22 @@ def test_rescoring_leaves_harmonic_out_of_every_total(tmp_path):
     assert noise["with_harmonic"]["mean_change"] > 1.0
     assert noise["without_harmonic"]["closer"] == 2
     assert noise["without_harmonic"]["mean_change"] == pytest.approx(-0.5)
+
+
+def test_recovery_counts_the_targets_own_step_as_closest_and_ties_as_misses():
+    # Passage "a" measures the step itself; passage "b" reads the step backwards,
+    # so across passages the closest candidate is never the target's own step
+    # except in the middle.
+    reading = {"a": lambda step: step, "b": lambda step: 2 - step}
+
+    def distance(target, candidate):
+        return abs(reading[target[1]](target[0]) - reading[candidate[1]](candidate[0]))
+
+    result = H.recovery(distance, 3, ["a", "b"])
+    assert result["of"] == 6 and result["recovered"] == 2
+    assert result["chance"] == pytest.approx(1 / 3, abs=1e-4) and result["chance_rank"] == 1.0
+
+    flat = H.recovery(lambda target, candidate: 0.0, 3, ["a", "b"])
+    assert flat["recovered"] == 0 and flat["mean_rank"] == 0.0
+    gap = H.recovery(lambda target, candidate: None, 3, ["a", "b"])
+    assert gap["of"] == 0 and gap["rate"] is None

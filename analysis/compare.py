@@ -92,12 +92,15 @@ def list_profiles() -> List[str]:
 
 
 def unpaired_counterpart(name: str) -> str:
-    """The profile to suggest when `name` needs a paired reamp that is not there:
-    the unpaired one of the same version, or the current default."""
-    if name.startswith("paired-"):
-        candidate = "un" + name
-        if candidate in _profiles():
-            return candidate
+    """The profile to suggest when `name` needs a paired reamp that is not there.
+
+    `paired-v1` keeps its own version, for reproducing -v1 runs. Everything else
+    gets the current default: without a reamp the two sides are different
+    performances, which is where `unpaired-v3` leaves out the harmonic
+    dimension that `unpaired-v2` still scores.
+    """
+    if name == "paired-v1":
+        return "unpaired-v1"
     return "unpaired-v3"
 
 

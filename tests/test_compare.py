@@ -347,11 +347,11 @@ def test_later_profiles_leave_the_frozen_file_alone(tmp_path, monkeypatch):
         list_profiles()
 
 
-def test_a_missing_reamp_suggests_the_unpaired_profile_of_the_same_version():
+def test_a_missing_reamp_suggests_the_current_unpaired_profile():
     from analysis.compare import unpaired_counterpart
 
     assert unpaired_counterpart("paired-v1") == "unpaired-v1"
-    assert unpaired_counterpart("paired-v2") == "unpaired-v2"
+    assert unpaired_counterpart("paired-v2") == "unpaired-v3"
     assert unpaired_counterpart("something-else") == "unpaired-v3"
 
 
