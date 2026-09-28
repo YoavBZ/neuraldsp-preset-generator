@@ -40,9 +40,12 @@ Every step runs from a clean worktree of this repository at the commit that
 merges this file, with the main checkout's interpreter,
 `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python` (written
 `.venv/bin/python`), Morgan Amps Suite 1.1.1 through the Swift renderer. For each
-part, `RUN` is `~/ndsp-presets/runs/heldout-sw50r/SLUG`, and `SLUG` is the part
-ID with `/` and spaces replaced by `-` and `_` (for example
-`telefunken-57_Chevy-GTR_1`).
+part, `RUN` is `runs/heldout-sw50r/SLUG` inside that worktree — git-ignored and
+private, and where `render_listening_guitar.py` requires its output — and `SLUG`
+is the part ID with `/` and spaces replaced by `-` and `_` (for example
+`telefunken-57_Chevy-GTR_1`). The worktree is kept until the results are
+appended, since each audition binds the exact paths of its crops and renders,
+and its `runs/heldout-sw50r` is then archived to `~/ndsp-presets/runs/`.
 
 1. **Crops**, as `validation-datasets.md` declares them: the loudest 10 s of the
    M80 (Telefunken) or the one amp track, and the same span of the DI, the mix
@@ -104,6 +107,13 @@ SW50R is not the amp on any of these recordings — the 57 Chevy rigs are not
 stated, Guitar-TECHS used an Orange CR-12, and Memphis may be an amp simulator —
 so neither alternative can reproduce the recording; the question is which one
 comes closer.
+
+Every command above was rehearsed on two development parts before this file was
+declared — Guitar-TECHS excerpt 01 (unbacked) and Bourbon GTR 1 — with the
+synthetic renderer and a small budget for the matches, the plugin for the
+renders, and both auditions built; nobody listened to them. The rehearsal found
+that `render_listening_guitar.py` sent a preset's name to the plugin as a
+control, which failed every Morgan preset render; this change fixes that.
 
 **When an alternative does not exist.** Each of these is a result, recorded as
 such, not a reason to change a setting: a non-zero exit or no `match-1.json`, or
