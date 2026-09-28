@@ -500,6 +500,10 @@ def test_fresh_renderer_reads_full_xml_preset_not_only_search_dimensions():
     assert "name" not in values
     writable = {spec.path for spec in pack.parameters.values() if spec.writable}
     assert set(values) == writable - {"name"}
+    # Settings JSON that still names it renders the same controls.
+    from scripts.render_listening_guitar import _all_writable_settings
+    assert _all_writable_settings({**values, "name": "x"}, pack, None,
+                                  warnings=[]) == values
 
 
 def test_fresh_renderer_rejects_a_parseable_preset_missing_one_control(tmp_path):

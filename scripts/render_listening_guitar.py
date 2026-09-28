@@ -66,6 +66,8 @@ def _all_writable_settings(settings, pack, supported, *, warnings=None):
         path = name[1:] if name.startswith("/") else name
         if not path or path.startswith("/"):
             raise ValueError(f"invalid setting path {name!r}")
+        if path in NOT_RENDERED:
+            continue
         spec = pack.parameters.get("/" + path if "/" not in path else path)
         if spec is None or not spec.writable or (supported is not None and path not in supported):
             raise ValueError(f"unsupported or read-only setting {name!r}")
