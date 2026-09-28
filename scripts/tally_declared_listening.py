@@ -5,7 +5,7 @@
       --declaration docs/heldout-listening-sw50r.md \
       --runs PRIVATE_RUN_DIRECTORY
 
-Print JSON to stdout. This reads no audio and writes no result or private file.
+Print JSON to stdout. This hashes audio and provenance files but writes nothing.
 It checks *all* published ``PART/audition/`` directories for verdicts before
 opening a single private key, including auditions outside the declaration.
 Only the named declaration's frozen decision rules are implemented so far.
@@ -32,6 +32,8 @@ from scripts.build_validation_crops import _declaration
 # tally loop. Add another entry only after its own rules are committed first.
 RULES = {
     "heldout-sw50r-di-vs-no-di": {
+        "declaration_path": "docs/heldout-listening-sw50r.md",
+        "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
         "alternatives": {"first": "DI match", "second": "no-DI match"},
         "tone_parts": {
             "57 Chevy GTR 1": ("telefunken/57 Chevy/GTR 1",),
@@ -72,14 +74,18 @@ def _slug(part_id: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "_", part_id.replace("/", "-"))
 
 
-def _declared_rules(path: pathlib.Path, repo: pathlib.Path) -> tuple[dict, list[str], dict]:
+def _declared_rules(path: pathlib.Path, repo: pathlib.Path,
+                    registry: dict) -> tuple[dict, list[str], dict]:
     # _declaration checks docs/*.md, regular file, HEAD tracking, unchanged bytes,
     # one valid fenced authorization block, and the exact named part.
-    anchor = next(iter(next(iter(RULES.values()))["tone_parts"].values()))[0]
+    anchor = next(iter(next(iter(registry.values()))["tone_parts"].values()))[0]
     binding = _declaration(path, anchor, repo)
-    rules = RULES.get(binding["test_id"])
+    rules = registry.get(binding["test_id"])
     if rules is None:
         raise ValueError(f"no tally rules implemented for {binding['test_id']!r}")
+    if (binding["path"] != rules["declaration_path"]
+            or binding["sha256"] != rules["declaration_sha256"]):
+        raise ValueError("committed declaration is not the frozen source of these tally rules")
     committed_path = repo / binding["path"]
     content = committed_path.read_bytes()
     if hashlib.sha256(content).hexdigest() != binding["sha256"]:
@@ -153,10 +159,16 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
         raise ValueError(f"{part_id}: validation crop binding changed")
     crop = json.loads(crop_path.read_text(encoding="utf-8"))
     if (crop.get("schema") != "validation-crops-1"
+            or crop.get("split") != "held_out"
+            or crop_binding.get("split") != "held_out"
             or "/".join(str(crop.get(field, "")) for field in ("source", "song", "part"))
             != part_id
             or crop.get("declaration") != crop_binding["declaration"]):
         raise ValueError(f"{part_id}: crop identifies another part or declaration")
+    outputs = crop.get("outputs") or {}
+    for role in ("di", "reference", "mix", "backing"):
+        _checked_file(outputs.get(role), audition.parent / "crops" / f"{role}.wav",
+                      f"{part_id}: {role} crop")
     manifest_binding = key.get("manifest") or {}
     manifest_path = pathlib.Path(manifest_binding.get("path", ""))
     if (manifest_path.resolve() != audition.parent / "audition.json"
@@ -173,16 +185,66 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
             or any(pathlib.Path((alternatives.get(role) or {}).get("path", "")).resolve()
                    != audition.parent / f"{role}.wav" for role in ("first", "second"))):
         raise ValueError(f"{part_id}: audition manifest assigns the wrong alternatives")
+    for role, crop_role in (("reference", "mix"), ("backing", "backing")):
+        spec = manifest.get(role)
+        expected = outputs[crop_role]
+        _checked_file(spec, pathlib.Path(expected["path"]),
+                      f"{part_id}: manifest {role}")
+        if spec["sha256"] != expected["sha256"]:
+            raise ValueError(f"{part_id}: manifest {role} is not its crop")
+    if (manifest["reference"].get("regime") != "mix"
+            or manifest["backing"].get("gain_db") != 0):
+        raise ValueError(f"{part_id}: manifest changed the listening conditions")
+    for role in ("first", "second"):
+        spec = alternatives[role]
+        _checked_file(spec, audition.parent / f"{role}.wav",
+                      f"{part_id}: manifest {role}")
+        if pathlib.Path(spec.get("render_record", "")).resolve() != (
+                audition.parent / f"{role}.wav.render.json"):
+            raise ValueError(f"{part_id}: manifest {role} lacks its fresh render")
     if (key.get("objective_record", {}).get("id") != _slug(part_id)
             or verdict.get("audition_key", {}).get("path") != str(key_path)
             or verdict.get("audition_key", {}).get("sha256") != _digest(key_path)
             or verdict.get("heard_audio_sha256") != key.get("output", {}).get("sha256")):
         raise ValueError(f"{part_id}: verdict does not bind this audition")
+    _checked_file(key.get("output"), audition / "audition.flac",
+                  f"{part_id}: heard audition")
+    sources = key.get("source_paths") or {}
+    hashes = key.get("source_sha256") or {}
+    for role, expected in (("reference", outputs["mix"]),
+                           ("backing", outputs["backing"])):
+        if (pathlib.Path(sources.get(role, "")).resolve() !=
+                pathlib.Path(expected["path"]).resolve()
+                or hashes.get(role) != expected["sha256"]):
+            raise ValueError(f"{part_id}: {role} does not bind the declared crop")
+    evidence = {}
+    for role in ("first", "second"):
+        audio = audition.parent / f"{role}.wav"
+        _checked_file({"path": sources.get(role), "sha256": hashes.get(role)},
+                      audio, f"{part_id}: {role} source audio")
+        proof = _checked_render(audition.parent, role, outputs["di"])
+        if proof["audio"]["sha256"] != hashes[role]:
+            raise ValueError(f"{part_id}: {role} source is not its fresh render")
+        evidence[role] = proof["preset"]["sha256"]
+    provenance = key.get("objective_record", {}).get("render_provenance") or {}
+    for label, role in key["blind_key"].items():
+        proof_file = audition.parent / f"{role}.wav.render.json"
+        source = provenance.get(label) or {}
+        if (source.get("pack") != "morgan" or source.get("amp_model") != "SW50R"
+                or source.get("process_policy") != "fresh"):
+            raise ValueError(f"{part_id}: {label} render provenance changed")
+        _checked_file(source.get("render_record"), proof_file,
+                      f"{part_id}: {label} render provenance")
     trials = key.get("trials")
     answers = verdict.get("listener_trials")
     _validate_trials(trials, answers, key.get("blind_key"))
     if tuple(sorted(trial["kind"] for trial in trials)) != tuple(sorted(trial_kinds)):
         raise ValueError(f"{part_id}: expected exactly the declared two trials")
+    primary = next(trial for trial in trials if trial["kind"] == "primary")
+    repeat = next(trial for trial in trials if trial["kind"] == "repeat")
+    if repeat["blind_key"] != {"A": primary["blind_key"]["B"],
+                               "B": primary["blind_key"]["A"]}:
+        raise ValueError(f"{part_id}: hidden repeat did not swap its labels")
     if verdict.get("verdict", {}).get("closer") != primary_answer(
             trials, answers, key["blind_key"]):
         raise ValueError(f"{part_id}: primary verdict disagrees with trial answers")
@@ -190,29 +252,69 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
               for trial, answer in zip(trials, answers)]
     winner = mapped[0] if mapped[0] == mapped[1] else None
     counts = {role: int(winner == role) for role in ("first", "second")}
-    return {"status": "run", "counts": counts, "winner": winner}
+    return {"status": "run", "counts": counts, "winner": winner,
+            "evidence": {"crop_record_sha256": crop_binding["sha256"],
+                         "preset_sha256": evidence}}
 
 
-def _identical_unheard(part_dir: pathlib.Path) -> bool:
+def _checked_file(spec: dict | None, expected: pathlib.Path, context: str) -> None:
+    """Verify the file behind a recorded path and digest, not just the claim."""
+    if (not isinstance(spec, dict) or not isinstance(spec.get("path"), str)
+            or not isinstance(spec.get("sha256"), str)
+            or len(spec["sha256"]) != 64
+            or pathlib.Path(spec.get("path", "")).resolve() != expected
+            or expected.is_symlink() or not expected.is_file()
+            or _digest(expected) != spec["sha256"]):
+        raise ValueError(f"{context} is missing or differs from its recorded hash")
+
+
+def _checked_render(part_dir: pathlib.Path, role: str, di: dict) -> dict:
+    path = part_dir / f"{role}.wav.render.json"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"{part_dir.name}: missing {role} fresh-render record")
+    proof = json.loads(path.read_text(encoding="utf-8"))
+    if (proof.get("schema") != "listening-fresh-render-v1"
+            or proof.get("pack") != "morgan" or proof.get("amp_model") != "SW50R"
+            or proof.get("process_policy") != "fresh"
+            or "process=fresh" not in proof.get("renderer", {}).get("quality_mode", "")
+            or not isinstance(proof.get("applied_settings"), dict)):
+        raise ValueError(f"{part_dir.name}: invalid {role} fresh-render record")
+    _checked_file(proof.get("audio"), part_dir / f"{role}.wav",
+                  f"{part_dir.name}: {role} rendered audio")
+    _checked_file(proof.get("di"), part_dir / "crops" / "di.wav",
+                  f"{part_dir.name}: {role} render DI")
+    if proof["di"]["sha256"] != di["sha256"]:
+        raise ValueError(f"{part_dir.name}: {role} used a different DI crop")
+    _checked_file(proof.get("preset"), part_dir / ("with-di.xml" if role == "first" else
+                                                      "no-di.xml"),
+                  f"{part_dir.name}: {role} preset")
+    return proof
+
+
+def _identical_unheard(part_dir: pathlib.Path, part_id: str, binding: dict) -> dict | None:
     records = [part_dir / f"{role}.wav.render.json" for role in ("first", "second")]
     if not all(path.is_file() and not path.is_symlink() for path in records):
-        return False
-    first, second = (json.loads(path.read_text(encoding="utf-8")) for path in records)
-    for role, record in zip(("first", "second"), (first, second)):
-        if (record.get("schema") != "listening-fresh-render-v1"
-                or record.get("process_policy") != "fresh"
-                or not isinstance(record.get("applied_settings"), dict)
-                or pathlib.Path(record.get("audio", {}).get("path", "")).resolve()
-                != part_dir / f"{role}.wav"
-                or not record.get("audio", {}).get("sha256")
-                or not (part_dir / f"{role}.wav").is_file()):
-            raise ValueError(f"{part_dir.name}: invalid {role} render record")
-    if (not first.get("di", {}).get("sha256")
-            or first["di"]["sha256"] != second.get("di", {}).get("sha256")
-            or first.get("pack") != second.get("pack")
-            or first.get("amp_model") != second.get("amp_model")):
-        raise ValueError(f"{part_dir.name}: alternatives were rendered through different DIs")
-    return first["applied_settings"] == second["applied_settings"]
+        return None
+    crop_path = part_dir / "crops" / "record.json"
+    if crop_path.is_symlink() or not crop_path.is_file():
+        raise ValueError(f"{part_dir.name}: missing validation crop record")
+    crop = json.loads(crop_path.read_text(encoding="utf-8"))
+    if (crop.get("schema") != "validation-crops-1"
+            or crop.get("split") != "held_out"
+            or "/".join(str(crop.get(field, "")) for field in ("source", "song", "part"))
+            != part_id or crop.get("declaration") != binding):
+        raise ValueError(f"{part_dir.name}: identical-settings crop is misbound")
+    outputs = crop.get("outputs") or {}
+    for role in ("di", "reference", "mix", "backing"):
+        _checked_file(outputs.get(role), part_dir / "crops" / f"{role}.wav",
+                      f"{part_dir.name}: {role} crop")
+    di = outputs["di"]
+    first, second = (_checked_render(part_dir, role, di) for role in ("first", "second"))
+    if first["applied_settings"] != second["applied_settings"]:
+        return None
+    return {"crop_record_sha256": _digest(crop_path),
+            "preset_sha256": {"first": first["preset"]["sha256"],
+                              "second": second["preset"]["sha256"]}}
 
 
 def _outcome(ordered_rules: tuple[dict, ...], *, run_count: int,
@@ -237,9 +339,10 @@ def _outcome(ordered_rules: tuple[dict, ...], *, run_count: int,
 
 
 def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
-          *, repo_root: pathlib.Path = ROOT) -> dict:
+          *, repo_root: pathlib.Path = ROOT, rule_registry: dict | None = None) -> dict:
     repo = repo_root.resolve()
-    binding, parts, rules = _declared_rules(declaration_path, repo)
+    binding, parts, rules = _declared_rules(declaration_path, repo,
+                                           RULES if rule_registry is None else rule_registry)
     run_dir = run_dir.expanduser().resolve()
     auditions = _published_auditions(run_dir, {_slug(part) for part in parts})
     part_counts = {}
@@ -248,14 +351,13 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         if slug in auditions:
             part_counts[part_id] = _read_audition(
                 part_id, auditions[slug], binding, rules["trials"])
-        elif _identical_unheard(run_dir / slug):
-            part_counts[part_id] = {
-                "status": "run_identical_settings", "counts": {"first": 0, "second": 0},
-                "winner": None}
         else:
-            part_counts[part_id] = {
+            identical = _identical_unheard(run_dir / slug, part_id, binding)
+            part_counts[part_id] = ({
+                "status": "run_identical_settings", "counts": {"first": 0, "second": 0},
+                "winner": None, "evidence": identical} if identical else {
                 "status": "not_run", "counts": {"first": 0, "second": 0},
-                "winner": None}
+                "winner": None})
     tone_counts = {}
     for tone, members in rules["tone_parts"].items():
         counts = {role: sum(part_counts[part]["counts"][role] for part in members)
@@ -271,6 +373,7 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         first_tones=sum(row["winner"] == "first" for row in tone_counts.values()))
     return {"schema": "declared-listening-tally-v1", "test_id": binding["test_id"],
             "declaration": binding, "alternatives": rules["alternatives"],
+            "not_verified_by_tally": ["step commits", "interpreter pip-freeze sha256"],
             "parts_run": run_parts,
             "not_run_parts": [part for part in parts if part not in run_parts],
             "part_counts": part_counts, "tone_counts": tone_counts,
