@@ -492,10 +492,18 @@ def test_fresh_renderer_reads_full_xml_preset_not_only_search_dimensions():
     root = pathlib.Path(__file__).resolve().parents[1]
     values = _settings_from_preset(root / "samples/Example_Clean_PR12.xml", pack, None)
     assert values["selectedAmp"] == "1"
-    assert "name" in values
     assert "parameters/transpose" in values
     assert len(values) > 100
     assert "version" not in values
+    # The preset name is writable in the file but no control of the plugin's
+    # state: sending it failed every Morgan render with "no name attribute".
+    assert "name" not in values
+    writable = {spec.path for spec in pack.parameters.values() if spec.writable}
+    assert set(values) == writable - {"name"}
+    # Settings JSON that still names it renders the same controls.
+    from scripts.render_listening_guitar import _all_writable_settings
+    assert _all_writable_settings({**values, "name": "x"}, pack, None,
+                                  warnings=[]) == values
 
 
 def test_fresh_renderer_rejects_a_parseable_preset_missing_one_control(tmp_path):

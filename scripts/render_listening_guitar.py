@@ -66,6 +66,8 @@ def _all_writable_settings(settings, pack, supported, *, warnings=None):
         path = name[1:] if name.startswith("/") else name
         if not path or path.startswith("/"):
             raise ValueError(f"invalid setting path {name!r}")
+        if path in NOT_RENDERED:
+            continue
         spec = pack.parameters.get("/" + path if "/" not in path else path)
         if spec is None or not spec.writable or (supported is not None and path not in supported):
             raise ValueError(f"unsupported or read-only setting {name!r}")
@@ -77,6 +79,11 @@ def _all_writable_settings(settings, pack, supported, *, warnings=None):
     if selector not in applied:
         raise ValueError(f"effective settings omit {selector}")
     return applied
+
+
+# Writable in the preset file but not a control of the plugin's state: sending
+# it to the plugin fails ("no name attribute"), and it changes no sound.
+NOT_RENDERED = {"name"}
 
 
 def _settings_from_preset(path, pack, supported, *, warnings=None):
@@ -98,7 +105,7 @@ def _settings_from_preset(path, pack, supported, *, warnings=None):
         name = f"{parameter.module_path}/{parameter.key}" if parameter.module_path else parameter.key
         if spec is None:
             raise ValueError(f"preset contains an undeclared control: {name}")
-        if not spec.writable:
+        if not spec.writable or name in NOT_RENDERED:
             continue
         if supported is not None and name not in supported:
             raise ValueError(f"preset control cannot be rendered: {name}")
@@ -109,7 +116,8 @@ def _settings_from_preset(path, pack, supported, *, warnings=None):
     selector = _selector(pack).path
     if selector not in values:
         raise ValueError(f"{pack.display_name} preset omits {selector}")
-    required = {spec.path for spec in pack.parameters.values() if spec.writable}
+    required = {spec.path for spec in pack.parameters.values()
+                if spec.writable and spec.path not in NOT_RENDERED}
     missing = sorted(required - values.keys())
     if missing:
         names = ", ".join(missing[:5])
