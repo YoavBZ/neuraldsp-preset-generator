@@ -12,14 +12,17 @@ fizz. `analysis.compare` turns them into the `harmonic` dimension. The questions
 
 - **pairs** (no plugin): each usable development part of
   `validation-datasets.md` is one take recorded twice, as a DI and through an
-  amp. Does the note the harmonic features are measured on come out the same on
-  both sides, and how often does the pitch sit on an edge of its search range?
+  amp. Are the harmonic features measured on the same pitch, and the same
+  stretch of the take, on both sides; how often does the pitch sit on an edge of
+  its search range?
 - **tracks**: the amp's neutral settings driven from clean to dirty
-  (`STEPS`), rendered through every passage. Within a passage, how far does the
-  `harmonic` dimension move between a setting and the middle step; at one
-  setting, how far does it move between two passages? A dimension that measures
-  the amp moves with the setting more than with the playing. Every render of
-  the middle step is made twice, for the render-to-render noise.
+  (`STEPS`), rendered through every passage, each passage first scaled to
+  --input-lufs so that every one drives the amp equally hard. Within a passage,
+  how far does the `harmonic` dimension move between two settings — every step
+  against the middle one, and across the whole range; at one setting, how far
+  between two passages, split by whether the two held the same pitch? A
+  dimension that measures the amp moves with the setting more than with the
+  playing. The middle step is rendered twice, for the render-to-render noise.
 - **rescored** (with --recordings): the recordings benchmark's comparisons with
   the `harmonic` dimension left out of every total.
 """
@@ -43,7 +46,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from _cli import die, guarded
 from benchmark_match import _backend_caveat, _renderer, _source_commit
 
-SCHEMA = "harmonic-study-1"
+SCHEMA = "harmonic-study-2"   # 2: level-matched passages, full-range and split effects
 CROPS = pathlib.Path("~/ndsp-presets/references/validation-crops")
 PITCH_RANGE_HZ = (60.0, 1200.0)   # analysis.features._monophonic_segment's
 SAME_NOTE = 0.03                  # two pitches within 3% are one note
@@ -80,6 +83,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--recordings", type=pathlib.Path, action="append", default=[],
                     help="a recordings-benchmark JSON to rescore without `harmonic`")
     ap.add_argument("--loss-profile", default="unpaired-v2")
+    ap.add_argument("--input-lufs", type=float, default=-18.0,
+                    help="integrated loudness every passage is scaled to before "
+                         "it is rendered (default: -18, near the How Long DI's)")
     ap.add_argument("--json", type=pathlib.Path)
     return ap
 
@@ -93,20 +99,18 @@ def measure(audio, sample_rate):
     from analysis import features, io
     from analysis.fingerprint import fingerprint
 
-    printed = fingerprint(io.from_samples(audio, sample_rate), regime="isolated_stem",
-                          excerpt_s=None)
-    import numpy as np
-
-    mono = np.asarray(audio, dtype=np.float64)
-    if mono.ndim > 1:
-        mono = mono.mean(axis=1)
-    segment = features._monophonic_segment(mono, sample_rate)
+    wrapped = io.from_samples(audio, sample_rate)
+    printed = fingerprint(wrapped, regime="isolated_stem", excerpt_s=None)
+    # The fingerprint measures loudness-normalised audio; find the segment on
+    # the same, so the stretch reported is the one its pitch came from.
+    segment = features._monophonic_segment(io.normalise(wrapped).mono(), sample_rate)
     harmonic = printed.harmonic
     note = None
-    if segment is not None:
-        start, stop, f0, _ = segment
-        note = {"start_s": round(start / sample_rate, 3),
-                "stop_s": round(stop / sample_rate, 3), "f0_hz": round(float(f0), 1),
+    f0 = harmonic.get("f0_hz")
+    if f0 is not None:
+        note = {"f0_hz": round(float(f0), 1),
+                "start_s": None if segment is None else round(segment[0] / sample_rate, 3),
+                "stop_s": None if segment is None else round(segment[1] / sample_rate, 3),
                 "at_edge": any(abs(f0 - edge) / edge < 0.01 for edge in PITCH_RANGE_HZ)}
     return printed, {
         "note": note,
@@ -115,9 +119,17 @@ def measure(audio, sample_rate):
 
 
 def same_note(a, b) -> bool:
+    """The same pitch, within 3%, wherever in the passage each was held."""
     if a is None or b is None:
         return False
     return abs(a["f0_hz"] - b["f0_hz"]) <= SAME_NOTE * min(a["f0_hz"], b["f0_hz"])
+
+
+def same_stretch(a, b) -> bool:
+    """The same pitch, measured on overlapping stretches of one take."""
+    if not same_note(a, b) or None in (a["start_s"], b["start_s"]):
+        return False
+    return a["start_s"] < b["stop_s"] and b["start_s"] < a["stop_s"]
 
 
 def pairs_question(records, profile):
@@ -132,6 +144,7 @@ def pairs_question(records, profile):
             io.load(record["outputs"]["reference"]["path"]).mono(), io.SAMPLE_RATE)
         rows.append({"part": f"{source}/{song}/{part}", "di": di, "amp": amp,
                      "same_note": same_note(di["note"], amp["note"]),
+                     "same_stretch": same_stretch(di["note"], amp["note"]),
                      "harmonic": compare(amp_print, di_print,
                                          profile=profile).values.get("harmonic")})
     return rows
@@ -220,6 +233,13 @@ def main() -> None:
                                "sha256": record["outputs"]["di"]["sha256"]}
     if len(dis) < 2:
         die("give at least two passages (--di, --development-dis)")
+    for name in list(dis):
+        measured = io.loudness_lufs(io.from_samples(dis[name], io.SAMPLE_RATE))
+        if measured is None:
+            die(f"passage {name} has no measurable loudness")
+        gain_db = args.input_lufs - measured
+        dis[name] = dis[name] * 10.0 ** (gain_db / 20.0)
+        described[name].update(lufs=round(measured, 2), gain_db=round(gain_db, 2))
 
     started = time.time()
     pairs = pairs_question(records, args.loss_profile) if records else []
@@ -263,19 +283,35 @@ def main() -> None:
                        profile=args.loss_profile).values.get("harmonic")
 
     names = list(dis)
-    setting_effect = {}
-    for index, (label, _) in enumerate(steps):
-        if index == REFERENCE_STEP:
-            continue
-        setting_effect[label] = [harmonic((index, n), (REFERENCE_STEP, n)) for n in names]
-    passage_effect = {label: [harmonic((index, a), (index, b))
-                              for a, b in itertools.combinations(names, 2)]
+
+    def note(index, name):
+        return tracks[index][name]["note"]
+
+    def split(pairs_of_keys):
+        """All, and split by whether the two sides held the same pitch."""
+        kept, moved = [], []
+        for a, b in pairs_of_keys:
+            (kept if same_note(note(*a), note(*b)) else moved).append(harmonic(a, b))
+        return {"all": kept + moved, "same_pitch": kept, "other_pitch": moved}
+
+    setting_effect = {label: split([((index, n), (REFERENCE_STEP, n)) for n in names])
+                      for index, (label, _) in enumerate(steps) if index != REFERENCE_STEP}
+    # The whole range: the cleanest step against the loudest volume step and
+    # against the full drive pedal.
+    loudest = max(index for index, (label, changes) in enumerate(steps)
+                  if len(changes) == 1)
+    ranges = {f"{steps[0][0]} vs {steps[i][0]}": split([((0, n), (i, n)) for n in names])
+              for i in (loudest, len(steps) - 1)}
+    passage_effect = {label: split([((index, a), (index, b))
+                                    for a, b in itertools.combinations(names, 2)])
                       for index, (label, _) in enumerate(steps)}
-    note_kept = {label: sum(same_note(tracks[index][n]["note"],
-                                      tracks[REFERENCE_STEP][n]["note"]) for n in names)
+    note_kept = {label: sum(same_note(note(index, n), note(REFERENCE_STEP, n))
+                            for n in names)
                  for index, (label, _) in enumerate(steps) if index != REFERENCE_STEP}
 
     def summary(values):
+        if isinstance(values, dict):
+            return {key: summary(value) for key, value in values.items()}
         present = [v for v in values if v is not None]
         if not present:
             return {"n": 0, "of": len(values)}
@@ -293,19 +329,34 @@ def main() -> None:
         kept = sum(row["same_note"] for row in pairs)
         edges = sum(bool(row[side]["note"] and row[side]["note"]["at_edge"])
                     for row in pairs for side in ("di", "amp"))
-        print(f"pairs: DI and amp track measured on the same note in {kept} of "
-              f"{len(pairs)} takes; {edges} of {2 * len(pairs)} pitches at a range edge")
+        stretch = sum(row["same_stretch"] for row in pairs)
+        print(f"pairs: DI and amp track measured on the same pitch in {kept} of "
+              f"{len(pairs)} takes, the same stretch in {stretch}; {edges} of "
+              f"{2 * len(pairs)} pitches at a range edge")
         for row in pairs:
             d, a = row["di"]["note"], row["amp"]["note"]
             print(f"  {row['part'][:40]:40} DI {d and d['f0_hz']} Hz, amp "
                   f"{a and a['f0_hz']} Hz, harmonic {row['harmonic']}")
     print(f"repeat (same render twice, middle step): {summary(list(repeats.values()))}")
-    print("setting effect (step against the middle step, same passage):")
+    def line(values):
+        cells = []
+        for key in ("all", "same_pitch", "other_pitch"):
+            s = summary(values[key])
+            cells.append(f"{key.replace('_', ' ')} " + (
+                f"{s['median']} (n {s['n']}/{s['of']}, max {s['max']})" if s["n"]
+                else f"— (n 0/{s['of']})"))
+        return "; ".join(cells)
+
+    print(f"passages scaled to {args.input_lufs} LUFS before rendering")
+    print("setting effect (each step against the middle step, same passage), median:")
     for label, values in setting_effect.items():
-        print(f"  {label:24} {summary(values)}; same note {note_kept[label]}/{len(names)}")
-    print("passage effect (two passages, same step):")
+        print(f"  {label:26} {line(values)}")
+    print("whole range (same passage), median:")
+    for label, values in ranges.items():
+        print(f"  {label:40} {line(values)}")
+    print("passage effect (two passages, same step), median:")
     for label, values in passage_effect.items():
-        print(f"  {label:24} {summary(values)}")
+        print(f"  {label:26} {line(values)}")
     for document in rescored:
         print(f"rescored {document['path']}:")
         for row in document["rows"]:
@@ -327,7 +378,9 @@ def main() -> None:
             "loss_profile": args.loss_profile, "dis": described,
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,
             "pairs": pairs, "tracks": tracks, "repeats": repeats,
+            "input_lufs": args.input_lufs,
             "setting_effect": {k: summary(v) for k, v in setting_effect.items()},
+            "whole_range": {k: summary(v) for k, v in ranges.items()},
             "passage_effect": {k: summary(v) for k, v in passage_effect.items()},
             "note_kept": note_kept, "rescored": rescored,
         }, indent=1) + "\n", encoding="utf-8")
