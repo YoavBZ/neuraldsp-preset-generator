@@ -1,0 +1,2507 @@
+{
+ "schema": "harmonic-study-2",
+ "source_commit": "4b7a6a392689e070e76243d7682249655cbe73a2",
+ "command": "scripts/study_harmonic.py --renderer swift --pack morgan --amp sw50r --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --development-dis --recordings docs/recordings-benchmark-sw50r.json --json docs/harmonic-study-sw50r.json",
+ "elapsed_s": 371.2,
+ "pack": "morgan",
+ "amp": "sw50r",
+ "loss_profile": "unpaired-v2",
+ "dis": {
+  "howlong": {
+   "path": "how-long-di-6s.wav",
+   "sha256": "87cbca70c20fd9838b4c22025638e20adc5804ba0b5479ac55acf63b7366c355",
+   "lufs": -18.36,
+   "gain_db": 0.36
+  },
+  "hotel": {
+   "path": "hotel-di-6s.wav",
+   "sha256": "57469c6b85ada837a4c7d938048addbd6f7f1397f847542321343dd9a952c8e2",
+   "lufs": -14.17,
+   "gain_db": -3.83
+  },
+  "telefunken/Bourbon/GTR 1": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Bourbon-GTR_1/di.wav",
+   "sha256": "97e6852479d766a7b38ac232c104ab409a6fbdc7949eef66fa7f8ab4dc6df331",
+   "lufs": -34.95,
+   "gain_db": 16.95
+  },
+  "telefunken/Bourbon/GTR 2": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Bourbon-GTR_2/di.wav",
+   "sha256": "d852344d7e398f3e4bb237dd0533897911d1391882311a68fbc6c199c71fbab4",
+   "lufs": -24.75,
+   "gain_db": 6.75
+  },
+  "telefunken/Collide With Me/GTR 1": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Collide_With_Me-GTR_1/di.wav",
+   "sha256": "b88dcf65e80edc4a1bdd51a0611d892ea4f60df6638f6a7c288cd02dca01f173",
+   "lufs": -35.76,
+   "gain_db": 17.76
+  },
+  "telefunken/Collide With Me/GTR 2": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Collide_With_Me-GTR_2/di.wav",
+   "sha256": "acc2f3c1027e28d939357b5acb7d73b8bbc4364874d04feb1bf437bc42f9e511",
+   "lufs": -21.15,
+   "gain_db": 3.15
+  },
+  "cambridge/Heather Jane/ElecGtr1": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Heather_Jane-ElecGtr1/di.wav",
+   "sha256": "a33b20c134e061226175565c50262f6d95bebe5bfcd571b60c231e38e7e1709d",
+   "lufs": -19.72,
+   "gain_db": 1.72
+  },
+  "cambridge/Heather Jane/ElecGtr1DT": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Heather_Jane-ElecGtr1DT/di.wav",
+   "sha256": "a0240e39ad0037a278dc3abd90fef6472b82b71499ff986b1b9dcec68338daf7",
+   "lufs": -19.61,
+   "gain_db": 1.61
+  },
+  "guitar-techs/P3_music excerpt 01/01": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_01-01/di.wav",
+   "sha256": "630adf048060e24880b4d29606f0391e3cb411b313226aef8739729339403838",
+   "lufs": -27.63,
+   "gain_db": 9.63
+  },
+  "guitar-techs/P3_music excerpt 03/03": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_03-03/di.wav",
+   "sha256": "03a03d789d59998d14618ae9ca0857695abc30dfa5f2616b33d1c4826f1185a7",
+   "lufs": -24.95,
+   "gain_db": 6.95
+  },
+  "guitar-techs/P3_music excerpt 04/04": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_04-04/di.wav",
+   "sha256": "0940f6e99670e0280e00a62a2132e7d3cff17349cdffa9eba6caa38491459bf0",
+   "lufs": -23.67,
+   "gain_db": 5.67
+  },
+  "guitar-techs/P3_music excerpt 05/05": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_05-05/di.wav",
+   "sha256": "263e96b8c72e369790ffefb841910b7e56012bf4a0d2e70a712660b73a5c1ad0",
+   "lufs": -27.29,
+   "gain_db": 9.29
+  },
+  "guitar-techs/P3_music excerpt 07/07": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_07-07/di.wav",
+   "sha256": "1a0497abe28383988f384e2b58d0b7a4e92e2f3ebc736edd4e8ce417b7a963e1",
+   "lufs": -21.13,
+   "gain_db": 3.13
+  },
+  "guitar-techs/P3_music excerpt 08/08": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_08-08/di.wav",
+   "sha256": "2c86ac1e7df532b747cbc04e25f2443cf0bf50da94ba01ead8301406eda1fb81",
+   "lufs": -24.32,
+   "gain_db": 6.32
+  },
+  "guitar-techs/P3_music excerpt 09/09": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_09-09/di.wav",
+   "sha256": "997ec57e0600940a70955581ff48504fd7eaa91e996760de59143099ecd81d22",
+   "lufs": -18.67,
+   "gain_db": 0.67
+  },
+  "guitar-techs/P3_music excerpt 12/12": {
+   "path": "/Users/yoavbz/ndsp-presets/references/validation-crops/guitar-techs-P3_music_excerpt_12-12/di.wav",
+   "sha256": "34e3aee0d6270e9d853a9654c1be70f58adc2e2b876a08e8a0711e152ac6af78",
+   "lufs": -39.49,
+   "gain_db": 21.49
+  }
+ },
+ "backend": {
+  "renderer_id": "swift",
+  "sample_rate": 48000,
+  "block_size": 512,
+  "plugin_version": "1.1.1",
+  "renderer_build": "audio-unit-renderer-2af9432f77c6",
+  "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+  "reproducible": false,
+  "band_noise_db": 0.23,
+  "notes": [
+   "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+   "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+  ]
+ },
+ "measurement_caveat": "rendered by swift (plugin 1.1.1), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 0.23 dB. Every number below carries that, and none of them may be committed without it",
+ "pairs": [
+  {
+   "part": "telefunken/Bourbon/GTR 1",
+   "di": {
+    "note": {
+     "f0_hz": 110.3,
+     "start_s": 8.671,
+     "stop_s": 8.993,
+     "at_edge": false
+    },
+    "hnr_db": 8.5674,
+    "odd_even_ratio": 0.1523,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.6656
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 1200.0,
+     "start_s": 1.564,
+     "stop_s": 1.84,
+     "at_edge": true
+    },
+    "hnr_db": -29.3488,
+    "odd_even_ratio": 0.4663,
+    "hf_residual_index": 0.0015,
+    "confidence": 0.7514
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 1.5230130247955858
+  },
+  {
+   "part": "telefunken/Bourbon/GTR 2",
+   "di": {
+    "note": {
+     "f0_hz": 110.1,
+     "start_s": 8.372,
+     "stop_s": 9.016,
+     "at_edge": false
+    },
+    "hnr_db": 14.1056,
+    "odd_even_ratio": 0.1008,
+    "hf_residual_index": 0.0028,
+    "confidence": 0.7831
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 82.3,
+     "start_s": 3.634,
+     "stop_s": 4.439,
+     "at_edge": false
+    },
+    "hnr_db": 2.3544,
+    "odd_even_ratio": 0.1664,
+    "hf_residual_index": 0.0056,
+    "confidence": 0.6609
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 0.4678601314717361
+  },
+  {
+   "part": "telefunken/Collide With Me/GTR 1",
+   "di": {
+    "note": {
+     "f0_hz": 116.8,
+     "start_s": 0.851,
+     "stop_s": 1.403,
+     "at_edge": false
+    },
+    "hnr_db": 7.4863,
+    "odd_even_ratio": 0.2248,
+    "hf_residual_index": 0.0013,
+    "confidence": 0.7223
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 117.1,
+     "start_s": 1.403,
+     "stop_s": 1.955,
+     "at_edge": false
+    },
+    "hnr_db": 7.0514,
+    "odd_even_ratio": 0.2129,
+    "hf_residual_index": 0.021,
+    "confidence": 0.6918
+   },
+   "same_note": true,
+   "same_stretch": false,
+   "harmonic": 0.11190249015141561
+  },
+  {
+   "part": "telefunken/Collide With Me/GTR 2",
+   "di": {
+    "note": {
+     "f0_hz": 1142.9,
+     "start_s": 0.0,
+     "stop_s": 4.554,
+     "at_edge": false
+    },
+    "hnr_db": -6.5525,
+    "odd_even_ratio": 6.6678,
+    "hf_residual_index": 0.0513,
+    "confidence": 0.663
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 155.6,
+     "start_s": 8.579,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 10.4371,
+    "odd_even_ratio": 0.4052,
+    "hf_residual_index": 0.001,
+    "confidence": 0.8431
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 3.1548708761716093
+  },
+  {
+   "part": "cambridge/Heather Jane/ElecGtr1",
+   "di": {
+    "note": {
+     "f0_hz": 147.2,
+     "start_s": 6.739,
+     "stop_s": 7.222,
+     "at_edge": false
+    },
+    "hnr_db": 6.9484,
+    "odd_even_ratio": 2.2201,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.6658
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 147.7,
+     "start_s": 6.762,
+     "stop_s": 7.291,
+     "at_edge": false
+    },
+    "hnr_db": 7.3119,
+    "odd_even_ratio": 2.5168,
+    "hf_residual_index": 0.0005,
+    "confidence": 0.6651
+   },
+   "same_note": true,
+   "same_stretch": true,
+   "harmonic": 0.12488907038717438
+  },
+  {
+   "part": "cambridge/Heather Jane/ElecGtr1DT",
+   "di": {
+    "note": {
+     "f0_hz": 235.9,
+     "start_s": 3.611,
+     "stop_s": 4.255,
+     "at_edge": false
+    },
+    "hnr_db": -31.5751,
+    "odd_even_ratio": 1.0609,
+    "hf_residual_index": 0.0,
+    "confidence": 0.5952
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 147.7,
+     "start_s": 6.67,
+     "stop_s": 7.222,
+     "at_edge": false
+    },
+    "hnr_db": 6.1736,
+    "odd_even_ratio": 0.7153,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.6192
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 1.3649360401995685
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 01/01",
+   "di": {
+    "note": {
+     "f0_hz": 128.7,
+     "start_s": 3.473,
+     "stop_s": 4.048,
+     "at_edge": false
+    },
+    "hnr_db": 1.9471,
+    "odd_even_ratio": 0.0002,
+    "hf_residual_index": 0.0,
+    "confidence": 0.641
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 1200.0,
+     "start_s": 0.069,
+     "stop_s": 0.897,
+     "at_edge": true
+    },
+    "hnr_db": -47.8763,
+    "odd_even_ratio": 0.374,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7223
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 1.9074054824967348
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 03/03",
+   "di": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 14.8584,
+    "odd_even_ratio": 1.1158,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.7367
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 14.1091,
+    "odd_even_ratio": 0.6825,
+    "hf_residual_index": 0.0003,
+    "confidence": 0.7332
+   },
+   "same_note": true,
+   "same_stretch": true,
+   "harmonic": 0.20754385989864788
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 04/04",
+   "di": {
+    "note": {
+     "f0_hz": 102.6,
+     "start_s": 8.878,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 2.3856,
+    "odd_even_ratio": 0.0001,
+    "hf_residual_index": 0.0,
+    "confidence": 0.6392
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 309.7,
+     "start_s": 7.475,
+     "stop_s": 8.073,
+     "at_edge": false
+    },
+    "hnr_db": -36.6015,
+    "odd_even_ratio": 0.6802,
+    "hf_residual_index": 0.0,
+    "confidence": 0.8359
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 1.62601944020887
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 05/05",
+   "di": {
+    "note": {
+     "f0_hz": 109.3,
+     "start_s": 0.506,
+     "stop_s": 2.507,
+     "at_edge": false
+    },
+    "hnr_db": 15.0625,
+    "odd_even_ratio": 4.1739,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7979
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 109.1,
+     "start_s": 0.483,
+     "stop_s": 2.507,
+     "at_edge": false
+    },
+    "hnr_db": 15.0276,
+    "odd_even_ratio": 9.344,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7969
+   },
+   "same_note": true,
+   "same_stretch": true,
+   "harmonic": 2.2905473224021966
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 07/07",
+   "di": {
+    "note": {
+     "f0_hz": 98.2,
+     "start_s": 7.406,
+     "stop_s": 8.28,
+     "at_edge": false
+    },
+    "hnr_db": 21.9148,
+    "odd_even_ratio": 0.1028,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7735
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 500.0,
+     "start_s": 2.484,
+     "stop_s": 3.381,
+     "at_edge": false
+    },
+    "hnr_db": -0.9075,
+    "odd_even_ratio": 0.5785,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7887
+   },
+   "same_note": false,
+   "same_stretch": false,
+   "harmonic": 1.185678040302664
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 08/08",
+   "di": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 7.981,
+     "stop_s": 8.924,
+     "at_edge": false
+    },
+    "hnr_db": 12.9296,
+    "odd_even_ratio": 0.0068,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9328
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.762,
+     "stop_s": 7.613,
+     "at_edge": false
+    },
+    "hnr_db": 12.8105,
+    "odd_even_ratio": 0.0401,
+    "hf_residual_index": 0.0,
+    "confidence": 0.9325
+   },
+   "same_note": true,
+   "same_stretch": false,
+   "harmonic": 0.023786251959223056
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 09/09",
+   "di": {
+    "note": {
+     "f0_hz": 146.8,
+     "start_s": 0.184,
+     "stop_s": 1.242,
+     "at_edge": false
+    },
+    "hnr_db": -7.9347,
+    "odd_even_ratio": 0.0002,
+    "hf_residual_index": 0.0,
+    "confidence": 0.651
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 145.5,
+     "start_s": 8.303,
+     "stop_s": 9.361,
+     "at_edge": false
+    },
+    "hnr_db": -3.8466,
+    "odd_even_ratio": 0.0025,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7026
+   },
+   "same_note": true,
+   "same_stretch": false,
+   "harmonic": 0.14870805132320994
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 12/12",
+   "di": {
+    "note": {
+     "f0_hz": 130.8,
+     "start_s": 3.082,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 22.9536,
+    "odd_even_ratio": 0.1907,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.8294
+   },
+   "amp": {
+    "note": {
+     "f0_hz": 131.1,
+     "start_s": 3.082,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 23.9878,
+    "odd_even_ratio": 0.3018,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.8307
+   },
+   "same_note": true,
+   "same_stretch": true,
+   "harmonic": 0.09895587817737596
+  }
+ ],
+ "tracks": [
+  {
+   "step": "volume 10",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 10.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 527.5,
+     "start_s": 1.633,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 20.098,
+    "odd_even_ratio": 0.118,
+    "hf_residual_index": 0.0002,
+    "confidence": 0.9477
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 292.7,
+     "start_s": 4.83,
+     "stop_s": 5.566,
+     "at_edge": false
+    },
+    "hnr_db": 11.2509,
+    "odd_even_ratio": 0.0857,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.9012
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.705,
+     "stop_s": 8.073,
+     "at_edge": false
+    },
+    "hnr_db": 7.8973,
+    "odd_even_ratio": 2.0499,
+    "hf_residual_index": 0.0002,
+    "confidence": 0.7089
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 146.8,
+     "start_s": 5.612,
+     "stop_s": 6.095,
+     "at_edge": false
+    },
+    "hnr_db": 9.7057,
+    "odd_even_ratio": 0.2466,
+    "hf_residual_index": 0.0079,
+    "confidence": 0.6576
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.5,
+     "start_s": 3.703,
+     "stop_s": 4.439,
+     "at_edge": false
+    },
+    "hnr_db": 9.6768,
+    "odd_even_ratio": 0.348,
+    "hf_residual_index": 0.0022,
+    "confidence": 0.6947
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.694,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 8.3768,
+    "odd_even_ratio": 0.9987,
+    "hf_residual_index": 0.0008,
+    "confidence": 0.8479
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 73.6,
+     "start_s": 5.635,
+     "stop_s": 6.371,
+     "at_edge": false
+    },
+    "hnr_db": 11.5786,
+    "odd_even_ratio": 0.425,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.6074
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 230.8,
+     "start_s": 3.427,
+     "stop_s": 4.278,
+     "at_edge": false
+    },
+    "hnr_db": -23.8753,
+    "odd_even_ratio": 1.1286,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.6504
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 296.3,
+     "start_s": 6.302,
+     "stop_s": 7.107,
+     "at_edge": false
+    },
+    "hnr_db": 4.0259,
+    "odd_even_ratio": 0.0398,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.781
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 14.1643,
+    "odd_even_ratio": 1.0006,
+    "hf_residual_index": 0.0011,
+    "confidence": 0.7347
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 301.9,
+     "start_s": 6.164,
+     "stop_s": 7.084,
+     "at_edge": false
+    },
+    "hnr_db": -29.656,
+    "odd_even_ratio": 1.3947,
+    "hf_residual_index": 0.0,
+    "confidence": 0.7697
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.3,
+     "start_s": 1.058,
+     "stop_s": 2.507,
+     "at_edge": false
+    },
+    "hnr_db": 18.2111,
+    "odd_even_ratio": 3.107,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7893
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.2,
+     "start_s": 7.429,
+     "stop_s": 8.901,
+     "at_edge": false
+    },
+    "hnr_db": 22.3443,
+    "odd_even_ratio": 0.2373,
+    "hf_residual_index": 0.0,
+    "confidence": 0.769
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 7.59,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 15.1842,
+    "odd_even_ratio": 0.0144,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9268
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 150.5,
+     "start_s": 9.338,
+     "stop_s": 9.959,
+     "at_edge": false
+    },
+    "hnr_db": -6.3693,
+    "odd_even_ratio": 0.3201,
+    "hf_residual_index": 0.0,
+    "confidence": 0.6144
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 131.1,
+     "start_s": 3.082,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 20.2402,
+    "odd_even_ratio": 0.2272,
+    "hf_residual_index": 0.0005,
+    "confidence": 0.8179
+   }
+  },
+  {
+   "step": "volume 30",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 30.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 527.5,
+     "start_s": 1.633,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 19.7559,
+    "odd_even_ratio": 0.0919,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.945
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 292.7,
+     "start_s": 4.807,
+     "stop_s": 5.451,
+     "at_edge": false
+    },
+    "hnr_db": 6.4031,
+    "odd_even_ratio": 0.4813,
+    "hf_residual_index": 0.0,
+    "confidence": 0.893
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.728,
+     "stop_s": 8.096,
+     "at_edge": false
+    },
+    "hnr_db": 7.9991,
+    "odd_even_ratio": 2.2512,
+    "hf_residual_index": 0.0015,
+    "confidence": 0.7028
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 110.3,
+     "start_s": 8.372,
+     "stop_s": 8.901,
+     "at_edge": false
+    },
+    "hnr_db": 12.0095,
+    "odd_even_ratio": 0.1188,
+    "hf_residual_index": 0.0148,
+    "confidence": 0.7725
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.8,
+     "start_s": 7.015,
+     "stop_s": 7.59,
+     "at_edge": false
+    },
+    "hnr_db": 7.2607,
+    "odd_even_ratio": 0.2726,
+    "hf_residual_index": 0.0078,
+    "confidence": 0.5791
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.786,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 10.5818,
+    "odd_even_ratio": 0.8389,
+    "hf_residual_index": 0.0048,
+    "confidence": 0.8458
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 73.6,
+     "start_s": 5.658,
+     "stop_s": 6.164,
+     "at_edge": false
+    },
+    "hnr_db": 9.8804,
+    "odd_even_ratio": 0.2962,
+    "hf_residual_index": 0.0023,
+    "confidence": 0.5822
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 234.7,
+     "start_s": 3.749,
+     "stop_s": 4.347,
+     "at_edge": false
+    },
+    "hnr_db": -12.6625,
+    "odd_even_ratio": 1.604,
+    "hf_residual_index": 0.0009,
+    "confidence": 0.5873
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 290.9,
+     "start_s": 6.003,
+     "stop_s": 6.486,
+     "at_edge": false
+    },
+    "hnr_db": 5.7125,
+    "odd_even_ratio": 0.1792,
+    "hf_residual_index": 0.0007,
+    "confidence": 0.7056
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 11.6487,
+    "odd_even_ratio": 1.0379,
+    "hf_residual_index": 0.0056,
+    "confidence": 0.7226
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 254.0,
+     "start_s": 0.23,
+     "stop_s": 1.334,
+     "at_edge": false
+    },
+    "hnr_db": -8.9423,
+    "odd_even_ratio": 5.3475,
+    "hf_residual_index": 0.0002,
+    "confidence": 0.7612
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.1,
+     "start_s": 0.759,
+     "stop_s": 1.886,
+     "at_edge": false
+    },
+    "hnr_db": 10.5533,
+    "odd_even_ratio": 3.4288,
+    "hf_residual_index": 0.0032,
+    "confidence": 0.788
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.924,
+     "at_edge": false
+    },
+    "hnr_db": 18.3741,
+    "odd_even_ratio": 2.3799,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.7645
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 7.59,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 14.8998,
+    "odd_even_ratio": 0.2922,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9229
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 147.2,
+     "start_s": 6.164,
+     "stop_s": 6.624,
+     "at_edge": false
+    },
+    "hnr_db": 3.6161,
+    "odd_even_ratio": 1.2826,
+    "hf_residual_index": 0.0053,
+    "confidence": 0.6997
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 130.4,
+     "start_s": 3.105,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 14.6675,
+    "odd_even_ratio": 0.7164,
+    "hf_residual_index": 0.005,
+    "confidence": 0.8054
+   }
+  },
+  {
+   "step": "volume 50",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 50.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 524.6,
+     "start_s": 1.656,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 20.3202,
+    "odd_even_ratio": 0.0846,
+    "hf_residual_index": 0.0009,
+    "confidence": 0.9453
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 292.7,
+     "start_s": 4.577,
+     "stop_s": 5.382,
+     "at_edge": false
+    },
+    "hnr_db": 8.1386,
+    "odd_even_ratio": 0.1627,
+    "hf_residual_index": 0.0003,
+    "confidence": 0.9061
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.728,
+     "stop_s": 8.096,
+     "at_edge": false
+    },
+    "hnr_db": 7.3998,
+    "odd_even_ratio": 1.8575,
+    "hf_residual_index": 0.0022,
+    "confidence": 0.6707
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 82.5,
+     "start_s": 3.611,
+     "stop_s": 4.416,
+     "at_edge": false
+    },
+    "hnr_db": 5.3597,
+    "odd_even_ratio": 0.1324,
+    "hf_residual_index": 0.0214,
+    "confidence": 0.661
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.8,
+     "start_s": 1.403,
+     "stop_s": 1.955,
+     "at_edge": false
+    },
+    "hnr_db": 10.9215,
+    "odd_even_ratio": 0.3343,
+    "hf_residual_index": 0.0089,
+    "confidence": 0.7262
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.786,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 10.4888,
+    "odd_even_ratio": 0.8599,
+    "hf_residual_index": 0.0059,
+    "confidence": 0.843
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 73.5,
+     "start_s": 1.012,
+     "stop_s": 1.426,
+     "at_edge": false
+    },
+    "hnr_db": 12.9898,
+    "odd_even_ratio": 0.2242,
+    "hf_residual_index": 0.0035,
+    "confidence": 0.6602
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 73.7,
+     "start_s": 5.543,
+     "stop_s": 6.003,
+     "at_edge": false
+    },
+    "hnr_db": 8.7625,
+    "odd_even_ratio": 0.4827,
+    "hf_residual_index": 0.0045,
+    "confidence": 0.5852
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 290.0,
+     "start_s": 6.026,
+     "stop_s": 6.348,
+     "at_edge": false
+    },
+    "hnr_db": 4.0089,
+    "odd_even_ratio": 0.1735,
+    "hf_residual_index": 0.0011,
+    "confidence": 0.6517
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.3,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 10.1673,
+    "odd_even_ratio": 0.9877,
+    "hf_residual_index": 0.0088,
+    "confidence": 0.7145
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 302.8,
+     "start_s": 7.498,
+     "stop_s": 8.096,
+     "at_edge": false
+    },
+    "hnr_db": -12.503,
+    "odd_even_ratio": 4.3037,
+    "hf_residual_index": 0.0009,
+    "confidence": 0.7651
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.1,
+     "start_s": 0.759,
+     "stop_s": 1.886,
+     "at_edge": false
+    },
+    "hnr_db": 9.6802,
+    "odd_even_ratio": 2.6651,
+    "hf_residual_index": 0.0046,
+    "confidence": 0.7836
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.878,
+     "at_edge": false
+    },
+    "hnr_db": 17.7103,
+    "odd_even_ratio": 4.3971,
+    "hf_residual_index": 0.0008,
+    "confidence": 0.762
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.785,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 14.4405,
+    "odd_even_ratio": 0.3988,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.923
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 147.2,
+     "start_s": 0.828,
+     "stop_s": 1.219,
+     "at_edge": false
+    },
+    "hnr_db": 1.5224,
+    "odd_even_ratio": 0.9847,
+    "hf_residual_index": 0.0027,
+    "confidence": 0.6511
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 130.4,
+     "start_s": 3.105,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 14.5597,
+    "odd_even_ratio": 1.1452,
+    "hf_residual_index": 0.0078,
+    "confidence": 0.8045
+   }
+  },
+  {
+   "step": "volume 70",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 70.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 521.7,
+     "start_s": 1.656,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 21.3281,
+    "odd_even_ratio": 0.1169,
+    "hf_residual_index": 0.0013,
+    "confidence": 0.9465
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 292.7,
+     "start_s": 4.577,
+     "stop_s": 5.382,
+     "at_edge": false
+    },
+    "hnr_db": 7.6232,
+    "odd_even_ratio": 0.2475,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.8985
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.889,
+     "stop_s": 8.073,
+     "at_edge": false
+    },
+    "hnr_db": 7.3757,
+    "odd_even_ratio": 1.821,
+    "hf_residual_index": 0.0028,
+    "confidence": 0.6795
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 82.5,
+     "start_s": 3.68,
+     "stop_s": 4.416,
+     "at_edge": false
+    },
+    "hnr_db": 3.7761,
+    "odd_even_ratio": 0.1615,
+    "hf_residual_index": 0.0472,
+    "confidence": 0.6455
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.8,
+     "start_s": 1.403,
+     "stop_s": 1.955,
+     "at_edge": false
+    },
+    "hnr_db": 9.3434,
+    "odd_even_ratio": 0.3329,
+    "hf_residual_index": 0.0193,
+    "confidence": 0.7005
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.832,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 10.5044,
+    "odd_even_ratio": 0.7321,
+    "hf_residual_index": 0.0142,
+    "confidence": 0.836
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 73.5,
+     "start_s": 1.035,
+     "stop_s": 1.426,
+     "at_edge": false
+    },
+    "hnr_db": 9.5438,
+    "odd_even_ratio": 0.2199,
+    "hf_residual_index": 0.0043,
+    "confidence": 0.6331
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 73.6,
+     "start_s": 0.483,
+     "stop_s": 0.713,
+     "at_edge": false
+    },
+    "hnr_db": 7.0774,
+    "odd_even_ratio": 0.2757,
+    "hf_residual_index": 0.0168,
+    "confidence": 0.5653
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 246.2,
+     "start_s": 4.025,
+     "stop_s": 4.324,
+     "at_edge": false
+    },
+    "hnr_db": 12.3743,
+    "odd_even_ratio": 0.8059,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.8624
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.3,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 8.3679,
+    "odd_even_ratio": 0.9083,
+    "hf_residual_index": 0.0173,
+    "confidence": 0.6958
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 275.1,
+     "start_s": 1.288,
+     "stop_s": 1.794,
+     "at_edge": false
+    },
+    "hnr_db": -8.9599,
+    "odd_even_ratio": 1.4833,
+    "hf_residual_index": 0.0012,
+    "confidence": 0.6241
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 108.8,
+     "start_s": 0.759,
+     "stop_s": 1.886,
+     "at_edge": false
+    },
+    "hnr_db": 6.2507,
+    "odd_even_ratio": 2.1575,
+    "hf_residual_index": 0.0082,
+    "confidence": 0.7744
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.878,
+     "at_edge": false
+    },
+    "hnr_db": 16.7497,
+    "odd_even_ratio": 5.1035,
+    "hf_residual_index": 0.0022,
+    "confidence": 0.764
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.785,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 13.2776,
+    "odd_even_ratio": 0.4703,
+    "hf_residual_index": 0.0003,
+    "confidence": 0.9207
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 163.8,
+     "start_s": 5.29,
+     "stop_s": 5.635,
+     "at_edge": false
+    },
+    "hnr_db": 11.3358,
+    "odd_even_ratio": 7.5464,
+    "hf_residual_index": 0.0046,
+    "confidence": 0.7929
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 130.4,
+     "start_s": 3.105,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 13.3739,
+    "odd_even_ratio": 1.5596,
+    "hf_residual_index": 0.0087,
+    "confidence": 0.7971
+   }
+  },
+  {
+   "step": "volume 90",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 90.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 521.7,
+     "start_s": 1.656,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 21.9035,
+    "odd_even_ratio": 0.1422,
+    "hf_residual_index": 0.002,
+    "confidence": 0.9465
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 335.7,
+     "start_s": 2.553,
+     "stop_s": 3.151,
+     "at_edge": false
+    },
+    "hnr_db": 14.6991,
+    "odd_even_ratio": 0.4634,
+    "hf_residual_index": 0.0008,
+    "confidence": 0.9312
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 219.7,
+     "start_s": 7.82,
+     "stop_s": 8.05,
+     "at_edge": false
+    },
+    "hnr_db": 6.0875,
+    "odd_even_ratio": 1.3318,
+    "hf_residual_index": 0.0096,
+    "confidence": 0.6201
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 82.5,
+     "start_s": 3.68,
+     "stop_s": 4.393,
+     "at_edge": false
+    },
+    "hnr_db": 2.6621,
+    "odd_even_ratio": 0.1781,
+    "hf_residual_index": 0.0759,
+    "confidence": 0.612
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.8,
+     "start_s": 1.403,
+     "stop_s": 1.955,
+     "at_edge": false
+    },
+    "hnr_db": 8.1177,
+    "odd_even_ratio": 0.3262,
+    "hf_residual_index": 0.0372,
+    "confidence": 0.6725
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.947,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 10.7926,
+    "odd_even_ratio": 0.4898,
+    "hf_residual_index": 0.0352,
+    "confidence": 0.8197
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 73.5,
+     "start_s": 1.035,
+     "stop_s": 1.426,
+     "at_edge": false
+    },
+    "hnr_db": 7.2269,
+    "odd_even_ratio": 0.2296,
+    "hf_residual_index": 0.0201,
+    "confidence": 0.6171
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 110.2,
+     "start_s": 1.863,
+     "stop_s": 2.047,
+     "at_edge": false
+    },
+    "hnr_db": 11.2759,
+    "odd_even_ratio": 0.3671,
+    "hf_residual_index": 0.0177,
+    "confidence": 0.7351
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 290.9,
+     "start_s": 6.026,
+     "stop_s": 6.394,
+     "at_edge": false
+    },
+    "hnr_db": 4.2495,
+    "odd_even_ratio": 0.5692,
+    "hf_residual_index": 0.0048,
+    "confidence": 0.6049
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 298.1,
+     "start_s": 1.541,
+     "stop_s": 2.277,
+     "at_edge": false
+    },
+    "hnr_db": 6.0731,
+    "odd_even_ratio": 0.6889,
+    "hf_residual_index": 0.0019,
+    "confidence": 0.7457
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 81.1,
+     "start_s": 0.253,
+     "stop_s": 0.736,
+     "at_edge": false
+    },
+    "hnr_db": 7.0735,
+    "odd_even_ratio": 5.4125,
+    "hf_residual_index": 0.0092,
+    "confidence": 0.647
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.1,
+     "start_s": 0.759,
+     "stop_s": 1.84,
+     "at_edge": false
+    },
+    "hnr_db": 6.4141,
+    "odd_even_ratio": 2.2107,
+    "hf_residual_index": 0.0181,
+    "confidence": 0.7675
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.878,
+     "at_edge": false
+    },
+    "hnr_db": 12.7162,
+    "odd_even_ratio": 2.9699,
+    "hf_residual_index": 0.0072,
+    "confidence": 0.7565
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.785,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 12.3631,
+    "odd_even_ratio": 0.5379,
+    "hf_residual_index": 0.0008,
+    "confidence": 0.9192
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 163.3,
+     "start_s": 5.29,
+     "stop_s": 5.635,
+     "at_edge": false
+    },
+    "hnr_db": 8.4663,
+    "odd_even_ratio": 6.9379,
+    "hf_residual_index": 0.0072,
+    "confidence": 0.7173
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 130.4,
+     "start_s": 3.105,
+     "stop_s": 3.726,
+     "at_edge": false
+    },
+    "hnr_db": 10.1421,
+    "odd_even_ratio": 1.2833,
+    "hf_residual_index": 0.0295,
+    "confidence": 0.7854
+   }
+  },
+  {
+   "step": "volume 50 + drive 50",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 50.0,
+    "drive1/drive1Active": true,
+    "drive1/drive1Drive": 50.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 521.7,
+     "start_s": 1.633,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 20.4029,
+    "odd_even_ratio": 0.0491,
+    "hf_residual_index": 0.0002,
+    "confidence": 0.9484
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 335.7,
+     "start_s": 2.553,
+     "stop_s": 3.197,
+     "at_edge": false
+    },
+    "hnr_db": 13.3866,
+    "odd_even_ratio": 0.1108,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9316
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.705,
+     "stop_s": 8.096,
+     "at_edge": false
+    },
+    "hnr_db": 8.1002,
+    "odd_even_ratio": 2.1751,
+    "hf_residual_index": 0.0003,
+    "confidence": 0.716
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 146.8,
+     "start_s": 2.622,
+     "stop_s": 3.082,
+     "at_edge": false
+    },
+    "hnr_db": 14.9968,
+    "odd_even_ratio": 0.2741,
+    "hf_residual_index": 0.0011,
+    "confidence": 0.8099
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.5,
+     "start_s": 3.703,
+     "stop_s": 4.416,
+     "at_edge": false
+    },
+    "hnr_db": 9.6486,
+    "odd_even_ratio": 0.2727,
+    "hf_residual_index": 0.0016,
+    "confidence": 0.7061
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.694,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 8.6182,
+    "odd_even_ratio": 1.1362,
+    "hf_residual_index": 0.0013,
+    "confidence": 0.8451
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 221.2,
+     "start_s": 5.06,
+     "stop_s": 5.497,
+     "at_edge": false
+    },
+    "hnr_db": 8.6164,
+    "odd_even_ratio": 0.3512,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7715
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 229.7,
+     "start_s": 3.519,
+     "stop_s": 4.278,
+     "at_edge": false
+    },
+    "hnr_db": -13.0344,
+    "odd_even_ratio": 3.6106,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.6021
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 258.1,
+     "start_s": 8.533,
+     "stop_s": 9.384,
+     "at_edge": false
+    },
+    "hnr_db": 4.8467,
+    "odd_even_ratio": 0.2687,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.707
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 13.995,
+    "odd_even_ratio": 1.0406,
+    "hf_residual_index": 0.0016,
+    "confidence": 0.731
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 255.3,
+     "start_s": 0.437,
+     "stop_s": 1.334,
+     "at_edge": false
+    },
+    "hnr_db": -18.7984,
+    "odd_even_ratio": 1.3838,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7445
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.3,
+     "start_s": 0.506,
+     "stop_s": 2.507,
+     "at_edge": false
+    },
+    "hnr_db": 11.8283,
+    "odd_even_ratio": 3.1014,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.7861
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.901,
+     "at_edge": false
+    },
+    "hnr_db": 16.3657,
+    "odd_even_ratio": 0.5017,
+    "hf_residual_index": 0.0006,
+    "confidence": 0.7652
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.785,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 14.5035,
+    "odd_even_ratio": 0.1221,
+    "hf_residual_index": 0.0,
+    "confidence": 0.9196
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 164.9,
+     "start_s": 7.268,
+     "stop_s": 7.889,
+     "at_edge": false
+    },
+    "hnr_db": 5.0714,
+    "odd_even_ratio": 0.8062,
+    "hf_residual_index": 0.0014,
+    "confidence": 0.633
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 131.1,
+     "start_s": 3.105,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 16.8286,
+    "odd_even_ratio": 0.3775,
+    "hf_residual_index": 0.001,
+    "confidence": 0.8119
+   }
+  },
+  {
+   "step": "volume 50 + drive 100",
+   "settings": {
+    "sw50rAmp/sw50rVolume": 50.0,
+    "drive1/drive1Active": true,
+    "drive1/drive1Drive": 100.0
+   },
+   "howlong": {
+    "note": {
+     "f0_hz": 521.7,
+     "start_s": 1.656,
+     "stop_s": 2.162,
+     "at_edge": false
+    },
+    "hnr_db": 20.8457,
+    "odd_even_ratio": 0.0421,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9484
+   },
+   "hotel": {
+    "note": {
+     "f0_hz": 335.7,
+     "start_s": 2.553,
+     "stop_s": 3.197,
+     "at_edge": false
+    },
+    "hnr_db": 13.345,
+    "odd_even_ratio": 0.1101,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.9316
+   },
+   "telefunken/Bourbon/GTR 1": {
+    "note": {
+     "f0_hz": 220.2,
+     "start_s": 7.705,
+     "stop_s": 8.096,
+     "at_edge": false
+    },
+    "hnr_db": 8.0919,
+    "odd_even_ratio": 2.173,
+    "hf_residual_index": 0.0003,
+    "confidence": 0.7158
+   },
+   "telefunken/Bourbon/GTR 2": {
+    "note": {
+     "f0_hz": 146.8,
+     "start_s": 2.622,
+     "stop_s": 3.082,
+     "at_edge": false
+    },
+    "hnr_db": 14.9646,
+    "odd_even_ratio": 0.2743,
+    "hf_residual_index": 0.0012,
+    "confidence": 0.8091
+   },
+   "telefunken/Collide With Me/GTR 1": {
+    "note": {
+     "f0_hz": 116.5,
+     "start_s": 3.703,
+     "stop_s": 4.416,
+     "at_edge": false
+    },
+    "hnr_db": 9.6297,
+    "odd_even_ratio": 0.2722,
+    "hf_residual_index": 0.0016,
+    "confidence": 0.7056
+   },
+   "telefunken/Collide With Me/GTR 2": {
+    "note": {
+     "f0_hz": 155.8,
+     "start_s": 8.694,
+     "stop_s": 10.0,
+     "at_edge": false
+    },
+    "hnr_db": 8.587,
+    "odd_even_ratio": 1.1373,
+    "hf_residual_index": 0.0013,
+    "confidence": 0.8451
+   },
+   "cambridge/Heather Jane/ElecGtr1": {
+    "note": {
+     "f0_hz": 221.2,
+     "start_s": 5.06,
+     "stop_s": 5.497,
+     "at_edge": false
+    },
+    "hnr_db": 8.6314,
+    "odd_even_ratio": 0.3461,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7723
+   },
+   "cambridge/Heather Jane/ElecGtr1DT": {
+    "note": {
+     "f0_hz": 229.7,
+     "start_s": 3.519,
+     "stop_s": 4.278,
+     "at_edge": false
+    },
+    "hnr_db": -13.0142,
+    "odd_even_ratio": 3.5972,
+    "hf_residual_index": 0.0004,
+    "confidence": 0.6017
+   },
+   "guitar-techs/P3_music excerpt 01/01": {
+    "note": {
+     "f0_hz": 258.1,
+     "start_s": 8.533,
+     "stop_s": 9.384,
+     "at_edge": false
+    },
+    "hnr_db": 4.785,
+    "odd_even_ratio": 0.2686,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7026
+   },
+   "guitar-techs/P3_music excerpt 03/03": {
+    "note": {
+     "f0_hz": 87.4,
+     "start_s": 8.74,
+     "stop_s": 9.821,
+     "at_edge": false
+    },
+    "hnr_db": 13.9841,
+    "odd_even_ratio": 1.0372,
+    "hf_residual_index": 0.0016,
+    "confidence": 0.7306
+   },
+   "guitar-techs/P3_music excerpt 04/04": {
+    "note": {
+     "f0_hz": 255.3,
+     "start_s": 0.437,
+     "stop_s": 1.334,
+     "at_edge": false
+    },
+    "hnr_db": -18.7163,
+    "odd_even_ratio": 1.4894,
+    "hf_residual_index": 0.0001,
+    "confidence": 0.7375
+   },
+   "guitar-techs/P3_music excerpt 05/05": {
+    "note": {
+     "f0_hz": 109.3,
+     "start_s": 0.506,
+     "stop_s": 2.507,
+     "at_edge": false
+    },
+    "hnr_db": 11.7895,
+    "odd_even_ratio": 3.0796,
+    "hf_residual_index": 0.0007,
+    "confidence": 0.786
+   },
+   "guitar-techs/P3_music excerpt 07/07": {
+    "note": {
+     "f0_hz": 98.0,
+     "start_s": 7.429,
+     "stop_s": 8.901,
+     "at_edge": false
+    },
+    "hnr_db": 15.7501,
+    "odd_even_ratio": 0.5062,
+    "hf_residual_index": 0.0008,
+    "confidence": 0.7614
+   },
+   "guitar-techs/P3_music excerpt 08/08": {
+    "note": {
+     "f0_hz": 328.8,
+     "start_s": 6.785,
+     "stop_s": 9.039,
+     "at_edge": false
+    },
+    "hnr_db": 14.0504,
+    "odd_even_ratio": 0.1323,
+    "hf_residual_index": 0.0,
+    "confidence": 0.931
+   },
+   "guitar-techs/P3_music excerpt 09/09": {
+    "note": {
+     "f0_hz": 164.9,
+     "start_s": 7.268,
+     "stop_s": 7.889,
+     "at_edge": false
+    },
+    "hnr_db": 5.085,
+    "odd_even_ratio": 0.8053,
+    "hf_residual_index": 0.0015,
+    "confidence": 0.6338
+   },
+   "guitar-techs/P3_music excerpt 12/12": {
+    "note": {
+     "f0_hz": 131.1,
+     "start_s": 3.105,
+     "stop_s": 3.749,
+     "at_edge": false
+    },
+    "hnr_db": 16.5325,
+    "odd_even_ratio": 0.3777,
+    "hf_residual_index": 0.0011,
+    "confidence": 0.811
+   }
+  }
+ ],
+ "repeats": {
+  "howlong": 2.445347413534471e-05,
+  "hotel": 1.770976840116919e-06,
+  "telefunken/Bourbon/GTR 1": 1.2656267439225452e-06,
+  "telefunken/Bourbon/GTR 2": 6.506907537860831e-07,
+  "telefunken/Collide With Me/GTR 1": 6.228752258148766e-07,
+  "telefunken/Collide With Me/GTR 2": 9.501891303102724e-07,
+  "cambridge/Heather Jane/ElecGtr1": 3.2158322780509683e-06,
+  "cambridge/Heather Jane/ElecGtr1DT": 1.2347886101126454e-06,
+  "guitar-techs/P3_music excerpt 01/01": 8.938644694786158e-07,
+  "guitar-techs/P3_music excerpt 03/03": 1.2421920169978834e-06,
+  "guitar-techs/P3_music excerpt 04/04": 7.5409291249726e-06,
+  "guitar-techs/P3_music excerpt 05/05": 2.3862456433919966e-05,
+  "guitar-techs/P3_music excerpt 07/07": 9.68539141790378e-06,
+  "guitar-techs/P3_music excerpt 08/08": 4.4859038586221706e-07,
+  "guitar-techs/P3_music excerpt 09/09": 1.5626527669293333e-05,
+  "guitar-techs/P3_music excerpt 12/12": 5.7086710029877545e-06
+ },
+ "input_lufs": -18.0,
+ "setting_effect": {
+  "volume 10": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.218,
+    "p90": 1.625,
+    "max": 1.97
+   },
+   "same_pitch": {
+    "n": 14,
+    "of": 14,
+    "median": 0.198,
+    "p90": 1.584,
+    "max": 1.97
+   },
+   "other_pitch": {
+    "n": 2,
+    "of": 2,
+    "median": 0.774,
+    "p90": 1.186,
+    "max": 1.288
+   }
+  },
+  "volume 30": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.183,
+    "p90": 0.739,
+    "max": 1.075
+   },
+   "same_pitch": {
+    "n": 13,
+    "of": 13,
+    "median": 0.142,
+    "p90": 0.351,
+    "max": 0.883
+   },
+   "other_pitch": {
+    "n": 3,
+    "of": 3,
+    "median": 0.596,
+    "p90": 0.979,
+    "max": 1.075
+   }
+  },
+  "volume 70": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.152,
+    "p90": 0.818,
+    "max": 2.737
+   },
+   "same_pitch": {
+    "n": 13,
+    "of": 13,
+    "median": 0.126,
+    "p90": 0.325,
+    "max": 0.385
+   },
+   "other_pitch": {
+    "n": 3,
+    "of": 3,
+    "median": 1.102,
+    "p90": 2.41,
+    "max": 2.737
+   }
+  },
+  "volume 90": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.322,
+    "p90": 0.99,
+    "max": 2.424
+   },
+   "same_pitch": {
+    "n": 11,
+    "of": 11,
+    "median": 0.268,
+    "p90": 0.402,
+    "max": 0.842
+   },
+   "other_pitch": {
+    "n": 5,
+    "of": 5,
+    "median": 0.484,
+    "p90": 1.91,
+    "max": 2.424
+   }
+  },
+  "volume 50 + drive 50": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.233,
+    "p90": 1.59,
+    "max": 1.742
+   },
+   "same_pitch": {
+    "n": 9,
+    "of": 9,
+    "median": 0.207,
+    "p90": 0.726,
+    "max": 1.707
+   },
+   "other_pitch": {
+    "n": 7,
+    "of": 7,
+    "median": 0.292,
+    "p90": 1.58,
+    "max": 1.742
+   }
+  },
+  "volume 50 + drive 100": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.232,
+    "p90": 1.57,
+    "max": 1.737
+   },
+   "same_pitch": {
+    "n": 9,
+    "of": 9,
+    "median": 0.205,
+    "p90": 0.72,
+    "max": 1.729
+   },
+   "other_pitch": {
+    "n": 7,
+    "of": 7,
+    "median": 0.29,
+    "p90": 1.542,
+    "max": 1.737
+   }
+  }
+ },
+ "whole_range": {
+  "volume 10 vs volume 90": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.496,
+    "p90": 2.208,
+    "max": 2.804
+   },
+   "same_pitch": {
+    "n": 10,
+    "of": 10,
+    "median": 0.382,
+    "p90": 1.107,
+    "max": 1.589
+   },
+   "other_pitch": {
+    "n": 6,
+    "of": 6,
+    "median": 1.081,
+    "p90": 2.799,
+    "max": 2.804
+   }
+  },
+  "volume 10 vs volume 50 + drive 100": {
+   "all": {
+    "n": 16,
+    "of": 16,
+    "median": 0.123,
+    "p90": 0.525,
+    "max": 1.19
+   },
+   "same_pitch": {
+    "n": 11,
+    "of": 11,
+    "median": 0.119,
+    "p90": 0.397,
+    "max": 1.19
+   },
+   "other_pitch": {
+    "n": 5,
+    "of": 5,
+    "median": 0.126,
+    "p90": 0.532,
+    "max": 0.562
+   }
+  }
+ },
+ "passage_effect": {
+  "volume 10": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.773,
+    "p90": 1.934,
+    "max": 2.78
+   },
+   "same_pitch": {
+    "n": 3,
+    "of": 3,
+    "median": 0.606,
+    "p90": 1.737,
+    "max": 2.02
+   },
+   "other_pitch": {
+    "n": 117,
+    "of": 117,
+    "median": 0.787,
+    "p90": 1.926,
+    "max": 2.78
+   }
+  },
+  "volume 30": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.798,
+    "p90": 1.899,
+    "max": 3.438
+   },
+   "same_pitch": {
+    "n": 2,
+    "of": 2,
+    "median": 0.846,
+    "p90": 1.403,
+    "max": 1.543
+   },
+   "other_pitch": {
+    "n": 118,
+    "of": 118,
+    "median": 0.798,
+    "p90": 1.942,
+    "max": 3.438
+   }
+  },
+  "volume 50": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.613,
+    "p90": 2.033,
+    "max": 3.189
+   },
+   "same_pitch": {
+    "n": 2,
+    "of": 2,
+    "median": 0.191,
+    "p90": 0.219,
+    "max": 0.225
+   },
+   "other_pitch": {
+    "n": 118,
+    "of": 118,
+    "median": 0.64,
+    "p90": 2.047,
+    "max": 3.189
+   }
+  },
+  "volume 70": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.742,
+    "p90": 2.473,
+    "max": 3.73
+   },
+   "same_pitch": {
+    "n": 1,
+    "of": 1,
+    "median": 0.142,
+    "p90": 0.142,
+    "max": 0.142
+   },
+   "other_pitch": {
+    "n": 119,
+    "of": 119,
+    "median": 0.744,
+    "p90": 2.482,
+    "max": 3.73
+   }
+  },
+  "volume 90": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.711,
+    "p90": 2.211,
+    "max": 3.269
+   },
+   "same_pitch": {
+    "n": 4,
+    "of": 4,
+    "median": 0.555,
+    "p90": 1.827,
+    "max": 2.202
+   },
+   "other_pitch": {
+    "n": 116,
+    "of": 116,
+    "median": 0.711,
+    "p90": 2.191,
+    "max": 3.269
+   }
+  },
+  "volume 50 + drive 50": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.652,
+    "p90": 1.858,
+    "max": 2.311
+   },
+   "same_pitch": {
+    "n": 3,
+    "of": 3,
+    "median": 0.747,
+    "p90": 1.243,
+    "max": 1.367
+   },
+   "other_pitch": {
+    "n": 117,
+    "of": 117,
+    "median": 0.635,
+    "p90": 1.86,
+    "max": 2.311
+   }
+  },
+  "volume 50 + drive 100": {
+   "all": {
+    "n": 120,
+    "of": 120,
+    "median": 0.66,
+    "p90": 1.874,
+    "max": 2.321
+   },
+   "same_pitch": {
+    "n": 3,
+    "of": 3,
+    "median": 0.749,
+    "p90": 1.265,
+    "max": 1.394
+   },
+   "other_pitch": {
+    "n": 117,
+    "of": 117,
+    "median": 0.655,
+    "p90": 1.875,
+    "max": 2.321
+   }
+  }
+ },
+ "note_kept": {
+  "volume 10": 14,
+  "volume 30": 13,
+  "volume 70": 13,
+  "volume 90": 11,
+  "volume 50 + drive 50": 9,
+  "volume 50 + drive 100": 9
+ },
+ "recovers": {
+  "ambience": {
+   "recovered": 226,
+   "of": 1329,
+   "rate": 0.1701,
+   "chance": 0.1429,
+   "mean_rank": 2.769,
+   "chance_rank": 3.0
+  },
+  "complexity": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "dynamics": {
+   "recovered": 374,
+   "of": 1680,
+   "rate": 0.2226,
+   "chance": 0.1429,
+   "mean_rank": 2.451,
+   "chance_rank": 3.0
+  },
+  "harmonic": {
+   "recovered": 250,
+   "of": 1680,
+   "rate": 0.1488,
+   "chance": 0.1429,
+   "mean_rank": 2.93,
+   "chance_rank": 3.0
+  },
+  "level": {
+   "recovered": 564,
+   "of": 1680,
+   "rate": 0.3357,
+   "chance": 0.1429,
+   "mean_rank": 1.64,
+   "chance_rank": 3.0
+  },
+  "prior_deviation": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "residual": {
+   "recovered": 0,
+   "of": 0,
+   "rate": null,
+   "chance": 0.1429,
+   "mean_rank": null,
+   "chance_rank": 3.0
+  },
+  "spatial": {
+   "recovered": 0,
+   "of": 1680,
+   "rate": 0.0,
+   "chance": 0.1429,
+   "mean_rank": 0.0,
+   "chance_rank": 3.0
+  },
+  "timbre": {
+   "recovered": 445,
+   "of": 1680,
+   "rate": 0.2649,
+   "chance": 0.1429,
+   "mean_rank": 1.939,
+   "chance_rank": 3.0
+  }
+ },
+ "rescored": [
+  {
+   "path": "docs/recordings-benchmark-sw50r.json",
+   "sha256": "cae66897a4688c63690e621121fbc0d229259c91b23cbc14da268ab347dee4eb",
+   "amp": "sw50r",
+   "rows": [
+    {
+     "a": "same",
+     "b": "other",
+     "with_harmonic": {
+      "closer": 13,
+      "of": 14,
+      "mean_change": -0.447,
+      "p": 0.0004
+     },
+     "without_harmonic": {
+      "closer": 13,
+      "of": 14,
+      "mean_change": -0.432,
+      "p": 0.0006
+     },
+     "without_harmonic_or_level": {
+      "closer": 13,
+      "of": 14,
+      "mean_change": -0.396,
+      "p": 0.0006
+     }
+    },
+    {
+     "a": "other",
+     "b": "noise",
+     "with_harmonic": {
+      "closer": 11,
+      "of": 14,
+      "mean_change": -0.598,
+      "p": 0.0052
+     },
+     "without_harmonic": {
+      "closer": 11,
+      "of": 14,
+      "mean_change": -0.269,
+      "p": 0.0203
+     },
+     "without_harmonic_or_level": {
+      "closer": 11,
+      "of": 14,
+      "mean_change": -0.222,
+      "p": 0.0353
+     }
+    },
+    {
+     "a": "same",
+     "b": "neutral",
+     "with_harmonic": {
+      "closer": 14,
+      "of": 14,
+      "mean_change": -0.643,
+      "p": 0.0001
+     },
+     "without_harmonic": {
+      "closer": 14,
+      "of": 14,
+      "mean_change": -0.649,
+      "p": 0.0001
+     },
+     "without_harmonic_or_level": {
+      "closer": 14,
+      "of": 14,
+      "mean_change": -0.563,
+      "p": 0.0001
+     }
+    },
+    {
+     "a": "other",
+     "b": "neutral",
+     "with_harmonic": {
+      "closer": 14,
+      "of": 14,
+      "mean_change": -0.355,
+      "p": 0.0001
+     },
+     "without_harmonic": {
+      "closer": 14,
+      "of": 14,
+      "mean_change": -0.383,
+      "p": 0.0001
+     },
+     "without_harmonic_or_level": {
+      "closer": 11,
+      "of": 14,
+      "mean_change": -0.277,
+      "p": 0.0107
+     }
+    },
+    {
+     "a": "noise",
+     "b": "neutral",
+     "with_harmonic": {
+      "closer": 10,
+      "of": 14,
+      "mean_change": 0.605,
+      "p": 0.1531
+     },
+     "without_harmonic": {
+      "closer": 10,
+      "of": 14,
+      "mean_change": -0.156,
+      "p": 0.0785
+     },
+     "without_harmonic_or_level": {
+      "closer": 9,
+      "of": 14,
+      "mean_change": -0.07,
+      "p": 0.4631
+     }
+    }
+   ]
+  }
+ ]
+}

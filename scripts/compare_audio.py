@@ -96,7 +96,7 @@ def main() -> None:
     )
     ap.add_argument("target", type=pathlib.Path, help="what you want it to sound like")
     ap.add_argument("candidate", type=pathlib.Path, help="what it sounds like now")
-    ap.add_argument("--profile", default="unpaired-v2")
+    ap.add_argument("--profile", default="unpaired-v3")
     ap.add_argument("--target-regime", default="mix")
     ap.add_argument("--candidate-regime", default="probe")
     ap.add_argument("--excerpt", type=nonnegative_float, default=None,

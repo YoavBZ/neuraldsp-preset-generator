@@ -4,7 +4,7 @@
       --template samples/Example_Clean_PR12.xml \\
       --reference ~/audio/song-excerpt.wav --reference-mode mix \\
       --probe-di data/di/probe.wav \\
-      --loss-profile unpaired-v2 --budget 300 --shortlist 3 \\
+      --loss-profile unpaired-v3 --budget 300 --shortlist 3 \\
       --renderer synthetic \\
       --out-dir "$NDSP_PRESET_DATA/runs/hotel-california-001"
 
@@ -123,9 +123,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--amp", default=None,
                     help="signal path to invert, e.g. sw50r or lead (default: read "
                          "the template's amp/channel selector)")
-    ap.add_argument("--loss-profile", default="unpaired-v2",
+    ap.add_argument("--loss-profile", default="unpaired-v3",
                     help="how the objective dimensions are weighted "
-                         "(unpaired-v2, paired-v2; the -v1 profiles, which also "
+                         "(unpaired-v3, paired-v2; unpaired-v2, which also "
+                         "compares a harmonic character that follows the passage "
+                         "more than the amp, and the -v1 profiles, which also "
                          "compare an RT60 that does not measure reverb on played "
                          "material, remain for reproducing earlier runs)")
     # "about 60" was the wrong shape of answer: it is a number the user cannot check

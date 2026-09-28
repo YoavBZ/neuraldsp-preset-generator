@@ -347,12 +347,25 @@ def test_later_profiles_leave_the_frozen_file_alone(tmp_path, monkeypatch):
         list_profiles()
 
 
-def test_a_missing_reamp_suggests_the_unpaired_profile_of_the_same_version():
+def test_a_missing_reamp_suggests_the_current_unpaired_profile():
     from analysis.compare import unpaired_counterpart
 
     assert unpaired_counterpart("paired-v1") == "unpaired-v1"
-    assert unpaired_counterpart("paired-v2") == "unpaired-v2"
-    assert unpaired_counterpart("something-else") == "unpaired-v2"
+    assert unpaired_counterpart("paired-v2") == "unpaired-v3"
+    assert unpaired_counterpart("something-else") == "unpaired-v3"
+
+
+def test_unpaired_v3_is_unpaired_v2_without_the_harmonic_dimension():
+    """Measured on played passages, the harmonic terms follow the passage more
+    than the amp (scripts/study_harmonic.py), so -v3 weights them zero and
+    changes nothing else."""
+    from analysis.compare import load_profile
+
+    v2, v3 = load_profile("unpaired-v2"), load_profile("unpaired-v3")
+    assert v3["weights"]["harmonic"] == 0.0 and v2["weights"]["harmonic"] > 0
+    assert {k: v for k, v in v3["weights"].items() if k != "harmonic"} == {
+        k: v for k, v in v2["weights"].items() if k != "harmonic"}
+    assert v3["scales"] == v2["scales"]
 
 
 def test_every_profile_file_ships_with_the_package():
