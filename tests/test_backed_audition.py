@@ -386,9 +386,11 @@ def test_backed_verdict_distinguishes_missing_v2_from_historical_key(tmp_path, o
     objective = key["objective_record"]
     del objective["objective_scoring"]["match_v2"]
     if old_v1_only:
+        del objective["objective_scoring"]["match_v3"]
         del key["objective_profiles_frozen"]
         del objective["objective_profiles_frozen"]
         objective.pop("agreement_match_v2", None)
+        objective.pop("agreement_match_v3", None)
     key_path.write_text(json.dumps(key))
 
     submitted = subprocess.run(
@@ -402,11 +404,13 @@ def test_backed_verdict_distinguishes_missing_v2_from_historical_key(tmp_path, o
         assert "scoring_error" not in scored
         assert "objective_scoring" in scored
         assert "agreement_match_v2" not in scored
+        assert "agreement_match_v3" not in scored
     else:
         assert "invalid" in scored["scoring_error"]
         assert "objective_scoring" not in scored
         assert "agreement" not in scored
         assert "agreement_match_v2" not in scored
+        assert "agreement_match_v3" not in scored
 
 
 def test_simultaneous_verdict_publication_cannot_replace_the_first(tmp_path, monkeypatch):
