@@ -141,6 +141,32 @@ def test_builds_exact_unity_mix_and_backing_with_one_shared_excerpt(tmp_path):
         _run(catalog, data_root, out)
 
 
+def test_guitar_without_di_stays_in_mix_and_not_excluded_di_record(tmp_path):
+    catalog_path, data_root, session_dir = _fixture(tmp_path)
+    name = "guitar-without-di.wav"
+    sf.write(session_dir / name, np.full(12 * RATE, .04, np.float32), RATE,
+             subtype="FLOAT")
+    catalog = json.loads(catalog_path.read_text())
+    session = catalog["sessions"][0]
+    session["files"][name] = _digest(session_dir / name)
+    session["parts"].append({"part": "without-di", "reference": name,
+                             "alternate": [], "di": None, "usable": False})
+    catalog_path.write_text(json.dumps(catalog))
+
+    out = tmp_path / "private-crops"
+    record = _run(catalog_path, data_root, out)
+    assert record["excluded_guitar_dis"] == ["other-di.wav", "own-di.wav"]
+    assert name in record["included_mix_tracks"]
+    assert name in record["verified_source_sha256"]
+    backing = io.load(out / "backing.wav").mono()
+    stereo_at_three = io.load(session_dir / "short-stereo.wav").mono()[3 * RATE]
+    assert backing[RATE] == pytest.approx(.2 + .04 + .01 + stereo_at_three + .03,
+                                         abs=2e-6)
+    assert np.allclose(io.load(out / "mix.wav").mono() -
+                       backing,
+                       io.load(out / "reference.wav").mono() + .05, atol=2e-6)
+
+
 def test_refuses_held_out_before_opening_any_audio(tmp_path):
     catalog, data_root, session_dir = _fixture(tmp_path, split="held_out")
     for path in session_dir.glob("*.wav"):
