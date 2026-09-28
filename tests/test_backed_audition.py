@@ -74,7 +74,9 @@ def test_backed_audio_uses_one_bed_and_scores_only_guitar(tmp_path):
     assert key["output"]["sha256"] == sha256(out / "audition.flac")
     scored = key["objective_record"]
     assert key["objective_profiles_frozen"] == scored["objective_profiles_frozen"] == [
-        "unpaired-v1", "unpaired-v2"]
+        "unpaired-v1", "unpaired-v2", "unpaired-v3"]
+    assert scored["objective_scoring"]["match_v3"]["profile"] == "unpaired-v3"
+    assert scored["agreement_match_v3"]["closer"]["status"] == "no_verdict"
     assert scored["agreement"]["closer"]["status"] == "no_verdict"
     assert scored["agreement"]["preferred"]["status"] == "no_verdict"
     assert scored["objective_scoring"]["primary_excluded_audio_terms"] == ["level"]
@@ -159,6 +161,7 @@ def test_hidden_repeat_and_identical_catch_report_consistency_separately(tmp_pat
     report = json.loads((audit_dir / "report.json").read_text())
     assert report["comparison_count_not_independent_n"] == 1
     assert len(report["v2"]["target_groups"]["new-song"]["comparisons"]) == 1
+    assert len(report["v3"]["target_groups"]["new-song"]["comparisons"]) == 1
     assert report["listener_consistency"]["repeat"]["fraction"] == 1.0
     assert report["listener_consistency"]["catch"]["fraction"] == 1.0
 

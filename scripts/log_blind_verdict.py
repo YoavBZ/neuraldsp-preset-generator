@@ -146,12 +146,14 @@ def main() -> None:
             frozen_profiles = key.get("objective_profiles_frozen")
             if frozen_profiles != objective.get("objective_profiles_frozen"):
                 raise ValueError("audition key and objective record disagree on frozen profiles")
-            if frozen_profiles not in (None, ["unpaired-v1", "unpaired-v2"]):
+            if frozen_profiles not in (None, ["unpaired-v1", "unpaired-v2"],
+                                       ["unpaired-v1", "unpaired-v2", "unpaired-v3"]):
                 raise ValueError("unsupported frozen objective profiles")
             recomputed = score_record(
                 submission,
                 include_match_v2=(frozen_profiles is not None or
                                   "match_v2" in (objective.get("objective_scoring") or {})),
+                include_match_v3=frozen_profiles == ["unpaired-v1", "unpaired-v2", "unpaired-v3"],
             )
             verify_frozen_prediction(objective, recomputed)
             scored = attach_verdict(submission, submission["verdict"])
@@ -160,7 +162,8 @@ def main() -> None:
             # the continued availability of its raw sources for rescoring.
             scored = {field: value for field, value in submission.items()
                       if field not in ("objective_scoring", "agreement", "agreement_with_level",
-                                       "agreement_match_v2", "scoring_error")}
+                                       "agreement_match_v2", "agreement_match_v3",
+                                       "scoring_error")}
             scored["scoring_error"] = f"{type(error).__name__}: {error}"
         # Bind the sidecar to the entire private key, including the blind A/B
         # mapping and completed-match provenance, not just its score fields.

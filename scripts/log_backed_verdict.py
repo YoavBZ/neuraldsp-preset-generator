@@ -39,7 +39,8 @@ def _publish_verdict(path: pathlib.Path, content: str) -> None:
 
 
 def main() -> None:
-    from analysis.listening import attach_verdict, sha256, valid_frozen_match_v2
+    from analysis.listening import (attach_verdict, sha256, valid_frozen_match_v2,
+                                    valid_frozen_match_v3)
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--key", required=True, type=pathlib.Path)
@@ -85,19 +86,25 @@ def main() -> None:
     key_profiles = key.get("objective_profiles_frozen")
     record_profiles = objective.get("objective_profiles_frozen")
     old_v1_only = (key_profiles is None and record_profiles is None and
-                   "match_v2" not in (objective.get("objective_scoring") or {}))
-    valid_v2 = (key_profiles == record_profiles == ["unpaired-v1", "unpaired-v2"] and
+                   "match_v2" not in (objective.get("objective_scoring") or {}) and
+                   "match_v3" not in (objective.get("objective_scoring") or {}))
+    v2_profiles = ["unpaired-v1", "unpaired-v2"]
+    v3_profiles = [*v2_profiles, "unpaired-v3"]
+    valid_v2 = (key_profiles == record_profiles == v2_profiles and
                 valid_frozen_match_v2(objective) is not None)
-    if old_v1_only or valid_v2:
+    valid_v3 = (key_profiles == record_profiles == v3_profiles and
+                valid_frozen_match_v2(objective) is not None and
+                valid_frozen_match_v3(objective) is not None)
+    if old_v1_only or valid_v2 or valid_v3:
         scored = attach_verdict(objective, verdict)
     else:
         # A damaged objective cannot invalidate what the listener heard. Keep
         # the verdict, but do not publish a misleading prediction or agreement.
         scored = {key: value for key, value in objective.items()
                   if key not in ("objective_scoring", "agreement", "agreement_with_level",
-                                 "agreement_match_v2")}
+                                 "agreement_match_v2", "agreement_match_v3")}
         scored["verdict"] = verdict
-        scored["scoring_error"] = "frozen v2 prediction or profile marker is invalid"
+        scored["scoring_error"] = "frozen match prediction or profile marker is invalid"
     record = {"schema": "prospective-backed-verdict-v1",
               "audition_key": {"path": str(key_path), "sha256": sha256(key_path)},
               "heard_audio_sha256": key["output"]["sha256"],

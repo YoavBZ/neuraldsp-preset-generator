@@ -12,7 +12,8 @@ from analysis.compare import Objectives, compare, scalar
 from analysis.fingerprint import fingerprint
 from analysis.listening import attach_verdict, score_record, agreement_report, sha256
 from analysis.listening import (common_term_sensitivity, verified_fresh_ac20,
-                                verify_frozen_prediction, match_v2_agreement_report)
+                                verify_frozen_prediction, match_v2_agreement_report,
+                                match_v3_agreement_report, valid_frozen_match_v3)
 from analysis.compare import PROFILE_PATH, PROFILE_PATHS
 
 
@@ -68,6 +69,69 @@ def test_new_audition_can_freeze_current_matching_profile_beside_v1(record):
         "objective_scoring"]["alternatives"]
     assert scored["agreement_match_v2"]["closer"]["status"] in (
         "agree", "disagree", "unequal_coverage", "objective_tie")
+
+
+def test_new_audition_freezes_v3_without_changing_existing_v1_v2(record):
+    previous = score_record(record, include_match_v2=True)
+    scored = score_record(record, include_match_v3=True)
+    assert scored["objective_profiles_frozen"] == [
+        "unpaired-v1", "unpaired-v2", "unpaired-v3"]
+    assert scored["objective_scoring"]["alternatives"] == previous[
+        "objective_scoring"]["alternatives"]
+    assert scored["objective_scoring"]["match_v2"] == previous[
+        "objective_scoring"]["match_v2"]
+    assert scored["agreement_match_v2"] == previous["agreement_match_v2"]
+    v3 = scored["objective_scoring"]["match_v3"]
+    assert v3["profile_sha256"] == sha256(PROFILE_PATHS[2])
+    assert valid_frozen_match_v3(scored) == v3
+    target = fingerprint(io.load(record["reference"]["path"]), regime="probe",
+                         excerpt_s=None)
+    for label in ("A", "B"):
+        source = fingerprint(io.load(record["alternatives"][label]["path"]),
+                             regime="probe", excerpt_s=None)
+        expected = compare(target, source, profile="unpaired-v3")
+        expected.values["level"] = None
+        assert v3["alternatives"][label]["distance"] == scalar(expected)
+        assert "harmonic" not in v3["alternatives"][label]["effective_weights"]
+    assert scored["agreement_match_v3"]["closer"]["status"] in (
+        "agree", "disagree", "unequal_coverage", "objective_tie")
+
+
+def test_v3_is_never_backfilled_into_an_old_verdict(record):
+    old = score_record(record, include_match_v2=True)
+    new = score_record({**record, "id": "new"}, include_match_v3=True)
+    report = match_v3_agreement_report([old, new])
+    assert valid_frozen_match_v3(old) is None
+    assert report["profile"] == "unpaired-v3"
+    assert report["target_groups"]["song"]["closer"][
+        "diagnostic_counts_not_independent_n"].get("unscored") == 1
+    assert report["summary"]["closer"]["target_groups_with_decisive_verdicts"] == 1
+
+
+def test_v3_tampering_cannot_count_or_pass_frozen_rescore(record):
+    frozen = score_record(record, include_match_v3=True)
+    recomputed = score_record(record, include_match_v3=True)
+    verify_frozen_prediction(frozen, recomputed)
+    changed = copy.deepcopy(frozen)
+    changed["objective_scoring"]["match_v3"]["prediction"] = "B"
+    assert valid_frozen_match_v3(changed) is None
+    assert match_v3_agreement_report([changed])["summary"]["closer"][
+        "target_groups_with_decisive_verdicts"] == 0
+    with pytest.raises(ValueError, match="match_v3"):
+        verify_frozen_prediction(changed, recomputed)
+
+
+def test_v3_ignores_zero_weight_harmonic_coverage(record):
+    scored = score_record(record, include_match_v3=True)
+    v3 = scored["objective_scoring"]["match_v3"]
+    assert "harmonic" not in v3["term_coverage_equal"]
+    altered = copy.deepcopy(scored)
+    alternative = altered["objective_scoring"]["match_v3"]["alternatives"]["B"]
+    alternative["objectives"]["detail"]["harmonic"] = {}
+    alternative["objectives"]["values"]["harmonic"] = None
+    assert valid_frozen_match_v3(altered) is not None
+    del altered["objective_scoring"]["match_v2"]
+    assert valid_frozen_match_v3(altered) is None
 
 
 def test_a_rescore_cannot_replace_the_frozen_v1_or_v2_prediction(record):
