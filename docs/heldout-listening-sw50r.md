@@ -20,7 +20,7 @@ appended, after the last verdict.
            "guitar-techs/P3_music excerpt 11/11"]}
 ```
 
-These are all eight usable held-out parts. They are five tones, not eight: the
+These are all eight usable held-out parts. They are four tones, not eight: the
 two 57 Chevy guitars, one Memphis guitar and its double, and one Guitar-TECHS
 player, guitar and amp setting heard in four excerpts.
 
@@ -138,7 +138,8 @@ change a setting. A non-zero exit of any step — the crop builder, either match
 instance a pair more than 0.5 LU apart after level matching — or a match with
 no `match-1.json`, makes that part "not run". A step that crashed without
 writing its output may be rerun once, byte-identical: the same command at the
-same commit. A run whose caveat says the optimiser never ran still has an
+same commit. A match's output is its `match-1.json`: its rerun uses the same
+out-dir, where the crashed run's trial store stays as a record. A run whose caveat says the optimiser never ran still has an
 answer, and it goes ahead. If both arms of a part end with the same settings
 (identical `applied_settings` in the two render records), the part is run,
 counts as no difference, and is not heard.
@@ -162,7 +163,7 @@ and the two render sidecars as `listening-objective-scoring.md` describes:
   `master_target_lufs` −20, `peak_ceiling_dbtp` −1, `max_ab_lufs_delta` 0.5,
   `gap_s` 0.5, `cycles` 1. `reference_lufs` is the reference amp track's level;
   for Telefunken the mix also holds the part's TF11 microphone, so there both
-  alternatives sit a little under the original guitar's level, equally;
+  alternatives sit under the original guitar's level, equally;
 - `reliability`: `hidden_repeats` 1, `catch_trial` false — each part is heard
   twice, the second time with the labels swapped, in an order the listener
   cannot see.
@@ -192,13 +193,13 @@ more of its parts than the no-DI match. The result is decided in this order:
 
 1. fewer than six parts run: **inconclusive**;
 2. the DI match counts on at least 6 parts, the no-DI match on at most 1, and
-   the DI match in at least 3 of the 5 tones: **supported**;
+   the DI match in at least 3 of the 4 tones: **supported**;
 3. the no-DI match counts on at least as many parts as the DI match — including
    none on either side, where nothing was heard to differ: **falsified**;
 4. anything else: **inconclusive**.
 
-These are thresholds, not significance tests: the eight parts are five tones,
-four of them a single Guitar-TECHS tone, two sessions share a band and room with
+These are thresholds, not significance tests: the eight parts are four tones,
+four of the parts one Guitar-TECHS tone, two sessions share a band and room with
 the development songs, and one listener hears them all. A supported result says that, on new performances heard by ear,
 matching through the player's own take beats matching without a DI on this one
 amp model; it does not measure how close either comes, and it says nothing about
