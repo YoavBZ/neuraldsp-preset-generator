@@ -141,8 +141,8 @@ rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of the ve
 take the amp recorded ended about half as far as one through the DI of another
 session (13 and 14 of 14 closer), as on the plugin's own renders, and the other
 session's DI still beat no DI on 11 and 13 of 14. Half of those other DIs were
-another excerpt of the same player and rig, and they did no better than a
-different player's. A user's own DI of the part is a different performance from
+another excerpt of the same player and rig, and they did no better than the
+rest. A user's own DI of the part is a different performance from
 the recording, so it lies somewhere between the first two; it was not measured.
 Measured on SW50R and Tone King's rhythm channel (one player, two songs; runs
 under -v1 and -v2, scored through either passage), searches through the target's

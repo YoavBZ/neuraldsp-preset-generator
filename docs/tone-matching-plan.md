@@ -1989,7 +1989,7 @@ next part from another session; and through the noise probe, as with no DI. "Ano
 session" is not always another player or rig: for seven of the eight Guitar-TECHS
 parts it is another excerpt by the same player, guitar and amp setting, and for the
 two Bourbon parts it is a Collide With Me guitar, the same band and room. The other
-seven are a different player or band. There is no truth to recover here, only
+five are a different player or band. There is no truth to recover here, only
 distance to what a real amplifier recorded — and no plugin setting reproduces a
 particular amp, cabinet, microphone and room exactly, so none of these distances
 goes to zero. Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,
@@ -2000,7 +2000,7 @@ goes to zero. Morgan 1.1.1 and Tone King 1.0.3 through the reused Swift server,
 | the part's own DI (same take) | 0.561 / 0.512 | 0.439 / 0.422 |
 | another session's DI | 1.014 / 1.091 | 1.056 / 0.987 |
 | … the same player and rig (7 parts) | 1.050 | 1.261 |
-| … a different player or band (7 parts) | 0.978 | 0.851 |
+| … not the same rig (7 parts: 5 another player or band, 2 the same band and room) | 0.978 | 0.851 |
 | the noise probe (no DI) | 2.524 / 1.330 | 1.453 / 1.485 |
 | *no search:* neutral settings | 1.573 / 1.552 | 1.060 / 1.045 |
 
@@ -2026,15 +2026,15 @@ and a room. They overstate the evidence; the counts are the plainer reading.
 and against real amplifiers: the part's own DI, then another session's, then none.
 So does the size of the first step: a DI of the same take ended at roughly half
 the distance another session's DI reached (45% and 58% closer), as it did on the
-renders (37–53% closer across the four runs above). **What is new.** Without a DI
+renders (37–53% closer across the five runs above). **What is new.** Without a DI
 the search on Tone King ended further from the recording than its own starting
 settings on every part, and on 12 of 14 with loudness set aside; its answers
 played 6.6 to 21.5 LU off the recording (SW50R's 5.1 to 14.4), beyond the 3.5 to
 14.5 LU the renders showed. On SW50R the no-DI search was no better than the
 start. Another session's DI beat the start on every SW50R part and only tied it on
 Tone King (8 of 14; with `level` left out 7 of 14, p = 0.81) — and on Tone King the
-seven parts heard through another excerpt of the same rig did no better than those
-heard through a different player's DI; they ended 8% further than neutral. So
+seven parts heard through another excerpt of the same rig did no better than the
+other seven; they ended 8% further than neutral. So
 whether a DI of the player's own rig and a different performance is worth more
 than any DI is not shown here. The "same take" arm is a paired reamp — the DI is
 the performance the amp recorded — which a player's own DI of the part, a
