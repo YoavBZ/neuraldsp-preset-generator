@@ -2195,7 +2195,8 @@ render each, outside the budget). A candidate with no measurable loudness there,
 or 20 dB or more under the template, fails; failures move behind the candidates that pass,
 so `match-1` is the best one that passed, and a caveat names each failure. If
 none passes, the caveat says so first and says to prefer the template; if the
-template itself is silent through the guitar, the check says it could not run.
+template itself has no measurable loudness through the guitar, the check says
+it could not run.
 A render that errors is recorded and judged neither way. `summary.json` records it
 all under `search.guitar_check`, with each row's `match` file. **The 20 dB line is
 in-sample**: it was chosen from these same answers, with nothing held out, between

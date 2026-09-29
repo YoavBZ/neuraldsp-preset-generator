@@ -1276,6 +1276,10 @@ def test_a_render_error_in_the_guitar_check_judges_nothing_and_loses_nothing():
     assert cli._passing_first(shortlist, check) == shortlist
     assert "could not render match-1" in cli._guitar_check_caveats(check)[0]
 
+    # One failed and the only other errored: that is still "every judged one failed".
+    cli, shortlist, check = _check(1.0, 0.01, "error")
+    assert "every shortlisted candidate failed" in cli._guitar_check_caveats(check)[0]
+
     cli, shortlist, check = _check("error", 0.5)
     assert check["candidates"][0]["passes"] is None and "template_error" in check
     assert "the preset you started from" in cli._guitar_check_caveats(check)[0]

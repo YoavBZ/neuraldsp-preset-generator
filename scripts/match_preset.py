@@ -874,7 +874,8 @@ def _guitar_check_caveats(check) -> List[str]:
                 f"was {-row['vs_template_db']:.0f} dB under the preset you started from")
     listed = "; ".join(f"match-{row['match']} (the search's choice "
                        f"{row['search_rank']}) {how(row)}" for row in failed)
-    if len(failed) == len(rows):
+    judged = [row for row in rows if row["passes"] is not None]
+    if len(failed) == len(judged):
         caveats.insert(0, f"every shortlisted candidate failed the guitar check — "
                           f"{listed} — through a synthetic guitar at a DI's level. "
                           "Without a DI the search can turn a gain stage almost off; "
@@ -885,7 +886,7 @@ def _guitar_check_caveats(check) -> List[str]:
                           f"the guitar check and were moved to the end — {listed} — "
                           "through a synthetic guitar at a DI's level: without a DI "
                           "the search can turn a gain stage almost off. match-1 is "
-                          "the best candidate that passed")
+                          "the best candidate that did not fail")
     return caveats
 
 
