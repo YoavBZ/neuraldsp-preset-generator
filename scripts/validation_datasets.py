@@ -227,6 +227,11 @@ def main():
     ap.add_argument("--json", type=pathlib.Path, required=True)
     args = ap.parse_args()
     document = build(args.root.expanduser())
+    # The ledger of held-out uses is a record, not a measurement: a rebuild
+    # keeps every entry already written.
+    if args.json.exists():
+        document["held_out_uses"] = json.loads(
+            args.json.read_text(encoding="utf-8")).get("held_out_uses", [])
     args.json.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n",
                          encoding="utf-8")
     for session in document["sessions"]:

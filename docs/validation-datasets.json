@@ -751,5 +751,28 @@
    ]
   }
  ],
- "held_out_uses": []
+ "held_out_uses": [
+  {
+   "declaration": "docs/heldout-listening-sw50r.md",
+   "test_id": "heldout-sw50r-di-vs-no-di",
+   "commit": "d78ffd05559675b7256570299c66dd566c0d0922",
+   "date": "2026-09-28",
+   "sessions": [
+    "telefunken/57 Chevy",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 02",
+    "guitar-techs/P3_music excerpt 06",
+    "guitar-techs/P3_music excerpt 10",
+    "guitar-techs/P3_music excerpt 11"
+   ],
+   "heard": [
+    "telefunken/57 Chevy/GTR 1",
+    "telefunken/57 Chevy/GTR 2",
+    "guitar-techs/P3_music excerpt 02/02",
+    "guitar-techs/P3_music excerpt 06/06",
+    "guitar-techs/P3_music excerpt 10/10"
+   ],
+   "results": "docs/heldout-listening-sw50r-results.json"
+  }
+ ]
 }

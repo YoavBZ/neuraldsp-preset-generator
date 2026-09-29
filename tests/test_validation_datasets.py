@@ -62,3 +62,17 @@ def test_a_take_that_drifts_mid_song_is_not_in_step(tmp_path):
     V_amp, V_di = _write(tmp_path, "amp.wav", amp), _write(tmp_path, "di.wav", di)
     window = V.windowed_pairing(V_amp, V_di)
     assert window["in_step_fraction"] < V.IN_STEP_FRACTION
+
+
+def test_a_rebuild_keeps_the_held_out_ledger(tmp_path, monkeypatch):
+    """The ledger records declared uses; re-measuring the audio must not erase it."""
+    import json
+
+    out = tmp_path / "catalog.json"
+    ledger = [{"test_id": "t", "declaration": "docs/x.md"}]
+    out.write_text(json.dumps({"sessions": [], "held_out_uses": ledger}))
+    monkeypatch.setattr(V, "build", lambda root: {"sessions": [], "held_out_uses": []})
+    monkeypatch.setattr(sys, "argv", ["validation_datasets.py", "--root", str(tmp_path),
+                                      "--json", str(out)])
+    V.main()
+    assert json.loads(out.read_text())["held_out_uses"] == ledger

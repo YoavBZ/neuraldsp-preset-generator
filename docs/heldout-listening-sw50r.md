@@ -217,3 +217,67 @@ ran at, a sha256 of that interpreter's `pip freeze`, every crop record's hash an
 each part's two presets' hashes. `held_out_uses` in `validation-datasets.json`
 gains this test's entry in the same change. Every part stays held out for the
 next declared test.
+
+## Results
+
+Appended 2026-09-29, after the last verdict. Every step ran at d78ffd0 (this
+file's merge), from a clean worktree, with Morgan 1.1.1 through the Swift
+renderer (`reproducible=False`); the interpreter's `pip freeze` hashes to
+`fd2b9aaf…0647`. Every crop record, preset, render, audition and verdict hash,
+the answers and the frozen predictions' agreement are in
+`heldout-listening-sw50r-results.json`. The steps were run by a driver that
+called each declared command in turn, two parts at a time, and wrote every
+step's output to a log the listener did not read.
+
+**The outcome is inconclusive, by rule 1: five parts were run, and six were
+needed.** Three parts failed, each for a reason the declaration made "not run":
+
+- **Memphis ElecGtr3 and its double** — the crop builder raised a `TypeError`
+  for both, and again on the one allowed rerun: the session has a guitar part
+  with no DI (ElecGtr1), and the builder sorted a set of DI names that included
+  its missing one. No development session has a guitar without a DI, so nothing
+  had exercised it. #82 has since fixed it; this test could not use the fix.
+- **Guitar-TECHS excerpt 11** — the audition builder refused, and again on the
+  rerun: the no-DI match, rendered through the part's DI, was silent (peak
+  0.0003, no measurable loudness). See below.
+
+Nobody heard any of the three; each stays held out.
+
+| part | tone | answers (two trials) | counts for |
+|---|---|---|---|
+| 57 Chevy GTR 1 | 57 Chevy GTR 1 | indistinguishable, indistinguishable | no difference |
+| 57 Chevy GTR 2 | 57 Chevy GTR 2 | the DI match, both times | the DI match |
+| Guitar-TECHS 02 | Guitar-TECHS | the DI match, both times | the DI match |
+| Guitar-TECHS 06 | Guitar-TECHS | the DI match, both times | the DI match |
+| Guitar-TECHS 10 | Guitar-TECHS | the DI match, both times | the DI match |
+
+The DI match counts on 4 parts and the no-DI match on none; the DI match wins
+two of the three tones that ran. Every repeat agreed with its primary trial. Had
+six parts run with these answers, the result would still not have been
+"supported": 4 is short of 6. The listener noted that the details were hard to
+hear on both 57 Chevy parts because of the band, especially the vocals, and that
+on Guitar-TECHS 02 one alternative — the no-DI match, it turned out — had "no
+guitar sound, only low background (sounds like white noise)". The frozen
+predictions — `unpaired-v1` without and with `level`, `unpaired-v2` and
+`unpaired-v3` — all agreed with the four parts heard as different; on 57 Chevy
+GTR 1, heard as no difference, `unpaired-v2` and `unpaired-v3` had predicted
+one, and `unpaired-v1`'s comparison had unequal coverage.
+
+**Without a DI, the match silenced the guitar on three of six parts.** Through
+the part's DI, every DI match played within 0.2 LU of the recording, as its
+level trim intends. The no-DI matches played at −17.5, −7.2, −38.5, −9.2 and
+−59.2 LUFS against recordings at −20.7 to −24.5, and silent on excerpt 11: 7 to
+35 LU too loud or too quiet, and on three Guitar-TECHS parts close to nothing.
+Their settings say why: the preamp volume at 0 (excerpt 02) and 2 (excerpt 10),
+and on excerpt 11 the amp's level at 3% with input gain at −17.75 dB, with the
+output gain raised to make up the level. Searched through the noise probe, which
+is far louder than a guitar DI, those settings still sound; through a guitar at
+a real level, almost nothing passes the amp, and the audition builder's level
+matching turned what did — hiss — up to the recording's loudness. That is what
+the listener heard on excerpt 02; excerpt 10's no-DI render, 35 LU down, was
+also mostly amplified noise. No development benchmark showed this: there the
+SW50R no-DI answers, searched from neutral settings rather than this template,
+played 5.1 to 14.4 LU off (`docs/recordings-benchmark-sw50r.json`). What this test measured beyond that failure is small: on the two
+57 Chevy parts, where both matches played, the listener heard the DI match
+closer on one and no difference on the other, through a band that made the
+guitar hard to hear.

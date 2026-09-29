@@ -92,8 +92,11 @@ def _sha(path):
 def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     """The part's crop record, building it once and verifying it after.
 
-    A cached record must name this part as development and the catalog it was
-    cut from must be this one, byte for byte; its outputs must match their hashes.
+    A cached record must name this part, the catalog must still list its
+    session as development, every source file the crop was cut from must have
+    the hash the catalog lists for it, and its outputs must match their hashes.
+    The catalog file itself may have changed since — its held-out ledger grows
+    with every declared test — without making the crop stale.
     """
     from build_validation_crops import build
 
@@ -104,9 +107,16 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     if not record_path.exists():
         build(catalog_path, data_root, source, song, part, out_dir)
     record = json.loads(record_path.read_text(encoding="utf-8"))
+    catalog = json.loads(pathlib.Path(catalog_path).read_text(encoding="utf-8"))
+    sessions = [item for item in catalog["sessions"]
+                if item["source"] == source and item["song"] == song]
+    files = sessions[0]["files"] if len(sessions) == 1 else {}
     expected = {"source": source, "song": song, "part": part, "split": "development"}
     found = {key: record.get(key) for key in expected}
-    if found != expected or record.get("catalog", {}).get("sha256") != _sha(catalog_path):
+    cut_from = record.get("verified_source_sha256") or {}
+    if (found != expected or len(sessions) != 1
+            or sessions[0].get("split") != "development" or not cut_from
+            or any(files.get(name) != digest for name, digest in cut_from.items())):
         die(f"{record_path} was not cut from this catalog for {source}/{song}/{part}; "
             f"delete {out_dir} to rebuild it")
     for role, output in record["outputs"].items():

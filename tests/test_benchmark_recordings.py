@@ -14,6 +14,7 @@ import benchmark_recordings as R  # noqa: E402
 
 CATALOG = {"sessions": [
     {"source": "a", "song": "one", "split": "development",
+     "files": {"di.wav": "d1", "amp.wav": "a1"},
      "parts": [{"part": "g1", "usable": True}, {"part": "g2", "usable": True},
                {"part": "g3", "usable": False}]},
     {"source": "a", "song": "two", "split": "held_out",
@@ -47,6 +48,7 @@ def _cached(tmp_path, record_changes=None):
     wav.write_bytes(b"crop")
     record = {"source": "a", "song": "one", "part": "g1", "split": "development",
               "catalog": {"sha256": hashlib.sha256(catalog.read_bytes()).hexdigest()},
+              "verified_source_sha256": {"di.wav": "d1", "amp.wav": "a1"},
               "outputs": {"di": {"path": str(wav),
                                  "sha256": hashlib.sha256(b"crop").hexdigest()}}}
     record.update(record_changes or {})
@@ -54,14 +56,23 @@ def _cached(tmp_path, record_changes=None):
     return catalog, wav
 
 
-def test_a_cached_crop_is_reused_only_for_its_own_part_and_catalog(tmp_path):
+def test_a_cached_crop_is_reused_only_for_its_own_part_and_sources(tmp_path):
+    import json
+
     catalog, _ = _cached(tmp_path)
     assert R.crops_for(catalog, tmp_path, tmp_path / "crops", "a", "one", "g1")["part"] == "g1"
 
-    for changes in ({"split": "held_out"}, {"part": "g2"},
-                    {"catalog": {"sha256": "0" * 64}}):
-        other = tmp_path / str(len(changes)) / next(iter(changes))
-        other.mkdir(parents=True)
+    # A growing held-out ledger changes the catalog file but not the crop.
+    document = json.loads(catalog.read_text())
+    document["held_out_uses"] = [{"test_id": "t"}]
+    catalog.write_text(json.dumps(document))
+    assert R.crops_for(catalog, tmp_path, tmp_path / "crops", "a", "one", "g1")["part"] == "g1"
+
+    for name, changes in (("split", {"split": "held_out"}), ("part", {"part": "g2"}),
+                          ("source", {"verified_source_sha256": {"di.wav": "changed"}}),
+                          ("none", {"verified_source_sha256": {}})):
+        other = tmp_path / name
+        other.mkdir()
         catalog, _ = _cached(other, changes)
         with pytest.raises(SystemExit):
             R.crops_for(catalog, other, other / "crops", "a", "one", "g1")
