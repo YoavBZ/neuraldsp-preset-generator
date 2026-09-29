@@ -179,6 +179,7 @@ def test_a_match_produces_a_spec_a_preset_and_a_report(audio, tmp_path):
         "template": 1,
         "inversion_probe": 1,
         "report_candidates": 2,
+        "guitar_check": 0,          # a DI was given, so no guitar check ran
     }
     assert summary["starting_point"]["observations"] == 1
     assert summary["starting_point"]["spread"] is None
