@@ -215,7 +215,7 @@ def build(root: pathlib.Path):
                   "lag_sign": "positive when the amp track is later than the DI"},
         "sessions": sessions,
         # Each use of a held-out session by a declared test: the declaring file,
-        # the commit it ran at and the date. Empty: nothing has used one yet.
+        # the commit it ran at and its dates. main() keeps what is already there.
         "held_out_uses": [],
     }
 
@@ -227,6 +227,11 @@ def main():
     ap.add_argument("--json", type=pathlib.Path, required=True)
     args = ap.parse_args()
     document = build(args.root.expanduser())
+    # The ledger of held-out uses is a record, not a measurement: a rebuild
+    # keeps every entry already written.
+    if args.json.exists():
+        document["held_out_uses"] = json.loads(
+            args.json.read_text(encoding="utf-8")).get("held_out_uses", [])
     args.json.write_text(json.dumps(document, indent=1, ensure_ascii=False) + "\n",
                          encoding="utf-8")
     for session in document["sessions"]:

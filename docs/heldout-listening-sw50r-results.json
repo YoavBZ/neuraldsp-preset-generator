@@ -1,0 +1,362 @@
+{
+ "schema": "heldout-listening-results-1",
+ "test_id": "heldout-sw50r-di-vs-no-di",
+ "declaration": "docs/heldout-listening-sw50r.md",
+ "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
+ "commit": "d78ffd05559675b7256570299c66dd566c0d0922",
+ "pip_freeze_sha256": "fd2b9aafed43c77c6e09a23e9e4a6235012fca8a7ab29a08502fc8c48b240647",
+ "renderer": "swift, Morgan Amps Suite 1.1.1, one fresh process per render (reproducible=True in every record)",
+ "outcome": "inconclusive (rule 1: fewer than six parts run)",
+ "parts_run": 5,
+ "di_match_counts": 4,
+ "no_di_match_counts": 0,
+ "tones": {
+  "57 Chevy GTR 1": {
+   "di_match": 0,
+   "no_di_match": 0
+  },
+  "57 Chevy GTR 2": {
+   "di_match": 1,
+   "no_di_match": 0
+  },
+  "Guitar-TECHS": {
+   "di_match": 3,
+   "no_di_match": 0
+  }
+ },
+ "parts": [
+  {
+   "part": "telefunken/57 Chevy/GTR 1",
+   "tone": "57 Chevy GTR 1",
+   "run": true,
+   "crop_record_sha256": "bab5c678fcefef1df5864f76c325e3c393b295c22a94662881a75c9f27731f8f",
+   "reference_lufs": -24.5,
+   "with_di": {
+    "preset_sha256": "0120ac3e50e6d9af12e09eec8a92dcbe1973cce048c264bba8ed6a2ef17c43a7",
+    "render_sha256": "9482576b96c35f3d128b096a578ce876abfb2091fbd715c7bc5ae158e8546e61",
+    "render_lufs_through_di": -24.4,
+    "settings": {
+     "inputGain": -2.25,
+     "outputGain": 21.0,
+     "gateThreshold": -75.5,
+     "sw50rVolume": 12.5,
+     "sw50rLevel": 56.0,
+     "sw50rEQLpf": 16304.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "ac4a90eee30d4ba93bf7b5699daf6e789e197891aca364e6e2909c4e2e639d92",
+    "render_sha256": "c4187cfa3bc7877a33a734ca1df3c6607e3df144aead305d08d0a528c943c06b",
+    "render_lufs_through_di": -17.5,
+    "settings": {
+     "inputGain": 7.5,
+     "outputGain": -2.33,
+     "gateThreshold": -73.75,
+     "sw50rVolume": 50.0,
+     "sw50rLevel": 21.5,
+     "sw50rEQLpf": 18714.0
+    }
+   },
+   "audition_sha256": "d20b31927ef78579fde8e3593a7a1ffcd4afc089bb5dbdffafc4665886229d7d",
+   "verdict_sha256": "dfae2682257361b21412f6afecf174a4e6352cc51c1b43f062c6962cfd19fe8b",
+   "answers": [
+    "indistinguishable",
+    "indistinguishable"
+   ],
+   "trial_kinds": [
+    "repeat",
+    "primary"
+   ],
+   "heard": [
+    "indistinguishable",
+    "indistinguishable"
+   ],
+   "counts_for": null,
+   "listener_notes": "Listener: pretty hard to hear the details because of the band in the background, especially the singing.",
+   "prediction_agreement": {
+    "unpaired-v1 without level": "unequal_coverage",
+    "unpaired-v1 with level": "unequal_coverage",
+    "unpaired-v2": "listener_tie",
+    "unpaired-v3": "listener_tie"
+   }
+  },
+  {
+   "part": "telefunken/57 Chevy/GTR 2",
+   "tone": "57 Chevy GTR 2",
+   "run": true,
+   "crop_record_sha256": "4ba230262a756f526dbd3feb1fa5d6782507f58e08205d22ebee2006a19719af",
+   "reference_lufs": -20.68,
+   "with_di": {
+    "preset_sha256": "98b86954612e4454b304b60664fd3cf0ce3d3028c5207af08a856a788111513a",
+    "render_sha256": "78707798db4050968ce9a70304d39ab56292493720af9751b07dcde4f64c9aed",
+    "render_lufs_through_di": -20.7,
+    "settings": {
+     "inputGain": 15.75,
+     "outputGain": -3.25,
+     "gateThreshold": -25.5,
+     "sw50rVolume": 50.0,
+     "sw50rLevel": 54.5,
+     "sw50rEQLpf": 18621.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "d7ca1ed63a0d9c6d1a0712ada1222151b8463c30ec50836bddb844797c7d8c6b",
+    "render_sha256": "d2ebda1a3a7c149efbe08e0ba641b38b4117d2b3113000b4e0bc11cb273930ee",
+    "render_lufs_through_di": -7.2,
+    "settings": {
+     "inputGain": 0.0,
+     "outputGain": 2.75,
+     "gateThreshold": -77.0,
+     "sw50rVolume": 34.5,
+     "sw50rLevel": 79.5,
+     "sw50rEQLpf": 15939.0
+    }
+   },
+   "audition_sha256": "52f83b71caacb40642473d4e8aedf7154b6860874cf398941c8075893dd4546f",
+   "verdict_sha256": "2a7a7b63b9e3cfc322374ffca503b0b48d1af96e1c2f4a4e445729b9f7de9971",
+   "answers": [
+    "B",
+    "A"
+   ],
+   "trial_kinds": [
+    "primary",
+    "repeat"
+   ],
+   "heard": [
+    "DI match",
+    "DI match"
+   ],
+   "counts_for": "DI match",
+   "listener_notes": "Listener: pretty hard to hear the details because of the band in the background, especially the singing.",
+   "prediction_agreement": {
+    "unpaired-v1 without level": "agree",
+    "unpaired-v1 with level": "agree",
+    "unpaired-v2": "agree",
+    "unpaired-v3": "agree"
+   }
+  },
+  {
+   "part": "cambridge/That's How I Got To Memphis/ElecGtr3",
+   "tone": "Memphis ElecGtr3",
+   "run": false,
+   "not_run": {
+    "step": "crops",
+    "error": "TypeError: '<' not supported between instances of 'str' and 'NoneType'"
+   }
+  },
+  {
+   "part": "cambridge/That's How I Got To Memphis/ElecGtr3DT",
+   "tone": "Memphis ElecGtr3",
+   "run": false,
+   "not_run": {
+    "step": "crops",
+    "error": "TypeError: '<' not supported between instances of 'str' and 'NoneType'"
+   }
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 02/02",
+   "tone": "Guitar-TECHS",
+   "run": true,
+   "crop_record_sha256": "9620de418eba9c6585882bb33a6f2d9bbd2ae5ace3205e2b2506063ebc74e2d5",
+   "reference_lufs": -22.15,
+   "with_di": {
+    "preset_sha256": "9ecd1e2da2a9c39408366b29419f1932f9fa24c6f06f744fab3ce45491bf1d70",
+    "render_sha256": "84ca33ea475101c8c95d95600c0e7143d58bf9815fbe45484fc2d19a6fc4c545",
+    "render_lufs_through_di": -22.3,
+    "settings": {
+     "inputGain": 0.0,
+     "outputGain": 14.0,
+     "gateThreshold": -62.0,
+     "sw50rVolume": 51.0,
+     "sw50rLevel": 20.0,
+     "sw50rEQLpf": 20000.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "25189c026b3cb3a8c44d893c51d3f1e515a5db8688c3e2cf127356696d1f31ee",
+    "render_sha256": "cfc4a613b49b6efd1dd355f624eba5dee55b257b6f42621059bc6df97391deeb",
+    "render_lufs_through_di": -38.5,
+    "settings": {
+     "inputGain": 0.0,
+     "outputGain": 14.25,
+     "gateThreshold": -90.25,
+     "sw50rVolume": 0.0,
+     "sw50rLevel": 26.5,
+     "sw50rEQLpf": 1000.0
+    }
+   },
+   "audition_sha256": "f7d1e1bfa4dab59742b38519ccf22757c6b958b45e68292b08bada3c6abe9b6d",
+   "verdict_sha256": "866f896467e31470536c841eddaeecd67f8a3641b8359debaef081b40baeb427",
+   "answers": [
+    "A",
+    "B"
+   ],
+   "trial_kinds": [
+    "primary",
+    "repeat"
+   ],
+   "heard": [
+    "DI match",
+    "DI match"
+   ],
+   "counts_for": "DI match",
+   "listener_notes": "Listener: the first block's B and the second block's A have no guitar sound, only a low background that sounds like white noise.",
+   "prediction_agreement": {
+    "unpaired-v1 without level": "agree",
+    "unpaired-v1 with level": "agree",
+    "unpaired-v2": "agree",
+    "unpaired-v3": "agree"
+   }
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 06/06",
+   "tone": "Guitar-TECHS",
+   "run": true,
+   "crop_record_sha256": "938bf7a6e935aaf9d5ef3fba5d337caf8cac270d9947302a94a82d7b8df68b51",
+   "reference_lufs": -23.93,
+   "with_di": {
+    "preset_sha256": "c80d3ee4def47298292106c22b4af02e1669f9ff30d468fac02e55b07c80f1c8",
+    "render_sha256": "43ec2bcc1e4bd655fcc1983ab1ad8b13c55bda2685f377cc55ba5bcde633ea38",
+    "render_lufs_through_di": -23.9,
+    "settings": {
+     "inputGain": 0.0,
+     "outputGain": -1.25,
+     "gateThreshold": -72.0,
+     "sw50rVolume": 27.3578,
+     "sw50rLevel": 29.9563,
+     "sw50rEQLpf": 20000.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "23bc921a64103fd3a6572edb72820e2e801c2122acea4f7ccd7cdae526d4ba2a",
+    "render_sha256": "57e63fab3a8b359e1781caf57e6bcd69bbe68acbab90ab0dc985b94e4bede9ab",
+    "render_lufs_through_di": -9.2,
+    "settings": {
+     "inputGain": 24.0,
+     "outputGain": -1.76,
+     "gateThreshold": -72.0,
+     "sw50rVolume": 27.3578,
+     "sw50rLevel": 29.9563,
+     "sw50rEQLpf": 1000.0
+    }
+   },
+   "audition_sha256": "86fec4cf333fae00710cc68d4c9696e408f9a50b57f7b7e853e480924ee01dcb",
+   "verdict_sha256": "b993c86601247baed640f10c78072b4128ccf0f176ecca44c260077139c65056",
+   "answers": [
+    "A",
+    "B"
+   ],
+   "trial_kinds": [
+    "primary",
+    "repeat"
+   ],
+   "heard": [
+    "DI match",
+    "DI match"
+   ],
+   "counts_for": "DI match",
+   "listener_notes": "",
+   "prediction_agreement": {
+    "unpaired-v1 without level": "agree",
+    "unpaired-v1 with level": "agree",
+    "unpaired-v2": "agree",
+    "unpaired-v3": "agree"
+   }
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 10/10",
+   "tone": "Guitar-TECHS",
+   "run": true,
+   "crop_record_sha256": "53ee876ae971c33859594e58ff6723766c1ead3f9b97070b23aebd87cad72402",
+   "reference_lufs": -24.54,
+   "with_di": {
+    "preset_sha256": "69226229fcc75e660828d95676b2bfc0eea22861f39d007920b02a5dc8dd02ae",
+    "render_sha256": "17c410d1f977943d55faf1b17bba2a3ef59fe7ed96c5befea94be41693a7ad9c",
+    "render_lufs_through_di": -24.7,
+    "settings": {
+     "inputGain": 0.0,
+     "outputGain": -0.26,
+     "gateThreshold": -72.0,
+     "sw50rVolume": 27.3578,
+     "sw50rLevel": 29.9563,
+     "sw50rEQLpf": 20000.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "6d09b7ee5101abe92d7a9246cc643a5171c534f60211aae514175a9c3c0aefb5",
+    "render_sha256": "37be5e62fe5f0c514587b96e8e9864aa0f643138d2a7cde0af98ce3d7e4e22a3",
+    "render_lufs_through_di": -59.2,
+    "settings": {
+     "inputGain": 15.0,
+     "outputGain": 4.5,
+     "gateThreshold": -71.5,
+     "sw50rVolume": 2.0,
+     "sw50rLevel": 21.5,
+     "sw50rEQLpf": 17296.0
+    }
+   },
+   "audition_sha256": "4c00fc9517b06c61ec706197e88ee6501753bcef3441a96f3487af29a31fa382",
+   "verdict_sha256": "533e6cc523379174020cb511df05077a851918739b0f99646375ae5da2bb560e",
+   "answers": [
+    "B",
+    "A"
+   ],
+   "trial_kinds": [
+    "primary",
+    "repeat"
+   ],
+   "heard": [
+    "DI match",
+    "DI match"
+   ],
+   "counts_for": "DI match",
+   "listener_notes": "",
+   "prediction_agreement": {
+    "unpaired-v1 without level": "agree",
+    "unpaired-v1 with level": "agree",
+    "unpaired-v2": "agree",
+    "unpaired-v3": "agree"
+   }
+  },
+  {
+   "part": "guitar-techs/P3_music excerpt 11/11",
+   "tone": "Guitar-TECHS",
+   "run": false,
+   "not_run": {
+    "step": "audition",
+    "error": "error: reference and both guitars need measurable loudness"
+   },
+   "crop_record_sha256": "14b856a4cd766eaf1f2c5a58683dceb7fed368b1a4f66c1b28d509fc5f9dcace",
+   "reference_lufs": -34.87,
+   "with_di": {
+    "preset_sha256": "f7a85434b856997a0c8698acc37c530e16f0642d550184665b5a9002bfa65cd3",
+    "render_sha256": "7a17b18f37a8b28267c743b6469946a8837dbfe567af25bef6ad4068548de3be",
+    "render_lufs_through_di": -35.0,
+    "settings": {
+     "inputGain": 4.0,
+     "outputGain": -8.5,
+     "gateThreshold": -81.75,
+     "sw50rVolume": 50.0,
+     "sw50rLevel": 22.0,
+     "sw50rEQLpf": 18377.0
+    }
+   },
+   "no_di": {
+    "preset_sha256": "c2fb0695850584851707bb08bc31cd3799a4f8c5b30f4c2bd1b64b26b2a7dd99",
+    "render_sha256": "6d4562d8872a8529ff1beca3db59fbe8957e939d713913062560685dbbaac329",
+    "render_lufs_through_di": null,
+    "settings": {
+     "inputGain": -17.75,
+     "outputGain": 2.5,
+     "gateThreshold": -68.5,
+     "sw50rVolume": 44.0,
+     "sw50rLevel": 3.0,
+     "sw50rEQLpf": 1750.0
+    }
+   }
+  }
+ ],
+ "pip_freeze_sha256_note": "taken 2026-09-28 16:27 UTC after the merge, before the first crop; text not saved; the archive holds pip-freeze-at-archive.txt, whose editable line differs",
+ "tally": "by hand from verdict.json and private-key.json after the last verdict; the run predates #83's execution record",
+ "archive": "~/ndsp-presets/runs/heldout-sw50r"
+}
