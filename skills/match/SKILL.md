@@ -171,9 +171,13 @@ change that. A no-DI match can also leave the guitar all but silent: in the
 held-out listening test (`docs/heldout-listening-sw50r.md`), searched from the
 shipped SW50R template, three of the six parts matched without a DI turned the
 preamp volume or the amp's level nearly to zero, and through a real guitar
-played 16–35 LU under the recording or not at all. Before handing a no-DI preset
-over, check the chosen settings for a volume, level or input gain near the
-bottom of its range, and tell the user to confirm it passes their guitar at all.
+played 16–35 LU under the recording or not at all. So without `--probe-di` the
+tool now renders the template and the shortlist through a synthetic guitar and
+moves any candidate that is silent there, or 20 dB or more under the template,
+behind those that pass (`search.guitar_check` in `summary.json`). Report that
+caveat when it fires; if every candidate failed, offer the starting preset
+instead. The check only shows a guitar gets through, so still tell the user to
+confirm the preset plays with their own guitar.
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
 (each decision is under `search.level_trims` in `summary.json`); other regimes
