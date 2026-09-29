@@ -1198,3 +1198,78 @@ def test_the_printed_apply_command_survives_a_path_with_spaces(audio, tmp_path):
     command = shlex.split(" ".join(line.rstrip("\\").strip() for line in lines))
     assert command[command.index("--template") + 1] == str(spaced)
     assert command[command.index("--out") + 1] == str(out / "match-1.xml")
+
+
+# --- the guitar check, without a DI ------------------------------------------
+
+
+class _GainRenderer:
+    """Renders the input scaled by the settings' `gain` (None: silent)."""
+
+    def render(self, signal, settings):
+        import types
+
+        import numpy as np
+
+        gain = settings["gain"]
+        audio = np.zeros_like(signal) if gain is None else signal * gain
+        return types.SimpleNamespace(audio=audio, silent=gain is None,
+                                     metadata=types.SimpleNamespace(sample_rate=48000))
+
+
+class _Settings:
+    def _settings(self, values):
+        return values
+
+
+def test_the_guitar_check_fails_silent_and_far_quieter_candidates():
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    shortlist = [Candidate(values={"gain": 0.05}), Candidate(values={"gain": 0.5}),
+                 Candidate(values={"gain": None}), Candidate(values={"gain": 2.0})]
+    check = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": 1.0}, shortlist)
+
+    rows = {row["search_rank"]: row for row in check["candidates"]}
+    assert rows[1]["vs_template_db"] == pytest.approx(-26.0, abs=0.1)
+    assert [rows[rank]["passes"] for rank in (1, 2, 3, 4)] == [False, True, False, True]
+    assert rows[3]["lufs"] is None and check["renders"] == 5
+
+    reordered = cli._passing_first(shortlist, check)
+    assert [c.values["gain"] for c in reordered] == [0.5, 2.0, 0.05, None]
+    caveat, = cli._guitar_check_caveats(check)
+    assert "2 of 4" in caveat and "26 dB under" in caveat and "silent" in caveat
+
+
+def test_the_guitar_check_says_when_nothing_passed_or_nothing_could_be_judged():
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    quiet = [Candidate(values={"gain": 0.01})]
+    check = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": 1.0}, quiet)
+    assert "every shortlisted candidate failed" in cli._guitar_check_caveats(check)[0]
+
+    unjudged = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": None}, quiet)
+    assert unjudged["candidates"][0]["passes"] is None
+    assert cli._passing_first(quiet, unjudged) == quiet
+    assert "could not run" in cli._guitar_check_caveats(unjudged)[0]
+
+
+def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
+    for label, extra in (("no-di", []), ("di", ["--probe-di", audio / "probe.wav"])):
+        out = tmp_path / label
+        done = run("match_preset.py", "--template", TEMPLATE,
+                   "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
+                   *extra, "--amp", "sw50r", "--renderer", "synthetic",
+                   "--budget", "80", "--shortlist", "2", "--seed", "0",
+                   "--out-dir", out)
+        assert done.returncode == 0, done.stdout + done.stderr
+        summary = json.loads((out / "summary.json").read_text())
+        check = summary["search"]["guitar_check"]
+        sources = summary["command_accounting"]["outside_budget_by_source"]
+        if label == "di":
+            assert check is None and sources["guitar_check"] == 0
+        else:
+            assert check["signal"]["lufs"] == -24.0
+            assert len(check["candidates"]) == len(summary["shortlist"])
+            assert sources["guitar_check"] == 1 + len(summary["shortlist"])
