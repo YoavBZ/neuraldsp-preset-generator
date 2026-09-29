@@ -10,6 +10,19 @@ expected presets in a temporary directory; it never modifies the supplied runs.
 It checks *all* published ``PART/audition/`` directories for verdicts before
 opening a single private key, including auditions outside the declaration.
 Only the named declaration's frozen decision rules are implemented so far.
+
+A part also needs ``PART/execution.json``: an operator's record of the commit,
+interpreter environment, zero exit status, and hashed log for each declared
+step. Without it the part is not run. The record makes those facts checkable,
+though it cannot independently prove that the operator recorded them honestly.
+Capture it when the commands run, not by guessing from the presence of outputs.
+The record has schema ``declared-listening-execution-v1``, the declaration's
+``declaration_sha256`` and ``commit``, a SHA-256 string in
+``interpreter_pip_freeze_sha256``, and a ``steps`` object. Each step has
+``{"exit_code": 0, "log": {"path": "logs/STEP.log", "sha256": "..."}}``.
+The required step names are crops, di_match, no_di_match, di_preset,
+no_di_preset, first_render, second_render, and audition when an audition was
+built. Log paths may be absolute or relative to PART, but must stay inside PART.
 """
 
 from __future__ import annotations
@@ -41,6 +54,9 @@ RULES = {
         "declaration_path": "docs/heldout-listening-sw50r.md",
         "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
         "template_sha256": "25a3efbf0fd243a976da119fb7b65ff39b48f353f51dcb62a45bbeaa08333acf",
+        "renderer_id": "swift",
+        "plugin_version": "1.1.1",
+        "amp_index": 2,
         "alternatives": {"first": "DI match", "second": "no-DI match"},
         "tone_parts": {
             "57 Chevy GTR 1": ("telefunken/57 Chevy/GTR 1",),
@@ -188,6 +204,8 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
     if any(crop_binding.get("declaration", {}).get(field) != binding[field]
            for field in ("path", "commit", "sha256", "test_id")):
         raise ValueError(f"{part_id}: audition belongs to another declaration")
+    if crop_binding.get("declaration", {}).get("head_commit") != binding["commit"]:
+        raise ValueError(f"{part_id}: crop was not made at the declaration commit")
     crop_path = pathlib.Path(crop_binding.get("path", ""))
     if (crop_path.resolve() != audition.parent / "crops" / "record.json"
             or not crop_path.is_file()
@@ -324,11 +342,51 @@ def _checked_file(spec: dict | None, expected: pathlib.Path, context: str) -> No
         raise ValueError(f"{context} is missing or differs from its recorded hash")
 
 
+_COMMON_STEPS = ("crops", "di_match", "no_di_match", "di_preset", "no_di_preset",
+                 "first_render", "second_render")
+
+
+def _execution_record(part_dir: pathlib.Path, binding: dict, heard: bool) -> dict:
+    """Refuse to count a part whose declared steps were not recorded as successful."""
+    path = part_dir / "execution.json"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"{part_dir.name}: missing execution record")
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise ValueError(f"{part_dir.name}: invalid execution record") from error
+    required = set(_COMMON_STEPS) | ({"audition"} if heard else set())
+    steps = record.get("steps") if isinstance(record, dict) else None
+    if (not isinstance(record, dict)
+            or record.get("schema") != "declared-listening-execution-v1"
+            or record.get("declaration_sha256") != binding["sha256"]
+            or record.get("commit") != binding["commit"]
+            or not _is_sha256(record.get("interpreter_pip_freeze_sha256"))
+            or not isinstance(steps, dict) or set(steps) != required):
+        raise ValueError(f"{part_dir.name}: execution record does not match the declared steps")
+    for name, step in steps.items():
+        log = step.get("log") if isinstance(step, dict) else None
+        if (not isinstance(step, dict) or type(step.get("exit_code")) is not int
+                or step["exit_code"] != 0 or not isinstance(log, dict)
+                or not isinstance(log.get("path"), str)
+                or not _is_sha256(log.get("sha256"))):
+            raise ValueError(f"{part_dir.name}: {name} did not record a successful step")
+        log_path = pathlib.Path(log["path"])
+        if not log_path.is_absolute():
+            log_path = part_dir / log_path
+        if (log_path.is_symlink() or not log_path.is_file()
+                or not log_path.resolve().is_relative_to(part_dir)
+                or _digest(log_path) != log["sha256"]):
+            raise ValueError(f"{part_dir.name}: {name} log is missing or changed")
+    return {"sha256": _digest(path), "commit": record["commit"],
+            "interpreter_pip_freeze_sha256": record["interpreter_pip_freeze_sha256"]}
+
+
 def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
 
 
-def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> dict:
+def _match_outputs(part_dir: pathlib.Path, role: str, rules: dict) -> dict:
     """Require both completed match outputs for a part to count as run."""
     name = "with-di" if role == "first" else "no-di"
     output_dir = part_dir / name
@@ -351,6 +409,8 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
             or summary.get("loss_profile") != "unpaired-v3"
             or not isinstance(search, dict) or search.get("budget") != 300
             or not isinstance(renderer, dict)
+            or renderer.get("renderer_id") != rules["renderer_id"]
+            or renderer.get("plugin_version") != rules["plugin_version"]
             or "process=fresh" not in renderer.get("quality_mode", "")
             or not isinstance(reference, dict)
             or not isinstance(reference.get("path"), str)
@@ -370,9 +430,15 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
     starting_point = summary.get("starting_point")
     template_source = (starting_point.get("template")
                        if isinstance(starting_point, dict) else None)
-    if (_digest(template) != template_sha256 or
+    settings = (starting_point.get("settings")
+                if isinstance(starting_point, dict) else None)
+    from match.space import _get
+
+    if (_digest(template) != rules["template_sha256"] or
             not isinstance(template_source, dict) or
-            template_source.get("sha256") != template_sha256):
+            template_source.get("sha256") != rules["template_sha256"]
+            or not isinstance(settings, dict)
+            or _get(settings, ("", "selectedAmp")) != rules["amp_index"]):
         raise ValueError(f"{part_dir.name}: {name} used another template")
     shortlist = summary.get("shortlist")
     candidate = shortlist[0] if isinstance(shortlist, list) and shortlist else None
@@ -395,7 +461,7 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
     except VerdictError as error:
         raise ValueError(f"{part_dir.name}: {name} spec differs from its candidate") from error
     _check_probe_store(output_dir / "trials.sqlite3", summary, role,
-                       part_dir / "crops" / "di.wav", candidate, parameters)
+                       part_dir / "crops" / "di.wav", candidate, parameters, rules)
     preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
     if preset.is_symlink() or not preset.is_file():
         raise ValueError(f"{part_dir.name}: missing {name} applied preset")
@@ -430,7 +496,7 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
 
 def _check_probe_store(path: pathlib.Path, summary: dict, role: str,
                        crop_di: pathlib.Path, candidate: dict,
-                       parameters: dict) -> None:
+                       parameters: dict, rules: dict) -> None:
     """The scored trial DI must be the crop for first, the noise probe for second."""
     if path.is_symlink() or not path.is_file():
         raise ValueError(f"{path.parent.name}: missing trial store for probe verification")
@@ -489,8 +555,13 @@ def _check_probe_store(path: pathlib.Path, summary: dict, role: str,
     except (TypeError, ValueError, KeyError) as error:
         raise ValueError(f"{path.parent.name}: invalid trial or match-run notes") from error
     regime = "paired_di" if role == "first" else "isolated_stem"
+    expected_template = ("samples", "SW50R_Atlas_Topology.xml")
     if (run.pack != "morgan" or run.regime != regime
             or run.loss_profile != "unpaired-v3" or run.budget != 300
+            or pathlib.Path(run.template or "").parts[-2:] != expected_template
+            or pathlib.Path(source_run.template or "").parts[-2:] != expected_template
+            or run.renderer_id != rules["renderer_id"]
+            or run.plugin_version != rules["plugin_version"]
             or not isinstance(notes, dict)
             or (notes.get("probe_note") is None) != (role == "first")
             or (role == "second" and not str(notes["probe_note"]).startswith(
@@ -539,7 +610,10 @@ def _identical_unheard(part_dir: pathlib.Path, part_id: str, binding: dict) -> d
     if (crop.get("schema") != "validation-crops-1"
             or crop.get("split") != "held_out"
             or "/".join(str(crop.get(field, "")) for field in ("source", "song", "part"))
-            != part_id or crop.get("declaration") != binding):
+            != part_id or not isinstance(crop.get("declaration"), dict)
+            or any(crop["declaration"].get(field) != binding[field]
+                   for field in ("path", "commit", "sha256", "test_id"))
+            or crop["declaration"].get("head_commit") != binding["commit"]):
         raise ValueError(f"{part_dir.name}: identical-settings crop is misbound")
     outputs = crop.get("outputs") or {}
     for role in ("di", "reference", "mix", "backing"):
@@ -587,7 +661,8 @@ def summarize(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         slug = _slug(part_id)
         part_dir = run_dir / slug
         try:
-            matches = {role: _match_outputs(part_dir, role, rules["template_sha256"])
+            execution = _execution_record(part_dir, binding, slug in auditions)
+            matches = {role: _match_outputs(part_dir, role, rules)
                        for role in ("first", "second")}
         except ValueError as error:
             part_counts[part_id] = {
@@ -606,6 +681,7 @@ def summarize(declaration_path: pathlib.Path, run_dir: pathlib.Path,
                 "winner": None})
         if part_counts[part_id]["status"] != "not_run":
             part_counts[part_id]["evidence"]["match_outputs"] = matches
+            part_counts[part_id]["evidence"]["execution_record"] = execution
     tone_counts = {}
     for tone, members in rules["tone_parts"].items():
         counts = {role: sum(part_counts[part]["counts"][role] for part in members)
@@ -621,8 +697,9 @@ def summarize(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         first_tones=sum(row["winner"] == "first" for row in tone_counts.values()))
     return {"schema": "declared-listening-summary-v1", "test_id": binding["test_id"],
             "declaration": binding, "alternatives": rules["alternatives"],
-            "not_verified_by_summary": ["step exit codes", "step commits",
-                                      "interpreter pip-freeze sha256"],
+            "not_verified_by_summary": [
+                "authenticity of operator-recorded step exit codes, commit, and interpreter environment"
+            ],
             "parts_run": run_parts,
             "not_run_parts": [part for part in parts if part not in run_parts],
             "part_counts": part_counts, "tone_counts": tone_counts,

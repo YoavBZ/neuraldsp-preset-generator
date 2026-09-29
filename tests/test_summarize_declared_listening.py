@@ -60,6 +60,8 @@ def _registry(declaration):
     registry = deepcopy(RULES)
     registry[TEST_ID]["declaration_path"] = "docs/synthetic-listening.md"
     registry[TEST_ID]["declaration_sha256"] = _sha(declaration)
+    registry[TEST_ID]["renderer_id"] = "synthetic"
+    registry[TEST_ID]["plugin_version"] = "synthetic"
     return registry
 
 
@@ -86,6 +88,24 @@ def _crop(repo, declaration, part_dir, part):
                                      "reference_lufs": -18.0, "excerpt_duration_s": 10.0,
                                      "declaration": binding, "outputs": outputs}))
     return binding, crop_path, outputs
+
+
+def _execution(part_dir, binding, *, heard):
+    names = ("crops", "di_match", "no_di_match", "di_preset", "no_di_preset",
+             "first_render", "second_render") + (("audition",) if heard else ())
+    logs = part_dir / "logs"
+    logs.mkdir()
+    steps = {}
+    for name in names:
+        path = logs / f"{name}.log"
+        path.write_text(f"synthetic {name} completed\n")
+        steps[name] = {"exit_code": 0,
+                       "log": {"path": str(path.relative_to(part_dir)),
+                               "sha256": _sha(path)}}
+    (part_dir / "execution.json").write_text(json.dumps({
+        "schema": "declared-listening-execution-v1",
+        "declaration_sha256": binding["sha256"], "commit": binding["commit"],
+        "interpreter_pip_freeze_sha256": "a" * 64, "steps": steps}))
 
 
 def _matches(part_dir, *, fallback_role=None):
@@ -123,6 +143,7 @@ def _matches(part_dir, *, fallback_role=None):
         with Store(str(match_dir / "trials.sqlite3")) as store:
             store.start_run(Run(
                 run_id=run_id, pack="morgan", regime=regime,
+                template=str(template),
                 loss_profile="unpaired-v3", budget=300,
                 reference_sha=reference_sha, renderer_id="synthetic",
                 plugin_version="synthetic", notes=json.dumps({
@@ -136,7 +157,8 @@ def _matches(part_dir, *, fallback_role=None):
             "loss_profile": "unpaired-v3", "search": {"budget": 300},
             "renderer": renderer,
             "starting_point": {"template": {"path": str(template),
-                                             "sha256": _sha(template)}},
+                                             "sha256": _sha(template)},
+                               "settings": {"selectedAmp": 2}},
             "shortlist": [{"rank": 1, "trial_id": trial.trial_id, "score": .5,
                            "objectives": {"total": .5}, "changes": [],
                            "fingerprint": {}, "fingerprint_delta": []}],
@@ -261,16 +283,18 @@ def _audition(repo, declaration, runs, part, choice, *, swap=False,
                "listener_consistency": consistency(trials, answers, primary),
                "frozen_scored_record": {"schema": "synthetic-scored-record"}}
     (audition / "verdict.json").write_text(json.dumps(verdict))
+    _execution(part_dir, binding, heard=True)
     return audition
 
 
 def _identical_unheard(repo, declaration, runs, part):
     part_dir = runs / _slug(part)
     part_dir.mkdir()
-    _, _, outputs = _crop(repo, declaration, part_dir, part)
+    binding, _, outputs = _crop(repo, declaration, part_dir, part)
     _matches(part_dir)
     for role in ("first", "second"):
         _render(part_dir, role, outputs["di"], settings={"gain": .5})
+    _execution(part_dir, binding, heard=False)
 
 
 def test_support_counts_swapped_trials_and_independent_tones(tmp_path):
@@ -364,7 +388,8 @@ def test_declared_template_fallback_is_bound_to_its_render(tmp_path):
 @pytest.mark.parametrize("damage", ("di_uses_noise", "no_di_uses_crop",
                                    "no_di_claims_a_di", "wrong_spec", "wrong_template",
                                    "wrong_candidate_score", "wrong_candidate_change",
-                                   "wrong_trial_parameters", "wrong_reference_hash"))
+                                   "wrong_trial_parameters", "wrong_reference_hash",
+                                   "wrong_renderer", "wrong_amp", "wrong_run_template"))
 def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
     repo, declaration, runs = _repo(tmp_path)
     audition = _audition(repo, declaration, runs, PARTS[0], "first")
@@ -417,6 +442,13 @@ def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
             store.commit()
         finally:
             store.close()
+    elif damage == "wrong_run_template":
+        store = sqlite3.connect(part_dir / "with-di" / "trials.sqlite3")
+        try:
+            store.execute("UPDATE runs SET template = ?", ("samples/PR12.xml",))
+            store.commit()
+        finally:
+            store.close()
     else:
         path = part_dir / "with-di" / "summary.json"
         summary = json.loads(path.read_text())
@@ -424,6 +456,10 @@ def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
             summary["starting_point"]["template"]["sha256"] = "0" * 64
         elif damage == "wrong_candidate_score":
             summary["shortlist"][0]["score"] = .1
+        elif damage == "wrong_renderer":
+            summary["renderer"]["renderer_id"] = "not-swift"
+        elif damage == "wrong_amp":
+            summary["starting_point"]["settings"]["selectedAmp"] = 1
         else:
             summary["shortlist"][0]["changes"] = [
                 {"path": "selectedAmp", "from": 0, "to": 1}]
@@ -456,6 +492,44 @@ def test_cached_first_candidate_can_come_from_matching_earlier_run(tmp_path):
     finally:
         store.close()
     assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+
+
+@pytest.mark.parametrize("damage", ("missing", "failed_step", "missing_step",
+                                   "wrong_commit", "changed_log"))
+def test_failed_or_unrecorded_declared_step_is_not_run(tmp_path, damage):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    part_dir = audition.parent
+    path = part_dir / "execution.json"
+    if damage == "missing":
+        path.unlink()
+    else:
+        record = json.loads(path.read_text())
+        if damage == "failed_step":
+            record["steps"]["no_di_match"]["exit_code"] = 1
+        elif damage == "missing_step":
+            del record["steps"]["first_render"]
+        elif damage == "wrong_commit":
+            record["commit"] = "0" * 40
+        else:
+            log = part_dir / record["steps"]["crops"]["log"]["path"]
+            log.write_text("changed after the record\n")
+        path.write_text(json.dumps(record))
+    result = _summarize(declaration, runs, repo)
+    assert result["part_counts"][PARTS[0]]["status"] == "not_run"
+    assert PARTS[0] not in result["parts_run"]
+
+
+def test_a_later_repo_commit_does_not_invalidate_the_frozen_crop(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    _audition(repo, declaration, runs, PARTS[0], "first")
+    later = repo / "docs" / "unrelated.md"
+    later.write_text("Unrelated later change\n")
+    subprocess.run(["git", "-C", str(repo), "add", "docs/unrelated.md"], check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "unrelated change"], check=True)
+    assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "run"
 
 
 def test_relative_summary_spec_path_from_other_worktree_is_accepted(tmp_path):
