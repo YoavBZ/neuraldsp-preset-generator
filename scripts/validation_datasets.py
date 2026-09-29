@@ -215,7 +215,7 @@ def build(root: pathlib.Path):
                   "lag_sign": "positive when the amp track is later than the DI"},
         "sessions": sessions,
         # Each use of a held-out session by a declared test: the declaring file,
-        # the commit it ran at and the date. Empty: nothing has used one yet.
+        # the commit it ran at and its dates. main() keeps what is already there.
         "held_out_uses": [],
     }
 

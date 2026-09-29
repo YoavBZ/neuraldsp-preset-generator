@@ -5,7 +5,7 @@
  "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
  "commit": "d78ffd05559675b7256570299c66dd566c0d0922",
  "pip_freeze_sha256": "fd2b9aafed43c77c6e09a23e9e4a6235012fca8a7ab29a08502fc8c48b240647",
- "renderer": "swift, Morgan Amps Suite 1.1.1, reproducible=False",
+ "renderer": "swift, Morgan Amps Suite 1.1.1, one fresh process per render (reproducible=True in every record)",
  "outcome": "inconclusive (rule 1: fewer than six parts run)",
  "parts_run": 5,
  "di_match_counts": 4,
@@ -355,5 +355,8 @@
     }
    }
   }
- ]
+ ],
+ "pip_freeze_sha256_note": "taken 2026-09-28 16:27 UTC after the merge, before the first crop; text not saved; the archive holds pip-freeze-at-archive.txt, whose editable line differs",
+ "tally": "by hand from verdict.json and private-key.json after the last verdict; the run predates #83's execution record",
+ "archive": "~/ndsp-presets/runs/heldout-sw50r"
 }

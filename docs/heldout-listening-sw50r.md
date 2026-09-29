@@ -220,14 +220,22 @@ next declared test.
 
 ## Results
 
-Appended 2026-09-29, after the last verdict. Every step ran at d78ffd0 (this
-file's merge), from a clean worktree, with Morgan 1.1.1 through the Swift
-renderer (`reproducible=False`); the interpreter's `pip freeze` hashes to
-`fd2b9aaf…0647`. Every crop record, preset, render, audition and verdict hash,
-the answers and the frozen predictions' agreement are in
-`heldout-listening-sw50r-results.json`. The steps were run by a driver that
-called each declared command in turn, two parts at a time, and wrote every
-step's output to a log the listener did not read.
+Appended 2026-09-29, after the last verdict. Every step ran on 2026-09-28 at
+d78ffd0 (this file's merge), from a clean worktree, with Morgan 1.1.1 through the
+Swift renderer, one fresh process per render (`reproducible=True` in every
+render and run record). The interpreter's `pip freeze`, taken at 16:27 UTC right
+after the merge and before the first crop, hashed to `fd2b9aaf…0647`; that text
+was not saved, and it cannot be recomputed, because its editable line names the
+main checkout's commit at the time. The freeze at archiving is saved in the run
+as `pip-freeze-at-archive.txt` (`f22684dc…`, differing in that line). Every crop
+record, preset, render, audition and verdict hash, the answers and the frozen
+predictions' agreement are in `heldout-listening-sw50r-results.json`. The steps
+were run by a driver that called each declared command in turn, two parts at a
+time, and wrote every step's output to a log the listener did not read. The
+tally was made by hand from the verdicts and the keys, after the last verdict:
+the run predates #83's execution record, which `summarize_declared_listening.py`
+needs, and that script pins this file's hash as declared, which appending these
+results changes. The run is archived at `~/ndsp-presets/runs/heldout-sw50r`.
 
 **The outcome is inconclusive, by rule 1: five parts were run, and six were
 needed.** Three parts failed, each for a reason the declaration made "not run":
@@ -268,16 +276,25 @@ the part's DI, every DI match played within 0.2 LU of the recording, as its
 level trim intends. The no-DI matches played at −17.5, −7.2, −38.5, −9.2 and
 −59.2 LUFS against recordings at −20.7 to −24.5, and silent on excerpt 11: 7 to
 35 LU too loud or too quiet, and on three Guitar-TECHS parts close to nothing.
-Their settings say why: the preamp volume at 0 (excerpt 02) and 2 (excerpt 10),
-and on excerpt 11 the amp's level at 3% with input gain at −17.75 dB, with the
-output gain raised to make up the level. Searched through the noise probe, which
-is far louder than a guitar DI, those settings still sound; through a guitar at
-a real level, almost nothing passes the amp, and the audition builder's level
-matching turned what did — hiss — up to the recording's loudness. That is what
-the listener heard on excerpt 02; excerpt 10's no-DI render, 35 LU down, was
-also mostly amplified noise. No development benchmark showed this: there the
-SW50R no-DI answers, searched from neutral settings rather than this template,
-played 5.1 to 14.4 LU off (`docs/recordings-benchmark-sw50r.json`). What this test measured beyond that failure is small: on the two
+Their settings: the preamp volume at 0 (excerpt 02) and 2 (excerpt 10), and on
+excerpt 11 the amp's level at 3% with input gain at −17.75 dB; only on excerpt
+02 was the output gain raised (to 14.25 dB, from the template's 5). The
+audition builder's level matching then raised what came through by up to 35 dB;
+on excerpt 02 that was, to the listener, only background noise.
+
+Why the search chose settings that pass so little of a guitar was not measured.
+The noise probe the search renders through is far louder than these DIs (about
+−8.5 LUFS against −20 to −36), but a probe turned down to a played passage's
+loudness did not fix a no-DI match's level on SW50R from this same template ("A
+probe at a guitar's loudness does not fix the level of a no-DI match" in
+`tone-matching-plan.md`), so the probe's loudness is a hypothesis here, not a
+cause. Neither benchmark showed silence: the search-signal benchmark, from this
+template through a played passage, left no-DI answers 4.5 to 14.1 LU off, and
+the recordings benchmark, from neutral settings through these recordings'
+development parts, 5.1 to 14.4 LU (`docs/recordings-benchmark-sw50r.json`).
+These held-out references differ from both in being unpaired-v3 matches of raw
+amp tracks, one of them at −34.9 LUFS.
+What this test measured beyond that failure is small: on the two
 57 Chevy parts, where both matches played, the listener heard the DI match
 closer on one and no difference on the other, through a band that made the
 guitar hard to hear.

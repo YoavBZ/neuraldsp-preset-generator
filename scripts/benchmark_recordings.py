@@ -94,7 +94,9 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
 
     A cached record must name this part, the catalog must still list its
     session as development, every source file the crop was cut from must have
-    the hash the catalog lists for it, and its outputs must match their hashes.
+    the hash the catalog lists for it, the part's DI, amp tracks and the
+    session's guitar DIs must be the ones it was cut with, and its outputs must
+    match their hashes.
     The catalog file itself may have changed since — its held-out ledger grows
     with every declared test — without making the crop stale.
     """
@@ -110,13 +112,22 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     catalog = json.loads(pathlib.Path(catalog_path).read_text(encoding="utf-8"))
     sessions = [item for item in catalog["sessions"]
                 if item["source"] == source and item["song"] == song]
-    files = sessions[0]["files"] if len(sessions) == 1 else {}
+    session = sessions[0] if len(sessions) == 1 else {"parts": []}
+    entries = [item for item in session["parts"] if item.get("part") == part]
+    entry = entries[0] if len(entries) == 1 else {}
+    files = session.get("files", {})
     expected = {"source": source, "song": song, "part": part, "split": "development"}
     found = {key: record.get(key) for key in expected}
     cut_from = record.get("verified_source_sha256") or {}
-    if (found != expected or len(sessions) != 1
-            or sessions[0].get("split") != "development" or not cut_from
-            or any(files.get(name) != digest for name, digest in cut_from.items())):
+    roles_kept = (bool(entry)
+                  and {entry.get("di"), entry.get("reference")} <= cut_from.keys()
+                  and record.get("removed_own_amp_tracks") == sorted(
+                      {entry.get("reference"), *entry.get("alternate", [])})
+                  and record.get("excluded_guitar_dis") == sorted(
+                      {item["di"] for item in session["parts"] if item.get("di")}))
+    if (found != expected or session.get("split") != "development" or not cut_from
+            or any(files.get(name) != digest for name, digest in cut_from.items())
+            or not roles_kept):
         die(f"{record_path} was not cut from this catalog for {source}/{song}/{part}; "
             f"delete {out_dir} to rebuild it")
     for role, output in record["outputs"].items():

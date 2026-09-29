@@ -15,7 +15,8 @@ import benchmark_recordings as R  # noqa: E402
 CATALOG = {"sessions": [
     {"source": "a", "song": "one", "split": "development",
      "files": {"di.wav": "d1", "amp.wav": "a1"},
-     "parts": [{"part": "g1", "usable": True}, {"part": "g2", "usable": True},
+     "parts": [{"part": "g1", "usable": True, "di": "di.wav", "reference": "amp.wav"},
+               {"part": "g2", "usable": True},
                {"part": "g3", "usable": False}]},
     {"source": "a", "song": "two", "split": "held_out",
      "parts": [{"part": "g1", "usable": True}]},
@@ -49,6 +50,7 @@ def _cached(tmp_path, record_changes=None):
     record = {"source": "a", "song": "one", "part": "g1", "split": "development",
               "catalog": {"sha256": hashlib.sha256(catalog.read_bytes()).hexdigest()},
               "verified_source_sha256": {"di.wav": "d1", "amp.wav": "a1"},
+              "removed_own_amp_tracks": ["amp.wav"], "excluded_guitar_dis": ["di.wav"],
               "outputs": {"di": {"path": str(wav),
                                  "sha256": hashlib.sha256(b"crop").hexdigest()}}}
     record.update(record_changes or {})
@@ -70,10 +72,25 @@ def test_a_cached_crop_is_reused_only_for_its_own_part_and_sources(tmp_path):
 
     for name, changes in (("split", {"split": "held_out"}), ("part", {"part": "g2"}),
                           ("source", {"verified_source_sha256": {"di.wav": "changed"}}),
-                          ("none", {"verified_source_sha256": {}})):
+                          ("none", {"verified_source_sha256": {}}),
+                          ("amps", {"removed_own_amp_tracks": ["other.wav"]}),
+                          ("dis", {"excluded_guitar_dis": []})):
         other = tmp_path / name
         other.mkdir()
         catalog, _ = _cached(other, changes)
+        with pytest.raises(SystemExit):
+            R.crops_for(catalog, other, other / "crops", "a", "one", "g1")
+
+    # The catalog moving the session to held out, or changing the part's roles,
+    # makes a development record stale even though its own fields are unchanged.
+    for name, edit in (("held", lambda s, part: s.update(split="held_out")),
+                       ("role", lambda s, part: part.update(alternate=["tf11.wav"]))):
+        other = tmp_path / f"catalog-{name}"
+        other.mkdir()
+        catalog, _ = _cached(other)
+        document = json.loads(catalog.read_text())
+        edit(document["sessions"][0], document["sessions"][0]["parts"][0])
+        catalog.write_text(json.dumps(document))
         with pytest.raises(SystemExit):
             R.crops_for(catalog, other, other / "crops", "a", "one", "g1")
 

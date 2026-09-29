@@ -169,11 +169,11 @@ played 3.5–21.5 LU from their targets on both amps, and turning the probe down
 guitar's loudness on SW50R did not change that), and that a DI of their playing would
 change that. A no-DI match can also leave the guitar all but silent: in the
 held-out listening test (`docs/heldout-listening-sw50r.md`), searched from the
-shipped SW50R template, three of six turned the preamp volume or the amp's level
-nearly to zero and made it up with output gain, so through a real guitar they
+shipped SW50R template, three of the six parts matched without a DI turned the
+preamp volume or the amp's level nearly to zero, and through a real guitar
 played 16–35 LU under the recording or not at all. Before handing a no-DI preset
-over, check the chosen settings for a volume, level or input gain at the bottom
-of its range, and tell the user to confirm it passes their guitar at all.
+over, check the chosen settings for a volume, level or input gain near the
+bottom of its range, and tell the user to confirm it passes their guitar at all.
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
 (each decision is under `search.level_trims` in `summary.json`); other regimes
