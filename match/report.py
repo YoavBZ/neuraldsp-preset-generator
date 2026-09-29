@@ -185,6 +185,7 @@ def build_summary(
     template_source: Optional[Mapping[str, Any]] = None,
     search_seed: Optional[Mapping] = None,
     reference_pairing: Optional[Mapping[str, Any]] = None,
+    guitar_check: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """The compact, machine-readable counterpart to the HTML report.
 
@@ -300,6 +301,9 @@ def build_summary(
             "level_trims": [{key: value for key, value in record.items()
                              if key != "values_before"}
                             for record in (level_trims or ())],
+            # Without a DI: the template and each candidate through a synthetic
+            # guitar, and which failed. None when a DI was given.
+            "guitar_check": None if guitar_check is None else dict(guitar_check),
         },
         "command_accounting": dict(command_accounting),
         "starting_point": {

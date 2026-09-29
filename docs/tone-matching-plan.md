@@ -2161,6 +2161,67 @@ usable again, and nothing here tried one.
 
 They took 6 minutes each from 4b7a6a3, a pre-squash commit of this change.
 
+#### Without a DI, a match can silence the guitar
+
+The held-out listening test (`heldout-listening-sw50r.md`) found that three of
+its six no-DI matches, searched from `samples/SW50R_Atlas_Topology.xml` through
+the noise probe, passed almost nothing of a real guitar: through the part's own
+DI they played 16 and 35 LU under the recording, and on the third had no
+measurable loudness (a peak of 3e-4). The same search on the 14 development
+parts, run exactly as the test ran it, did it once more: Bourbon GTR 2's answer
+set the amp's level to 0.5% and has no measurable loudness through its DI (a
+peak of 1e-3). So four of 20. In each, a gain stage went nearly to zero
+— the preamp volume to 0 or 2, the amp's level to 0.5% or 3% — and why the search
+chose that was not measured (the probe's loudness is a hypothesis, not a finding:
+see "A probe at a guitar's loudness does not fix the level of a no-DI match").
+
+**What tells them apart.** Each of those 20 answers, the six held-out DI matches
+and the template were rendered through `analysis.probes.synthetic_guitar` at
+−24 LUFS, a DI's level. The template played at −15.6 LUFS. Every answer that
+passed its own DI played between 18.0 dB under and 11.7 dB over the template;
+the four failures played 23.7 and 41.3 dB under it, or had no measurable
+loudness (twice). Excerpt 09, with its preamp at 5.5%, is left out of both: it
+was 20.4 dB under the template, but through its DI only 8.1 LU under its
+recording, and nobody listened to it. Two other checks were tried and did
+not separate them: correlating the output's envelope with the DI's (good DI
+matches read as low as 0.12, under compression and reverb), and how much the
+output moves when the guitar is 20 dB quieter (3 to 17 dB for the held-out
+presets and the template). Nor did silence in: every held-out preset and the
+template, failures included, peaks under 1e-8 through it.
+
+**The guard.** Without `--probe-di`, `match_preset.py` now renders the template
+and each shortlisted candidate through that guitar signal after the search (one
+render each, outside the budget). A candidate with no measurable loudness there,
+or 20 dB or more under the template, fails; failures move behind the candidates that pass,
+so `match-1` is the best one that passed, and a caveat names each failure. If
+none passes, the caveat says so first and says to prefer the template; if the
+template itself has no measurable loudness through the guitar, the check says
+it could not run.
+A render that errors is recorded and judged neither way. `summary.json` records it
+all under `search.guitar_check`, with each row's `match` file. **The 20 dB line is
+in-sample**: it was chosen from these same answers, with nothing held out, between
+the worst pass (18.0 dB under) and the best measurable failure (23.7) — a 2 dB
+margin on the pass side, and 3 dB from a correctly trimmed DI match on the
+quietest recording (excerpt 11's, 17.0 under). Only two of the four failures
+have a level at all. It also demotes excerpt 09 on a guess. And all of it is
+SW50R from one template, `isolated_stem`, fresh processes, no `--enumerate`:
+with `--enumerate` the candidates keep their own amp and cab but are judged
+against the template's, and on Tone King, whose renders can come back all zero,
+nothing has calibrated it. A tighter separator in this sample is the guitar
+render's level against the reference's (every pass at least 0.1 LU over, every
+failure 15 LU or more under), but only where the reference is an amp track, not
+a mix; it is not used.
+
+Rerun with the guard on three development parts: on Bourbon GTR 2 the
+unmeasurable answer went to the end and the new `match-1`, 3.4 dB over the template through
+the guitar, played through the part's DI 11.8 LU over its recording; on excerpt
+09 the answer 20.4 dB under was moved and the new `match-1` played 1.2 LU from
+its recording; on Collide GTR 2 all three candidates passed and nothing moved.
+What the guard does not do: it checks that a guitar gets through, not that the
+tone is right, and it does not correct a no-DI answer's output level: through
+their own DIs, 12 of the 13 development answers that played ran 9.6 to 22.1 LU
+over their recordings.
+
 ---
 
 ## 8. Dependency and CI policy
