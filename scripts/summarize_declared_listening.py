@@ -16,6 +16,11 @@ interpreter environment, zero exit status, and hashed log for each declared
 step. Without it the part is not run. The record makes those facts checkable,
 though it cannot independently prove that the operator recorded them honestly.
 Capture it when the commands run, not by guessing from the presence of outputs.
+This verification applies to runs recorded from #83 onward. The archived
+heldout-sw50r run predates ``execution.json``; its completed verdicts do not
+establish the missing step-execution evidence, so this tool reports its parts
+as not run rather than reconstructing that evidence from ``status.json``.
+
 The record has schema ``declared-listening-execution-v1``, the declaration's
 ``declaration_sha256`` and ``commit``, a SHA-256 string in
 ``interpreter_pip_freeze_sha256``, and a ``steps`` object. Each step has
@@ -52,7 +57,11 @@ from scripts.build_validation_crops import _declaration
 RULES = {
     "heldout-sw50r-di-vs-no-di": {
         "declaration_path": "docs/heldout-listening-sw50r.md",
+        # Both hashes describe the declaration as first committed. Results may
+        # be appended later, but no byte of the frozen declaration may change.
         "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
+        "declaration_frozen_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
+        "declaration_commit": "d78ffd05559675b7256570299c66dd566c0d0922",
         "template_sha256": "25a3efbf0fd243a976da119fb7b65ff39b48f353f51dcb62a45bbeaa08333acf",
         "renderer_id": "swift",
         "plugin_version": "1.1.1",
@@ -97,22 +106,37 @@ def _slug(part_id: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "_", part_id.replace("/", "-"))
 
 
+def _frozen_declaration(content: bytes) -> bytes:
+    """Exclude one separator newline and everything from a Results heading on."""
+    before, marker, _ = content.partition(b"\n## Results\n")
+    if not marker:
+        return content
+    return before if before.endswith(b"\n") else before + b"\n"
+
+
 def _declared_rules(path: pathlib.Path, repo: pathlib.Path,
                     registry: dict) -> tuple[dict, list[str], dict]:
     # _declaration checks docs/*.md, regular file, HEAD tracking, unchanged bytes,
     # one valid fenced authorization block, and the exact named part.
     anchor = next(iter(next(iter(registry.values()))["tone_parts"].values()))[0]
-    binding = _declaration(path, anchor, repo)
-    rules = registry.get(binding["test_id"])
+    current_binding = _declaration(path, anchor, repo)
+    rules = registry.get(current_binding["test_id"])
     if rules is None:
-        raise ValueError(f"no summary rules implemented for {binding['test_id']!r}")
-    if (binding["path"] != rules["declaration_path"]
-            or binding["sha256"] != rules["declaration_sha256"]):
+        raise ValueError(f"no summary rules implemented for {current_binding['test_id']!r}")
+    if current_binding["path"] != rules["declaration_path"]:
         raise ValueError("committed declaration is not the frozen source of these summary rules")
-    committed_path = repo / binding["path"]
+    committed_path = repo / current_binding["path"]
     content = committed_path.read_bytes()
-    if hashlib.sha256(content).hexdigest() != binding["sha256"]:
+    if hashlib.sha256(content).hexdigest() != current_binding["sha256"]:
         raise ValueError("declaration changed during summary setup")
+    if hashlib.sha256(_frozen_declaration(content)).hexdigest() != rules[
+            "declaration_frozen_sha256"]:
+        raise ValueError("committed declaration is not the frozen source of these summary rules")
+    # Crops, auditions and execution records bind the original declaration,
+    # not the later commit that appended the public Results section.
+    binding = {**current_binding, "sha256": rules["declaration_sha256"],
+               "commit": rules["declaration_commit"],
+               "head_commit": rules["declaration_commit"]}
     blocks = re.findall(r"^```json[ \t]*\r?\n(.*?)^```[ \t]*$",
                         content.decode("utf-8"), flags=re.MULTILINE | re.DOTALL)
     declaration = next(json.loads(block) for block in blocks
@@ -350,7 +374,8 @@ def _execution_record(part_dir: pathlib.Path, binding: dict, heard: bool) -> dic
     """Refuse to count a part whose declared steps were not recorded as successful."""
     path = part_dir / "execution.json"
     if path.is_symlink() or not path.is_file():
-        raise ValueError(f"{part_dir.name}: missing execution record")
+        raise ValueError(f"{part_dir.name}: missing execution record; runs before #83 "
+                         "cannot be verified by this summarizer")
     try:
         record = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as error:
