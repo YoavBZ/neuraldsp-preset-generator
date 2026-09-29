@@ -173,8 +173,10 @@ shipped SW50R template, three of the six parts matched without a DI turned the
 preamp volume or the amp's level nearly to zero, and through a real guitar
 played 16–35 LU under the recording or not at all. So without `--probe-di` the
 tool now renders the template and the shortlist through a synthetic guitar and
-moves any candidate that is silent there, or 20 dB or more under the template,
-behind those that pass (`search.guitar_check` in `summary.json`). Report that
+moves any candidate with no measurable loudness there, or 20 dB or more under the
+template, behind those that pass (`search.guitar_check` in `summary.json`; a line
+set on SW50R from twenty answers, so treat a pass as "a guitar gets through",
+nothing more). Report that
 caveat when it fires; if every candidate failed, offer the starting preset
 instead. The check only shows a guitar gets through, so still tell the user to
 confirm the preset plays with their own guitar.

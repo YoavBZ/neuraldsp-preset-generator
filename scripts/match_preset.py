@@ -515,6 +515,17 @@ def main() -> None:
         die("no candidate produced a comparable render, so there is nothing to "
             f"write. See {args.out_dir / 'trials.sqlite3'} for what was tried.")
 
+    # Without a DI every candidate was heard through the noise probe, and on four
+    # of twenty amp recordings the search's answer then passed almost nothing of a
+    # real guitar (docs/tone-matching-plan.md, "Without a DI, a match can silence
+    # the guitar"). Hear the shortlist through a guitar before recommending any of
+    # it — and before judging the recommendation against the template below.
+    guitar_check = None
+    if args.probe_di is None:
+        guitar_check = _guitar_check(renderer, evaluator, template_values,
+                                     result.shortlist)
+        result.shortlist[:] = _passing_first(result.shortlist, guitar_check)
+
     # Nothing checked this, and on a near-perfect template it is the whole story: the
     # bundled PR12 preset matched against a render of itself scored 0.069, and the
     # pipeline handed back 0.408 while the report announced "-488% closer".
@@ -531,15 +542,7 @@ def main() -> None:
     if result.unsearched and result.unsearched in caveats:
         caveats.insert(0, caveats.pop(caveats.index(result.unsearched)))
 
-    # Without a DI every candidate was heard through the noise probe, and on six
-    # of twenty amp recordings the search's answer then passed almost nothing of a
-    # real guitar (docs/heldout-listening-sw50r.md). Hear the shortlist through a
-    # guitar before recommending any of it.
-    guitar_check = None
-    if args.probe_di is None:
-        guitar_check = _guitar_check(renderer, evaluator, template_values,
-                                     result.shortlist)
-        result.shortlist[:] = _passing_first(result.shortlist, guitar_check)
+    if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
 
     _write_specs(args.out_dir, result, space, template_name)
@@ -626,6 +629,9 @@ def main() -> None:
     if not args.no_invert:
         outside_sources += "the inversion's probe and "
     outside_sources += "one per shortlisted candidate for the report"
+    if guitar_check is not None:
+        outside_sources += (f", and {guitar_check['renders']} for the guitar check "
+                            "(the template and each candidate)")
     print(f"  {result.renders} of them against the {budget}-render budget; "
           f"{outside} outside it — {outside_sources}")
     worst = ""
@@ -783,41 +789,58 @@ def _guitar_check(renderer, evaluator, template_values, shortlist) -> Dict:
 
     A no-DI search hears every candidate through a noise probe far louder than a
     guitar DI, and it can take a gain stage almost to zero and make the level up
-    elsewhere: through a real guitar such an answer played 24 to 41 dB under the
-    preset it started from, or not at all, while every answer that passed a guitar
-    played within 18 dB of it (docs/tone-matching-plan.md, "Without a DI, a match
-    can silence the guitar"). So render the template and each candidate through
-    the synthetic strummed guitar at a DI's loudness, and fail a candidate that is
-    silent there or GUITAR_CHECK_DROP_DB under the template.
+    elsewhere: through a real guitar four such answers of twenty played 24 and 41
+    dB under the preset they started from or had no measurable loudness, while
+    every answer that passed its own DI played within 18 dB of it
+    (docs/tone-matching-plan.md, "Without a DI, a match can silence the guitar";
+    SW50R, one template, in-sample). So render the template and each candidate
+    through the synthetic strummed guitar at a DI's loudness, and fail a candidate
+    with no measurable loudness there or GUITAR_CHECK_DROP_DB under the template.
+    A render that errors is recorded and judged neither way.
     """
     from analysis import io
     from analysis.probes import synthetic_guitar
+    from match.renderer import RenderError
 
     signal = synthetic_guitar(seconds=6.0, seed=13, target_lufs=GUITAR_CHECK_LUFS)
 
     def lufs(values):
-        rendered = renderer.render(signal, evaluator._settings(values))
+        """(loudness or None, error or None)."""
+        try:
+            rendered = renderer.render(signal, evaluator._settings(values))
+        except (RenderError, ValueError) as error:
+            return None, str(error)
         if getattr(rendered, "silent", False):
-            return None
+            return None, None
         return io.loudness_lufs(io.from_samples(rendered.audio,
-                                                rendered.metadata.sample_rate))
+                                                rendered.metadata.sample_rate)), None
 
-    template = lufs(template_values)
+    template, template_error = lufs(template_values)
     rows = []
     for rank, candidate in enumerate(shortlist, start=1):
-        level = lufs(candidate.values)
+        level, error = lufs(candidate.values)
         drop = None if level is None or template is None else level - template
-        judged = template is not None
-        rows.append({"search_rank": rank,
-                     "lufs": None if level is None else round(level, 2),
-                     "vs_template_db": None if drop is None else round(drop, 2),
-                     "passes": (None if not judged else
-                                level is not None and drop > -GUITAR_CHECK_DROP_DB)})
-    return {"signal": {"kind": "analysis.probes.synthetic_guitar", "seconds": 6.0,
-                       "seed": 13, "lufs": GUITAR_CHECK_LUFS},
-            "fails_below_template_db": GUITAR_CHECK_DROP_DB,
-            "template_lufs": None if template is None else round(template, 2),
-            "candidates": rows, "renders": 1 + len(shortlist)}
+        judged = template is not None and error is None
+        row = {"search_rank": rank,
+               "lufs": None if level is None else round(level, 2),
+               "vs_template_db": None if drop is None else round(drop, 2),
+               "passes": (None if not judged else
+                          level is not None and drop > -GUITAR_CHECK_DROP_DB)}
+        if error is not None:
+            row["error"] = error
+        rows.append(row)
+    check = {"signal": {"kind": "analysis.probes.synthetic_guitar", "seconds": 6.0,
+                        "seed": 13, "lufs": GUITAR_CHECK_LUFS},
+             "fails_below_template_db": GUITAR_CHECK_DROP_DB,
+             "template_lufs": None if template is None else round(template, 2),
+             "candidates": rows, "renders": 1 + len(shortlist)}
+    if template_error is not None:
+        check["template_error"] = template_error
+    # Where each row ends up once failures move to the end: its match-N file.
+    order = _passing_first(list(range(1, len(rows) + 1)), check)
+    for row in rows:
+        row["match"] = order.index(row["search_rank"]) + 1
+    return check
 
 
 def _passing_first(shortlist, check) -> list:
@@ -829,27 +852,41 @@ def _passing_first(shortlist, check) -> list:
 
 def _guitar_check_caveats(check) -> List[str]:
     rows = check["candidates"]
-    if check["template_lufs"] is None:
-        return ["the guitar check could not run: the preset you started from is "
-                "silent through a synthetic guitar, so nothing here was compared "
-                "with it — confirm the answer plays with your own guitar"]
+    caveats = []
+    errors = [row for row in rows if row.get("error")]
+    if errors or check.get("template_error"):
+        caveats.append("the guitar check could not render "
+                       + ("the preset you started from" if check.get("template_error")
+                          else ", ".join(f"match-{row['match']}" for row in errors))
+                       + ", so it judged nothing there — confirm the answer plays "
+                         "with your own guitar")
+    if check["template_lufs"] is None and not check.get("template_error"):
+        caveats.append("the guitar check could not run: the preset you started from "
+                       "has no measurable loudness through a synthetic guitar, so "
+                       "nothing was compared with it — confirm the answer plays with "
+                       "your own guitar")
     failed = [row for row in rows if row["passes"] is False]
     if not failed:
-        return []
+        return caveats
+
     def how(row):
-        return ("silent" if row["lufs"] is None else
-                f"{-row['vs_template_db']:.0f} dB under the preset you started from")
-    listed = "; ".join(f"search candidate {row['search_rank']} was {how(row)}"
-                       for row in failed)
+        return ("had no measurable loudness" if row["lufs"] is None else
+                f"was {-row['vs_template_db']:.0f} dB under the preset you started from")
+    listed = "; ".join(f"match-{row['match']} (the search's choice "
+                       f"{row['search_rank']}) {how(row)}" for row in failed)
     if len(failed) == len(rows):
-        return [f"every shortlisted candidate failed the guitar check — {listed} "
-                "through a synthetic guitar at a DI's level. Without a DI the search "
-                "can turn a gain stage almost off; do not use these without hearing "
-                "them with your own guitar, and prefer the preset you started from"]
-    return [f"{len(failed)} of {len(rows)} shortlisted candidates failed the guitar "
-            f"check and were moved to the end ({listed}) through a synthetic guitar "
-            "at a DI's level: without a DI the search can turn a gain stage almost "
-            "off. match-1 is the best candidate that passed"]
+        caveats.insert(0, f"every shortlisted candidate failed the guitar check — "
+                          f"{listed} — through a synthetic guitar at a DI's level. "
+                          "Without a DI the search can turn a gain stage almost off; "
+                          "do not use these without hearing them with your own "
+                          "guitar, and prefer the preset you started from")
+    else:
+        caveats.insert(0, f"{len(failed)} of {len(rows)} shortlisted candidates failed "
+                          f"the guitar check and were moved to the end — {listed} — "
+                          "through a synthetic guitar at a DI's level: without a DI "
+                          "the search can turn a gain stage almost off. match-1 is "
+                          "the best candidate that passed")
+    return caveats
 
 
 def _no_better(found: float, started: float, budget: int,

@@ -1205,15 +1205,18 @@ def test_the_printed_apply_command_survives_a_path_with_spaces(audio, tmp_path):
 
 
 class _GainRenderer:
-    """Renders the input scaled by the settings' `gain` (None: silent)."""
+    """Renders the input scaled by the settings' `gain`: None is an all-zero
+    render, "error" raises the way a plugin failure does."""
 
     def render(self, signal, settings):
         import types
 
-        import numpy as np
+        from match.renderer import RenderError
 
         gain = settings["gain"]
-        audio = np.zeros_like(signal) if gain is None else signal * gain
+        if gain == "error":
+            raise RenderError("the plugin did not answer")
+        audio = signal * 0.0 if gain is None else signal * gain
         return types.SimpleNamespace(audio=audio, silent=gain is None,
                                      metadata=types.SimpleNamespace(sample_rate=48000))
 
@@ -1223,37 +1226,106 @@ class _Settings:
         return values
 
 
-def test_the_guitar_check_fails_silent_and_far_quieter_candidates():
+def _check(template_gain, *gains):
     from match.search import Candidate
     from scripts import match_preset as cli
 
-    shortlist = [Candidate(values={"gain": 0.05}), Candidate(values={"gain": 0.5}),
-                 Candidate(values={"gain": None}), Candidate(values={"gain": 2.0})]
-    check = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": 1.0}, shortlist)
+    shortlist = [Candidate(values={"gain": gain}) for gain in gains]
+    return cli, shortlist, cli._guitar_check(_GainRenderer(), _Settings(),
+                                             {"gain": template_gain}, shortlist)
+
+
+def test_the_guitar_check_fails_unmeasurable_and_far_quieter_candidates():
+    # 1e-5 is not silence but is under loudness's gate: the real failures were that.
+    cli, shortlist, check = _check(1.0, 0.05, 0.5, None, 2.0, 1e-5)
 
     rows = {row["search_rank"]: row for row in check["candidates"]}
     assert rows[1]["vs_template_db"] == pytest.approx(-26.0, abs=0.1)
-    assert [rows[rank]["passes"] for rank in (1, 2, 3, 4)] == [False, True, False, True]
-    assert rows[3]["lufs"] is None and check["renders"] == 5
+    assert [rows[r]["passes"] for r in (1, 2, 3, 4, 5)] == [False, True, False, True, False]
+    assert rows[3]["lufs"] is None and rows[5]["lufs"] is None and check["renders"] == 6
+    # Each row says which match-N file it ends up in.
+    assert [rows[r]["match"] for r in (1, 2, 3, 4, 5)] == [3, 1, 4, 2, 5]
 
     reordered = cli._passing_first(shortlist, check)
-    assert [c.values["gain"] for c in reordered] == [0.5, 2.0, 0.05, None]
+    assert [c.values["gain"] for c in reordered] == [0.5, 2.0, 0.05, None, 1e-5]
     caveat, = cli._guitar_check_caveats(check)
-    assert "2 of 4" in caveat and "26 dB under" in caveat and "silent" in caveat
+    assert caveat.startswith("3 of 5 shortlisted candidates failed")
+    assert "match-3 (the search's choice 1) was 26 dB under" in caveat
+    assert "match-4 (the search's choice 3) had no measurable loudness" in caveat
+
+
+def test_the_guitar_check_line_is_twenty_decibels():
+    _, _, check = _check(1.0, 10 ** (-20.05 / 20), 10 ** (-19.95 / 20))
+    assert [row["passes"] for row in check["candidates"]] == [False, True]
 
 
 def test_the_guitar_check_says_when_nothing_passed_or_nothing_could_be_judged():
-    from match.search import Candidate
-    from scripts import match_preset as cli
-
-    quiet = [Candidate(values={"gain": 0.01})]
-    check = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": 1.0}, quiet)
+    cli, quiet, check = _check(1.0, 0.01)
     assert "every shortlisted candidate failed" in cli._guitar_check_caveats(check)[0]
 
-    unjudged = cli._guitar_check(_GainRenderer(), _Settings(), {"gain": None}, quiet)
+    cli, quiet, unjudged = _check(None, 0.01)
     assert unjudged["candidates"][0]["passes"] is None
     assert cli._passing_first(quiet, unjudged) == quiet
     assert "could not run" in cli._guitar_check_caveats(unjudged)[0]
+
+
+def test_a_render_error_in_the_guitar_check_judges_nothing_and_loses_nothing():
+    cli, shortlist, check = _check(1.0, "error", 0.5)
+    first = check["candidates"][0]
+    assert first["passes"] is None and "did not answer" in first["error"]
+    assert cli._passing_first(shortlist, check) == shortlist
+    assert "could not render match-1" in cli._guitar_check_caveats(check)[0]
+
+    cli, shortlist, check = _check("error", 0.5)
+    assert check["candidates"][0]["passes"] is None and "template_error" in check
+    assert "the preset you started from" in cli._guitar_check_caveats(check)[0]
+
+
+def _no_di_run(audio, out, monkeypatch=None, fail_rank=None):
+    """In process, so the check can be made to fail a chosen candidate."""
+    from scripts import match_preset as cli
+
+    if fail_rank is not None:
+        real = cli._guitar_check
+
+        def failing(*args, **kwargs):
+            check = real(*args, **kwargs)
+            for row in check["candidates"]:
+                row["passes"] = row["search_rank"] != fail_rank
+            order = cli._passing_first(list(range(1, len(check["candidates"]) + 1)),
+                                       check)
+            for row in check["candidates"]:
+                row["match"] = order.index(row["search_rank"]) + 1
+            return check
+
+        monkeypatch.setattr(cli, "_guitar_check", failing)
+    monkeypatch.setattr(sys, "argv", [
+        "match_preset.py", "--template", str(TEMPLATE),
+        "--reference", str(audio / "ref.wav"), "--reference-mode", "isolated_stem",
+        "--amp", "sw50r", "--renderer", "synthetic", "--budget", "80",
+        "--shortlist", "2", "--seed", "0", "--out-dir", str(out)])
+    cli.main()
+    return json.loads((out / "summary.json").read_text())
+
+
+def test_a_failed_first_choice_is_written_as_the_last_match(audio, tmp_path, monkeypatch):
+    before = _no_di_run(audio, tmp_path / "plain", monkeypatch)
+    assert all(row["passes"] for row in before["search"]["guitar_check"]["candidates"])
+    after = _no_di_run(audio, tmp_path / "failed", monkeypatch, fail_rank=1)
+
+    plain, failed = tmp_path / "plain", tmp_path / "failed"
+
+    def settings(path):
+        return json.loads(path.read_text())["parameters"]
+
+    assert settings(failed / "match-1.json") == settings(plain / "match-2.json")
+    assert settings(failed / "match-2.json") == settings(plain / "match-1.json")
+    assert after["shortlist"][0]["trial_id"] == before["shortlist"][1]["trial_id"]
+    assert after["caveats"][0].startswith("1 of 2 shortlisted candidates failed")
+    command = after["command_accounting"]
+    assert command["total_renders"] == (command["budgeted_renders"]
+                                        + command["outside_budget_renders"])
+    assert command["outside_budget_by_source"]["guitar_check"] == 3
 
 
 def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
@@ -1274,3 +1346,4 @@ def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
             assert check["signal"]["lufs"] == -24.0
             assert len(check["candidates"]) == len(summary["shortlist"])
             assert sources["guitar_check"] == 1 + len(summary["shortlist"])
+            assert "for the guitar check" in done.stdout
