@@ -21,7 +21,7 @@ sf = pytest.importorskip("soundfile")
 from scripts.build_validation_crops import _declaration
 from scripts._listening_trials import consistency
 from scripts import apply_spec
-from scripts.tally_declared_listening import RULES, _slug, tally
+from scripts.summarize_declared_listening import RULES, _slug, summarize
 
 
 PARTS = (
@@ -51,8 +51,8 @@ def _wav(path, sample=1000):
         output.writeframes(int(sample).to_bytes(2, "little", signed=True) * 4800)
 
 
-def _tally(declaration, runs, repo):
-    return tally(declaration, runs, repo_root=repo,
+def _summarize(declaration, runs, repo):
+    return summarize(declaration, runs, repo_root=repo,
                  rule_registry=_registry(declaration))
 
 
@@ -92,6 +92,7 @@ def _matches(part_dir, *, fallback_role=None):
     from analysis import io as audio_io
     from analysis.probes import decaying_noise_bursts
     from match.renderer import _hash_audio
+    from match.store import Run, Store, Trial
 
     template = pathlib.Path(__file__).resolve().parents[1] / "samples" / "SW50R_Atlas_Topology.xml"
     for name, regime in (("with-di", "paired_di"), ("no-di", "isolated_stem")):
@@ -99,7 +100,8 @@ def _matches(part_dir, *, fallback_role=None):
         match_dir = part_dir / name
         match_dir.mkdir()
         spec_path = match_dir / "match-1.json"
-        spec_path.write_text(json.dumps({"name": f"synthetic {name}", "parameters": []}))
+        spec_path.write_text(json.dumps({"name": f"synthetic {name}", "parameters": [
+            {"module": "", "key": "selectedAmp", "value": 2}]}))
         preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
         if fallback_role == role:
             shutil.copyfile(template, preset)
@@ -112,30 +114,38 @@ def _matches(part_dir, *, fallback_role=None):
                 apply_spec.run(args)
         run_id = f"synthetic-{name}"
         probe_note = None if role == "first" else "no --probe-di was given; synthetic noise probe"
-        (match_dir / "summary.json").write_text(json.dumps({
-            "schema": "tone-match-summary-v1", "run_id": run_id, "pack": "morgan",
-            "loss_profile": "unpaired-v3", "search": {"budget": 300},
-            "renderer": {"quality_mode": "process=fresh"},
-            "seed": {"template": {"path": str(template), "sha256": _sha(template)}},
-            "caveats": (["nothing beat the preset you started from"]
-                        if fallback_role == role else ([probe_note] if probe_note else [])),
-            "reference": {"path": str(part_dir / "crops" / "reference.wav"),
-                          "regime": regime}}))
+        reference_sha = _sha(part_dir / "crops" / "reference.wav")
+        renderer = {"quality_mode": "process=fresh", "renderer_id": "synthetic",
+                    "plugin_version": "synthetic", "reproducible": True}
         di_sha = (_hash_audio(audio_io.load(part_dir / "crops" / "di.wav").mono())
                   if role == "first" else
                   _hash_audio(decaying_noise_bursts(seconds=6.0, gap=0.9, seed=13)))
-        store = sqlite3.connect(match_dir / "trials.sqlite3")
-        try:
-            store.execute("CREATE TABLE runs (run_id TEXT, pack TEXT, regime TEXT, "
-                          "loss_profile TEXT, budget INTEGER, notes TEXT)")
-            store.execute("CREATE TABLE trials (run_id TEXT, di_offset_db REAL, di_sha TEXT)")
-            store.execute("INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?)",
-                          (run_id, "morgan", regime, "unpaired-v3", 300,
-                           json.dumps({"probe_note": probe_note})))
-            store.execute("INSERT INTO trials VALUES (?, ?, ?)", (run_id, 0, di_sha))
-            store.commit()
-        finally:
-            store.close()
+        with Store(str(match_dir / "trials.sqlite3")) as store:
+            store.start_run(Run(
+                run_id=run_id, pack="morgan", regime=regime,
+                loss_profile="unpaired-v3", budget=300,
+                reference_sha=reference_sha, renderer_id="synthetic",
+                plugin_version="synthetic", notes=json.dumps({
+                    "schema": "tone-match-run-notes-v1", "probe_note": probe_note,
+                    "renderer": renderer})))
+            trial = store.add_trial(run_id, Trial(
+                params={"selectedAmp": 2}, di_sha=di_sha,
+                objectives={"total": .5}, fingerprint={}, silent=False))
+        (match_dir / "summary.json").write_text(json.dumps({
+            "schema": "tone-match-summary-v1", "run_id": run_id, "pack": "morgan",
+            "loss_profile": "unpaired-v3", "search": {"budget": 300},
+            "renderer": renderer,
+            "starting_point": {"template": {"path": str(template),
+                                             "sha256": _sha(template)}},
+            "shortlist": [{"rank": 1, "trial_id": trial.trial_id, "score": .5,
+                           "objectives": {"total": .5}, "changes": [],
+                           "fingerprint": {}, "fingerprint_delta": []}],
+            "outputs": {"specs": [str(spec_path)]},
+            "caveats": (["nothing beat the preset you started from"]
+                        if fallback_role == role else ([probe_note] if probe_note else [])),
+            "reference": {"path": str(part_dir / "crops" / "reference.wav"),
+                          "regime": regime,
+                          "fingerprint": {"source": {"sha256": reference_sha}}}}))
 
 
 def _render(part_dir, role, di, *, settings=None):
@@ -270,7 +280,7 @@ def test_support_counts_swapped_trials_and_independent_tones(tmp_path):
         _audition(repo, declaration, runs, part, choice,
                   swap=index % 2 == 1, primary_last=index % 3 == 0)
 
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["outcome"] == "supported"
     assert result["applied_rule"] == 2
     assert result["parts_run"] == list(PARTS)
@@ -281,14 +291,14 @@ def test_support_counts_swapped_trials_and_independent_tones(tmp_path):
     assert result["tone_counts"]["Guitar-TECHS P3"]["counts"] == {
         "first": 3, "second": 0}
     assert sum(row["winner"] == "first" for row in result["tone_counts"].values()) == 3
-    assert str(runs) not in json.dumps(result), "the public tally must omit private paths"
+    assert str(runs) not in json.dumps(result), "the public summary must omit private paths"
 
 
 def test_all_ties_are_falsified_after_the_minimum_run_gate(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     for part in PARTS:
         _audition(repo, declaration, runs, part, "indistinguishable")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["total_part_counts"] == {"first": 0, "second": 0}
     assert result["outcome"] == "falsified"
     assert result["applied_rule"] == 3
@@ -298,7 +308,7 @@ def test_second_wins_a_completed_test(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     for part in PARTS:
         _audition(repo, declaration, runs, part, "second")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["total_part_counts"] == {"first": 0, "second": 8}
     assert result["outcome"] == "falsified"
     assert result["applied_rule"] == 3
@@ -308,7 +318,7 @@ def test_six_first_parts_in_only_two_tones_do_not_support(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     for part in PARTS[2:]:  # Memphis pair plus all four Guitar-TECHS excerpts.
         _audition(repo, declaration, runs, part, "first")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert len(result["parts_run"]) == 6
     assert result["total_part_counts"] == {"first": 6, "second": 0}
     assert sum(row["winner"] == "first" for row in result["tone_counts"].values()) == 2
@@ -320,7 +330,7 @@ def test_too_few_run_parts_is_inconclusive_even_when_second_wins(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     for part in PARTS[:5]:
         _audition(repo, declaration, runs, part, "second")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["parts_run"] == list(PARTS[:5])
     assert result["not_run_parts"] == list(PARTS[5:])
     assert result["outcome"] == "inconclusive"
@@ -334,7 +344,7 @@ def test_remaining_case_is_inconclusive_and_identical_settings_count_as_run(tmp_
     _identical_unheard(repo, declaration, runs, PARTS[5])
     _audition(repo, declaration, runs, PARTS[6], "second")
     _audition(repo, declaration, runs, PARTS[7], "tie")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["part_counts"][PARTS[5]]["status"] == "run_identical_settings"
     assert result["part_counts"][PARTS[5]]["counts"] == {"first": 0, "second": 0}
     assert len(result["parts_run"]) == 8
@@ -346,13 +356,15 @@ def test_remaining_case_is_inconclusive_and_identical_settings_count_as_run(tmp_
 def test_declared_template_fallback_is_bound_to_its_render(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     _audition(repo, declaration, runs, PARTS[0], "first", fallback_role="first")
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["part_counts"][PARTS[0]]["status"] == "run"
     assert result["part_counts"][PARTS[0]]["counts"]["first"] == 1
 
 
 @pytest.mark.parametrize("damage", ("di_uses_noise", "no_di_uses_crop",
-                                   "no_di_claims_a_di", "wrong_spec", "wrong_template"))
+                                   "no_di_claims_a_di", "wrong_spec", "wrong_template",
+                                   "wrong_candidate_score", "wrong_candidate_change",
+                                   "wrong_trial_parameters", "wrong_reference_hash"))
 def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
     repo, declaration, runs = _repo(tmp_path)
     audition = _audition(repo, declaration, runs, PARTS[0], "first")
@@ -378,16 +390,88 @@ def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
     elif damage == "wrong_spec":
         path = part_dir / "with-di" / "match-1.json"
         spec = json.loads(path.read_text())
-        spec["name"] = "a different candidate"
+        spec["parameters"][0]["value"] = 1
         path.write_text(json.dumps(spec))
+        template = pathlib.Path(__file__).resolve().parents[1] / "samples" / "SW50R_Atlas_Topology.xml"
+        args = argparse.Namespace(template=str(template), spec=str(path),
+                                  out=str(part_dir / "with-di.xml"), recipe=[], bpm=None,
+                                  name=None, pack=None, strip_irs=False,
+                                  allow_out_of_range=False, force=True, dry_run=False)
+        with contextlib.redirect_stdout(io.StringIO()):
+            apply_spec.run(args)
+    elif damage == "wrong_trial_parameters":
+        store = sqlite3.connect(part_dir / "with-di" / "trials.sqlite3")
+        try:
+            store.execute("UPDATE trials SET params_json = ?", ('{"selectedAmp":1}',))
+            store.commit()
+        finally:
+            store.close()
+    elif damage == "wrong_reference_hash":
+        path = part_dir / "with-di" / "summary.json"
+        summary = json.loads(path.read_text())
+        summary["reference"]["fingerprint"]["source"]["sha256"] = "0" * 64
+        path.write_text(json.dumps(summary))
+        store = sqlite3.connect(part_dir / "with-di" / "trials.sqlite3")
+        try:
+            store.execute("UPDATE runs SET reference_sha = ?", ("0" * 64,))
+            store.commit()
+        finally:
+            store.close()
     else:
         path = part_dir / "with-di" / "summary.json"
         summary = json.loads(path.read_text())
-        summary["seed"]["template"]["sha256"] = "0" * 64
+        if damage == "wrong_template":
+            summary["starting_point"]["template"]["sha256"] = "0" * 64
+        elif damage == "wrong_candidate_score":
+            summary["shortlist"][0]["score"] = .1
+        else:
+            summary["shortlist"][0]["changes"] = [
+                {"path": "selectedAmp", "from": 0, "to": 1}]
         path.write_text(json.dumps(summary))
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["part_counts"][PARTS[0]]["status"] == "not_run"
     assert PARTS[0] not in result["parts_run"]
+
+
+def test_cached_first_candidate_can_come_from_matching_earlier_run(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    store_path = audition.parent / "with-di" / "trials.sqlite3"
+    store = sqlite3.connect(store_path)
+    try:
+        store.execute("INSERT INTO runs SELECT 'earlier-matching-run', created_at, "
+                      "pack, template, reference_sha, regime, loss_profile, budget, "
+                      "renderer_id, plugin_version, notes FROM runs")
+        store.execute("UPDATE trials SET run_id = 'earlier-matching-run'")
+        store.commit()
+    finally:
+        store.close()
+    assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "run"
+
+    store = sqlite3.connect(store_path)
+    try:
+        store.execute("UPDATE runs SET reference_sha = ? WHERE run_id = ?",
+                      ("0" * 64, "earlier-matching-run"))
+        store.commit()
+    finally:
+        store.close()
+    assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+
+
+def test_relative_summary_spec_path_from_other_worktree_is_accepted(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    path = audition.parent / "with-di" / "summary.json"
+    summary = json.loads(path.read_text())
+    summary["outputs"]["specs"][0] = (
+        f"runs/heldout-sw50r/{audition.parent.name}/with-di/match-1.json")
+    path.write_text(json.dumps(summary))
+    assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "run"
+
+    summary["outputs"]["specs"][0] = (
+        f"runs/heldout-sw50r/{audition.parent.name}/with-di/match-2.json")
+    path.write_text(json.dumps(summary))
+    assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
 
 
 def test_no_private_key_opened_until_every_published_audition_has_verdict(
@@ -407,7 +491,7 @@ def test_no_private_key_opened_until_every_published_audition_has_verdict(
 
     monkeypatch.setattr(pathlib.Path, "read_text", spy)
     with pytest.raises(ValueError, match="verdict.json is missing"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
     assert not opened
 
 
@@ -426,7 +510,7 @@ def test_preflight_includes_undeclared_built_auditions(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pathlib.Path, "read_text", refuse_key)
     with pytest.raises(ValueError, match="undeclared"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
 
 
 def test_placeholder_verdict_cannot_unblind_any_part(tmp_path, monkeypatch):
@@ -445,7 +529,7 @@ def test_placeholder_verdict_cannot_unblind_any_part(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pathlib.Path, "read_text", spy)
     with pytest.raises(ValueError, match="incomplete verdict"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
     assert not opened
 
 
@@ -454,7 +538,7 @@ def test_a_built_audition_without_both_match_outputs_is_not_run(tmp_path, missin
     repo, declaration, runs = _repo(tmp_path)
     audition = _audition(repo, declaration, runs, PARTS[0], "first")
     (audition.parent / "with-di" / missing).unlink()
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["part_counts"][PARTS[0]]["status"] == "not_run"
     assert PARTS[0] in result["not_run_parts"]
     assert result["total_part_counts"] == {"first": 0, "second": 0}
@@ -464,7 +548,7 @@ def test_identical_settings_need_both_match_outputs_to_count_as_run(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     _identical_unheard(repo, declaration, runs, PARTS[0])
     (runs / _slug(PARTS[0]) / "no-di" / "match-1.json").unlink()
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert result["part_counts"][PARTS[0]]["status"] == "not_run"
 
 
@@ -474,7 +558,7 @@ def test_failed_sixth_part_cannot_cross_the_decision_gate(tmp_path):
         _audition(repo, declaration, runs, part, "second")
     _identical_unheard(repo, declaration, runs, PARTS[5])
     (runs / _slug(PARTS[5]) / "no-di" / "match-1.json").unlink()
-    result = _tally(declaration, runs, repo)
+    result = _summarize(declaration, runs, repo)
     assert len(result["parts_run"]) == 5
     assert result["outcome"] == "inconclusive"
     assert result["applied_rule"] == 1
@@ -506,20 +590,20 @@ def test_rejects_builder_valid_but_undeclared_listening_settings(tmp_path, damag
     key_path.write_text(json.dumps(key))
     _rebind_key(audition)
     with pytest.raises(ValueError, match="manifest"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
 
 
 def test_rejects_changed_or_wrong_committed_declaration(tmp_path):
     repo, declaration, runs = _repo(tmp_path)
     declaration.write_text(declaration.read_text() + "\nmodified after commit\n")
     with pytest.raises(ValueError, match="differs from its committed HEAD version"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
 
     other = tmp_path / "another"
     other.mkdir()
     repo, declaration, runs = _repo(other, parts=PARTS[:-1])
     with pytest.raises(ValueError, match="do not match its implemented tone rules"):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)
 
 
 def test_rejects_another_committed_document_with_same_id_and_parts(tmp_path):
@@ -532,7 +616,7 @@ def test_rejects_another_committed_document_with_same_id_and_parts(tmp_path):
                     "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
                     "change the decision rules"], check=True)
     with pytest.raises(ValueError, match="not the frozen source"):
-        tally(declaration, runs, repo_root=repo, rule_registry=frozen_rules)
+        summarize(declaration, runs, repo_root=repo, rule_registry=frozen_rules)
 
 
 @pytest.mark.parametrize("damage", ("heard-audio", "reference-crop", "di-crop",
@@ -562,10 +646,10 @@ def test_rejects_changed_audio_render_or_repeat(tmp_path, damage):
         path.write_bytes(path.read_bytes() + (
             b"\n" if damage == "first-render-record" else b"changed after the verdict"))
     if damage == "first-preset":
-        assert _tally(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+        assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
     else:
         with pytest.raises(ValueError, match="changed|differs|swap|hash"):
-            _tally(declaration, runs, repo)
+            _summarize(declaration, runs, repo)
 
 
 @pytest.mark.parametrize("damage", ("di-crop", "first-render", "first-preset"))
@@ -578,10 +662,10 @@ def test_identical_settings_need_verified_audio_and_preset(tmp_path, damage):
             "first-preset": part_dir / "with-di.xml"}[damage]
     path.write_bytes(path.read_bytes() + b"tampered")
     if damage == "first-preset":
-        assert _tally(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+        assert _summarize(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
     else:
         with pytest.raises(ValueError, match="hash|differs"):
-            _tally(declaration, runs, repo)
+            _summarize(declaration, runs, repo)
 
 
 @pytest.mark.parametrize("damage", ("key-hash", "primary-answer", "crop-part",
@@ -627,4 +711,4 @@ def test_rejects_misbound_or_incomplete_trial_evidence(tmp_path, damage):
         verdict["audition_key"]["sha256"] = _sha(key_path)
         verdict_path.write_text(json.dumps(verdict))
     with pytest.raises(ValueError):
-        _tally(declaration, runs, repo)
+        _summarize(declaration, runs, repo)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Tally a committed held-out listening declaration after every audition has a verdict.
+"""Summarize a committed held-out listening declaration after every audition has a verdict.
 
-    python scripts/tally_declared_listening.py \
+    python scripts/summarize_declared_listening.py \
       --declaration docs/heldout-listening-sw50r.md \
       --runs PRIVATE_RUN_DIRECTORY
 
@@ -35,7 +35,7 @@ from scripts.build_validation_crops import _declaration
 
 
 # One declared test, represented as data rather than thresholds hidden in the
-# tally loop. Add another entry only after its own rules are committed first.
+# summary loop. Add another entry only after its own rules are committed first.
 RULES = {
     "heldout-sw50r-di-vs-no-di": {
         "declaration_path": "docs/heldout-listening-sw50r.md",
@@ -89,14 +89,14 @@ def _declared_rules(path: pathlib.Path, repo: pathlib.Path,
     binding = _declaration(path, anchor, repo)
     rules = registry.get(binding["test_id"])
     if rules is None:
-        raise ValueError(f"no tally rules implemented for {binding['test_id']!r}")
+        raise ValueError(f"no summary rules implemented for {binding['test_id']!r}")
     if (binding["path"] != rules["declaration_path"]
             or binding["sha256"] != rules["declaration_sha256"]):
-        raise ValueError("committed declaration is not the frozen source of these tally rules")
+        raise ValueError("committed declaration is not the frozen source of these summary rules")
     committed_path = repo / binding["path"]
     content = committed_path.read_bytes()
     if hashlib.sha256(content).hexdigest() != binding["sha256"]:
-        raise ValueError("declaration changed during tally setup")
+        raise ValueError("declaration changed during summary setup")
     blocks = re.findall(r"^```json[ \t]*\r?\n(.*?)^```[ \t]*$",
                         content.decode("utf-8"), flags=re.MULTILINE | re.DOTALL)
     declaration = next(json.loads(block) for block in blocks
@@ -359,15 +359,43 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
             or reference.get("regime") != (
                 "paired_di" if role == "first" else "isolated_stem")):
         raise ValueError(f"{part_dir.name}: {name} match is not the declared run")
+    crop_reference = part_dir / "crops" / "reference.wav"
+    fingerprint = reference.get("fingerprint")
+    source = fingerprint.get("source") if isinstance(fingerprint, dict) else None
+    if (crop_reference.is_symlink() or not crop_reference.is_file()
+            or not isinstance(source, dict)
+            or source.get("sha256") != _digest(crop_reference)):
+        raise ValueError(f"{part_dir.name}: {name} matched a different reference crop")
     template = ROOT / "samples" / "SW50R_Atlas_Topology.xml"
-    seed = summary.get("seed")
-    template_source = seed.get("template") if isinstance(seed, dict) else None
+    starting_point = summary.get("starting_point")
+    template_source = (starting_point.get("template")
+                       if isinstance(starting_point, dict) else None)
     if (_digest(template) != template_sha256 or
             not isinstance(template_source, dict) or
             template_source.get("sha256") != template_sha256):
         raise ValueError(f"{part_dir.name}: {name} used another template")
+    shortlist = summary.get("shortlist")
+    candidate = shortlist[0] if isinstance(shortlist, list) and shortlist else None
+    outputs = summary.get("outputs")
+    specs = outputs.get("specs") if isinstance(outputs, dict) else None
+    if (not isinstance(candidate, dict) or candidate.get("rank") != 1
+            or not isinstance(specs, list) or not specs
+            or not isinstance(specs[0], str)
+            # --out-dir in the declaration is relative to its clean worktree.
+            # This script can run from another checkout, so a cwd-based resolve
+            # would reject an otherwise valid match. The trial binding below
+            # checks the content; here only the declared output slot matters.
+            or pathlib.Path(specs[0]).parts[-3:] != spec_path.parts[-3:]):
+        raise ValueError(f"{part_dir.name}: {name} has no bound first candidate")
+    from match.verdict import VerdictError, _spec_parameters, _validate_changes
+
+    try:
+        parameters = _spec_parameters(spec)
+        _validate_changes(candidate, parameters)
+    except VerdictError as error:
+        raise ValueError(f"{part_dir.name}: {name} spec differs from its candidate") from error
     _check_probe_store(output_dir / "trials.sqlite3", summary, role,
-                       part_dir / "crops" / "di.wav")
+                       part_dir / "crops" / "di.wav", candidate, parameters)
     preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
     if preset.is_symlink() or not preset.is_file():
         raise ValueError(f"{part_dir.name}: missing {name} applied preset")
@@ -381,7 +409,7 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
     else:
         from scripts import apply_spec
 
-        with tempfile.TemporaryDirectory(prefix="declared-tally-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="declared-summary-") as temporary:
             expected = pathlib.Path(temporary) / "expected.xml"
             args = argparse.Namespace(
                 template=str(template), spec=str(spec_path), out=str(expected),
@@ -401,40 +429,79 @@ def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> d
 
 
 def _check_probe_store(path: pathlib.Path, summary: dict, role: str,
-                       crop_di: pathlib.Path) -> None:
+                       crop_di: pathlib.Path, candidate: dict,
+                       parameters: dict) -> None:
     """The scored trial DI must be the crop for first, the noise probe for second."""
     if path.is_symlink() or not path.is_file():
         raise ValueError(f"{path.parent.name}: missing trial store for probe verification")
     from analysis import io as audio_io
     from match.renderer import _hash_audio
     from analysis.probes import decaying_noise_bursts
+    from match.store import Run, Trial
+    from match.verdict import _contexts_match, _trial_matches
 
     if role == "first":
         expected = _hash_audio(audio_io.load(crop_di).mono())
     else:
         expected = _hash_audio(decaying_noise_bursts(seconds=6.0, gap=0.9, seed=13))
+    trial_id = candidate.get("trial_id")
+    if isinstance(trial_id, bool) or not isinstance(trial_id, int) or trial_id < 1:
+        raise ValueError(f"{path.parent.name}: first candidate has no trial id")
     try:
         uri = f"file:{quote(str(path))}?mode=ro&immutable=1"
         with contextlib.closing(sqlite3.connect(uri, uri=True)) as db:
-            run = db.execute("SELECT pack, regime, loss_profile, budget, notes "
-                             "FROM runs WHERE run_id = ?", (summary.get("run_id"),)).fetchone()
+            db.row_factory = sqlite3.Row
+            run_row = db.execute("SELECT * FROM runs WHERE run_id = ?",
+                                 (summary.get("run_id"),)).fetchone()
+            trial_row = db.execute("SELECT * FROM trials WHERE trial_id = ?",
+                                   (trial_id,)).fetchone()
             probes = [row[0] for row in db.execute(
                 "SELECT di_sha FROM trials WHERE run_id = ? "
                 "AND ABS(di_offset_db) < 0.000000001", (summary.get("run_id"),))]
+            source_row = (db.execute("SELECT * FROM runs WHERE run_id = ?",
+                                     (trial_row["run_id"],)).fetchone()
+                          if trial_row is not None else None)
     except (sqlite3.DatabaseError, OSError) as error:
         raise ValueError(f"{path.parent.name}: invalid trial store") from error
-    if run is None or not probes or any(value != expected for value in probes):
+    if (run_row is None or trial_row is None or source_row is None
+            or any(value != expected for value in probes)
+            or trial_row["di_sha"] != expected):
         raise ValueError(f"{path.parent.name}: scored trials used the wrong probe")
     try:
-        notes = json.loads(run[4])
-    except (TypeError, json.JSONDecodeError) as error:
-        raise ValueError(f"{path.parent.name}: invalid match-run notes") from error
-    if (run[:4] != ("morgan", "paired_di" if role == "first" else "isolated_stem",
-                   "unpaired-v3", 300)
+        run = Run(**dict(run_row))
+        source_run = Run(**dict(source_row))
+        stored = dict(trial_row)
+        params = json.loads(stored["params_json"])
+        objectives = json.loads(stored["objectives_json"])
+        fingerprint = json.loads(stored["fingerprint_json"])
+        if (not isinstance(params, dict) or not isinstance(objectives, dict)
+                or not isinstance(fingerprint, dict)):
+            raise ValueError("candidate trial has malformed JSON fields")
+        trial = Trial(
+            trial_id=stored["trial_id"], run_id=stored["run_id"],
+            params=params, di_sha=stored["di_sha"],
+            di_offset_db=stored["di_offset_db"], silent=stored["silent"],
+            error=stored["error"], objectives=objectives,
+            fingerprint=fingerprint,
+        )
+        notes = json.loads(run.notes)
+        source_notes = json.loads(source_run.notes)
+    except (TypeError, ValueError, KeyError) as error:
+        raise ValueError(f"{path.parent.name}: invalid trial or match-run notes") from error
+    regime = "paired_di" if role == "first" else "isolated_stem"
+    if (run.pack != "morgan" or run.regime != regime
+            or run.loss_profile != "unpaired-v3" or run.budget != 300
             or not isinstance(notes, dict)
             or (notes.get("probe_note") is None) != (role == "first")
             or (role == "second" and not str(notes["probe_note"]).startswith(
-                "no --probe-di was given"))):
+                "no --probe-di was given"))
+            or not isinstance(source_notes, dict)
+            or (source_notes.get("probe_note") is None) != (role == "first")
+            or (role == "second" and not str(source_notes["probe_note"]).startswith(
+                "no --probe-di was given"))
+            or not _contexts_match(source_run, run, summary)
+            or not isinstance(trial.di_offset_db, (int, float))
+            or not _trial_matches(trial, summary, candidate, parameters)):
         raise ValueError(f"{path.parent.name}: run did not use the declared probe")
 
 
@@ -508,7 +575,7 @@ def _outcome(ordered_rules: tuple[dict, ...], *, run_count: int,
     raise ValueError("declared decision rules have no final case")
 
 
-def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
+def summarize(declaration_path: pathlib.Path, run_dir: pathlib.Path,
           *, repo_root: pathlib.Path = ROOT, rule_registry: dict | None = None) -> dict:
     repo = repo_root.resolve()
     binding, parts, rules = _declared_rules(declaration_path, repo,
@@ -552,9 +619,9 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
     result, rule_number = _outcome(
         rules["ordered_rules"], run_count=len(run_parts), counts=totals,
         first_tones=sum(row["winner"] == "first" for row in tone_counts.values()))
-    return {"schema": "declared-listening-tally-v1", "test_id": binding["test_id"],
+    return {"schema": "declared-listening-summary-v1", "test_id": binding["test_id"],
             "declaration": binding, "alternatives": rules["alternatives"],
-            "not_verified_by_tally": ["step exit codes", "step commits",
+            "not_verified_by_summary": ["step exit codes", "step commits",
                                       "interpreter pip-freeze sha256"],
             "parts_run": run_parts,
             "not_run_parts": [part for part in parts if part not in run_parts],
@@ -568,7 +635,7 @@ def main() -> None:
     parser.add_argument("--declaration", required=True, type=pathlib.Path)
     parser.add_argument("--runs", required=True, type=pathlib.Path)
     args = parser.parse_args()
-    print(json.dumps(tally(args.declaration, args.runs), indent=2, allow_nan=False))
+    print(json.dumps(summarize(args.declaration, args.runs), indent=2, allow_nan=False))
 
 
 if __name__ == "__main__":

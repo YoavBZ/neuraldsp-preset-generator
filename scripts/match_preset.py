@@ -968,7 +968,7 @@ def _template_amp(template: pathlib.Path):
 
 
 def _render_fingerprint(renderer, di, settings, counter=None):
-    """Render and measure, counting the render if the caller is keeping a tally.
+    """Render and measure, counting the render if the caller tracks render counts.
 
     These renders sit outside the search's budget and outside its accounting: the
     template's own render, the optional inversion probe, and one per shortlisted candidate
