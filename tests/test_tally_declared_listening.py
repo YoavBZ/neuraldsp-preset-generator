@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import argparse
+import contextlib
 import hashlib
+import io
 import json
 import pathlib
+import shutil
+import sqlite3
 import subprocess
 import wave
 from copy import deepcopy
@@ -15,6 +20,7 @@ sf = pytest.importorskip("soundfile")
 
 from scripts.build_validation_crops import _declaration
 from scripts._listening_trials import consistency
+from scripts import apply_spec
 from scripts.tally_declared_listening import RULES, _slug, tally
 
 
@@ -82,26 +88,61 @@ def _crop(repo, declaration, part_dir, part):
     return binding, crop_path, outputs
 
 
-def _matches(part_dir):
+def _matches(part_dir, *, fallback_role=None):
+    from analysis import io as audio_io
+    from analysis.probes import decaying_noise_bursts
+    from match.renderer import _hash_audio
+
+    template = pathlib.Path(__file__).resolve().parents[1] / "samples" / "SW50R_Atlas_Topology.xml"
     for name, regime in (("with-di", "paired_di"), ("no-di", "isolated_stem")):
+        role = "first" if name == "with-di" else "second"
         match_dir = part_dir / name
         match_dir.mkdir()
-        (match_dir / "match-1.json").write_text(json.dumps({
-            "name": "synthetic match", "parameters": [{"module": "", "key": "selectedAmp",
-                                                        "value": 1}]}))
+        spec_path = match_dir / "match-1.json"
+        spec_path.write_text(json.dumps({"name": f"synthetic {name}", "parameters": []}))
+        preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
+        if fallback_role == role:
+            shutil.copyfile(template, preset)
+        else:
+            args = argparse.Namespace(template=str(template), spec=str(spec_path),
+                                      out=str(preset), recipe=[], bpm=None, name=None,
+                                      pack=None, strip_irs=False,
+                                      allow_out_of_range=False, force=False, dry_run=False)
+            with contextlib.redirect_stdout(io.StringIO()):
+                apply_spec.run(args)
+        run_id = f"synthetic-{name}"
+        probe_note = None if role == "first" else "no --probe-di was given; synthetic noise probe"
         (match_dir / "summary.json").write_text(json.dumps({
-            "schema": "tone-match-summary-v1", "pack": "morgan",
+            "schema": "tone-match-summary-v1", "run_id": run_id, "pack": "morgan",
             "loss_profile": "unpaired-v3", "search": {"budget": 300},
             "renderer": {"quality_mode": "process=fresh"},
+            "seed": {"template": {"path": str(template), "sha256": _sha(template)}},
+            "caveats": (["nothing beat the preset you started from"]
+                        if fallback_role == role else ([probe_note] if probe_note else [])),
             "reference": {"path": str(part_dir / "crops" / "reference.wav"),
                           "regime": regime}}))
+        di_sha = (_hash_audio(audio_io.load(part_dir / "crops" / "di.wav").mono())
+                  if role == "first" else
+                  _hash_audio(decaying_noise_bursts(seconds=6.0, gap=0.9, seed=13)))
+        store = sqlite3.connect(match_dir / "trials.sqlite3")
+        try:
+            store.execute("CREATE TABLE runs (run_id TEXT, pack TEXT, regime TEXT, "
+                          "loss_profile TEXT, budget INTEGER, notes TEXT)")
+            store.execute("CREATE TABLE trials (run_id TEXT, di_offset_db REAL, di_sha TEXT)")
+            store.execute("INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?)",
+                          (run_id, "morgan", regime, "unpaired-v3", 300,
+                           json.dumps({"probe_note": probe_note})))
+            store.execute("INSERT INTO trials VALUES (?, ?, ?)", (run_id, 0, di_sha))
+            store.commit()
+        finally:
+            store.close()
 
 
 def _render(part_dir, role, di, *, settings=None):
     path = part_dir / f"{role}.wav"
     _wav(path, 4000 if role == "first" else 5000)
     preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
-    preset.write_text("<synthetic-preset role='" + role + "'/>")
+    assert preset.is_file()
     proof_path = part_dir / f"{role}.wav.render.json"
     proof_path.write_text(json.dumps({
         "schema": "listening-fresh-render-v1", "process_policy": "fresh",
@@ -133,13 +174,13 @@ def _repo(tmp_path, parts=PARTS):
 
 
 def _audition(repo, declaration, runs, part, choice, *, swap=False,
-              primary_last=False):
+              primary_last=False, fallback_role=None):
     slug = _slug(part)
     part_dir = runs / slug
     audition = part_dir / "audition"
     audition.mkdir(parents=True)
     binding, crop_path, outputs = _crop(repo, declaration, part_dir, part)
-    _matches(part_dir)
+    _matches(part_dir, fallback_role=fallback_role)
     proofs = {role: _render(part_dir, role, outputs["di"])
               for role in ("first", "second")}
     manifest_path = part_dir / "audition.json"
@@ -300,6 +341,53 @@ def test_remaining_case_is_inconclusive_and_identical_settings_count_as_run(tmp_
     assert result["total_part_counts"] == {"first": 5, "second": 1}
     assert result["outcome"] == "inconclusive"
     assert result["applied_rule"] == 4
+
+
+def test_declared_template_fallback_is_bound_to_its_render(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    _audition(repo, declaration, runs, PARTS[0], "first", fallback_role="first")
+    result = _tally(declaration, runs, repo)
+    assert result["part_counts"][PARTS[0]]["status"] == "run"
+    assert result["part_counts"][PARTS[0]]["counts"]["first"] == 1
+
+
+@pytest.mark.parametrize("damage", ("di_uses_noise", "no_di_uses_crop",
+                                   "no_di_claims_a_di", "wrong_spec", "wrong_template"))
+def test_match_provenance_mismatch_makes_part_not_run(tmp_path, damage):
+    repo, declaration, runs = _repo(tmp_path)
+    audition = _audition(repo, declaration, runs, PARTS[0], "first")
+    part_dir = audition.parent
+    if damage in ("di_uses_noise", "no_di_uses_crop", "no_di_claims_a_di"):
+        from analysis import io as audio_io
+        from analysis.probes import decaying_noise_bursts
+        from match.renderer import _hash_audio
+
+        match_dir = part_dir / ("with-di" if damage == "di_uses_noise" else "no-di")
+        store = sqlite3.connect(match_dir / "trials.sqlite3")
+        try:
+            if damage == "no_di_claims_a_di":
+                store.execute("UPDATE runs SET notes = ?", (json.dumps({"probe_note": None}),))
+            else:
+                wrong = (_hash_audio(decaying_noise_bursts(seconds=6.0, gap=0.9, seed=13))
+                         if damage == "di_uses_noise" else
+                         _hash_audio(audio_io.load(part_dir / "crops" / "di.wav").mono()))
+                store.execute("UPDATE trials SET di_sha = ?", (wrong,))
+            store.commit()
+        finally:
+            store.close()
+    elif damage == "wrong_spec":
+        path = part_dir / "with-di" / "match-1.json"
+        spec = json.loads(path.read_text())
+        spec["name"] = "a different candidate"
+        path.write_text(json.dumps(spec))
+    else:
+        path = part_dir / "with-di" / "summary.json"
+        summary = json.loads(path.read_text())
+        summary["seed"]["template"]["sha256"] = "0" * 64
+        path.write_text(json.dumps(summary))
+    result = _tally(declaration, runs, repo)
+    assert result["part_counts"][PARTS[0]]["status"] == "not_run"
+    assert PARTS[0] not in result["parts_run"]
 
 
 def test_no_private_key_opened_until_every_published_audition_has_verdict(
@@ -473,8 +561,11 @@ def test_rejects_changed_audio_render_or_repeat(tmp_path, damage):
         }[damage]
         path.write_bytes(path.read_bytes() + (
             b"\n" if damage == "first-render-record" else b"changed after the verdict"))
-    with pytest.raises(ValueError, match="changed|differs|swap|hash"):
-        _tally(declaration, runs, repo)
+    if damage == "first-preset":
+        assert _tally(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+    else:
+        with pytest.raises(ValueError, match="changed|differs|swap|hash"):
+            _tally(declaration, runs, repo)
 
 
 @pytest.mark.parametrize("damage", ("di-crop", "first-render", "first-preset"))
@@ -486,8 +577,11 @@ def test_identical_settings_need_verified_audio_and_preset(tmp_path, damage):
             "first-render": part_dir / "first.wav",
             "first-preset": part_dir / "with-di.xml"}[damage]
     path.write_bytes(path.read_bytes() + b"tampered")
-    with pytest.raises(ValueError, match="hash|differs"):
-        _tally(declaration, runs, repo)
+    if damage == "first-preset":
+        assert _tally(declaration, runs, repo)["part_counts"][PARTS[0]]["status"] == "not_run"
+    else:
+        with pytest.raises(ValueError, match="hash|differs"):
+            _tally(declaration, runs, repo)
 
 
 @pytest.mark.parametrize("damage", ("key-hash", "primary-answer", "crop-part",

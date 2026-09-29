@@ -5,7 +5,8 @@
       --declaration docs/heldout-listening-sw50r.md \
       --runs PRIVATE_RUN_DIRECTORY
 
-Print JSON to stdout. This hashes audio and provenance files but writes nothing.
+Print JSON to stdout. This hashes audio and provenance files, reconstructing
+expected presets in a temporary directory; it never modifies the supplied runs.
 It checks *all* published ``PART/audition/`` directories for verdicts before
 opening a single private key, including auditions outside the declaration.
 Only the named declaration's frozen decision rules are implemented so far.
@@ -14,11 +15,16 @@ Only the named declaration's frozen decision rules are implemented so far.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
+import io
 import json
 import pathlib
 import re
+import sqlite3
 import sys
+import tempfile
+from urllib.parse import quote
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -34,6 +40,7 @@ RULES = {
     "heldout-sw50r-di-vs-no-di": {
         "declaration_path": "docs/heldout-listening-sw50r.md",
         "declaration_sha256": "3baf20532235d47f96bafef6dab4e8f51de28282a244bf6a87c1239ae3b5c2d7",
+        "template_sha256": "25a3efbf0fd243a976da119fb7b65ff39b48f353f51dcb62a45bbeaa08333acf",
         "alternatives": {"first": "DI match", "second": "no-DI match"},
         "tone_parts": {
             "57 Chevy GTR 1": ("telefunken/57 Chevy/GTR 1",),
@@ -321,7 +328,7 @@ def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
 
 
-def _match_outputs(part_dir: pathlib.Path, role: str) -> dict:
+def _match_outputs(part_dir: pathlib.Path, role: str, template_sha256: str) -> dict:
     """Require both completed match outputs for a part to count as run."""
     name = "with-di" if role == "first" else "no-di"
     output_dir = part_dir / name
@@ -352,7 +359,83 @@ def _match_outputs(part_dir: pathlib.Path, role: str) -> dict:
             or reference.get("regime") != (
                 "paired_di" if role == "first" else "isolated_stem")):
         raise ValueError(f"{part_dir.name}: {name} match is not the declared run")
-    return {"spec_sha256": _digest(spec_path), "summary_sha256": _digest(summary_path)}
+    template = ROOT / "samples" / "SW50R_Atlas_Topology.xml"
+    seed = summary.get("seed")
+    template_source = seed.get("template") if isinstance(seed, dict) else None
+    if (_digest(template) != template_sha256 or
+            not isinstance(template_source, dict) or
+            template_source.get("sha256") != template_sha256):
+        raise ValueError(f"{part_dir.name}: {name} used another template")
+    _check_probe_store(output_dir / "trials.sqlite3", summary, role,
+                       part_dir / "crops" / "di.wav")
+    preset = part_dir / ("with-di.xml" if role == "first" else "no-di.xml")
+    if preset.is_symlink() or not preset.is_file():
+        raise ValueError(f"{part_dir.name}: missing {name} applied preset")
+    caveats = summary.get("caveats")
+    if not isinstance(caveats, list) or any(not isinstance(item, str) for item in caveats):
+        raise ValueError(f"{part_dir.name}: invalid {name} match caveats")
+    fallback = any(item.startswith("nothing beat the preset you started from")
+                   for item in caveats)
+    if fallback:
+        expected_sha = _digest(template)
+    else:
+        from scripts import apply_spec
+
+        with tempfile.TemporaryDirectory(prefix="declared-tally-") as temporary:
+            expected = pathlib.Path(temporary) / "expected.xml"
+            args = argparse.Namespace(
+                template=str(template), spec=str(spec_path), out=str(expected),
+                recipe=[], bpm=None, name=None, pack=None, strip_irs=False,
+                allow_out_of_range=False, force=False, dry_run=False)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                    io.StringIO()):
+                try:
+                    apply_spec.run(args)
+                except SystemExit as error:
+                    raise ValueError(f"{part_dir.name}: {name} spec cannot be applied") from error
+            expected_sha = _digest(expected)
+    if _digest(preset) != expected_sha:
+        raise ValueError(f"{part_dir.name}: {name} preset is not its declared spec or fallback")
+    return {"spec_sha256": _digest(spec_path), "summary_sha256": _digest(summary_path),
+            "trial_store_sha256": _digest(output_dir / "trials.sqlite3")}
+
+
+def _check_probe_store(path: pathlib.Path, summary: dict, role: str,
+                       crop_di: pathlib.Path) -> None:
+    """The scored trial DI must be the crop for first, the noise probe for second."""
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"{path.parent.name}: missing trial store for probe verification")
+    from analysis import io as audio_io
+    from match.renderer import _hash_audio
+    from analysis.probes import decaying_noise_bursts
+
+    if role == "first":
+        expected = _hash_audio(audio_io.load(crop_di).mono())
+    else:
+        expected = _hash_audio(decaying_noise_bursts(seconds=6.0, gap=0.9, seed=13))
+    try:
+        uri = f"file:{quote(str(path))}?mode=ro&immutable=1"
+        with contextlib.closing(sqlite3.connect(uri, uri=True)) as db:
+            run = db.execute("SELECT pack, regime, loss_profile, budget, notes "
+                             "FROM runs WHERE run_id = ?", (summary.get("run_id"),)).fetchone()
+            probes = [row[0] for row in db.execute(
+                "SELECT di_sha FROM trials WHERE run_id = ? "
+                "AND ABS(di_offset_db) < 0.000000001", (summary.get("run_id"),))]
+    except (sqlite3.DatabaseError, OSError) as error:
+        raise ValueError(f"{path.parent.name}: invalid trial store") from error
+    if run is None or not probes or any(value != expected for value in probes):
+        raise ValueError(f"{path.parent.name}: scored trials used the wrong probe")
+    try:
+        notes = json.loads(run[4])
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{path.parent.name}: invalid match-run notes") from error
+    if (run[:4] != ("morgan", "paired_di" if role == "first" else "isolated_stem",
+                   "unpaired-v3", 300)
+            or not isinstance(notes, dict)
+            or (notes.get("probe_note") is None) != (role == "first")
+            or (role == "second" and not str(notes["probe_note"]).startswith(
+                "no --probe-di was given"))):
+        raise ValueError(f"{path.parent.name}: run did not use the declared probe")
 
 
 def _checked_render(part_dir: pathlib.Path, role: str, di: dict) -> dict:
@@ -437,7 +520,7 @@ def tally(declaration_path: pathlib.Path, run_dir: pathlib.Path,
         slug = _slug(part_id)
         part_dir = run_dir / slug
         try:
-            matches = {role: _match_outputs(part_dir, role)
+            matches = {role: _match_outputs(part_dir, role, rules["template_sha256"])
                        for role in ("first", "second")}
         except ValueError as error:
             part_counts[part_id] = {
