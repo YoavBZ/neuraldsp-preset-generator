@@ -227,7 +227,7 @@ render and run record). The interpreter's `pip freeze`, taken at 16:27 UTC right
 after the merge and before the first crop, hashed to `fd2b9aaf…0647`; that text
 was not saved, and it cannot be recomputed, because its editable line names the
 main checkout's commit at the time. The freeze at archiving is saved in the run
-as `pip-freeze-at-archive.txt` (`f22684dc…`, differing in that line). Every crop
+as `pip-freeze-at-archive.txt` (`f22684dc…`, whose editable line, at least, differs). Every crop
 record, preset, render, audition and verdict hash, the answers and the frozen
 predictions' agreement are in `heldout-listening-sw50r-results.json`. The steps
 were run by a driver that called each declared command in turn, two parts at a
@@ -292,8 +292,9 @@ cause. Neither benchmark showed silence: the search-signal benchmark, from this
 template through a played passage, left no-DI answers 4.5 to 14.1 LU off, and
 the recordings benchmark, from neutral settings through these recordings'
 development parts, 5.1 to 14.4 LU (`docs/recordings-benchmark-sw50r.json`).
-These held-out references differ from both in being unpaired-v3 matches of raw
-amp tracks, one of them at −34.9 LUFS.
+These differ from both in using unpaired-v3 (both benchmarks used
+unpaired-v2), and from the search-signal benchmark in matching real amp tracks
+rather than plugin renders; one reference is at −34.9 LUFS.
 What this test measured beyond that failure is small: on the two
 57 Chevy parts, where both matches played, the listener heard the DI match
 closer on one and no difference on the other, through a band that made the
