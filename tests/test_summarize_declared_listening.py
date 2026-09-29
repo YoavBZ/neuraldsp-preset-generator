@@ -1,4 +1,4 @@
-"""Declared listening arithmetic with committed synthetic metadata, never held-out audio."""
+"""Declared listening arithmetic; synthetic runs and no held-out audio."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ sf = pytest.importorskip("soundfile")
 from scripts.build_validation_crops import _declaration
 from scripts._listening_trials import consistency
 from scripts import apply_spec
-from scripts.summarize_declared_listening import RULES, _slug, summarize
+from scripts.summarize_declared_listening import ROOT, RULES, _declared_rules, _slug, summarize
 
 
 PARTS = (
@@ -59,7 +59,18 @@ def _summarize(declaration, runs, repo):
 def _registry(declaration):
     registry = deepcopy(RULES)
     registry[TEST_ID]["declaration_path"] = "docs/synthetic-listening.md"
-    registry[TEST_ID]["declaration_sha256"] = _sha(declaration)
+    repo = declaration.parents[1]
+    original_commit = subprocess.run(
+        ["git", "-C", str(repo), "log", "--diff-filter=A", "--format=%H", "--",
+         "docs/synthetic-listening.md"], capture_output=True, check=True,
+        text=True).stdout.strip()
+    original = subprocess.run(
+        ["git", "-C", str(repo), "show", f"{original_commit}:docs/synthetic-listening.md"],
+        capture_output=True, check=True).stdout
+    original_sha = hashlib.sha256(original).hexdigest()
+    registry[TEST_ID]["declaration_sha256"] = original_sha
+    registry[TEST_ID]["declaration_frozen_sha256"] = original_sha
+    registry[TEST_ID]["declaration_commit"] = original_commit
     registry[TEST_ID]["renderer_id"] = "synthetic"
     registry[TEST_ID]["plugin_version"] = "synthetic"
     return registry
@@ -691,6 +702,51 @@ def test_rejects_another_committed_document_with_same_id_and_parts(tmp_path):
                     "change the decision rules"], check=True)
     with pytest.raises(ValueError, match="not the frozen source"):
         summarize(declaration, runs, repo_root=repo, rule_registry=frozen_rules)
+
+
+def test_appended_results_preserve_the_frozen_declaration_and_run_binding(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    _audition(repo, declaration, runs, PARTS[0], "first")
+    original_binding = _declaration(declaration, PARTS[0], repo)
+    declaration.write_text(declaration.read_text() + "\n## Results\n\nPublic results.\n")
+    subprocess.run(["git", "-C", str(repo), "add", "docs/synthetic-listening.md"],
+                   check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "append results"], check=True)
+
+    result = _summarize(declaration, runs, repo)
+    assert result["declaration"] == original_binding
+    assert result["part_counts"][PARTS[0]]["status"] == "run"
+
+
+def test_shipped_results_appendix_preserves_the_original_declaration():
+    binding, parts, _ = _declared_rules(
+        ROOT / "docs" / "heldout-listening-sw50r.md", ROOT, RULES)
+    assert binding["sha256"] == RULES[TEST_ID]["declaration_sha256"]
+    assert binding["commit"] == RULES[TEST_ID]["declaration_commit"]
+    assert parts == list(PARTS)
+
+
+def test_committed_edit_above_results_is_rejected(tmp_path):
+    repo, declaration, runs = _repo(tmp_path)
+    _audition(repo, declaration, runs, PARTS[0], "first")
+    declaration.write_text(declaration.read_text() + "\n## Results\n\nPublic results.\n")
+    subprocess.run(["git", "-C", str(repo), "add", "docs/synthetic-listening.md"],
+                   check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "append results"], check=True)
+    declaration.write_text(declaration.read_text().replace(
+        "# Synthetic declaration", "# Changed declaration"))
+    subprocess.run(["git", "-C", str(repo), "add", "docs/synthetic-listening.md"],
+                   check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=Synthetic Test",
+                    "-c", "user.email=synthetic@example.invalid", "commit", "-qm",
+                    "change frozen declaration"], check=True)
+
+    with pytest.raises(ValueError, match="not the frozen source"):
+        _summarize(declaration, runs, repo)
 
 
 @pytest.mark.parametrize("damage", ("heard-audio", "reference-crop", "di-crop",
