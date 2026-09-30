@@ -28,7 +28,7 @@ The user speaks in plain language, not flags. Extract:
 - **the role** — rhythm / lead / clean, if stated
 - **the plugin** — which pack. Detect it from a template they point at; if they
   don't say, detect the pack from the template's own header rather than
-  assuming — more than one pack exists now. If there is genuinely nothing to
+  assuming — more than one pack exists. If there is genuinely nothing to
   detect from, ask rather than picking.
 
 Ask at most **one** clarifying question, and only if the answer would change the
