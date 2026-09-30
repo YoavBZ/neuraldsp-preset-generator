@@ -141,6 +141,12 @@ class Pack:
     # the selector and members that put that control in circuit; Morgan encodes
     # the same ownership in module prefixes instead.
     search_conditions: Dict[str, Any] = field(default_factory=dict)
+    # Where this plugin keeps a custom impulse response: per cab slot, the path
+    # field, the selector that makes the cab play it, the selector value that
+    # means "Custom IR", and what to put back when the file is cleared. Empty
+    # when nobody has established that, and `--strip-irs` then says it stripped
+    # nothing rather than guessing a plugin's default mic.
+    custom_ir: List[Dict[str, str]] = field(default_factory=list)
 
     def get(self, module: str, key: str) -> Optional[ParamSpec]:
         return self.parameters.get(f"{module}/{key}")
@@ -416,6 +422,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         amp_modules=raw.get("amp_modules", {}),
         calibration=raw.get("calibration", {}),
         search_conditions=raw.get("search_conditions", {}),
+        custom_ir=list(raw.get("custom_ir", {}).get("slots", [])),
     )
 
 

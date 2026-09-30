@@ -15,7 +15,24 @@
     "PR12": "pr12",
     "SW50R": "sw50r"
   },
-  "description": "Curated parameter facts for Neural DSP Morgan Amps Suite. Hand-maintained: this is the contract the generator writes against. It contains no Neural DSP code, audio, or preset content - only parameter names, units, and ranges needed to read and write presets for a licensed copy of the plugin.",
+  "custom_ir": {
+    "note": "What --strip-irs clears. A cab plays the file named by `path` only while `selector` holds `custom`, so clearing the path alone leaves the plugin showing Custom IR / No File. The selector goes back to `default`, the plugin's own choice for that side (Dynamic 57 left, Condenser 184 right).",
+    "slots": [
+      {
+        "path": "cabParameters/leftChosenIRFilePath",
+        "selector": "cabParameters/leftMicType",
+        "custom": "10",
+        "default": "0"
+      },
+      {
+        "path": "cabParameters/rightChosenIRFilePath",
+        "selector": "cabParameters/rightMicType",
+        "custom": "10",
+        "default": "4"
+      }
+    ]
+  },
+  "description":"Curated parameter facts for Neural DSP Morgan Amps Suite. Hand-maintained: this is the contract the generator writes against. It contains no Neural DSP code, audio, or preset content - only parameter names, units, and ranges needed to read and write presets for a licensed copy of the plugin.",
   "enums": {
     "internalMic": {
       "0": "Dynamic 57",

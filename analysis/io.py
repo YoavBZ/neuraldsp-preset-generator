@@ -90,18 +90,18 @@ def load(path, target_rate: int = SAMPLE_RATE) -> Audio:
     try:
         samples, rate = sf.read(str(path), dtype="float32", always_2d=True)
     except sf.LibsndfileError as e:
-        # libsndfile decodes WAV, AIFF, FLAC and Ogg, and no compressed Apple or
-        # MPEG format. A reference bounced out of a DAW is usually fine; one
-        # exported from a phone, a streaming service or a stem-separation tool is
-        # routinely .m4a or .mp3, and "Format not recognised" tells that person
-        # nothing about what to do next. Naming the converter is the whole fix —
+        # libsndfile decodes WAV, AIFF, FLAC and Ogg, and MP3 from 1.1 (which
+        # current soundfile wheels bundle), but no AAC/Apple format. A reference
+        # bounced out of a DAW is usually fine; one exported from a phone or a
+        # streaming service is routinely .m4a, and "Format not recognised" tells
+        # that person nothing about what to do next. Naming the converter is the whole fix —
         # this deliberately does not shell out to one, because a decode nobody
         # asked for is a decode nobody can check.
         raise ValueError(
             f"{path} is not audio this can read ({e}).\n"
-            f"  libsndfile handles WAV, AIFF, FLAC and Ogg. Compressed formats "
-            f"(.m4a, .mp3, .aac) have to be converted first — 48 kHz, which is "
-            f"what everything here measures at:\n"
+            f"  libsndfile handles WAV, AIFF, FLAC, Ogg and (from 1.1) MP3. "
+            f"Other compressed formats (.m4a, .aac) have to be converted first — "
+            f"48 kHz, which is what everything here measures at:\n"
             f"    afconvert -f WAVE -d LEI16@48000 {path.name!r} out.wav   # macOS\n"
             f"    ffmpeg -i {path.name!r} -ar 48000 out.wav                # anywhere\n"
             f"  A lossy source is still worth measuring, but the codec has "

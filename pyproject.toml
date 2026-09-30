@@ -1,10 +1,12 @@
 [build-system]
-requires = ["setuptools>=61"]
+# 77 is the first release that reads the SPDX `license = "MIT"` string and
+# `license-files` below; 61-76 reject them and the build fails.
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuraldsp-preset-generator"
-version = "0.7.39"
+version = "0.7.40"
 description = "Generate, match, and edit Neural DSP amp-sim preset files."
 requires-python = ">=3.10"
 license = "MIT"

@@ -88,3 +88,14 @@ def test_computed_times_fit_the_declared_delay_range():
                 f"{division} at {bpm} BPM is {ms} ms, outside "
                 f"[{spec.min}, {spec.max}]"
             )
+
+
+@pytest.mark.parametrize("bpm", ["nan", "inf", float("inf"), 0, -120])
+def test_a_tempo_that_is_not_a_positive_number_is_refused(bpm):
+    """NaN and infinity both got past a plain `<= 0` check."""
+    from packs.timing import TimingError, note_hz, note_ms
+
+    with pytest.raises(TimingError, match="positive number"):
+        note_ms(bpm, "1/4")
+    with pytest.raises(TimingError, match="positive number"):
+        note_hz(bpm, "1/8")

@@ -119,7 +119,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--paired-provenance", type=pathlib.Path,
                     help="paired-di-reference-1 sidecar proving that --reference "
                          "was rendered from this exact --probe-di")
-    ap.add_argument("--pack", default="morgan", help="which plugin pack (default: morgan)")
+    ap.add_argument("--pack", default=None,
+                    help="which plugin pack (default: the one the template's header "
+                         "names, as show.py and apply_spec.py detect it)")
     ap.add_argument("--amp", default=None,
                     help="signal path to invert, e.g. sw50r or lead (default: read "
                          "the template's amp/channel selector)")
@@ -238,6 +240,9 @@ def main() -> None:
             "--excerpt-start would score a window of one against all of the "
             "other.\n  Drop --excerpt-start for a paired run.")
     reject_excerpt_start_without_window(args.excerpt_start, excerpt_s)
+
+    if args.pack is None:
+        args.pack = _pack_of(args.template)
 
     signal_path_arg = None
     pairing_document = None
@@ -1002,6 +1007,22 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
         f"  Use --renderer swift for the real plugin, or --renderer synthetic, "
         f"which is a Python approximation of the chain's topology and is what "
         f"this repository's numbers through M4 were measured against.")
+
+
+def _pack_of(template: pathlib.Path) -> str:
+    """The pack a template's own header names.
+
+    Defaulting to Morgan made a Tone King template fail with "pass --pack
+    toneking", while show.py and apply_spec.py read the same file and just knew.
+    A file that names no known pack falls back to Morgan, so `_seed_from_template`
+    refuses it with the sentence written for that case.
+    """
+    from format.parser import parse_file
+    from format.structured import build as build_preset
+    from packs.loader import detect_pack
+
+    detected = detect_pack(build_preset(parse_file(str(template.expanduser()))).file_header)
+    return detected.pack_id if detected is not None else "morgan"
 
 
 def _seed_from_template(path: pathlib.Path, space, pack_id: str):

@@ -302,6 +302,56 @@ def test_tone_king_cli_loads_recipes_from_the_detected_pack(tmp_path):
     assert preset.by_path[("", "presetNameProp")].value == "Tone King Test"
 
 
+def test_strip_irs_says_so_when_a_pack_cannot_strip(tmp_path):
+    """Tone King declares no custom-IR mapping, so --strip-irs cannot clear it.
+
+    It used to report no change and exit cleanly while the output kept the
+    template's IR path and its Custom IR mic — a preset the caller had asked to
+    be portable. Nothing is guessed now either, but the run says what it left.
+    """
+    import struct
+
+    def text(value: str) -> bytes:
+        body = value.encode()
+        return bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+
+    def record(key: str, value: float) -> bytes:
+        return (b"PARAM\x00\x01\x02id\x00" + text(key) + b"value\x00\x01\x09\x04"
+                + struct.pack("<d", value) + b"\x00")
+
+    def text_record(key: str, value: str) -> bytes:
+        return b"PARAM\x00\x01\x02id\x00" + text(key) + b"value\x00" + text(value)
+
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00"
+        + text_record("presetNameProp", "Original")
+        + text_record("filePath1", "/Users/someone/IRs/cab.wav")
+        + record("cab1MicIR", 16.0)
+        + record("outputGain", 0.0)
+    )
+    spec = tmp_path / "spec.json"
+    spec.write_text('{"parameters": [{"module": "", "key": "outputGain", "value": -3}]}')
+    output = tmp_path / "out.xml"
+    result = subprocess.run(
+        [sys.executable, str(APPLY), "--template", str(template), "--strip-irs",
+         "--spec", str(spec), "--out", str(output)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, result.stderr
+    assert "stripped nothing" in result.stderr
+    assert "filePath1 = /Users/someone/IRs/cab.wav" in result.stderr
+    assert "cab1MicIR = Custom IR" in result.stderr
+
+
+def test_strip_irs_is_quiet_when_the_pack_declares_its_slots(out):
+    """Morgan declares its slots, so stripping an IR-free template is a no-op
+    with nothing to warn about."""
+    result = run("--recipe", "compressor/off", "--strip-irs", "--out", str(out))
+    assert result.returncode == 0, result.stderr
+    assert "stripped nothing" not in result.stderr
+
+
 # --- guards ---------------------------------------------------------------
 
 

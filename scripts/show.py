@@ -64,9 +64,18 @@ def main() -> None:
             "key": p.key,
             "kind": kind,
             "stored": p.value,
-            "human": from_binary(kind, p.value, unit),
-            "display": describe(kind, p.value, unit),
         }
+        try:
+            entry["human"] = from_binary(kind, p.value, unit)
+            entry["display"] = describe(kind, p.value, unit)
+        except (ValueError, OverflowError):
+            # One value that does not read as its manifest kind — an empty
+            # string where a number belongs, a newer plugin's spelling — used to
+            # stop the whole listing with a message naming neither the value nor
+            # the parameter, and every skill starts by running this. Show the
+            # stored text and flag it instead.
+            entry["human"] = entry["display"] = p.value
+            entry["unreadable"] = f"stored value {p.value!r} does not read as {kind}"
         if unit:
             entry["unit"] = unit
         if spec:
@@ -148,7 +157,8 @@ def print_text(out: dict, pack) -> None:
             current = p["module"]
             print(f"  {current or '(top level)'}")
         label = p.get("ui") or p["key"]
-        flag = " (!)" if (p.get("unconfirmed_selector") or p.get("guessed_kind")) else ""
+        flag = " (!)" if (p.get("unconfirmed_selector") or p.get("guessed_kind")
+                          or p.get("unreadable")) else ""
         print(f"    {label:<22} {p['display']:<22} {p['key']}{flag}")
     if out.get("observed"):
         print(f"\n  advisory: {out['observed']}")
@@ -174,6 +184,10 @@ def print_text(out: dict, pack) -> None:
             f"\n  (!) selector whose member names are not yet confirmed — see "
             f"packs/{pack.pack_id}/manifest.json"
         )
+    unreadable = [p for p in out["parameters"] if p.get("unreadable")]
+    for p in unreadable:
+        where = f"{p['module']}/{p['key']}" if p["module"] else p["key"]
+        print(f"\n  (!) {where}: {p['unreadable']}; shown as stored")
     guessed = sum(1 for p in out["parameters"] if p.get("guessed_kind"))
     if guessed:
         print(

@@ -94,3 +94,44 @@ def test_every_real_value_roundtrips_through_human():
                 )
             checked += 1
     assert checked > 100, f"only checked {checked} values — is samples/ empty?"
+
+
+def test_non_finite_values_display_but_are_never_written():
+    """A binary plugin can store inf, and the parser keeps it on purpose. Showing
+    it must not fail; writing one from a spec must be refused in words."""
+    assert describe("metered", "inf", "dB") == "inf dB"
+    assert describe("rotation", "nan") == "nan%"
+    for value in ("inf", "-inf", "nan", float("inf")):
+        with pytest.raises(ValueError, match="finite"):
+            to_binary("metered", value)
+
+
+def test_show_lists_a_preset_with_one_unreadable_value(tmp_path):
+    """One value that does not read as its kind used to stop show.py outright,
+    naming neither the value nor the parameter — and every skill runs it first."""
+    import json
+    import pathlib
+    import subprocess
+    import sys
+
+    from format.structured import set_parameter
+    from format.writer import write_file
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    preset = build(parse_file(str(root / "samples" / "Example_Clean_PR12.xml")))
+    set_parameter(preset, "delay", "delayTime", "")
+    odd = tmp_path / "odd.xml"
+    write_file(str(odd), preset.tokens)
+
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts" / "show.py"), str(odd),
+         "--data-dir", str(tmp_path)],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    rows = {(p["module"], p["key"]): p for p in json.loads(result.stdout)["parameters"]}
+    odd_row = rows[("delay", "delayTime")]
+    assert odd_row["display"] == "" and "does not read as metered" in odd_row["unreadable"]
+    assert rows[("delay", "delayFeedback")]["display"].endswith("%"), (
+        "every other parameter must still be read normally"
+    )

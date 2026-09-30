@@ -20,6 +20,7 @@ stacks.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
@@ -31,7 +32,14 @@ _DECIMALS = 10
 
 def _fmt_num(x: float) -> str:
     """Format a number the way the preset format does: ints without a trailing
-    .0, floats with no trailing zeros and no exponent."""
+    .0, floats with no trailing zeros and no exponent.
+
+    Non-finite values are spelled the way the parser spells them ("inf",
+    "nan"). A binary plugin can store one, and `int(inf)` raising here took the
+    whole preset down in show.py rather than printing one odd value.
+    """
+    if not math.isfinite(x):
+        return repr(x)
     if x == int(x):
         return str(int(x))
     return f"{x:.{_DECIMALS}f}".rstrip("0").rstrip(".")
@@ -76,7 +84,10 @@ def to_binary(kind: str, value: Any, unit: str | None = None) -> str:
         return _fmt_num(frac)
 
     if kind == "metered":
-        return _fmt_num(float(value))
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError(f"value must be a finite number, got {value!r}")
+        return _fmt_num(number)
 
     raise ValueError(
         f"kind {kind!r} has no defined human→binary mapping; "

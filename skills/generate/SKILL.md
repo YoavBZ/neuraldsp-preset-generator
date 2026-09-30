@@ -165,7 +165,9 @@ Build the spec JSON, then always `--dry-run` first and show the user the change
 list before writing. See [preset-spec.md](../../reference/preset-spec.md).
 
 Pass `--strip-irs` so the result is portable — see
-[cab-and-irs.md](../../reference/cab-and-irs.md).
+[cab-and-irs.md](../../reference/cab-and-irs.md). If it warns that it stripped
+nothing (Tone King declares no IR mapping), the listed paths are still in the
+preset: tell the user rather than calling the result portable.
 
 ## 6. Install and report
 

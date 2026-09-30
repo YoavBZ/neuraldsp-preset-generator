@@ -1644,16 +1644,16 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
 
     variants = topologies(space, seed, switches=switches, selectors=selectors)
     if len(variants) == 1:
-        # No caller reaches the enumeration. `switches` and `selectors` are `search`'s
-        # own parameters, nothing in the repository outside tests passes them, and the
-        # report's diff column shows switch changes anyway — from the *inversion* — so
-        # it reads as though discrete choices were searched. §12c names this as a stage
-        # that exists rather than a stage that runs; the run has to say so too.
+        # Enumeration only happens when asked for — `match_preset.py --enumerate` —
+        # and the report's diff column shows switch changes anyway, from the
+        # *inversion*, so without this it reads as though discrete choices were
+        # searched.
         result.caveats.append(
             "no switches or selectors were enumerated, so every on/off, the cabinet, "
             "the microphone and the amp are whatever the starting point had — only "
-            "continuous controls were searched. Trying a different cab or mic means "
-            "editing the template and running this again."
+            "continuous controls were searched. To compare a different cab, mic or "
+            "switch position, run again with --enumerate for that control "
+            "(--list-enumerable shows which ones), or edit the template."
         )
     spent = evaluator.renders
     # Every fixed cost, reserved: the screen has already been paid, the topology loop

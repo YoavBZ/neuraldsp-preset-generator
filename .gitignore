@@ -3,7 +3,8 @@
 # and anything carrying absolute IR paths from your machine. Bring your own.
 #
 # Presets normally live outside the repo entirely, under the data root
-# (${CLAUDE_PLUGIN_DATA} when installed as a plugin — see packs/paths.py).
+# ($NDSP_PRESET_DATA, else $CLAUDE_PLUGIN_DATA, else ~/ndsp-presets when
+# installed as a plugin — see packs/paths.py).
 # These rules cover the in-repo case, which is what you get when working in a
 # clone with no data root configured. Scoped to the directories presets live
 # in, so an ordinary .xml elsewhere in the repo is still tracked.
