@@ -42,7 +42,7 @@ comparisons: one instance per worker thread, with every render a target makes st
 threshold — is a thresholded view of a noisy measurement, and several controls sit
 close enough to that threshold for membership to flip, so comparing pooled against
 serial *sets* of selected controls gives contradictory answers (0 of 3 pairs
-differing on one run, 9 of 9 on another): it amplifies exactly what the threshold
+differing within a group of runs, 9 of 9 across groups): it amplifies exactly what the threshold
 exists to suppress. What would settle it is a comparison of the *movements*,
 control by control, over enough repeats to separate the pool's contribution from
 the backend's own spread; nothing has made that comparison.

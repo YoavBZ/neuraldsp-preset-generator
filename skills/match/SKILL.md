@@ -148,7 +148,9 @@ different performance from the recording, so it lies somewhere between the first
 two; it was not measured.
 
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
-white-noise bursts and records that limitation. Every candidate is then noise
+white-noise bursts and records that limitation. Do not substitute another probe:
+on SW50R neither turning it down to a guitar's loudness nor replacing it with a
+synthetic strummed guitar helped reliably. Every candidate is then noise
 through the amp compared with a guitar, so a no-DI run's own scores are
 noise-against-guitar distances and a falling score is not evidence the tone got
 closer. Against real amp recordings a no-DI search was no better than its
