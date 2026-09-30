@@ -180,8 +180,9 @@ user to confirm the preset plays with their own guitar.
 
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
-(each decision is under `search.level_trims` in `summary.json`); other regimes
-leave the output level to the search. A residual-weighted paired run must
+(each decision is under `search.level_trims` in `summary.json`); without a DI the
+output level is set through the synthetic guitar as above, and otherwise it is
+left to the search. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
 residual.
