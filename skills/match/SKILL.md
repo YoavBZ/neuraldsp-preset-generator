@@ -158,9 +158,13 @@ starting settings on SW50R and ended further from the recording than them on
 Tone King on all 14 parts, and on 12 of 14 with loudness set aside — so without a
 DI, show the starting preset beside the searched one and do not present the
 search as an improvement. Tell the user a match made without a DI is at best a
-starting point, not a measured match, that its output level may need setting by
-ear (such matches played 3.5–21.5 LU from their targets on both amps), and that a
-DI of their playing would change that.
+starting point, not a measured match, and that a DI of their playing would
+change that. Without a DI the tool sets each passing candidate's output gain
+through a synthetic guitar rather than the noise probe
+(`search.guitar_check.level_trim` in `summary.json`); on SW50R that brought
+answers from 7–22 LU over their recordings to 2–9 LU over, so tell the user to
+expect it a little loud and to trim it by ear, and report the caveat that names
+any candidate whose level was left as the search set it.
 
 A no-DI match can also leave the guitar all but silent: from the shipped SW50R
 template, three of six held-out parts matched without a DI turned the preamp
@@ -176,8 +180,9 @@ user to confirm the preset plays with their own guitar.
 
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
-(each decision is under `search.level_trims` in `summary.json`); other regimes
-leave the output level to the search. A residual-weighted paired run must
+(each decision is under `search.level_trims` in `summary.json`); without a DI the
+output level is set through the synthetic guitar as above, and otherwise it is
+left to the search. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
 residual.

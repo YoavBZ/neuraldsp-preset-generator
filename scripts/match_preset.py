@@ -482,13 +482,16 @@ def main() -> None:
     # loudness matched through the probe does not carry over, and an excerpt of the
     # reference is not the whole DI the candidates render
     # (docs/tone-matching-plan.md, "Trimming the output level after a search").
-    output_control = None
-    if (args.probe_di is not None and args.reference_mode == "paired_di"
-            and excerpt_s is None and args.excerpt_start is None):
-        trim_path = (signal_path_arg or space.amp_prefix(seed)
-                     or invert.selected_signal_path(args.pack, seed))
-        if trim_path is not None:
-            output_control = invert.output_gain_control(args.pack, trim_path)
+    level_path = (signal_path_arg or space.amp_prefix(seed)
+                  or invert.selected_signal_path(args.pack, seed))
+    level_control = (invert.output_gain_control(args.pack, level_path)
+                     if level_path is not None else None)
+    output_control = (level_control
+                      if (args.probe_di is not None and args.reference_mode == "paired_di"
+                          and excerpt_s is None and args.excerpt_start is None)
+                      else None)
+    # Without a DI the output level is set through a guitar after the search instead.
+    output_control_for_level = level_control if args.probe_di is None else None
 
     # Validate the budget against the seed the screen will really see.  The
     # inversion can switch whole sections on and select a different amp, so doing
@@ -543,8 +546,42 @@ def main() -> None:
     if result.unsearched and result.unsearched in caveats:
         caveats.insert(0, caveats.pop(caveats.index(result.unsearched)))
 
+    # The level the search set through the noise probe does not carry over to a
+    # guitar (docs/tone-matching-plan.md, "Setting a no-DI match's level through a
+    # guitar"), so set each passing candidate's output gain through the synthetic
+    # guitar the check just heard it through. After the judgment above, which is
+    # about the search's own scores; each trimmed vector is scored again as its own
+    # trial, so the spec, the summary and the trial store describe one preset.
+    if guitar_check is not None and output_control_for_level is not None:
+        # Scored into the run's own store, as the search's trials are, so a verdict
+        # can bind to the trimmed preset.
+        trim_scorer = search.Evaluator(renderer, target, probe_di, space,
+                                       profile=args.loss_profile, store=store,
+                                       run_id=run_id, recipe=seed,
+                                       reference_audio=(reference.samples
+                                                        if residual_weighted else None))
+        result.shortlist[:] = _guitar_level_trim(
+            renderer, trim_scorer, space, result.shortlist, guitar_check,
+            (target.source or {}).get("lufs_i"), output_control_for_level)
+        guitar_check["level_trim"]["scoring_renders"] = trim_scorer.renders
+        guitar_check["renders"] += trim_scorer.renders
+        # The judgment above used the search's own scores; the headline reports
+        # the trimmed preset's. If the trim's probe-measured level term pushed that
+        # past the template's, say so rather than print a negative "closer".
+        if (result.best.reference_score >= start.total
+                and not any(c.startswith("nothing beat the preset you started from")
+                            for c in caveats)):
+            caveats.insert(0, (
+                f"after its level was set through a synthetic guitar, match-1 scored "
+                f"{result.best.reference_score:.3f} against the starting preset's "
+                f"{start.total:.3f}: the score's level term is measured through the "
+                "noise probe, which that trim deliberately does not follow, and "
+                "before the trim the search's answer did beat the starting preset. "
+                "Judge it by ear against the starting preset"))
+
     if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
+        caveats.extend(_guitar_level_caveat(guitar_check))
 
     _write_specs(args.out_dir, result, space, template_name)
     prints = {index: _render_fingerprint(renderer, probe_di,
@@ -632,7 +669,8 @@ def main() -> None:
     outside_sources += "one per shortlisted candidate for the report"
     if guitar_check is not None:
         outside_sources += (f", and {guitar_check['renders']} for the guitar check "
-                            "(the template and each candidate)")
+                            "(the template and each candidate, then two for each "
+                            "level trim: its check and its score)")
     print(f"  {result.renders} of them against the {budget}-render budget; "
           f"{outside} outside it — {outside_sources}")
     worst = ""
@@ -842,6 +880,134 @@ def _guitar_check(renderer, evaluator, template_values, shortlist) -> Dict:
     for row in rows:
         row["match"] = order.index(row["search_rank"]) + 1
     return check
+
+
+GUITAR_LEVEL_LANDING_DB = 1.0   # a trim that lands further off than this is reported
+
+
+def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
+                       target_lufs, control) -> list:
+    """Each passing candidate's output gain, set so it plays at the reference's
+    loudness through the guitar check's synthetic guitar.
+
+    Without a DI the search matched loudness through a noise probe, which does not
+    carry over to a guitar: the answers that pass the guitar check played 7.0 to
+    22.1 LU over their recordings through their own DIs, and set this way the same
+    answers would have played 2.2 to 9.3 over, the rest being how a real DI differs
+    from the synthetic one (docs/tone-matching-plan.md, "Setting a no-DI match's
+    level through a guitar"). The output gain is a gain after the amp, so the
+    loudness gap is the change it needs.
+
+    Each trim is checked twice: once through the synthetic guitar, where a silent
+    render or one without a measurable loudness keeps the candidate as it was and
+    one that lands more than GUITAR_LEVEL_LANDING_DB off is reported; then scored
+    through the evaluator as a trial of its own, so the spec, the summary and the
+    trial store describe the same preset. That score's `level` term is measured
+    through the noise probe, which this trim deliberately does not follow.
+    `check["level_trim"]` records every step. Failed or unjudged candidates, and
+    any the evaluator could not score, are left as they were.
+    """
+    from analysis import io
+    from analysis.probes import synthetic_guitar
+    from match.renderer import RenderError
+    from match.search import _dimension, _get
+    from match.space import _spellings
+
+    records = []
+    check["level_trim"] = {"control": control, "target_lufs": target_lufs,
+                           "landing_tolerance_db": GUITAR_LEVEL_LANDING_DB,
+                           "records": records}
+    if target_lufs is None:
+        check["level_trim"]["reason"] = "the reference has no integrated loudness"
+        return list(shortlist)
+    signal = synthetic_guitar(**{k: check["signal"][k] for k in ("seconds", "seed")},
+                              target_lufs=check["signal"]["lufs"])
+    dimension = _dimension(space, control)
+    low, high = dimension.bounds()
+    key = (dimension.module, dimension.key)
+    rows = {row["match"]: row for row in check["candidates"]}
+    trimmed = []
+    for match, candidate in enumerate(shortlist, start=1):
+        row = rows[match]
+        record = {"match": match, "applied": False}
+        records.append(record)
+        current = _get(candidate.values, dimension)
+        if row["passes"] is not True or row["lufs"] is None or current is None:
+            record["reason"] = ("it failed the guitar check" if row["passes"] is False
+                                else "the guitar check could not judge it"
+                                if row["passes"] is None or row["lufs"] is None
+                                else f"it does not set {control}")
+            trimmed.append(candidate)
+            continue
+        gap = float(target_lufs) - float(row["lufs"])
+        value = dimension.quantise(min(max(float(current) + gap, float(low)), float(high)))
+        values = {k: v for k, v in candidate.values.items()
+                  if k != key and k not in set(_spellings(key))}
+        values[key] = value
+        record.update(gap_db=round(gap, 2), before=float(current), after=float(value),
+                      clamped=abs(float(current) + gap - float(value)) > 0.5)
+        check["renders"] += 1
+        try:
+            rendered = renderer.render(signal, evaluator._settings(values))
+            after = (None if getattr(rendered, "silent", False) else
+                     io.loudness_lufs(io.from_samples(rendered.audio,
+                                                      rendered.metadata.sample_rate)))
+        except (RenderError, ValueError) as error:
+            record["reason"] = f"the checking render failed: {error}"
+            trimmed.append(candidate)
+            continue
+        if after is None:
+            record["reason"] = "the trimmed candidate had no measurable loudness"
+            trimmed.append(candidate)
+            continue
+        record.update(lufs_after=round(after, 2),
+                      residual_db=round(after - float(target_lufs), 2))
+        scored = evaluator.evaluate(values)
+        if not scored.objectives:
+            record["reason"] = f"the trimmed candidate could not be scored: {scored.error}"
+            trimmed.append(candidate)
+            continue
+        record.update(applied=True, trial_before=candidate.trial_id,
+                      trial_after=scored.trial_id, total_before=round(candidate.total, 4),
+                      total_after=round(scored.total, 4))
+        trimmed.append(scored)
+    return trimmed
+
+
+def _guitar_level_caveat(check) -> List[str]:
+    trim = check.get("level_trim") or {}
+    records = trim.get("records", [])
+    applied = [r for r in records if r["applied"]]
+    kept = [r for r in records if not r["applied"]]
+    if not applied and not kept:
+        return []
+    caveats = []
+    if applied:
+        clamped = [r["match"] for r in applied if r["clamped"]]
+        missed = [r for r in applied if not r["clamped"]
+                  and abs(r["residual_db"]) > trim["landing_tolerance_db"]]
+        caveats.append(
+            f"without a DI, the output gain ({trim['control']}) of "
+            + ", ".join(f"match-{r['match']}" for r in applied)
+            + " was set so each plays at the reference's loudness through a synthetic "
+              "guitar at a DI's level, not through the noise probe the search heard; "
+              "with a real guitar expect it to play a few dB loud (2 to 9 LU on "
+              "fifteen SW50R amp recordings), and on a full mix it matches the whole "
+              "mix's loudness, not the guitar's. Their scores are of the trimmed "
+              "presets, with a level term measured through the noise probe; the "
+              "±6 dB figures and the shortlist's order are from before the trim, and "
+              "the trims are the last points of the convergence chart"
+            + (f". On {', '.join(f'match-{m}' for m in clamped)} the control ran out "
+               "of range, so the level is not reached" if clamped else "")
+            + ("" if not missed else
+               ". " + ", ".join(f"match-{r['match']} landed {r['residual_db']:+.1f} dB "
+                                 "from the target" for r in missed)
+               + ", so a stage after the output gain is not linear there"))
+    if kept:
+        caveats.append("the output gain of "
+                       + ", ".join(f"match-{r['match']} ({r['reason']})" for r in kept)
+                       + " was left as the search set it through the noise probe")
+    return caveats
 
 
 def _passing_first(shortlist, check) -> list:

@@ -1350,14 +1350,18 @@ def test_a_failed_first_choice_is_written_as_the_last_match(audio, tmp_path, mon
     def settings(path):
         return json.loads(path.read_text())["parameters"]
 
+    def but_level(path):     # a failed candidate keeps its output gain untrimmed
+        return [p for p in settings(path) if p["key"] != "outputGain"]
+
     assert settings(failed / "match-1.json") == settings(plain / "match-2.json")
-    assert settings(failed / "match-2.json") == settings(plain / "match-1.json")
-    assert after["shortlist"][0]["trial_id"] == before["shortlist"][1]["trial_id"]
+    assert but_level(failed / "match-2.json") == but_level(plain / "match-1.json")
     assert after["caveats"][0].startswith("1 of 2 shortlisted candidates failed")
     command = after["command_accounting"]
     assert command["total_renders"] == (command["budgeted_renders"]
                                         + command["outside_budget_renders"])
-    assert command["outside_budget_by_source"]["guitar_check"] == 3
+    applied = sum(r["applied"] for r in after["search"]["guitar_check"]["level_trim"]["records"])
+    # The template, both candidates, and a check and a score per trimmed candidate.
+    assert command["outside_budget_by_source"]["guitar_check"] == 3 + 2 * applied
 
 
 def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
@@ -1377,5 +1381,144 @@ def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
         else:
             assert check["signal"]["lufs"] == -24.0
             assert len(check["candidates"]) == len(summary["shortlist"])
-            assert sources["guitar_check"] == 1 + len(summary["shortlist"])
+            applied = sum(r["applied"] for r in check["level_trim"]["records"])
+            assert sources["guitar_check"] == 1 + len(summary["shortlist"]) + 2 * applied
             assert "for the guitar check" in done.stdout
+            trim = check["level_trim"]
+            assert trim["control"] == "parameters/outputGain"
+            assert trim["target_lufs"] == pytest.approx(summary["reference"]["fingerprint"]
+                                                        ["source"]["lufs_i"], abs=0.01)
+            assert len(trim["records"]) == len(summary["shortlist"])
+            applied = [r for r in trim["records"] if r["applied"]]
+            assert applied, "the synthetic run should trim at least one candidate"
+            first = next(r for r in trim["records"] if r["match"] == 1)
+            spec = json.loads((out / "match-1.json").read_text())
+            gain = next(p["value"] for p in spec["parameters"] if p["key"] == "outputGain")
+            if first["applied"]:
+                assert gain == pytest.approx(first["after"])
+            # The written spec, the summary and the trial store describe one preset.
+            from match.verdict import validate_candidate
+            assert validate_candidate(out, 1).trial is not None
+
+
+class _OutputGainRenderer:
+    """The signal through a fixed -6 dB amp, then the output gain in dB; `power`
+    below 1 compresses after the gain, `mute_above` goes silent past a gain."""
+
+    def __init__(self, power=1.0, mute_above=None):
+        self.power, self.mute_above = power, mute_above
+
+    def render(self, signal, settings):
+        import types
+
+        import numpy as np
+
+        gain_db = settings[("parameters", "outputGain")]
+        silent = self.mute_above is not None and gain_db > self.mute_above
+        audio = (np.zeros_like(signal) if silent
+                 else signal * 10 ** (self.power * (gain_db - 6.0) / 20))
+        return types.SimpleNamespace(audio=audio, silent=silent,
+                                     metadata=types.SimpleNamespace(sample_rate=48000))
+
+
+class _ScoringEvaluator(_Settings):
+    """Scores a vector as a new trial, the way `search.Evaluator` does."""
+
+    def __init__(self):
+        self.renders = 0
+
+    def evaluate(self, values):
+        from match.search import Candidate
+
+        self.renders += 1
+        return Candidate(values=dict(values), objectives={"total": 0.5, "level": 1.0},
+                         total=0.5, trial_id=100 + self.renders)
+
+
+def _trim(renderer, *gains, target=-24.0, template=0.0):
+    from match import space as space_module
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    gain = ("parameters", "outputGain")
+    shortlist = [Candidate(values={gain: g}, total=0.4, trial_id=i)
+                 for i, g in enumerate(gains, start=1)]
+    evaluator = _ScoringEvaluator()
+    check = cli._guitar_check(renderer, evaluator, {gain: template}, shortlist)
+    shortlist = cli._passing_first(shortlist, check)
+    trimmed = cli._guitar_level_trim(renderer, evaluator,
+                                     space_module.build("morgan", amp="sw50r"),
+                                     shortlist, check, target, "parameters/outputGain")
+    return cli, gain, check, trimmed, evaluator
+
+
+def test_the_guitar_level_trim_lands_on_the_reference_and_scores_the_trimmed_preset():
+    # Through the -6 dB amp the -24 LUFS guitar plays at -30 LUFS with 0 dB of
+    # output gain, so the reference's -24 needs +6 dB.
+    cli, gain, check, trimmed, evaluator = _trim(_OutputGainRenderer(), 0.0, -30.0, 18.0)
+
+    records = {r["match"]: r for r in check["level_trim"]["records"]}
+    assert trimmed[0].values[gain] == pytest.approx(6.0) and trimmed[1].values[gain] == pytest.approx(6.0)
+    assert records[1]["applied"] and records[1]["residual_db"] == pytest.approx(0.0, abs=0.05)
+    # Each trimmed preset is its own scored trial, so a verdict can bind to it.
+    assert trimmed[0].trial_id == records[1]["trial_after"] != records[1]["trial_before"]
+    # -30 dB of output gain is 30 dB under the template: it failed, kept its gain.
+    assert trimmed[2].values[gain] == -30.0 and not records[3]["applied"]
+    assert records[3]["reason"] == "it failed the guitar check"
+    # The check's four and one per trim; the caller adds the scorer's two.
+    assert check["renders"] == 4 + 2 and evaluator.renders == 2
+    trimmed_caveat, kept_caveat = cli._guitar_level_caveat(check)
+    assert "match-1, match-2" in trimmed_caveat and "not linear" not in trimmed_caveat
+    assert "match-3 (it failed the guitar check)" in kept_caveat
+
+
+def test_a_trim_past_the_controls_range_is_clamped_and_said_so():
+    cli, gain, check, trimmed, _ = _trim(_OutputGainRenderer(), 0.0, target=10.0)
+    record = check["level_trim"]["records"][0]
+    assert record["clamped"] and trimmed[0].values[gain] == pytest.approx(24.0)
+    assert "ran out of range" in cli._guitar_level_caveat(check)[0]
+
+
+def test_a_trim_that_does_not_land_is_reported():
+    # Compression after the gain: +12 dB of output gain moves the output 6 dB.
+    cli, gain, check, trimmed, _ = _trim(_OutputGainRenderer(power=0.5), 0.0,
+                                         target=-21.0)
+    record = check["level_trim"]["records"][0]
+    assert record["applied"] and abs(record["residual_db"]) > 1.0
+    assert "not linear" in cli._guitar_level_caveat(check)[0]
+
+
+def test_a_trim_that_goes_silent_keeps_the_candidate_as_it_was():
+    cli, gain, check, trimmed, evaluator = _trim(_OutputGainRenderer(mute_above=3.0), 0.0)
+    record = check["level_trim"]["records"][0]
+    assert not record["applied"] and "no measurable loudness" in record["reason"]
+    assert trimmed[0].values[gain] == 0.0 and trimmed[0].trial_id == 1
+    assert evaluator.renders == 0
+
+
+def test_a_residual_weighted_run_without_a_di_completes_the_level_trim(audio, tmp_path):
+    """The trim's scorer needs the reference samples a residual profile weighs."""
+    out = tmp_path / "paired-no-di"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+               "--loss-profile", "paired-v2", "--excerpt", "0", "--amp", "sw50r",
+               "--renderer", "synthetic", "--budget", "80", "--shortlist", "2",
+               "--seed", "0", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert (out / "match-1.json").exists()
+
+
+def test_a_trimmed_score_past_the_templates_is_said_so(audio, tmp_path, monkeypatch):
+    import dataclasses
+
+    from scripts import match_preset as cli
+
+    real = cli._guitar_level_trim
+
+    def worse(*args, **kwargs):
+        return [dataclasses.replace(c, total=99.0) for c in real(*args, **kwargs)]
+
+    monkeypatch.setattr(cli, "_guitar_level_trim", worse)
+    summary = _no_di_run(audio, tmp_path / "worse", monkeypatch)
+    assert any(c.startswith("after its level was set through a synthetic guitar")
+               for c in summary["caveats"])
