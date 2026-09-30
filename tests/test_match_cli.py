@@ -1494,3 +1494,31 @@ def test_a_trim_that_goes_silent_keeps_the_candidate_as_it_was():
     assert not record["applied"] and "no measurable loudness" in record["reason"]
     assert trimmed[0].values[gain] == 0.0 and trimmed[0].trial_id == 1
     assert evaluator.renders == 0
+
+
+def test_a_residual_weighted_run_without_a_di_completes_the_level_trim(audio, tmp_path):
+    """The trim's scorer needs the reference samples a residual profile weighs."""
+    out = tmp_path / "paired-no-di"
+    done = run("match_preset.py", "--template", TEMPLATE,
+               "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+               "--loss-profile", "paired-v2", "--excerpt", "0", "--amp", "sw50r",
+               "--renderer", "synthetic", "--budget", "80", "--shortlist", "2",
+               "--seed", "0", "--out-dir", out)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert (out / "match-1.json").exists()
+
+
+def test_a_trimmed_score_past_the_templates_is_said_so(audio, tmp_path, monkeypatch):
+    import dataclasses
+
+    from scripts import match_preset as cli
+
+    real = cli._guitar_level_trim
+
+    def worse(*args, **kwargs):
+        return [dataclasses.replace(c, total=99.0) for c in real(*args, **kwargs)]
+
+    monkeypatch.setattr(cli, "_guitar_level_trim", worse)
+    summary = _no_di_run(audio, tmp_path / "worse", monkeypatch)
+    assert any(c.startswith("after its level was set through a synthetic guitar")
+               for c in summary["caveats"])

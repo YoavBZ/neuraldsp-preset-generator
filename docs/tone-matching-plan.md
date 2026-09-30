@@ -2242,7 +2242,9 @@ guitar, the same arithmetic as `invert.output_level`, clamped to the control's
 computed from renders already made (the output gain acts after the amp, so the
 arithmetic is exact up to the control's limits; on three of them the limit is
 reached). A fixed correction for the remaining median of about 6 LU, fitted on
-the development parts, made the held-out answers worse, so none is applied.
+the development parts, moved two of the three held-out answers further off (2.2
+to 3.9 LU) and the third closer (8.6 to 2.4); three answers are not evidence for
+it, so none is applied.
 
 **The trim.** Without `--probe-di`, after the guitar check, `match_preset.py`
 moves each passing candidate's output gain by that gap, clamped, and checks it

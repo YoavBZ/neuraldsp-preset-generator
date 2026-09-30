@@ -557,12 +557,27 @@ def main() -> None:
         # can bind to the trimmed preset.
         trim_scorer = search.Evaluator(renderer, target, probe_di, space,
                                        profile=args.loss_profile, store=store,
-                                       run_id=run_id, recipe=seed)
+                                       run_id=run_id, recipe=seed,
+                                       reference_audio=(reference.samples
+                                                        if residual_weighted else None))
         result.shortlist[:] = _guitar_level_trim(
             renderer, trim_scorer, space, result.shortlist, guitar_check,
             (target.source or {}).get("lufs_i"), output_control_for_level)
         guitar_check["level_trim"]["scoring_renders"] = trim_scorer.renders
         guitar_check["renders"] += trim_scorer.renders
+        # The judgment above used the search's own scores; the headline reports
+        # the trimmed preset's. If the trim's probe-measured level term pushed that
+        # past the template's, say so rather than print a negative "closer".
+        if (result.best.reference_score >= start.total
+                and not any(c.startswith("nothing beat the preset you started from")
+                            for c in caveats)):
+            caveats.insert(0, (
+                f"after its level was set through a synthetic guitar, match-1 scored "
+                f"{result.best.reference_score:.3f} against the starting preset's "
+                f"{start.total:.3f}: the score's level term is measured through the "
+                "noise probe, which that trim deliberately does not follow, and "
+                "before the trim the search's answer did beat the starting preset. "
+                "Judge it by ear against the starting preset"))
 
     if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
@@ -979,7 +994,9 @@ def _guitar_level_caveat(check) -> List[str]:
               "with a real guitar expect it to play a few dB loud (2 to 9 LU on "
               "fifteen SW50R amp recordings), and on a full mix it matches the whole "
               "mix's loudness, not the guitar's. Their scores are of the trimmed "
-              "presets, with a level term measured through the noise probe"
+              "presets, with a level term measured through the noise probe; the "
+              "±6 dB figures and the shortlist's order are from before the trim, and "
+              "the trims are the last points of the convergence chart"
             + (f". On {', '.join(f'match-{m}' for m in clamped)} the control ran out "
                "of range, so the level is not reached" if clamped else "")
             + ("" if not missed else
