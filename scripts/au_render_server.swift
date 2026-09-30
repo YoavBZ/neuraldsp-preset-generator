@@ -57,10 +57,27 @@ func reply(_ fields: [String]) {
     FileHandle.standardOutput.write(("{" + fields.joined(separator: ",") + "}\n").data(using: .utf8)!)
 }
 
+// A JSON string literal. Every reply is one line of JSON, so a path or name with a
+// quote, a backslash or a control character in it must not end the string early
+// or split the reply across lines.
 func quoted(_ s: String) -> String {
-    let escaped = s.replacingOccurrences(of: "\\", with: "\\\\")
-        .replacingOccurrences(of: "\"", with: "\\\"")
-    return "\"\(escaped)\""
+    var out = "\""
+    for scalar in s.unicodeScalars {
+        switch scalar {
+        case "\"": out += "\\\""
+        case "\\": out += "\\\\"
+        case "\n": out += "\\n"
+        case "\r": out += "\\r"
+        case "\t": out += "\\t"
+        default:
+            if scalar.value < 0x20 {
+                out += String(format: "\\u%04x", scalar.value)
+            } else {
+                out.unicodeScalars.append(scalar)
+            }
+        }
+    }
+    return out + "\""
 }
 
 // An XML element or attribute name as the plugin's state spells them: a letter or
@@ -71,17 +88,19 @@ func isXMLName(_ s: String, allowEmpty: Bool) -> Bool {
     return s.range(of: "^[A-Za-z_][A-Za-z0-9_.-]*$", options: .regularExpression) != nil
 }
 
-// A value as it has to appear inside a double-quoted XML attribute.
+// A value as it has to appear inside a double-quoted XML attribute. Escaped per
+// Unicode scalar, not per Character: a quote followed by a combining mark is one
+// Character that is not equal to a quote, and would go out unescaped.
 func xmlEscaped(_ s: String) -> String {
     var out = ""
-    for ch in s {
-        switch ch {
+    for scalar in s.unicodeScalars {
+        switch scalar {
         case "&": out += "&amp;"
         case "<": out += "&lt;"
         case ">": out += "&gt;"
         case "\"": out += "&quot;"
         case "'": out += "&apos;"
-        default: out.append(ch)
+        default: out.unicodeScalars.append(scalar)
         }
     }
     return out
@@ -262,7 +281,7 @@ while let line = readLine(strippingNewline: true) {
     var state = baseState
     if let statePath = command["state"] as? String {
         guard let blob = try? Data(contentsOf: URL(fileURLWithPath: statePath)) else {
-            reply(["\"ok\":false", "\"error\":\("could not read \(statePath)".debugDescription)"])
+            reply(["\"ok\":false", "\"error\":\(quoted("could not read \(statePath)"))"])
             continue
         }
         state["jucePluginState"] = blob
@@ -292,9 +311,12 @@ while let line = readLine(strippingNewline: true) {
                 break
             }
             let ns = edited as NSString
+            // The name ends where the tag's whitespace, `/` or `>` begins, and the
+            // attribute starts after whitespace: `\b` would let `sw50r` match
+            // `<sw50r-x` now that names may hold `-` and `.`.
             let elementPattern = module.isEmpty
                 ? "<[A-Za-z_][^>]*>"
-                : "<\(NSRegularExpression.escapedPattern(for: module))\\b[^>]*>"
+                : "<\(NSRegularExpression.escapedPattern(for: module))(?=[\\s/>])[^>]*>"
             let elementRE = try! NSRegularExpression(pattern: elementPattern)
             guard let element = elementRE.firstMatch(
                 in: edited, range: NSRange(location: 0, length: ns.length))
@@ -303,7 +325,7 @@ while let line = readLine(strippingNewline: true) {
                 break
             }
             let keyRE = try! NSRegularExpression(
-                pattern: "\\b\(NSRegularExpression.escapedPattern(for: key))=\"([^\"]*)\"")
+                pattern: "(?<=\\s)\(NSRegularExpression.escapedPattern(for: key))=\"([^\"]*)\"")
             guard let match = keyRE.firstMatch(in: edited, range: element.range) else {
                 failure = "no \(key) attribute on <\(module)>"
                 break
@@ -342,14 +364,14 @@ while let line = readLine(strippingNewline: true) {
     // allocates afterwards, and its renders are bit-identical across processes.
     // "isolate" reproduces that order here.
     //
-    // It does *not* make a second render in the same process match the first,
-    // which this comment used to claim: on Morgan 1.1.1 two renders of identical
+    // It does *not* make a second render in the same process match the first: on
+    // Morgan 1.1.1 two renders of identical
     // parameters differ by -15.4 dB relative to the signal without it and
     // -15.7 dB with it. Only a fresh process is bit-exact.
     //
     // What it does do is make Tone King audible at all. That plugin renders exact
-    // zeros on its first allocation of render resources — the silence this project
-    // spent months attributing to bare instantiation — and renders normally once
+    // zeros on its first allocation of render resources — not a property of bare
+    // instantiation — and renders normally once
     // they have been cycled. "realloc" below works just as well, so it is the
     // reallocation that matters rather than the order of the state write. See
     // match/renderer_au.py, which turns this on by itself when a first render
