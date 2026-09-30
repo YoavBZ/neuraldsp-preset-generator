@@ -71,13 +71,12 @@ def require(feature: str = "audio analysis"):
     produces one line a person can act on instead of an ImportError traceback
     from six frames down.
 
-    `pyloudnorm` is checked here with the rest, and that matters more than it
-    looks. It used to be caught at its two call sites and turned into `None`,
-    which in this schema means "the recording could not support the measurement".
-    A missing library is not a property of the recording: the effect was that
-    `lufs_i` and `lra_lu` went absent with no caveat, and `normalise()` quietly
-    stopped normalising, so every "spectral features are loudness-normalised"
-    guarantee in the package silently lapsed.
+    `pyloudnorm` is checked here with the rest, not at its call sites. Caught
+    there it would become `None`, which in this schema means "the recording could
+    not support the measurement" — but a missing library is not a property of the
+    recording: `lufs_i` and `lra_lu` would go absent with no caveat, and
+    `normalise()` would quietly stop normalising, so every "spectral features are
+    loudness-normalised" guarantee in the package would silently lapse.
     """
     try:
         import numpy  # noqa: F401

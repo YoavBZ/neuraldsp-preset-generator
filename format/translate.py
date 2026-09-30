@@ -35,8 +35,8 @@ def _fmt_num(x: float) -> str:
     .0, floats with no trailing zeros and no exponent.
 
     Non-finite values are spelled the way the parser spells them ("inf",
-    "nan"). A binary plugin can store one, and `int(inf)` raising here took the
-    whole preset down in show.py rather than printing one odd value.
+    "nan"). A binary plugin can store one, and `int(inf)` raising here would take
+    the whole preset down in show.py rather than print one odd value.
     """
     if not math.isfinite(x):
         return repr(x)

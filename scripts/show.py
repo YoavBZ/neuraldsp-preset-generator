@@ -70,10 +70,9 @@ def main() -> None:
             entry["display"] = describe(kind, p.value, unit)
         except (ValueError, OverflowError):
             # One value that does not read as its manifest kind — an empty
-            # string where a number belongs, a newer plugin's spelling — used to
-            # stop the whole listing with a message naming neither the value nor
-            # the parameter, and every skill starts by running this. Show the
-            # stored text and flag it instead.
+            # string where a number belongs, a newer plugin's spelling — must not
+            # stop the whole listing: every skill starts by running this. Show
+            # the stored text and flag it.
             entry["human"] = entry["display"] = p.value
             entry["unreadable"] = f"stored value {p.value!r} does not read as {kind}"
         if unit:

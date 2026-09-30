@@ -163,7 +163,7 @@ def _mono(samples):
 def residual_db(reference, candidate) -> Optional[float]:
     """How much of the reference is left after subtracting the candidate, in dB.
 
-    The number M0 used to compare two hosts and two renders: 0 dB means the
+    The number that compares two hosts or two renders: 0 dB means the
     difference is as loud as the signal, -60 dB means they are the same
     recording. Align first, or this measures the offset instead of the audio.
     """

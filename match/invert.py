@@ -112,16 +112,11 @@ def declared(pack_id: str, path: str):
     """The pack's spec for a parameter, refusing a pack that does not declare it.
 
     Every inversion here writes Morgan's parameter *paths* — `delay/delayTime`,
-    `reverb/reverbDecay`, `parameters/outputGain`. `pack_id` used to be threaded
-    through and then ignored: called with `toneking` these functions emitted
-    Morgan's paths clamped to Morgan's ranges, so `reverb/reverbDecay` came out at
-    30 s against Tone King's declared 0.5–8 s, for a parameter Tone King does not
-    have. Silently. An argument that quietly does nothing is worse than one that
-    is absent, so it now refuses.
-
-    This also removes five copies of "look up the spec, else a hardcoded fallback
-    range" — one of which had already drifted, offering `tremoloRate` a fallback of
-    0.1–10 Hz against a manifest that declares 0.15–15.
+    `reverb/reverbDecay`, `parameters/outputGain`. Called for a pack that does not
+    declare the path, it refuses rather than write Morgan's path clamped to
+    Morgan's range (`reverb/reverbDecay` at 30 s, against Tone King's declared
+    0.5–8 s, for a parameter Tone King does not have). The manifest is the only
+    source of ranges: a hardcoded fallback drifts from it.
     """
     from packs.loader import load_pack
 
@@ -154,9 +149,8 @@ class Inversion:
     def merge(self, other: "Inversion") -> None:
         """Fold another inversion's values, caveats and detail into this one.
 
-        Returns nothing on purpose. It used to return `self`, which every one of the
-        six call sites discarded and which bought only the misreading that
-        `a.merge(b)` leaves `a` alone.
+        Returns nothing on purpose: returning `self` would invite the misreading
+        that `a.merge(b)` leaves `a` alone.
         """
         self.values.update(other.values)
         self.caveats.extend(other.caveats)
@@ -466,19 +460,19 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
 
     `accounted_for` is dB per frequency that something else in the chain is already
     contributing — in practice `fit_filters`' `filter_response_db`, so the bands fit
-    what the corners leave rather than the same difference over again. Subtracting a
-    modelled response replaced *deleting* the covered bands, which was wrong in
-    three ways, all measured:
+    what the corners leave rather than the same difference over again. It is
+    subtracted, not used to *delete* the covered bands, which fails three ways, all
+    measured:
 
-    - **A band whose neighbourhood was deleted went to the rail.** On a target with
+    - **A band whose neighbourhood is deleted goes to the rail.** On a target with
       an LPF at 4 kHz — 23.7 dB short at 16 kHz — the 16 kHz band came out at
       *+10.59 dB*, a boost, because nothing constrained it any more.
-    - **The residual described a subset.** `eq_residual_db` read 1.34 dB where the
+    - **The residual describes a subset.** `eq_residual_db` read 1.34 dB where the
       emitted gains scored 9.82 against everything measured, and `eq_requested_db`
       held 24 of 30 bands with nothing saying six were missing.
-    - **A caller's own basis stopped fitting.** `basis` is sized to the full delta,
-      so removing bands first made the shape check reject the measured basis M5 is
-      going to supply — the only reason `basis` is a parameter at all.
+    - **A caller's own basis stops fitting.** `basis` is sized to the full delta,
+      so removing bands first makes the shape check reject a measured basis — the
+      only reason `basis` is a parameter at all.
 
     All three go away when every band stays in the fit and the target is the part
     nothing else is handling. `eq_requested_db` records that remainder and
@@ -891,8 +885,8 @@ def delay_settings(fingerprint, pack_id: str = "morgan",
     else:
         caveats.append("the repeat count did not support a feedback estimate")
 
-    # `delayMix` is deliberately not set. It used to be written as the detection
-    # confidence times 100, so a confidence of 0.95 asked the plugin for 95% wet.
+    # `delayMix` is deliberately not set, in particular not as the detection
+    # confidence times 100 (a confidence of 0.95 would ask for 95% wet).
     # The confidence is a normalised autocorrelation height, and nothing establishes
     # that a correlation height equals a wet-mix percentage — they are not even the
     # same kind of quantity. Setting a control from a number that happens to share
@@ -956,9 +950,9 @@ def reverb_from_rt60(fingerprint, pack_id: str = "morgan",
     decay = declared(pack_id, "reverb/reverbDecay")
 
     if rt60 is None:
-        # Not the same thing as an unconfident reading, and it used to get the same
-        # sentence — "the notes decay at different rates" is a finding, and nothing
-        # was found. The module header is explicit that an absent key means the
+        # Not the same thing as an unconfident reading, so not the same sentence —
+        # "the notes decay at different rates" is a finding, and nothing was
+        # found. The module header is explicit that an absent key means the
         # measurement was not supported, not that it came back zero.
         return Inversion(
             values={"reverb/reverbActive": False},
@@ -1300,7 +1294,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
         # the section on would expose values the render never contained — every one
         # of those turns on a control the template does not state. The alternative
         # is to guess "bypassed", overwrite nine bands with neutral zero and call it
-        # a tidy-up, which is what this used to do.
+        # a tidy-up.
         unstated, untranslatable = _unreadable_eq_gates(
             signal_path, current_settings, pack_id
         )
@@ -1801,8 +1795,7 @@ def _eq_is_active(signal_path, current_settings, pack_id: str) -> Optional[bool]
     reports it as a tidy-up.
 
     `Space.active` states the same rule for the same reason — a value nobody
-    supplied is a value nobody knows — and this helper used to take the opposite
-    reading of it. Neither committed pack can produce the case: Morgan and Tone
+    supplied is a value nobody knows. Neither committed pack can produce the case: Morgan and Tone
     King both declare their gates and both appear in any real preset. A pack that
     excludes one from the search space, or a preset that omits it, can.
     """

@@ -217,11 +217,10 @@ def main() -> None:
         print(f"state encoding: {args.state.name} is {incoming}, "
               f"the plugin's own state is {current}")
         if incoming == "unknown":
-            # A truncated preset, or one from a plugin no pack claims, used to be
-            # applied anyway: the guard only fired when *both* encodings were
-            # known, so 300 bytes of noise went in and the resulting peak was
-            # reported as though the state had taken. That is the exact failure
-            # this script exists to prevent.
+            # A truncated preset, or one from a plugin no pack claims, is refused:
+            # applied anyway, its noise would go in and the resulting peak would
+            # be reported as though the state had taken — the exact failure this
+            # script exists to prevent.
             die(
                 f"{args.state} is not a state document this tool recognises: it "
                 f"neither parses as a preset record for a known pack nor looks "

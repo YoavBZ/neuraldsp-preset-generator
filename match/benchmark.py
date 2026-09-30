@@ -167,10 +167,9 @@ class BenchmarkResult:
                 continue
             ours, theirs = self.paired("full", baseline)
             if not ours:
-                # Which arm failed matters, and the message used to name the baseline
-                # whatever the cause: with `full` failing every target it reported
-                # "the recipe baseline produced no comparable objective" about a
-                # baseline that had scored 1.0 on all fifty.
+                # Name the arm that failed: a message that always blamed the baseline
+                # would report "the recipe baseline produced no comparable
+                # objective" about a baseline that scored on every target.
                 #
                 # A flat chain. This was a three-way conditional expression whose result
                 # was then overwritten by an `if` on the next line, so its first branch
@@ -652,7 +651,7 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
         return outcomes, caveats
 
     def collect(index, outcomes, caveats):
-        """Fold one target's results in, deduping caveats as the loop used to.
+        """Fold one target's results in, deduping caveats across targets.
 
         Fifty targets produce fifty copies of the same sentence about the budget,
         and a caveat block nobody can read is a caveat block nobody reads.
@@ -707,9 +706,8 @@ def compare_baselines(renderer, space: Space, probe_di, seed: Mapping,
                         outcomes, caveats = one_target(index, member, own_scorer)
                     except Exception as unexpected:   # noqa: BLE001
                         # A target that dies outside the arm loop — its truth
-                        # render, or building its evaluator — used to take its
-                        # thread with it and leave no trace but a shorter table.
-                        # It is a failed target now, and it says so.
+                        # render, or building its evaluator — is recorded as a
+                        # failed target, not lost with its thread.
                         outcomes = [Outcome(arm=arm, target_index=index, failed=True,
                                             error=f"{type(unexpected).__name__}: "
                                                   f"{unexpected}")

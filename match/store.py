@@ -19,9 +19,7 @@ project is aiming at, and their choice belongs next to the trial it was about.
 
 sqlite3 from the standard library, no ORM, no dependency. Not minimalism: a store a
 person cannot open is a store they will not trust, and `sqlite3 trials.sqlite3` plus
-one SELECT is a tool everybody already has. (An earlier version of this paragraph
-claimed `show.py` and `apply_spec.py` open the store. They do not — they have nothing
-to do with it, and the reason given for a decision should be the actual reason.)
+one SELECT is a tool everybody already has.
 
 Audio is **not** stored: a run of 300 renders at 48 kHz is gigabytes, and `render_sha`
 plus the cache key identifies the audio well enough to re-render it.

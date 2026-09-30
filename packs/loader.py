@@ -195,8 +195,8 @@ class Pack:
                 f"written.\n  {detail}".rstrip()
             )
 
-        # A guessed kind is doubt the manifest already records; until now nothing
-        # carried it to the person doing the writing. It warns rather than
+        # A guessed kind is doubt the manifest already records; this carries it
+        # to the person doing the writing. It warns rather than
         # refuses because a draft pack is meant to be usable while it is being
         # corrected — and because the guess is often right. Checked before the
         # kind branches, since the guess is what chose the branch.

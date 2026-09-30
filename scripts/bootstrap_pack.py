@@ -10,16 +10,15 @@ draft plus a list of the questions only you can answer.
 What it can infer, and what it can't:
 
 - **Names and structure** come straight from the file, so they are exact.
-- **Kinds** are guessed from key names and observed values, the same heuristics
-  that used to drive the old generated catalog. Good enough to start, wrong often
+- **Kinds** are guessed from key names and observed values. Good enough to start, wrong often
   enough that the draft is marked `needs_review` until a human confirms it.
 - **Ranges** cannot be inferred at all. One preset shows one value; that says
   nothing about limits. They are left undeclared, which means unchecked.
 - **Selector members** cannot be inferred either — the plugin never shows the
   stored integer. `scripts/probe.py` is how you find those out.
 
-So this gets you from "no support at all" to "a draft to correct", which is the
-part that was previously a code change.
+So this gets you from "no support at all" to "a draft to correct" without a code
+change.
 """
 
 from __future__ import annotations
@@ -54,12 +53,11 @@ UNIT_HINTS = [
 ]
 SELECTOR_HINTS = re.compile(r"(Type|Mode|Note|Sync|selected[A-Z])")
 
-# `Pan` and `Power` used to be in the pattern above, on the reasoning that a
-# name like that reads as a list of positions. Measuring Morgan against the
-# running plugin showed both guesses were wrong: `*CabPan` is a signed number
-# from -50 to 50 and `ac20Power` is an ordinary 0-1 knob. Guessing "selector"
-# is the expensive way to be wrong, because it makes the value an opaque index
-# nobody can check, so these now fall through to the numeric branches below.
+# Not `Pan` or `Power`, though they read like lists of positions: measured on
+# Morgan, `*CabPan` is a signed number from -50 to 50 and `ac20Power` is an
+# ordinary 0-1 knob. Guessing "selector" is the expensive way to be wrong,
+# because it makes the value an opaque index nobody can check, so these fall
+# through to the numeric branches below.
 
 
 def looks_numeric(text: str) -> bool:

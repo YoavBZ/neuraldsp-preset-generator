@@ -28,9 +28,9 @@ def write(tokens: Iterable[Token]) -> bytes:
 def write_file(path: str, tokens: Iterable[Token]) -> None:
     """Write a preset so the path holds either the old file or the new one.
 
-    Written beside the target and renamed over it. Opening the target itself
-    truncated it first, so an interrupted `--force` into the plugin's preset
-    folder left a cut-off preset where a working one had been.
+    Written beside the target and renamed over it: opening the target itself
+    would truncate it first, so an interrupted `--force` into the plugin's preset
+    folder could leave a cut-off preset where a working one had been.
     """
     data = write(tokens)
     directory = os.path.dirname(os.path.abspath(path))

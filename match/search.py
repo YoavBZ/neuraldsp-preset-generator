@@ -78,10 +78,8 @@ INITIAL_SIGMA = 0.15
 
 # The prior's weight is NOT here. `prior_deviation` is a dimension of the objective
 # vector, so how much it counts is a number in `analysis/loss_profiles.json` — 0.15
-# under `unpaired-v1`, 0.1 under `paired-v1`. A `PRIOR_WEIGHT = 0.15` constant used to
-# sit here, wired to an `Evaluator.prior_weight` attribute that was assigned and never
-# read: a maintainer who changed it would have seen no effect and no error, which is
-# the exact trap "no parameter that does nothing" exists to prevent.
+# under `unpaired-v1`, 0.1 under `paired-v1`. A constant here would be a parameter
+# that does nothing: changing it would show no effect and no error.
 
 # The input-level offsets the shortlist is re-rendered at, in dB.
 ROBUSTNESS_OFFSETS_DB = (-6.0, 6.0)
@@ -570,8 +568,6 @@ class Evaluator:
         costs are the same order — §12j measures a fingerprint at 65.8 ms on one
         thread, and Morgan's 4.54 renders/s implies about 220 ms per render — so
         scoring serially would give back roughly a quarter of what the pool buys.
-        Earlier drafts of this docstring said 150 ms and 370 ms, which came from a
-        different signal and a different pack than the numbers §12j records.
 
         The three alignment counters are the only shared state here, and they are
         summary statistics for a caveat rather than anything a score depends on —
@@ -948,19 +944,10 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
     new mean is `weights @ selected`, the weights are positive and sum to one, and every
     row of `selected` was clipped into [0, 1] — so the mean is a convex combination of
     points in the box and is therefore in the box. It cannot leave, and no separate
-    guard on it can do anything.
-
-    This paragraph used to carry a measured table — unclipped 2.5e-03 against clipped
-    2.6e-06 on a sphere at unit 0.02, n=8, σ=0.15, 600 evaluations, with a final mean
-    range of (−4.2, −0.55) — arguing that clipping the mean mattered a thousandfold. It
-    does not, and the table cannot have come from this algorithm: reproduced at four
-    seeds, clipped and unclipped agree to every digit printed (3.677e-06, 6.797e-06,
-    1.856e-06, 4.268e-06), and the mean's range is (0.019, 0.021) either way. Even with
-    the optimum placed *outside* the box at unit −0.30, so that the fitness rewards
-    movement past the bound, both variants pin the mean at exactly 0.000 — because of the
-    convexity above. It replaced an earlier paragraph that argued the opposite case from
-    first principles, and the lesson is the same one twice over: a table with no
-    recorded invocation behind it is an argument wearing decimal points.
+    guard on it can do anything. Measured: on a sphere at unit 0.02 (n=8, σ=0.15, 600
+    evaluations, four seeds) clipping the mean or not agrees to every digit printed,
+    and with the optimum placed *outside* the box at unit −0.30 both pin the mean at
+    exactly 0.000.
     """
     import numpy as np
 
@@ -1075,12 +1062,10 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
         step *= math.exp((c_s / damps) * (np.linalg.norm(path_s) / chi_n - 1))
         generations += 1
 
-        # Stop when the step is finer than what the plugin can store, rather than
-        # flooring it there. A floor was the first attempt and it guaranteed the
-        # waste it was meant to prevent: 1e-4 in unit space is 0.0024 dB against an EQ
-        # band's 0.25 dB quantum, so once the step reached the floor every remaining
-        # render was a duplicate of one already made. A well-posed run hit it and then
-        # sampled out the rest of its budget.
+        # Stop rather than floor the step: below the finest stored change, every
+        # further render repeats one already made (1e-4 in unit space is 0.0024 dB
+        # against an EQ band's 0.25 dB quantum), and a floor would spend the rest
+        # of the budget on those duplicates.
         if step < _quantisation_step(dimensions):
             caveats.append(
                 f"the optimiser stopped after {generations} generations and "
@@ -1092,10 +1077,7 @@ def refine(evaluator: Evaluator, seed: Mapping, searched: Sequence[str],
 
     # No "it never ran" caveat here. `search` owns that message, because it is the only
     # caller that knows what the fixed costs were and can therefore name the number to
-    # raise `--budget` to. The version that lived here said "at least λ more than the
-    # fixed costs above" — and nothing above had printed a fixed cost, so the one
-    # actionable sentence in the run pointed at nothing. Two messages for one fact, and
-    # the one that fired on an 18-parameter Morgan search was the useless one.
+    # raise `--budget` to.
     return evaluated, caveats
 
 
@@ -1106,8 +1088,7 @@ def pareto(candidates: Sequence[Candidate], dimensions: Sequence[str],
            limit: int = 5) -> List[Candidate]:
     """The non-dominated candidates, thinned to perceptually distinct ones.
 
-    Thinned by `DISTINCT_OBJECTIVE`, which used to be a `distinct=` argument that no
-    caller outside the tests ever set.
+    Thinned by `DISTINCT_OBJECTIVE`.
     """
     distinct = DISTINCT_OBJECTIVE
     usable = [c for c in candidates if c.objectives and math.isfinite(c.total)]
@@ -1899,16 +1880,16 @@ def supported_keys(renderer) -> Optional[set]:
     Spelled the way `Dimension.path` and `ParamSpec.path` both spell it, which for
     a top-level parameter means no leading slash. A backend keys its specs
     `(module, key)`, and joining `("", "selectedAmp")` gives `/selectedAmp` while
-    the dimension it has to match is `selectedAmp` — so the key was compared
-    against a spelling it could never equal.
+    the dimension it has to match is `selectedAmp` — so unnormalised, the key
+    could never match.
 
     That is not cosmetic. `_settings` drops a dimension the backend does not
-    claim to support, so `selectedAmp` was dropped from every render on any
+    claim to support, so `selectedAmp` would be dropped from every render on any
     backend that declares it: the search would move an amp's tone stack while the
     plugin stayed on whatever amp it booted with, and writing a control on an
     unselected amp is a silent no-op. Nothing would have failed, and every number
     would have been about the wrong amp. The synthetic chain models one amp and
-    never declared `selectedAmp`, which is why this survived M3 and M4.
+    does not declare `selectedAmp`, so only a real backend exercises this.
     """
     try:
         specs = renderer.parameter_specs()

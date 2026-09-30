@@ -192,9 +192,8 @@ def loudness_lufs(audio: Audio) -> Optional[float]:
     Averaged, not summed, and the difference is not cosmetic: because it divides
     by the channel count, adding one silent channel to a five-channel file moves
     the reported loudness by about 9 dB on identical audio — three units of
-    "wrong" at `compare._level`'s 3 dB scale. Both this docstring and
-    `caveats()` used to say "summed" while the code averaged. The number to
-    distrust across a channel-count change is this one; `normalise()` is
+    "wrong" at `compare._level`'s 3 dB scale. The channels are averaged, not
+    summed. The number to distrust across a channel-count change is this one; `normalise()` is
     self-consistent, so the spectral path is unaffected.
     """
     require("loudness metering")
@@ -405,9 +404,9 @@ def excerpt_selection(audio: Audio, seconds: float,
     start = int(np.argmax(density)) * HOP
     start = min(start, audio.frames - wanted)
 
-    # Report the tie, and only the tie. An earlier version called this case
-    # "uninformative" and had the caveat say the ranking chose nothing — which
-    # is false whenever the plateau is merely large: on ten seconds of silence
+    # Report the tie, and only the tie. Calling this case "uninformative", as if
+    # the ranking chose nothing, is false whenever the plateau is merely large:
+    # on ten seconds of silence
     # followed by fifty of playing, the ranking lands exactly on the first note
     # and 31 of 41 windows still tie, because they all sit inside the music.
     # What is true in every case that reaches here is that the window is the

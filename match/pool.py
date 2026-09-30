@@ -37,18 +37,15 @@ so none of them can use this on a `reproducible=false` backend. The sound
 application is the benchmark, whose targets are independent experiments rather than
 comparisons: one instance per worker thread, with every render a target makes staying on the instance its thread holds.
 
-**Superseded note, kept because it names the mistake.** On a
+**Pooled numbers from a non-reproducible backend are unvalidated.** On a
 `reproducible=false` backend the screen's output — which controls clear the freeze
 threshold — is a thresholded view of a noisy measurement, and several controls sit
-close enough to that threshold for membership to flip. Four attempts to compare
-pooled against serial selection contradicted each other: 0 of 3 pairs differing
-within each group and 9 of 9 across it, then 0 of 2 across it on a later run, and a
-variant sharing one instance between baseline and probes differing by 7. Comparing
-thresholded sets was the wrong instrument — it amplifies exactly what the threshold
-exists to suppress. What would settle it is a comparison of the *movements*, control
-by control, over enough repeats to separate the pool's contribution from the
-backend's own spread. Until that exists, treat pooled numbers from a
-non-reproducible backend as unvalidated.
+close enough to that threshold for membership to flip, so comparing pooled against
+serial *sets* of selected controls gives contradictory answers (0 of 3 pairs
+differing on one run, 9 of 9 on another): it amplifies exactly what the threshold
+exists to suppress. What would settle it is a comparison of the *movements*,
+control by control, over enough repeats to separate the pool's contribution from
+the backend's own spread; nothing has made that comparison.
 """
 
 from __future__ import annotations

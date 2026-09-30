@@ -206,9 +206,8 @@ def run(args) -> None:
             ))
         if not pack.custom_ir:
             left = unstripped_irs(preset, pack)
-            # Silence here was the bug: the flag asks for a portable preset, and
-            # a pack that cannot say where its IRs live used to report no change
-            # while the file kept every path the template had.
+            # Not silent: the flag asks for a portable preset, and a pack that
+            # cannot say where its IRs live leaves every path the template had.
             warnings.append(
                 f"--strip-irs stripped nothing: {pack.display_name} declares no "
                 f"custom-IR mapping (`custom_ir` in "

@@ -119,10 +119,9 @@ def selected_path(space, values: Mapping) -> Optional[str]:
 
     Through `packs.calibration`, which already answers this for both packs:
     Tone King declares `calibration.signal_paths` selected by `ampType`, and Morgan's
-    paths are derived from `amp_modules` and selected by `selectedAmp`. The atlas
-    used to ask `space.amp_prefix` instead, which only knows `selectedAmp`, so it
-    refused every Tone King topology — while `match_preset.py --amp lead` worked,
-    because the search already went through this route.
+    paths are derived from `amp_modules` and selected by `selectedAmp`. Not
+    `space.amp_prefix`, which only knows `selectedAmp` and so would refuse every
+    Tone King topology; this is the route the search takes too.
     """
     from packs.calibration import CalibrationError, selected_signal_path
     from packs.loader import load_pack

@@ -20,8 +20,8 @@ def decaying_noise_bursts(
 ):
     """Return transient, aperiodic white-noise bursts at regular intervals.
 
-    This used to be called a synthetic "pluck", which suggested pitched guitar
-    excitation it does not contain. Noise is intentional: it exposes attack and
+    Not a "pluck": there is no pitched guitar excitation in it. Noise is
+    intentional: it exposes attack and
     decay without adding a pitch comb, but it cannot represent sustained or
     palm-muted playing.
     """

@@ -55,8 +55,7 @@ def harmonics(path, fundamental, count=8, sr=48000.0):
     # THE FUNDAMENTAL MUST LAND ON A BIN CENTRE. Off-centre, the fundamental
     # leaks into the harmonic bins and the result is dominated by that leakage:
     # a mathematically pure sine at 220 Hz reads 1.606% here, amplitude
-    # independent, which is exactly the size of the "clean" readings this was
-    # first used to publish. On a bin centre it reads 0.000%, and because a
+    # independent, the size of a typical "clean" reading. On a bin centre it reads 0.000%, and because a
     # harmonic of a bin-centred tone is itself bin-centred, every harmonic is
     # clean too. Refuse rather than silently returning noise.
     exact = nearest_bin(fundamental, sr)

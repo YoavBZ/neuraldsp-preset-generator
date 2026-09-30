@@ -254,12 +254,11 @@ class Space:
         dimension mid-run would change what every earlier sample meant.
 
         A key this space knows and the caller did not supply is **refused** by
-        default. It used to encode as 0.0, which is a legitimate coordinate and
-        therefore indistinguishable from a deliberate minimum: encoding
-        `{"selectedAmp": 2}` alone produced a vector that decoded to a 16 ms delay,
-        a mic 40 dB down and a cab panned hard left, and `to_spec` would have
-        written all of it. Pass `missing="floor"` to opt into the old behaviour
-        when a floor really is what you want.
+        default. Encoding it as 0.0 would be a legitimate coordinate and therefore
+        indistinguishable from a deliberate minimum: `{"selectedAmp": 2}` alone
+        would decode to a 16 ms delay, a mic 40 dB down and a cab panned hard left,
+        and `to_spec` would write all of it. Pass `missing="floor"` when a floor
+        really is what you want.
         """
         from analysis import require
 

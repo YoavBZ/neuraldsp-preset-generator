@@ -92,13 +92,12 @@ dist/
 *.flac
 *.mp3
 
-# Leftover from the schema package dissolved in #1.
+# A retired schema package's directory, if one is still lying around.
 schema/
 
 # Agent worktrees created by the Agent tool; never part of the repo.
 .claude/worktrees/
 
-# Response atlases are research data, not plugin content: 8 MB each, and removed
-# from the repository in PR #55 (M7-1 in docs/tone-matching-plan.md). Build or
-# restore them locally without committing them again.
+# Response atlases are research data, not plugin content: 8 MB each (see
+# docs/tone-matching-plan.md). Build or restore them locally; never commit them.
 packs/*/response_atlas_*.json

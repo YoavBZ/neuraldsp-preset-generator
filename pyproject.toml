@@ -26,10 +26,9 @@ analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
 # Searching for parameters. The synthetic renderer needs nothing beyond
 # [analysis], which is what lets the whole match stack be tested with no plugin.
 #
-# No `cma`. An earlier version of this comment said "cma arrives with the optimiser in
-# M4"; M4 arrived and §2's D4 held instead — `match/search.py` writes the textbook
-# (μ/μ_w, λ) CMA-ES out with Hansen's constants in about seventy lines of numpy, which
-# is legible, pinned by tests, and one fewer dependency to age.
+# No `cma`: §2's D4 — `match/search.py` writes the textbook (μ/μ_w, λ) CMA-ES out
+# with Hansen's constants in about seventy lines of numpy, which is legible, pinned
+# by tests, and one fewer dependency to age.
 match = ["neuraldsp-preset-generator[analysis]"]
 # Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
 # macOS-only, like every other plugin-dependent check — never used by CI.
@@ -42,10 +41,9 @@ host = ["pedalboard>=0.9"]
 [tool.setuptools]
 packages = ["format", "packs", "analysis", "match", "scripts"]
 
-# The wheel used to contain no non-Python files at all, so an installed (rather
-# than editable) copy died on `analysis/loss_profiles.json` with a
-# FileNotFoundError, and `packs/*/manifest.json` — the file the whole project
-# calls its contract — was missing too.
+# Every non-Python file the package reads at run time. Without this an installed
+# (rather than editable) copy dies on `analysis/loss_profiles.json` with a
+# FileNotFoundError and lacks `packs/*/manifest.json`, the project's contract.
 [tool.setuptools.package-data]
 analysis = ["loss_profiles.json", "loss_profiles-v2.json", "loss_profiles-v3.json"]
 packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json", "*/drive_curve.json", "*/warm_start_benchmark_*.json"]
@@ -60,20 +58,13 @@ pythonpath = ["."]
 # the three is entirely balance — a handful of tests dominate (the longest is 45s)
 # and `loadfile` pins all of `test_search.py`'s 167s to one worker.
 #
-# Per-test distribution needed two fixtures fixed before it was safe, and the
-# claim that it was already safe was wrong: `tests/test_bootstrap.py` and
-# `tests/test_apply_spec_cli.py` drafted packs into the repository's own
-# `packs/` — ten tests sharing one directory and one pack id — which was
-# invisible one test at a time and four to seven failures a run once they ran
-# together. Both now draft into a copied plugin tree, as `tests/test_skills.py`
-# already did. Everything else was genuinely ready: every other test takes its
-# own `tmp_path`, environment mutation goes through `monkeypatch`, and
-# `tests/test_skills.py` redirects the fixed paths its documented commands
-# mention — `/tmp/spec.json`, `/tmp/au_probe` — into a per-test sandbox.
-#
-# Note what did *not* catch it: the full suite passed 18 times across six
-# configurations, because all twelve of those tests land on one worker when
-# 999 are distributed. Only running that file alone shows it.
+# Per-test distribution needs every test isolated: each takes its own
+# `tmp_path`, environment changes go through `monkeypatch`, anything that drafts
+# a pack drafts it into a copied plugin tree rather than the repository's own
+# `packs/`, and `tests/test_skills.py` redirects the fixed paths its documented
+# commands mention (`/tmp/spec.json`, `/tmp/au_probe`) into a per-test sandbox.
+# A shared-state bug hides in a whole-suite run, where the tests that share the
+# state tend to land on one worker; run the one file alone to see it.
 #
 # Pass `-n0` to turn this off, or to run a debugger.
 addopts = "-n auto --dist worksteal"

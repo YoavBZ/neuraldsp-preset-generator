@@ -104,13 +104,12 @@ def numeric(shown: str, unit: str = None):
     # Pan is displayed as a POSITION OUT OF 50 with the side as a letter, and
     # that is not necessarily the unit the file stores. Morgan stores -50..50 and
     # Tone King stores -1..1, both displaying `L 50`/`50 L` at the same end. So
-    # the display cannot establish the range for these, and pretending it can is
-    # how a Tone King pan came to be declared 50x too large.
+    # the display cannot establish the range for these, and assuming it can
+    # declares a Tone King pan 50x too large.
     #
-    # This function previously converted the letter to a sign, which made the
-    # audit agree with that wrong range — the checker was adjusted until it
-    # matched the manifest instead of the manifest being questioned. Refuse
-    # instead; the caller falls back to writing a value and reading it back,
+    # Converting the letter to a sign would make the audit agree with a wrong
+    # range — the checker adjusted to match the manifest instead of the manifest
+    # being questioned. Refuse instead; the caller falls back to writing a value and reading it back,
     # which measures the stored unit rather than inferring it.
     if re.search(r"(^|\s)[lr]\s*[\d.]|[\d.]\s*[lr]$", lowered):
         return UNPARSEABLE
@@ -180,15 +179,14 @@ class BoundsChecker:
         except KeyError:
             return None
         # Writing past an end must come back as that end, AND writing the end
-        # itself must survive unchanged. The second half was previously written
-        # and then thrown away, which left half the check unmade.
+        # itself must survive unchanged. Both halves are checked.
         #
         # Compared at float32 like probe_bounds, and for the same reason: this
         # measures the same physical quantity through a 32-bit parameter, so a
-        # bound written as 1.0 can come back as 0.99999994. Exact `!=` was
-        # latent here only because Morgan round-trips its bounds as decimal text
-        # — the first pack whose state keeps binary doubles would have seen a
-        # disagreement no manifest edit could fix.
+        # bound written as 1.0 can come back as 0.99999994. Exact `!=` would pass
+        # on Morgan only because it round-trips its bounds as decimal text; a
+        # pack whose state keeps binary doubles would see a disagreement no
+        # manifest edit could fix.
         want = (float(spec.min), float(spec.max))
         for measured in ((low, high), (at_min, at_max)):
             if not all(_same_to_float32(a, b) for a, b in zip(measured, want)):
@@ -463,7 +461,7 @@ def published_members(spec, control):
     A `switch` counts as a selector here. It is a two-index one whose labels the
     plugin publishes in the same array (`Inactive`/`Active`, `Off`/`On`), and
     declaring them is the only thing that gives the audit anything to check
-    about a switch at all — 21 of them were previously "declares nothing".
+    about a switch at all; without them a switch "declares nothing".
     """
     if spec.kind not in ("enum", "switch") or not spec.members:
         return None
@@ -518,8 +516,7 @@ def check_members(checker, lookup, spec):
     if spec.kind not in ("enum", "switch") or not spec.members:
         # A switch that declares the plugin's own two labels is a two-index
         # selector and is checked as one. Morgan declares none today, so this
-        # only bites a future pack -- which is how the same gap went unnoticed
-        # on the other path.
+        # only bites a future pack.
         return None
     indices = sorted(spec.members, key=int)
     try:
