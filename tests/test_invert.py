@@ -1326,6 +1326,13 @@ def test_tone_king_inversion_uses_its_selected_path_and_measured_eq():
 
     pack = load_pack("toneking")
     measured_noise = pack.calibration["reused_instance_band_noise_db"]
+    # The build the committed basis was measured with, so re-measuring it after a
+    # renderer change does not also mean editing this test.
+    import json
+    import pathlib
+
+    basis_path = pathlib.Path(invert.__file__).resolve().parents[1] / "packs" / "toneking" / "eq_basis.json"
+    measured_build = json.loads(basis_path.read_text())["renderer"]["renderer_build"]
 
     class ToneKingBasis:
         def metadata(self):
@@ -1333,7 +1340,7 @@ def test_tone_king_inversion_uses_its_selected_path_and_measured_eq():
                 renderer_id="swift", sample_rate=48000, block_size=512,
                 plugin_version="1.0.3", reproducible=False,
                 band_noise_db=measured_noise,
-                renderer_build="audio-unit-renderer-2af9432f77c6",
+                renderer_build=measured_build,
                 quality_mode=("standard;amplitude=1;settle_ms=0;warmup_s=0;"
                               "isolate=auto;process=reuse"),
             )

@@ -63,6 +63,30 @@ func quoted(_ s: String) -> String {
     return "\"\(escaped)\""
 }
 
+// An XML element or attribute name as the plugin's state spells them: a letter or
+// underscore, then letters, digits, `_`, `-` or `.`. The empty module means the
+// state's root element.
+func isXMLName(_ s: String, allowEmpty: Bool) -> Bool {
+    if s.isEmpty { return allowEmpty }
+    return s.range(of: "^[A-Za-z_][A-Za-z0-9_.-]*$", options: .regularExpression) != nil
+}
+
+// A value as it has to appear inside a double-quoted XML attribute.
+func xmlEscaped(_ s: String) -> String {
+    var out = ""
+    for ch in s {
+        switch ch {
+        case "&": out += "&amp;"
+        case "<": out += "&lt;"
+        case ">": out += "&gt;"
+        case "\"": out += "&quot;"
+        case "'": out += "&apos;"
+        default: out.append(ch)
+        }
+    }
+    return out
+}
+
 // --- arguments --------------------------------------------------------------
 var args: [String] = []
 var defaultSettleMicroseconds: UInt32 = 0
@@ -259,20 +283,32 @@ while let line = readLine(strippingNewline: true) {
                 failure = "edit \(module)/\(key) needs a string or number value"
                 break
             }
+            // Names go into regular expressions and values into an XML attribute,
+            // so neither may carry syntax of its own: an unescaped name could
+            // crash this server or match the wrong element, and an unescaped value
+            // could end the attribute early and corrupt the state.
+            guard isXMLName(module, allowEmpty: true), isXMLName(key, allowEmpty: false) else {
+                failure = "edit \(module)/\(key) is not an XML element and attribute name"
+                break
+            }
             let ns = edited as NSString
-            let elementRE = try! NSRegularExpression(pattern: "<\(module)\\b[^>]*>")
+            let elementPattern = module.isEmpty
+                ? "<[A-Za-z_][^>]*>"
+                : "<\(NSRegularExpression.escapedPattern(for: module))\\b[^>]*>"
+            let elementRE = try! NSRegularExpression(pattern: elementPattern)
             guard let element = elementRE.firstMatch(
                 in: edited, range: NSRange(location: 0, length: ns.length))
             else {
                 failure = "no <\(module)> element in the plugin's state"
                 break
             }
-            let keyRE = try! NSRegularExpression(pattern: "\\b\(key)=\"([^\"]*)\"")
+            let keyRE = try! NSRegularExpression(
+                pattern: "\\b\(NSRegularExpression.escapedPattern(for: key))=\"([^\"]*)\"")
             guard let match = keyRE.firstMatch(in: edited, range: element.range) else {
                 failure = "no \(key) attribute on <\(module)>"
                 break
             }
-            edited = ns.replacingCharacters(in: match.range(at: 1), with: value)
+            edited = ns.replacingCharacters(in: match.range(at: 1), with: xmlEscaped(value))
         }
         if let failure {
             reply(["\"ok\":false", "\"error\":\(quoted(failure))"])

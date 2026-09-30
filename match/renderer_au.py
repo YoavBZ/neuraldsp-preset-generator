@@ -39,6 +39,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import select
 import shutil
 import subprocess
 import sys
@@ -58,6 +59,10 @@ PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 # remainder is the plugin's response to the zero padding after the signal ends,
 # never the signal itself.
 BLOCK_FRAMES = 512
+# How long one reply from the render server may take: starting the plugin, or one
+# render. The slowest measured is a few seconds (Tone King in a fresh process); a
+# plugin that hangs used to block a search forever.
+REPLY_TIMEOUT_S = 120.0
 SAMPLE_RATE = 48000
 
 
@@ -89,7 +94,8 @@ class AudioUnitRenderer(Renderer):
                  band_noise_db: Optional[float] = None,
                  process_policy: str = "reuse",
                  binary: Optional[pathlib.Path] = None,
-                 workdir: Optional[pathlib.Path] = None):
+                 workdir: Optional[pathlib.Path] = None,
+                 reply_timeout_s: float = REPLY_TIMEOUT_S):
         self.pack_id = pack_id
         self.settle_ms = float(settle_ms)
         # None means "find out". Some plugins render silence on their first
@@ -147,6 +153,9 @@ class AudioUnitRenderer(Renderer):
                 "but declares no positive band-noise floor"
             )
 
+        if not float(reply_timeout_s) > 0:
+            raise AudioUnitError("reply_timeout_s must be a positive number of seconds")
+        self.reply_timeout_s = float(reply_timeout_s)
         self._binary = pathlib.Path(binary) if binary else None
         self._owns_workdir = workdir is None
         self._workdir = pathlib.Path(workdir) if workdir else pathlib.Path(
@@ -544,6 +553,21 @@ class AudioUnitRenderer(Renderer):
     def _readline(self) -> Dict[str, Any]:
         process = self._process
         assert process is not None and process.stdout is not None
+        if not self._reply_arrives(process.stdout):
+            # Hung, not dead: nothing will ever come. Kill it and forget it, so the
+            # next render starts a new instance instead of waiting on this one or
+            # reporting it as a crash.
+            self._process = None
+            try:
+                process.kill()
+                process.wait(timeout=10)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            raise AudioUnitError(
+                f"the render server did not reply within {self.reply_timeout_s:g} s, "
+                "so it was stopped; the next render starts a new plugin instance. "
+                f"Its stderr is in {self._workdir / 'server.log'}."
+            )
         line = process.stdout.readline()
         if not line:
             status = process.poll()
@@ -557,6 +581,21 @@ class AudioUnitRenderer(Renderer):
             raise AudioUnitError(
                 f"the render server said {line.strip()!r}, which is not JSON ({e})"
             ) from e
+
+    def _reply_arrives(self, stream) -> bool:
+        """Whether the server's next line arrives within the reply timeout.
+
+        The server answers each command with exactly one line and nothing is read
+        ahead, so the pipe is empty between replies and `select` on it is the
+        whole story. A stand-in without a real descriptor (a test double) is
+        read directly.
+        """
+        try:
+            descriptor = stream.fileno()
+        except (AttributeError, OSError, ValueError):
+            return True
+        ready, _, _ = select.select([descriptor], [], [], self.reply_timeout_s)
+        return bool(ready)
 
     def _compile(self, source: pathlib.Path, output: pathlib.Path) -> None:
         sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))

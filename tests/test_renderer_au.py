@@ -12,9 +12,14 @@ plugin. It is a script rather than a test precisely because CI can never run it.
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 from match.renderer_au import AudioUnitError, AudioUnitRenderer
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def renderer(pack_id: str = "morgan", **kwargs) -> AudioUnitRenderer:
@@ -300,6 +305,57 @@ def test_a_non_json_reply_is_named_rather_than_swallowed():
     made._process = _FakeServer(["dyld: Library not loaded\n"])
     with pytest.raises(AudioUnitError, match="not JSON"):
         made._exchange({"out": "/tmp/x.wav"})
+
+
+def _python_server(code):
+    import subprocess
+    import sys
+
+    return subprocess.Popen([sys.executable, "-c", code], stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, text=True, bufsize=1)
+
+
+def test_a_server_that_hangs_is_stopped_and_the_next_render_starts_afresh():
+    made = renderer()
+    made.reply_timeout_s = 0.5
+    hung = _python_server("import time; time.sleep(60)")
+    made._process = hung
+    with pytest.raises(AudioUnitError, match="did not reply within 0.5 s"):
+        made._exchange({"out": "/tmp/x.wav"})
+    assert hung.poll() is not None, "the hung server was not stopped"
+    # Forgotten rather than kept as a crash, so `_ensure_server` starts a new one.
+    assert made._process is None
+
+
+def test_a_server_that_replies_in_time_is_read_normally():
+    made = renderer()
+    made.reply_timeout_s = 5.0
+    server = _python_server("import sys; sys.stdin.readline(); "
+                            "print('{\"ok\":true}', flush=True)")
+    made._process = server
+    try:
+        assert made._exchange({"out": "/tmp/x.wav"}) == {"ok": True}
+    finally:
+        server.kill()
+        server.wait()
+
+
+def test_the_reply_timeout_must_be_positive():
+    with pytest.raises(AudioUnitError, match="positive"):
+        renderer(reply_timeout_s=0)
+
+
+def test_the_server_escapes_what_it_puts_into_patterns_and_the_state():
+    """The render server builds regular expressions from edit names and writes
+    values into an XML attribute. Checked in the source, since running it needs
+    the plugin: names are validated and escaped, values XML-escaped."""
+    source = (ROOT / "scripts" / "au_render_server.swift").read_text()
+    assert "NSRegularExpression.escapedPattern(for: module)" in source
+    assert "NSRegularExpression.escapedPattern(for: key)" in source
+    assert "isXMLName(module, allowEmpty: true), isXMLName(key, allowEmpty: false)" in source
+    assert "with: xmlEscaped(value))" in source
+    for entity in ("&amp;", "&lt;", "&gt;", "&quot;", "&apos;"):
+        assert entity in source
 
 
 class _FakeServer:
