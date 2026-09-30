@@ -1350,14 +1350,19 @@ def test_a_failed_first_choice_is_written_as_the_last_match(audio, tmp_path, mon
     def settings(path):
         return json.loads(path.read_text())["parameters"]
 
+    def but_level(path):     # a failed candidate keeps its output gain untrimmed
+        return [p for p in settings(path) if p["key"] != "outputGain"]
+
     assert settings(failed / "match-1.json") == settings(plain / "match-2.json")
-    assert settings(failed / "match-2.json") == settings(plain / "match-1.json")
+    assert but_level(failed / "match-2.json") == but_level(plain / "match-1.json")
     assert after["shortlist"][0]["trial_id"] == before["shortlist"][1]["trial_id"]
     assert after["caveats"][0].startswith("1 of 2 shortlisted candidates failed")
     command = after["command_accounting"]
     assert command["total_renders"] == (command["budgeted_renders"]
                                         + command["outside_budget_renders"])
-    assert command["outside_budget_by_source"]["guitar_check"] == 3
+    applied = sum(r["applied"] for r in after["search"]["guitar_check"]["level_trim"]["records"])
+    # The template, both candidates, and one checking render per trimmed candidate.
+    assert command["outside_budget_by_source"]["guitar_check"] == 3 + applied
 
 
 def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
@@ -1377,5 +1382,57 @@ def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
         else:
             assert check["signal"]["lufs"] == -24.0
             assert len(check["candidates"]) == len(summary["shortlist"])
-            assert sources["guitar_check"] == 1 + len(summary["shortlist"])
+            applied = sum(r["applied"] for r in check["level_trim"]["records"])
+            assert sources["guitar_check"] == 1 + len(summary["shortlist"]) + applied
             assert "for the guitar check" in done.stdout
+            trim = check["level_trim"]
+            assert trim["control"] == "parameters/outputGain"
+            assert trim["target_lufs"] == pytest.approx(summary["reference"]["fingerprint"]
+                                                        ["source"]["lufs_i"], abs=0.01)
+            assert len(trim["records"]) == len(summary["shortlist"])
+
+
+class _OutputGainRenderer:
+    """The signal through a fixed -6 dB amp, then the output gain in dB."""
+
+    def render(self, signal, settings):
+        import types
+
+        gain_db = settings[("parameters", "outputGain")] - 6.0
+        return types.SimpleNamespace(audio=signal * 10 ** (gain_db / 20), silent=False,
+                                     metadata=types.SimpleNamespace(sample_rate=48000))
+
+
+def test_the_guitar_level_trim_sets_a_passing_candidates_output_to_the_reference():
+    from match import space as space_module
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    space = space_module.build("morgan", amp="sw50r")
+    gain = ("parameters", "outputGain")
+    shortlist = [Candidate(values={gain: 0.0}), Candidate(values={gain: 0.0}),
+                 Candidate(values={gain: 20.0})]
+    check = {"signal": {"seconds": 6.0, "seed": 13, "lufs": -24.0}, "renders": 4,
+             "candidates": [{"match": 1, "passes": True, "lufs": -30.0},
+                            {"match": 2, "passes": False, "lufs": -60.0},
+                            {"match": 3, "passes": True, "lufs": -10.0}]}
+    trimmed = cli._guitar_level_trim(_OutputGainRenderer(), _Settings(), space,
+                                     shortlist, check, -24.0, "parameters/outputGain")
+
+    records = check["level_trim"]["records"]
+    assert trimmed[0].values[gain] == pytest.approx(6.0)
+    assert records[0]["applied"] and records[0]["lufs_after"] == pytest.approx(-24.0, abs=0.05)
+    assert trimmed[1] is shortlist[1] and records[1]["reason"] == "it failed the guitar check"
+    assert trimmed[2].values[gain] == pytest.approx(6.0) and not records[2]["clamped"]
+    assert check["renders"] == 6
+    caveat, = cli._guitar_level_caveat(check)
+    assert "match-1, match-3" in caveat and "synthetic guitar" in caveat
+
+    # A gap past the control's range is clamped and said so.
+    far = {**check, "candidates": [{"match": 1, "passes": True, "lufs": -70.0}],
+           "renders": 2}
+    cli._guitar_level_trim(_OutputGainRenderer(), _Settings(), space,
+                           [Candidate(values={gain: 0.0})], far, -24.0,
+                           "parameters/outputGain")
+    assert far["level_trim"]["records"][0]["clamped"]
+    assert "ran out of range" in cli._guitar_level_caveat(far)[0]

@@ -526,6 +526,18 @@ def main() -> None:
         guitar_check = _guitar_check(renderer, evaluator, template_values,
                                      result.shortlist)
         result.shortlist[:] = _passing_first(result.shortlist, guitar_check)
+        # The level the search set through the noise probe does not carry over to a
+        # guitar (docs/tone-matching-plan.md, "Setting a no-DI match's level through
+        # a guitar"), so set each passing candidate's output gain through the same
+        # synthetic guitar the check just heard it through.
+        level_path = (signal_path_arg or space.amp_prefix(seed)
+                      or invert.selected_signal_path(args.pack, seed))
+        level_control = (invert.output_gain_control(args.pack, level_path)
+                         if level_path is not None else None)
+        if level_control is not None:
+            result.shortlist[:] = _guitar_level_trim(
+                renderer, evaluator, space, result.shortlist, guitar_check,
+                (target.source or {}).get("lufs_i"), level_control)
 
     # Nothing checked this, and on a near-perfect template it is the whole story: the
     # bundled PR12 preset matched against a render of itself scored 0.069, and the
@@ -545,6 +557,7 @@ def main() -> None:
 
     if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
+        caveats.extend(_guitar_level_caveat(guitar_check))
 
     _write_specs(args.out_dir, result, space, template_name)
     prints = {index: _render_fingerprint(renderer, probe_di,
@@ -842,6 +855,91 @@ def _guitar_check(renderer, evaluator, template_values, shortlist) -> Dict:
     for row in rows:
         row["match"] = order.index(row["search_rank"]) + 1
     return check
+
+
+def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
+                       target_lufs, control) -> list:
+    """Each passing candidate's output gain, set so it plays at the reference's
+    loudness through the guitar check's synthetic guitar.
+
+    Without a DI the search matched loudness through a noise probe, and through a
+    guitar the answers then played 9.6 to 22.1 LU over their recordings on
+    development parts and 35 under to 15 over on held-out ones; set this way the
+    same answers would have played 2.3 LU under to 9.3 over, the spread that
+    remains being how a real DI differs from the synthetic one. The output gain is
+    a gain after the amp, so the loudness gap is the change it needs; one render per
+    candidate checks it, and `check["level_trim"]` records every step. Failed or
+    unmeasured candidates are left alone. Scores in the shortlist are from before.
+    """
+    import dataclasses
+
+    from analysis import io
+    from analysis.probes import synthetic_guitar
+    from match.renderer import RenderError
+    from match.search import _dimension, _get
+    from match.space import _spellings
+
+    records = []
+    check["level_trim"] = {"control": control, "target_lufs": target_lufs,
+                           "records": records}
+    if target_lufs is None:
+        check["level_trim"]["reason"] = "the reference has no integrated loudness"
+        return list(shortlist)
+    signal = synthetic_guitar(**{k: check["signal"][k] for k in ("seconds", "seed")},
+                              target_lufs=check["signal"]["lufs"])
+    dimension = _dimension(space, control)
+    low, high = dimension.bounds()
+    key = (dimension.module, dimension.key)
+    rows = {row["match"]: row for row in check["candidates"]}
+    trimmed = []
+    for match, candidate in enumerate(shortlist, start=1):
+        row = rows[match]
+        record = {"match": match, "applied": False}
+        records.append(record)
+        current = _get(candidate.values, dimension)
+        if row["passes"] is not True or row["lufs"] is None or current is None:
+            record["reason"] = ("it failed the guitar check" if row["passes"] is False
+                                else "the guitar check could not judge it"
+                                if row["passes"] is None or row["lufs"] is None
+                                else f"it does not set {control}")
+            trimmed.append(candidate)
+            continue
+        gap = float(target_lufs) - float(row["lufs"])
+        value = dimension.quantise(min(max(float(current) + gap, float(low)), float(high)))
+        values = {k: v for k, v in candidate.values.items()
+                  if k != key and k not in set(_spellings(key))}
+        values[key] = value
+        record.update(gap_db=round(gap, 2), before=float(current), after=float(value),
+                      clamped=abs(float(current) + gap - float(value)) > 0.5)
+        try:
+            rendered = renderer.render(signal, evaluator._settings(values))
+            after = io.loudness_lufs(io.from_samples(rendered.audio,
+                                                     rendered.metadata.sample_rate))
+        except (RenderError, ValueError) as error:
+            record["reason"] = f"the checking render failed: {error}"
+            trimmed.append(candidate)
+            continue
+        check["renders"] += 1
+        record.update(applied=True, lufs_after=None if after is None else round(after, 2))
+        trimmed.append(dataclasses.replace(candidate, values=values))
+    return trimmed
+
+
+def _guitar_level_caveat(check) -> List[str]:
+    trim = check.get("level_trim") or {}
+    applied = [r for r in trim.get("records", []) if r["applied"]]
+    if not applied:
+        return []
+    clamped = [r["match"] for r in applied if r["clamped"]]
+    return [f"without a DI, the output gain ({trim['control']}) of "
+            + ", ".join(f"match-{r['match']}" for r in applied)
+            + " was set so each plays at the reference's loudness through a "
+              "synthetic guitar at a DI's level, not through the noise probe the "
+              "search heard; with a real guitar expect it a few dB off (between 2 "
+              "LU under and 9 over on eighteen amp recordings), and on a full mix "
+              "it matches the whole mix's loudness, not the guitar's"
+            + (f". On {', '.join(f'match-{m}' for m in clamped)} the control ran "
+               "out of range, so the level is not reached" if clamped else "")]
 
 
 def _passing_first(shortlist, check) -> list:
