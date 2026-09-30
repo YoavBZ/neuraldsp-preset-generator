@@ -2222,6 +2222,47 @@ tone is right, and it does not correct a no-DI answer's output level: through
 their own DIs, 12 of the 13 development answers that played ran 9.6 to 22.1 LU
 over their recordings.
 
+#### Setting a no-DI match's level through a guitar
+
+A no-DI match sets its output level through the noise probe, and that level does
+not carry over to a guitar: through their own DIs, the 13 development no-DI
+answers that played ran 9.6 to 22.1 LU over their recordings (−8.1 on excerpt 09,
+whose preamp sat at 5.5%), and the five held-out ones 35 under to 15 over. A
+likely reason, not measured separately, is that the cabinet removes most of the
+probe's broadband energy and little of a guitar's, so a chain that plays the
+probe at the recording's loudness plays a guitar far louder. Turning the probe
+down to a guitar's loudness did not fix it (see "A probe at a guitar's loudness
+does not fix the level of a no-DI match").
+
+The guitar check already renders every shortlisted candidate through the
+synthetic guitar at −24 LUFS. Setting the output gain from that render — the
+gap between the reference's loudness and the candidate's through the synthetic
+guitar, the same arithmetic as `invert.output_level` — would have put those 18
+answers between 2.3 LU under and 9.3 over, computed from renders already made
+(the output gain acts after the amp, so the arithmetic is exact up to the
+control's limits). A fixed correction for the remaining median of 6.2 LU, fitted
+on the development parts, made the held-out ones worse (8.5 under to 2.4 over,
+against 2.3 under to 8.6 over without it), so none is applied.
+
+**The trim.** Without `--probe-di`, after the guitar check, `match_preset.py`
+moves each passing candidate's output gain by that gap, clamped to the control's
+range, and renders it once more through the synthetic guitar to check it
+(`search.guitar_check.level_trim` in `summary.json`; a caveat says it was done and
+when a control ran out of range). Failed or unjudged candidates are left alone.
+The shortlist's scores are from before the trim. With a DI it does nothing: the
+paired level trim sets a DI match's level through the DI itself, and applying
+this one to the held-out DI matches would have moved them off by up to 11 LU.
+
+Run on four development parts with the plugin, `match-1` through the part's own
+DI played at +7.7, +9.1, +2.3 and +6.4 LU from its recording, against +20.0,
++22.1, +15.5 and −8.1 before (on excerpt 09 the guard now also demotes the
+near-silent answer, so `match-1` is a different candidate). On excerpt 03 every
+candidate's output gain reached the control's −24 dB limit, leaving them 1.5
+to 5.5 LU short of the target, and the caveat said so. What it does not do: a real DI
+still passes these presets several dB louder than the synthetic guitar does, so
+no-DI answers still tend to play loud — by 2 to 9 LU here — and on a `mix`
+reference it matches the whole mix's loudness, not the guitar's.
+
 ---
 
 ## 8. Dependency and CI policy
