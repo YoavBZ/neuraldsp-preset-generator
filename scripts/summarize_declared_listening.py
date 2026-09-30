@@ -382,16 +382,20 @@ def _execution_record(part_dir: pathlib.Path, binding: dict, heard: bool) -> dic
         raise ValueError(f"{part_dir.name}: invalid execution record") from error
     required = set(_COMMON_STEPS) | ({"audition"} if heard else set())
     steps = record.get("steps") if isinstance(record, dict) else None
+    permitted = required | ({"manifest"} if heard else set())
     if (not isinstance(record, dict)
             or record.get("schema") != "declared-listening-execution-v1"
+            or record.get("status") == "not_run"
             or record.get("declaration_sha256") != binding["sha256"]
             or record.get("commit") != binding["commit"]
             or not _is_sha256(record.get("interpreter_pip_freeze_sha256"))
-            or not isinstance(steps, dict) or set(steps) != required):
+            or not isinstance(steps, dict) or not required <= set(steps)
+            or not set(steps) <= permitted):
         raise ValueError(f"{part_dir.name}: execution record does not match the declared steps")
     for name, step in steps.items():
         log = step.get("log") if isinstance(step, dict) else None
         if (not isinstance(step, dict) or type(step.get("exit_code")) is not int
+                or step.get("failed") is True
                 or step["exit_code"] != 0 or not isinstance(log, dict)
                 or not isinstance(log.get("path"), str)
                 or not _is_sha256(log.get("sha256"))):
