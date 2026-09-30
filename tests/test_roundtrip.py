@@ -85,3 +85,33 @@ def test_non_ascii_values_stay_addressable(name: str) -> None:
     assert len(after.parameters) == len(before.parameters), (
         "mutating a value must not change how many parameters are visible"
     )
+
+
+def test_write_file_replaces_rather_than_truncates(tmp_path, monkeypatch):
+    """A write that fails part-way must leave the previous file intact.
+
+    `--force` writes into the plugin's own preset folder, and opening the target
+    for writing used to truncate it before a byte of the new preset existed.
+    """
+    import os
+
+    from format import writer
+    from format.parser import parse_file
+
+    example = pathlib.Path(__file__).resolve().parents[1] / "samples" / "Example_Clean_PR12.xml"
+    tokens = parse_file(str(example))
+    target = tmp_path / "existing.xml"
+    target.write_bytes(b"the preset that was here")
+
+    def refuse(*_):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(writer.os, "replace", refuse)
+    with pytest.raises(OSError):
+        writer.write_file(str(target), tokens)
+    assert target.read_bytes() == b"the preset that was here"
+    assert os.listdir(tmp_path) == ["existing.xml"], "no temporary file left behind"
+
+    monkeypatch.undo()
+    writer.write_file(str(target), tokens)
+    assert target.read_bytes() == example.read_bytes()

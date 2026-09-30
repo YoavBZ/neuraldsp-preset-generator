@@ -713,6 +713,34 @@ def test_tone_king_template_seeds_top_level_controls_and_the_selected_channel(tm
     assert "rhythmAmpVolume" not in live
 
 
+def test_the_pack_comes_from_the_template_when_not_named(tmp_path):
+    """show.py and apply_spec.py detect the pack from the header; so does this.
+
+    It defaulted to Morgan, so a Tone King template without `--pack toneking`
+    was refused as the wrong plugin. The synthetic chain models no Tone King
+    control, so the run stops there — naming the pack it detected.
+    """
+    import struct
+
+    from scripts.match_preset import _pack_of
+
+    body = b"ampType"
+    template = tmp_path / "ToneKing.xml"
+    template.write_bytes(
+        b"neural_dsp_toneking\x00PARAM\x00\x01\x02id\x00"
+        + bytes([0x01, len(body) + 2, 0x05]) + body + b"\x00"
+        + b"value\x00\x01\x09\x04" + struct.pack("<d", 1.0) + b"\x00"
+    )
+    assert _pack_of(template) == "toneking"
+    assert _pack_of(pathlib.Path(TEMPLATE)) == "morgan"
+
+    done = run("match_preset.py", "--template", template,
+               "--reference", tmp_path / "unused.wav", "--out-dir", tmp_path / "run")
+    assert done.returncode != 0
+    assert "pack toneking" in done.stderr, done.stderr
+    assert "not a preset for pack" not in done.stderr, done.stderr
+
+
 def test_an_out_dir_that_is_a_file_says_which_part_of_the_path(audio, tmp_path):
     blocker = tmp_path / "afile"
     blocker.write_text("not a directory")

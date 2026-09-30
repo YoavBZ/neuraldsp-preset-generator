@@ -29,14 +29,14 @@
     "sample_rate": 48000,
     "block_size": 512,
     "plugin_version": "1.0.3",
-    "renderer_build": "audio-unit-renderer-2af9432f77c6",
+    "renderer_build": "audio-unit-renderer-810ebcd7a922",
     "quality_mode": "standard;amplitude=1;settle_ms=200;warmup_s=0;isolate=auto;process=fresh",
     "reproducible": false,
-    "band_noise_db": 4.909836,
+    "band_noise_db": 6.725741,
     "notes": [
       "toneking through aumf TKI2 NDSP, one fresh plugin process per render",
       "fresh processes are not sample-exact for this pack; band_noise_db records the largest identical-state third-octave movement observed",
-      "fresh-process repeats in this run moved a third-octave band by up to 4.90984 dB",
+      "fresh-process repeats in this run moved a third-octave band by up to 6.72574 dB",
       "one repeated point per signal path was checked; at least one differed, so renderer.reproducible is false"
     ]
   },
@@ -51,23 +51,23 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 1.564454,
-              "output_peak": 0.01224,
+              "thd_percent": 0.488492,
+              "output_peak": 0.012608,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 0.45768,
-              "output_peak": 0.011978,
+              "thd_percent": 0.402646,
+              "output_peak": 0.012692,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 1.040841,
+              "thd_percent": 1.04003,
               "output_peak": 0.01698,
               "silent": false,
               "clipped": false
@@ -75,7 +75,7 @@
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 1.715753,
+              "thd_percent": 1.716311,
               "output_peak": 0.022767,
               "silent": false,
               "clipped": false
@@ -83,7 +83,7 @@
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 2.378334,
+              "thd_percent": 2.378163,
               "output_peak": 0.02801,
               "silent": false,
               "clipped": false
@@ -91,7 +91,7 @@
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 3.415156,
+              "thd_percent": 3.415567,
               "output_peak": 0.036218,
               "silent": false,
               "clipped": false
@@ -99,7 +99,7 @@
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 5.564407,
+              "thd_percent": 5.564672,
               "output_peak": 0.051967,
               "silent": false,
               "clipped": false
@@ -107,24 +107,24 @@
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 10.774535,
-              "output_peak": 0.058339,
+              "thd_percent": 10.774742,
+              "output_peak": 0.05829,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 15.953966,
-              "output_peak": 0.060915,
+              "thd_percent": 15.952942,
+              "output_peak": 0.060472,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 16.055133,
-              "output_peak": 0.059537,
+              "thd_percent": 16.054632,
+              "output_peak": 0.059367,
               "silent": false,
               "clipped": false
             }
@@ -137,15 +137,15 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 1.003043,
-              "output_peak": 0.012239,
+              "thd_percent": 0.887007,
+              "output_peak": 0.012267,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 1.463245,
+              "thd_percent": 1.467557,
               "output_peak": 0.028904,
               "silent": false,
               "clipped": false
@@ -153,7 +153,7 @@
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 4.036565,
+              "thd_percent": 4.037342,
               "output_peak": 0.04643,
               "silent": false,
               "clipped": false
@@ -161,7 +161,7 @@
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 5.505607,
+              "thd_percent": 5.505479,
               "output_peak": 0.054119,
               "silent": false,
               "clipped": false
@@ -169,48 +169,48 @@
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 6.806758,
-              "output_peak": 0.056648,
+              "thd_percent": 6.807459,
+              "output_peak": 0.056702,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 10.114872,
-              "output_peak": 0.058546,
+              "thd_percent": 10.115057,
+              "output_peak": 0.058658,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 16.946163,
-              "output_peak": 0.061734,
+              "thd_percent": 16.945488,
+              "output_peak": 0.061704,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 25.958966,
-              "output_peak": 0.061547,
+              "thd_percent": 25.920494,
+              "output_peak": 0.06132,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 29.28428,
-              "output_peak": 0.060987,
+              "thd_percent": 29.264298,
+              "output_peak": 0.060519,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 29.268063,
-              "output_peak": 0.060821,
+              "thd_percent": 29.231373,
+              "output_peak": 0.060532,
               "silent": false,
               "clipped": false
             }
@@ -223,7 +223,7 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 2.177981,
+              "thd_percent": 2.180284,
               "output_peak": 0.022308,
               "silent": false,
               "clipped": false
@@ -231,7 +231,7 @@
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 4.557984,
+              "thd_percent": 4.565113,
               "output_peak": 0.055199,
               "silent": false,
               "clipped": false
@@ -239,47 +239,47 @@
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 12.805348,
-              "output_peak": 0.060726,
+              "thd_percent": 12.805593,
+              "output_peak": 0.06067,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 17.070974,
-              "output_peak": 0.061564,
+              "thd_percent": 17.071313,
+              "output_peak": 0.061512,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 20.119438,
-              "output_peak": 0.061329,
+              "thd_percent": 20.128651,
+              "output_peak": 0.061837,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 24.048551,
-              "output_peak": 0.061515,
+              "thd_percent": 24.01204,
+              "output_peak": 0.060961,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 29.23469,
-              "output_peak": 0.060803,
+              "thd_percent": 29.227299,
+              "output_peak": 0.060395,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 32.74093,
+              "thd_percent": 32.707093,
               "output_peak": 0.062915,
               "silent": false,
               "clipped": false
@@ -287,7 +287,7 @@
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 33.486695,
+              "thd_percent": 33.481989,
               "output_peak": 0.063042,
               "silent": false,
               "clipped": false
@@ -295,8 +295,8 @@
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 33.666041,
-              "output_peak": 0.06255,
+              "thd_percent": 33.688001,
+              "output_peak": 0.062475,
               "silent": false,
               "clipped": false
             }
@@ -309,7 +309,7 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 3.973153,
+              "thd_percent": 3.987334,
               "output_peak": 0.037878,
               "silent": false,
               "clipped": false
@@ -317,72 +317,72 @@
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 13.59006,
-              "output_peak": 0.061922,
+              "thd_percent": 13.58681,
+              "output_peak": 0.061081,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 21.935501,
-              "output_peak": 0.061421,
+              "thd_percent": 21.902705,
+              "output_peak": 0.061732,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 25.56941,
-              "output_peak": 0.06094,
+              "thd_percent": 25.567119,
+              "output_peak": 0.060946,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 27.849813,
-              "output_peak": 0.060115,
+              "thd_percent": 27.858895,
+              "output_peak": 0.060232,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 30.346574,
-              "output_peak": 0.060507,
+              "thd_percent": 30.359593,
+              "output_peak": 0.06054,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 32.958542,
-              "output_peak": 0.063609,
+              "thd_percent": 32.983444,
+              "output_peak": 0.063608,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 34.174639,
-              "output_peak": 0.064799,
+              "thd_percent": 34.098217,
+              "output_peak": 0.064884,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 34.16871,
-              "output_peak": 0.06579,
+              "thd_percent": 34.142826,
+              "output_peak": 0.065641,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 34.188432,
-              "output_peak": 0.065253,
+              "thd_percent": 34.144063,
+              "output_peak": 0.064619,
               "silent": false,
               "clipped": false
             }
@@ -392,17 +392,17 @@
       "repeat_verification": {
         "input_level": 0.05,
         "position_percent": 50.0,
-        "sha256_first": "4e60c5713dba95a238900fa28f31c0e733da8e0425a605d92f5f83c3dcfb586c",
-        "sha256_repeat": "51f2371b5961cfcb5a734d69f554b46f555ad126677c0dd1b2315759233c62b3",
+        "sha256_first": "9c7ec042ab4f7fa4ef193a3df624154dbcebee120cdf843ded607ee26edc75a9",
+        "sha256_repeat": "3decfa9384658e67c4381959d32267a95a328cc3225a508b8c1d08fd0ba8d54d",
         "byte_exact": false,
-        "relative_error_db": -39.487683,
-        "max_abs_difference": 0.00405325,
-        "max_band_difference_db": 4.909836,
+        "relative_error_db": -31.228571,
+        "max_abs_difference": 0.008441578,
+        "max_band_difference_db": 6.725741,
         "max_band_difference_hz": 40.0
       },
       "caveats": [
         "THD describes the complete amp/cab output at -6 dB output trim, not an isolated preamp stage.",
-        "fresh processes were not sample-exact at the repeated point: -39.49 dB relative waveform error and 4.91 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
+        "fresh processes were not sample-exact at the repeated point: -31.23 dB relative waveform error and 6.73 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
       ]
     },
     "lead": {
@@ -415,7 +415,7 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 1.162644,
+              "thd_percent": 1.193072,
               "output_peak": 0.014812,
               "silent": false,
               "clipped": false
@@ -423,7 +423,7 @@
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 3.297902,
+              "thd_percent": 3.297698,
               "output_peak": 0.039409,
               "silent": false,
               "clipped": false
@@ -431,7 +431,7 @@
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 4.598699,
+              "thd_percent": 4.598625,
               "output_peak": 0.050045,
               "silent": false,
               "clipped": false
@@ -439,7 +439,7 @@
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 5.104602,
+              "thd_percent": 5.104683,
               "output_peak": 0.054056,
               "silent": false,
               "clipped": false
@@ -447,7 +447,7 @@
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 5.623827,
+              "thd_percent": 5.623805,
               "output_peak": 0.055612,
               "silent": false,
               "clipped": false
@@ -455,7 +455,7 @@
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 6.924347,
+              "thd_percent": 6.924354,
               "output_peak": 0.056226,
               "silent": false,
               "clipped": false
@@ -463,7 +463,7 @@
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 9.774022,
+              "thd_percent": 9.774005,
               "output_peak": 0.056855,
               "silent": false,
               "clipped": false
@@ -471,24 +471,24 @@
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 13.747164,
-              "output_peak": 0.058909,
+              "thd_percent": 13.741709,
+              "output_peak": 0.058457,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 17.305429,
-              "output_peak": 0.060617,
+              "thd_percent": 17.298184,
+              "output_peak": 0.060665,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 19.308533,
-              "output_peak": 0.062343,
+              "thd_percent": 19.309471,
+              "output_peak": 0.062337,
               "silent": false,
               "clipped": false
             }
@@ -501,7 +501,7 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 4.225164,
+              "thd_percent": 4.2252,
               "output_peak": 0.042104,
               "silent": false,
               "clipped": false
@@ -509,72 +509,72 @@
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 11.379319,
-              "output_peak": 0.057504,
+              "thd_percent": 11.379007,
+              "output_peak": 0.057508,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 15.700917,
-              "output_peak": 0.059253,
+              "thd_percent": 15.700287,
+              "output_peak": 0.059284,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 18.151571,
-              "output_peak": 0.060863,
+              "thd_percent": 18.149224,
+              "output_peak": 0.06063,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 20.164605,
-              "output_peak": 0.060794,
+              "thd_percent": 20.15719,
+              "output_peak": 0.061636,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 22.170267,
-              "output_peak": 0.060662,
+              "thd_percent": 22.147427,
+              "output_peak": 0.062403,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 23.813858,
-              "output_peak": 0.061904,
+              "thd_percent": 23.808089,
+              "output_peak": 0.062749,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 24.518659,
-              "output_peak": 0.060944,
+              "thd_percent": 24.50896,
+              "output_peak": 0.060956,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 26.074874,
-              "output_peak": 0.061081,
+              "thd_percent": 26.070846,
+              "output_peak": 0.061111,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 29.172697,
-              "output_peak": 0.06131,
+              "thd_percent": 29.168861,
+              "output_peak": 0.060919,
               "silent": false,
               "clipped": false
             }
@@ -587,7 +587,7 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 11.605766,
+              "thd_percent": 11.60578,
               "output_peak": 0.057169,
               "silent": false,
               "clipped": false
@@ -595,47 +595,47 @@
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 22.817143,
-              "output_peak": 0.06332,
+              "thd_percent": 22.818355,
+              "output_peak": 0.062757,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 24.858768,
-              "output_peak": 0.062872,
+              "thd_percent": 24.840917,
+              "output_peak": 0.063494,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 25.748607,
-              "output_peak": 0.063048,
+              "thd_percent": 25.739208,
+              "output_peak": 0.062763,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 26.534549,
-              "output_peak": 0.061659,
+              "thd_percent": 26.534128,
+              "output_peak": 0.061653,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 27.829033,
-              "output_peak": 0.059991,
+              "thd_percent": 27.819144,
+              "output_peak": 0.060012,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 32.306257,
+              "thd_percent": 32.255853,
               "output_peak": 0.06269,
               "silent": false,
               "clipped": false
@@ -643,7 +643,7 @@
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 44.601739,
+              "thd_percent": 44.609359,
               "output_peak": 0.066114,
               "silent": false,
               "clipped": false
@@ -651,7 +651,7 @@
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 63.225858,
+              "thd_percent": 63.349458,
               "output_peak": 0.067999,
               "silent": false,
               "clipped": false
@@ -659,7 +659,7 @@
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 77.215885,
+              "thd_percent": 77.299269,
               "output_peak": 0.068525,
               "silent": false,
               "clipped": false
@@ -673,47 +673,47 @@
             {
               "position_percent": 10.0,
               "stored_value": "0.1",
-              "thd_percent": 19.688518,
-              "output_peak": 0.061662,
+              "thd_percent": 19.694415,
+              "output_peak": 0.061444,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 20.0,
               "stored_value": "0.2",
-              "thd_percent": 26.088453,
-              "output_peak": 0.065221,
+              "thd_percent": 26.10841,
+              "output_peak": 0.064226,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 30.0,
               "stored_value": "0.3",
-              "thd_percent": 27.845577,
-              "output_peak": 0.063213,
+              "thd_percent": 27.833215,
+              "output_peak": 0.063825,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 40.0,
               "stored_value": "0.4",
-              "thd_percent": 29.566616,
-              "output_peak": 0.062062,
+              "thd_percent": 29.563066,
+              "output_peak": 0.062697,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 50.0,
               "stored_value": "0.5",
-              "thd_percent": 31.895497,
-              "output_peak": 0.063423,
+              "thd_percent": 31.91784,
+              "output_peak": 0.063424,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 60.0,
               "stored_value": "0.6",
-              "thd_percent": 36.622744,
+              "thd_percent": 36.520299,
               "output_peak": 0.065152,
               "silent": false,
               "clipped": false
@@ -721,32 +721,32 @@
             {
               "position_percent": 70.0,
               "stored_value": "0.7",
-              "thd_percent": 47.62358,
-              "output_peak": 0.066955,
+              "thd_percent": 47.62136,
+              "output_peak": 0.066956,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 80.0,
               "stored_value": "0.8",
-              "thd_percent": 68.817739,
-              "output_peak": 0.067773,
+              "thd_percent": 68.809995,
+              "output_peak": 0.067933,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 90.0,
               "stored_value": "0.9",
-              "thd_percent": 91.497291,
-              "output_peak": 0.067799,
+              "thd_percent": 91.493749,
+              "output_peak": 0.067809,
               "silent": false,
               "clipped": false
             },
             {
               "position_percent": 100.0,
               "stored_value": "1",
-              "thd_percent": 106.87881,
-              "output_peak": 0.069627,
+              "thd_percent": 106.939971,
+              "output_peak": 0.06966,
               "silent": false,
               "clipped": false
             }
@@ -756,17 +756,17 @@
       "repeat_verification": {
         "input_level": 0.05,
         "position_percent": 50.0,
-        "sha256_first": "47c88f83b308b5f220724436e5abf8fc22472e866d273531edfa0d2960e0a8b7",
-        "sha256_repeat": "5484ca25a683647444b32cca4384c9a3ca95f94c577e8d024bbcfa6b34d1decc",
+        "sha256_first": "e063e68d0b92d2e799adda08fa309539d5289105cb620ffd6421f720b06ec2bc",
+        "sha256_repeat": "83b5ab5d7968446af508beb4ca7c30340b009d82cc4656ba8ebc4e81932e9f4e",
         "byte_exact": false,
-        "relative_error_db": -31.25567,
-        "max_abs_difference": 0.0086512,
-        "max_band_difference_db": 4.406398,
-        "max_band_difference_hz": 315.0
+        "relative_error_db": -48.470813,
+        "max_abs_difference": 0.001419587,
+        "max_band_difference_db": 2.071675,
+        "max_band_difference_hz": 40.0
       },
       "caveats": [
         "THD describes the complete amp/cab output at -6 dB output trim, not an isolated preamp stage.",
-        "fresh processes were not sample-exact at the repeated point: -31.26 dB relative waveform error and 4.41 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
+        "fresh processes were not sample-exact at the repeated point: -48.47 dB relative waveform error and 2.07 dB maximum third-octave difference. Curve values are single renders, not exact deterministic outputs."
       ]
     }
   }

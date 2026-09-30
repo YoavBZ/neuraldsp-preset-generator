@@ -988,19 +988,15 @@ def _detect_predelay(mono, sample_rate: int, env, env_rate: float) -> Optional[f
         # The crossover is the *end* of the dip — the last moment still at the
         # floor before the tail lifts the envelope again.
         #
-        # Two earlier versions are recorded because both looked right and both
-        # were wrong in ways the tests did not see. Taking the first local minimum
-        # finds envelope ripple. Taking `argmin` over the window returns the first
-        # of many equal minima across a silent gap, i.e. the moment the direct
-        # sound ended, so it reported a constant ~23 ms whatever the pre-delay was.
-        #
-        # And anchoring the rise on `argmax(db)` — the version a review caught —
-        # only ever worked when the tail was *louder* than the direct sound.
-        # `db` is relative to the attack, so `db[0] == 0`; whenever the tail is
-        # quieter, as it normally is, `argmax` returned 0 and the onset was
-        # skipped. It discarded 108 of 175 onset windows, and the fixture passed
-        # only because its tail happened to survive smoothing louder than the
-        # 12 ms burst that caused it.
+        # Three simpler rules look right and are wrong in ways a test can miss.
+        # The first local minimum finds envelope ripple. `argmin` over the window
+        # returns the first of many equal minima across a silent gap — the moment
+        # the direct sound ended — so it reads a constant ~23 ms whatever the
+        # pre-delay is. And anchoring the rise on `argmax(db)` works only when the
+        # tail is *louder* than the direct sound: `db` is relative to the attack,
+        # so `db[0] == 0`, and with the usual quieter tail `argmax` returns 0 and
+        # the onset is skipped (108 of 175 onset windows, on a fixture whose tail
+        # happened to survive smoothing louder than its 12 ms burst).
         floor = float(db.min())
         if floor > -PREDELAY_MIN_DIP_DB:
             continue  # the direct sound never falls: nothing is separated

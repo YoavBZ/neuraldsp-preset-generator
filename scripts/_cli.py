@@ -26,10 +26,9 @@ _INTERRUPT_NOTE: Optional[str] = None
 def on_interrupt(note: str) -> None:
     """Register the sentence to print if this run is interrupted.
 
-    A long search interrupted at 90% used to print nothing at all and leave a 176 KB
-    store behind with every render in it. Not a traceback, so it cleared the bar the
-    other error paths are held to — and it still left the user believing an hour was
-    gone when the work was on disk and the next run would serve it from the cache.
+    A long search interrupted at 90% has every render so far in its store, and the
+    next run serves them from the cache. Without a note, the user would believe an
+    hour was lost when the work is on disk.
     """
     global _INTERRUPT_NOTE
     _INTERRUPT_NOTE = note
@@ -61,15 +60,12 @@ def guarded(main) -> None:
     `FileNotFoundError` traceback is not a message. These are the mistakes a
     person makes, not the ones the code makes.
 
-    Nothing here imports `analysis`. It used to, for `AnalysisUnavailable`, and that put
-    the analysis extra on the path of every script that calls `guarded` — including
-    `show.py`, `apply_spec.py` and `bootstrap_pack.py`, which are the three that must run
-    on a bare clone with nothing but the standard library. On a checkout without the
-    extra installed, `bootstrap_pack.py` died with `ModuleNotFoundError: No module named
-    'analysis'` from inside the handler written to stop tracebacks reaching people. CI
-    did not see it because CI installs the package, which makes `analysis` importable
-    from anywhere; matching by name is what the sibling `_LIBRARY_ERRORS` clause already
-    does, and for the same reason.
+    Nothing here imports `analysis`: that would put the analysis extra on the path of
+    every script that calls `guarded` — including `show.py`, `apply_spec.py` and
+    `bootstrap_pack.py`, which must run on a bare clone with nothing but the standard
+    library — and fail with `ModuleNotFoundError` from inside the handler meant to
+    stop tracebacks reaching people. CI would not see it, because CI installs the
+    package. `AnalysisUnavailable` is matched by name, as `_LIBRARY_ERRORS` is.
     """
     import json
 
@@ -123,8 +119,7 @@ def guarded(main) -> None:
 # and quietly fall back on a guess.
 #
 # Matched by name rather than imported, because importing either one here would put an
-# optional dependency on the bare-clone path — which is the one thing `_cli` must not do,
-# and which importing `analysis` for this list did for months.
+# optional dependency on the bare-clone path — which is the one thing `_cli` must not do.
 _LIBRARY_ERRORS = frozenset({
     "LibsndfileError", "SoundFileError", "SoundFileRuntimeError",
     "AnalysisUnavailable",

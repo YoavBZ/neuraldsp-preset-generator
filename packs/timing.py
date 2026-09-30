@@ -20,6 +20,7 @@ tempo changes. Otherwise prefer this.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Dict
 
@@ -63,8 +64,10 @@ def quarter_ms(bpm: float) -> float:
         tempo = float(bpm)
     except (TypeError, ValueError):
         raise TimingError(f"tempo must be a number, got {bpm!r}") from None
-    if tempo <= 0:
-        raise TimingError(f"tempo must be positive, got {bpm}")
+    # `nan <= 0` is False and so is `inf <= 0`: NaN would become a NaN delay time,
+    # and infinity a 0 ms quarter note and a ZeroDivisionError for a tremolo rate.
+    if not math.isfinite(tempo) or tempo <= 0:
+        raise TimingError(f"tempo must be a positive number, got {bpm}")
     return 60000.0 / tempo
 
 

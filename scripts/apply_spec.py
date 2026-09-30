@@ -192,20 +192,34 @@ def run(args) -> None:
         changes.append(("name", before, str(new_name)))
 
     # --- IR stripping ---------------------------------------------------
+    warnings: list[str] = []
     if args.strip_irs:
-        for key, before, after in strip_custom_irs(preset):
+        for module, key, before, after in strip_custom_irs(preset, pack):
             # Report these the way every other row is reported, so a mic index
             # reads as "Custom IR -> Dynamic 57" rather than a bare integer.
             # Only a genuinely emptied path is "(cleared)".
-            meta = pack.get("cabParameters", key)
+            meta = pack.get(module, key)
             changes.append((
-                f"cabParameters/{key}",
-                render(meta, before) if meta else before,
-                "(cleared)" if after == "" else (render(meta, after) if meta else after),
+                f"{module}/{key}" if module else key,
+                render(meta, before),
+                "(cleared)" if after == "" else render(meta, after),
             ))
+        if not pack.custom_ir:
+            left = unstripped_irs(preset, pack)
+            # Not silent: the flag asks for a portable preset, and a pack that
+            # cannot say where its IRs live leaves every path the template had.
+            warnings.append(
+                f"--strip-irs stripped nothing: {pack.display_name} declares no "
+                f"custom-IR mapping (`custom_ir` in "
+                f"packs/{pack.pack_id}/manifest.json), so nothing here knows which "
+                f"mic to fall back to."
+                + ("" if not left else
+                   " These still point at files or at Custom IR:\n"
+                   + "\n".join(f"    {path} = {value}" for path, value in left)
+                   + "\n  Tell the user, or set them by hand in a --spec.")
+            )
 
     # --- parameter overrides --------------------------------------------
-    warnings: list[str] = []
     for i, entry in enumerate(entries):
         module, key, human = read_entry(entry, i)
         param = preset.by_path.get((module, key))
@@ -293,7 +307,12 @@ def render(spec, stored: str) -> str:
     name = spec.member_name(stored)
     if name:
         return name
-    return describe(spec.kind, stored, spec.unit)
+    try:
+        return describe(spec.kind, stored, spec.unit)
+    except (ValueError, OverflowError):
+        # A "raw" write, or a template value that does not read as its kind.
+        # The change list is a preview; it must not be what refuses the write.
+        return repr(stored)
 
 
 
@@ -328,15 +347,12 @@ def read_entry(entry, index: int):
     return entry["module"], entry["key"], entry["value"]
 
 
-# Index 10 of the mic selector is "Custom IR": the cab plays the file named by
-# `*ChosenIRFilePath` instead of a modelled mic. The plugin's own defaults for
-# the two selectors, which is what a cab with no custom IR should fall back to.
-CUSTOM_IR_INDEX = "10"
-DEFAULT_MIC_INDEX = {"left": "0", "right": "4"}  # Dynamic 57 / Condenser 184
-
-
-def strip_custom_irs(preset) -> list:
+def strip_custom_irs(preset, pack=None) -> list:
     """Clear custom IR file paths so the cab falls back to internal mics.
+
+    Returns (module, key, before, after) for each field it changed. Which fields
+    those are comes from the pack's `custom_ir` slots; with no pack given, the
+    one the preset's own header names is used.
 
     A custom IR is an absolute path that only resolves on the machine that
     saved the preset. "No custom IR" is that field set to an empty string,
@@ -348,24 +364,57 @@ def strip_custom_irs(preset) -> list:
     showing `Custom IR / No File` — so the selector is moved back to the
     plugin's own default for that side whenever it was pointing at the file.
     """
+    if pack is None:
+        from packs.loader import detect_pack
+
+        pack = detect_pack(preset.file_header)
+        if pack is None:
+            return []
     changed = []
-    for side in ("left", "right"):
-        key = f"{side}ChosenIRFilePath"
-        param = preset.by_path.get(("cabParameters", key))
+    for slot in pack.custom_ir:
+        module, _, key = slot["path"].rpartition("/")
+        param = preset.by_path.get((module, key))
         if param is not None and param.value != "":
             before = param.value
-            set_parameter(preset, "cabParameters", key, "")
-            changed.append((key, before, ""))
+            set_parameter(preset, module, key, "")
+            changed.append((module, key, before, ""))
 
-        mic_key = f"{side}MicType"
-        mic = preset.by_path.get(("cabParameters", mic_key))
-        if mic is not None and mic.value == CUSTOM_IR_INDEX:
+        module, _, key = slot["selector"].rpartition("/")
+        mic = preset.by_path.get((module, key))
+        if mic is not None and _same_index(mic.value, slot["custom"]):
             before = mic.value
-            after = DEFAULT_MIC_INDEX[side]
-            set_parameter(preset, "cabParameters", mic_key, after)
-            changed.append((mic_key, before, after))
+            set_parameter(preset, module, key, slot["default"])
+            changed.append((module, key, before, slot["default"]))
     return changed
 
+
+def unstripped_irs(preset, pack) -> list:
+    """The IR-looking fields a pack with no `custom_ir` mapping left alone.
+
+    Every non-empty `path` field, and every selector sitting on a member named
+    "Custom IR". Listed rather than cleared: without a declared mapping there is
+    no known default to fall back to, and a guessed one is a tone change nobody
+    chose.
+    """
+    found = []
+    for param in preset.parameters:
+        spec = pack.get(param.module_path, param.key)
+        if spec is None:
+            continue
+        shown = f"{spec.module}/{spec.key}" if spec.module else spec.key
+        if spec.kind == "path" and param.value != "":
+            found.append((shown, param.value))
+        elif spec.kind == "enum" and spec.member_name(param.value) == "Custom IR":
+            found.append((shown, "Custom IR"))
+    return found
+
+
+def _same_index(stored: str, index: str) -> bool:
+    """Stored selectors are text ("10") or doubles ("16"); compare as numbers."""
+    try:
+        return float(stored) == float(index)
+    except ValueError:
+        return stored == index
 
 
 if __name__ == "__main__":

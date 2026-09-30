@@ -13,6 +13,8 @@ file. The template-based approach sidesteps this entirely.
 
 from __future__ import annotations
 
+import os
+import tempfile
 from typing import Iterable
 
 from .parser import Token
@@ -24,6 +26,26 @@ def write(tokens: Iterable[Token]) -> bytes:
 
 
 def write_file(path: str, tokens: Iterable[Token]) -> None:
-    with open(path, "wb") as f:
-        f.write(write(tokens))
+    """Write a preset so the path holds either the old file or the new one.
+
+    Written beside the target and renamed over it: opening the target itself
+    would truncate it first, so an interrupted `--force` into the plugin's preset
+    folder could leave a cut-off preset where a working one had been.
+    """
+    data = write(tokens)
+    directory = os.path.dirname(os.path.abspath(path))
+    handle, temp = tempfile.mkstemp(prefix=".preset-", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(handle, "wb") as f:
+            f.write(data)
+        # mkstemp creates the file 0600; a preset should get the permissions
+        # any other new file here would.
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(temp, 0o666 & ~umask)
+        os.replace(temp, path)
+    except BaseException:
+        if os.path.exists(temp):
+            os.unlink(temp)
+        raise
 

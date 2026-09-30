@@ -72,5 +72,13 @@ path back on a stripped preset. But swapping a third-party IR for an internal
 mic is a real tonal change, not a formality. Don't strip a preset the user wants
 to keep IR-based, and always say what you did.
 
+### Which packs can be stripped
+
+The fields come from the pack manifest's `custom_ir` slots: for each cab, the
+path, the selector, its "Custom IR" value, and the default to fall back to.
+Morgan declares them. Tone King does not — its fall-back mics have not been
+established — so `--strip-irs` on a Tone King preset changes nothing and warns,
+listing every file path and every mic still on `Custom IR`.
+
 `samples/Example_Clean_PR12.xml` is already IR-free, so `--strip-irs` is a
 harmless no-op there.

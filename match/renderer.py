@@ -43,9 +43,8 @@ class RenderError(RuntimeError):
     """A backend could not produce audio at all — no array came back.
 
     Deliberately *not* raised for silence. A silent render is a legitimate return
-    value that the caller has to interpret: Tone King produced exact zeros from
-    the Swift helpers for months, and that turned out to be a property of the
-    bare CLI instantiation rather than a failure to render. `RenderResult.silent`
+    value that the caller has to interpret: Tone King produces exact zeros on its
+    first allocation of render resources, which is not a failure to render. `RenderResult.silent`
     is how a caller asks, and the standing rule is that silence is not evidence
     about a control either way.
     """
@@ -115,8 +114,8 @@ class RenderResult:
     @property
     def silent(self) -> bool:
         """Exact zeros. Worth its own name: the repository's rule is that a silent
-        render is not evidence about a control, and Tone King produced exactly this
-        from the Swift helpers for months."""
+        render is not evidence about a control, and Tone King produces exactly
+        this on its first allocation of render resources."""
         return self.peak == 0.0
 
 

@@ -150,7 +150,9 @@ Other flags:
 
 - `--strip-irs` — clear custom IR paths so the preset uses internal mics and is
   portable on any machine. Reversible, but it changes the sound — see
-  [cab-and-irs.md](cab-and-irs.md).
+  [cab-and-irs.md](cab-and-irs.md). Only a pack whose manifest declares
+  `custom_ir` can be stripped (Morgan does, Tone King does not); on any other
+  it warns and lists the IR fields it left in place.
 - `--allow-out-of-range` — downgrade a declared-range violation to a warning.
   Use only when the user asks for something deliberately extreme, and say so.
 - `--force` — overwrite an existing `--out`. Ask first.

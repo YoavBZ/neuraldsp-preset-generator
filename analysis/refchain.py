@@ -132,8 +132,8 @@ def parameter_specs():
     keeps the two from drifting apart.
 
     Cached because `load_pack()` re-reads and re-parses `manifest.json` on every
-    call, and this used to be called once per render plus once per supplied
-    setting: a render with all 45 parameters spent about 25 of its 47 ms parsing
+    call, and this is called once per render plus once per supplied setting:
+    uncached, a render with all 45 parameters spends about 25 of its 47 ms parsing
     the same file 47 times. Returned specs are read-only dataclasses. A test that
     edits a manifest in place must call `parameter_specs.cache_clear()`.
     """

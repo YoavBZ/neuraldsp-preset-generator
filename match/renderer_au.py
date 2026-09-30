@@ -1,8 +1,7 @@
 """The real backend: an installed Audio Unit, driven through the batched Swift server.
 
-This is the one renderer whose numbers are facts about the plugin. Everything
-M1-M4 measured came from `SyntheticRenderer`, which shares Morgan's topology and
-models none of its DSP; the gap between the two is what M5 exists to write down.
+This is the one renderer whose numbers are facts about the plugin.
+`SyntheticRenderer` shares Morgan's topology and models none of its DSP.
 
 Three things shape the implementation, and all three are measurements rather than
 preferences:
@@ -13,8 +12,8 @@ instantiates once and then reads commands, which takes a render to about 291 ms
 steady state. A 300-render search is 90 seconds rather than 10 minutes, and that
 difference is what makes searching against the plugin possible at all.
 
-**No settle.** The 200 ms pause after writing state was a guess. The same state at
-0/5/10/25/50/100/200/400 ms produces byte-identical output, for a switch and for a
+**No settle.** The same state at 0/5/10/25/50/100/200/400 ms after writing it
+produces byte-identical output, for a switch and for a
 mic change that reloads an impulse response, so this passes `--settle 0` and hands
 the search back a fifth of its wall clock. (Measured on Morgan's XML state path.
 `settle_ms` is still a constructor argument, because that measurement has not been
@@ -39,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import selectors
 import shutil
 import subprocess
 import sys
@@ -58,6 +58,13 @@ PROBE_SOURCE = PLUGIN_ROOT / "scripts" / "au_probe.swift"
 # remainder is the plugin's response to the zero padding after the signal ends,
 # never the signal itself.
 BLOCK_FRAMES = 512
+# How long the render server may take to reply before it counts as hung and is
+# stopped, rather than blocking a search forever. The base covers starting the
+# plugin and a render's fixed cost — Tone King's first render has taken about 46 s
+# (docs/measuring-against-the-plugin.md) — and each render adds twice its own audio
+# length, so a long DI is slow rather than failed.
+REPLY_TIMEOUT_S = 120.0
+REPLY_SECONDS_PER_AUDIO_SECOND = 2.0
 SAMPLE_RATE = 48000
 
 
@@ -89,15 +96,15 @@ class AudioUnitRenderer(Renderer):
                  band_noise_db: Optional[float] = None,
                  process_policy: str = "reuse",
                  binary: Optional[pathlib.Path] = None,
-                 workdir: Optional[pathlib.Path] = None):
+                 workdir: Optional[pathlib.Path] = None,
+                 reply_timeout_s: float = REPLY_TIMEOUT_S):
         self.pack_id = pack_id
         self.settle_ms = float(settle_ms)
         # None means "find out". Some plugins render silence on their first
         # allocation of render resources and render normally after a deallocate/
-        # reallocate cycle. Tone King is one: it returned exact zeros from the
-        # Swift helpers for months, which was recorded as a property of bare
-        # instantiation, and it renders at 0.153 peak once the resources have been
-        # cycled. Measured both ways round — `realloc` after the state write and
+        # reallocate cycle. Tone King is one: from the Swift helpers it returns
+        # exact zeros on a bare instantiation, and renders at 0.153 peak once the
+        # resources have been cycled. Measured both ways round — `realloc` after the state write and
         # `isolate` before it both work, so it is the reallocation that matters
         # and not the state write. Morgan never needs it. Rather than encode a
         # rule from two plugins, this tries without and reacts to the symptom.
@@ -147,6 +154,9 @@ class AudioUnitRenderer(Renderer):
                 "but declares no positive band-noise floor"
             )
 
+        if not float(reply_timeout_s) > 0:
+            raise AudioUnitError("reply_timeout_s must be a positive number of seconds")
+        self.reply_timeout_s = float(reply_timeout_s)
         self._binary = pathlib.Path(binary) if binary else None
         self._owns_workdir = workdir is None
         self._workdir = pathlib.Path(workdir) if workdir else pathlib.Path(
@@ -231,9 +241,8 @@ class AudioUnitRenderer(Renderer):
             return audio
 
         # The first render decides how this plugin has to be driven. Silence here
-        # is the symptom Tone King showed for months and which was written down as
-        # "a property of the bare instantiation": it is not, it is the plugin's
-        # first allocation of render resources. One render is spent finding out,
+        # is what Tone King does: not a property of the bare instantiation but of
+        # the plugin's first allocation of render resources. One render is spent finding out,
         # and only on a backend that came back silent — so a plugin that works,
         # like Morgan, pays nothing.
         self._isolate_decided = True
@@ -280,7 +289,9 @@ class AudioUnitRenderer(Renderer):
 
         state_path = pathlib.Path(command["state"]) if "state" in command else None
         try:
-            self._exchange(command)
+            seconds = frames / SAMPLE_RATE + self.warmup_s
+            self._exchange(command, timeout=self.reply_timeout_s
+                           + REPLY_SECONDS_PER_AUDIO_SECOND * seconds)
             return self._read_render(out_path, frames)
         finally:
             out_path.unlink(missing_ok=True)
@@ -522,8 +533,9 @@ class AudioUnitRenderer(Renderer):
             self._log = None
         self._ensure_server()
 
-    def _exchange(self, command: Dict[str, Any]) -> Dict[str, Any]:
-        """One command, one reply, with a dead server reported as such."""
+    def _exchange(self, command: Dict[str, Any],
+                  timeout: Optional[float] = None) -> Dict[str, Any]:
+        """One command, one reply, with a dead or hung server reported as such."""
         process = self._process
         assert process is not None and process.stdin is not None
         try:
@@ -534,16 +546,42 @@ class AudioUnitRenderer(Renderer):
                 f"the render server closed its input ({e}). Its stderr is in "
                 f"{self._workdir / 'server.log'}."
             ) from e
-        reply = self._readline()
+        reply = self._readline(timeout)
         if not reply.get("ok"):
             raise AudioUnitError(
                 f"render failed: {reply.get('error', reply)}"
             )
         return reply
 
-    def _readline(self) -> Dict[str, Any]:
+    def _readline(self, timeout: Optional[float] = None) -> Dict[str, Any]:
         process = self._process
         assert process is not None and process.stdout is not None
+        timeout = self.reply_timeout_s if timeout is None else float(timeout)
+        if not self._reply_arrives(process.stdout, timeout):
+            # Hung, not dead: nothing will ever come. Stop it and forget it, so the
+            # next render starts one new instance instead of waiting on this one or
+            # reporting it as a crash.
+            self._process = None
+            self._process_has_rendered = False
+            try:
+                process.kill()
+                process.wait(timeout=10)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            for stream in (process.stdin, process.stdout):
+                try:
+                    if stream is not None:
+                        stream.close()
+                except OSError:
+                    pass
+            if self._log is not None:
+                self._log.close()
+                self._log = None
+            raise AudioUnitError(
+                f"the render server did not reply within {timeout:g} s, "
+                "so it was stopped; the next render starts a new plugin instance. "
+                f"Its stderr is in {self._workdir / 'server.log'}."
+            )
         line = process.stdout.readline()
         if not line:
             status = process.poll()
@@ -557,6 +595,22 @@ class AudioUnitRenderer(Renderer):
             raise AudioUnitError(
                 f"the render server said {line.strip()!r}, which is not JSON ({e})"
             ) from e
+
+    def _reply_arrives(self, stream, timeout: float) -> bool:
+        """Whether the server's next line arrives within the reply timeout.
+
+        The server answers each command with exactly one line and nothing is read
+        ahead, so the pipe is empty between replies and `select` on it is the
+        whole story. A stand-in without a real descriptor (a test double) is
+        read directly.
+        """
+        try:
+            descriptor = stream.fileno()
+        except (AttributeError, OSError, ValueError):
+            return True
+        with selectors.DefaultSelector() as selector:
+            selector.register(descriptor, selectors.EVENT_READ)
+            return bool(selector.select(timeout))
 
     def _compile(self, source: pathlib.Path, output: pathlib.Path) -> None:
         sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))

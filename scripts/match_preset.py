@@ -50,12 +50,8 @@ from _cli import (add_excerpt_start_arg, die, enumerated as _enumerated, guarded
                   reject_excerpt_start_without_window, renderer_paths,
                   resolved_excerpt)
 
-# The regimes `analysis.fingerprint` accepts, and only those. This tuple used to read
-# `("paired_di", "reamp", "isolated", "mix", "probe")` — two of which do not exist:
-# `fingerprint()` refuses an unknown regime by name, so `--reference-mode reamp` passed
-# argparse and then died with "unknown regime 'reamp'", and `separated_stem`, which the
-# fingerprint scores at 0.55 confidence, could not be selected at all. Two dead choices
-# and one missing one, in the flag that decides how much the whole run is worth.
+# The regimes `analysis.fingerprint` accepts, and only those: a choice argparse allows
+# and `fingerprint()` refuses would pass the flag and then die with "unknown regime".
 # `tests/test_match_cli.py` asserts this list against the fingerprint's so it cannot
 # drift again; it is not imported from there because `build_parser()` runs before the
 # missing-extra check and must not need numpy to print `--help`.
@@ -119,7 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--paired-provenance", type=pathlib.Path,
                     help="paired-di-reference-1 sidecar proving that --reference "
                          "was rendered from this exact --probe-di")
-    ap.add_argument("--pack", default="morgan", help="which plugin pack (default: morgan)")
+    ap.add_argument("--pack", default=None,
+                    help="which plugin pack (default: the one the template's header "
+                         "names, as show.py and apply_spec.py detect it)")
     ap.add_argument("--amp", default=None,
                     help="signal path to invert, e.g. sw50r or lead (default: read "
                          "the template's amp/channel selector)")
@@ -238,6 +236,9 @@ def main() -> None:
             "--excerpt-start would score a window of one against all of the "
             "other.\n  Drop --excerpt-start for a paired run.")
     reject_excerpt_start_without_window(args.excerpt_start, excerpt_s)
+
+    if args.pack is None:
+        args.pack = _pack_of(args.template)
 
     signal_path_arg = None
     pairing_document = None
@@ -1004,6 +1005,21 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
         f"this repository's numbers through M4 were measured against.")
 
 
+def _pack_of(template: pathlib.Path) -> str:
+    """The pack a template's own header names.
+
+    Read from the header, as show.py and apply_spec.py do, so a Tone King template
+    needs no `--pack toneking`. A file that names no known pack falls back to Morgan, so `_seed_from_template`
+    refuses it with the sentence written for that case.
+    """
+    from format.parser import parse_file
+    from format.structured import build as build_preset
+    from packs.loader import detect_pack
+
+    detected = detect_pack(build_preset(parse_file(str(template.expanduser()))).file_header)
+    return detected.pack_id if detected is not None else "morgan"
+
+
 def _seed_from_template(path: pathlib.Path, space, pack_id: str):
     """The template's values as the search's starting point and its prior.
 
@@ -1014,10 +1030,9 @@ def _seed_from_template(path: pathlib.Path, space, pack_id: str):
 
     A file that is not a preset for this pack is refused here rather than tolerated.
     `parse_file` reads anything and `build_preset` yields zero parameters, so
-    `--template pyproject.toml` used to search from an empty seed, spend the whole
-    budget, write a report with a distance in it, and then print an `apply_spec.py`
-    command that refuses the very file it had just been given. The one downstream tool
-    that checked was the one this run told the user to go and run next.
+    tolerated, `--template pyproject.toml` would search from an empty seed, spend the
+    whole budget, write a report with a distance in it, and then print an
+    `apply_spec.py` command that refuses the very file it had been given.
     """
     from format.parser import parse_file
     from format.structured import build as build_preset

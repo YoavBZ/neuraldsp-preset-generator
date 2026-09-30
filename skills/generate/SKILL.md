@@ -28,7 +28,7 @@ The user speaks in plain language, not flags. Extract:
 - **the role** — rhythm / lead / clean, if stated
 - **the plugin** — which pack. Detect it from a template they point at; if they
   don't say, detect the pack from the template's own header rather than
-  assuming — more than one pack exists now. If there is genuinely nothing to
+  assuming — more than one pack exists. If there is genuinely nothing to
   detect from, ask rather than picking.
 
 Ask at most **one** clarifying question, and only if the answer would change the
@@ -165,7 +165,9 @@ Build the spec JSON, then always `--dry-run` first and show the user the change
 list before writing. See [preset-spec.md](../../reference/preset-spec.md).
 
 Pass `--strip-irs` so the result is portable — see
-[cab-and-irs.md](../../reference/cab-and-irs.md).
+[cab-and-irs.md](../../reference/cab-and-irs.md). If it warns that it stripped
+nothing (Tone King declares no IR mapping), the listed paths are still in the
+preset: tell the user rather than calling the result portable.
 
 ## 6. Install and report
 

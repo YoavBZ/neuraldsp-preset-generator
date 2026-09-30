@@ -196,7 +196,8 @@ def test_strip_irs_also_moves_the_mic_off_custom_ir():
                       f"/Users/someone/IRs/{side}.wav")
         set_parameter(preset, "cabParameters", f"{side}MicType", "10")
 
-    changed = {key: (before, after) for key, before, after in strip_custom_irs(preset)}
+    changed = {key: (before, after)
+               for _, key, before, after in strip_custom_irs(preset)}
     assert changed["leftMicType"] == ("10", "0")
     assert changed["rightMicType"] == ("10", "4")
     assert changed["leftChosenIRFilePath"][1] == ""
@@ -225,4 +226,4 @@ def test_strip_irs_leaves_a_real_mic_alone():
     set_parameter(preset, "cabParameters", "rightChosenIRFilePath", "/tmp/x.wav")
     changed = strip_custom_irs(preset)
     assert preset.by_path[("cabParameters", "rightMicType")].value == before
-    assert not any(key.endswith("MicType") for key, _, _ in changed)
+    assert not any(key.endswith("MicType") for _, key, _, _ in changed)

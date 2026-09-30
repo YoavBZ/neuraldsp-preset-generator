@@ -90,18 +90,18 @@ def load(path, target_rate: int = SAMPLE_RATE) -> Audio:
     try:
         samples, rate = sf.read(str(path), dtype="float32", always_2d=True)
     except sf.LibsndfileError as e:
-        # libsndfile decodes WAV, AIFF, FLAC and Ogg, and no compressed Apple or
-        # MPEG format. A reference bounced out of a DAW is usually fine; one
-        # exported from a phone, a streaming service or a stem-separation tool is
-        # routinely .m4a or .mp3, and "Format not recognised" tells that person
-        # nothing about what to do next. Naming the converter is the whole fix —
+        # libsndfile decodes WAV, AIFF, FLAC and Ogg, and MP3 from 1.1 (which
+        # current soundfile wheels bundle), but no AAC/Apple format. A reference
+        # bounced out of a DAW is usually fine; one exported from a phone or a
+        # streaming service is routinely .m4a, and "Format not recognised" tells
+        # that person nothing about what to do next. Naming the converter is the whole fix —
         # this deliberately does not shell out to one, because a decode nobody
         # asked for is a decode nobody can check.
         raise ValueError(
             f"{path} is not audio this can read ({e}).\n"
-            f"  libsndfile handles WAV, AIFF, FLAC and Ogg. Compressed formats "
-            f"(.m4a, .mp3, .aac) have to be converted first — 48 kHz, which is "
-            f"what everything here measures at:\n"
+            f"  libsndfile handles WAV, AIFF, FLAC, Ogg and (from 1.1) MP3. "
+            f"Other compressed formats (.m4a, .aac) have to be converted first — "
+            f"48 kHz, which is what everything here measures at:\n"
             f"    afconvert -f WAVE -d LEI16@48000 {path.name!r} out.wav   # macOS\n"
             f"    ffmpeg -i {path.name!r} -ar 48000 out.wav                # anywhere\n"
             f"  A lossy source is still worth measuring, but the codec has "
@@ -192,9 +192,8 @@ def loudness_lufs(audio: Audio) -> Optional[float]:
     Averaged, not summed, and the difference is not cosmetic: because it divides
     by the channel count, adding one silent channel to a five-channel file moves
     the reported loudness by about 9 dB on identical audio — three units of
-    "wrong" at `compare._level`'s 3 dB scale. Both this docstring and
-    `caveats()` used to say "summed" while the code averaged. The number to
-    distrust across a channel-count change is this one; `normalise()` is
+    "wrong" at `compare._level`'s 3 dB scale. The channels are averaged, not
+    summed. The number to distrust across a channel-count change is this one; `normalise()` is
     self-consistent, so the spectral path is unaffected.
     """
     require("loudness metering")
@@ -405,9 +404,9 @@ def excerpt_selection(audio: Audio, seconds: float,
     start = int(np.argmax(density)) * HOP
     start = min(start, audio.frames - wanted)
 
-    # Report the tie, and only the tie. An earlier version called this case
-    # "uninformative" and had the caveat say the ranking chose nothing — which
-    # is false whenever the plateau is merely large: on ten seconds of silence
+    # Report the tie, and only the tie. Calling this case "uninformative", as if
+    # the ranking chose nothing, is false whenever the plateau is merely large:
+    # on ten seconds of silence
     # followed by fifty of playing, the ranking lands exactly on the first note
     # and 31 of 41 windows still tie, because they all sit inside the music.
     # What is true in every case that reaches here is that the window is the

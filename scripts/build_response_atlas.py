@@ -115,8 +115,7 @@ def main() -> None:
     total = args.samples + args.held_out + baseline
     print(f"{args.pack}/{args.amp}: fixed topology from {template_name!r}, "
           f"{len(dimensions)} continuous dimensions")
-    # Generated from the pack's own pin table: this line used to be Morgan's list in
-    # prose, and printed "doubler" for a Tone King run that has none.
+    # Generated from the pack's own pin table, so it names only what this pack pins.
     pins = atlas.atlas_pins(args.pack)
     print("  pinned: " + ", ".join(f"{path}={value}" for path, value in pins.items()))
     print(f"  {args.samples} atlas renders + {args.held_out} held-out renders"

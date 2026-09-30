@@ -18,15 +18,13 @@ order:
     4. ~/ndsp-presets             (when running from an installed plugin)
     5. the repo root              (correct when working in a git clone)
 
-Rule 4 exists because rule 3 cannot be relied on. ``$CLAUDE_PLUGIN_DATA`` was
-documented here as "set by Claude Code for installed plugins" and treated as the
-answer for the installed case; it is not always set, and when it is absent the
-chain used to fall through to the install directory. Nothing failed loudly — the
-preset library and the learned notes were simply written somewhere an update
-deletes, and read back from there as "none yet" on the next run. A silent wrong
-answer about where the user's data lives is worse than any of the alternatives,
-so the installed case now has a durable default of its own rather than borrowing
-the code directory. ``~/ndsp-presets`` is what the README has always told people
+Rule 4 exists because rule 3 cannot be relied on: ``$CLAUDE_PLUGIN_DATA`` is not
+always set for installed plugins. Falling through to the install directory
+would fail silently — the preset library and the learned notes would be written
+somewhere an update deletes, and read back from there as "none yet" on the next
+run. A silent wrong answer about where the user's data lives is worse than any
+of the alternatives, so the installed case has a durable default of its own
+rather than borrowing the code directory. ``~/ndsp-presets`` is what the README has always told people
 to export, which means an existing library is picked up with no configuration.
 
 Only the scripts that read or write under the data root take ``--data-dir``:

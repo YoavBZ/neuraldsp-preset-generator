@@ -14,7 +14,7 @@
   "calibration": {
     "eq_band_centres_source": "Tone King Imperial MKII User's Guide v1.0.0, page 12 (official installed manual and https://downloads.neuraldsp.com/file/toneking-imperial/Tone%20King%20Imperial%20MKII%20v1.0.0.pdf)",
     "fresh_process_reproducible": false,
-    "fresh_process_band_noise_db": 4.91,
+    "fresh_process_band_noise_db": 6.73,
     "reused_instance_band_noise_db": 5.228794,
     "output_gain_control": "/outputGain",
     "settings": {

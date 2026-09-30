@@ -11,11 +11,10 @@ the stored fingerprints under the normal loss profile, and writes ordinary specs
 that ``apply_spec.py`` accepts.  They are starts for local refinement, not claims
 that a finite atlas found the final preset.
 
-No atlas ships with the plugin any more; build one with
-``build_response_atlas.py``.  The ones that used to ship were built on the
-synthetic noise probe, and looked up with renders of a played guitar the three
-measured picked an entry that beat neutral settings on only 27 or 28 of 48
-held-out targets ("M7-1 on a played guitar" in docs/tone-matching-plan.md).
+No atlas ships with the plugin; build one with ``build_response_atlas.py``.
+Atlases built on the synthetic noise probe and looked up with renders of a played
+guitar picked an entry that beat neutral settings on only 27 or 28 of 48 held-out
+targets (docs/tone-matching-plan.md).
 """
 
 from __future__ import annotations
@@ -137,8 +136,8 @@ def main() -> None:
         print("\nevery compared response feature falls inside this finite sample")
     else:
         print("\nno response feature could be compared at all")
-    # A feature nobody could measure is not a feature inside the range, and the
-    # line above used to count all six of them whether or not they were compared.
+    # A feature nobody could measure is not a feature inside the range, so the
+    # count above covers only those compared.
     if skipped:
         print("not compared — the atlas or the reference has no reading for: "
               + ", ".join(skipped))

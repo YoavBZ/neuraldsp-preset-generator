@@ -81,7 +81,7 @@ Decide the rack reverb here, not in the match. The inversion leaves Morgan's rac
 reverb as the template has it for any recording, stem or reamp: the decay it can
 measure on played guitar is mostly the notes' own sustain, and a rule reading it
 switched the reverb on as often for targets without one as with one. Only a
-`probe` reference, rendered through the noise-burst probe, still sets it. So a
+`probe` reference, rendered through the noise-burst probe, sets it. So a
 template with the rack reverb on keeps it even against a dry recording: use a
 template, or an edited copy of one, with `reverb/reverbActive` set the way the
 evidence says, or try both with `--enumerate reverb/reverbActive`, and add
@@ -89,16 +89,15 @@ evidence says, or try both with `--enumerate reverb/reverbActive`, and add
 
 ### No response atlas
 
-Earlier versions shipped response atlases — one amp's stored responses at sampled
-settings — and suggested starting a match from the nearest one. None ship now,
-and do not build one to start from: measured on SW50R, a search started from an
-atlas ended further from played-guitar targets than one started from neutral
-settings (0.548 against 0.447), and even an atlas built from the user's own DI
-ended no closer (0.479 against 0.480) after costing 128 renders to build. The
-research tools remain; see M7-1 in `docs/tone-matching-plan.md`.
+Do not build or start from a response atlas (one amp's stored responses at
+sampled settings). On SW50R a search started from the nearest atlas entry ended
+further from played-guitar targets than one started from neutral settings (0.548
+against 0.447), and an atlas built from the user's own DI ended no closer (0.479
+against 0.480) after costing 128 renders to build. The research tools are
+described in `docs/tone-matching-plan.md`.
 
 Do not enumerate switches or selectors casually. Enumeration divides the budget
-among complete inner searches, and M5 did not demonstrate an accuracy benefit on
+among complete inner searches, and no accuracy benefit from it has been shown on
 the real backend. If trying a discrete control is material, run
 `--list-enumerable`, explain the budget product, and name the uncertainty.
 
@@ -142,44 +141,39 @@ get to the recorded take (a guess, not a measurement); otherwise of anything the
 play. Against real amp recordings (14 parts on each of SW50R and Tone King's
 rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of the very
 take the amp recorded ended about half as far as one through the DI of another
-session (13 and 14 of 14 closer), as on the plugin's own renders, and the other
-session's DI still beat no DI on 11 and 13 of 14. Half of those other DIs were
-another excerpt of the same player and rig, and they did no better than the
-rest. A user's own DI of the part is a different performance from
-the recording, so it lies somewhere between the first two; it was not measured.
-Measured on SW50R and Tone King's rhythm channel (one player, two songs; runs
-under -v1 and -v2, scored through either passage), searches through the target's
-own passage ended at 0.31–0.48, through the player's other song at 0.61–0.96 —
-closer than noise on at least 11 of 12 targets in every run — and through the
-noise probe the tool uses without a DI at 1.06–1.53. Scored with `unpaired-v2` and with loudness set aside, the noise
-search ended no closer than the neutral settings themselves on either amp. On
-SW50R, neither matching that probe's loudness to a guitar's nor replacing it with a
-synthetic strummed guitar helped reliably.
+session (13 and 14 of 14 closer), and the other session's DI still beat no DI on
+11 and 13 of 14. Half of those other DIs were another excerpt of the same player
+and rig, and they did no better than the rest. A user's own DI of the part is a
+different performance from the recording, so it lies somewhere between the first
+two; it was not measured.
+
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
-white-noise bursts and records that limitation. Every candidate is then noise
+white-noise bursts and records that limitation. Do not substitute another probe:
+on SW50R neither turning it down to a guitar's loudness nor replacing it with a
+synthetic strummed guitar helped reliably. Every candidate is then noise
 through the amp compared with a guitar, so a no-DI run's own scores are
 noise-against-guitar distances and a falling score is not evidence the tone got
 closer. Against real amp recordings a no-DI search was no better than its
 starting settings on SW50R and ended further from the recording than them on
 Tone King on all 14 parts, and on 12 of 14 with loudness set aside — so without a
 DI, show the starting preset beside the searched one and do not present the
-search as an improvement. Tell the user a match made without a DI is at best a starting point, not
-a measured match, that its output level may need setting by ear (such matches
-played 3.5–21.5 LU from their targets on both amps, and turning the probe down to a
-guitar's loudness on SW50R did not change that), and that a DI of their playing would
-change that. A no-DI match can also leave the guitar all but silent: in the
-held-out listening test (`docs/heldout-listening-sw50r.md`), searched from the
-shipped SW50R template, three of the six parts matched without a DI turned the
-preamp volume or the amp's level nearly to zero, and through a real guitar
-played 16–35 LU under the recording or not at all. So without `--probe-di` the
-tool now renders the template and the shortlist through a synthetic guitar and
-moves any candidate with no measurable loudness there, or 20 dB or more under the
-template, behind those that pass (`search.guitar_check` in `summary.json`; a line
-set on SW50R from twenty answers, so treat a pass as "a guitar gets through",
-nothing more). Report that
-caveat when it fires; if every candidate failed, offer the starting preset
-instead. The check only shows a guitar gets through, so still tell the user to
-confirm the preset plays with their own guitar.
+search as an improvement. Tell the user a match made without a DI is at best a
+starting point, not a measured match, that its output level may need setting by
+ear (such matches played 3.5–21.5 LU from their targets on both amps), and that a
+DI of their playing would change that.
+
+A no-DI match can also leave the guitar all but silent: from the shipped SW50R
+template, three of six held-out parts matched without a DI turned the preamp
+volume or the amp's level nearly to zero, and through a real guitar played 16–35
+LU under the recording or not at all (`docs/heldout-listening-sw50r.md`). So
+without `--probe-di` the tool renders the template and the shortlist through a
+synthetic guitar and moves any candidate with no measurable loudness there, or
+20 dB or more under the template, behind those that pass (`search.guitar_check`
+in `summary.json`; a line set on SW50R from twenty answers, so treat a pass as "a
+guitar gets through", nothing more). Report that caveat when it fires; if every
+candidate failed, offer the starting preset instead, and in any case tell the
+user to confirm the preset plays with their own guitar.
+
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
 (each decision is under `search.level_trims` in `summary.json`); other regimes
@@ -297,9 +291,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/log_blind_verdict.py" \
   --comment "the low mids are still too thick"
 ```
 
-`--choice` is the closer blind label: `A`, `B`, or `indistinguishable`.
-Historical preference answers remain readable, but do not ask for or infer a new
-preference. Pass the same `--data-dir`
+`--choice` is the closer blind label: `A`, `B`, or `indistinguishable`. Older
+records may carry a preference answer; do not ask for or infer one. Pass the same `--data-dir`
 used for the preset library when one was used.
 Other regimes, including `probe`, do not prove that the reference and DI are the
 same performance; export them only with an explicit `--allow-unpaired` limitation.

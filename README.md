@@ -98,7 +98,7 @@ All three preview their changes before writing:
 
 ```
 .claude-plugin/  — plugin manifest
-skills/          — generate/ and edit/, the two entry points
+skills/          — generate/, match/ and edit/, the three entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
 scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
