@@ -348,7 +348,8 @@ def test_a_server_that_replies_in_time_is_read_normally():
 def test_a_renders_deadline_grows_with_its_length(tmp_path):
     """A long DI is slow, not hung: its reply may take the base allowance plus
     twice its own audio length (and any warm-up)."""
-    import numpy as np
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
 
     from match import renderer_au
 
