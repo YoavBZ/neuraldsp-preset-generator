@@ -840,7 +840,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.763
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr2DT",
@@ -854,7 +855,8 @@
       "in_step_fraction": 0.824,
       "median_correlation": 0.748
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -868,7 +870,8 @@
       "in_step_fraction": 0.923,
       "median_correlation": 0.935
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -882,7 +885,8 @@
       "in_step_fraction": 0.929,
       "median_correlation": 0.969
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr5",
@@ -896,7 +900,8 @@
       "in_step_fraction": 0.5,
       "median_correlation": 0.901
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1008,7 +1013,8 @@
       "in_step_fraction": 0.5,
       "median_correlation": 0.84
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr01DT",
@@ -1022,7 +1028,8 @@
       "in_step_fraction": 0.688,
       "median_correlation": 0.839
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr02",
@@ -1036,7 +1043,8 @@
       "in_step_fraction": 0.625,
       "median_correlation": 0.862
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr02DT",
@@ -1050,7 +1058,8 @@
       "in_step_fraction": 0.562,
       "median_correlation": 0.881
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr03",
@@ -1066,7 +1075,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.835
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr04",
@@ -1080,7 +1090,8 @@
       "in_step_fraction": 0.182,
       "median_correlation": 0.798
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr04DT",
@@ -1094,7 +1105,8 @@
       "in_step_fraction": 0.273,
       "median_correlation": 0.801
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr05",
@@ -1108,7 +1120,8 @@
       "in_step_fraction": 0.6,
       "median_correlation": 0.779
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1206,7 +1219,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.742
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr2",
@@ -1222,7 +1236,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.738
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -1238,7 +1253,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.86
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -1254,7 +1270,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.853
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr5",
@@ -1270,7 +1287,8 @@
       "in_step_fraction": 0.1,
       "median_correlation": 0.073
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr6",
@@ -1286,7 +1304,8 @@
       "in_step_fraction": 0.6,
       "median_correlation": 0.373
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1382,7 +1401,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.863
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1478,7 +1498,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.566
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr02",
@@ -1494,7 +1515,8 @@
       "in_step_fraction": 0.875,
       "median_correlation": 0.549
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr04",
@@ -1508,7 +1530,8 @@
       "in_step_fraction": 0.087,
       "median_correlation": 0.041
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr05",
@@ -1522,7 +1545,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.65
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr06",
@@ -1538,7 +1562,8 @@
       "in_step_fraction": 0.913,
       "median_correlation": 0.426
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr07",
@@ -1552,7 +1577,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.837
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr09",
@@ -1566,7 +1592,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.586
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr10",
@@ -1580,7 +1607,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.77
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1696,7 +1724,8 @@
       "in_step_fraction": 0.611,
       "median_correlation": 0.822
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr05",
@@ -1710,7 +1739,8 @@
       "in_step_fraction": null,
       "median_correlation": null
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr08",
@@ -1724,7 +1754,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.954
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr09",
@@ -1738,7 +1769,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.941
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -1800,7 +1832,7 @@
   },
   {
    "source": "cambridge",
-   "song": "Sugar / Faith",
+   "song": "Sugar - Faith",
    "artist": "Forkupines",
    "group": "Forkupines",
    "set": 2,
@@ -1868,7 +1900,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.847
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr2",
@@ -1882,7 +1915,8 @@
       "in_step_fraction": 0.738,
       "median_correlation": 0.761
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -1896,7 +1930,8 @@
       "in_step_fraction": 0.825,
       "median_correlation": 0.807
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -1910,7 +1945,8 @@
       "in_step_fraction": 0.643,
       "median_correlation": 0.717
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr5",
@@ -1924,7 +1960,8 @@
       "in_step_fraction": 0.683,
       "median_correlation": 0.747
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr6",
@@ -1938,7 +1975,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.757
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr7",
@@ -1952,7 +1990,8 @@
       "in_step_fraction": 0.75,
       "median_correlation": 0.87
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr8",
@@ -1966,7 +2005,8 @@
       "in_step_fraction": 0.125,
       "median_correlation": 0.827
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr9",
@@ -1980,7 +2020,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.891
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2088,7 +2129,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.649
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr13",
@@ -2102,7 +2144,8 @@
       "in_step_fraction": 0.875,
       "median_correlation": 0.697
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr14",
@@ -2116,7 +2159,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.699
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr15",
@@ -2130,7 +2174,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.81
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2218,7 +2263,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.904
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr2",
@@ -2232,7 +2278,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.995
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -2246,7 +2293,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.978
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -2260,7 +2308,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.877
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr5",
@@ -2274,7 +2323,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.854
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2368,7 +2418,10 @@
       "in_step_fraction": 0.833,
       "median_correlation": 0.522
      },
-     "usable": false
+     "usable": false,
+     "simulated": [
+      "22_ElecGtr1AmpSim.wav"
+     ]
     },
     {
      "part": "ElecGtr2",
@@ -2384,7 +2437,10 @@
       "in_step_fraction": 0.778,
       "median_correlation": 0.552
      },
-     "usable": false
+     "usable": false,
+     "simulated": [
+      "26_ElecGtr2AmpSim.wav"
+     ]
     },
     {
      "part": "ElecGtr3",
@@ -2400,7 +2456,10 @@
       "in_step_fraction": 0.833,
       "median_correlation": 0.843
      },
-     "usable": true
+     "usable": true,
+     "simulated": [
+      "30_ElecGtr3AmpSim.wav"
+     ]
     }
    ],
    "mix_tracks": [
@@ -2525,7 +2584,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.977
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -2541,7 +2601,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.915
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -2557,7 +2618,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.85
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr6",
@@ -2573,7 +2635,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.717
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2696,7 +2759,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.837
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr2",
@@ -2712,7 +2776,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.922
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -2728,7 +2793,8 @@
       "in_step_fraction": 0.75,
       "median_correlation": 0.552
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2844,7 +2910,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.774
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr02",
@@ -2860,7 +2927,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.938
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr04",
@@ -2874,7 +2942,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.577
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -2997,7 +3066,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.525
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr2",
@@ -3011,7 +3081,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.927
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr3",
@@ -3025,7 +3096,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.776
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr4",
@@ -3039,7 +3111,8 @@
       "in_step_fraction": 0.769,
       "median_correlation": 0.73
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr5",
@@ -3053,7 +3126,8 @@
       "in_step_fraction": 0.692,
       "median_correlation": 0.877
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr6",
@@ -3067,7 +3141,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.978
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "ElecGtr7",
@@ -3081,7 +3156,8 @@
       "in_step_fraction": 0.308,
       "median_correlation": 0.826
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr8",
@@ -3095,7 +3171,8 @@
       "in_step_fraction": 0.286,
       "median_correlation": 0.6
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "ElecGtr9",
@@ -3109,7 +3186,8 @@
       "in_step_fraction": 0.286,
       "median_correlation": 0.6
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3204,7 +3282,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.96
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3280,7 +3359,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.986
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3357,7 +3437,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.904
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3440,7 +3521,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.822
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3522,7 +3604,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.618
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "GTR 2",
@@ -3538,7 +3621,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.984
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3613,7 +3697,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.893
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "GTR 2",
@@ -3629,7 +3714,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.985
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3708,7 +3794,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.801
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "GTR 2",
@@ -3724,7 +3811,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.984
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3803,7 +3891,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.887
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "GTR 2",
@@ -3819,7 +3908,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.981
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3895,7 +3985,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.891
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -3976,7 +4067,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.864
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4057,7 +4149,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.849
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4138,7 +4231,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.748
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4220,7 +4314,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.938
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4305,7 +4400,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.969
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4391,7 +4487,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.953
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4427,7 +4524,7 @@
   },
   {
    "source": "telefunken",
-   "song": "Hikikomori / Love Does",
+   "song": "Hikikomori - Love Does",
    "artist": "John Morgan Kimock",
    "group": "John Morgan Kimock",
    "set": 2,
@@ -4474,7 +4571,8 @@
       "in_step_fraction": 0.964,
       "median_correlation": 0.941
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     },
     {
      "part": "Keys GTR",
@@ -4488,7 +4586,9 @@
       "in_step_fraction": 0.964,
       "median_correlation": 0.504
      },
-     "usable": false
+     "usable": false,
+     "excluded": "named for the keyboard player",
+     "simulated": []
     },
     {
      "part": "Keys GTR DI 2",
@@ -4502,7 +4602,9 @@
       "in_step_fraction": 0.964,
       "median_correlation": 0.491
      },
-     "usable": false
+     "usable": false,
+     "excluded": "named for the keyboard player",
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4576,7 +4678,8 @@
       "in_step_fraction": 0.571,
       "median_correlation": 0.097
      },
-     "usable": false
+     "usable": false,
+     "simulated": []
     },
     {
      "part": "Keys GTR",
@@ -4590,7 +4693,9 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.948
      },
-     "usable": true
+     "usable": false,
+     "excluded": "named for the keyboard player",
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4660,7 +4765,9 @@
       "in_step_fraction": 0.95,
       "median_correlation": 0.553
      },
-     "usable": false
+     "usable": false,
+     "excluded": "named for the keyboard player",
+     "simulated": []
     },
     {
      "part": "Keys GTR DI 2",
@@ -4674,7 +4781,9 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.77
      },
-     "usable": true
+     "usable": false,
+     "excluded": "named for the keyboard player",
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4745,7 +4854,8 @@
       "in_step_fraction": 0.95,
       "median_correlation": 0.945
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4825,7 +4935,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.946
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4911,7 +5022,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.923
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -4993,7 +5105,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.941
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -5081,7 +5194,8 @@
       "in_step_fraction": 1.0,
       "median_correlation": 0.979
      },
-     "usable": true
+     "usable": true,
+     "simulated": []
     }
    ],
    "mix_tracks": [
@@ -5109,6 +5223,7 @@
     "DRUM_Snare Top_M80sh.wav",
     "DRUM_Tom_M81sh.wav",
     "Guitar Amp_M80.wav",
+    "Guitar Helix.wav",
     "Keys Vox_M80.wav",
     "Keys_TDP-2.wav",
     "Lead Vox_M80.wav"

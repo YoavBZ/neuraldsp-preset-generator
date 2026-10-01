@@ -4,8 +4,9 @@
   "by a separate research session (its record: validation-candidates.json beside the",
   "audio), each with a guitar recorded as a DI and as an amp track (a microphone on an",
   "amp, or for Cambridge the guitar's processed track) in the same take. Amp simulator",
-  "and modeller tracks are not listed. Parts and amp tracks as that record names them;",
-  "scripts/validation_datasets.py measures and splits them."
+  "and modeller tracks a part was paired with are listed apart, as `simulated`. Parts",
+  "and tracks as that record names them; scripts/validation_datasets.py measures and",
+  "splits them."
  ],
  "sessions": [
   {
@@ -319,7 +320,7 @@
    "key": "cam_Forkupines_Sugar_Faith",
    "source": "cambridge",
    "artist": "Forkupines",
-   "song": "Sugar / Faith",
+   "song": "Sugar - Faith",
    "group": "Forkupines",
    "path": "cambridge/Forkupines_SugarFaith_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK018/Forkupines_SugarFaith_Full.zip",
@@ -493,6 +494,9 @@
      "amps": [
       "19_ElecGtr1Mic1.wav",
       "20_ElecGtr1Mic2.wav"
+     ],
+     "simulated": [
+      "22_ElecGtr1AmpSim.wav"
      ]
     },
     {
@@ -501,6 +505,9 @@
      "amps": [
       "23_ElecGtr2Mic1.wav",
       "24_ElecGtr2Mic2.wav"
+     ],
+     "simulated": [
+      "26_ElecGtr2AmpSim.wav"
      ]
     },
     {
@@ -509,6 +516,9 @@
      "amps": [
       "27_ElecGtr3Mic1.wav",
       "28_ElecGtr3Mic2.wav"
+     ],
+     "simulated": [
+      "30_ElecGtr3AmpSim.wav"
      ]
     }
    ]
@@ -1040,7 +1050,7 @@
    "key": "tf_JMK_Hikikomori_Love_Does",
    "source": "telefunken",
    "artist": "John Morgan Kimock",
-   "song": "Hikikomori / Love Does",
+   "song": "Hikikomori - Love Does",
    "group": "John Morgan Kimock",
    "path": "telefunken/Hikikomori > Love Does",
    "url": "https://season6multitracks.s3.us-east-2.amazonaws.com/JMK+-+Hikikomori+%3E+Love+Does.zip",
@@ -1216,6 +1226,9 @@
      "amps": [
       "Guitar Amp_M80.wav",
       "Guitar Amp_TF11.wav"
+     ],
+     "simulated": [
+      "Guitar Helix.wav"
      ]
     }
    ]

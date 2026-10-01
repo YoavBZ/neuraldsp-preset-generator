@@ -158,8 +158,11 @@ the same guitar, left metal out, downloaded each archive, checked its files and
 tested every DI/amp pair. Its record, `validation-candidates.json`, stays beside
 the audio. `validation-sources-2.json` lists what was taken from it: for each
 session the source, artist, song, band (`group`), folder, archive URL and SHA-256,
-and each guitar's DI and amp tracks. It leaves out amp simulator and modeller
-tracks (a name containing "sim", or a modeller's name such as "Helix").
+and each guitar's DI and amp tracks, with any amp simulator or modeller track the
+research paired with that DI (a name containing "sim", or a modeller's name such
+as "Helix") listed apart as `simulated`. Two titles holding "/" are written with
+" - " instead ("Sugar - Faith", "Hikikomori - Love Does"), since a part's ID is
+`source/song/part`.
 
 - **Cambridge Music Technology "Mixing Secrets" library** — 14 sessions by 12
   artists, 24-bit/44.1 kHz, on the terms quoted above. Many sessions name their
@@ -176,7 +179,11 @@ Everything in the sections above applies to the second set, except these rules:
 
 - **Which parts count.** The same two tests, measured by
   `scripts/validation_datasets.py` from the audio, not taken from the research
-  record.
+  record. Two more rules leave a part out whatever its pairing, and its
+  `excluded` field says which: a part named for the keyboard player ("Keys
+  GTR"), which may be a keyboard through a guitar amp — the sessions do not say
+  — and a part whose amp track is another part's too, since that track then
+  carries two performances.
 - **The reference.** A part's amp tracks are tried in the order of
   `AMP_PREFERENCE` in that script: the M80 microphone first, as in the first set,
   then a first or close microphone, then a track named as the amp or as the
@@ -185,17 +192,21 @@ Everything in the sections above applies to the second set, except these rules:
   none does, the part is not usable. The others are alternates, used only by a
   test that names them.
 - **The mix** is the session's `mix_tracks`, summed at unity gain: every WAV but
-  electric guitar DIs (a part's or not), every part's alternates, amp
-  simulators, click tracks and rendered mixes, each recognised by its name. So
-  every guitar with a DI is heard once, through its reference. A guitar without
-  a DI keeps all its tracks, and the bass keeps its DI and its amp, as in the
-  first set.
+  electric guitar DIs (a part's or not), every part's alternates, click tracks
+  and rendered mixes, each recognised by its name, and a part's simulator or
+  modeller track when it is the same take as the part's DI (the first pairing
+  test). So every part's guitar is heard once, through its reference. A guitar
+  recorded only as a DI is left out; a guitar without a DI keeps all its
+  tracks, a modeller playing another part among them; and the bass keeps its DI
+  and its amp, as in the first set.
 - **The backing** is the mix without the part's reference.
-- **The instrumental backing** is the backing without the session's
-  `vocal_tracks` (mix tracks named "vox" or "vocal"). It is for listening, where
-  loud singing over the first set's held-out parts made them hard to hear. Live
-  rooms put singing into the other microphones too, so it is quieter singing,
-  not none.
+- **The instrumental mix and backing** are the mix and the backing without the
+  session's `vocal_tracks` (mix tracks named "vox" or "vocal"). They are for
+  listening, where loud singing over the first set's held-out parts made them
+  hard to hear, and an audition plays them together or not at all, since
+  singing in only one would give the reference away. A listening test that
+  uses them says so in its declaration. Live rooms put singing into the other
+  microphones too, so it is quieter singing, not none.
 
 The split holds out whole bands, so that all of a band's songs are on one side.
 Players a band shares with another band, if any, are not tracked. `scripts/validation_datasets.py` draws it with
@@ -210,9 +221,9 @@ rng.sample(sorted(telefunken_bands), 3)   # -> Briana Maia, Catbite, Wild & Co
 | | development | held out |
 |---|---|---|
 | Cambridge | 7 bands, 8 sessions: 23 usable parts of 48 | 5 bands, 6 sessions: 14 usable parts of 24 |
-| Telefunken | 6 bands, 18 sessions: 22 usable parts of 26 | 3 bands, 5 sessions: 5 usable parts of 5 |
+| Telefunken | 6 bands, 18 sessions: 20 usable parts of 26 | 3 bands, 5 sessions: 5 usable parts of 5 |
 
-That is 45 usable development parts and 19 held out; as in the first set, a
+That is 43 usable development parts and 19 held out; as in the first set, a
 double-tracked part and its double count as one tone. Every pairing figure is in
 `validation-datasets.json`, where the second set's sessions carry `"set": 2`.
 

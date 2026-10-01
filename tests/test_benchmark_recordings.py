@@ -92,10 +92,13 @@ def test_a_cached_crop_is_reused_only_for_its_own_part_and_sources(tmp_path):
         with pytest.raises(SystemExit):
             R.crops_for(catalog, other, other / "crops", "a", "one", "g1")
 
-    # The catalog moving the session to held out, or changing the part's roles,
-    # makes a development record stale even though its own fields are unchanged.
+    # The catalog moving the session to held out, changing the part's roles or
+    # declaring another mix makes a development record stale even though its own
+    # fields are unchanged.
     for name, edit in (("held", lambda s, part: s.update(split="held_out")),
-                       ("role", lambda s, part: part.update(alternate=["tf11.wav"]))):
+                       ("role", lambda s, part: part.update(alternate=["tf11.wav"])),
+                       ("mix", lambda s, part: s.update(mix_tracks=["amp.wav"],
+                                                        vocal_tracks=[]))):
         other = tmp_path / f"catalog-{name}"
         other.mkdir()
         catalog, _ = _cached(other)
@@ -104,6 +107,22 @@ def test_a_cached_crop_is_reused_only_for_its_own_part_and_sources(tmp_path):
         catalog.write_text(json.dumps(document))
         with pytest.raises(SystemExit):
             R.crops_for(catalog, other, other / "crops", "a", "one", "g1")
+
+
+def test_a_cached_crop_of_a_declared_mix_is_reused_while_the_mix_is_unchanged(tmp_path):
+    import json
+
+    catalog, _ = _cached(tmp_path, {"included_mix_tracks": ["amp.wav", "vox.wav"],
+                                    "vocal_tracks": ["vox.wav"]})
+    document = json.loads(catalog.read_text())
+    document["sessions"][0].update(mix_tracks=["amp.wav", "vox.wav"],
+                                   vocal_tracks=["vox.wav"])
+    catalog.write_text(json.dumps(document))
+    assert R.crops_for(catalog, tmp_path, tmp_path / "crops", "a", "one", "g1")["part"] == "g1"
+    document["sessions"][0]["vocal_tracks"] = []
+    catalog.write_text(json.dumps(document))
+    with pytest.raises(SystemExit):
+        R.crops_for(catalog, tmp_path, tmp_path / "crops", "a", "one", "g1")
 
 
 def test_a_changed_crop_is_refused(tmp_path):

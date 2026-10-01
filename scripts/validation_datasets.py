@@ -51,13 +51,18 @@ AMP_PREFERENCE = (r"M ?80(?!\d)", r"Mic ?1(?!\d)", r"Close", r"Amp ?1(?!\d)",
                   r"TF ?51(?!\d)", r"TF ?39(?!\d)", r"Mic ?2(?!\d)", r"Far",
                   r"Mic ?3(?!\d)", r"Amp ?2(?!\d)")
 VOCAL_TRACK = re.compile(r"vox|vocal", re.I)
-# Tracks no second-set mix holds, by name: rendered mixes, click tracks, amp
-# simulators and modellers, and electric guitar DIs, a part's or not.
+# Tracks no second-set mix holds, by name: rendered mixes, click tracks and
+# electric guitar DIs, a part's or not. An amp simulator or modeller track
+# (SIMULATED_AMP; validation-sources-2.json lists them per part) is left out only
+# when it is the same take as its part's DI: otherwise it is another guitar.
 RENDERED_MIX = re.compile(r"master|mixdown|(?:^|[ _-])mix(?:[ _-]|$)", re.I)
 CLICK_TRACK = re.compile(r"click|metronome", re.I)
 SIMULATED_AMP = re.compile(r"sim|helix|kemper|axe-?fx|quad ?cortex", re.I)
 GUITAR_DI = re.compile(r"^(?!.*acoustic)(?=.*(?:gtr|guitar)).*(?:DI(?![a-z])|TDP|direct)",
                        re.I)
+# A part named for the keyboard player ("Keys GTR") may be a keyboard through a
+# guitar amp; the names do not say, so it is not used.
+KEYBOARD_PART = re.compile(r"\bkeys?\b", re.I)
 CAMBRIDGE_DIRS = {"Heather Jane": "ChrisColtraine_HeatherJane_Full",
                   "That's How I Got To Memphis":
                       "ChrisColtraine_ThatsHowIGotToMemphis_Full"}
@@ -202,18 +207,28 @@ def set2_session(root, entry, split):
 
     A part's reference is its first amp track by `AMP_PREFERENCE` that passes
     both pairing tests, or its first if none does (the part is then unusable);
-    the others are alternates. The mix is every WAV except electric guitar DIs,
-    every part's alternates, amp simulators, click tracks and rendered mixes, so
-    each guitar with a DI is heard once, through its reference; `vocal_tracks`
-    lets a backing leave the singing out.
+    the others are alternates. A part is also unusable when it is named for the
+    keyboard player, or when one of its amp tracks is another part's too, since
+    that track then carries two performances (`excluded` says which). The mix is
+    every WAV except electric guitar DIs, every part's alternates and same-take
+    simulator tracks, click tracks and rendered mixes, so each part's guitar is
+    heard once, through its reference; `vocal_tracks` lets a backing leave the
+    singing out.
     """
     directory = root / entry["path"]
+    if "/" in entry["song"] or any("/" in part["part"] for part in entry["parts"]):
+        raise ValueError(f"{entry['path']}: a song or part name holds '/', which part "
+                         "IDs (source/song/part) cannot")
     wavs = sorted(p.relative_to(directory).as_posix() for p in directory.rglob("*.wav")
                   if not p.name.startswith("._"))
     by_name = {pathlib.PurePosixPath(w).name: w for w in wavs}
     if len(by_name) != len(wavs):
         raise ValueError(f"{entry['path']}: two WAVs share a file name")
-    parts, dis, alternates = [], set(), set()
+    owners = {}
+    for declared in entry["parts"]:
+        for amp in declared["amps"]:
+            owners.setdefault(amp, []).append(declared["part"])
+    parts, left_out = [], set()
     for declared in entry["parts"]:
         amps = sorted((by_name[a] for a in declared["amps"]), key=amp_rank)
         di = by_name[declared["di"]]
@@ -224,12 +239,21 @@ def set2_session(root, entry, split):
             if tried[-1]["usable"]:
                 break
         part = tried[-1] if tried[-1]["usable"] else tried[0]
+        shared = sorted({other for amp in declared["amps"] for other in owners[amp]}
+                        - {declared["part"]})
+        if KEYBOARD_PART.search(declared["part"]):
+            part.update(usable=False, excluded="named for the keyboard player")
+        elif shared:
+            part.update(usable=False,
+                        excluded=f"shares an amp track with {', '.join(shared)}")
+        part["simulated"] = [by_name[t] for t in declared.get("simulated", [])
+                             if (pairing(directory / by_name[t], directory / di)[0]
+                                 or 0) >= PAIRED_MIN]
         parts.append(part)
-        dis.add(di)
-        alternates.update(part["alternate"])
-    mix = [w for w in wavs if w not in dis and w not in alternates
+        left_out.update({di, *part["alternate"], *part["simulated"]})
+    mix = [w for w in wavs if w not in left_out
            and not any(rule.search(pathlib.PurePosixPath(w).stem) for rule in
-                       (RENDERED_MIX, CLICK_TRACK, SIMULATED_AMP, GUITAR_DI))]
+                       (RENDERED_MIX, CLICK_TRACK, GUITAR_DI))]
     return {"source": entry["source"], "song": entry["song"], "artist": entry["artist"],
             "group": entry["group"], "set": 2, "path": entry["path"],
             "url": entry["url"], "archive_sha256": entry["archive_sha256"],

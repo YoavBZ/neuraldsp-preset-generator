@@ -103,8 +103,9 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     A cached record must name this part, the catalog must still list its
     session as development, every source file the crop was cut from must have
     the hash the catalog lists for it, the part's DI, amp tracks and the
-    session's guitar DIs must be the ones it was cut with, and its outputs must
-    match their hashes.
+    session's guitar DIs must be the ones it was cut with — and, for a session
+    that declares its mix, its mix and vocal tracks — and its outputs must match
+    their hashes.
     The catalog file itself may have changed since — its held-out ledger grows
     with every declared test — without making the crop stale.
     """
@@ -132,7 +133,11 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
                   and record.get("removed_own_amp_tracks") == sorted(
                       {entry.get("reference"), *entry.get("alternate", [])})
                   and record.get("excluded_guitar_dis") == sorted(
-                      {item["di"] for item in session["parts"] if item.get("di")}))
+                      {item["di"] for item in session["parts"] if item.get("di")})
+                  and ("mix_tracks" not in session
+                       or (record.get("included_mix_tracks") == session["mix_tracks"]
+                           and record.get("vocal_tracks") == sorted(
+                               session.get("vocal_tracks") or ()))))
     if (found != expected or session.get("split") != "development" or not cut_from
             or any(files.get(name) != digest for name, digest in cut_from.items())
             or not roles_kept):
