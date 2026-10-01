@@ -1,0 +1,1237 @@
+{
+ "_comment": [
+  "The second set of validation recordings: sessions found, downloaded and pair-tested",
+  "by a separate research session (its record: validation-candidates.json beside the",
+  "audio), each with a guitar recorded as a DI and as an amp track (a microphone on an",
+  "amp, or for Cambridge the guitar's processed track) in the same take. Amp simulator",
+  "and modeller tracks a part was paired with are listed apart, as `simulated`. Parts",
+  "and tracks as that record names them; scripts/validation_datasets.py measures and",
+  "splits them."
+ ],
+ "sessions": [
+  {
+   "key": "cam_Adam_Buckley_Drag_me_Down",
+   "source": "cambridge",
+   "artist": "Adam Buckley",
+   "song": "Drag Me Down",
+   "group": "Adam Buckley",
+   "path": "cambridge/AdamBuckley_DragMeDown_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK016/AdamBuckley_DragMeDown_Full.zip",
+   "archive_sha256": "e613a9ca96fc22981bddd35dc2ad3d63b7eabd75534640bc66c6e05913739fea",
+   "parts": [
+    {
+     "part": "ElecGtr2",
+     "di": "27_ElecGtr2DI.wav",
+     "amps": [
+      "26_ElecGtr2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2DT",
+     "di": "29_ElecGtr2DTDI.wav",
+     "amps": [
+      "28_ElecGtr2DT.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "31_ElecGtr3DI.wav",
+     "amps": [
+      "30_ElecGtr3.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "33_ElecGtr4DI.wav",
+     "amps": [
+      "32_ElecGtr4.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "35_ElecGtr5DI.wav",
+     "amps": [
+      "34_ElecGtr5.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Ale_Lak_Nosso_Mundo_Deixou_De_Existir",
+   "source": "cambridge",
+   "artist": "Ale Lak",
+   "song": "Nosso Mundo Deixou De Existir",
+   "group": "Ale Lak",
+   "path": "cambridge/AleLak_NossoMundoDeixouDeExistir_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK016/AleLak_NossoMundoDeixouDeExistir_Full.zip",
+   "archive_sha256": "a2fac1bbdc99e747767625c4d2d37040fb3e84e8b96e55e92db8e4ea63f62c8e",
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "di": "09_ElecGtr01DI.wav",
+     "amps": [
+      "08_ElecGtr01.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr01DT",
+     "di": "11_ElecGtr01DTDI.wav",
+     "amps": [
+      "10_ElecGtr01DT.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "13_ElecGtr02DI.wav",
+     "amps": [
+      "12_ElecGtr02.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr02DT",
+     "di": "15_ElecGtr02DTDI.wav",
+     "amps": [
+      "14_ElecGtr02DT.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "18_ElecGtr03DI.wav",
+     "amps": [
+      "16_ElecGtr03Amp1.wav",
+      "17_ElecGtr03Amp2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "20_ElecGtr04DI.wav",
+     "amps": [
+      "19_ElecGtr04.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr04DT",
+     "di": "22_ElecGtr04DTDI.wav",
+     "amps": [
+      "21_ElecGtr04DT.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "24_ElecGtr05DI.wav",
+     "amps": [
+      "23_ElecGtr05.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Atlantis_Bound_It_Was_My_Fault_For_Waiting",
+   "source": "cambridge",
+   "artist": "Atlantis Bound",
+   "song": "It Was My Fault For Waiting",
+   "group": "Atlantis Bound",
+   "path": "cambridge/AtlantisBound_ItWasMyFaultForWaiting_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK009/AtlantisBound_ItWasMyFaultForWaiting_Full.zip",
+   "archive_sha256": "9c6bcf164f12b378db473f1f1fd6e8d2ba0293c9c8c5871a07e425e34cd501aa",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "14_ElecGtr1DI.wav",
+     "amps": [
+      "12_ElecGtr1Mic1.wav",
+      "13_ElecGtr1Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "17_ElecGtr2MicDI.wav",
+     "amps": [
+      "15_ElecGtr2Mic1.wav",
+      "16_ElecGtr2Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "20_ElecGtr3DI.wav",
+     "amps": [
+      "18_ElecGtr3Mic1.wav",
+      "19_ElecGtr3Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "23_ElecGtr4DI.wav",
+     "amps": [
+      "21_ElecGtr4Mic1.wav",
+      "22_ElecGtr4Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "26_ElecGtr5DI.wav",
+     "amps": [
+      "24_ElecGtr5Mic1.wav",
+      "25_ElecGtr5Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr6",
+     "di": "29_ElecGtr6DI.wav",
+     "amps": [
+      "27_ElecGtr6Mic1.wav",
+      "28_ElecGtr6Mic2.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Boogiesnakes_It_s_My_Right",
+   "source": "cambridge",
+   "artist": "Boogie Snakes",
+   "song": "It's My Right",
+   "group": "Boogie Snakes",
+   "path": "cambridge/BoogieSnakes_ItsMyRight_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK010/BoogieSnakes_ItsMyRight_Full.zip",
+   "archive_sha256": "428e30fe972c5b763a8e989420ca77339239839b2d02cc6611c1178898fbd828",
+   "parts": [
+    {
+     "part": "Gtr3",
+     "di": "18_Gtr3DI.wav",
+     "amps": [
+      "16_Gtr3Mic1.wav",
+      "17_Gtr3Mic2.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Eat_The_Feeder_Today_s_The_Day",
+   "source": "cambridge",
+   "artist": "Eat The Feeder",
+   "song": "Today's The Day",
+   "group": "Eat The Feeder",
+   "path": "cambridge/EatTheFeeder_TodaysTheDay_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK023/EatTheFeeder_TodaysTheDay_Full.zip",
+   "archive_sha256": "01f3eedba1ba9987331f9fadebc3806fa2bea772edb5ade7a134f4c9002c9624",
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "di": "25_ElecGtr01DI.wav",
+     "amps": [
+      "23_ElecGtr01Amp1.wav",
+      "24_ElecGtr01Amp2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "28_ElecGtr02DI.wav",
+     "amps": [
+      "26_ElecGtr02Amp1.wav",
+      "27_ElecGtr02Amp2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "31_ElecGtr04DI.wav",
+     "amps": [
+      "30_ElecGtr04Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "33_ElecGtr05DI.wav",
+     "amps": [
+      "32_ElecGtr05Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr06",
+     "di": "36_ElecGtr06DI.wav",
+     "amps": [
+      "34_ElecGtr06Amp1.wav",
+      "35_ElecGtr06Amp2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr07",
+     "di": "38_ElecGtr07DI.wav",
+     "amps": [
+      "37_ElecGtr07Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr09",
+     "di": "41_ElecGtr09DI.wav",
+     "amps": [
+      "40_ElecGtr09Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr10",
+     "di": "43_ElecGtr10DI.wav",
+     "amps": [
+      "42_ElecGtr10Amp.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Forkupines_Semantics",
+   "source": "cambridge",
+   "artist": "Forkupines",
+   "song": "Semantics",
+   "group": "Forkupines",
+   "path": "cambridge/Forkupines_Semantics_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK008/Forkupines_Semantics_Full.zip",
+   "archive_sha256": "ac9b991b7d23f45919f2214508607f824404448c70454001cddc9d7c641dae54",
+   "parts": [
+    {
+     "part": "ElecGtr03",
+     "di": "23_ElecGtr03DI.wav",
+     "amps": [
+      "24_ElecGtr03Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "27_ElecGtr05DI.wav",
+     "amps": [
+      "28_ElecGtr05Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr08",
+     "di": "31_ElecGtr08DI.wav",
+     "amps": [
+      "32_ElecGtr08Amp.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr09",
+     "di": "33_ElecGtr09DI.wav",
+     "amps": [
+      "34_ElecGtr09Amp.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Forkupines_Sugar_Faith",
+   "source": "cambridge",
+   "artist": "Forkupines",
+   "song": "Sugar - Faith",
+   "group": "Forkupines",
+   "path": "cambridge/Forkupines_SugarFaith_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK018/Forkupines_SugarFaith_Full.zip",
+   "archive_sha256": "32b1bccd0815c86c0c63755eb066f1bb9b9e9d0cfe3217e709925ef1342b8217",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "24_ElecGtr1DI.wav",
+     "amps": [
+      "23_ElecGtr1.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "26_ElecGtr2DI.wav",
+     "amps": [
+      "25_ElecGtr2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "28_ElecGtr3DI.wav",
+     "amps": [
+      "27_ElecGtr3.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "30_ElecGtr4DI.wav",
+     "amps": [
+      "29_ElecGtr4.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "32_ElecGtr5DI.wav",
+     "amps": [
+      "31_ElecGtr5.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr6",
+     "di": "34_ElecGtr6DI.wav",
+     "amps": [
+      "33_ElecGtr6.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr7",
+     "di": "36_ElecGtr7DI.wav",
+     "amps": [
+      "35_ElecGtr7.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr8",
+     "di": "38_ElecGtr8DI.wav",
+     "amps": [
+      "37_ElecGtr8.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr9",
+     "di": "40_ElecGtr9DI.wav",
+     "amps": [
+      "39_ElecGtr9.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_North_To_Alaska_All_The_Same",
+   "source": "cambridge",
+   "artist": "Lights Off Clarity",
+   "song": "All The Same",
+   "group": "Lights Off Clarity",
+   "path": "cambridge/MR0912_NorthToAlaska_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK003/MR0912_NorthToAlaska_Full.zip",
+   "archive_sha256": "8943cdbb62aa866ef72a972c6a8c8cfa2f364eec152d7c2c31e2aecc8ace09f6",
+   "parts": [
+    {
+     "part": "ElecGtr12",
+     "di": "22_ElecGtr12DI.wav",
+     "amps": [
+      "18_ElecGtr12.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr13",
+     "di": "23_ElecGtr13DI.wav",
+     "amps": [
+      "19_ElecGtr13.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr14",
+     "di": "24_ElecGtr14DI.wav",
+     "amps": [
+      "20_ElecGtr14.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr15",
+     "di": "25_ElecGtr15DI.wav",
+     "amps": [
+      "21_ElecGtr15.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Starnes_Shah_Prodigal",
+   "source": "cambridge",
+   "artist": "Starnes And Shah",
+   "song": "Prodigal",
+   "group": "Starnes And Shah",
+   "path": "cambridge/StarnesAndShah_Prodigal_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK018/StarnesAndShah_Prodigal_Full.zip",
+   "archive_sha256": "4102962808deff2bf8d360d47a95f1487a9c55bcae6b26f756fa4ab4f603b1e9",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "06_ElecGtr1DI.wav",
+     "amps": [
+      "05_ElecGtr1.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "08_ElecGtr2DI.wav",
+     "amps": [
+      "07_ElecGtr2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "10_ElecGtr3DI.wav",
+     "amps": [
+      "09_ElecGtr3.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "12_ElecGtr4DI.wav",
+     "amps": [
+      "11_ElecGtr4.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "14_ElecGtr5DI.wav",
+     "amps": [
+      "13_ElecGtr5.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_The_Maybe_Next_Years_One_Flip_Flop",
+   "source": "cambridge",
+   "artist": "The Maybe Next Years",
+   "song": "One Flip Flop",
+   "group": "The Maybe Next Years",
+   "path": "cambridge/TheMaybeNextYears_OneFlipFlop_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK021/TheMaybeNextYears_OneFlipFlop_Full.zip",
+   "archive_sha256": "628d9d4d2d9c7db3041cd40de5e306607ab20a5f804e2e55d7d779405f1b155f",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "21_ElecGtr1DI.wav",
+     "amps": [
+      "19_ElecGtr1Mic1.wav",
+      "20_ElecGtr1Mic2.wav"
+     ],
+     "simulated": [
+      "22_ElecGtr1AmpSim.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "25_ElecGtr2DI.wav",
+     "amps": [
+      "23_ElecGtr2Mic1.wav",
+      "24_ElecGtr2Mic2.wav"
+     ],
+     "simulated": [
+      "26_ElecGtr2AmpSim.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "29_ElecGtr3DI.wav",
+     "amps": [
+      "27_ElecGtr3Mic1.wav",
+      "28_ElecGtr3Mic2.wav"
+     ],
+     "simulated": [
+      "30_ElecGtr3AmpSim.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_The_Travelling_Band_Passing_Ships",
+   "source": "cambridge",
+   "artist": "The Travelling Band",
+   "song": "Passing Ships",
+   "group": "The Travelling Band",
+   "path": "cambridge/TheTravellingBand_PassingShips_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK010/TheTravellingBand_PassingShips_Full.zip",
+   "archive_sha256": "ccb05d005a45c8492b1b63c1f5d0584a8e246cd4101098db71b775efbc28b738",
+   "parts": [
+    {
+     "part": "ElecGtr2",
+     "di": "19_ElecGtr2DI.wav",
+     "amps": [
+      "17_ElecGtr2Mic1.wav",
+      "18_ElecGtr2Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "22_ElecGtr3DI.wav",
+     "amps": [
+      "20_ElecGtr3Mic1.wav",
+      "21_ElecGtr3Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "25_ElecGtr4DI.wav",
+     "amps": [
+      "23_ElecGtr4Mic1.wav",
+      "24_ElecGtr4Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr6",
+     "di": "29_ElecGtr6DI.wav",
+     "amps": [
+      "27_ElecGtr6Mic1.wav",
+      "28_ElecGtr6Mic2.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_The_Travelling_Band_Quicksand",
+   "source": "cambridge",
+   "artist": "The Travelling Band",
+   "song": "Quicksand",
+   "group": "The Travelling Band",
+   "path": "cambridge/TheTravellingBand_Quicksand_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK010/TheTravellingBand_Quicksand_Full.zip",
+   "archive_sha256": "cab59aab8e203809040e157872075420a0ebd445c66f0d81ae0da55867c1bf45",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "16_ElecGtr1DI.wav",
+     "amps": [
+      "14_ElecGtr1Close.wav",
+      "15_ElecGtrFar.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "19_ElecGtr2DI.wav",
+     "amps": [
+      "17_ElecGtr2Close.wav",
+      "18_ElecGtr2Far.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "22_ElecGtr3DI.wav",
+     "amps": [
+      "20_ElecGtr3Close.wav",
+      "21_ElecGtr3Far.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Tim_Taler_Stalker",
+   "source": "cambridge",
+   "artist": "Tim Taler",
+   "song": "Stalker",
+   "group": "Tim Taler",
+   "path": "cambridge/TimTaler_Stalker_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK006/TimTaler_Stalker_Full.zip",
+   "archive_sha256": "ea75b9eb1b570fab4ce10a77aee7681d4df70b25bef555cb413bd7cbd8d4f0c2",
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "di": "26_ElecGtr01d_DI.wav",
+     "amps": [
+      "23_ElecGtr01a_Mic1.wav",
+      "24_ElecGtr01b_Mic2.wav",
+      "25_ElecGtr01c_Mic3.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "29_ElecGtr02c_DI.wav",
+     "amps": [
+      "27_ElecGtr02a_Mic1.wav",
+      "28_ElecGtr02b_Mic2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "31_ElecGtr04a_DI.wav",
+     "amps": [
+      "32_ElecGtr04b_Fuzz.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "cam_Zeno_Signs",
+   "source": "cambridge",
+   "artist": "Zeno",
+   "song": "Signs",
+   "group": "Zeno",
+   "path": "cambridge/MR1003_Zeno_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK001/MR1003_Zeno_Full.zip",
+   "archive_sha256": "7c67db02b883fe268ccc128712adc14b0692517ab5644ef8847c7b400e63676b",
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "di": "23_ElecGtr1DI.wav",
+     "amps": [
+      "22_ElecGtr1.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "25_ElecGtr2DI.wav",
+     "amps": [
+      "24_ElecGtr2.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "27_ElecGtr3DI.wav",
+     "amps": [
+      "26_ElecGtr3.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "29_ElecGtr4DI.wav",
+     "amps": [
+      "28_ElecGtr4.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "31_ElecGtr5DI.wav",
+     "amps": [
+      "30_ElecGtr5.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr6",
+     "di": "33_ElecGtr6DI.wav",
+     "amps": [
+      "32_ElecGtr6.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr7",
+     "di": "35_ElecGtr7DI.wav",
+     "amps": [
+      "34_ElecGtr7.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr8",
+     "di": "37_ElecGtr8DI.wav",
+     "amps": [
+      "36_ElecGtr8.wav"
+     ]
+    },
+    {
+     "part": "ElecGtr9",
+     "di": "39_ElecGtr9DI.wav",
+     "amps": [
+      "38_ElecGtr9.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Briana_Maia_Pretty_Peace",
+   "source": "telefunken",
+   "artist": "Briana Maia",
+   "song": "Pretty Peace",
+   "group": "Briana Maia",
+   "path": "telefunken/Briana Maia - Pretty Peace",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Briana+Maia+-+Pretty+Peace.zip",
+   "archive_sha256": "048ffe43a2adddaccc533612fc4954c5b8d5693b49a918ac7ab69c082eafb731",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF51.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Briana_Maia_Safety",
+   "source": "telefunken",
+   "artist": "Briana Maia",
+   "song": "Safety",
+   "group": "Briana Maia",
+   "path": "telefunken/Briana Maia - Safety",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Briana+Maia+-+Safety.zip",
+   "archive_sha256": "8a858cb8f7e76370f19cbb463505387d871894e25ff5fe46755e8ffebdeb6efb",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF51.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Catbite_Bad_Influence_LIVE_FROM_THE_LAB",
+   "source": "telefunken",
+   "artist": "Catbite",
+   "song": "Bad Influence",
+   "group": "Catbite",
+   "path": "telefunken/Catbite - Bad Influence LIVE FROM THE LAB",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Catbite+-+Bad+Influence+LIVE+FROM+THE+LAB.zip",
+   "archive_sha256": "d8007c87e48df55ecef3d7e0f222b9e1f28f52dac96c901d60e643ee66edf10d",
+   "parts": [
+    {
+     "part": "Guitar",
+     "di": "Guitar TDP-1.wav",
+     "amps": [
+      "Guitar Amp M80.wav",
+      "Guitar Amp TF39.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Catbite_Die_In_Denver_LIVE_FROM_THE_LAB",
+   "source": "telefunken",
+   "artist": "Catbite",
+   "song": "Die In Denver",
+   "group": "Catbite",
+   "path": "telefunken/Catbite - Die In Denver LIVE FROM THE LAB",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Catbite+-+Die+In+Denver+LIVE+FROM+THE+LAB.zip",
+   "archive_sha256": "4a3178121a2b73be262fcf0d0482ed9e724062a09af4366140575206ae0bdc9e",
+   "parts": [
+    {
+     "part": "Guitar",
+     "di": "Guitar DI_18.wav",
+     "amps": [
+      "Guitar Amp 1_18.wav",
+      "Guitar Amp 2_18.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Dom_McLennon_LFTL_First_Offering",
+   "source": "telefunken",
+   "artist": "Dom McLennon",
+   "song": "First Offering",
+   "group": "Dom McLennon",
+   "path": "telefunken/Dom McLennon LFTL First Offering",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Dom+McLennon+LFTL+First+Offering.zip",
+   "archive_sha256": "8eba19b559c9fb97311a0382a4f1f0c3b035277b6778b53bf5ad6633421cd441",
+   "parts": [
+    {
+     "part": "GTR 1",
+     "di": "GTR 1 DI TDP-1-Norm_01-01.wav",
+     "amps": [
+      "GTR 1 Amp M80-Norm_01-01.wav",
+      "GTR 1 Amp TF11-Norm_01-01.wav"
+     ]
+    },
+    {
+     "part": "GTR 2",
+     "di": "GTR 2 DI TDP-1-Norm_01-01.wav",
+     "amps": [
+      "GTR 2 Amp M80-Norm_01-01.wav",
+      "GTR 2 Amp TF11-Norm_01-01.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Dom_McLennon_LFTL_Gym_Hours",
+   "source": "telefunken",
+   "artist": "Dom McLennon",
+   "song": "Gym Hours",
+   "group": "Dom McLennon",
+   "path": "telefunken/Dom McLennon LFTL Gym Hours",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Dom+McLennon+LFTL+Gym+Hours.zip",
+   "archive_sha256": "446357c947997b84e81dceebdf3344198f241ff502d48737cdfa1947843a2e2e",
+   "parts": [
+    {
+     "part": "GTR 1",
+     "di": "GTR 1 DI TDP-1-Norm_03-01.wav",
+     "amps": [
+      "GTR 1 Amp M80-Norm_03-01.wav",
+      "GTR 1 Amp TF11-Norm_03-01.wav"
+     ]
+    },
+    {
+     "part": "GTR 2",
+     "di": "GTR 2 DI TDP-1-Norm_03-01.wav",
+     "amps": [
+      "GTR 2 Amp M80-Norm_03-01.wav",
+      "GTR 2 Amp TF11-Norm_03-01.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Dom_McLennon_LFTL_Russian_Cream",
+   "source": "telefunken",
+   "artist": "Dom McLennon",
+   "song": "Russian Cream",
+   "group": "Dom McLennon",
+   "path": "telefunken/Dom McLennon LFTL Russian Cream",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Dom+McLennon+LFTL+Russian+Cream.zip",
+   "archive_sha256": "19f5c3764055e7db43aaefb5b291e368a803437a189067e397674dcb3afab938",
+   "parts": [
+    {
+     "part": "GTR 1",
+     "di": "GTR 1 DI TDP-1.1-Norm_01-01.wav",
+     "amps": [
+      "GTR 1 Amp M80.1-Norm_01-01.wav",
+      "GTR 1 Amp TF11.1-Norm_01-01.wav"
+     ]
+    },
+    {
+     "part": "GTR 2",
+     "di": "GTR 2 DI TDP-1.1-Norm_01-01.wav",
+     "amps": [
+      "GTR 2 Amp M80.1-Norm_01-01.wav",
+      "GTR 2 Amp TF11.1-Norm_01-01.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Dom_McLennon_LFTL_Sculptors_Request",
+   "source": "telefunken",
+   "artist": "Dom McLennon",
+   "song": "Sculptor's Request",
+   "group": "Dom McLennon",
+   "path": "telefunken/Dom McLennon LFTL Sculptors Request",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Dom+McLennon+LFTL+Sculptors+Request.zip",
+   "archive_sha256": "3c837f34da374ae4036415c26e4b7dba4bd70ba9f08c32bd851da141fce13982",
+   "parts": [
+    {
+     "part": "GTR 1",
+     "di": "GTR 1 DI TDP-1-Norm_02-01.wav",
+     "amps": [
+      "GTR 1 Amp M80-Norm_02-01.wav",
+      "GTR 1 Amp TF11-Norm_02-01.wav"
+     ]
+    },
+    {
+     "part": "GTR 2",
+     "di": "GTR 2 DI TDP-1-Norm_02-01.wav",
+     "amps": [
+      "GTR 2 Amp M80-Norm_02-01.wav",
+      "GTR 2 Amp TF11-Norm_02-01.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Doom_Flamingo_Blind_Spots_LFTL",
+   "source": "telefunken",
+   "artist": "Doom Flamingo",
+   "song": "Blind Spots",
+   "group": "Doom Flamingo",
+   "path": "telefunken/Doom Flamingo - Blind Spots LFTL",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Doom+Flamingo+-+Blind+Spots+LFTL.zip",
+   "archive_sha256": "266429701679306e236f1a5e6cbf3e99c5e952af918f2ccd3568f273448b9d38",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Doom_Flamingo_Long_Way_Home_LFTL",
+   "source": "telefunken",
+   "artist": "Doom Flamingo",
+   "song": "Long Way Home",
+   "group": "Doom Flamingo",
+   "path": "telefunken/Doom Flamingo - Long Way Home LFTL",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Doom+Flamingo+-+Long+Way+Home+LFTL.zip",
+   "archive_sha256": "b425f9abcb3cfa2edf5857d6c168fe349cce58fc2518017fe1e812381f15e7a5",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Doom_Flamingo_Measurements_LFTL",
+   "source": "telefunken",
+   "artist": "Doom Flamingo",
+   "song": "Measurements",
+   "group": "Doom Flamingo",
+   "path": "telefunken/Doom Flamingo - Measurements LFTL",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Doom+Flamingo+-+Measurements+LFTL.zip",
+   "archive_sha256": "acc36f7537bd8e41305526880f23525769e7a34e700c1fe9d17af7d525755bb2",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Doom_Flamingo_Strangest_Places_LFTL",
+   "source": "telefunken",
+   "artist": "Doom Flamingo",
+   "song": "Strangest Places",
+   "group": "Doom Flamingo",
+   "path": "telefunken/Doom Flamingo - Strangest Places LFTL",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Doom+Flamingo+-+Strangest+Places+LFTL.zip",
+   "archive_sha256": "2dc77e5a0957eaf5d43924535bfb402f286a7fd573eaa2c877def2cf193f4076",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR Amp_M80.wav",
+      "GTR Amp_TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Eggy_Bloomlight_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Eggy",
+   "song": "Bloomlight",
+   "group": "Eggy",
+   "path": "telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Eggy+%22Bloomlight%22+TELEFUNKEN+Live+From+The+Lab.zip",
+   "archive_sha256": "4fc512512b225b8cd4088e8054f979fe26aaff49f2f0b9f359adac65edabc988",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI.04_02.wav",
+     "amps": [
+      "GTR M80.04_02.wav",
+      "GTR TF11.04_02.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Eggy_Farthest_Step_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Eggy",
+   "song": "Farthest Step",
+   "group": "Eggy",
+   "path": "telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Eggy+%22Farthest+Step%22+TELEFUNKEN+Live+From+The+Lab.zip",
+   "archive_sha256": "5bce49b47f8c5acdcf245d5651f9592ea107af13822055a2e095c4c51378a518",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI.04_01.wav",
+     "amps": [
+      "GTR M80.04_01.wav",
+      "GTR TF11.04_01.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Eggy_Fragments_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Eggy",
+   "song": "Fragments",
+   "group": "Eggy",
+   "path": "telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab ",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Eggy+%22Fragments%22+TELEFUNKEN+Live+From+The+Lab+.zip",
+   "archive_sha256": "1472ca818daf55fb22e943ae2eef3668e7eac2963f129fd6c005bad56957afe9",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_01-02.wav",
+     "amps": [
+      "GTR M80_01-02.wav",
+      "GTR TF11_01-02.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_JMK_Hikikomori_Love_Does",
+   "source": "telefunken",
+   "artist": "John Morgan Kimock",
+   "song": "Hikikomori - Love Does",
+   "group": "John Morgan Kimock",
+   "path": "telefunken/Hikikomori > Love Does",
+   "url": "https://season6multitracks.s3.us-east-2.amazonaws.com/JMK+-+Hikikomori+%3E+Love+Does.zip",
+   "archive_sha256": "be2a46d0dae0279641877b476a413f748cd8ddb71fe4a1e6bb51b1cdbbc093ef",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR M80.wav",
+      "GTR TF51.wav"
+     ]
+    },
+    {
+     "part": "Keys GTR",
+     "di": "Keys GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR KEYS AMP_TF51.wav"
+     ]
+    },
+    {
+     "part": "Keys GTR DI 2",
+     "di": "Keys GTR DI 2_TDP-1.wav",
+     "amps": [
+      "GTR KEYS AMP_TF51.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_JMK_New_One",
+   "source": "telefunken",
+   "artist": "John Morgan Kimock",
+   "song": "New One",
+   "group": "John Morgan Kimock",
+   "path": "telefunken/New One",
+   "url": "https://season6multitracks.s3.us-east-2.amazonaws.com/JMK+-+New+One.zip",
+   "archive_sha256": "4e2c0bf54857eac8143b1c5e167dd5037d561da1075d06699fdfbcf0e5eaacc0",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR M80.wav",
+      "GTR TF51.wav"
+     ]
+    },
+    {
+     "part": "Keys GTR",
+     "di": "Keys GTR DI_TDP-1.wav",
+     "amps": [
+      "GTR KEYS AMP_M80.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_JMK_Procession",
+   "source": "telefunken",
+   "artist": "John Morgan Kimock",
+   "song": "Procession",
+   "group": "John Morgan Kimock",
+   "path": "telefunken/Procession",
+   "url": "https://season6multitracks.s3.us-east-2.amazonaws.com/JMK+-+Procession.zip",
+   "archive_sha256": "52cac9fb617e42927ad4531720762f62b7a9e215ac4a7ee80b59c925eeda9c55",
+   "parts": [
+    {
+     "part": "Keys GTR DI 1",
+     "di": "Keys GTR DI 1_TDA-1.wav",
+     "amps": [
+      "GTR KEYS AMP_M80.wav"
+     ]
+    },
+    {
+     "part": "Keys GTR DI 2",
+     "di": "Keys GTR DI 2_TDA-1.wav",
+     "amps": [
+      "GTR KEYS AMP_M80.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Moorea_Masa_The_Mood_with_Swatkins_Honey_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Moorea Masa & The Mood with Swatkins",
+   "song": "Honey",
+   "group": "Swatkins",
+   "path": "telefunken/Honey - Swatkins TELEFUNKEN Live From The Lab",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Moorea+Masa+%26+The+Mood+with+Swatkins+%22Honey%22+TELEFUNKEN+Live+From+The+Lab.zip",
+   "archive_sha256": "bfdaadf151d11eb48214dacce242ebfca26773d3f121720fa65062338aca58fa",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI TDP-1.wav",
+     "amps": [
+      "GTR Amp TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Moorea_Masa_The_Mood_with_Swatkins_Lost_Alive_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Moorea Masa & The Mood with Swatkins",
+   "song": "Lost Alive",
+   "group": "Swatkins",
+   "path": "telefunken/Swatkins \"Lost & Alive\" TELEFUNKEN Live From The Lab",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Moorea+Masa+%26+The+Mood+with+Swatkins+%22Lost+%26+Alive%22+TELEFUNKEN+Live+From+The+Lab.zip",
+   "archive_sha256": "19715f6edab837e9f59e7a6ac02272aaed49162a3efdf777b7a9a6e461c5d404",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI TDP-1_02.wav",
+     "amps": [
+      "GTR Amp TF11_02.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Shes_Gone_Bernard_Purdie_Tribute_All_Stars",
+   "source": "telefunken",
+   "artist": "Bernard Purdie Tribute All-Stars",
+   "song": "She's Gone",
+   "group": "Bernard Purdie Tribute All-Stars",
+   "path": "telefunken/Shes Gone Bernard Purdie Tribute All Stars",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Shes+Gone+Bernard+Purdie+Tribute+All+Stars.zip",
+   "archive_sha256": "1977f3050bc689ba5aecb0bc247ecd5495314cf348c4bd63889641c7671157e4",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI.wav",
+     "amps": [
+      "GTR amp M80.wav",
+      "GTR amp TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_Swatkins_Until_I_Get_Back_TELEFUNKEN_Live_From_The_Lab",
+   "source": "telefunken",
+   "artist": "Swatkins",
+   "song": "Until I Get Back",
+   "group": "Swatkins",
+   "path": "telefunken/Until I Get Back - Swatkins TELEFUNKEN Live From The Lab",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/Swatkins+%22Until+I+Get+Back%22++TELEFUNKEN+Live+From+The+Lab.zip",
+   "archive_sha256": "37b8ec38455d507f6b5aa2cca59693e55923db47b8c249f52055874ceb212627",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "GTR DI TDP-1.wav",
+     "amps": [
+      "GTR Amp TF11.wav"
+     ]
+    }
+   ]
+  },
+  {
+   "key": "tf_WILD_CO_Past_Dues_LFTL",
+   "source": "telefunken",
+   "artist": "Wild & Co",
+   "song": "Past Dues",
+   "group": "Wild & Co",
+   "path": "telefunken/WILD&CO Past Dues LFTL",
+   "url": "https://season7multitracks.s3.us-east-2.amazonaws.com/WILD%26CO+Past+Dues+LFTL.zip",
+   "archive_sha256": "075e69c4c3c333ac075d3a0f91c4b01edcac79427e6980386d0557a476300ac7",
+   "parts": [
+    {
+     "part": "GTR",
+     "di": "Guitar DI_TDP-1.wav",
+     "amps": [
+      "Guitar Amp_M80.wav",
+      "Guitar Amp_TF11.wav"
+     ],
+     "simulated": [
+      "Guitar Helix.wav"
+     ]
+    }
+   ]
+  }
+ ]
+}

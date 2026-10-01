@@ -410,3 +410,104 @@ def test_cli_is_pinned_to_committed_catalog_and_refuses_held_out(tmp_path):
                                    cwd=ROOT, capture_output=True, text=True)
     assert with_override.returncode != 0
     assert "unrecognized arguments: --catalog" in with_override.stderr
+
+
+def test_a_declared_mix_is_mixed_from_exactly_its_tracks_with_a_vocal_free_backing(tmp_path):
+    """The second set declares each session's mix: one amp track per guitar and no
+    rendered mixes. With vocal tracks declared, a backing without them is cut too."""
+    catalog, data_root, session_dir = _fixture(tmp_path)
+    t = np.arange(12 * RATE) / RATE
+    sf.write(session_dir / "lead-vox.wav", (.3 * np.sin(2 * np.pi * 440 * t)).astype(np.float32),
+             RATE, subtype="FLOAT")
+    sf.write(session_dir / "master.wav", np.full(12 * RATE, .5, np.float32), RATE,
+             subtype="FLOAT")
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    for name in ("lead-vox.wav", "master.wav"):
+        session["files"][name] = _digest(session_dir / name)
+    session["mix_tracks"] = ["reference.wav", "other-amp.wav", "bass-di.wav", "lead-vox.wav"]
+    session["vocal_tracks"] = ["lead-vox.wav"]
+    catalog.write_text(json.dumps(document))
+
+    record = _run(catalog, data_root, tmp_path / "private" / "crops")
+    assert record["mix_rule"] == "declared mix_tracks"
+    assert record["included_mix_tracks"] == session["mix_tracks"]
+    assert record["vocal_tracks"] == ["lead-vox.wav"]
+    out = {role: sf.read(spec["path"])[0] for role, spec in record["outputs"].items()}
+    # The other mic of part one, the master and the DIs are nowhere in the mix.
+    expected_backing = (.2 + .01) + out["mix"] * 0
+    np.testing.assert_allclose(out["backing_instrumental"], expected_backing, atol=1e-6)
+    vox = sf.read(session_dir / "lead-vox.wav")[0]
+    start, end = record["excerpt_start_frame"], record["excerpt_end_frame"]
+    np.testing.assert_allclose(out["backing"] - out["backing_instrumental"],
+                               vox[start:end], atol=1e-6)
+    np.testing.assert_allclose(out["mix"] - out["mix_instrumental"], vox[start:end],
+                               atol=1e-6)
+
+
+def test_a_declared_mix_must_hold_the_parts_reference_and_no_di(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path)
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    for mix, message in ((["other-amp.wav"], "leaves out the selected part's reference"),
+                         (["reference.wav", "own-di.wav"], "guitar DI")):
+        session["mix_tracks"] = mix
+        catalog.write_text(json.dumps(document))
+        with pytest.raises(ValueError, match=message):
+            _run(catalog, data_root, tmp_path / "private" / f"crops-{len(mix)}")
+
+
+def test_an_audition_plays_the_vocal_free_mix_and_backing_together_or_neither(tmp_path):
+    """The instrumental pair is a valid audition; one of each would let the singing
+    tell the reference from A and B."""
+    catalog, data_root, session_dir = _fixture(tmp_path)
+    t = np.arange(12 * RATE) / RATE
+    sf.write(session_dir / "lead-vox.wav", (.3 * np.sin(2 * np.pi * 440 * t)).astype(np.float32),
+             RATE, subtype="FLOAT")
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    session["files"]["lead-vox.wav"] = _digest(session_dir / "lead-vox.wav")
+    session["mix_tracks"] = ["reference.wav", "other-amp.wav", "bass-di.wav", "lead-vox.wav"]
+    session["vocal_tracks"] = ["lead-vox.wav"]
+    catalog.write_text(json.dumps(document))
+    crop_dir = tmp_path / "crops"
+    crops = build(catalog, data_root, "test", "song", "one", crop_dir)
+    t = np.arange(crops["outputs"]["di"]["frames"]) / RATE
+    alternatives = {}
+    for role, hz, amp in (("first", 440, "PR12"), ("second", 660, "SW50R")):
+        audio_path = tmp_path / f"{role}.wav"
+        sf.write(audio_path, .02 * np.sin(2 * np.pi * hz * t), RATE, subtype="FLOAT")
+        proof_path = tmp_path / f"{role}.render.json"
+        proof_path.write_text(json.dumps({
+            "schema": "listening-fresh-render-v1", "pack": "morgan",
+            "amp_model": amp, "process_policy": "fresh",
+            "renderer": {"quality_mode": "process=fresh"},
+            "di": crops["outputs"]["di"],
+            "audio": {"path": str(audio_path), "sha256": _digest(audio_path)},
+        }))
+        alternatives[role] = {"path": str(audio_path), "sha256": _digest(audio_path),
+                              "start_s": 0, "pack": "morgan", "amp_model": amp,
+                              "render_record": str(proof_path)}
+
+    def manifest(mix_role, backing_role):
+        return {
+            "schema": "prospective-backed-listening-v1", "id": "instrumental-one",
+            "target_id": "test/song", "validation_mode": "declared",
+            "validation_crop_record": str(crop_dir / "record.json"),
+            "reference": {**crops["outputs"][mix_role], "start_s": 0,
+                          "duration_s": 10, "regime": "mix"},
+            "backing": {**crops["outputs"][backing_role], "start_s": 0,
+                        "gain_db": 0, "guitar_removed": True},
+            "alternatives": alternatives,
+            "mix": {"guitar_target_lufs": -29, "master_target_lufs": -20,
+                    "peak_ceiling_dbtp": -1, "max_ab_lufs_delta": 3,
+                    "gap_s": .1, "cycles": 1},
+        }
+
+    _, evidence = build_backed(manifest("mix_instrumental", "backing_instrumental"), seed=17)
+    binding = evidence["validation_crop_record"]
+    assert (binding["reference_output"], binding["backing_output"]) == (
+        "mix_instrumental", "backing_instrumental")
+    for mixed in (("mix", "backing_instrumental"), ("mix_instrumental", "backing")):
+        with pytest.raises(ValueError, match="whole mix and unchanged backing"):
+            build_backed(manifest(*mixed), seed=17)

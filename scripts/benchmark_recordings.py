@@ -5,7 +5,9 @@
       --signal same --signal other --signal noise --budget 300 --workers 2 \\
       --json recordings-sw50r.json
 
-Every usable development part of `docs/validation-datasets.md` is a target: its
+Every usable development part of `docs/validation-datasets.md` is a target (with
+`--set`, only those of the named validation sets; the runs recorded in
+`tone-matching-plan.md` predate the second set and are `--set 1`): its
 amp track (a real amplifier, or for Cambridge a processed guitar track) is the
 reference, and its own DI is what every answer is rendered through to be scored —
 what the player hears. Each `--signal` runs the same pipeline (neutral settings,
@@ -62,6 +64,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workers", type=positive_int, default=1)
     ap.add_argument("--part", action="append", metavar="SOURCE/SONG/PART",
                     help="only these development parts (default: every usable one)")
+    ap.add_argument("--set", type=int, choices=(1, 2), action="append", dest="sets",
+                    help="repeatable; only parts of these validation sets (default: all)")
     ap.add_argument("--data-root", type=pathlib.Path,
                     help="dataset root (default: the catalog's)")
     ap.add_argument("--crops-dir", type=pathlib.Path,
@@ -71,10 +75,14 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def development_parts(catalog: dict, only=None):
-    """(source, song, part) for every usable development part, in catalog order."""
+def development_parts(catalog: dict, only=None, sets=None):
+    """(source, song, part) for every usable development part, in catalog order.
+
+    A session without a `set` is from the first set, declared before there was one.
+    """
     parts = [(session["source"], session["song"], part["part"])
              for session in catalog["sessions"] if session["split"] == "development"
+             and (not sets or session.get("set", 1) in sets)
              for part in session["parts"] if part.get("usable")]
     if only:
         wanted = [tuple(item.split("/", 2)) for item in only]
@@ -95,8 +103,9 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     A cached record must name this part, the catalog must still list its
     session as development, every source file the crop was cut from must have
     the hash the catalog lists for it, the part's DI, amp tracks and the
-    session's guitar DIs must be the ones it was cut with, and its outputs must
-    match their hashes.
+    session's guitar DIs must be the ones it was cut with — and, for a session
+    that declares its mix, its mix and vocal tracks — and its outputs must match
+    their hashes.
     The catalog file itself may have changed since — its held-out ledger grows
     with every declared test — without making the crop stale.
     """
@@ -124,7 +133,11 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
                   and record.get("removed_own_amp_tracks") == sorted(
                       {entry.get("reference"), *entry.get("alternate", [])})
                   and record.get("excluded_guitar_dis") == sorted(
-                      {item["di"] for item in session["parts"] if item.get("di")}))
+                      {item["di"] for item in session["parts"] if item.get("di")})
+                  and ("mix_tracks" not in session
+                       or (record.get("included_mix_tracks") == session["mix_tracks"]
+                           and record.get("vocal_tracks") == sorted(
+                               session.get("vocal_tracks") or ()))))
     if (found != expected or session.get("split") != "development" or not cut_from
             or any(files.get(name) != digest for name, digest in cut_from.items())
             or not roles_kept):
@@ -160,7 +173,7 @@ def main() -> None:
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     data_root = (args.data_root or pathlib.Path(catalog["root"])).expanduser()
-    parts = development_parts(catalog, args.part)
+    parts = development_parts(catalog, args.part, args.sets)
     if not parts:
         die("no usable development parts selected")
     records = [crops_for(CATALOG, data_root, args.crops_dir, *part)

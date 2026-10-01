@@ -6,7 +6,8 @@
 
 Hashes every file, measures how well each guitar part's DI and amp track are the
 same take kept in step (`pairing`, `windowed_pairing`), and draws the declared
-development / held-out split. `docs/validation-datasets.md` states the rules;
+development / held-out splits. The second set's sessions, parts and amp tracks
+come from docs/validation-sources-2.json. `docs/validation-datasets.md` states the rules;
 this is them, so the committed numbers can be reproduced from the audio.
 """
 
@@ -17,6 +18,7 @@ import hashlib
 import json
 import pathlib
 import random
+import re
 import sys
 
 FRAME_S = 0.01          # envelope frame: 10 ms of mean absolute amplitude
@@ -36,6 +38,31 @@ GUITAR_TECHS_EXCERPTS = [f"{i:02d}" for i in range(1, 13)]
 TELEFUNKEN_DIRS = {"57 Chevy": "Rebecca Haviland - 57 Chevy",
                    "Bourbon": "Rebecca Haviland - Burbon",
                    "Collide With Me": "Rebecaa Haviland - Collide With Me"}
+# The second set: sessions found and pair-tested after the first split was used,
+# listed in docs/validation-sources-2.json and split by band (validation-datasets.md).
+SET2_SOURCES = pathlib.Path(__file__).resolve().parents[1] / "docs" / "validation-sources-2.json"
+SET2_SPLIT_SEED = 20261001
+SET2_HELD_OUT_GROUPS = {"cambridge": 5, "telefunken": 3}
+# The order a part's amp tracks are tried in for its reference (set2_session): the
+# M80 for Telefunken, as in the first set; on Cambridge the first microphone, the
+# close one, or the one named as the amp.
+AMP_PREFERENCE = (r"M ?80(?!\d)", r"Mic ?1(?!\d)", r"Close", r"Amp ?1(?!\d)",
+                  r"Amp(?! ?\d)", r"^(?:\d+_)?ElecGtr\d+(?:DT)?$", r"TF ?11(?!\d)",
+                  r"TF ?51(?!\d)", r"TF ?39(?!\d)", r"Mic ?2(?!\d)", r"Far",
+                  r"Mic ?3(?!\d)", r"Amp ?2(?!\d)")
+VOCAL_TRACK = re.compile(r"vox|vocal", re.I)
+# Tracks no second-set mix holds, by name: rendered mixes, click tracks and
+# electric guitar DIs, a part's or not. An amp simulator or modeller track
+# (SIMULATED_AMP; validation-sources-2.json lists them per part) is left out only
+# when it is the same take as its part's DI: otherwise it is another guitar.
+RENDERED_MIX = re.compile(r"master|mixdown|(?:^|[ _-])mix(?:[ _-]|$)", re.I)
+CLICK_TRACK = re.compile(r"click|metronome", re.I)
+SIMULATED_AMP = re.compile(r"sim|helix|kemper|axe-?fx|quad ?cortex", re.I)
+GUITAR_DI = re.compile(r"^(?!.*acoustic)(?=.*(?:gtr|guitar)).*(?:DI(?![a-z])|TDP|direct)",
+                       re.I)
+# A part named for the keyboard player ("Keys GTR") may be a keyboard through a
+# guitar amp; the names do not say, so it is not used.
+KEYBOARD_PART = re.compile(r"\bkeys?\b", re.I)
 CAMBRIDGE_DIRS = {"Heather Jane": "ChrisColtraine_HeatherJane_Full",
                   "That's How I Got To Memphis":
                       "ChrisColtraine_ThatsHowIGotToMemphis_Full"}
@@ -159,6 +186,91 @@ def _part(session_dir, name, reference, di, alternate=()):
     return part
 
 
+def draw_set2_split(groups_by_source):
+    """The second set's held-out draw: whole bands, per source, as declared."""
+    rng = random.Random(SET2_SPLIT_SEED)
+    return {source: sorted(rng.sample(sorted(groups_by_source[source]),
+                                      SET2_HELD_OUT_GROUPS[source]))
+            for source in ("cambridge", "telefunken")}
+
+
+def amp_rank(name):
+    stem = pathlib.Path(name).stem
+    for rank, pattern in enumerate(AMP_PREFERENCE):
+        if re.search(pattern, stem, re.I):
+            return rank
+    return len(AMP_PREFERENCE)
+
+
+def set2_session(root, entry, split):
+    """One second-set session: its files, parts, mix tracks and vocal tracks.
+
+    A part's reference is its first amp track by `AMP_PREFERENCE` that passes
+    both pairing tests, or its first if none does (the part is then unusable);
+    the others are alternates. A part is also unusable when it is named for the
+    keyboard player, or when one of its amp tracks is another part's too, since
+    that track then carries two performances (`excluded` says which). The mix is
+    every WAV except electric guitar DIs, every part's alternates and same-take
+    simulator tracks, click tracks and rendered mixes, so each part's guitar is
+    heard once, through its reference; `vocal_tracks` lets a backing leave the
+    singing out.
+    """
+    directory = root / entry["path"]
+    if "/" in entry["song"] or any("/" in part["part"] for part in entry["parts"]):
+        raise ValueError(f"{entry['path']}: a song or part name holds '/', which part "
+                         "IDs (source/song/part) cannot")
+    wavs = sorted(p.relative_to(directory).as_posix() for p in directory.rglob("*.wav")
+                  if not p.name.startswith("._"))
+    by_name = {pathlib.PurePosixPath(w).name: w for w in wavs}
+    if len(by_name) != len(wavs):
+        raise ValueError(f"{entry['path']}: two WAVs share a file name")
+    owners = {}
+    for declared in entry["parts"]:
+        for amp in declared["amps"]:
+            owners.setdefault(amp, []).append(declared["part"])
+    parts, left_out = [], set()
+    for declared in entry["parts"]:
+        amps = sorted((by_name[a] for a in declared["amps"]), key=amp_rank)
+        di = by_name[declared["di"]]
+        tried = []
+        for reference in amps:
+            tried.append(_part(directory, declared["part"], reference, di,
+                               [a for a in amps if a != reference]))
+            if tried[-1]["usable"]:
+                break
+        part = tried[-1] if tried[-1]["usable"] else tried[0]
+        shared = sorted({other for amp in declared["amps"] for other in owners[amp]}
+                        - {declared["part"]})
+        if KEYBOARD_PART.search(declared["part"]):
+            part.update(usable=False, excluded="named for the keyboard player")
+        elif shared:
+            part.update(usable=False,
+                        excluded=f"shares an amp track with {', '.join(shared)}")
+        part["simulated"] = [by_name[t] for t in declared.get("simulated", [])
+                             if (pairing(directory / by_name[t], directory / di)[0]
+                                 or 0) >= PAIRED_MIN]
+        parts.append(part)
+        left_out.update({di, *part["alternate"], *part["simulated"]})
+    listed = {by_name[t] for declared in entry["parts"]
+              for t in (*declared["amps"], *declared.get("simulated", []))}
+    unlisted = [w for w in wavs if w not in listed
+                and SIMULATED_AMP.search(pathlib.PurePosixPath(w).stem)]
+    if unlisted:
+        raise ValueError(f"{entry['path']}: {', '.join(unlisted)} looks like an amp "
+                         "simulator; list it under its part's simulated tracks")
+    mix = [w for w in wavs if w not in left_out
+           and not any(rule.search(pathlib.PurePosixPath(w).stem) for rule in
+                       (RENDERED_MIX, CLICK_TRACK, GUITAR_DI))]
+    return {"source": entry["source"], "song": entry["song"], "artist": entry["artist"],
+            "group": entry["group"], "set": 2, "path": entry["path"],
+            "url": entry["url"], "archive_sha256": entry["archive_sha256"],
+            "split": "held_out" if entry["group"] in split[entry["source"]] else "development",
+            "files": {w: _sha(directory / w) for w in wavs},
+            "parts": parts, "mix_tracks": mix,
+            "vocal_tracks": [w for w in mix
+                             if VOCAL_TRACK.search(pathlib.PurePosixPath(w).stem)]}
+
+
 def build(root: pathlib.Path):
     split = draw_split()
     sessions = []
@@ -205,11 +317,19 @@ def build(root: pathlib.Path):
                          "parts": [_part(directory, number,
                                          f"audio/micamp/micamp_{number}.wav",
                                          f"audio/directinput/directinput_{number}.wav")]})
+    manifest = json.loads(SET2_SOURCES.read_text(encoding="utf-8"))
+    groups = {}
+    for entry in manifest["sessions"]:
+        groups.setdefault(entry["source"], set()).add(entry["group"])
+    split2 = draw_set2_split(groups)
+    sessions += [set2_session(root, entry, split2) for entry in manifest["sessions"]]
     return {
-        "schema": "validation-datasets-2",
+        "schema": "validation-datasets-3",
         "root": "~/ndsp-presets/references/datasets",
         "split_seed": SPLIT_SEED,
         "split_draw": split,
+        "set2_split_seed": SET2_SPLIT_SEED,
+        "set2_split_draw": split2,
         "rules": {"paired_min": PAIRED_MIN, "in_step_fraction": IN_STEP_FRACTION,
                   "window_median_min": WINDOW_MEDIAN_MIN,
                   "lag_sign": "positive when the amp track is later than the DI"},

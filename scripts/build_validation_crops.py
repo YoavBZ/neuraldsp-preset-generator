@@ -9,10 +9,13 @@ catalog's session stem WAVs, not MIDI or video camera audio. Every guitar DI
 listed in the session's parts is excluded from the unity-gain mix; a bass DI
 remains. Backing is that mix minus the selected part's reference and alternate
 amp tracks. These stereo/length/stem-file interpretations are explicit because
-the declaration does not say how to treat partial or non-stem media files.
+the declaration does not say how to treat partial or non-stem media files. A
+second-set session declares its mix (`mix_tracks`) and is mixed from exactly
+those; when it lists `vocal_tracks`, the mix and the backing are also cut
+without them (`mix_instrumental`, `backing_instrumental`).
 
 The excerpt is the earliest maximum-integrated-loudness 10-second window of
-the mono reference on a 0.5-second grid. All four outputs use that same span.
+the mono reference on a 0.5-second grid. Every output uses that same span.
 No normalization, limiter, or gain change is applied. Float32 WAV preserves
 out-of-range raw mix samples without integer clipping. The output is private.
 Held-out parts require --declaration pointing to an unchanged, committed
@@ -57,7 +60,7 @@ def _sha256(path: pathlib.Path) -> str:
 
 
 def _entry(catalog: dict, source: str, song: str, part_name: str) -> tuple[dict, dict]:
-    if catalog.get("schema") != "validation-datasets-2":
+    if catalog.get("schema") not in ("validation-datasets-2", "validation-datasets-3"):
         raise ValueError("unsupported validation dataset schema")
     sessions = [item for item in catalog["sessions"]
                 if item.get("source") == source and item.get("song") == song]
@@ -166,7 +169,7 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
           song: str, part_name: str, out_dir: pathlib.Path,
           declaration_path: pathlib.Path | None = None,
           *, repo_root: pathlib.Path = ROOT) -> dict:
-    """Verify a trusted catalog and atomically publish four private WAVs and hashes.
+    """Verify a trusted catalog and atomically publish private WAV crops and hashes.
 
     The CLI accepts only the unchanged committed catalog. A different catalog
     argument here permits synthetic unit fixtures, not held-out authorization.
@@ -226,10 +229,21 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     length = len(di)
     reference = _fit(load(part["reference"]), length)
     start, end, lufs = _window(reference, io.SAMPLE_RATE)
+    # A session that declares its mix tracks (the second set) is mixed from exactly
+    # those, one amp track per guitar; the first set's sessions sum every stem but
+    # the guitar DIs, as validation-datasets.md declared for them.
+    declared_mix = session.get("mix_tracks")
+    if declared_mix is not None:
+        if not set(declared_mix) <= set(stem_names) or set(declared_mix) & guitar_dis:
+            raise ValueError("the declared mix names an undeclared WAV or a guitar DI")
+        if part["reference"] not in declared_mix:
+            raise ValueError("the declared mix leaves out the selected part's reference")
+    vocals = set(session.get("vocal_tracks") or ())
     mix = np.zeros(end - start, dtype=np.float64)
     own_amps = np.zeros_like(mix)
+    singing = np.zeros_like(mix)
     included = []
-    for name in stem_names:
+    for name in (declared_mix if declared_mix is not None else stem_names):
         if name in guitar_dis:
             continue
         samples = reference if name == part["reference"] else _fit(load(name), length)
@@ -237,10 +251,17 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         mix += crop
         if name in amp_tracks:
             own_amps += crop
+        if name in vocals:
+            singing += crop
         included.append(name)
     backing = mix - own_amps
     outputs = {"di": di[start:end], "reference": reference[start:end],
                "mix": mix.astype(np.float32), "backing": backing.astype(np.float32)}
+    if vocals:
+        # The mix and backing with the singing left out, for a listener who has to
+        # hear the guitar through them; an audition plays the two together.
+        outputs["mix_instrumental"] = (mix - singing).astype(np.float32)
+        outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
 
     record = {
         "schema": "validation-crops-1",
@@ -253,7 +274,10 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         "policy": "mono channel mean; first-sample alignment; session length from DI; "
                   "short stems zero-padded and long stems cut; unity WAV-stem sum; "
                   "no normalization or limiting; float32 WAV",
+        "mix_rule": ("declared mix_tracks" if declared_mix is not None
+                     else "every session WAV except the guitar DIs"),
         "included_mix_tracks": included,
+        "vocal_tracks": sorted(vocals & set(included)),
         "excluded_guitar_dis": sorted(guitar_dis),
         "removed_own_amp_tracks": sorted(amp_tracks),
         "verified_source_sha256": checked,
@@ -290,7 +314,7 @@ def main() -> None:
     data_root = args.data_root or pathlib.Path(catalog["root"]).expanduser()
     record = build(CATALOG, data_root, args.source, args.song, args.part, args.out_dir,
                    args.declaration)
-    print(f"wrote four private 10-second WAV crops and hashes to {args.out_dir}")
+    print(f"wrote private 10-second WAV crops and hashes to {args.out_dir}")
     print(f"reference excerpt: {record['excerpt_start_s']:.1f} s, "
           f"{record['reference_lufs']:.2f} LUFS; no gain or time shift applied")
 

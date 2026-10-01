@@ -129,7 +129,13 @@ def _validation_crop(manifest: dict, reference: dict, backing: dict,
                 and spec.get("sha256") == output.get("sha256")
                 and sha256(output["path"]) == output["sha256"])
 
-    if (not matches(reference, "mix") or not matches(backing, "backing")
+    # The crop's mix and backing, or both without the singing — never one of each,
+    # or the singing alone would tell the reference from A and B.
+    pairs = [("mix", "backing"), ("mix_instrumental", "backing_instrumental")]
+    played = next((pair for pair in pairs
+                   if all(isinstance(outputs.get(role), dict) for role in pair)
+                   and matches(reference, pair[0]) and matches(backing, pair[1])), None)
+    if (played is None
             or reference.get("regime") != "mix"
             or float(reference.get("start_s", -1)) != 0
             or float(reference.get("duration_s", -1)) != record.get("excerpt_duration_s")
@@ -165,7 +171,8 @@ def _validation_crop(manifest: dict, reference: dict, backing: dict,
                 or manifest.get("declared_test_id") != declaration.get("test_id")):
             raise ValueError("held-out audition must name the crop's declared_test_id")
     return {"path": str(path), "sha256": sha256(path),
-            "split": record.get("split"), "declaration": declaration}
+            "split": record.get("split"), "declaration": declaration,
+            "reference_output": played[0], "backing_output": played[1]}
 
 
 def _require_crop_binding(manifest: dict, reference: dict, backing: dict) -> None:

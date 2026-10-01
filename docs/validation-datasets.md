@@ -9,7 +9,8 @@ recordings — guitar parts recorded through an amp with a DI of the same take, 
 of them with the rest of the band — and, before any matching or benchmark result
 exists on them, which of them may be used to develop and tune the tools and which
 are held out to test them. The declaration time is when this file reaches `main`
-on GitHub.
+on GitHub. A second set, added after the first set's held-out sessions had been
+used once, is declared the same way in [its own section](#the-second-set).
 
 ## Sources and terms
 
@@ -143,5 +144,98 @@ added to `held_out_uses` in `validation-datasets.json`. A held-out session used
 once by such a test stays held out for the next declared one. A held-out session
 used for anything else moves to development, and this file says so.
 
-Until now these recordings have been checked only for the pairing above, their
-lengths and their levels. No match, benchmark or listening test has touched them.
+When this was declared, these recordings had been checked only for the pairing
+above, their lengths and their levels. No match, benchmark or listening test had
+touched them.
+
+## The second set
+
+The first set is three bands, one of them a solo player, and its held-out sessions
+share their band, room or player with development ones. The second set adds 37
+sessions from 21 bands, mostly rock, chosen to fit the amps the packs model: a
+separate research session searched for multitracks with a DI and an amp track of
+the same guitar, left metal out, downloaded each archive, checked its files and
+tested every DI/amp pair. Its record, `validation-candidates.json`, stays beside
+the audio. `validation-sources-2.json` lists what was taken from it: for each
+session the source, artist, song, band (`group`), folder, archive URL and SHA-256,
+and each guitar's DI and amp tracks, with any amp simulator or modeller track the
+research paired with that DI (a name containing "sim", or a modeller's name such
+as "Helix") listed apart as `simulated`. Two titles holding "/" are written with
+" - " instead ("Sugar - Faith", "Hikikomori - Love Does"), since a part's ID is
+`source/song/part`.
+
+- **Cambridge Music Technology "Mixing Secrets" library** — 14 sessions by 12
+  artists, 24-bit/44.1 kHz, on the terms quoted above. Many sessions name their
+  guitar tracks by microphone (Mic1, Close, Far); some only as the amp or the
+  guitar. What is a microphone on an amp and what is a processed track is still
+  not stated.
+- **Telefunken "Live From The Lab"**, later seasons — 23 sessions by 9 bands,
+  24-bit at 48 kHz (17) or 96 kHz (6), on the terms quoted above, recorded live
+  in Telefunken's room.
+  The two songs credited to Moorea Masa & The Mood with Swatkins are grouped
+  with Swatkins's own, so the players they share stay on one side of the split.
+
+Everything in the sections above applies to the second set, except these rules:
+
+- **Which parts count.** The same two tests, measured by
+  `scripts/validation_datasets.py` from the audio, not taken from the research
+  record. Two more rules leave a part out whatever its pairing, and its
+  `excluded` field says which: a part named for the keyboard player ("Keys
+  GTR"), which may be a keyboard through a guitar amp — the sessions do not say
+  — and a part whose amp track is another part's too, since that track then
+  carries two performances.
+- **The reference.** A part's amp tracks are tried in the order of
+  `AMP_PREFERENCE` in that script: the M80 microphone first, as in the first set,
+  then a first or close microphone, then a track named as the amp or as the
+  guitar alone, then the other Telefunken microphones, then a second or far
+  microphone. The first that passes both pairing tests is the reference; when
+  none does, the part is not usable. The others are alternates, used only by a
+  test that names them.
+- **The mix** is the session's `mix_tracks`, summed at unity gain: every WAV but
+  electric guitar DIs (a part's or not), every part's alternates, click tracks
+  and rendered mixes, each recognised by its name, and a part's simulator or
+  modeller track when it is the same take as the part's DI (the first pairing
+  test). So every part's guitar is heard once, through its reference. A guitar
+  recorded only as a DI is left out; a guitar without a DI keeps all its
+  tracks, a modeller playing another part among them; and the bass keeps its DI
+  and its amp, as in the first set.
+- **The backing** is the mix without the part's reference.
+- **The instrumental mix and backing** are the mix and the backing without the
+  session's `vocal_tracks` (mix tracks named "vox" or "vocal"). They are for
+  listening, where loud singing over the first set's held-out parts made them
+  hard to hear, and an audition plays them together or not at all, since
+  singing in only one would give the reference away. A listening test that
+  uses them says so in its declaration; the declared-listening tools take only
+  the mix and the backing so far, so such a test extends them first. Live rooms put singing into the other
+  microphones too, so it is quieter singing, not none.
+
+The split holds out whole bands, so that all of a band's songs are on one side.
+Players a band shares with another band, if any, are not tracked. `scripts/validation_datasets.py` draws it with
+`random.Random(20261001)`, from each source's band names sorted:
+
+```python
+rng.sample(sorted(cambridge_bands), 5)    # -> Boogie Snakes, Forkupines, Lights Off Clarity,
+                                          #    The Maybe Next Years, Tim Taler
+rng.sample(sorted(telefunken_bands), 3)   # -> Briana Maia, Catbite, Wild & Co
+```
+
+| | development | held out |
+|---|---|---|
+| Cambridge | 7 bands, 8 sessions: 23 usable parts of 48 | 5 bands, 6 sessions: 14 usable parts of 24 |
+| Telefunken | 6 bands, 18 sessions: 20 usable parts of 26 | 3 bands, 5 sessions: 5 usable parts of 5 |
+
+That is 43 usable development parts and 19 held out; as in the first set, a
+double-tracked part and its double count as one tone. Every pairing figure is in
+`validation-datasets.json`, where the second set's sessions carry `"set": 2`.
+
+Every file of every session by a held-out band is held out. Development and
+held-out material follow the rules of [the split](#the-split), and the first
+set's held-out sessions stay held out. What the held-out Telefunken bands can
+test is limited the way "57 Chevy" was: one room and often the same
+microphones, so they test new players, guitars and amps more than a new room.
+
+When this was declared, the second set had been checked only for the research
+session's pairing tests and file checks and for this file's measurements. Its
+mix and reference rules were chosen from track names and from which pairs the
+research session found in step, not from listening. No match, benchmark or
+listening test had touched it.
