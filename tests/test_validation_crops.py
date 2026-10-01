@@ -410,3 +410,46 @@ def test_cli_is_pinned_to_committed_catalog_and_refuses_held_out(tmp_path):
                                    cwd=ROOT, capture_output=True, text=True)
     assert with_override.returncode != 0
     assert "unrecognized arguments: --catalog" in with_override.stderr
+
+
+def test_a_declared_mix_is_mixed_from_exactly_its_tracks_with_a_vocal_free_backing(tmp_path):
+    """The second set declares each session's mix: one amp track per guitar and no
+    rendered mixes. With vocal tracks declared, a backing without them is cut too."""
+    catalog, data_root, session_dir = _fixture(tmp_path)
+    t = np.arange(12 * RATE) / RATE
+    sf.write(session_dir / "lead-vox.wav", (.3 * np.sin(2 * np.pi * 440 * t)).astype(np.float32),
+             RATE, subtype="FLOAT")
+    sf.write(session_dir / "master.wav", np.full(12 * RATE, .5, np.float32), RATE,
+             subtype="FLOAT")
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    for name in ("lead-vox.wav", "master.wav"):
+        session["files"][name] = _digest(session_dir / name)
+    session["mix_tracks"] = ["reference.wav", "other-amp.wav", "bass-di.wav", "lead-vox.wav"]
+    session["vocal_tracks"] = ["lead-vox.wav"]
+    catalog.write_text(json.dumps(document))
+
+    record = _run(catalog, data_root, tmp_path / "private" / "crops")
+    assert record["mix_rule"] == "declared mix_tracks"
+    assert record["included_mix_tracks"] == session["mix_tracks"]
+    assert record["vocal_tracks"] == ["lead-vox.wav"]
+    out = {role: sf.read(spec["path"])[0] for role, spec in record["outputs"].items()}
+    # The other mic of part one, the master and the DIs are nowhere in the mix.
+    expected_backing = (.2 + .01) + out["mix"] * 0
+    np.testing.assert_allclose(out["backing_instrumental"], expected_backing, atol=1e-6)
+    vox = sf.read(session_dir / "lead-vox.wav")[0]
+    start, end = record["excerpt_start_frame"], record["excerpt_end_frame"]
+    np.testing.assert_allclose(out["backing"] - out["backing_instrumental"],
+                               vox[start:end], atol=1e-6)
+
+
+def test_a_declared_mix_must_hold_the_parts_reference_and_no_di(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path)
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    for mix, message in ((["other-amp.wav"], "leaves out the selected part's reference"),
+                         (["reference.wav", "own-di.wav"], "guitar DI")):
+        session["mix_tracks"] = mix
+        catalog.write_text(json.dumps(document))
+        with pytest.raises(ValueError, match=message):
+            _run(catalog, data_root, tmp_path / "private" / f"crops-{len(mix)}")

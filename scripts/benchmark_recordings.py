@@ -5,7 +5,9 @@
       --signal same --signal other --signal noise --budget 300 --workers 2 \\
       --json recordings-sw50r.json
 
-Every usable development part of `docs/validation-datasets.md` is a target: its
+Every usable development part of `docs/validation-datasets.md` is a target (with
+`--set`, only those of the named validation sets; the runs recorded in
+`tone-matching-plan.md` predate the second set and are `--set 1`): its
 amp track (a real amplifier, or for Cambridge a processed guitar track) is the
 reference, and its own DI is what every answer is rendered through to be scored —
 what the player hears. Each `--signal` runs the same pipeline (neutral settings,
@@ -62,6 +64,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workers", type=positive_int, default=1)
     ap.add_argument("--part", action="append", metavar="SOURCE/SONG/PART",
                     help="only these development parts (default: every usable one)")
+    ap.add_argument("--set", type=int, choices=(1, 2), action="append", dest="sets",
+                    help="repeatable; only parts of these validation sets (default: all)")
     ap.add_argument("--data-root", type=pathlib.Path,
                     help="dataset root (default: the catalog's)")
     ap.add_argument("--crops-dir", type=pathlib.Path,
@@ -71,10 +75,14 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def development_parts(catalog: dict, only=None):
-    """(source, song, part) for every usable development part, in catalog order."""
+def development_parts(catalog: dict, only=None, sets=None):
+    """(source, song, part) for every usable development part, in catalog order.
+
+    A session without a `set` is from the first set, declared before there was one.
+    """
     parts = [(session["source"], session["song"], part["part"])
              for session in catalog["sessions"] if session["split"] == "development"
+             and (not sets or session.get("set", 1) in sets)
              for part in session["parts"] if part.get("usable")]
     if only:
         wanted = [tuple(item.split("/", 2)) for item in only]
@@ -160,7 +168,7 @@ def main() -> None:
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     data_root = (args.data_root or pathlib.Path(catalog["root"])).expanduser()
-    parts = development_parts(catalog, args.part)
+    parts = development_parts(catalog, args.part, args.sets)
     if not parts:
         die("no usable development parts selected")
     records = [crops_for(CATALOG, data_root, args.crops_dir, *part)

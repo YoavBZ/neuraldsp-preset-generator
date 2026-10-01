@@ -30,6 +30,17 @@ def test_only_usable_development_parts_are_targets():
                                             ("b", "three", "x")]
 
 
+def test_set_picks_parts_by_validation_set_and_an_unmarked_session_is_the_first():
+    catalog = {"sessions": [*CATALOG["sessions"],
+                            {"source": "c", "song": "four", "split": "development",
+                             "set": 2, "parts": [{"part": "y", "usable": True}]}]}
+    assert R.development_parts(catalog, sets=[1]) == R.development_parts(CATALOG)
+    assert R.development_parts(catalog, sets=[2]) == [("c", "four", "y")]
+    assert len(R.development_parts(catalog)) == 4
+    assert R.build_parser().parse_args(
+        ["--amp", "x", "--signal", "same", "--set", "1"]).sets == [1]
+
+
 def test_another_songs_di_comes_from_a_different_session():
     parts = R.development_parts(CATALOG)
     assert [R.other_di_index(parts, i) for i in range(3)] == [2, 2, 0]

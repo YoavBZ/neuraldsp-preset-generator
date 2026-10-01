@@ -57,7 +57,7 @@ def _sha256(path: pathlib.Path) -> str:
 
 
 def _entry(catalog: dict, source: str, song: str, part_name: str) -> tuple[dict, dict]:
-    if catalog.get("schema") != "validation-datasets-2":
+    if catalog.get("schema") not in ("validation-datasets-2", "validation-datasets-3"):
         raise ValueError("unsupported validation dataset schema")
     sessions = [item for item in catalog["sessions"]
                 if item.get("source") == source and item.get("song") == song]
@@ -226,10 +226,21 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     length = len(di)
     reference = _fit(load(part["reference"]), length)
     start, end, lufs = _window(reference, io.SAMPLE_RATE)
+    # A session that declares its mix tracks (the second set) is mixed from exactly
+    # those, one amp track per guitar; the first set's sessions sum every stem but
+    # the guitar DIs, as validation-datasets.md declared for them.
+    declared_mix = session.get("mix_tracks")
+    if declared_mix is not None:
+        if not set(declared_mix) <= set(stem_names) or set(declared_mix) & guitar_dis:
+            raise ValueError("the declared mix names an undeclared WAV or a guitar DI")
+        if part["reference"] not in declared_mix:
+            raise ValueError("the declared mix leaves out the selected part's reference")
+    vocals = set(session.get("vocal_tracks") or ())
     mix = np.zeros(end - start, dtype=np.float64)
     own_amps = np.zeros_like(mix)
+    singing = np.zeros_like(mix)
     included = []
-    for name in stem_names:
+    for name in (declared_mix if declared_mix is not None else stem_names):
         if name in guitar_dis:
             continue
         samples = reference if name == part["reference"] else _fit(load(name), length)
@@ -237,10 +248,16 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         mix += crop
         if name in amp_tracks:
             own_amps += crop
+        if name in vocals:
+            singing += crop
         included.append(name)
     backing = mix - own_amps
     outputs = {"di": di[start:end], "reference": reference[start:end],
                "mix": mix.astype(np.float32), "backing": backing.astype(np.float32)}
+    if vocals:
+        # The backing with the singing left out, for a listener who has to hear the
+        # guitar through it.
+        outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
 
     record = {
         "schema": "validation-crops-1",
@@ -253,7 +270,10 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         "policy": "mono channel mean; first-sample alignment; session length from DI; "
                   "short stems zero-padded and long stems cut; unity WAV-stem sum; "
                   "no normalization or limiting; float32 WAV",
+        "mix_rule": ("declared mix_tracks" if declared_mix is not None
+                     else "every session WAV except the guitar DIs"),
         "included_mix_tracks": included,
+        "vocal_tracks": sorted(vocals & set(included)),
         "excluded_guitar_dis": sorted(guitar_dis),
         "removed_own_amp_tracks": sorted(amp_tracks),
         "verified_source_sha256": checked,
