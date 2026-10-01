@@ -251,6 +251,13 @@ def set2_session(root, entry, split):
                                  or 0) >= PAIRED_MIN]
         parts.append(part)
         left_out.update({di, *part["alternate"], *part["simulated"]})
+    listed = {by_name[t] for declared in entry["parts"]
+              for t in (*declared["amps"], *declared.get("simulated", []))}
+    unlisted = [w for w in wavs if w not in listed
+                and SIMULATED_AMP.search(pathlib.PurePosixPath(w).stem)]
+    if unlisted:
+        raise ValueError(f"{entry['path']}: {', '.join(unlisted)} looks like an amp "
+                         "simulator; list it under its part's simulated tracks")
     mix = [w for w in wavs if w not in left_out
            and not any(rule.search(pathlib.PurePosixPath(w).stem) for rule in
                        (RENDERED_MIX, CLICK_TRACK, GUITAR_DI))]

@@ -199,6 +199,10 @@ def test_a_second_set_session_refuses_slashes_and_twice_used_file_names(tmp_path
     entry = _telefunken_entry(tmp_path, {**files, "extra/GTR DI.wav": di}, parts)
     with pytest.raises(ValueError, match="share a file name"):
         V.set2_session(tmp_path, entry, {"cambridge": [], "telefunken": []})
+    (tmp_path / "telefunken" / "Act - Song" / "extra" / "GTR DI.wav").unlink()
+    entry = _telefunken_entry(tmp_path, {**files, "GTR Helix.wav": di}, parts)
+    with pytest.raises(ValueError, match="looks like an amp simulator"):
+        V.set2_session(tmp_path, entry, {"cambridge": [], "telefunken": []})
 
 
 def test_the_committed_second_split_is_the_manifests_draw():
