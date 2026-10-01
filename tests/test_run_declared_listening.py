@@ -290,11 +290,11 @@ def test_refuses_declaration_without_machine_readable_commands(tmp_path):
         run(declaration, repo / "runs" / "missing-block", repo_root=repo)
 
 
-def test_manifest_builder_uses_the_declared_crops_and_fresh_render_records(tmp_path):
+def _manifest_inputs(tmp_path, roles=("di", "reference", "mix", "backing")):
     crops = tmp_path / "crops"
     crops.mkdir()
     outputs = {}
-    for role in ("di", "reference", "mix", "backing"):
+    for role in roles:
         path = crops / f"{role}.wav"
         path.write_bytes(f"synthetic {role}".encode())
         outputs[role] = {"path": str(path),
@@ -316,6 +316,11 @@ def test_manifest_builder_uses_the_declared_crops_and_fresh_render_records(tmp_p
             "audio": {"path": str(audio),
                       "sha256": hashlib.sha256(audio.read_bytes()).hexdigest()}}))
         renders.append(proof)
+    return crop_record, renders, outputs
+
+
+def test_manifest_builder_uses_the_declared_crops_and_fresh_render_records(tmp_path):
+    crop_record, renders, outputs = _manifest_inputs(tmp_path)
     out = tmp_path / "audition.json"
     manifest = build_manifest(crop_record, *renders, out)
     assert json.loads(out.read_text()) == manifest
@@ -323,6 +328,26 @@ def test_manifest_builder_uses_the_declared_crops_and_fresh_render_records(tmp_p
     assert manifest["backing"]["path"] == outputs["backing"]["path"]
     assert manifest["mix"]["guitar_target_lufs"] == -19.5
     assert manifest["reliability"] == {"hidden_repeats": 1, "catch_trial": False}
+    with pytest.raises(ValueError, match="cut without its vocal tracks"):
+        build_manifest(crop_record, *renders, tmp_path / "instrumental.json",
+                       instrumental=True)
+    assert not (tmp_path / "instrumental.json").exists()
+    half = json.loads(crop_record.read_text())
+    half["outputs"]["mix_instrumental"] = outputs["mix"]
+    crop_record.write_text(json.dumps(half))
+    with pytest.raises(ValueError, match="cut without its vocal tracks"):
+        build_manifest(crop_record, *renders, tmp_path / "half.json", instrumental=True)
+    assert not (tmp_path / "half.json").exists()
+
+
+def test_manifest_builder_takes_the_vocal_free_mix_and_backing_together(tmp_path):
+    crop_record, renders, outputs = _manifest_inputs(
+        tmp_path, ("di", "reference", "mix", "backing", "mix_instrumental",
+                   "backing_instrumental"))
+    manifest = build_manifest(crop_record, *renders, tmp_path / "audition.json",
+                              instrumental=True)
+    assert manifest["reference"]["path"] == outputs["mix_instrumental"]["path"]
+    assert manifest["backing"]["path"] == outputs["backing_instrumental"]["path"]
 
 
 def test_template_copy_is_byte_identical_and_never_overwrites(tmp_path):

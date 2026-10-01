@@ -17,6 +17,7 @@ pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
 
 from analysis import io
 from scripts.build_backed_audition import build as build_backed
+from scripts.build_declared_listening_manifest import build as build_manifest
 from scripts.build_validation_crops import build
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -511,3 +512,50 @@ def test_an_audition_plays_the_vocal_free_mix_and_backing_together_or_neither(tm
     for mixed in (("mix", "backing_instrumental"), ("mix_instrumental", "backing")):
         with pytest.raises(ValueError, match="whole mix and unchanged backing"):
             build_backed(manifest(*mixed), seed=17)
+
+
+def test_a_declared_instrumental_manifest_reaches_the_audition_as_the_vocal_free_pair(tmp_path):
+    """Crop with vocals -> manifest builder --instrumental (API and CLI) -> audition."""
+    catalog, data_root, session_dir = _fixture(tmp_path, split="held_out")
+    repo, declaration = _declaration_repo(tmp_path)
+    t = np.arange(12 * RATE) / RATE
+    sf.write(session_dir / "lead-vox.wav", (.3 * np.sin(2 * np.pi * 440 * t)).astype(np.float32),
+             RATE, subtype="FLOAT")
+    document = json.loads(catalog.read_text())
+    session = document["sessions"][0]
+    session["files"]["lead-vox.wav"] = _digest(session_dir / "lead-vox.wav")
+    session["mix_tracks"] = ["reference.wav", "other-amp.wav", "bass-di.wav", "lead-vox.wav"]
+    session["vocal_tracks"] = ["lead-vox.wav"]
+    catalog.write_text(json.dumps(document))
+    crop_dir = tmp_path / "crops"
+    crops = build(catalog, data_root, "test", "song", "one", crop_dir, declaration,
+                  repo_root=repo)
+    t = np.arange(crops["outputs"]["di"]["frames"]) / RATE
+    proofs = []
+    for role, hz, amp in (("first", 440, "PR12"), ("second", 660, "SW50R")):
+        audio_path = tmp_path / f"{role}.wav"
+        sf.write(audio_path, .02 * np.sin(2 * np.pi * hz * t), RATE, subtype="FLOAT")
+        proof_path = tmp_path / f"{role}.wav.render.json"
+        proof_path.write_text(json.dumps({
+            "schema": "listening-fresh-render-v1", "pack": "morgan",
+            "amp_model": amp, "process_policy": "fresh",
+            "renderer": {"quality_mode": "process=fresh"},
+            "di": crops["outputs"]["di"],
+            "audio": {"path": str(audio_path), "sha256": _digest(audio_path)},
+        }))
+        proofs.append(proof_path)
+    manifest = build_manifest(crop_dir / "record.json", *proofs, tmp_path / "audition.json",
+                              max_ab_lufs_delta=3, instrumental=True)
+    cli = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "build_declared_listening_manifest.py"),
+         "--crop-record", str(crop_dir / "record.json"), "--first-render", str(proofs[0]),
+         "--second-render", str(proofs[1]), "--out", str(tmp_path / "cli.json"),
+         "--max-ab-lufs-delta", "3", "--instrumental"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert cli.returncode == 0, cli.stderr
+    assert json.loads((tmp_path / "cli.json").read_text()) == manifest
+    assert manifest["reference"]["sha256"] == crops["outputs"]["mix_instrumental"]["sha256"]
+    _, evidence = build_backed(manifest, seed=17)
+    binding = evidence["validation_crop_record"]
+    assert (binding["reference_output"], binding["backing_output"]) == (
+        "mix_instrumental", "backing_instrumental")
