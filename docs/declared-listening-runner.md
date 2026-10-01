@@ -82,6 +82,12 @@ For a future SW50R test, this is the command-block shape. It is an example,
 }
 ```
 
+A test that plays a second-set crop without its singing adds `--instrumental`
+to the manifest step's argv and lists `{run}/crops/mix_instrumental.wav` and
+`{run}/crops/backing_instrumental.wav` among the crops step's outputs; the
+reference and the backing are then the crop's vocal-free mix and backing, always
+together.
+
 If a match summary has a caveat beginning `nothing beat the preset you started
 from`, the preset step runs its declared `fallback_argv` instead, and the
 runner checks that its output is byte-identical to `template`. If the two

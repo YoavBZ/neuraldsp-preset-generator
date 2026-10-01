@@ -3,7 +3,10 @@
 
 The declaration's machine-readable manifest step supplies this command's argv.
 This reads records and hashes their named files, not the audio samples. It does
-not open an audition key or reveal a blind mapping.
+not open an audition key or reveal a blind mapping. With --instrumental the
+reference and the backing are the crop's vocal-free mix and backing, which a
+second-set crop has when its session lists vocal tracks; the two are always
+taken together, so the singing cannot tell the reference from A and B.
 """
 
 from __future__ import annotations
@@ -45,7 +48,7 @@ def build(crop_record: pathlib.Path, first_render: pathlib.Path,
           second_render: pathlib.Path, out: pathlib.Path, *,
           master_lufs: float = -20, peak_ceiling_dbtp: float = -1,
           max_ab_lufs_delta: float = .5, gap_s: float = .5,
-          hidden_repeats: int = 1) -> dict:
+          hidden_repeats: int = 1, instrumental: bool = False) -> dict:
     crop_record = crop_record.expanduser().absolute()
     first_render = first_render.expanduser().absolute()
     second_render = second_render.expanduser().absolute()
@@ -66,8 +69,12 @@ def build(crop_record: pathlib.Path, first_render: pathlib.Path,
             or not isinstance(crop.get("reference_lufs"), (int, float))
             or crop.get("excerpt_duration_s") != 10):
         raise ValueError("manifest needs a declared held-out crop record")
-    mix = _verified(outputs.get("mix"), "mix crop")
-    backing = _verified(outputs.get("backing"), "backing crop")
+    mix_role, backing_role = (("mix_instrumental", "backing_instrumental")
+                              if instrumental else ("mix", "backing"))
+    if instrumental and not all(role in outputs for role in (mix_role, backing_role)):
+        raise ValueError("--instrumental needs a crop cut without its vocal tracks")
+    mix = _verified(outputs.get(mix_role), f"{mix_role} crop")
+    backing = _verified(outputs.get(backing_role), f"{backing_role} crop")
     di = _verified(outputs.get("di"), "DI crop")
     alternatives = {}
     for role, record_path in (("first", first_render), ("second", second_render)):
@@ -129,11 +136,13 @@ def main() -> None:
     parser.add_argument("--max-ab-lufs-delta", type=float, default=.5)
     parser.add_argument("--gap-s", type=float, default=.5)
     parser.add_argument("--hidden-repeats", type=int, default=1)
+    parser.add_argument("--instrumental", action="store_true",
+                        help="play the crop's vocal-free mix and backing")
     args = parser.parse_args()
     build(args.crop_record, args.first_render, args.second_render, args.out,
           master_lufs=args.master_lufs, peak_ceiling_dbtp=args.peak_ceiling_dbtp,
           max_ab_lufs_delta=args.max_ab_lufs_delta, gap_s=args.gap_s,
-          hidden_repeats=args.hidden_repeats)
+          hidden_repeats=args.hidden_repeats, instrumental=args.instrumental)
 
 
 if __name__ == "__main__":
