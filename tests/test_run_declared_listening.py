@@ -331,6 +331,13 @@ def test_manifest_builder_uses_the_declared_crops_and_fresh_render_records(tmp_p
     with pytest.raises(ValueError, match="cut without its vocal tracks"):
         build_manifest(crop_record, *renders, tmp_path / "instrumental.json",
                        instrumental=True)
+    assert not (tmp_path / "instrumental.json").exists()
+    half = json.loads(crop_record.read_text())
+    half["outputs"]["mix_instrumental"] = outputs["mix"]
+    crop_record.write_text(json.dumps(half))
+    with pytest.raises(ValueError, match="cut without its vocal tracks"):
+        build_manifest(crop_record, *renders, tmp_path / "half.json", instrumental=True)
+    assert not (tmp_path / "half.json").exists()
 
 
 def test_manifest_builder_takes_the_vocal_free_mix_and_backing_together(tmp_path):

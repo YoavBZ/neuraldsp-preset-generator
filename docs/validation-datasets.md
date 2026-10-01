@@ -206,12 +206,13 @@ Everything in the sections above applies to the second set, except these rules:
   hard to hear, and an audition plays them together or not at all, since
   singing in only one would give the reference away. A listening test that
   uses them says so in its declaration, and its manifest step passes
-  `--instrumental` (`declared-listening-runner.md`). Live rooms put singing into the other
-  microphones too, so it is quieter singing, not none.
+  `--instrumental` (`declared-listening-runner.md`). Live rooms put singing
+  into the other microphones too, so it is quieter singing, not none.
 
 The split holds out whole bands, so that all of a band's songs are on one side.
-Players a band shares with another band, if any, are not tracked. `scripts/validation_datasets.py` draws it with
-`random.Random(20261001)`, from each source's band names sorted:
+Players a band shares with another band, if any, are not tracked.
+`scripts/validation_datasets.py` draws it with `random.Random(20261001)`, from
+each source's band names sorted:
 
 ```python
 rng.sample(sorted(cambridge_bands), 5)    # -> Boogie Snakes, Forkupines, Lights Off Clarity,

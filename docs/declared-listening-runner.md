@@ -82,8 +82,8 @@ For a future SW50R test, this is the command-block shape. It is an example,
 }
 ```
 
-A test that plays a second-set crop without its singing adds `--instrumental`
-to the manifest step's argv and lists `{run}/crops/mix_instrumental.wav` and
+A test whose parts are all second-set crops with vocal tracks can play them
+without the singing: it adds `--instrumental` to the manifest step's argv and lists `{run}/crops/mix_instrumental.wav` and
 `{run}/crops/backing_instrumental.wav` among the crops step's outputs; the
 reference and the backing are then the crop's vocal-free mix and backing, always
 together.
