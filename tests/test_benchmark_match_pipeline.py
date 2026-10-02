@@ -170,3 +170,23 @@ def test_a_quieter_copy_differs_from_its_source_only_in_level(tmp_path):
     assert row["vs_reference_lu"] == pytest.approx(-12, abs=.05)
     assert row["v3_no_level"] == pytest.approx(0, abs=1e-6)
     assert row["v3"] > 0.1
+
+
+def test_a_finished_arm_from_another_process_policy_is_refused_not_reused(
+        tmp_path, monkeypatch):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    out = tmp_path / "s-song-g"
+    out.mkdir()
+    (out / "result.json").write_text(json.dumps({
+        "part": "s/song/g", "template": {"lufs": -18.0},
+        "no_di": {"v3_no_level": 1.0}}))   # written before the policy was recorded
+    args = P.build_parser().parse_args(["--process-policy", "fresh"])
+    runner = P.Runner(args, tmp_path, "abc123")
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    result = runner.part(("s", "song", "g"), ["no_di"], None, None)
+    assert "searched with --process-policy reuse" in result["errors"]["no_di"]

@@ -16,6 +16,8 @@ validation sets) it cuts the part's declared crops with `build_validation_crops.
   di        match_preset.py with the part's own DI (`paired_di`), a same-take
             reamp: the best case a player's DI can reach
 
+`--process-policy fresh` runs every search candidate in its own plugin process,
+as AC20 needs; a finished arm searched under another policy is refused, not reused.
 Each answer becomes a preset (apply_spec.py, or the template when the match says
 nothing beat it) and is rendered through the part's DI with
 render_listening_guitar.py, a fresh plugin process. Each render is scored against
@@ -55,6 +57,10 @@ MEASUREMENT_CAVEAT = (
     "template and every answer were then rendered through the DI in a fresh process "
     "each. `measured_commit` on each arm is the checkout that ran it; `source_commit` "
     "is the one that wrote this summary")
+TONE_KING_CAVEAT = (
+    "; Tone King's renders are not sample-exact even in a fresh process (its "
+    "manifest: fresh_process_reproducible false), so its scoring renders carry "
+    "that noise too")
 FRESH_CAVEAT = (
     "each search rendered every candidate in a fresh plugin process, as were the "
     "template and every answer rendered through the DI. `measured_commit` on each "
@@ -79,8 +85,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--budget", default="300")
     ap.add_argument("--seed", default="0")
     ap.add_argument("--process-policy", choices=("reuse", "fresh"), default="reuse",
-                    help="for the searches; fresh for AC20, or a template with the "
-                         "tremolo or rack reverb on (skills/match/SKILL.md)")
+                    help="for the searches; fresh for AC20 or a template with the "
+                         "tremolo on, and for the rack reverb when a DI is played "
+                         "(skills/match/SKILL.md)")
     ap.add_argument("--parallel", type=int, default=1, help="parts at once")
     ap.add_argument("--out-dir", type=pathlib.Path,
                     help="under this checkout's runs/ (default: runs/match-pipeline-PACK-AMP)")
@@ -196,6 +203,11 @@ class Runner:
             for arm in arms:
                 stage = arm
                 if arm in result:
+                    found = result[arm].get("process_policy", "reuse")
+                    if found != self.args.process_policy:
+                        raise RuntimeError(
+                            f"this directory's {arm} arm searched with --process-policy "
+                            f"{found}; choose another --out-dir for {self.args.process_policy}")
                     continue
                 started = time.time()
                 summary, fallback = self.match(crop, out, arm)
@@ -204,6 +216,7 @@ class Runner:
                 entry.update(fallback_to_template=fallback,
                              minutes=round((time.time() - started) / 60, 1),
                              measured_commit=self.commit,
+                             process_policy=self.args.process_policy,
                              caveats=summary.get("caveats"),
                              guitar_check=(summary.get("search") or {}).get("guitar_check"))
                 result[arm] = entry
@@ -297,7 +310,9 @@ def summarise(results) -> dict:
 def main() -> None:
     args = build_parser().parse_args()
     out_dir = (args.out_dir or PLUGIN_ROOT / "runs" /
-               f"match-pipeline-{args.pack}-{args.amp}").expanduser().absolute()
+               f"match-pipeline-{args.pack}-{args.amp}"
+               f"{'-fresh' if args.process_policy == 'fresh' else ''}"
+               ).expanduser().absolute()
     if not out_dir.is_relative_to(PLUGIN_ROOT / "runs"):
         die("--out-dir must be under this checkout's runs/, which the renders require")
     from analysis import require
@@ -330,7 +345,9 @@ def main() -> None:
             "loss_profile": "unpaired-v3",
             "process_policy": {"search": args.process_policy, "scoring_renders": "fresh"},
             "measurement_caveat": (MEASUREMENT_CAVEAT if args.process_policy == "reuse"
-                                   else FRESH_CAVEAT), "summary": summary,
+                                   else FRESH_CAVEAT)
+                                  + (TONE_KING_CAVEAT if args.pack == "toneking" else ""),
+            "summary": summary,
             # Each arm's caveats stay in its part's result.json; they repeat.
             "parts": [{key: ({k: v for k, v in value.items() if k != "caveats"}
                              if key in ARMS else value)
