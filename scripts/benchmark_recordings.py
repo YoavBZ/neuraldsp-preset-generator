@@ -350,16 +350,22 @@ def main() -> None:
         pool_dis = [load(crops_for(CATALOG, data_root, args.crops_dir, *part)
                          ["outputs"]["di"]["path"]) for part in pool]
         pool_groups = part_groups(catalog, pool)
+        # With the library on, `other` is chosen over the whole pool too, so
+        # neither arm changes with which parts `--part` scores.
+        pool_others = [pool[other_di_index(pool, pool.index(part))] for part in parts]
+        other_dis = [pool_dis[pool.index(part)] for part in pool_others]
         libraries = [library_probe(part, pool, pool_dis, pool_groups,
-                                   exclude=({groups[others[index]]}
-                                            if others[index] is not None else ()))
+                                   exclude={pool_groups[pool.index(pool_others[index])]})
                      for index, part in enumerate(parts)]
-    if "other" in args.signal and any(other is None for other in others):
+    if ("other" in args.signal and "library" not in args.signal
+            and any(other is None for other in others)):
         die("--signal other needs parts from at least two sessions")
     recordings = []
     for index in range(len(parts)):
+        other_di = (other_dis[index] if "library" in args.signal
+                    else dis[others[index]] if others[index] is not None else None)
         by_name = {"same": dis[index],
-                   "other": dis[others[index]] if others[index] is not None else None,
+                   "other": other_di,
                    "noise": noise,
                    "library": libraries[index] and libraries[index][0]}
         recordings.append({"reference": references[index], "di": dis[index],
@@ -450,7 +456,9 @@ def main() -> None:
             "loss_profile": args.loss_profile, "workers": args.workers,
             "no_di_seconds": NO_DI_SECONDS,
             "parts": [{"source": source, "song": song, "part": part,
-                       "other_di_from": ("/".join(parts[others[index]])
+                       "other_di_from": ("/".join(pool_others[index])
+                                         if "library" in args.signal
+                                         else "/".join(parts[others[index]])
                                          if others[index] is not None else None),
                        "crops": {role: output["sha256"] for role, output
                                  in record["outputs"].items()},
