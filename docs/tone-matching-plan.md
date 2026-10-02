@@ -2466,6 +2466,55 @@ Both ran from a clean checkout of 7ec5046, two parts at once beside the Tone
 King recordings benchmark, about three hours each; their JSONs were written into
 that checkout's `runs/` and copied here.
 
+#### The second set on Tone King's rhythm channel
+
+The recordings benchmark, as for SW50R above, on the same 43 development parts:
+Tone King 1.0.3 through the reused Swift server, `reproducible=False` (band noise
+5.23 dB), `unpaired-v3`, neutral settings for the rhythm channel. Mean / median:
+
+| searched through | Tone King rhythm, second set |
+|---|---:|
+| the part's own DI (same take) | 0.473 / 0.501 |
+| another session's DI | 1.205 / 0.996 |
+| the noise probe (no DI) | 1.610 / 1.537 |
+| *no search:* neutral settings | 1.222 / 1.148 |
+
+Paired by part, 43 each: the same-take DI ended closer than another session's on
+43 (a median 50% closer), and another session's closer than no DI on 35 (28 with
+`level` left out). Against neutral settings: the same-take DI closer on 43;
+another session's on 27 (p = 0.37, 27 with `level` left out too); and no DI on
+5 — a median 41% further — and with `level` left out on 14 (23% further,
+p = 0.02). That is the first set's result on new bands: on Tone King a search
+without a DI ends further from the recording than the settings it started from,
+and a DI of another performance is no better than not searching.
+
+**The run, and a silent plugin.** The first run (`-run1.json`) went silent part
+way: 2.2 hours in, all three workers' Tone King instances began rendering
+silence. Three parts lost one arm each ("the answer produced no comparable
+objective") and the 25 after them failed at their neutral start ("a silent
+render"), within minutes. A fresh process rendered one of those parts normally,
+so the 28 were run again in three batches of 9 or 10 parts with new processes
+(`-rerun0` to `-rerun2`, 78 to 103 minutes each), with no failure. The figures
+above take each part from the run in which it completed: 15 from the first, 28
+from the batches. Within a batch, "another session's DI" is drawn from that
+batch's parts, so those 28 pairings differ from what a single run would have
+used, and so do their random numbers. `renderer_au.py` recovers a Tone King
+instance that is silent on its first render, not one that goes silent after
+hours of renders; until it does, keep a Tone King run under about two hours or
+split it, as here.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack toneking \
+  --amp rhythm --set 2 --signal same --signal other --signal noise --budget 300 \
+  --loss-profile unpaired-v3 --workers 3 \
+  --json docs/recordings-benchmark-set2-toneking-rhythm-run1.json
+```
+
+The batches add a `--part` for each of their parts (`-rerunN.json` lists them under
+`parts`). All four ran from 407aee4 in a separate checkout; the first took 153
+minutes beside the SW50R no-DI runs, and the JSONs were written outside the
+checkout and copied here.
+
 ---
 
 ## 8. Dependency and CI policy
