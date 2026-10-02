@@ -15,9 +15,9 @@
 
 The change most likely to help is a simple one. Stop rendering candidates through the 6-second noise burst and render them through a real guitar DI taken from a public library. The committed runs already show what this is worth. A DI from another band beat neutral settings on 19 of 27 SW50R set-2 parts with level left out. The direct inversion alone through another DI also ended closer than the full 300-render noise search (median 1.11 against 1.25 on SW50R, 1.03 against 1.26 on Tone King). This needs no model and no new dependency, and a match still takes about 8 minutes. It can be tested over one night after a small change to `scripts/benchmark_recordings.py`.
 
-It will probably help Morgan more than Tone King. On Tone King, another DI beat neutral settings on only about 20 of 33 parts. So until something beats neutral there, a Tone King match without a DI should return neutral settings instead of searching.
+It will probably help Morgan more than Tone King. On Tone King, another DI beat neutral settings on only about 20 of 33 parts. So whether a Tone King match without a DI should simply return neutral settings, rather than search, is worth deciding (§5). The noise search ended further than neutral on 29 of 43 parts with level left out, and 38 with level.
 
-The second big unknown is the mix itself. No benchmark has yet started from a song instead of a clean amp track. The one old Demucs test left the separated stem about as far from the true guitar as neutral settings are from a target. This must be measured before anything learned is built.
+The second big unknown is the mix itself. No benchmark has yet started from a song instead of a clean amp track. The one old Demucs test (`~/ndsp-presets/separation-test`) scored the stem 0.79–1.23 from the true guitar under an older profile, which is not comparable with today's figures. It has to be measured again, on set-2 parts, before anything learned is built.
 
 Only one idea has a real chance of closing the rest of the gap to a same-take DI (median about 1.0 against 0.5): a distance that ignores what is being played. No published model has been shown to do this for knob-level amp settings. So screen it cheaply first, and train our own only if the screen shows a gap worth chasing. Recovering a DI from the song, and predicting settings directly with a network, are long shots. One diagnostic run decides whether DI recovery deserves any work.
 
@@ -25,17 +25,17 @@ Only one idea has a real chance of closing the rest of the gap to a same-take DI
 
 ### 1. Real guitar DIs instead of the noise probe
 
-**What it is.** When the user gives no DI, the search plays one fixed 6-second probe through each candidate preset: 4 clips of 1.5 s from real DI recordings, joined with short fades. Each clip is scaled to a typical DI loudness. The development DIs span −39.5 to −10.7 LUFS with a median of −23.7, so use −23.7, not the −18 used in `study_harmonic.py`. The loss stays `unpaired-v3`, and the inversion, guitar check and level trim stay as they are. One fixed file matters, because rotating clips between candidates would make CMA-ES rank the clips instead of the settings. `Evaluator` already takes a per-call DI, and `match_preset.py` already has `--probe-di`, so this is mostly a change to which probe gets picked.
+**What it is.** When the user gives no DI, the search plays one fixed 6-second probe through each candidate preset: 4 clips of 1.5 s from real DI recordings, joined with short fades. Each clip is scaled to a typical DI loudness. The 43 set-2 development DIs span −32.0 to −10.7 LUFS with a median of −22.9, so start from −22.9, not the −18 used in `study_harmonic.py`. E1 tests the level. The loss stays `unpaired-v3`, and the inversion, guitar check and level trim stay as they are. One fixed file matters, because rotating clips between candidates would make CMA-ES rank the clips instead of the settings. `Evaluator` already takes a per-call DI, and `match_preset.py` already has `--probe-di`, so this is mostly a change to which probe gets picked.
 
 **Expected benefit.**
 - **Morgan:** the search goes from "no better than its start" to clearly better than neutral. Expect roughly 65–75% of parts closer than neutral, with a median 15–25% closer, plus a tail of bad answers. It should also fix much of the no-DI loudness error: the other-DI arm won 39 of 43 with level included, against 34 of 43 with level left out.
-- **Confidence:** medium-high that it beats noise, medium that it beats neutral with an outside library. 23 of the 27 other-band pairs in the committed run shared a recording chain (Cambridge to Cambridge, or Telefunken in one room), so a public library is untested.
+- **Confidence:** medium-high that it beats noise, medium that it beats neutral with an outside library. 23 of the 27 other-band pairs in the committed run came from the same source library: 16 Cambridge to Cambridge, from 12 artists whose chains are not stated, and 7 Telefunken, all one room. Wins over neutral were 9 of 16 for Cambridge pairs, 6 of 7 for Telefunken pairs and 4 of 4 for cross-source pairs, so a shared-chain advantage is not shown either way. A public library is untested.
 - **Tone King:** low confidence.
-- **Not worth building:** choosing the DI to fit the song. In the scratch spectral check, one fixed "medoid" DI was spectrally closer to the true DI than the benchmark's `other` DI on 33 of 43 parts. The song-matched pick beat that fixed DI on only 24 of 43.
+- **Probably not worth building, pending E1:** choosing the DI to fit the song. In an uncommitted scratch spectral check, one fixed "medoid" DI was spectrally closer to the true DI than the benchmark's `other` DI on 33 of 43 parts, and the song-matched pick beat that fixed DI on only 24 of 43. E1's `retrieved` and `oracle_pick` arms decide it.
 
 **Cost.**
 - About 2–3 days of work.
-- Experiments: about 45 minutes of renders for the inversion-only screen, then about 3.4 h (SW50R) and 2 h (Tone King) of search.
+- Experiments: about 45 minutes of renders for the inversion-only screen, then about 3.4 h (SW50R) and about 3–3.4 h (Tone King, which renders at the same rate) of search.
 - Match time: unchanged.
 - Dependencies: none new in the core, just a few seconds of licensed DI audio. See the decisions in section 5.
 
@@ -77,7 +77,7 @@ If the stem keeps most of the gain, ship Demucs as an optional extra. It would c
 
 ### 3. A distance that ignores the performance (screen first, train only if needed)
 
-**What it is.** The remaining gap after approach 1 is a loss that partly scores the notes instead of the amp. The hand features pick the right setting across performances only 22–34% of the time, against 14% chance. There are three tiers, cheapest first:
+**What it is.** The remaining gap after approach 1 is a loss that partly scores the notes instead of the amp. The hand features pick the right setting across performances only 22–34% of the time for timbre, dynamics and level (ambience 17–18.5%), against 14% chance. There are three tiers, cheapest first:
 - **(a) Numpy only.** Learned whitening and LDA on the existing fingerprint features, fitted so that renders of the same settings through different DIs look alike, folded by band. Also a source-normalised timbre term: the reference spectrum over an average DI spectrum, against the candidate spectrum over the probe spectrum. This keeps D4.
 - **(b) Pretrained effect encoders as screening rows only.** AFx-Rep, and Fx-Encoder++ (non-commercial, local only).
 - **(c) Our own contrastive encoder,** trained on plugin renders of many CC BY DIs. Positives are the same settings through different DIs and backings. Its distances are regressed onto the same-DI `unpaired-v3` distance, the loss that already works on 43 of 43 parts.
@@ -87,9 +87,9 @@ If the stem keeps most of the gain, ship Demucs as an optional extra. It would c
 - Low-to-medium confidence. No published encoder is shown to resolve knob positions within one amp: Open-Amp separates devices, and Chen et al. show the right training recipe but give no retrieval numbers.
 
 **Cost.**
-- **Screen:** about 2–3 days of code, with about 1,100 renders per amp (about 6 minutes on SW50R, about 40 minutes on Tone King) plus about 30 minutes of Demucs.
+- **Screen:** about 2–3 days of code, with about 1,100 renders per amp (minutes per amp; Tone King renders at the same rate as SW50R) plus about 30 minutes of Demucs.
 - **Numpy metric:** 1–2 days.
-- **Trained encoder:** 2–3 weeks. It needs 16k–100k renders per amp (SW50R about 1–2 h, Tone King about 4 h in chunks, AC20 overnight for about 30k) and 2–4 h of MPS training per amp, with torch in an optional extra.
+- **Trained encoder:** 2–3 weeks. It needs 16k–100k renders per amp (about 1–2 h each for SW50R and Tone King, Tone King split into runs under two hours as a precaution; AC20 overnight for about 30k) and 2–4 h of MPS training per amp, with torch in an optional extra.
 - **Match time:** the same renders as approach 1, plus about 20 ms per embedding.
 
 **Key references.**
@@ -108,8 +108,8 @@ If the stem keeps most of the gain, ship Demucs as an optional extra. It would c
 **What it is.** The search holds switches and selectors (amp, bright, mic type, pedals on or off), so a wrong topology is the one thing it cannot fix. M7-1 showed that a better *continuous* start ends where the neutral start does (0.479 against 0.480), but switches are the exception.
 
 The plan has two parts:
-- **Topology.** For each of 18 declared Morgan topologies, invert through the library probe and keep the topology whose render is nearest the reference. `--enumerate` already does this; no classifier is needed.
-- **Factory presets.** With a fixed probe, the roughly 109 non-User Morgan and 131 Tone King factory presets can be fingerprinted once. A match then ranks them against the reference with no per-match renders and inverts the top 3. The `User/` folder is excluded because it holds this tool's own outputs.
+- **Topology.** For each Morgan topology worth trying (amp, its switches, mic type, pedals on or off), invert through the library probe and keep the topology whose render is nearest the reference. This needs a small inversion-only mode. `--enumerate` runs a full inner search per position and splits the budget between them, which is far costlier. No classifier is needed.
+- **Factory presets.** With a fixed probe, the 108 non-User Morgan and 130 Tone King factory presets (both counts include Default and Reset All Settings) can be fingerprinted once. A match then ranks them against the reference with no per-match renders and inverts the top 3. The `User/` folder is excluded because it holds this tool's own outputs.
 
 **Expected benefit.**
 - This is bounded by the oracle headroom after inversion, which has never been measured. Low-to-medium confidence.
@@ -128,8 +128,8 @@ The plan has two parts:
 ### 5. Safety rails: stop when the search would not help, plus a prior from the factory presets
 
 **What it is.**
-- **Abstain.** Return neutral settings, or the nearest factory preset, when the no-DI search is not shown to help. This applies to Tone King now: the noise search ended further than neutral on 38 of 43 parts.
-- **Prior.** Fit a shrunk diagonal Gaussian on the factory presets and add a Mahalanobis term to `prior_deviation`. This makes the search a "most likely settings" (MAP) search, which limits how far a weak loss can walk. PR12 ended worse than its start on 34 of 43 parts, and the template start ended further on 28 of 43.
+- **Abstain.** Return neutral settings, or the nearest factory preset, when the no-DI search is not shown to help. On Tone King the noise search ended further than neutral on 29 of 43 parts with level left out (38 with level). Whether to abstain there now is your call (§5).
+- **Prior.** Fit a shrunk diagonal Gaussian on the factory presets and add a Mahalanobis term to `prior_deviation`. This makes the search a "most likely settings" (MAP) search, which limits how far a weak loss can walk. From the shipped Example_Clean_PR12 preset, PR12 ended worse than its start on 34 of 43 parts (an uncommitted run; from a neutral start, 18 of 43). From SW50R's shipped template, 28 of 43 at seed 0 and 25 at seed 11.
 
 **Expected benefit.** It limits damage; it cannot make a match right. Medium confidence.
 
@@ -192,7 +192,7 @@ The plan has two parts:
 - Set-2 development parts only.
 - Run with `.venv/bin/python` and pass `--crops-dir ~/ndsp-presets/references/validation-crops` when running from a worktree.
 - Score through each part's own DI against the amp track, with `unpaired-v3` and level left out.
-- Every comparison stays within one run, because single parts moved by up to 0.52 between runs.
+- Every comparison stays within one run, because single parts moved by up to 0.91 between runs (noise arm; 0.52 for the other-song arm), measured on synthetic How Long targets.
 - Count wins by part and by band.
 - The 20-part runs use one seeded draw stratified by band, committed before the first run.
 - Durations come from the committed runs: 3 arms × 43 parts on SW50R with 3 workers took 435 minutes, which is about 3.4 minutes per arm-part. Tone King batches of 9–10 parts took 78–103 minutes.
@@ -206,13 +206,13 @@ The plan has two parts:
   - add `--reference-source {amp,single_guitar_mix,stem}`;
   - add per-band and same-band/other-band breakdowns to the summary.
 
-  Add a numpy probe builder: 4 × 1.5 s guitar-active clips, 50 ms fades, −23.7 LUFS. It builds two libraries:
+  Add a numpy probe builder: 4 × 1.5 s guitar-active clips, 50 ms fades, −22.9 LUFS (provisional: E1 checks it). It builds two libraries:
   - **L1:** for each part, DIs from three *other* set-2 bands. Local only.
   - **L2:** Guitar-TECHS P1/P2 clips (CC BY 4.0), pinned by SHA-256.
 - **R1, prior check.** Fit the factory-preset prior and compute the Mahalanobis distance of every stored no-DI answer (the `runs/start-*` folders and the `match-pipeline-set2-sw50r*.json` answers). Correlate it with each answer's change in score against its own start.
   - **Pass:** Spearman ≥0.3, or answers outside the 90% region at least 1.5× as likely to have got worse.
   - **Fail:** shelve the prior.
-- **B0, ship now.** For Tone King without a DI, return neutral settings and skip the noise search. This is already measured (further than neutral on 38 of 43) and needs no gate.
+- **B0, your call.** For Tone King without a DI, return neutral settings and skip the noise search. The measurement behind it is the objective proxy only, with no listening: further than neutral on 29 of 43 with level left out, 38 with level. See §5.
 
 ### Phase 1: the probe swap (about one evening plus two nights)
 
@@ -230,13 +230,13 @@ Gates:
 - **`amptrack_as_di`** is expected to collapse toward a transparent preset: fitted EQ curves nearly identical across parts (spread under 1 dB per band) and no better than L1 on 30 of 43. If so, close the "stem as its own DI" idea.
 
 **E2, SW50R full search.** 20 parts, arms L2, L1 and `other`, plus in-run neutral, budget 300, about 3.4 h with 3 workers.
-- **Pass:** L2 closer than neutral on ≥15 of 20 (sign test p≈0.02) across most bands, and its median no worse than `other`'s by more than 5%.
+- **Pass:** L2 closer than neutral on ≥15 of 20 (sign test, two-sided p≈0.04) across most bands, and its median no worse than `other`'s by more than 5%.
 - **Fail:** ≤12 of 20. The earlier gain then came from the shared recording chain. L1 against L2 shows whether a matching chain is what matters.
-- **If it passes:** run the remaining 23 parts with L2 and neutral (about 2.6 h) as confirmation before building.
+- **If it passes:** run the remaining 23 parts with L2 and neutral (about 1.3 h) as confirmation before building.
 
-**E3, Tone King rhythm.** The same arms on the same 20 parts, in two batches of 10 parts with fresh processes, about 2 h.
+**E3, Tone King rhythm.** The same arms on the same 20 parts, in two batches of 10 parts with fresh processes, about 3–3.4 h.
 - **Pass:** ≥14 of 20 closer than neutral, with a median ≥5% closer.
-- **Fail:** B0 stands.
+- **Fail:** B0 (if adopted) stands.
 
 **Built after E2 and its confirmation pass (B1, about 2 days).** Library-DI probe as the Morgan no-DI default in `match_preset.py`, with the level trim done through the same probe and the guitar check kept. Check loudness with `benchmark_match_pipeline.py` against the "within ±3 LU" figures it already reports. Tone King joins only if E3 passes.
 
@@ -251,7 +251,7 @@ Gates:
 
 **Sanity check by ear.** The Telefunken "Fragments" session ships a real master. Use it, not the unity-sum crops, before claiming anything about mastered songs.
 
-**E5, topology headroom and factory-preset start.** 43 parts, 18 topologies, neutral settings plus inversion through L2, scored on the second 5 s of each crop after choosing on the first 5 s (this controls the bias of picking a minimum). Arms:
+**E5, topology headroom and factory-preset start.** 43 parts, each candidate topology, neutral settings plus inversion through L2, scored on the second 5 s of each crop after choosing on the first 5 s (this controls the bias of picking a minimum). Arms:
 - the fixed SW50R topology
 - the split-half oracle
 - render-selection
@@ -268,11 +268,11 @@ About 1.5–2 h.
 ### Phase 3: the two diagnostics that decide any ML spending
 
 **E6, cross-performance regret harness.** Extend `scripts/study_harmonic.py`:
-- 16 set-2 development DIs from at least 8 bands, at native level and at −23.7 LUFS;
+- 16 set-2 development DIs from at least 8 bands, at native level and at the probe level E1 settles;
 - 64 settings (48 Latin-hypercube samples plus 16 factory presets) on SW50R and on Tone King rhythm;
 - a mixed-and-separated context for 16 settings.
 
-About 1.5 days of code. Machine time: about 6 minutes on SW50R, about 40 minutes on Tone King, about 30 minutes of Demucs, and 5–15 minutes of extraction per model.
+About 1.5 days of code. Machine time: minutes per amp at the committed render rates, about 30 minutes of Demucs, and 5–15 minutes of extraction per model.
 
 **Metric: regret.** For a target rendered through DI A, pick the candidate nearest to it as rendered through DI B. Regret is the same-DI distance between the target and that pick, both rendered through A. Top-k is not used, because many settings sound alike.
 
@@ -327,7 +327,7 @@ Phases 0–1 take about a week including the overnight runs, and phases 2–3 ab
 - **Train anything on noise-probe or synthetic-guitar renders.** This rules out a denser atlas, an atlas plus a network, and a bigger M7-2 regressor. At the same settings, noise and guitar fingerprints sit 2.1–2.4 apart, more than a target sits from neutral (1.2–1.9). M7-2's parameter loss lowered parameter error while the sound moved further away, and 17 controls were poorly identifiable even from one source.
 - **Teach an embedding that noise counts as a guitar.** The amp responds to bursts differently (the probe is about 10 LU hotter, with different crest and intermodulation). Making noise and guitar look the same would erase the drive information the match needs.
 - **Tune the Karplus-Strong probe further.** It beat noise through one passage and not the other. Real DIs beat it at no extra cost to the user.
-- **Use the separated stem as its own DI.** The search would converge on the plugin's most transparent setting for every song.
+- **Use the separated stem as its own DI.** Expected to converge on the plugin's most transparent setting for every song. E1's `amptrack_as_di` arm tests this before it is closed.
 - **Swap the optimiser** (Bayesian optimisation, TuRBO, SPSA, surrogate CMA-ES, multi-fidelity). With the part's own DI, today's CMA-ES wins 43 of 43, Tone King included, so the optimiser is not what failed. Revisit noise handling on Tone King only if, after a better probe, the stored searches show more than 30% rank flips.
 - **Build a differentiable neural proxy now.** DeepAFx-ST's proxies underperformed even for an EQ and a compressor, it would cost about 8 days at low confidence, and it does not change the loss that failed.
 - **Use distribution matching (frame MMD) as the loss.** Short frames resolve individual harmonics, so it is more sensitive to the notes, not less. It gets a free row in E6 and nothing more.
@@ -340,12 +340,13 @@ Phases 0–1 take about a week including the overnight runs, and phases 2–3 ab
 ## 5. Decisions needed from you
 
 1. **Where the shipped DI clips come from.** The safe source is Guitar-TECHS P1/P2 (CC BY 4.0). Options:
-   - bundle a 6-second probe in the repo with attribution, which needs your licence call (the plan's §10 item 4);
+   - bundle a 6-second probe in the repo with attribution, which needs your licence call (the licence question in the plan's §10 item 4; nothing else in that item applies, since you will not record a DI);
    - download it on first use.
 
    EGDB's DIs have no confirmed licence, and GOAT is by request and research-only. This is needed before B1, not before the experiments, which can use local DIs.
 2. **Adding Demucs plus torch as an optional extra for songs.** It is several hundred MB, MIT-licensed, and archived. The alternative is that you supply a guitar stem yourself when you have one, for example from Logic Pro 11.2's Stem Splitter if you use Logic, which scores about 9 dB against Demucs's 3. Needed before B2.
-3. **Pointing at a timestamp.** Would you point the tool at a passage where the guitar is exposed (the excerpt-start option already exists)? It is cheap for you, and it is the most practical answer for songs with several guitars.
-4. **Later, only if Phase 3's gates call for it:** two to three weeks of work and a torch extra for a trained encoder. Using non-commercial models for local screening (never shipped) needs only a yes now.
+3. **Tone King without a DI (B0).** Return neutral settings instead of the noise search? It rests on the objective proxy alone: further than neutral on 29 of 43 parts with level left out. The starting-point runs measuring Tone King's Default, Reset All Settings and neutral starts finish tonight and will inform it.
+4. **Pointing at a timestamp.** Would you point the tool at a passage where the guitar is exposed (the excerpt-start option already exists)? It is cheap for you, and it is the most practical answer for songs with several guitars.
+5. **Later, only if Phase 3's gates call for it:** two to three weeks of work and a torch extra for a trained encoder. Using non-commercial models for local screening (never shipped) needs only a yes now.
 
 Not a decision: you will not be asked to record a DI. E2's L1-against-L2 arms only show whether a library DI from a similar recording chain matters, which shapes the choice of library.
