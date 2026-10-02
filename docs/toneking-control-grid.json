@@ -1,0 +1,754 @@
+{
+ "/ampReverb": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/ampTremoloDepth": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/ampTremoloSpeed": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab1Distance": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab1Level": [
+  {
+   "wrote": "-25.43736",
+   "kept": "-25.399999618530273",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "3.63336",
+   "kept": "3.6000008583068848",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab1Pan": [
+  {
+   "wrote": "-0.37326",
+   "kept": "-0.3700000047683716",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.43426",
+   "kept": "0.429999977350235",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab1Position": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab1RoomIRLevel": [
+  {
+   "wrote": "-37.43736",
+   "kept": "-37.400001525878906",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "-8.36664",
+   "kept": "-8.399999618530273",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab2Distance": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab2Level": [
+  {
+   "wrote": "-25.43736",
+   "kept": "-25.399999618530273",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "3.63336",
+   "kept": "3.6000008583068848",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab2Pan": [
+  {
+   "wrote": "-0.37326",
+   "kept": "-0.3700000047683716",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.43426",
+   "kept": "0.429999977350235",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab2Position": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/cab2RoomIRLevel": [
+  {
+   "wrote": "-37.43736",
+   "kept": "-37.400001525878906",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "-8.36664",
+   "kept": "-8.399999618530273",
+   "outcome": "mapped"
+  }
+ ],
+ "/chorusDepth": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/chorusMix": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/chorusRate": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/compBlend": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/compCompression": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/compVolume": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.480000019073486",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.2099995613098145",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayFeedback": [
+  {
+   "wrote": "0.156685",
+   "kept": "0.1599999964237213",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.358565",
+   "kept": "0.35999998450279236",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayHPF": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayLPF": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayMix": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayTempo": [
+  {
+   "wrote": "102.674",
+   "kept": "102.70000457763672",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "183.426",
+   "kept": "183.40000915527344",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayTimeMSL": [
+  {
+   "wrote": "413.37",
+   "kept": "413.37",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "817.13",
+   "kept": "817.13",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "333.3333",
+   "kept": "333.3299865722656",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "777.7777",
+   "kept": "777.7799682617188",
+   "outcome": "mapped"
+  }
+ ],
+ "/delayTimeMSR": [
+  {
+   "wrote": "413.37",
+   "kept": "413.37",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "817.13",
+   "kept": "817.13",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "333.3333",
+   "kept": "333.3299865722656",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "777.7777",
+   "kept": "777.7799682617188",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive1Bass": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive1Overdrive": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive1Treble": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive1Volume": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive2Bass": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive2Overdrive": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive2Treble": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/drive2Volume": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand1": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand2": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand3": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand4": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand5": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand6": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand7": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand8": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/eqBand9": [
+  {
+   "wrote": "-4.47912",
+   "kept": "-4.5",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.21112",
+   "kept": "5.200000286102295",
+   "outcome": "mapped"
+  }
+ ],
+ "/gateThreshold": [
+  {
+   "wrote": "-65.91648",
+   "kept": "-65.9000015258789",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "-27.15552",
+   "kept": "-27.19999885559082",
+   "outcome": "mapped"
+  }
+ ],
+ "/inputGain": [
+  {
+   "wrote": "-8.95824",
+   "kept": "-9",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "10.42224",
+   "kept": "10.40000057220459",
+   "outcome": "mapped"
+  }
+ ],
+ "/leadAmpMidBite": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/leadAmpTone": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/leadAmpVolume": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/outputGain": [
+  {
+   "wrote": "-8.95824",
+   "kept": "-9",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "10.42224",
+   "kept": "10.40000057220459",
+   "outcome": "mapped"
+  }
+ ],
+ "/reverbDecay": [
+  {
+   "wrote": "2.850275",
+   "kept": "2.8499999046325684",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "5.878475",
+   "kept": "5.880000114440918",
+   "outcome": "mapped"
+  }
+ ],
+ "/reverbHPF": [
+  {
+   "wrote": "253.6905",
+   "kept": "254",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "516.1345",
+   "kept": "516",
+   "outcome": "mapped"
+  }
+ ],
+ "/reverbLPF": [
+  {
+   "wrote": "3820.33",
+   "kept": "3820",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "7454.17",
+   "kept": "7454",
+   "outcome": "mapped"
+  }
+ ],
+ "/reverbMix": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/reverbPreDelay": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/rhythmAmpBass": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/rhythmAmpTreble": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/rhythmAmpVolume": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.3100000023841858",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7199999690055847",
+   "outcome": "mapped"
+  }
+ ],
+ "/wahAtt": [
+  {
+   "wrote": "320.2363",
+   "kept": "320",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "719.9587",
+   "kept": "720",
+   "outcome": "mapped"
+  }
+ ],
+ "/wahPosition": [
+  {
+   "wrote": "0.31337",
+   "kept": "0.31300002336502075",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "0.71713",
+   "kept": "0.7170000076293945",
+   "outcome": "mapped"
+  }
+ ],
+ "/wahRel": [
+  {
+   "wrote": "320.2363",
+   "kept": "320",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "719.9587",
+   "kept": "720",
+   "outcome": "mapped"
+  }
+ ],
+ "/wahSens": [
+  {
+   "wrote": "31.337",
+   "kept": "31",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "71.713",
+   "kept": "72",
+   "outcome": "mapped"
+  }
+ ]
+}

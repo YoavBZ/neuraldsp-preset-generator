@@ -83,6 +83,10 @@ class ParamSpec:
     # applies at: it is what the spectral fit in `match/invert.py` solves onto,
     # and what `analysis/refchain.py` places its filters at.
     centre_hz: Optional[float] = None
+    # The stored resolution, where the plugin rounds what it is given and the unit
+    # gives no step of its own: a search writes the plugin's own grid, so the state
+    # it reads back is the state it wrote.
+    step: Optional[float] = None
     members: Optional[Dict[str, str]] = None  # stored int (as str) -> display name
     ui: Optional[str] = None
     note: Optional[str] = None
@@ -231,6 +235,18 @@ class Pack:
             match = _find_member(spec.members, human)
             if match is not None:
                 human = match
+
+        # A rotation's written value is a percent while a step is in stored units,
+        # so only fractions and metered values, written as stored, are rounded.
+        if spec.step and spec.kind in ("fraction", "metered"):
+            # The plugin keeps a value rounded to its own grid when it applies a
+            # state, so write that value: the preset then reads back as written,
+            # whichever path produced the number (a search, an inversion, a trim
+            # or a person). A non-numeric value falls through to the error below.
+            try:
+                human = round(round(float(human) / spec.step) * spec.step, 6)
+            except (TypeError, ValueError, OverflowError):
+                pass
 
         try:
             stored = to_binary(spec.kind, human, spec.unit)
@@ -401,6 +417,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
             max=entry.get("max"),
             range_source=entry.get("range_source"),
             centre_hz=entry.get("centre_hz"),
+            step=entry.get("step"),
             members=members,
             ui=entry.get("ui"),
             note=entry.get("note"),

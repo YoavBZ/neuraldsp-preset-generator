@@ -186,21 +186,27 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Amp Reverb"
+      "ui": "Amp Reverb",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/ampTremoloDepth": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Amp Tremolo Depth"
+      "ui": "Amp Tremolo Depth",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/ampTremoloSpeed": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Amp Tremolo Speed"
+      "ui": "Amp Tremolo Speed",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/ampType": {
       "kind": "enum",
@@ -235,7 +241,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Cab L Distance"
+      "ui": "Cab L Distance",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab1Level": {
       "kind": "metered",
@@ -243,7 +251,9 @@
       "min": -48.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab L Level"
+      "ui": "Cab L Level",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab1MicIR": {
       "kind": "enum",
@@ -257,7 +267,9 @@
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, value read back)",
       "ui": "Cab L Pan",
-      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1."
+      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1.",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab1Phase": {
       "kind": "switch",
@@ -272,7 +284,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Cab L Position"
+      "ui": "Cab L Position",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab1RoomActive": {
       "kind": "switch",
@@ -288,7 +302,9 @@
       "min": -60.0,
       "max": 12.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab L Room IR Level"
+      "ui": "Cab L Room IR Level",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab1RoomIRPosition": {
       "kind": "internal",
@@ -307,7 +323,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Cab R Distance"
+      "ui": "Cab R Distance",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab2Level": {
       "kind": "metered",
@@ -315,7 +333,9 @@
       "min": -48.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab R Level"
+      "ui": "Cab R Level",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab2MicIR": {
       "kind": "enum",
@@ -329,7 +349,9 @@
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, value read back)",
       "ui": "Cab R Pan",
-      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1."
+      "note": "Stored -1..1, NOT the -50..50 the plugin displays. -1 is hard left (shown `L 50`), 0 is centre (`C`), 1 is hard right (`R 50`), and 0.5 is `R 25`. The displayed number is a position out of 50 and the stored number is a fraction of full deflection; reading the range off the display gave -50..50 and made every value 50x too large, so a recipe asking for a gentle spread hard-panned the cab. Verified by writing -10 and watching the plugin keep -1.",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab2Phase": {
       "kind": "switch",
@@ -344,7 +366,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Cab R Position"
+      "ui": "Cab R Position",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab2RoomActive": {
       "kind": "switch",
@@ -360,7 +384,9 @@
       "min": -60.0,
       "max": 12.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Cab R Room IR Level"
+      "ui": "Cab R Room IR Level",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/cab2RoomIRPosition": {
       "kind": "internal",
@@ -419,7 +445,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Chorus Depth"
+      "ui": "Chorus Depth",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/chorusLevel": {
       "kind": "internal",
@@ -430,14 +458,18 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Chorus Dry/Wet"
+      "ui": "Chorus Dry/Wet",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/chorusRate": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Chorus Rate"
+      "ui": "Chorus Rate",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/chorusSwitch": {
       "kind": "internal",
@@ -484,14 +516,18 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Compressor Blend"
+      "ui": "Compressor Blend",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/compCompression": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Compressor Comp"
+      "ui": "Compressor Comp",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/compOutput": {
       "kind": "internal",
@@ -510,7 +546,9 @@
       "min": -12.0,
       "max": 12.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Compressor Volume"
+      "ui": "Compressor Volume",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayActive": {
       "kind": "switch",
@@ -529,7 +567,9 @@
       "min": 0.0,
       "max": 0.5,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Delay Feedback"
+      "ui": "Delay Feedback",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayHPF": {
       "kind": "fraction",
@@ -537,7 +577,9 @@
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written past both ends, read back clamped)",
       "note": "The plugin publishes an empty min/max display string for this control, so the range is measured rather than read: writing -1 came back as 0 and writing 2 came back as 1.",
-      "ui": "Delay High Pass"
+      "ui": "Delay High Pass",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayLPF": {
       "kind": "fraction",
@@ -545,14 +587,18 @@
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written past both ends, read back clamped)",
       "note": "The plugin publishes an empty min/max display string for this control, so the range is measured rather than read: writing -1 came back as 0 and writing 2 came back as 1.",
-      "ui": "Delay Low Pass"
+      "ui": "Delay Low Pass",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayMix": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Delay Dry/Wet"
+      "ui": "Delay Dry/Wet",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayMultiplier": {
       "kind": "internal",
@@ -613,7 +659,9 @@
       "min": 40.0,
       "max": 240.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Delay Tempo"
+      "ui": "Delay Tempo",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/delayTimeMSL": {
       "kind": "metered",
@@ -621,7 +669,9 @@
       "min": 100.0,
       "max": 1100.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Delay Time L"
+      "ui": "Delay Time L",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; its first two values sat on the grid, and 333.3333 and 777.7777 were kept as 333.33 and 777.78"
     },
     "/delayTimeMSR": {
       "kind": "metered",
@@ -629,7 +679,9 @@
       "min": 100.0,
       "max": 1100.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Delay Time R"
+      "ui": "Delay Time R",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; its first two values sat on the grid, and 333.3333 and 777.7777 were kept as 333.33 and 777.78"
     },
     "/delayXFeedback": {
       "kind": "internal",
@@ -660,7 +712,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 1 Bass"
+      "ui": "Overdrive 1 Bass",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive1Level": {
       "kind": "internal",
@@ -671,7 +725,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 1 Drive"
+      "ui": "Overdrive 1 Drive",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive1Tone": {
       "kind": "internal",
@@ -682,14 +738,18 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 1 Treble"
+      "ui": "Overdrive 1 Treble",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive1Volume": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 1 Volume"
+      "ui": "Overdrive 1 Volume",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive2Active": {
       "kind": "switch",
@@ -704,7 +764,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 2 Bass"
+      "ui": "Overdrive 2 Bass",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive2BassCut": {
       "kind": "internal",
@@ -719,7 +781,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 2 Drive"
+      "ui": "Overdrive 2 Drive",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive2Tone": {
       "kind": "internal",
@@ -730,14 +794,18 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 2 Treble"
+      "ui": "Overdrive 2 Treble",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/drive2Volume": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Overdrive 2 Volume"
+      "ui": "Overdrive 2 Volume",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/driveActive": {
       "kind": "internal",
@@ -881,7 +949,9 @@
       "max": 12.0,
       "centre_hz": 65,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 1"
+      "ui": "EQ Band 1",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand2": {
       "kind": "metered",
@@ -889,7 +959,9 @@
       "max": 12.0,
       "centre_hz": 125,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 2"
+      "ui": "EQ Band 2",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand3": {
       "kind": "metered",
@@ -897,7 +969,9 @@
       "max": 12.0,
       "centre_hz": 250,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 3"
+      "ui": "EQ Band 3",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand4": {
       "kind": "metered",
@@ -905,7 +979,9 @@
       "max": 12.0,
       "centre_hz": 500,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 4"
+      "ui": "EQ Band 4",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand5": {
       "kind": "metered",
@@ -913,7 +989,9 @@
       "max": 12.0,
       "centre_hz": 1000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 5"
+      "ui": "EQ Band 5",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand6": {
       "kind": "metered",
@@ -921,7 +999,9 @@
       "max": 12.0,
       "centre_hz": 2000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 6"
+      "ui": "EQ Band 6",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand7": {
       "kind": "metered",
@@ -929,7 +1009,9 @@
       "max": 12.0,
       "centre_hz": 4000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 7"
+      "ui": "EQ Band 7",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand8": {
       "kind": "metered",
@@ -937,7 +1019,9 @@
       "max": 12.0,
       "centre_hz": 8000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 8"
+      "ui": "EQ Band 8",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqBand9": {
       "kind": "metered",
@@ -945,7 +1029,9 @@
       "max": 12.0,
       "centre_hz": 16000,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "EQ Band 9"
+      "ui": "EQ Band 9",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/eqSectionActive": {
       "kind": "switch",
@@ -990,7 +1076,9 @@
       "min": -96.0,
       "max": 0.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Gate Amount"
+      "ui": "Gate Amount",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/harmonizerActive": {
       "kind": "internal",
@@ -1001,7 +1089,9 @@
       "min": -24.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Input Gain"
+      "ui": "Input Gain",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/leadAmpBass": {
       "kind": "internal",
@@ -1044,7 +1134,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Lead Channel Mid Bite"
+      "ui": "Lead Channel Mid Bite",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/leadAmpOutput": {
       "kind": "internal",
@@ -1067,7 +1159,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Lead Channel Tone"
+      "ui": "Lead Channel Tone",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/leadAmpTreble": {
       "kind": "internal",
@@ -1078,7 +1172,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Lead Channel Volume"
+      "ui": "Lead Channel Volume",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/levelAdder": {
       "kind": "internal",
@@ -1110,7 +1206,9 @@
       "min": -24.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Output Gain"
+      "ui": "Output Gain",
+      "step": 0.1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/panMultiplier": {
       "kind": "internal",
@@ -1197,7 +1295,9 @@
       "min": 0.5,
       "max": 8.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Reverb Decay"
+      "ui": "Reverb Decay",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/reverbHPF": {
       "kind": "metered",
@@ -1205,7 +1305,9 @@
       "min": 50.0,
       "max": 700.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Reverb Low Cut"
+      "ui": "Reverb Low Cut",
+      "step": 1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/reverbLPF": {
       "kind": "metered",
@@ -1213,14 +1315,18 @@
       "min": 1000.0,
       "max": 10000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Reverb High Cut"
+      "ui": "Reverb High Cut",
+      "step": 1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/reverbMix": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Reverb Dry/Wet"
+      "ui": "Reverb Dry/Wet",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/reverbMode": {
       "kind": "internal",
@@ -1229,14 +1335,18 @@
     "/reverbPreDelay": {
       "kind": "fraction",
       "note": "Deliberately undeclared. The plugin publishes an empty min/max display string for this control, and its default state already sits at 0 \u2014 the bottom of the control \u2014 so writing below that moves nothing and the plugin keeps the out-of-range number verbatim (-1 came back as -1). The top clamps at 1 (2 came back as 1), but half a range is not a range, and the missing half is exactly the \u201calready at that value\u201d blind spot that let three wrong ranges through a full audit. `audit_manifest.py` reports it as declaring nothing, which is the truth. What is unique here is not the blind spot but the absence of a second source: `ampReverb`, `wahPosition` and `chorusMix` sit at an end of their range too, and writing past it is retained verbatim there as well \u2014 their ranges stand because the plugin also publishes a display string for them, which this control does not.",
-      "ui": "Reverb Pre-Delay"
+      "ui": "Reverb Pre-Delay",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/rhythmAmpBass": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Rhythm Channel Bass"
+      "ui": "Rhythm Channel Bass",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/rhythmAmpEq2200": {
       "kind": "internal",
@@ -1291,14 +1401,18 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Rhythm Channel Treble"
+      "ui": "Rhythm Channel Treble",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/rhythmAmpVolume": {
       "kind": "fraction",
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Rhythm Channel Volume"
+      "ui": "Rhythm Channel Volume",
+      "step": 0.01,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/rhythmAttBypass": {
       "kind": "switch",
@@ -1478,7 +1592,9 @@
       "min": 10.0,
       "max": 1000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Auto-Wah Attack"
+      "ui": "Auto-Wah Attack",
+      "step": 1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/wahMode": {
       "kind": "enum",
@@ -1493,7 +1609,9 @@
       "min": 0.0,
       "max": 1.0,
       "range_source": "docs/measuring-against-the-plugin.md (au_probe params: the mapped control's own minString/maxString)",
-      "ui": "Wah Pedal Position"
+      "ui": "Wah Pedal Position",
+      "step": 0.001,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/wahRel": {
       "kind": "metered",
@@ -1501,7 +1619,9 @@
       "min": 10.0,
       "max": 1000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Auto-Wah Release"
+      "ui": "Auto-Wah Release",
+      "step": 1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/wahSectionActive": {
       "kind": "internal",
@@ -1513,7 +1633,9 @@
       "min": 0.0,
       "max": 100.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
-      "ui": "Auto-Wah Sensitivity"
+      "ui": "Auto-Wah Sensitivity",
+      "step": 1,
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back"
     },
     "/width": {
       "kind": "internal",
