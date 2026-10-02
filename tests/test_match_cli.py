@@ -1488,12 +1488,68 @@ def test_a_trim_that_does_not_land_is_reported():
     assert "not linear" in cli._guitar_level_caveat(check)[0]
 
 
-def test_a_trim_that_goes_silent_keeps_the_candidate_as_it_was():
+def test_a_trim_that_goes_silent_keeps_the_candidate_but_fails_the_check():
     cli, gain, check, trimmed, evaluator = _trim(_OutputGainRenderer(mute_above=3.0), 0.0)
     record = check["level_trim"]["records"][0]
     assert not record["applied"] and "no measurable loudness" in record["reason"]
     assert trimmed[0].values[gain] == 0.0 and trimmed[0].trial_id == 1
     assert evaluator.renders == 0
+    row = check["candidates"][0]
+    assert row["passes"] is False and row["failed_by"] == "level_trim"
+    caveat = cli._guitar_check_caveats(check)[0]
+    assert caveat.startswith("every shortlisted candidate failed the guitar check")
+    assert "lost all measurable loudness when its output gain moved +6.0 dB" in caveat
+
+
+class _CliffRenderer(_OutputGainRenderer):
+    """A candidate with its input gain far down plays only while its output gain
+    stays at 7 dB or more: a gain stage at a cliff, so trimming it down silences it."""
+
+    def render(self, signal, settings):
+        import types
+
+        import numpy as np
+
+        gain_db = settings[("parameters", "outputGain")]
+        input_db = settings.get(("parameters", "inputGain"), 0.0)
+        silent = input_db < -10 and gain_db < 7.0
+        audio = (np.zeros_like(signal) if silent
+                 else signal * 10 ** ((gain_db - 6.0 + input_db) / 20))
+        return types.SimpleNamespace(audio=audio, silent=silent,
+                                     metadata=types.SimpleNamespace(sample_rate=48000))
+
+
+def test_a_candidate_that_goes_silent_when_trimmed_moves_behind_those_that_pass():
+    from match import space as space_module
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    gain, inp = ("parameters", "outputGain"), ("parameters", "inputGain")
+    shortlist = [Candidate(values={gain: 7.75, inp: -14.0}, total=0.3, trial_id=1),
+                 Candidate(values={gain: 0.0, inp: 0.0}, total=0.4, trial_id=2)]
+    renderer, evaluator = _CliffRenderer(), _ScoringEvaluator()
+    check = cli._guitar_check(renderer, evaluator, {gain: 0.0, inp: 0.0}, shortlist)
+    # As searched, both pass: the first plays 6 dB under the template.
+    assert [row["passes"] for row in check["candidates"]] == [True, True]
+    shortlist = cli._passing_first(shortlist, check)
+    trimmed = cli._guitar_level_trim(renderer, evaluator,
+                                     space_module.build("morgan", amp="sw50r"),
+                                     shortlist, check, -40.0, "parameters/outputGain")
+
+    assert [c.trial_id for c in trimmed] == [evaluator.renders + 100, 1]
+    assert trimmed[0].values[gain] == pytest.approx(-10.0)
+    assert trimmed[1].values == {gain: 7.75, inp: -14.0}
+    first, second = check["candidates"]
+    assert (first["passes"], first["failed_by"], first["match"]) == (False, "level_trim", 2)
+    assert (second["passes"], second["match"]) == (True, 1)
+    records = check["level_trim"]["records"]
+    assert [(r["match"], r["applied"]) for r in records] == [(1, True), (2, False)]
+    caveat = cli._guitar_check_caveats(check)[0]
+    assert caveat.startswith("1 of 2 shortlisted candidates failed the guitar check")
+    assert ("match-2 (the search's choice 1) lost all measurable loudness when its "
+            "output gain moved -3.8 dB") in caveat
+    assert "match-2 (the trimmed candidate had no measurable loudness)" in (
+        cli._guitar_level_caveat(check)[1])
 
 
 def test_a_residual_weighted_run_without_a_di_completes_the_level_trim(audio, tmp_path):

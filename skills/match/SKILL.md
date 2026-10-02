@@ -177,10 +177,11 @@ template, three of six held-out parts matched without a DI turned the preamp
 volume or the amp's level nearly to zero, and through a real guitar played 16–35
 LU under the recording or not at all (`docs/heldout-listening-sw50r.md`). So
 without `--probe-di` the tool renders the template and the shortlist through a
-synthetic guitar and moves any candidate with no measurable loudness there, or
-20 dB or more under the template, behind those that pass (`search.guitar_check`
-in `summary.json`; a line set on SW50R from twenty answers, so treat a pass as "a
-guitar gets through", nothing more). Report that caveat when it fires; if every
+synthetic guitar and moves any candidate with no measurable loudness there, 20
+dB or more under the template, or that loses its loudness when its level is set,
+behind those that pass (`search.guitar_check` in `summary.json`; lines set on
+SW50R in sample, so treat a pass as "a guitar gets through", nothing more — on
+43 SW50R recordings two answers that passed played 13 and 18 LU quiet). Report that caveat when it fires; if every
 candidate failed, offer the starting preset instead, and in any case tell the
 user to confirm the preset plays with their own guitar.
 

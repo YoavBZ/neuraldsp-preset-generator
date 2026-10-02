@@ -898,14 +898,20 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
     level through a guitar"). The output gain is a gain after the amp, so the
     loudness gap is the change it needs.
 
-    Each trim is checked twice: once through the synthetic guitar, where a silent
-    render or one without a measurable loudness keeps the candidate as it was and
-    one that lands more than GUITAR_LEVEL_LANDING_DB off is reported; then scored
-    through the evaluator as a trial of its own, so the spec, the summary and the
-    trial store describe the same preset. That score's `level` term is measured
-    through the noise probe, which this trim deliberately does not follow.
+    Each trim is checked twice: once through the synthetic guitar, where one that
+    lands more than GUITAR_LEVEL_LANDING_DB off is reported; then scored through
+    the evaluator as a trial of its own, so the spec, the summary and the trial
+    store describe the same preset. That score's `level` term is measured through
+    the noise probe, which this trim deliberately does not follow.
     `check["level_trim"]` records every step. Failed or unjudged candidates, and
     any the evaluator could not score, are left as they were.
+
+    A trimmed render that is silent or has no measurable loudness keeps the
+    candidate's values, but the candidate fails the guitar check after all and
+    moves behind those that pass: its gain stages sit at a cliff. The one such
+    answer in 129 development matches played through its own DI at a peak of
+    1e-4, although it had passed the check as searched (docs/tone-matching-plan.md,
+    "The no-DI starting point").
     """
     from analysis import io
     from analysis.probes import synthetic_guitar
@@ -958,6 +964,8 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
             continue
         if after is None:
             record["reason"] = "the trimmed candidate had no measurable loudness"
+            row.update(passes=False, failed_by="level_trim",
+                       trim_gap_db=round(gap, 2))
             trimmed.append(candidate)
             continue
         record.update(lufs_after=round(after, 2),
@@ -971,6 +979,18 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
                       trial_after=scored.trial_id, total_before=round(candidate.total, 4),
                       total_after=round(scored.total, 4))
         trimmed.append(scored)
+    if any(row.get("failed_by") == "level_trim" for row in rows.values()):
+        # Failures go behind the candidates that pass, as `_passing_first` put the
+        # check's own; every match number moves with its candidate.
+        order = ([m for m in sorted(rows) if rows[m]["passes"] is not False]
+                 + [m for m in sorted(rows) if rows[m]["passes"] is False])
+        renumber = {old: new for new, old in enumerate(order, start=1)}
+        trimmed = [trimmed[old - 1] for old in order]
+        for row in check["candidates"]:
+            row["match"] = renumber[row["match"]]
+        for record in records:
+            record["match"] = renumber[record["match"]]
+        records.sort(key=lambda record: record["match"])
     return trimmed
 
 
@@ -1037,6 +1057,9 @@ def _guitar_check_caveats(check) -> List[str]:
         return caveats
 
     def how(row):
+        if row.get("failed_by") == "level_trim":
+            return (f"lost all measurable loudness when its output gain moved "
+                    f"{row['trim_gap_db']:+.1f} dB to set its level")
         return ("had no measurable loudness" if row["lufs"] is None else
                 f"was {-row['vs_template_db']:.0f} dB under the preset you started from")
     listed = "; ".join(f"match-{row['match']} (the search's choice "
