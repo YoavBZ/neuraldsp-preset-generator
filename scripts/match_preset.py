@@ -576,8 +576,8 @@ def main() -> None:
                 f"{result.best.reference_score:.3f} against the starting preset's "
                 f"{start.total:.3f}: the score's level term is measured through the "
                 "noise probe, which that trim deliberately does not follow, and "
-                "before the trim the search's answer did beat the starting preset. "
-                "Judge it by ear against the starting preset"))
+                "before the trim the search's best candidate did beat the starting "
+                "preset. Judge it by ear against the starting preset"))
 
     if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
@@ -908,9 +908,10 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
 
     A trimmed render that is silent or has no measurable loudness keeps the
     candidate's values, but the candidate fails the guitar check after all and
-    moves behind those that pass: its gain stages sit at a cliff. The one such
+    moves behind those that pass, ahead of any the check failed before the trim
+    (each group keeps its order): its gain stages sit at a cliff. The one such
     answer in 129 development matches played through its own DI at a peak of
-    1e-4, although it had passed the check as searched (docs/tone-matching-plan.md,
+    1.4e-4, although it had passed the check as searched (docs/tone-matching-plan.md,
     "The no-DI starting point").
     """
     from analysis import io
@@ -1002,6 +1003,7 @@ def _guitar_level_caveat(check) -> List[str]:
     if not applied and not kept:
         return []
     caveats = []
+    silenced = [row for row in check["candidates"] if row.get("failed_by") == "level_trim"]
     if applied:
         clamped = [r["match"] for r in applied if r["clamped"]]
         missed = [r for r in applied if not r["clamped"]
@@ -1014,9 +1016,11 @@ def _guitar_level_caveat(check) -> List[str]:
               "with a real guitar expect it to play a few dB loud (a median of 4 LU, "
               "3 under to 11 over, on 43 SW50R amp recordings), and on a full mix it "
               "matches the whole mix's loudness, not the guitar's. Their scores are of "
-              "the trimmed presets, with a level term measured through the noise probe; the "
-              "±6 dB figures and the shortlist's order are from before the trim, and "
-              "the trims are the last points of the convergence chart"
+              "the trimmed presets, with a level term measured through the noise "
+              "probe; the ±6 dB figures and the shortlist's order are from before the "
+              "trim" + (", except that a candidate the trim silenced moved to the end"
+                        if silenced else "")
+            + ", and the trims are the last points of the convergence chart"
             + (f". On {', '.join(f'match-{m}' for m in clamped)} the control ran out "
                "of range, so the level is not reached" if clamped else "")
             + ("" if not missed else

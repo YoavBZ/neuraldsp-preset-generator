@@ -1578,3 +1578,38 @@ def test_a_trimmed_score_past_the_templates_is_said_so(audio, tmp_path, monkeypa
     summary = _no_di_run(audio, tmp_path / "worse", monkeypatch)
     assert any(c.startswith("after its level was set through a synthetic guitar")
                for c in summary["caveats"])
+
+
+def test_a_trim_failure_goes_behind_the_passes_and_ahead_of_the_checks_failures():
+    """Searched order: one silenced by its trim, one that passes, one the check
+    failed. Afterwards: the pass, then the trim failure, then the check failure."""
+    from match import space as space_module
+    from match.search import Candidate
+    from scripts import match_preset as cli
+
+    gain, inp = ("parameters", "outputGain"), ("parameters", "inputGain")
+    shortlist = [Candidate(values={gain: 7.75, inp: -14.0}, total=0.3, trial_id=1),
+                 Candidate(values={gain: 0.0, inp: 0.0}, total=0.4, trial_id=2),
+                 Candidate(values={gain: -30.0, inp: 0.0}, total=0.5, trial_id=3)]
+    renderer, evaluator = _CliffRenderer(), _ScoringEvaluator()
+    check = cli._guitar_check(renderer, evaluator, {gain: 0.0, inp: 0.0}, shortlist)
+    assert [row["passes"] for row in check["candidates"]] == [True, True, False]
+    shortlist = cli._passing_first(shortlist, check)
+    trimmed = cli._guitar_level_trim(renderer, evaluator,
+                                     space_module.build("morgan", amp="sw50r"),
+                                     shortlist, check, -40.0, "parameters/outputGain")
+
+    assert [c.values[gain] for c in trimmed] == [pytest.approx(-10.0), 7.75, -30.0]
+    by_rank = {row["search_rank"]: row for row in check["candidates"]}
+    assert [by_rank[rank]["match"] for rank in (1, 2, 3)] == [2, 1, 3]
+    assert by_rank[1]["failed_by"] == "level_trim" and "failed_by" not in by_rank[3]
+    records = check["level_trim"]["records"]
+    assert [r["match"] for r in records] == [1, 2, 3]
+    assert [r["reason"] for r in records[1:]] == [
+        "the trimmed candidate had no measurable loudness", "it failed the guitar check"]
+    caveat = cli._guitar_check_caveats(check)[0]
+    assert caveat.startswith("2 of 3 shortlisted candidates failed")
+    assert "match-2 (the search's choice 1) lost all measurable loudness" in caveat
+    assert "match-3 (the search's choice 3) was 30 dB under" in caveat
+    assert "except that a candidate the trim silenced moved to the end" in (
+        cli._guitar_level_caveat(check)[0])

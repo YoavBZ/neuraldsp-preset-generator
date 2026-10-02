@@ -181,7 +181,8 @@ synthetic guitar and moves any candidate with no measurable loudness there, 20
 dB or more under the template, or that loses its loudness when its level is set,
 behind those that pass (`search.guitar_check` in `summary.json`; lines set on
 SW50R in sample, so treat a pass as "a guitar gets through", nothing more — on
-43 SW50R recordings two answers that passed played 13 and 18 LU quiet). Report that caveat when it fires; if every
+43 SW50R recordings two answers that passed played 13 and 18 LU quiet, and the
+level caveat had flagged both). Report that caveat when it fires; if every
 candidate failed, offer the starting preset instead, and in any case tell the
 user to confirm the preset plays with their own guitar.
 
