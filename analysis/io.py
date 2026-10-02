@@ -234,17 +234,23 @@ def true_peak_dbtp(audio: Audio) -> Optional[float]:
     return None if peak <= 0 else float(20.0 * np.log10(peak))
 
 
-def normalise(audio: Audio, target_lufs: float = -23.0) -> Audio:
+_UNMEASURED = object()
+
+
+def normalise(audio: Audio, target_lufs: float = -23.0, measured=_UNMEASURED) -> Audio:
     """Scale to a fixed loudness so that what follows compares tone, not level.
 
     Silent or unmeasurable material is returned unchanged: there is no gain that
     makes silence -23 LUFS, and pretending otherwise would put a division by
-    zero into every downstream feature.
+    zero into every downstream feature. A caller that has already measured this
+    audio's loudness passes it as `measured` (None meaning unmeasurable), so it
+    is not measured twice.
     """
     require("loudness normalisation")
     import numpy as np
 
-    measured = loudness_lufs(audio)
+    if measured is _UNMEASURED:
+        measured = loudness_lufs(audio)
     if measured is None:
         return audio
     gain = 10.0 ** ((target_lufs - measured) / 20.0)
