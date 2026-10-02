@@ -20,6 +20,13 @@ and selectors held:
           Guitar-TECHS that is another excerpt of the same player and rig, and
           for Telefunken often the same band and room, not another player
   noise   the synthetic noise-burst probe match_preset.py uses with no DI
+  library one 6-second probe of real guitar: the loudest 1.5 s of four
+          development DIs from bands other than the part's own (catalog `group`),
+          each set to the median development-DI loudness, with short fades
+
+`--no-search` scores only the neutral start and each signal's inversion (the
+calculated EQ and level, a handful of renders): what a deterministic,
+search-free match would give.
 
 Each part's declared 10-second excerpt is cut by `build_validation_crops.py` into
 private WAVs under `--crops-dir` (built once, then reused after checking their
@@ -46,7 +53,14 @@ from benchmark_match import _backend_caveat, _renderer, _source_commit
 
 SCHEMA = "recordings-benchmark-1"
 CATALOG = PLUGIN_ROOT / "docs" / "validation-datasets.json"
-SIGNALS = ("same", "other", "noise")
+SIGNALS = ("same", "other", "noise", "library")
+# The `library` signal: a fixed probe of real guitar, built per part from
+# development DIs of other bands, so no part is ever heard through its own band's
+# playing (docs/research-song-only-matching.md, approach 1).
+LIBRARY_CLIPS = 4
+LIBRARY_CLIP_SECONDS = 1.5
+LIBRARY_FADE_SECONDS = 0.05
+LIBRARY_LUFS = -22.9   # the median loudness of the 43 set-2 development DIs
 NO_DI_SECONDS = 6.0
 
 
@@ -71,6 +85,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--crops-dir", type=pathlib.Path,
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"),
                     help="private directory for the 10-second crops")
+    ap.add_argument("--no-search", action="store_true",
+                    help="score the neutral start and each signal's inversion only")
     ap.add_argument("--json", type=pathlib.Path)
     return ap
 
@@ -150,6 +166,72 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     return record
 
 
+def part_groups(catalog: dict, parts) -> list:
+    """Each part's band: the catalog's `group`, else its own session."""
+    by_session = {(session["source"], session["song"]): session.get("group")
+                  for session in catalog["sessions"]}
+    return [by_session.get(tuple(part[:2])) or "/".join(part[:2]) for part in parts]
+
+
+def library_probe(index, parts, dis, groups, rate=48000):
+    """A fixed probe of real guitar for one part, never from the part's own band.
+
+    Walks the parts after this one in catalog order, alternating between the
+    other source and the part's own (so a probe is not all one recording chain,
+    as a public library would not be), and takes the loudest
+    LIBRARY_CLIP_SECONDS of each DI from a band not yet used and not the part's
+    own, until it has LIBRARY_CLIPS clips. Each clip is set to LIBRARY_LUFS and
+    faded in and out. Returns the samples and the parts the clips came from.
+    """
+    import numpy as np
+
+    from analysis import io
+
+    length = int(LIBRARY_CLIP_SECONDS * rate)
+    fade = np.linspace(0.0, 1.0, int(LIBRARY_FADE_SECONDS * rate))
+    hop = rate // 4
+
+    def clip_of(other):
+        di = np.asarray(dis[other], dtype=np.float64)
+        if len(di) < length:
+            return None
+        energies = [float(np.mean(di[start:start + length] ** 2))
+                    for start in range(0, len(di) - length + 1, hop)]
+        start = int(np.argmax(energies)) * hop
+        clip = di[start:start + length].copy()
+        lufs = io.loudness_lufs(io.from_samples(clip, rate))
+        if lufs is None:
+            return None
+        clip *= 10 ** ((LIBRARY_LUFS - lufs) / 20)
+        clip[:len(fade)] *= fade
+        clip[-len(fade):] *= fade[::-1]
+        return clip
+
+    clips, used, sources = [], {groups[index]}, []
+    walk = [(index + step) % len(parts) for step in range(1, len(parts))]
+    queues = [[i for i in walk if parts[i][0] != parts[index][0]],
+              [i for i in walk if parts[i][0] == parts[index][0]]]
+    turn = 0
+    while len(clips) < LIBRARY_CLIPS and any(queues):
+        queue = queues[turn % 2] if queues[turn % 2] else queues[(turn + 1) % 2]
+        turn += 1
+        while queue:
+            other = queue.pop(0)
+            if groups[other] in used:
+                continue
+            clip = clip_of(other)
+            if clip is None:
+                continue
+            clips.append(clip)
+            used.add(groups[other])
+            sources.append("/".join(parts[other]))
+            break
+    if len(clips) < LIBRARY_CLIPS:
+        die(f"the library signal needs {LIBRARY_CLIPS} other bands for "
+            f"{'/'.join(parts[index])}")
+    return np.concatenate(clips).astype(np.float32), sources
+
+
 def other_di_index(parts, index):
     """The next part, cyclically, from a different session."""
     for step in range(1, len(parts)):
@@ -182,6 +264,16 @@ def main() -> None:
     dis = [load(record["outputs"]["di"]["path"]) for record in records]
     references = [load(record["outputs"]["reference"]["path"]) for record in records]
     noise, _ = probe_di(None, NO_DI_SECONDS)
+    libraries = [None] * len(parts)
+    if "library" in args.signal:
+        # Drawn from every development part of the chosen sets, whichever parts
+        # are scored, so `--part` does not shrink the library.
+        pool = development_parts(catalog, None, args.sets)
+        pool_dis = [load(crops_for(CATALOG, data_root, args.crops_dir, *part)
+                         ["outputs"]["di"]["path"]) for part in pool]
+        pool_groups = part_groups(catalog, pool)
+        libraries = [library_probe(pool.index(part), pool, pool_dis, pool_groups)
+                     for part in parts]
     others = [other_di_index(parts, index) for index in range(len(parts))]
     if "other" in args.signal and any(other is None for other in others):
         die("--signal other needs parts from at least two sessions")
@@ -189,7 +281,8 @@ def main() -> None:
     for index in range(len(parts)):
         by_name = {"same": dis[index],
                    "other": dis[others[index]] if others[index] is not None else None,
-                   "noise": noise}
+                   "noise": noise,
+                   "library": libraries[index] and libraries[index][0]}
         recordings.append({"reference": references[index], "di": dis[index],
                            "signals": {name: by_name[name] for name in args.signal}})
 
@@ -215,7 +308,7 @@ def main() -> None:
             pack_id=args.pack, amp=amp, progress=progress, workers=args.workers,
             renderer_factory=(None if args.workers < 2
                               else lambda: _renderer(args.renderer, args.pack)),
-            recordings=recordings)
+            recordings=recordings, run_search=not args.no_search)
     finally:
         close = getattr(renderer, "close", None)
         if close is not None:
@@ -252,6 +345,7 @@ def main() -> None:
             "elapsed_s": round(elapsed, 1),
             "catalog_sha256": _sha(CATALOG),
             "pack": args.pack, "amp": amp, "signals": args.signal,
+            "search": not args.no_search,
             "reference": reference, "budget": args.budget, "seed": args.seed,
             "loss_profile": args.loss_profile, "workers": args.workers,
             "no_di_seconds": NO_DI_SECONDS,
@@ -260,7 +354,9 @@ def main() -> None:
                                          if others[index] is not None else None),
                        "crops": {role: output["sha256"] for role, output
                                  in record["outputs"].items()},
-                       "excerpt_start_s": record["excerpt_start_s"]}
+                       "excerpt_start_s": record["excerpt_start_s"],
+                       "library_from": (libraries[index][1]
+                                        if libraries[index] else None)}
                       for index, ((source, song, part), record)
                       in enumerate(zip(parts, records))],
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,

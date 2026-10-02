@@ -149,3 +149,38 @@ def test_the_catalog_is_not_a_command_line_choice():
     with pytest.raises(SystemExit):
         R.build_parser().parse_args(["--amp", "sw50r", "--signal", "same",
                                      "--catalog", "elsewhere.json"])
+
+
+def test_a_library_probe_is_real_guitar_from_other_bands_at_one_loudness():
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
+    from analysis import io
+
+    rate = 48000
+    rng = np.random.default_rng(0)
+    parts = [("s", f"song{i}", "g") for i in range(5)] + [("t", f"song{i}", "g")
+                                                           for i in range(5, 9)]
+    groups = ["A", "A", "B", "B", "C", "D", "D", "E", "F"]
+    dis = [rng.standard_normal(3 * rate) * (0.01 * (i + 1)) for i in range(9)]
+    probe, sources = R.library_probe(0, parts, dis, groups)
+    assert len(probe) == 4 * int(1.5 * rate)
+    # Never the part's own band, one clip per band, alternating the other source
+    # and the part's own, each in catalog order after it.
+    assert sources == ["t/song5/g", "s/song2/g", "t/song7/g", "s/song4/g"]
+    clip = probe[:int(1.5 * rate)]
+    assert abs(clip[0]) < 1e-9 and abs(clip[-1]) < 1e-6   # faded
+    middle = probe[int(0.2 * rate):int(1.3 * rate)].astype(np.float64)
+    assert io.loudness_lufs(io.from_samples(middle, rate)) == pytest.approx(-22.9, abs=0.6)
+    with pytest.raises(SystemExit):
+        R.library_probe(0, parts[:3], dis[:3], groups[:3])
+
+
+def test_a_session_without_a_group_is_its_own_band():
+    catalog = {"sessions": [{"source": "a", "song": "one", "group": "Band"},
+                            {"source": "b", "song": "two"}]}
+    assert R.part_groups(catalog, [("a", "one", "g"), ("b", "two", "x")]) == ["Band", "b/two"]
+
+
+def test_no_search_is_a_flag_and_library_a_signal():
+    args = R.build_parser().parse_args(["--amp", "x", "--signal", "library", "--no-search"])
+    assert args.no_search and args.signal == ["library"]
