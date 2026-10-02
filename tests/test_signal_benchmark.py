@@ -492,3 +492,25 @@ def test_recordings_are_targets_heard_through_their_own_di(space, topology, monk
             SyntheticRenderer(), space, None, {}, topology, budget=30,
             pack_id="morgan", amp=AMP,
             recordings=[recordings[0], {**recordings[1], "signals": {"same": second_di}}])
+
+
+def test_an_answer_with_no_measurable_loudness_is_a_failure(
+        space, topology, signals, monkeypatch):
+    """A render with no `level` dimension is silence through the DI. It still
+    scores on the other dimensions, so it must fail its row, not finish it: three
+    Tone King answers rendered after the plugin's licence daemon died once
+    counted as results this way."""
+    import dataclasses
+
+    target, named = signals
+    real = B.scorer_candidates
+
+    def silent(*args, **kwargs):
+        return [dataclasses.replace(c, objectives={k: v for k, v in c.objectives.items()
+                                                   if k != "level"})
+                for c in real(*args, **kwargs)]
+
+    monkeypatch.setattr(B, "scorer_candidates", silent)
+    outcomes = _run(space, topology, target, named, targets=1)
+    assert outcomes and all(o.failed and "no measurable loudness" in o.error
+                            for o in outcomes)

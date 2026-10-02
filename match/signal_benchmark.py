@@ -279,6 +279,15 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                 if outcome.objective is None:
                     outcome.failed = True
                     outcome.error = "the answer produced no comparable objective"
+                elif "level" not in (outcome.objective_dimensions or {}):
+                    # An answer heard through its DI with no measurable loudness
+                    # still scores on the other dimensions, and once counted as a
+                    # finished arm: on 2026-10-02 three Tone King answers rendered
+                    # after the plugin's licence daemon died scored about twice
+                    # their rerun distance this way. A silent answer is a failure.
+                    outcome.failed = True
+                    outcome.error = ("the answer had no measurable loudness through "
+                                     "its DI: a silent render")
                 if truth is not None:
                     outcome.parameter_mae, _ = benchmark.parameter_error(
                         space, truth, best.values, only=sampled)

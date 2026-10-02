@@ -114,7 +114,10 @@ def test_the_searches_render_with_the_process_policy_asked_for(tmp_path, monkeyp
 
 def test_the_committed_summary_is_what_its_parts_summarise_to():
     committed = json.loads((ROOT / "docs" / "match-pipeline-set2-sw50r.json").read_text())
-    assert P.summarise(committed["parts"]) == committed["summary"]
+    # Fields added since it was written (e.g. silent trials) are not in it.
+    recomputed = P.summarise(committed["parts"])
+    assert {k: v for k, v in recomputed.items() if k in committed["summary"]} == (
+        committed["summary"])
 
 
 def test_a_finished_stage_is_not_run_again_and_a_failure_is_kept_until_it_passes(
@@ -190,3 +193,34 @@ def test_a_finished_arm_from_another_process_policy_is_refused_not_reused(
     monkeypatch.setattr(runner, "log", lambda message: None)
     result = runner.part(("s", "song", "g"), ["no_di"], None, None)
     assert "searched with --process-policy reuse" in result["errors"]["no_di"]
+
+
+def test_a_plugin_that_goes_silent_mid_match_is_a_failure_set_aside_for_a_rerun(
+        tmp_path, monkeypatch):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    monkeypatch.setattr(P, "score", lambda reference, wav: {
+        "lufs": -18.0, "vs_reference_lu": 0.0, "v3": 1.0, "v3_no_level": 1.0})
+    dead = {"caveats": [], "search": {"accounting": {"silent": 6},
+                                      "guitar_check": {"template_lufs": None,
+                                                       "candidates": []}}}
+
+    def match(self, crop, out, arm):
+        (out / arm).mkdir(exist_ok=True)
+        (out / arm / "summary.json").write_text(json.dumps(dead))
+        return dead, False
+
+    monkeypatch.setattr(P.Runner, "match", match)
+    monkeypatch.setattr(P.Runner, "render", lambda self, *a: None)
+    runner = P.Runner(P.build_parser().parse_args([]), tmp_path, "abc123")
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    result = runner.part(("s", "song", "g"), ["no_di"], None, None)
+    assert "went silent during the match" in result["errors"]["no_di"]
+    assert "no_di" not in result
+    part = tmp_path / "s-song-g"
+    assert not (part / "no_di").exists()
+    assert (part / "no_di.silent-attempt" / "no_di" / "summary.json").exists()

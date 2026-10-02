@@ -211,9 +211,22 @@ class Runner:
                     continue
                 started = time.time()
                 summary, fallback = self.match(crop, out, arm)
+                search = summary.get("search") or {}
+                check = search.get("guitar_check")
+                if (check is not None and check.get("template_lufs") is None
+                        and result["template"].get("lufs") is not None):
+                    # The starting preset plays through the DI but was silent in the
+                    # match's own guitar check: the plugin went silent mid-match, as
+                    # when its licence daemon dies. Set the attempt aside so a rerun
+                    # redoes it rather than keeping a search of silent renders.
+                    _set_aside(out, arm)
+                    raise RuntimeError("the plugin went silent during the match (the "
+                                       "starting preset plays through its DI but not "
+                                       "in the guitar check); rerun this part")
                 self.render(crop, out / f"{arm}.xml", out / f"{arm}.wav", out)
                 entry = score(reference, out / f"{arm}.wav")
-                entry.update(fallback_to_template=fallback,
+                entry.update(silent_trials=(search.get("accounting") or {}).get("silent"),
+                             fallback_to_template=fallback,
                              minutes=round((time.time() - started) / 60, 1),
                              measured_commit=self.commit,
                              process_policy=self.args.process_policy,
@@ -231,6 +244,16 @@ class Runner:
             result.pop("errors")
         result_path.write_text(json.dumps(result, indent=1))
         return result
+
+
+def _set_aside(out: pathlib.Path, arm: str) -> None:
+    """Move an arm's match, preset and render out of the way, keeping them."""
+    aside = out / f"{arm}.silent-attempt"
+    shutil.rmtree(aside, ignore_errors=True)
+    aside.mkdir()
+    for name in (arm, f"{arm}.xml", f"{arm}.wav", f"{arm}.wav.render.json"):
+        if (out / name).exists():
+            shutil.move(str(out / name), str(aside / name))
 
 
 def _spread(values):
@@ -283,6 +306,8 @@ def summarise(results) -> dict:
             if r["no_di"]["vs_reference_lu"] is not None:
                 before.append(r["no_di"]["vs_reference_lu"] - moved)
     summary["guitar_check_failed_a_candidate"] = fired
+    summary["no_di_silent_trials"] = [r["part"] for r in no_di
+                                      if r["no_di"].get("silent_trials")]
     # "before the trim" is the measured level less the move, which holds only if
     # the output gain acts linearly: `landed_off_target` lists where, through the
     # synthetic guitar, the trimmed level missed its target by more than 1 dB.
