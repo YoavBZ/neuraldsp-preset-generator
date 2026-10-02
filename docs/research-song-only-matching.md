@@ -89,7 +89,7 @@ If the stem keeps most of the gain, ship Demucs as an optional extra. It would c
 **Cost.**
 - **Screen:** about 2–3 days of code, with about 1,100 renders per amp (minutes per amp; Tone King renders at the same rate as SW50R) plus about 30 minutes of Demucs.
 - **Numpy metric:** 1–2 days.
-- **Trained encoder:** 2–3 weeks. It needs 16k–100k renders per amp (about 1–2 h each for SW50R and Tone King, Tone King split into runs under two hours as a precaution; AC20 overnight for about 30k) and 2–4 h of MPS training per amp, with torch in an optional extra.
+- **Trained encoder:** 2–3 weeks. It needs 16k–100k renders per amp (rendering only, with no scoring or search, at the profiled 0.3–0.9 s per render per worker idle to loaded: 16k renders take about 0.5–1.5 h with 3 workers and 100k about 3–8 h, Tone King split into runs under two hours as a precaution; AC20 in fresh processes at about 2.35 s per render, so about 30k overnight) and 2–4 h of MPS training per amp, with torch in an optional extra.
 - **Match time:** the same renders as approach 1, plus about 20 ms per embedding.
 
 **Key references.**
@@ -109,7 +109,7 @@ If the stem keeps most of the gain, ship Demucs as an optional extra. It would c
 
 The plan has two parts:
 - **Topology.** For each Morgan topology worth trying (amp, its switches, mic type, pedals on or off), invert through the library probe and keep the topology whose render is nearest the reference. This needs a small inversion-only mode. `--enumerate` runs a full inner search per position and splits the budget between them, which is far costlier. No classifier is needed.
-- **Factory presets.** With a fixed probe, the 108 non-User Morgan and 130 Tone King factory presets (both counts include Default and Reset All Settings) can be fingerprinted once. A match then ranks them against the reference with no per-match renders and inverts the top 3. The `User/` folder is excluded because it holds this tool's own outputs.
+- **Factory presets.** With a fixed probe, the 108 non-User Morgan and 130 Tone King factory presets (Morgan's count includes its Default preset; Tone King's includes Default and Reset All Settings) can be fingerprinted once. A match then ranks them against the reference with no per-match renders and inverts the top 3. The `User/` folder is excluded because it holds this tool's own outputs.
 
 **Expected benefit.**
 - This is bounded by the oracle headroom after inversion, which has never been measured. Low-to-medium confidence.
@@ -192,7 +192,7 @@ The plan has two parts:
 - Set-2 development parts only.
 - Run with `.venv/bin/python` and pass `--crops-dir ~/ndsp-presets/references/validation-crops` when running from a worktree.
 - Score through each part's own DI against the amp track, with `unpaired-v3` and level left out.
-- Every comparison stays within one run, because single parts moved by up to 0.91 between runs (noise arm; 0.52 for the other-song arm), measured on synthetic How Long targets.
+- Every comparison stays within one run, because single targets moved by up to 0.91 between runs (noise arm; 0.52 for the other-song arm), measured on synthetic How Long targets.
 - Count wins by part and by band.
 - The 20-part runs use one seeded draw stratified by band, committed before the first run.
 - Durations come from the committed runs: 3 arms × 43 parts on SW50R with 3 workers took 435 minutes, which is about 3.4 minutes per arm-part. Tone King batches of 9–10 parts took 78–103 minutes.
@@ -231,7 +231,7 @@ Gates:
 
 **E2, SW50R full search.** 20 parts, arms L2, L1 and `other`, plus in-run neutral, budget 300, about 3.4 h with 3 workers.
 - **Pass:** L2 closer than neutral on ≥15 of 20 (sign test, two-sided p≈0.04) across most bands, and its median no worse than `other`'s by more than 5%.
-- **Fail:** ≤12 of 20. The earlier gain then came from the shared recording chain. L1 against L2 shows whether a matching chain is what matters.
+- **Fail:** ≤12 of 20. That suggests the earlier gain depended on DIs from the same source library. L1 against L2 shows whether a matching chain is what matters.
 - **If it passes:** run the remaining 23 parts with L2 and neutral (about 1.3 h) as confirmation before building.
 
 **E3, Tone King rhythm.** The same arms on the same 20 parts, in two batches of 10 parts with fresh processes, about 3–3.4 h.
@@ -305,7 +305,7 @@ Gates:
 ### Phase 4: built only after the gates above
 
 - **E9, encoder pilot.** Run only if E2 passes, E6 shows a real gap, and Tone King or the mix still fails.
-  - Training data: SW50R, about 16k renders of CC BY DIs (about 1 h), with no set-2 DIs.
+  - Training data: SW50R, about 16k renders of CC BY DIs (rendering only, about 0.5–1.5 h with 3 workers), with no set-2 DIs.
   - Training: about 2 h on MPS.
   - Gate on E6's regret: ≤0.5× on isolated targets, ≤0.65× on stems, Spearman ≥0.7.
   - Then a 20-part arm against the best probe arm: pass at ≥14 of 20. Only then all 43 parts and Tone King.
@@ -345,7 +345,7 @@ Phases 0–1 take about a week including the overnight runs, and phases 2–3 ab
 
    EGDB's DIs have no confirmed licence, and GOAT is by request and research-only. This is needed before B1, not before the experiments, which can use local DIs.
 2. **Adding Demucs plus torch as an optional extra for songs.** It is several hundred MB, MIT-licensed, and archived. The alternative is that you supply a guitar stem yourself when you have one, for example from Logic Pro 11.2's Stem Splitter if you use Logic, which scores about 9 dB against Demucs's 3. Needed before B2.
-3. **Tone King without a DI (B0).** Return neutral settings instead of the noise search? It rests on the objective proxy alone: further than neutral on 29 of 43 parts with level left out. The starting-point runs measuring Tone King's Default, Reset All Settings and neutral starts finish tonight and will inform it.
+3. **Tone King without a DI (B0).** Return neutral settings instead of the noise search? It rests on the objective proxy alone: further than neutral on 29 of 43 parts with level left out. The Tone King starting-point runs (Default, Reset All Settings and neutral starts, run 2026-10-02) inform it.
 4. **Pointing at a timestamp.** Would you point the tool at a passage where the guitar is exposed (the excerpt-start option already exists)? It is cheap for you, and it is the most practical answer for songs with several guitars.
 5. **Later, only if Phase 3's gates call for it:** two to three weeks of work and a torch extra for a trained encoder. Using non-commercial models for local screening (never shipped) needs only a yes now.
 
