@@ -297,6 +297,16 @@
    "wrote": "817.13",
    "kept": "817.13",
    "outcome": "mapped"
+  },
+  {
+   "wrote": "333.3333",
+   "kept": "333.3299865722656",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "777.7777",
+   "kept": "777.7799682617188",
+   "outcome": "mapped"
   }
  ],
  "/delayTimeMSR": [
@@ -308,6 +318,16 @@
   {
    "wrote": "817.13",
    "kept": "817.13",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "333.3333",
+   "kept": "333.3299865722656",
+   "outcome": "mapped"
+  },
+  {
+   "wrote": "777.7777",
+   "kept": "777.7799682617188",
    "outcome": "mapped"
   }
  ],

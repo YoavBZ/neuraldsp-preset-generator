@@ -723,6 +723,10 @@ def test_a_written_value_is_rounded_to_the_plugins_grid():
     assert float(pack.to_stored(spec, 3.37, warnings=[])) == pytest.approx(3.4)
     spec = next(spec for spec in pack.parameters.values() if spec.key == "rhythmAmpTreble")
     assert float(pack.to_stored(spec, 0.3337, warnings=[])) == pytest.approx(0.33)
+    # Infinity is refused as it was before rounding existed, not raised raw.
+    from packs.loader import PackError
+    with pytest.raises(PackError):
+        pack.to_stored(spec, "inf", warnings=[])
     # Morgan declares no grid, so it is written as given.
     morgan = load_pack("morgan")
     spec = next(spec for spec in morgan.parameters.values()

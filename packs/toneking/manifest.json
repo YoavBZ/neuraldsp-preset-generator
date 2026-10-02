@@ -671,7 +671,7 @@
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "Delay Time L",
       "step": 0.01,
-      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; 333.3333 was kept as 333.33"
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; its first two values sat on the grid, and 333.3333 and 777.7777 were kept as 333.33 and 777.78"
     },
     "/delayTimeMSR": {
       "kind": "metered",
@@ -681,7 +681,7 @@
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
       "ui": "Delay Time R",
       "step": 0.01,
-      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; 333.3333 was kept as 333.33"
+      "step_source": "docs/toneking-control-grid.json: two off-grid values written with scripts/probe_state.py --values, the kept values read back; its first two values sat on the grid, and 333.3333 and 777.7777 were kept as 333.33 and 777.78"
     },
     "/delayXFeedback": {
       "kind": "internal",
