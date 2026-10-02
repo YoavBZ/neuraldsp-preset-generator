@@ -1,0 +1,152 @@
+"""The match-pipeline benchmark's summary: loudness, the guitar check, the level trim
+and paired distances, computed from per-part results without the plugin."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import subprocess
+import sys
+
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import benchmark_match_pipeline as P  # noqa: E402
+
+
+def _arm(lu, v3, *, fallback=False, check=None):
+    return {"lufs": None if lu is None else -20 + lu, "vs_reference_lu": lu,
+            "v3": v3 + .1, "v3_no_level": v3, "v2": v3, "v2_no_level": v3,
+            "fallback_to_template": fallback, "guitar_check": check}
+
+
+def _check(passes=(True, True, True), trim=None):
+    return {"candidates": [{"search_rank": i, "passes": p} for i, p in enumerate(passes, 1)],
+            "level_trim": {"records": [trim] if trim else []}}
+
+
+def test_the_summary_pairs_arms_and_reads_the_guitar_check_and_trim():
+    trimmed = {"match": 1, "applied": True, "before": -8.0, "after": -18.0, "clamped": False,
+               "residual_db": -.2}
+    results = [
+        {"part": "a/one/g", "template": _arm(1.0, 1.0),
+         "no_di": _arm(4.0, 1.5, check=_check(trim=trimmed)), "di": _arm(0.0, .5)},
+        {"part": "a/two/g", "template": _arm(-2.0, 1.2),
+         "no_di": _arm(2.0, 1.0, check=_check((False, True, True),
+                                              {**trimmed, "clamped": True})),
+         "di": _arm(.5, .4)},
+        {"part": "b/three/g", "errors": {"no_di": "RuntimeError: render failed"},
+         "template": _arm(None, 2.0),
+         "di": _arm(0.0, .5)},
+        {"part": "b/four/g", "template": _arm(0.0, 1.0),
+         "no_di": _arm(-5.0, 1.0, check=_check(trim={**trimmed, "residual_db": -2.1}))},
+    ]
+    summary = P.summarise(results)
+    # A later arm's success does not hide an earlier arm's failure.
+    assert summary["failed"] == ["b/three/g: no_di"]
+    assert summary["template"]["parts"] == 4 and summary["no_di"]["parts"] == 3
+    assert summary["template"]["unmeasurable"] == ["b/three/g"]
+    assert summary["no_di"]["within_3_lu"] == 1 and summary["di"]["within_3_lu"] == 3
+    assert summary["guitar_check_failed_a_candidate"] == ["a/two/g"]
+    trim = summary["level_trim_on_match_1"]
+    assert trim["applied"] == 3 and trim["clamped"] == 1
+    assert trim["moved_db"]["median"] == -10.0
+    # Before the trim, each answer played the trim's move louder: 4 + 10, 2 + 10,
+    # -5 + 10 — the last only roughly, since its trim landed 2.1 dB off target.
+    assert trim["vs_reference_lu_before_trim"]["min"] == 5.0
+    assert trim["landed_off_target"] == ["b/four/g"]
+    pairs = summary["paired_v3_no_level"]
+    assert pairs["di_closer_than_no_di"] == {"closer": 2, "of": 2, "median_change": -.633}
+    assert pairs["no_di_closer_than_template"] == {"closer": 1, "of": 3,
+                                                   "median_change": 0.0}
+
+
+def test_a_fallback_to_the_template_is_not_counted_as_a_trim():
+    trimmed = {"match": 1, "applied": True, "before": 0.0, "after": -6.0, "clamped": False}
+    results = [{"part": "a/one/g", "template": _arm(0.0, 1.0),
+                "no_di": _arm(0.0, 1.0, fallback=True, check=_check(trim=trimmed))}]
+    summary = P.summarise(results)
+    assert summary["level_trim_on_match_1"]["applied"] == 0
+    assert summary["no_di"]["fell_back_to_template"] == 1
+
+
+def test_a_part_directory_name_has_no_separator_or_space():
+    assert P.slug(("telefunken", "Hikikomori - Love Does", "Keys GTR")) == (
+        "telefunken-Hikikomori_-_Love_Does-Keys_GTR")
+
+
+def test_the_output_must_be_under_the_checkouts_runs(tmp_path):
+    done = subprocess.run([sys.executable, str(ROOT / "scripts" / "benchmark_match_pipeline.py"),
+                           "--out-dir", str(tmp_path / "elsewhere")],
+                          capture_output=True, text=True, cwd=ROOT)
+    assert done.returncode != 0
+    assert "must be under this checkout's runs/" in done.stderr
+    assert not (tmp_path / "elsewhere").exists()
+
+
+def test_the_defaults_are_the_shipped_sw50r_template_and_both_arms():
+    args = P.build_parser().parse_args(["--set", "2"])
+    assert (args.template, args.pack, args.amp, args.sets, args.arm) == (
+        "samples/SW50R_Atlas_Topology.xml", "morgan", "sw50r", [2], None)
+
+
+def test_the_committed_summary_is_what_its_parts_summarise_to():
+    committed = json.loads((ROOT / "docs" / "match-pipeline-set2-sw50r.json").read_text())
+    assert P.summarise(committed["parts"]) == committed["summary"]
+
+
+def test_a_finished_stage_is_not_run_again_and_a_failure_is_kept_until_it_passes(
+        tmp_path, monkeypatch):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    monkeypatch.setattr(P, "score", lambda reference, wav: {
+        "lufs": -18.0, "vs_reference_lu": 0.0, "v3": 1.0, "v3_no_level": 1.0})
+    calls = []
+    broken = {"no_di"}
+
+    def match(self, crop, out, arm):
+        calls.append(arm)
+        if arm in broken:
+            raise RuntimeError("match_preset.py exit 2")
+        return {"caveats": [], "search": {}}, False
+
+    monkeypatch.setattr(P.Runner, "match", match)
+    monkeypatch.setattr(P.Runner, "render", lambda self, *a: calls.append("render"))
+    runner = P.Runner(P.build_parser().parse_args([]), tmp_path, "abc123")
+    monkeypatch.setattr(runner, "log", lambda message: None)
+
+    first = runner.part(("s", "song", "g"), ["no_di", "di"], None, None)
+    assert first["errors"] == {"no_di": "RuntimeError: match_preset.py exit 2"}
+    assert "di" not in first and first["template"]["measured_commit"] == "abc123"
+    calls.clear()
+    second = runner.part(("s", "song", "g"), ["di"], None, None)
+    assert second["errors"] == {"no_di": "RuntimeError: match_preset.py exit 2"}
+    assert second["di"]["measured_commit"] == "abc123" and calls == ["di", "render"]
+    broken.clear()
+    calls.clear()
+    third = runner.part(("s", "song", "g"), ["no_di", "di"], None, None)
+    assert "errors" not in third and calls == ["no_di", "render"]
+
+
+def test_a_quieter_copy_differs_from_its_source_only_in_level(tmp_path):
+    for module in ("numpy", "scipy", "soundfile", "pyloudnorm"):
+        pytest.importorskip(module, reason="needs the analysis extra")
+    import soundfile as sf
+    from analysis import io
+    from analysis.probes import synthetic_guitar
+
+    signal = synthetic_guitar(seconds=6.0, seed=13, target_lufs=-20)
+    samples = getattr(signal, "samples", signal)
+    sf.write(tmp_path / "loud.wav", samples, io.SAMPLE_RATE, subtype="FLOAT")
+    sf.write(tmp_path / "quiet.wav", samples * 10 ** (-12 / 20), io.SAMPLE_RATE,
+             subtype="FLOAT")
+    row = P.score(tmp_path / "loud.wav", tmp_path / "quiet.wav")
+    assert row["vs_reference_lu"] == pytest.approx(-12, abs=.05)
+    assert row["v3_no_level"] == pytest.approx(0, abs=1e-6)
+    assert row["v3"] > 0.1
