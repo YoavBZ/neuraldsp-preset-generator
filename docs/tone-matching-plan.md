@@ -2484,24 +2484,36 @@ Paired by part, 43 each: the same-take DI ended closer than another session's on
 `level` left out). Against neutral settings: the same-take DI closer on 43;
 another session's on 27 (p = 0.37, 27 with `level` left out too); and no DI on
 5 — a median 41% further — and with `level` left out on 14 (23% further,
-p = 0.02). That is the first set's result on new bands: on Tone King a search
-without a DI ends further from the recording than the settings it started from,
-and a DI of another performance is no better than not searching.
+p = 0.02). That is the first set's result on new bands — there, rescored the same
+way, without `harmonic` or `level`, no DI was closer than neutral on 4 of 14 (20%
+further, p = 0.029): on Tone King a search without a DI ends further from the
+recording than the settings it started from, and a DI of another performance
+was not shown to be better than not searching. "Another session's DI" here is not
+the same DI as in the SW50R run: 26 of the 28 rerun parts drew another (below),
+only 17 of the 43 pairings match SW50R's, and 9 are the same band's against 16
+there; on Tone King the same band's did no better (1.26 against 1.19).
 
 **The run, and a silent plugin.** The first run (`-run1.json`) went silent part
-way: 2.2 hours in, all three workers' Tone King instances began rendering
-silence. Three parts lost one arm each ("the answer produced no comparable
-objective") and the 25 after them failed at their neutral start ("a silent
-render"), within minutes. A fresh process rendered one of those parts normally,
-so the 28 were run again in three batches of 9 or 10 parts with new processes
-(`-rerun0` to `-rerun2`, 78 to 103 minutes each), with no failure. The figures
-above take each part from the run in which it completed: 15 from the first, 28
-from the batches. Within a batch, "another session's DI" is drawn from that
-batch's parts, so those 28 pairings differ from what a single run would have
-used, and so do their random numbers. `renderer_au.py` recovers a Tone King
-instance that is silent on its first render, not one that goes silent after
-hours of renders; until it does, keep a Tone King run under about two hours or
-split it, as here.
+way, between about 2.2 and 2.45 hours in, on all three workers. Before anything
+failed, three parts each had one arm "complete" with an answer whose loudness
+was unmeasurable — no `level` dimension — scoring 2.51, 2.41 and 2.39 where the
+reruns found 1.20, 1.35 and 0.29 for the same arms; each of those parts then lost
+another arm ("the answer produced no comparable objective"), and the 25 parts
+after them failed at their neutral start within four minutes ("the seed vector
+produced nothing to compare against: a silent render, or no dimension the loss
+profile weights"). So a run's failure count undercounts the damage: an answer
+with no `level` dimension is the sign to look for. All 28 parts with any failed
+arm were run again whole, in three batches of 9 or 10 parts with new processes
+(`-rerun0` to `-rerun2`, 78 to 103 minutes each), and none failed or lost its
+`level` dimension. The figures above take each part, all three arms, from the run
+in which it completed: 15 from the first, 28 from the batches. Within a batch,
+"another session's DI" is drawn from that batch's parts, so 26 of the 28 drew a
+different one than a single run would have, and their random numbers differ too.
+`renderer_au.py` recovers a Tone King instance that is silent on its first
+render, not one that goes silent later. Why it did is not known — the first set's
+Tone King run lasted 173 minutes and about 6,300 renders per instance without it,
+this one went silent after about 5,000 — so splitting a long Tone King run, as
+here, is a precaution from one occurrence, not a measured limit.
 
 ```bash
 .venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack toneking \
@@ -2512,8 +2524,8 @@ split it, as here.
 
 The batches add a `--part` for each of their parts (`-rerunN.json` lists them under
 `parts`). All four ran from 407aee4 in a separate checkout; the first took 153
-minutes beside the SW50R no-DI runs, and the JSONs were written outside the
-checkout and copied here.
+minutes beside the neutral-start SW50R no-DI run, and the JSONs were written
+outside the checkout and copied here.
 
 ---
 

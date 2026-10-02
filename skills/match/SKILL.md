@@ -136,41 +136,42 @@ workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
 Use the user's own DI as `--probe-di` when available, and ask for one before
-matching without it — of this part if they can, which is the nearest a player can
-get to the recorded take (a guess, not a measurement); otherwise of anything they
-play. Against real amp recordings (14 parts on each of SW50R and Tone King's
-rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of the very
-take the amp recorded ended about half as far as one through the DI of another
-session (13 and 14 of 14 closer), and the other session's DI still beat no DI on
-11 and 13 of 14. Half of those other DIs were another excerpt of the same player
-and rig, and they did no better than the rest. On 43 more parts from 13 other
-bands the same held on SW50R (43 and 39 of 43) and on Tone King (43 and 35 of
-43); on SW50R another song by the same band ended closer than another band's DI,
-though that was not designed to be shown. A user's own DI of the part is a different performance from the
-recording, so it lies somewhere between the first two; it was not measured.
+matching without it — of this part if they can, which is the nearest a player
+can get to the recorded take (a guess, not a measurement); otherwise of anything
+they play. Against real amp recordings (14 parts on each of SW50R and Tone
+King's rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of
+the very take the amp recorded ended about half as far as one through the DI of
+another session (13 and 14 of 14 closer), and the other session's DI still beat
+no DI on 11 and 13 of 14. Half of those other DIs were another excerpt of the
+same player and rig, and they did no better than the rest. On 43 more parts from
+13 other bands the same held on SW50R (43 and 39 of 43) and on Tone King (43 and
+35 of 43, with different pairings); on SW50R another song by the same band ended
+closer than another band's DI, though that was not designed to be shown. A
+user's own DI of the part is a different performance from the recording, so it
+lies somewhere between the first two; it was not measured.
 
 Without a DI, omit the flag; the tool uses a six-second sequence of decaying
 white-noise bursts and records that limitation. Do not substitute another probe:
 on SW50R neither turning it down to a guitar's loudness nor replacing it with a
-synthetic strummed guitar helped reliably. Every candidate is then noise
-through the amp compared with a guitar, so a no-DI run's own scores are
+synthetic strummed guitar helped reliably. Every candidate is then noise through
+the amp compared with a guitar, so a no-DI run's own scores are
 noise-against-guitar distances and a falling score is not evidence the tone got
 closer. Against real amp recordings a no-DI search was no better than its
 starting settings on SW50R and ended further from the recording than them on
-Tone King on all 14 parts, and on 12 of 14 with loudness set aside (on 43 more,
-on 38 and 29); on 43 more SW50R recordings the shipped no-DI match ended further from the recording than
-the unsearched template on 28, with loudness set aside, while a match through
-the same take's DI (a reamp, the best case) was closer on all 43 — so without a
-DI, show the starting preset beside the searched one and do not present the
-search as an improvement. Tell the user a match made without a DI is at best a
-starting point, not a measured match, and that a DI of their playing would
-change that. Without a DI the tool sets each passing candidate's output gain
-through a synthetic guitar rather than the noise probe
+Tone King on all 14 parts and on 38 of 43 more, and still on most with loudness
+set aside; on 43 more SW50R recordings the shipped no-DI match ended further
+from the recording than the unsearched template on 28, with loudness set aside,
+while a match through the same take's DI (a reamp, the best case) was closer on
+all 43 — so without a DI, show the starting preset beside the searched one and
+do not present the search as an improvement. Tell the user a match made without
+a DI is at best a starting point, not a measured match, and that a DI of their
+playing would change that. Without a DI the tool sets each passing candidate's
+output gain through a synthetic guitar rather than the noise probe
 (`search.guitar_check.level_trim` in `summary.json`); on 43 SW50R recordings
-that brought answers from a median of 13 LU over their recordings to 4 over
-(3 under to 11 over), so tell the user to expect it a little loud and to trim it
-by ear, and report the caveat that names
-any candidate whose level was left as the search set it.
+that brought answers from a median of 13 LU over their recordings to 4 over (3
+under to 11 over), so tell the user to expect it a little loud and to trim it by
+ear, and report the caveat that names any candidate whose level was left as the
+search set it.
 
 A no-DI match can also leave the guitar all but silent: from the shipped SW50R
 template, three of six held-out parts matched without a DI turned the preamp
