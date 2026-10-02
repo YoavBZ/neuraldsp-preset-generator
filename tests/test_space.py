@@ -687,3 +687,20 @@ def test_encode_and_decode_ask_for_the_extra_before_using_it():
     )
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout
+
+
+def test_a_controls_measured_step_is_the_searchs_grid():
+    """Tone King rounds a cab level to 0.1 dB and a reverb cut to 1 Hz when it
+    applies them; a search that wrote anything finer read back a different state,
+    which the listening renderer refuses."""
+    from match import invert
+
+    pack = load_pack("toneking")
+    stepped = {spec.path: spec.step for spec in pack.parameters.values() if spec.step}
+    assert stepped["cab1Level"] == 0.1 and stepped["reverbHPF"] == 1
+    for path, step in stepped.items():
+        assert step > 0, path
+    space = S.build("toneking", amp=invert.resolve_signal_path("toneking", "rhythm"))
+    by_path = {dimension.path: dimension for dimension in space.dimensions}
+    assert by_path["cab1Level"].quantise(-12.720171566758928) == -12.7
+    assert by_path["reverbHPF"].quantise(123.456) == 123

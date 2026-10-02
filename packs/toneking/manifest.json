@@ -240,6 +240,8 @@
     "/cab1Level": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 0.1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 0.1",
       "min": -48.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -285,6 +287,8 @@
     "/cab1RoomIRLevel": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 0.1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 0.1",
       "min": -60.0,
       "max": 12.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -312,6 +316,8 @@
     "/cab2Level": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 0.1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 0.1",
       "min": -48.0,
       "max": 24.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -357,6 +363,8 @@
     "/cab2RoomIRLevel": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 0.1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 0.1",
       "min": -60.0,
       "max": 12.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -1202,6 +1210,8 @@
     "/reverbHPF": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 1",
       "min": 50.0,
       "max": 700.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -1210,6 +1220,8 @@
     "/reverbLPF": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 1",
       "min": 1000.0,
       "max": 10000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -1475,6 +1487,8 @@
     "/wahAtt": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 1",
       "min": 10.0,
       "max": 1000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -1498,6 +1512,8 @@
     "/wahRel": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 1",
       "min": 10.0,
       "max": 1000.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
@@ -1510,6 +1526,8 @@
     "/wahSens": {
       "kind": "metered",
       "note": "unit unknown",
+      "step": 1,
+      "step_source": "scripts/probe_state.py --values: the plugin keeps a written value rounded to 1",
       "min": 0.0,
       "max": 100.0,
       "range_source": "docs/measuring-against-the-plugin.md (scripts/probe_state.py: written to the plugin, control observed)",
