@@ -1,6 +1,6 @@
 {
  "schema": "match-pipeline-benchmark-1",
- "source_commit": "3204012848695fe6556f9ffd152ec0720730fde7",
+ "source_commit": "ba9ea33e7a219acce48d57710568fca5eb647376",
  "command": "scripts/benchmark_match_pipeline.py --set 2 --out-dir runs/match-pipeline-set2 --json docs/match-pipeline-set2-sw50r.json",
  "template": "samples/SW50R_Atlas_Topology.xml",
  "pack": "morgan",

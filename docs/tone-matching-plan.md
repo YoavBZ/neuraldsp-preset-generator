@@ -2383,9 +2383,10 @@ another performance lies somewhere between it and no DI.
   --json docs/match-pipeline-set2-sw50r.json
 ```
 
-It ran from a clean checkout of 407aee4 (each arm's `measured_commit`) through
+It ran from a clean checkout of 407aee4 through
 `~/ndsp-presets/runs/set2-dev/rehearse.py`, this script's uncommitted predecessor
-with the same match, preset, render and scoring steps; this script then wrote
+with the same match, preset, render and scoring steps, which did not record its
+commit: each arm's `measured_commit` was added afterwards from that checkout's; this script then wrote
 the committed JSON from those per-part results without running anything again
 (a finished arm is skipped), so its `source_commit` and `command` are the
 summary's. About 8.4 minutes a part without a DI and 13
