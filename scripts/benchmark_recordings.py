@@ -173,16 +173,21 @@ def part_groups(catalog: dict, parts) -> list:
     return [by_session.get(tuple(part[:2])) or "/".join(part[:2]) for part in parts]
 
 
-def library_probe(index, parts, dis, groups, rate=48000):
-    """A fixed probe of real guitar for one part, never from the part's own band.
+def library_probe(target, pool, dis, groups, exclude=(), rate=48000):
+    """A fixed probe of real guitar for one part, never from its own band.
 
-    Walks the parts after this one in catalog order, alternating between the
-    other source and the part's own (so a probe is not all one recording chain,
-    as a public library would not be), and takes the loudest
-    LIBRARY_CLIP_SECONDS of each DI from a band not yet used and not the part's
-    own, until it has LIBRARY_CLIPS clips. Each clip is set to LIBRARY_LUFS and
-    faded in and out. Returns the samples and the parts the clips came from.
+    The bands other than the part's own (and any in `exclude`) are split into the
+    part's own source and the other source, each put in an order seeded by the
+    part's id, and taken alternately, the other source first, so no probe is one
+    recording chain. From each band one of its DIs, also chosen by that seed,
+    gives its loudest LIBRARY_CLIP_SECONDS (0.25 s hops), set to LIBRARY_LUFS and
+    faded in and out; a DI too short or unmeasurable passes to the band's next.
+    LIBRARY_LUFS is the median of whole development crops, so each clip, the
+    busiest stretch of its DI, plays about 1 LU softer than its own crop's busiest
+    stretch would. Returns the samples and the parts the clips came from.
     """
+    import random
+
     import numpy as np
 
     from analysis import io
@@ -207,29 +212,93 @@ def library_probe(index, parts, dis, groups, rate=48000):
         clip[-len(fade):] *= fade[::-1]
         return clip
 
-    clips, used, sources = [], {groups[index]}, []
-    walk = [(index + step) % len(parts) for step in range(1, len(parts))]
-    queues = [[i for i in walk if parts[i][0] != parts[index][0]],
-              [i for i in walk if parts[i][0] == parts[index][0]]]
-    turn = 0
+    index = pool.index(target)
+    rng = random.Random("/".join(target))
+    members = {}
+    for i, part in enumerate(pool):
+        if groups[i] != groups[index] and groups[i] not in exclude:
+            members.setdefault(groups[i], []).append(i)
+    source_of = {group: pool[items[0]][0] for group, items in members.items()}
+    queues = []
+    for own in (False, True):
+        bands = sorted(g for g in members if (source_of[g] == target[0]) == own)
+        rng.shuffle(bands)
+        queues.append(bands)
+    clips, sources, turn = [], [], 0
     while len(clips) < LIBRARY_CLIPS and any(queues):
         queue = queues[turn % 2] if queues[turn % 2] else queues[(turn + 1) % 2]
         turn += 1
         while queue:
-            other = queue.pop(0)
-            if groups[other] in used:
+            band = queue.pop(0)
+            candidates = members[band][:]
+            first = rng.randrange(len(candidates))
+            for other in candidates[first:] + candidates[:first]:
+                clip = clip_of(other)
+                if clip is not None:
+                    clips.append(clip)
+                    sources.append("/".join(pool[other]))
+                    break
+            else:
                 continue
-            clip = clip_of(other)
-            if clip is None:
-                continue
-            clips.append(clip)
-            used.add(groups[other])
-            sources.append("/".join(parts[other]))
             break
     if len(clips) < LIBRARY_CLIPS:
-        die(f"the library signal needs {LIBRARY_CLIPS} other bands for "
-            f"{'/'.join(parts[index])}")
+        die(f"the library signal needs {LIBRARY_CLIPS} other bands for {'/'.join(target)}")
     return np.concatenate(clips).astype(np.float32), sources
+
+
+def inversion_pairs(outcomes, reference: str, profile: str) -> dict:
+    """Without a search, what a match is: each signal's inversion, paired by part
+    against the neutral start and against the reference signal's inversion, with
+    and without the `level` term (the research plan's E1 gates)."""
+    import statistics
+
+    from analysis.compare import Objectives, scalar
+    from scipy.stats import wilcoxon
+
+    def without_level(dimensions):
+        if not dimensions:
+            return None
+        return scalar(Objectives(values={k: v for k, v in dimensions.items()
+                                         if k != "level"}, profile=profile))
+
+    rows = {}
+    for outcome in outcomes:
+        if not outcome.failed and outcome.inversion_objective is not None:
+            rows.setdefault(outcome.signal, {})[outcome.target_index] = outcome
+
+    def pair(mine, theirs):
+        both = [(a, b) for a, b in zip(mine, theirs) if a is not None and b is not None]
+        if not both:
+            return None
+        diffs = [a - b for a, b in both]
+        result = {"targets": len(both), "closer": sum(a < b for a, b in both),
+                  "median_change_fraction": round(statistics.median(
+                      a / b - 1 for a, b in both if b), 4)}
+        if any(diffs) and len(both) > 1:
+            result["wilcoxon_p"] = float(wilcoxon([a for a, _ in both],
+                                                  [b for _, b in both]).pvalue)
+        return result
+
+    pairs = {}
+    for signal, mine in rows.items():
+        keys = sorted(mine)
+        entry = {
+            "against_neutral": pair([mine[k].inversion_objective for k in keys],
+                                    [mine[k].neutral_objective for k in keys]),
+            "against_neutral_no_level": pair(
+                [without_level(mine[k].inversion_dimensions) for k in keys],
+                [without_level(mine[k].neutral_dimensions) for k in keys])}
+        if signal != reference and reference in rows:
+            theirs = rows[reference]
+            common = [k for k in keys if k in theirs]
+            entry[f"against_{reference}"] = pair(
+                [mine[k].inversion_objective for k in common],
+                [theirs[k].inversion_objective for k in common])
+            entry[f"against_{reference}_no_level"] = pair(
+                [without_level(mine[k].inversion_dimensions) for k in common],
+                [without_level(theirs[k].inversion_dimensions) for k in common])
+        pairs[signal] = entry
+    return pairs
 
 
 def other_di_index(parts, index):
@@ -264,17 +333,27 @@ def main() -> None:
     dis = [load(record["outputs"]["di"]["path"]) for record in records]
     references = [load(record["outputs"]["reference"]["path"]) for record in records]
     noise, _ = probe_di(None, NO_DI_SECONDS)
+    others = [other_di_index(parts, index) for index in range(len(parts))]
+    groups = part_groups(catalog, parts)
     libraries = [None] * len(parts)
     if "library" in args.signal:
-        # Drawn from every development part of the chosen sets, whichever parts
-        # are scored, so `--part` does not shrink the library.
-        pool = development_parts(catalog, None, args.sets)
+        # Drawn from every set-2 development part, whichever parts are scored, so
+        # `--part` does not shrink it; set 1 (one Guitar-TECHS player and rig,
+        # and the bands without a catalog group) stays out, as the research plan
+        # says. The `other` DI's band is left out too, so the two arms do not
+        # share a recording.
+        pool = development_parts(catalog, None, [2])
+        missing = [part for part in parts if part not in pool]
+        if missing:
+            die("--signal library scores set-2 development parts only: "
+                + ", ".join("/".join(part) for part in missing))
         pool_dis = [load(crops_for(CATALOG, data_root, args.crops_dir, *part)
                          ["outputs"]["di"]["path"]) for part in pool]
         pool_groups = part_groups(catalog, pool)
-        libraries = [library_probe(pool.index(part), pool, pool_dis, pool_groups)
-                     for part in parts]
-    others = [other_di_index(parts, index) for index in range(len(parts))]
+        libraries = [library_probe(part, pool, pool_dis, pool_groups,
+                                   exclude=({groups[others[index]]}
+                                            if others[index] is not None else ()))
+                     for index, part in enumerate(parts)]
     if "other" in args.signal and any(other is None for other in others):
         die("--signal other needs parts from at least two sessions")
     recordings = []
@@ -316,12 +395,33 @@ def main() -> None:
 
     reference = args.signal[0]
     summary = signal_benchmark.summarise(outcomes, reference)
+    if args.no_search:
+        for name, entry in inversion_pairs(outcomes, reference, args.loss_profile).items():
+            summary.setdefault(name, {})["inversion_pairs"] = entry
     elapsed = time.time() - started
     caveat = _backend_caveat(metadata)
-    print(f"\n{len(parts)} development parts, budget {args.budget}, {args.pack}/{amp}, "
+    print(f"\n{len(parts)} development parts, "
+          f"{'no search' if args.no_search else f'budget {args.budget}'}, {args.pack}/{amp}, "
           f"{metadata.renderer_id} {metadata.plugin_version}, {args.loss_profile}, "
           f"{elapsed:.0f}s; answers heard through each part's own DI\n")
     for name, entry in summary.items():
+        if args.no_search:
+            pairs = entry.get("inversion_pairs") or {}
+
+            def said(key):
+                found = pairs.get(key)
+                return "n/a" if not found else (
+                    f"{found['closer']}/{found['targets']}, "
+                    f"{100 * found['median_change_fraction']:+.0f}%"
+                    + (f", p={found['wilcoxon_p']:.2g}" if "wilcoxon_p" in found else ""))
+
+            print(f"{name:8} inversion {entry.get('inversion_objective_mean')} / "
+                  f"{entry.get('inversion_objective_median')} | closer than neutral "
+                  f"{said('against_neutral')} (no level {said('against_neutral_no_level')})"
+                  + ("" if name == reference else
+                     f" | closer than {reference} {said(f'against_{reference}')} "
+                     f"(no level {said(f'against_{reference}_no_level')})"))
+            continue
         versus = ""
         if "closer_than_reference" in entry:
             versus = (f" | closer than {reference} on {entry['closer_than_reference']}"
@@ -355,8 +455,12 @@ def main() -> None:
                        "crops": {role: output["sha256"] for role, output
                                  in record["outputs"].items()},
                        "excerpt_start_s": record["excerpt_start_s"],
+                       "group": groups[index],
                        "library_from": (libraries[index][1]
-                                        if libraries[index] else None)}
+                                        if libraries[index] else None),
+                       "library_sha256": (hashlib.sha256(
+                           libraries[index][0].tobytes()).hexdigest()
+                           if libraries[index] else None)}
                       for index, ((source, song, part), record)
                       in enumerate(zip(parts, records))],
             "backend": metadata.as_dict(), "measurement_caveat": caveat or None,

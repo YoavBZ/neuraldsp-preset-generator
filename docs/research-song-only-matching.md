@@ -207,7 +207,7 @@ The plan has two parts:
   - add per-band and same-band/other-band breakdowns to the summary.
 
   Add a numpy probe builder: 4 × 1.5 s guitar-active clips, 50 ms fades, −22.9 LUFS (provisional: E1 checks it). It builds two libraries:
-  - **L1:** for each part, DIs from three *other* set-2 bands. Local only.
+  - **L1:** for each part, the loudest 1.5 s of DIs from four *other* set-2 bands, alternating the part's own source and the other, chosen per part by a seed and never the band of its `other` DI (`benchmark_recordings.py --signal library`). Local only. Telefunken clips share one room, so L1 is not a stand-in for a public library (L2).
   - **L2:** Guitar-TECHS P1/P2 clips (CC BY 4.0), pinned by SHA-256.
 - **R1, prior check.** Fit the factory-preset prior and compute the Mahalanobis distance of every stored no-DI answer (the `runs/start-*` folders and the `match-pipeline-set2-sw50r*.json` answers). Correlate it with each answer's change in score against its own start.
   - **Pass:** Spearman ≥0.3, or answers outside the 90% region at least 1.5× as likely to have got worse.
