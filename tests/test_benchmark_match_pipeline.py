@@ -88,8 +88,28 @@ def test_the_output_must_be_under_the_checkouts_runs(tmp_path):
 
 def test_the_defaults_are_the_shipped_sw50r_template_and_both_arms():
     args = P.build_parser().parse_args(["--set", "2"])
-    assert (args.template, args.pack, args.amp, args.sets, args.arm) == (
-        "samples/SW50R_Atlas_Topology.xml", "morgan", "sw50r", [2], None)
+    assert (args.template, args.pack, args.amp, args.sets, args.arm,
+            args.process_policy) == (
+        "samples/SW50R_Atlas_Topology.xml", "morgan", "sw50r", [2], None, "reuse")
+
+
+def test_the_searches_render_with_the_process_policy_asked_for(tmp_path, monkeypatch):
+    argvs = []
+
+    def run(self, argv, log):
+        argvs.append(argv)
+        if argv[1].endswith("match_preset.py"):
+            (tmp_path / "no_di").mkdir()
+            (tmp_path / "no_di" / "summary.json").write_text('{"caveats": []}')
+
+    monkeypatch.setattr(P.Runner, "run", run)
+    args = P.build_parser().parse_args(["--amp", "ac20", "--process-policy", "fresh"])
+    crop = {"outputs": {"reference": {"path": "ref.wav"}, "di": {"path": "di.wav"}}}
+    P.Runner(args, tmp_path, "abc123").match(crop, tmp_path, "no_di")
+    match = argvs[0]
+    assert match[1].endswith("match_preset.py")
+    assert match[match.index("--process-policy") + 1] == "fresh"
+    assert match[match.index("--amp") + 1] == "ac20"
 
 
 def test_the_committed_summary_is_what_its_parts_summarise_to():
@@ -150,3 +170,23 @@ def test_a_quieter_copy_differs_from_its_source_only_in_level(tmp_path):
     assert row["vs_reference_lu"] == pytest.approx(-12, abs=.05)
     assert row["v3_no_level"] == pytest.approx(0, abs=1e-6)
     assert row["v3"] > 0.1
+
+
+def test_a_finished_arm_from_another_process_policy_is_refused_not_reused(
+        tmp_path, monkeypatch):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    out = tmp_path / "s-song-g"
+    out.mkdir()
+    (out / "result.json").write_text(json.dumps({
+        "part": "s/song/g", "template": {"lufs": -18.0},
+        "no_di": {"v3_no_level": 1.0}}))   # written before the policy was recorded
+    args = P.build_parser().parse_args(["--process-policy", "fresh"])
+    runner = P.Runner(args, tmp_path, "abc123")
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    result = runner.part(("s", "song", "g"), ["no_di"], None, None)
+    assert "searched with --process-policy reuse" in result["errors"]["no_di"]
