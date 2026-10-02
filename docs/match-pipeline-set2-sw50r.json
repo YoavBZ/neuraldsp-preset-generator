@@ -1,6 +1,6 @@
 {
  "schema": "match-pipeline-benchmark-1",
- "source_commit": "fb80f8d3edae0e08cb6b865511a35a5a110e54fd",
+ "source_commit": "3204012848695fe6556f9ffd152ec0720730fde7",
  "command": "scripts/benchmark_match_pipeline.py --set 2 --out-dir runs/match-pipeline-set2 --json docs/match-pipeline-set2-sw50r.json",
  "template": "samples/SW50R_Atlas_Topology.xml",
  "pack": "morgan",
@@ -8,6 +8,11 @@
  "budget": "300",
  "seed": "0",
  "loss_profile": "unpaired-v3",
+ "process_policy": {
+  "search": "reuse",
+  "scoring_renders": "fresh"
+ },
+ "measurement_caveat": "each search ran in one reused plugin process, which the Swift backend reports as reproducible=False (identical states can render slightly differently); the template and every answer were then rendered through the DI in a fresh process each. `measured_commit` on each arm is the checkout that ran it; `source_commit` is the one that wrote this summary",
  "summary": {
   "parts": 43,
   "failed": [],
@@ -91,6 +96,11 @@
     "median": -9.75,
     "max": 4.0
    },
+   "landed_off_target": [
+    "cambridge/It Was My Fault For Waiting/ElecGtr3",
+    "cambridge/Quicksand/ElecGtr1",
+    "telefunken/Measurements/GTR"
+   ],
    "vs_reference_lu_before_trim": {
     "n": 43,
     "min": -7.01,
@@ -127,7 +137,8 @@
     "v3": 2.1177705346151923,
     "v3_no_level": 2.2831208399795497,
     "v2": 1.8197920439630944,
-    "v2_no_level": 1.9369523946563396
+    "v2_no_level": 1.9369523946563396,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -20.58,
@@ -221,7 +232,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -16.16,
@@ -232,7 +244,8 @@
     "v2_no_level": 0.5125120964480312,
     "fallback_to_template": false,
     "minutes": 11.5,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "e69bd45134ea39f66482e730543feb78eddb85ea64a4169b61beae6972290507",
@@ -252,7 +265,8 @@
     "v3": 0.7347856019241626,
     "v3_no_level": 0.7925318336550177,
     "v2": 0.6576233719035192,
-    "v2_no_level": 0.7002944613754878
+    "v2_no_level": 0.7002944613754878,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -17.89,
@@ -346,7 +360,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.71,
@@ -357,7 +372,8 @@
     "v2_no_level": 0.33331035523077485,
     "fallback_to_template": false,
     "minutes": 12.5,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400",
@@ -377,7 +393,8 @@
     "v3": 1.567401574096943,
     "v3_no_level": 1.6521964352098595,
     "v2": 1.34048274405581,
-    "v2_no_level": 1.3957316186681457
+    "v2_no_level": 1.3957316186681457,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -20.34,
@@ -471,7 +488,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.27,
@@ -482,7 +500,8 @@
     "v2_no_level": 0.5064194800538802,
     "fallback_to_template": false,
     "minutes": 11.7,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "d6b6c584693c45e1d38c22770c9f71a9c84245a675fe5ad925397b01a8048dc2",
@@ -502,7 +521,8 @@
     "v3": 1.7626532799608818,
     "v3_no_level": 1.8412838020630566,
     "v2": 1.7626532799608818,
-    "v2_no_level": 1.8412838020630566
+    "v2_no_level": 1.8412838020630566,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -15.41,
@@ -596,7 +616,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -19.6,
@@ -607,7 +628,8 @@
     "v2_no_level": 0.45959881259311297,
     "fallback_to_template": false,
     "minutes": 12.1,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "3920ba8856c6769961ce758ce0dc7207b864cfdfa74adb5b752f6885a8515629",
@@ -627,7 +649,8 @@
     "v3": 1.4802209971964422,
     "v3_no_level": 1.544448970659319,
     "v2": 1.4802209971964422,
-    "v2_no_level": 1.544448970659319
+    "v2_no_level": 1.544448970659319,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -12.76,
@@ -721,7 +744,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -19.63,
@@ -732,7 +756,8 @@
     "v2_no_level": 0.470494736719356,
     "fallback_to_template": false,
     "minutes": 12.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "5de10fe27c6f417265098aa67c22ee8460354fe708265928f9d4f7cb0b829d66",
@@ -752,7 +777,8 @@
     "v3": 1.0363775940732762,
     "v3_no_level": 0.906881088342219,
     "v2": 0.9141618669092149,
-    "v2_no_level": 0.7992159017076418
+    "v2_no_level": 0.7992159017076418,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -30.07,
@@ -846,7 +872,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -27.5,
@@ -857,7 +884,8 @@
     "v2_no_level": 0.5081533366006034,
     "fallback_to_template": false,
     "minutes": 12.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4",
@@ -877,7 +905,8 @@
     "v3": 1.1071974364535295,
     "v3_no_level": 0.9011867077524923,
     "v2": 1.2331253263726523,
-    "v2_no_level": 1.071155238962173
+    "v2_no_level": 1.071155238962173,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -28.86,
@@ -971,7 +1000,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -30.24,
@@ -982,7 +1012,8 @@
     "v2_no_level": 0.6794119672800742,
     "fallback_to_template": false,
     "minutes": 12.0,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "8220506429afe96e775b637e2aedcebb672dfabc26a15f686f72b1b394bf0000",
@@ -1002,7 +1033,8 @@
     "v3": 2.7434343357911466,
     "v3_no_level": 2.9468633623009737,
     "v2": 2.4069227808199547,
-    "v2_no_level": 2.5530264404386473
+    "v2_no_level": 2.5530264404386473,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -17.9,
@@ -1096,7 +1128,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -19.16,
@@ -1107,7 +1140,8 @@
     "v2_no_level": 0.5292056055358852,
     "fallback_to_template": false,
     "minutes": 12.9,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c",
@@ -1127,7 +1161,8 @@
     "v3": 1.7642239549542549,
     "v3_no_level": 1.9008732145559064,
     "v2": 1.5670516328640358,
-    "v2_no_level": 1.6670767393551686
+    "v2_no_level": 1.6670767393551686,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -19.65,
@@ -1221,7 +1256,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -20.69,
@@ -1232,7 +1268,8 @@
     "v2_no_level": 0.5038613181762095,
     "fallback_to_template": false,
     "minutes": 12.9,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "146bae7fb6d8427ef292ab131e36c77338608809cdefeef14a4981ca61afdf1b",
@@ -1252,7 +1289,8 @@
     "v3": 1.9332040029336086,
     "v3_no_level": 1.7224758603907808,
     "v2": 1.9332040029336086,
-    "v2_no_level": 1.7224758603907808
+    "v2_no_level": 1.7224758603907808,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -26.65,
@@ -1346,7 +1384,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -31.6,
@@ -1357,7 +1396,8 @@
     "v2_no_level": 0.535350742645718,
     "fallback_to_template": false,
     "minutes": 11.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "246491edfcac92937413d6539d14a8ff15cfd900a8f75f98fc998ae24dec35bb",
@@ -1377,7 +1417,8 @@
     "v3": 1.2747374067964672,
     "v3_no_level": 1.3280061494382938,
     "v2": 2.988755067208509,
-    "v2_no_level": 3.1445434411568898
+    "v2_no_level": 3.1445434411568898,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -21.16,
@@ -1471,7 +1512,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -21.87,
@@ -1482,7 +1524,8 @@
     "v2_no_level": 3.209909098380116,
     "fallback_to_template": false,
     "minutes": 12.5,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "2538e174f2eab9a739624d13c9754ac5c2a50956ba1c2218c5c5d1a8a499b74c",
@@ -1502,7 +1545,8 @@
     "v3": 1.0500895224665834,
     "v3_no_level": 0.9593071163455241,
     "v2": 0.9180085031963405,
-    "v2_no_level": 0.8344003621004494
+    "v2_no_level": 0.8344003621004494,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -21.21,
@@ -1596,7 +1640,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -26.23,
@@ -1607,7 +1652,8 @@
     "v2_no_level": 0.4092214100908605,
     "fallback_to_template": false,
     "minutes": 12.2,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "d1a66b47c0fe9b738d824e5573ded3f1d89d0ab079d9259e4d5f2e587009c1a6",
@@ -1627,7 +1673,8 @@
     "v3": 1.5057545359451139,
     "v3_no_level": 1.5892282362249472,
     "v2": 1.5057545359451139,
-    "v2_no_level": 1.5892282362249472
+    "v2_no_level": 1.5892282362249472,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -18.38,
@@ -1721,7 +1768,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.3,
@@ -1732,7 +1780,8 @@
     "v2_no_level": 0.6445147473452761,
     "fallback_to_template": false,
     "minutes": 11.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "703d871f3c893c5b1bb3c0e2fe6e2f6eb8b9a874e8d6f73e9476acfa2dad74a5",
@@ -1752,7 +1801,8 @@
     "v3": 1.170856165979455,
     "v3_no_level": 1.0364500738199383,
     "v2": 1.1711345937592836,
-    "v2_no_level": 1.0601216324827152
+    "v2_no_level": 1.0601216324827152,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -26.24,
@@ -1846,7 +1896,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -30.32,
@@ -1857,7 +1908,8 @@
     "v2_no_level": 0.5491317681546584,
     "fallback_to_template": false,
     "minutes": 12.9,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af",
@@ -1877,7 +1929,8 @@
     "v3": 1.7468183321762156,
     "v3_no_level": 1.6365671478743375,
     "v2": 1.471936505132799,
-    "v2_no_level": 1.362932364163199
+    "v2_no_level": 1.362932364163199,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -23.84,
@@ -1971,7 +2024,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -29.66,
@@ -1982,7 +2036,8 @@
     "v2_no_level": 0.7215687227126872,
     "fallback_to_template": false,
     "minutes": 13.2,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "2b428e29c58595a251b28f2e5ebf440d2eac0cb0fedd62b8134221ecb4c55ee7",
@@ -2002,7 +2057,8 @@
     "v3": 1.2656797478392288,
     "v3_no_level": 1.2869176226686416,
     "v2": 1.087924750590057,
-    "v2_no_level": 1.093876364758974
+    "v2_no_level": 1.093876364758974,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -15.29,
@@ -2096,7 +2152,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.36,
@@ -2107,7 +2164,8 @@
     "v2_no_level": 0.6224776440608185,
     "fallback_to_template": false,
     "minutes": 12.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "55951b8dd9528468ea34f75fa1daa90c339192c3f5d8ff470a59383f5b45a1db",
@@ -2127,7 +2185,8 @@
     "v3": 1.015596546785593,
     "v3_no_level": 0.975775221531824,
     "v2": 0.9371823956861361,
-    "v2_no_level": 0.8991725519265362
+    "v2_no_level": 0.8991725519265362,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -19.61,
@@ -2221,7 +2280,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -23.79,
@@ -2232,7 +2292,8 @@
     "v2_no_level": 0.39443204313070707,
     "fallback_to_template": false,
     "minutes": 13.2,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "3b0faca1c51a6e3bd36dd750a2cfd6ea295c5b642cd727c104d9aa8b7adc1ec8",
@@ -2252,7 +2313,8 @@
     "v3": 1.2402475602979115,
     "v3_no_level": 1.3427740846155447,
     "v2": 1.0193906164584206,
-    "v2_no_level": 1.0807287233855112
+    "v2_no_level": 1.0807287233855112,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -10.92,
@@ -2346,7 +2408,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -13.91,
@@ -2357,7 +2420,8 @@
     "v2_no_level": 0.36043693214289857,
     "fallback_to_template": false,
     "minutes": 12.9,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c",
@@ -2377,7 +2441,8 @@
     "v3": 1.1413931943485458,
     "v3_no_level": 1.2217663412707995,
     "v2": 0.9872037466801183,
-    "v2_no_level": 1.0435431214636044
+    "v2_no_level": 1.0435431214636044,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -8.11,
@@ -2471,7 +2536,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.22,
@@ -2482,7 +2548,8 @@
     "v2_no_level": 0.3659118755739799,
     "fallback_to_template": false,
     "minutes": 13.0,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893",
@@ -2502,7 +2569,8 @@
     "v3": 1.264769448694378,
     "v3_no_level": 1.1861986156965656,
     "v2": 1.3778493324326597,
-    "v2_no_level": 1.3203177671565287
+    "v2_no_level": 1.3203177671565287,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -20.06,
@@ -2596,7 +2664,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -22.39,
@@ -2607,7 +2676,8 @@
     "v2_no_level": 0.509190456692697,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce",
@@ -2627,7 +2697,8 @@
     "v3": 3.3749663590456422,
     "v3_no_level": 3.4732531768650348,
     "v2": 2.8416573519527555,
-    "v2_no_level": 2.888069787949674
+    "v2_no_level": 2.888069787949674,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -2.46,
@@ -2721,7 +2792,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -11.33,
@@ -2732,7 +2804,8 @@
     "v2_no_level": 0.5161295367917346,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa",
@@ -2752,7 +2825,8 @@
     "v3": 1.571280201301097,
     "v3_no_level": 1.6317745085833573,
     "v2": 1.571280201301097,
-    "v2_no_level": 1.6317745085833573
+    "v2_no_level": 1.6317745085833573,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -5.42,
@@ -2846,7 +2920,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -14.58,
@@ -2857,7 +2932,8 @@
     "v2_no_level": 0.501807468729433,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "3304bc6a6758dd2de464a051c0ea3170c3b1a184570ee897e84e43b98e8d7593",
@@ -2877,7 +2953,8 @@
     "v3": 1.4528051048475517,
     "v3_no_level": 1.4848686657565688,
     "v2": 1.2410140149239706,
-    "v2_no_level": 1.2536888419842296
+    "v2_no_level": 1.2536888419842296,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -19.56,
@@ -2971,7 +3048,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.51,
@@ -2982,7 +3060,8 @@
     "v2_no_level": 0.45911597427573875,
     "fallback_to_template": false,
     "minutes": 12.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "ab0aea68cf62baa81d9daeb929f62469f58a564f45a8d7721015f052e44e57bf",
@@ -3002,7 +3081,8 @@
     "v3": 1.367529211698775,
     "v3_no_level": 1.4704920442013096,
     "v2": 1.1583086039864041,
-    "v2_no_level": 1.2297200346811694
+    "v2_no_level": 1.2297200346811694,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -10.43,
@@ -3096,7 +3176,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -16.99,
@@ -3107,7 +3188,8 @@
     "v2_no_level": 0.47384561496517275,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "5f70954c5a278613bdddd65aec232f8448ecfe102a24050d6079c1d9551c031d",
@@ -3127,7 +3209,8 @@
     "v3": 1.0090722601586175,
     "v3_no_level": 0.94742007017114,
     "v2": 0.9067670481973465,
-    "v2_no_level": 0.8491648991667388
+    "v2_no_level": 0.8491648991667388,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -8.07,
@@ -3221,7 +3304,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -11.85,
@@ -3232,7 +3316,8 @@
     "v2_no_level": 0.454756144696775,
     "fallback_to_template": false,
     "minutes": 13.2,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "f8bd2c62a8b27efd9a14ceabf838e701073a7d379a4094c9b9f5aeeb874bb019",
@@ -3252,7 +3337,8 @@
     "v3": 1.5452909353938635,
     "v3_no_level": 1.6136033776618002,
     "v2": 1.351120449079423,
-    "v2_no_level": 1.3948891740193854
+    "v2_no_level": 1.3948891740193854,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -4.05,
@@ -3346,7 +3432,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -15.33,
@@ -3357,7 +3444,8 @@
     "v2_no_level": 0.6927438545704392,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "12ebe02f987fa851291ece87653dd424e6335d3034e5778ce41cd05d0fb9fd53",
@@ -3377,7 +3465,8 @@
     "v3": 1.3180410851068975,
     "v3_no_level": 1.4107811707732314,
     "v2": 1.379465155582717,
-    "v2_no_level": 1.4600824483381116
+    "v2_no_level": 1.4600824483381116,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -13.71,
@@ -3471,7 +3560,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.65,
@@ -3482,7 +3572,8 @@
     "v2_no_level": 0.8165404395385236,
     "fallback_to_template": false,
     "minutes": 13.3,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "4983760b0de0465e65bfe6e6132be90e3981d57e355a2508653917292ac3aa75",
@@ -3502,7 +3593,8 @@
     "v3": 1.62588595268098,
     "v3_no_level": 1.7205611594715835,
     "v2": 1.380140851259266,
-    "v2_no_level": 1.4423239502544356
+    "v2_no_level": 1.4423239502544356,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -9.21,
@@ -3596,7 +3688,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -15.69,
@@ -3607,7 +3700,8 @@
     "v2_no_level": 0.4062960687866645,
     "fallback_to_template": false,
     "minutes": 13.8,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "0f002c3e8301bf3b2c5cfaf3abaf7260ad45401c393c8fb65186534a661b28f2",
@@ -3627,7 +3721,8 @@
     "v3": 1.358685346450985,
     "v3_no_level": 1.2891078738023785,
     "v2": 1.2596138202332543,
-    "v2_no_level": 1.195675591118032
+    "v2_no_level": 1.195675591118032,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -8.03,
@@ -3721,7 +3816,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -11.82,
@@ -3732,7 +3828,8 @@
     "v2_no_level": 0.5522745902756224,
     "fallback_to_template": false,
     "minutes": 13.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "98b19a38e6613077c0d8516251fc56615985a5f2069b95e1740cc4da6f4a40a5",
@@ -3752,7 +3849,8 @@
     "v3": 1.5678593318544929,
     "v3_no_level": 1.6542692791061633,
     "v2": 1.3761583066390364,
-    "v2_no_level": 1.4350381962024517
+    "v2_no_level": 1.4350381962024517,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -7.8,
@@ -3846,7 +3944,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -16.23,
@@ -3857,7 +3956,8 @@
     "v2_no_level": 0.5906747796409089,
     "fallback_to_template": false,
     "minutes": 13.8,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "4da302485038bb03f8362ea2e0fc842ff1d319e41a3df8a8ff13ca71998bb23d",
@@ -3877,7 +3977,8 @@
     "v3": 1.346536363838352,
     "v3_no_level": 1.425999760983485,
     "v2": 1.159626484752477,
-    "v2_no_level": 1.2130803859319865
+    "v2_no_level": 1.2130803859319865,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -16.57,
@@ -3971,7 +4072,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -19.99,
@@ -3982,7 +4084,8 @@
     "v2_no_level": 0.4865830495597095,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77",
@@ -4002,7 +4105,8 @@
     "v3": 1.0401834619675108,
     "v3_no_level": 1.099934787912314,
     "v2": 0.8984510903458873,
-    "v2_no_level": 0.9385674658032278
+    "v2_no_level": 0.9385674658032278,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -14.97,
@@ -4096,7 +4200,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.42,
@@ -4107,7 +4212,8 @@
     "v2_no_level": 0.47967948601568877,
     "fallback_to_template": false,
     "minutes": 13.5,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021",
@@ -4127,7 +4233,8 @@
     "v3": 1.2749511918643126,
     "v3_no_level": 1.3248157596430743,
     "v2": 1.072172913077909,
-    "v2_no_level": 1.100140711756903
+    "v2_no_level": 1.100140711756903,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -14.77,
@@ -4221,7 +4328,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.09,
@@ -4232,7 +4340,8 @@
     "v2_no_level": 0.5376644801861057,
     "fallback_to_template": false,
     "minutes": 13.5,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "32827faee831bf62afe6c4a443826e8b0cc8d1e110d804a7be549fe219684b0f",
@@ -4252,7 +4361,8 @@
     "v3": 2.231679694419312,
     "v3_no_level": 2.381022828189258,
     "v2": 1.8976762692445126,
-    "v2_no_level": 1.9992638520213284
+    "v2_no_level": 1.9992638520213284,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -22.02,
@@ -4346,7 +4456,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -19.28,
@@ -4357,7 +4468,8 @@
     "v2_no_level": 0.5980625948478541,
     "fallback_to_template": false,
     "minutes": 13.8,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "80ab75206b554796e3b16a484d8b9db4f2c6235ca7af7c2ac2f735e5385b295d",
@@ -4377,7 +4489,8 @@
     "v3": 1.6974240803403067,
     "v3_no_level": 1.7921480889481967,
     "v2": 1.4013708100975577,
-    "v2_no_level": 1.450373933161243
+    "v2_no_level": 1.450373933161243,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -15.07,
@@ -4471,7 +4584,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -22.27,
@@ -4482,7 +4596,8 @@
     "v2_no_level": 0.5822770874571838,
     "fallback_to_template": false,
     "minutes": 13.9,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "e25f5bb972e596bfc816bcdef0137aaefc7b2a3c4dead87fc7dab1603f69c016",
@@ -4502,7 +4617,8 @@
     "v3": 0.9031820975315948,
     "v3_no_level": 0.9360648947051418,
     "v2": 0.7630720355522294,
-    "v2_no_level": 0.7810984726534617
+    "v2_no_level": 0.7810984726534617,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -16.49,
@@ -4596,7 +4712,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -20.13,
@@ -4607,7 +4724,8 @@
     "v2_no_level": 0.32351524000958004,
     "fallback_to_template": false,
     "minutes": 13.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "eddb3a475225a372bc3c4310302ce03b1ff8dc256f0afab0e15b9ad56260e168",
@@ -4627,7 +4745,8 @@
     "v3": 0.9218152700790861,
     "v3_no_level": 1.0159383347304167,
     "v2": 0.8076785778698984,
-    "v2_no_level": 0.8713740149146122
+    "v2_no_level": 0.8713740149146122,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -17.16,
@@ -4721,7 +4840,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.28,
@@ -4732,7 +4852,8 @@
     "v2_no_level": 0.3708710245861972,
     "fallback_to_template": false,
     "minutes": 14.0,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4",
@@ -4752,7 +4873,8 @@
     "v3": 0.7446009686526928,
     "v3_no_level": 0.8033852556515895,
     "v2": 0.64420345892715,
-    "v2_no_level": 0.6862167279876163
+    "v2_no_level": 0.6862167279876163,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -14.54,
@@ -4846,7 +4968,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -17.63,
@@ -4857,7 +4980,8 @@
     "v2_no_level": 0.3371343526340631,
     "fallback_to_template": false,
     "minutes": 13.6,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "c48d223c2ead47194d8b7003492d5e79342efbee204bb51aa15ef779a41539d0",
@@ -4877,7 +5001,8 @@
     "v3": 1.9809563124514737,
     "v3_no_level": 1.87034448878556,
     "v2": 1.717849689247636,
-    "v2_no_level": 1.6098927189071612
+    "v2_no_level": 1.6098927189071612,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -26.29,
@@ -4971,7 +5096,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -29.31,
@@ -4982,7 +5108,8 @@
     "v2_no_level": 0.8474416226244297,
     "fallback_to_template": false,
     "minutes": 13.8,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "5ff37dc0cef3258395350f0f5385b78ce41f8597b2ba3b002eba34674be743be",
@@ -5000,7 +5127,8 @@
     "v3": 1.3874472662838293,
     "v3_no_level": 1.3764562609904474,
     "v2": 1.5060181645584716,
-    "v2_no_level": 1.5046715231166328
+    "v2_no_level": 1.5046715231166328,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -16.71,
@@ -5094,7 +5222,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -25.16,
@@ -5105,7 +5234,8 @@
     "v2_no_level": 0.9618150497644757,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "ecbaa429c72e6689c994b29ff54297bb8b4d5c70ff8297896995535e4c6679c0",
@@ -5125,7 +5255,8 @@
     "v3": 1.6381542030539122,
     "v3_no_level": 1.7385347980318528,
     "v2": 1.7333468994225631,
-    "v2_no_level": 1.8224782189501216
+    "v2_no_level": 1.8224782189501216,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -11.27,
@@ -5219,7 +5350,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.74,
@@ -5230,7 +5362,8 @@
     "v2_no_level": 0.7798035403619894,
     "fallback_to_template": false,
     "minutes": 13.7,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "e008508664e6c9b5cd9a286ae9e0fd59b8b6c0a6fa5ecfadec51dbc5066fb352",
@@ -5250,7 +5383,8 @@
     "v3": 1.0271928475317087,
     "v3_no_level": 0.9253922828631593,
     "v2": 1.0021152285518262,
-    "v2_no_level": 0.9163836130225974
+    "v2_no_level": 0.9163836130225974,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -22.84,
@@ -5344,7 +5478,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -24.97,
@@ -5355,7 +5490,8 @@
     "v2_no_level": 0.44976316469327926,
     "fallback_to_template": false,
     "minutes": 13.4,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "a3275fd2e09208b5fdc824f0afcdd6c71dabcf0a7a8a9b8cf25459b95cfc6aef",
@@ -5375,7 +5511,8 @@
     "v3": 1.3665368675924419,
     "v3_no_level": 1.4650943891202033,
     "v2": 1.2685516944517021,
-    "v2_no_level": 1.3370421134337882
+    "v2_no_level": 1.3370421134337882,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "no_di": {
     "lufs": -10.15,
@@ -5469,7 +5606,8 @@
       ],
       "scoring_renders": 3
      }
-    }
+    },
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "di": {
     "lufs": -18.54,
@@ -5480,7 +5618,8 @@
     "v2_no_level": 0.7595198734847549,
     "fallback_to_template": false,
     "minutes": 12.8,
-    "guitar_check": null
+    "guitar_check": null,
+    "measured_commit": "407aee4c98121899df905cbde29790580cb3054d"
    },
    "crops": {
     "di": "f93f76ea81bed5b9223d18f02acfd1e7a384dfb489aa73d050d8ccd05bc5851e",
