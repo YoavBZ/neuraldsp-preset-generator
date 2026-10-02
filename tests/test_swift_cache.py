@@ -13,7 +13,8 @@ import _swift  # noqa: E402
 
 FAKE = """#!/bin/sh
 echo "$@" >> "$FAKE_SWIFTC_LOG"
-if [ "$1" = "--version" ]; then echo "fake swift 1.0"; exit 0; fi
+if [ "$1" = "--version" ]; then echo "fake swift ${FAKE_SWIFTC_VERSION:-1.0}"; exit 0; fi
+if [ -n "$FAKE_SWIFTC_FAIL" ]; then echo "error: broken" >&2; exit 1; fi
 while [ $# -gt 0 ]; do
   if [ "$1" = "-o" ]; then shift; printf 'built' > "$1"; fi
   shift
@@ -62,3 +63,34 @@ def test_a_changed_source_is_compiled_again(tmp_path, monkeypatch):
     leftovers = [p for p in (tmp_path / "cache").rglob("*")
                  if p.is_dir() and p.name.startswith("tmp")]
     assert leftovers == []
+
+
+def test_a_failed_build_is_not_cached_and_a_new_compiler_rebuilds(tmp_path, monkeypatch):
+    log = _fake_compiler(tmp_path, monkeypatch)
+    source = tmp_path / "au_probe.swift"
+    source.write_text("print(1)\n")
+    monkeypatch.setenv("FAKE_SWIFTC_FAIL", "1")
+    built, error = _swift.compile_swift(source, tmp_path / "a" / "au_probe")
+    assert built.returncode != 0 and "broken" in error
+    monkeypatch.delenv("FAKE_SWIFTC_FAIL")
+    built, error = _swift.compile_swift(source, tmp_path / "b" / "au_probe")
+    assert error is None and _compiles(log) == 2
+    monkeypatch.setenv("FAKE_SWIFTC_VERSION", "2.0")
+    _swift.compile_swift(source, tmp_path / "c" / "au_probe")
+    assert _compiles(log) == 3
+
+
+def test_an_unusable_cache_falls_back_to_building_in_place(tmp_path, monkeypatch):
+    log = _fake_compiler(tmp_path, monkeypatch)
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("")
+    monkeypatch.setenv("NDSP_SWIFT_CACHE", str(blocker / "cache"))
+    source = tmp_path / "au_render_server.swift"
+    source.write_text("print(1)\n")
+    built, error = _swift.compile_swift(source, tmp_path / "out" / "au_render_server")
+    assert error is None and (tmp_path / "out" / "au_render_server").read_text() == "built"
+    assert _compiles(log) == 1
+    # A missing source goes to the compiler, as it always did, rather than raising
+    # while the cache key is read.
+    built, _ = _swift.compile_swift(tmp_path / "missing.swift", tmp_path / "x" / "bin")
+    assert built is not None
