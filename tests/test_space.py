@@ -690,17 +690,41 @@ def test_encode_and_decode_ask_for_the_extra_before_using_it():
 
 
 def test_a_controls_measured_step_is_the_searchs_grid():
-    """Tone King rounds a cab level to 0.1 dB and a reverb cut to 1 Hz when it
-    applies them; a search that wrote anything finer read back a different state,
-    which the listening renderer refuses."""
+    """Tone King rounds what it is given when it applies a state (a cab level to 0.1
+    dB, an amp knob to 0.01, a reverb cut to 1 Hz); a search that wrote anything
+    finer read back a different state, which the listening renderer refuses."""
     from match import invert
 
     pack = load_pack("toneking")
     stepped = {spec.path: spec.step for spec in pack.parameters.values() if spec.step}
-    assert stepped["cab1Level"] == 0.1 and stepped["reverbHPF"] == 1
-    for path, step in stepped.items():
-        assert step > 0, path
+    continuous = [spec.path for spec in pack.parameters.values()
+                  if spec.kind in ("rotation", "fraction", "metered")]
+    assert sorted(stepped) == sorted(continuous)
     space = S.build("toneking", amp=invert.resolve_signal_path("toneking", "rhythm"))
     by_path = {dimension.path: dimension for dimension in space.dimensions}
     assert by_path["cab1Level"].quantise(-12.720171566758928) == -12.7
     assert by_path["reverbHPF"].quantise(123.456) == 123
+    assert by_path["rhythmAmpTreble"].quantise(0.335) in (0.33, 0.34)
+    assert by_path["outputGain"].quantum == 0.1
+    # A 0.001 grid takes the fraction's 0.005 step as it is.
+    assert by_path["drive1Overdrive"].quantum == 0.005
+    for dimension in space.dimensions:
+        if dimension.continuous:
+            step = stepped[dimension.path]
+            ratio = dimension.quantum / step
+            assert abs(ratio - round(ratio)) < 1e-9, dimension.path
+
+
+def test_a_written_value_is_rounded_to_the_plugins_grid():
+    """Whatever produced the number — an inversion writes 2-decimal EQ gains — the
+    stored value is what the plugin keeps."""
+    pack = load_pack("toneking")
+    spec = next(spec for spec in pack.parameters.values() if spec.key == "eqBand3")
+    assert float(pack.to_stored(spec, 3.37, warnings=[])) == pytest.approx(3.4)
+    spec = next(spec for spec in pack.parameters.values() if spec.key == "rhythmAmpTreble")
+    assert float(pack.to_stored(spec, 0.3337, warnings=[])) == pytest.approx(0.33)
+    # Morgan declares no grid, so it is written as given.
+    morgan = load_pack("morgan")
+    spec = next(spec for spec in morgan.parameters.values()
+                if spec.key == "outputGain")
+    assert float(morgan.to_stored(spec, 3.37, warnings=[])) == pytest.approx(3.37)

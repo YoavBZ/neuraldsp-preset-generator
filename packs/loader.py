@@ -236,6 +236,16 @@ class Pack:
             if match is not None:
                 human = match
 
+        if spec.step and spec.kind in ("rotation", "fraction", "metered"):
+            # The plugin keeps a value rounded to its own grid when it applies a
+            # state, so write that value: the preset then reads back as written,
+            # whichever path produced the number (a search, an inversion, a trim
+            # or a person). A non-numeric value falls through to the error below.
+            try:
+                human = round(round(float(human) / spec.step) * spec.step, 6)
+            except (TypeError, ValueError):
+                pass
+
         try:
             stored = to_binary(spec.kind, human, spec.unit)
             if spec.kind == "switch" and spec.switch_encoding == "numeric":

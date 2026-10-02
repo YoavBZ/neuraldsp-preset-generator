@@ -57,6 +57,21 @@ QUANTA = {
 }
 
 
+def _search_quantum(spec) -> Optional[float]:
+    """The step a search moves a control by: the unit's own quantum where it lands
+    on the plugin's stored grid (`spec.step`), else that grid itself. Tone King
+    keeps a fraction to 0.01 and a level to 0.1 dB, so 0.005 and 0.25 dB steps
+    would write values it rounds on reading; its 0.001 grid takes 0.005 as is."""
+    default = QUANTA.get(spec.unit or spec.kind)
+    if not spec.step:
+        return default
+    if default is not None:
+        ratio = default / spec.step
+        if ratio >= 1 and abs(ratio - round(ratio)) < 1e-9:
+            return default
+    return spec.step
+
+
 class SpaceError(ValueError):
     """A space that cannot be built, or a vector that does not fit it."""
 
@@ -441,7 +456,7 @@ def build(pack_id: str = "morgan", include_needs_review: bool = False,
                 low=spec.min,
                 high=spec.max,
                 members=dict(spec.members) if spec.members else None,
-                quantum=spec.step or QUANTA.get(spec.unit or spec.kind),
+                quantum=_search_quantum(spec),
                 gate=gates.get(path),
                 gate_amp=owner,
                 selector_condition=conditions.get(path),
