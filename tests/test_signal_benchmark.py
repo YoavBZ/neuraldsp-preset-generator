@@ -492,3 +492,43 @@ def test_recordings_are_targets_heard_through_their_own_di(space, topology, monk
             SyntheticRenderer(), space, None, {}, topology, budget=30,
             pack_id="morgan", amp=AMP,
             recordings=[recordings[0], {**recordings[1], "signals": {"same": second_di}}])
+
+
+def test_a_quiet_answer_is_a_result_and_a_dead_plugin_is_a_failure(
+        space, topology, signals, monkeypatch):
+    """No `level` means under the loudness gate. From a live plugin that is a
+    too-quiet answer and stays a result, flagged; when the neutral start that had
+    a level loses it too, the plugin died (as when its licence daemon is killed)
+    and the row fails."""
+    import dataclasses
+
+    target, named = signals
+    real = B.scorer_candidates
+    calls = []
+
+    def quiet_answers(*args, **kwargs):
+        calls.append(1)
+        scored = real(*args, **kwargs)
+        if len(calls) == 1:   # the neutral start keeps its level
+            return scored
+        return [dataclasses.replace(c, objectives={k: v for k, v in c.objectives.items()
+                                                   if k != "level"}) for c in scored]
+
+    monkeypatch.setattr(B, "scorer_candidates", quiet_answers)
+    outcomes = _run(space, topology, target, named, targets=1)
+    assert outcomes and all(o.failed and "plugin went silent" in o.error for o in outcomes)
+
+    calls.clear()
+
+    def only_answers_quiet(scorer, target_fp, values, *args, **kwargs):
+        calls.append(values)
+        scored = real(scorer, target_fp, values, *args, **kwargs)
+        if values == topology["seed"]:
+            return scored
+        return [dataclasses.replace(c, objectives={k: v for k, v in c.objectives.items()
+                                                   if k != "level"}) for c in scored]
+
+    monkeypatch.setattr(B, "scorer_candidates", only_answers_quiet)
+    outcomes = _run(space, topology, target, named, targets=1)
+    assert outcomes and not any(o.failed for o in outcomes)
+    assert all(o.answer_unmeasurable for o in outcomes)

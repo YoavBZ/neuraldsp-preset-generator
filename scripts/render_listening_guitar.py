@@ -31,6 +31,11 @@ def _sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
+# Below this peak (-120 dBFS) a render is silence. The quietest real answer seen,
+# a guitar all but turned off by a no-DI search, peaked at 1.4e-4.
+SILENCE_PEAK = 1e-6
+
+
 def _silent_preroll(di, sample_rate: int, seconds: float):
     """Start the plugin on silence without replaying or shifting the audible DI."""
     import numpy as np
@@ -213,7 +218,8 @@ def main():
         if len(result.audio) != len(render_di):
             raise ValueError("renderer returned the wrong number of frames")
         audible = result.audio[preroll_frames:]
-        if not len(audible) or not bool(audible.any()):
+        # A peak, not "any sample non-zero": one stray denormal is not a guitar.
+        if not len(audible) or float(abs(audible).max()) < SILENCE_PEAK:
             raise ValueError("the preset rendered silence; no listening alternative was written")
         if _sha(source_path) != source_sha or _sha(di_path) != di_sha:
             raise ValueError("the preset/settings or DI changed during rendering")
