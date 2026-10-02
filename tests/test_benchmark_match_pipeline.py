@@ -88,8 +88,28 @@ def test_the_output_must_be_under_the_checkouts_runs(tmp_path):
 
 def test_the_defaults_are_the_shipped_sw50r_template_and_both_arms():
     args = P.build_parser().parse_args(["--set", "2"])
-    assert (args.template, args.pack, args.amp, args.sets, args.arm) == (
-        "samples/SW50R_Atlas_Topology.xml", "morgan", "sw50r", [2], None)
+    assert (args.template, args.pack, args.amp, args.sets, args.arm,
+            args.process_policy) == (
+        "samples/SW50R_Atlas_Topology.xml", "morgan", "sw50r", [2], None, "reuse")
+
+
+def test_the_searches_render_with_the_process_policy_asked_for(tmp_path, monkeypatch):
+    argvs = []
+
+    def run(self, argv, log):
+        argvs.append(argv)
+        if argv[1].endswith("match_preset.py"):
+            (tmp_path / "no_di").mkdir()
+            (tmp_path / "no_di" / "summary.json").write_text('{"caveats": []}')
+
+    monkeypatch.setattr(P.Runner, "run", run)
+    args = P.build_parser().parse_args(["--amp", "ac20", "--process-policy", "fresh"])
+    crop = {"outputs": {"reference": {"path": "ref.wav"}, "di": {"path": "di.wav"}}}
+    P.Runner(args, tmp_path, "abc123").match(crop, tmp_path, "no_di")
+    match = argvs[0]
+    assert match[1].endswith("match_preset.py")
+    assert match[match.index("--process-policy") + 1] == "fresh"
+    assert match[match.index("--amp") + 1] == "ac20"
 
 
 def test_the_committed_summary_is_what_its_parts_summarise_to():

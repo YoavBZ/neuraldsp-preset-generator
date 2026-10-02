@@ -55,6 +55,11 @@ MEASUREMENT_CAVEAT = (
     "template and every answer were then rendered through the DI in a fresh process "
     "each. `measured_commit` on each arm is the checkout that ran it; `source_commit` "
     "is the one that wrote this summary")
+FRESH_CAVEAT = (
+    "each search rendered every candidate in a fresh plugin process, as were the "
+    "template and every answer rendered through the DI. `measured_commit` on each "
+    "arm is the checkout that ran it; `source_commit` is the one that wrote this "
+    "summary")
 ARMS = ("no_di", "di")
 NOTHING_BEAT = "nothing beat the preset you started from"
 
@@ -73,6 +78,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="repeatable (default: both); the template is always rendered")
     ap.add_argument("--budget", default="300")
     ap.add_argument("--seed", default="0")
+    ap.add_argument("--process-policy", choices=("reuse", "fresh"), default="reuse",
+                    help="for the searches; fresh for AC20, or a template with the "
+                         "tremolo or rack reverb on (skills/match/SKILL.md)")
     ap.add_argument("--parallel", type=int, default=1, help="parts at once")
     ap.add_argument("--out-dir", type=pathlib.Path,
                     help="under this checkout's runs/ (default: runs/match-pipeline-PACK-AMP)")
@@ -139,7 +147,7 @@ class Runner:
         argv = [self.python, "scripts/match_preset.py", "--template", a.template,
                 "--reference", crop["outputs"]["reference"]["path"], "--excerpt", "0",
                 "--loss-profile", "unpaired-v3", "--pack", a.pack, "--amp", a.amp,
-                "--renderer", "swift", "--process-policy", "reuse", "--budget",
+                "--renderer", "swift", "--process-policy", a.process_policy, "--budget",
                 a.budget, "--shortlist", "3", "--seed", a.seed, "--out-dir", str(out / arm)]
         argv += (["--reference-mode", "paired_di", "--probe-di",
                   crop["outputs"]["di"]["path"]] if arm == "di"
@@ -320,8 +328,9 @@ def main() -> None:
             "command": " ".join(sys.argv), "template": args.template,
             "pack": args.pack, "amp": args.amp, "budget": args.budget, "seed": args.seed,
             "loss_profile": "unpaired-v3",
-            "process_policy": {"search": "reuse", "scoring_renders": "fresh"},
-            "measurement_caveat": MEASUREMENT_CAVEAT, "summary": summary,
+            "process_policy": {"search": args.process_policy, "scoring_renders": "fresh"},
+            "measurement_caveat": (MEASUREMENT_CAVEAT if args.process_policy == "reuse"
+                                   else FRESH_CAVEAT), "summary": summary,
             # Each arm's caveats stay in its part's result.json; they repeat.
             "parts": [{key: ({k: v for k, v in value.items() if k != "caveats"}
                              if key in ARMS else value)
