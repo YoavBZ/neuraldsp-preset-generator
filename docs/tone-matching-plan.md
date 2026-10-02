@@ -2274,6 +2274,98 @@ excerpt, which by default is the densest window, so on a long reference it leans
 loud; the recordings here were 10 s crops, measured whole. Tone King's output
 control resolves the same way, but no Tone King run was made.
 
+#### The second set on SW50R: the recordings benchmark and the shipped match
+
+The second validation set (`validation-datasets.md`, "The second set") was used
+here for the first time, on its 43 usable development parts — 13 bands, mostly
+rock — and nothing held out was touched. Two runs, side by side overnight.
+
+**The recordings benchmark** is the one above, on the new parts, under
+`unpaired-v3` (the first set's ran under `unpaired-v2`, whose harmonic term was
+since dropped), `--set 2`, three workers. Mean / median:
+
+| searched through | SW50R, second set |
+|---|---:|
+| the part's own DI (same take) | 0.518 / 0.485 |
+| another session's DI | 1.050 / 0.998 |
+| the noise probe (no DI) | 1.472 / 1.359 |
+| *no search:* neutral settings | 1.817 / 1.733 |
+
+Paired by part, 43 each: the same-take DI ended closer than another session's on
+43 (a median 47% closer), and another session's DI closer than no DI on 39 (34
+with `level` left out). Against neutral settings: the same-take DI closer on 43,
+another session's on 39 (34 with `level` left out), and no DI on 33 — but with
+`level` left out on 26 (a median 15% closer, p = 0.28). So the first set's
+ordering holds on new bands and players: the part's own DI, then another
+session's, then none; and what a no-DI search gains over its start is mostly
+loudness, as on the first set (9 of 14). Another session's DI was the same band's
+on 16 parts and another band's on 27; the same band's ended closer to the
+recording (mean 0.93 against 1.12), which fits a player's own rig mattering, but
+the parts differ too and this was not designed to show it.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp sw50r --set 2 --signal same --signal other --signal noise --budget 300 \
+  --loss-profile unpaired-v3 --workers 3 --json docs/recordings-benchmark-set2-sw50r.json
+```
+
+It took 435 minutes from 407aee4 in a separate checkout, which built the 43 crops
+into `~/ndsp-presets/references/validation-crops/` for both runs; the JSON was
+written outside the checkout and copied here.
+
+**The shipped match.** `scripts/benchmark_match_pipeline.py` runs
+`match_preset.py` as a player runs it, from `samples/SW50R_Atlas_Topology.xml`, against each part's amp track
+(its declared 10 s crop, measured whole): once without a DI — the noise-probe
+search, the guitar check and the level trim — and once with the part's own DI as
+a paired reamp, the best case a DI can be. Each answer, and the template itself,
+is rendered through the part's DI in a fresh plugin process and scored against
+the amp track: its loudness gap, and the `unpaired-v3` distance with the level
+term left out. Budget 300, seed 0, the searches in a reused process, Morgan 1.1.1.
+
+| through the part's own DI | loudness vs the recording, LU: median (range) | within ±3 LU | distance, no level: median |
+|---|---|---:|---:|
+| the template, unsearched | +0.8 (−6.7 to +11.7) | 27 of 43 | 1.43 |
+| matched without a DI | +3.7 (−3.2 to +11.3) | 15 of 43 | 1.54 |
+| matched with the DI | 0.0 (−1.4 to +1.2) | 43 of 43 | 0.53 |
+
+**The guitar check never fired.** No shortlisted candidate failed it on any part,
+and no answer was silent through its DI, so it had nothing to catch here; the
+evidence for it is still four of twenty answers from the first set.
+
+**The level trim helps and leaves answers loud.** It moved every `match-1`'s
+output gain, by −14.2 to +4.0 dB, and never reached the control's limit. Before
+it, the answers would have played at a median of +13.2 LU (−7.0 to +22.8,
+derived from the move: the output gain acts after the amp); after it, +3.7, the
+middle half +1.2 to +6.6. The caveat's "2 to 9 LU" came from fifteen in-sample
+answers; out of sample two played more than 9 over and five more than 2 under.
+
+**Without a DI the tone moved away from the recording.** The no-DI answer was
+further from the amp track than the unsearched template on 28 of 43 parts, a
+median 17% further (Wilcoxon p = 0.04 treating the parts as independent, which
+they are not; by band, it was further on most of a band's parts in 9 of 13). No
+match fell back to the template: each search improved its own score, measured
+through the noise probe, and that did not carry over to a guitar. On the first
+set the no-DI search was no better than neutral settings on SW50R (9 of 14 with
+level left out); on these 43 it was somewhat worse than the shipped template.
+This is the objective proxy, not listening, though it agrees with the held-out
+listening test, where no listener preferred a no-DI match.
+
+**With a DI every answer improved**: closer than the template on 43 of 43 (a
+median 59% closer) and closer than the no-DI answer on 43 of 43 (64%), and its
+loudness within 1.4 LU. A same-take reamp is the best case; a player's own DI of
+another performance lies somewhere between it and no DI.
+
+```bash
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --parallel 3 \
+  --json docs/match-pipeline-set2-sw50r.json
+```
+
+It ran from a clean checkout of 407aee4 by this script before it was committed,
+with the same commands; the committed JSON was then summarised by this script
+from those per-part results (a finished arm is not run again), so its
+`source_commit` is the summary's. About 8.4 minutes a part without a DI and 13
+with one, three parts at once beside the recordings benchmark: 5.5 hours.
+
 ---
 
 ## 8. Dependency and CI policy
