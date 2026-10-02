@@ -77,6 +77,9 @@ class SignalOutcome:
     # and scoring its answer. The neutral start's are shared by every arm of a
     # target and counted in none.
     renders: int = 0
+    # The answer played under the loudness gate through its DI, with the plugin
+    # still alive: too quiet, which is a result, not a failure.
+    answer_unmeasurable: bool = False
     failed: bool = False
     error: Optional[str] = None
 
@@ -279,15 +282,21 @@ def compare_search_signals(renderer, space: Space, target_di, signals: Mapping,
                 if outcome.objective is None:
                     outcome.failed = True
                     outcome.error = "the answer produced no comparable objective"
-                elif "level" not in (outcome.objective_dimensions or {}):
-                    # An answer heard through its DI with no measurable loudness
-                    # still scores on the other dimensions, and once counted as a
-                    # finished arm: on 2026-10-02 three Tone King answers rendered
-                    # after the plugin's licence daemon died scored about twice
-                    # their rerun distance this way. A silent answer is a failure.
-                    outcome.failed = True
-                    outcome.error = ("the answer had no measurable loudness through "
-                                     "its DI: a silent render")
+                elif ("level" not in (outcome.objective_dimensions or {})
+                      and "level" in (neutral_dimensions or {})):
+                    # No `level` is an answer under the loudness gate: very quiet,
+                    # or silent because the plugin died (as when its licence daemon
+                    # is killed: three Tone King answers once finished that way at
+                    # 2-8x their rerun distance). Re-hearing the neutral start, which
+                    # had a level, tells them apart: a live plugin still plays it.
+                    _, again, _ = heard(seed)
+                    if "level" not in (again or {}):
+                        outcome.failed = True
+                        outcome.error = ("the plugin went silent: the neutral start "
+                                         "that played before the search no longer "
+                                         "does")
+                    else:
+                        outcome.answer_unmeasurable = True
                 if truth is not None:
                     outcome.parameter_mae, _ = benchmark.parameter_error(
                         space, truth, best.values, only=sampled)

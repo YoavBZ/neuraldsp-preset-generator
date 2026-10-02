@@ -223,4 +223,7 @@ def test_a_plugin_that_goes_silent_mid_match_is_a_failure_set_aside_for_a_rerun(
     assert "no_di" not in result
     part = tmp_path / "s-song-g"
     assert not (part / "no_di").exists()
-    assert (part / "no_di.silent-attempt" / "no_di" / "summary.json").exists()
+    assert (part / "no_di.silent-attempt-1" / "no_di" / "summary.json").exists()
+    # A second dead attempt keeps the first.
+    runner.part(("s", "song", "g"), ["no_di"], None, None)
+    assert (part / "no_di.silent-attempt-2" / "no_di" / "summary.json").exists()

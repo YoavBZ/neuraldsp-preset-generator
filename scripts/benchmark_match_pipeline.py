@@ -213,7 +213,9 @@ class Runner:
                 summary, fallback = self.match(crop, out, arm)
                 search = summary.get("search") or {}
                 check = search.get("guitar_check")
+                # The DI arm has no guitar check, so this covers the no-DI arm.
                 if (check is not None and check.get("template_lufs") is None
+                        and not check.get("template_error")
                         and result["template"].get("lufs") is not None):
                     # The starting preset plays through the DI but was silent in the
                     # match's own guitar check: the plugin went silent mid-match, as
@@ -247,11 +249,15 @@ class Runner:
 
 
 def _set_aside(out: pathlib.Path, arm: str) -> None:
-    """Move an arm's match, preset and render out of the way, keeping them."""
-    aside = out / f"{arm}.silent-attempt"
-    shutil.rmtree(aside, ignore_errors=True)
+    """Move an arm's match, preset, render and logs out of the way, keeping every
+    earlier attempt: each goes to its own numbered folder."""
+    number = 1
+    while (out / f"{arm}.silent-attempt-{number}").exists():
+        number += 1
+    aside = out / f"{arm}.silent-attempt-{number}"
     aside.mkdir()
-    for name in (arm, f"{arm}.xml", f"{arm}.wav", f"{arm}.wav.render.json"):
+    for name in (arm, f"{arm}.xml", f"{arm}.wav", f"{arm}.wav.render.json",
+                 f"{arm}-match.log", f"{arm}-preset.log", f"{arm}-render.log"):
         if (out / name).exists():
             shutil.move(str(out / name), str(aside / name))
 
