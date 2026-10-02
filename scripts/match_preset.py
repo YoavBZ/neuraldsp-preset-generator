@@ -576,8 +576,8 @@ def main() -> None:
                 f"{result.best.reference_score:.3f} against the starting preset's "
                 f"{start.total:.3f}: the score's level term is measured through the "
                 "noise probe, which that trim deliberately does not follow, and "
-                "before the trim the search's answer did beat the starting preset. "
-                "Judge it by ear against the starting preset"))
+                "before the trim the search's best candidate did beat the starting "
+                "preset. Judge it by ear against the starting preset"))
 
     if guitar_check is not None:
         caveats[0:0] = _guitar_check_caveats(guitar_check)
@@ -898,14 +898,21 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
     level through a guitar"). The output gain is a gain after the amp, so the
     loudness gap is the change it needs.
 
-    Each trim is checked twice: once through the synthetic guitar, where a silent
-    render or one without a measurable loudness keeps the candidate as it was and
-    one that lands more than GUITAR_LEVEL_LANDING_DB off is reported; then scored
-    through the evaluator as a trial of its own, so the spec, the summary and the
-    trial store describe the same preset. That score's `level` term is measured
-    through the noise probe, which this trim deliberately does not follow.
+    Each trim is checked twice: once through the synthetic guitar, where one that
+    lands more than GUITAR_LEVEL_LANDING_DB off is reported; then scored through
+    the evaluator as a trial of its own, so the spec, the summary and the trial
+    store describe the same preset. That score's `level` term is measured through
+    the noise probe, which this trim deliberately does not follow.
     `check["level_trim"]` records every step. Failed or unjudged candidates, and
     any the evaluator could not score, are left as they were.
+
+    A trimmed render that is silent or has no measurable loudness keeps the
+    candidate's values, but the candidate fails the guitar check after all and
+    moves behind those that pass, ahead of any the check failed before the trim
+    (each group keeps its order): its gain stages sit at a cliff. The one such
+    answer in 129 development matches played through its own DI at a peak of
+    1.4e-4, although it had passed the check as searched (docs/tone-matching-plan.md,
+    "The no-DI starting point").
     """
     from analysis import io
     from analysis.probes import synthetic_guitar
@@ -958,6 +965,8 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
             continue
         if after is None:
             record["reason"] = "the trimmed candidate had no measurable loudness"
+            row.update(passes=False, failed_by="level_trim",
+                       trim_gap_db=round(gap, 2))
             trimmed.append(candidate)
             continue
         record.update(lufs_after=round(after, 2),
@@ -971,6 +980,18 @@ def _guitar_level_trim(renderer, evaluator, space, shortlist, check,
                       trial_after=scored.trial_id, total_before=round(candidate.total, 4),
                       total_after=round(scored.total, 4))
         trimmed.append(scored)
+    if any(row.get("failed_by") == "level_trim" for row in rows.values()):
+        # Failures go behind the candidates that pass, as `_passing_first` put the
+        # check's own; every match number moves with its candidate.
+        order = ([m for m in sorted(rows) if rows[m]["passes"] is not False]
+                 + [m for m in sorted(rows) if rows[m]["passes"] is False])
+        renumber = {old: new for new, old in enumerate(order, start=1)}
+        trimmed = [trimmed[old - 1] for old in order]
+        for row in check["candidates"]:
+            row["match"] = renumber[row["match"]]
+        for record in records:
+            record["match"] = renumber[record["match"]]
+        records.sort(key=lambda record: record["match"])
     return trimmed
 
 
@@ -982,6 +1003,7 @@ def _guitar_level_caveat(check) -> List[str]:
     if not applied and not kept:
         return []
     caveats = []
+    silenced = [row for row in check["candidates"] if row.get("failed_by") == "level_trim"]
     if applied:
         clamped = [r["match"] for r in applied if r["clamped"]]
         missed = [r for r in applied if not r["clamped"]
@@ -994,9 +1016,11 @@ def _guitar_level_caveat(check) -> List[str]:
               "with a real guitar expect it to play a few dB loud (a median of 4 LU, "
               "3 under to 11 over, on 43 SW50R amp recordings), and on a full mix it "
               "matches the whole mix's loudness, not the guitar's. Their scores are of "
-              "the trimmed presets, with a level term measured through the noise probe; the "
-              "±6 dB figures and the shortlist's order are from before the trim, and "
-              "the trims are the last points of the convergence chart"
+              "the trimmed presets, with a level term measured through the noise "
+              "probe; the ±6 dB figures and the shortlist's order are from before the "
+              "trim" + (", except that a candidate the trim silenced moved to the end"
+                        if silenced else "")
+            + ", and the trims are the last points of the convergence chart"
             + (f". On {', '.join(f'match-{m}' for m in clamped)} the control ran out "
                "of range, so the level is not reached" if clamped else "")
             + ("" if not missed else
@@ -1037,6 +1061,9 @@ def _guitar_check_caveats(check) -> List[str]:
         return caveats
 
     def how(row):
+        if row.get("failed_by") == "level_trim":
+            return (f"lost all measurable loudness when its output gain moved "
+                    f"{row['trim_gap_db']:+.1f} dB to set its level")
         return ("had no measurable loudness" if row["lufs"] is None else
                 f"was {-row['vs_template_db']:.0f} dB under the preset you started from")
     listed = "; ".join(f"match-{row['match']} (the search's choice "

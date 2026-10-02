@@ -2392,6 +2392,80 @@ the committed JSON from those per-part results without running anything again
 summary's. About 8.4 minutes a part without a DI and 13
 with one, three parts at once beside the recordings benchmark: 5.5 hours.
 
+#### The no-DI starting point
+
+On the second set the shipped no-DI match ended further from the recordings than
+the recordings benchmark's bare no-DI search (31 of 43), and the two differed in
+their starting preset, their seed and how the answer is chosen. Two more runs of
+`benchmark_match_pipeline.py`, the no-DI arm only, on the same 43 development
+parts, separate them. "Neutral settings" is the benchmark's own start — every
+sampled control centred, the template's topology, the compressor, reverb, delay
+and gate off — written out with `space.to_spec` as `docs/neutral-sw50r-spec.json`.
+Distances are `unpaired-v3` with `level` left out, through each part's own DI:
+
+| no-DI match from | seed | median distance | ended closer than its own start | after the level trim, LU: median (range) |
+|---|---:|---:|---:|---|
+| `samples/SW50R_Atlas_Topology.xml` (shipped) | 0 | 1.54 | 15 of 43 | +3.7 (−3.2 to +11.3) |
+| `samples/SW50R_Atlas_Topology.xml` (shipped) | 11 | 1.59 | 18 of 43 | +3.4 (−17.9 to +15.5) |
+| neutral settings | 11 | 1.34 | 24 of 43 | +2.6 (−7.8 to +5.5), one unmeasurable |
+
+**The starting preset explains it, not the seed.** From the shipped template the
+two seeds ended alike (seed 11 closer on 24 of 43, p = 0.24); with seed 11, the
+neutral start ended closer than the template on 33 of 43 (a median 22% closer,
+p < 0.001). From neutral settings the shipped pipeline ended where the
+benchmark's bare search did (closer on 21 of 43, p = 0.63): no detectable cost
+from its shortlist, guitar check and choice of `match-1`. The two scripts do not
+score identically — the pipeline scored the same neutral preset a median 4% lower
+than the benchmark did (lower on 37 of 43), so each search's gain over its own
+start is measured against a slightly different baseline. Unsearched, the two starts are
+about equally far from the recordings (neutral closer on 22 of 43): the
+difference is what a search through the noise probe does from each. The template
+has the compressor, reverb, delay and gate on, the amp's bright and treble boost
+on, a ribbon microphone and both microphones loud; which of those matters was not
+measured.
+
+**From either start, no DI does not reliably improve on the start.** From neutral
+settings the search ended closer than where it began on 24 of 43 (a median 4%
+closer, p = 0.31); the benchmark's, against its own score of that start, on 26
+(15%). It played nearer the
+recording's loudness after the trim (within ±3 LU on 24 of 42, against 15 and 17
+of 43), and with seed 11 from the template two answers that passed the guitar
+check played 13 and 18 LU under their recordings: the check catches a guitar that
+all but vanishes, not one that is quiet. The level caveat did flag both — on one
+the output gain ran out of range 8.75 dB short of its target, on the other the
+trim landed 5.1 dB short.
+
+**A gap in the guitar check, closed.** From neutral settings, on Hikikomori GTR,
+the answer set the amp's level to 1.5% and the input gain to −14.25 dB. Through
+the synthetic guitar it played 9.4 dB over the neutral start, which is itself
+quiet there (−36.6 LUFS, both microphones at −17 dB), so it passed; but cutting
+its output gain 1.75 dB to set its level left no measurable loudness, and through
+its own DI it peaked at 1.4e-4. In the 129 no-DI matches of the three runs it is
+the only trimmed render without a measurable loudness and the only answer
+unmeasurable through its DI. `match_preset.py` now fails such a candidate — one
+that loses its loudness when its output gain moves — and moves it behind those
+that pass (ahead of any the check failed before the trim), with a caveat that
+names it. On Hikikomori itself that changes the advice, not the file: the other
+two candidates had already failed the check, so all three now fail, `match-1` is
+the same preset, and the caveat says every candidate failed and to prefer the
+preset you started from. One case, found in sample.
+
+```bash
+.venv/bin/python scripts/apply_spec.py --template samples/SW50R_Atlas_Topology.xml \
+  --spec docs/neutral-sw50r-spec.json --out runs/neutral-sw50r.xml
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 \
+  --template runs/neutral-sw50r.xml --seed 11 --arm no_di --parallel 2 \
+  --out-dir runs/match-pipeline-neutral-s11 \
+  --json docs/match-pipeline-set2-sw50r-neutral-seed11.json
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 \
+  --arm no_di --parallel 2 --out-dir runs/match-pipeline-template-s11 \
+  --json docs/match-pipeline-set2-sw50r-seed11.json
+```
+
+Both ran from a clean checkout of 7ec5046, two parts at once beside the Tone
+King recordings benchmark, about three hours each; their JSONs were written into
+that checkout's `runs/` and copied here.
+
 ---
 
 ## 8. Dependency and CI policy
