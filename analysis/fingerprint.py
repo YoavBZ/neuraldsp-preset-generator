@@ -328,7 +328,7 @@ def fingerprint(audio, regime: str = "probe",
 
     # Everything below this line sees loudness-normalised audio, which is what
     # makes two fingerprints comparable at all.
-    levelled = normalise(audio)
+    levelled = normalise(audio, measured=loudness)
     mono = levelled.mono()
     rate = levelled.sample_rate
 

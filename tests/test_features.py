@@ -455,3 +455,33 @@ def test_dynamics_separate_a_compressed_signal_from_a_dynamic_one():
     dynamic = fx.plucks(seconds=6.0)
     squashed = np.tanh(dynamic * 8.0)
     assert F.dynamics(squashed, SR)["crest_db"] < F.dynamics(dynamic, SR)["crest_db"]
+
+
+def test_the_batched_periodicity_is_the_per_frame_autocorrelation():
+    """One FFT over every frame gives the pitch and score `np.correlate` gives
+    frame by frame, chunk boundaries included, silent frames as zeros."""
+    import numpy as np
+
+    from analysis import features as F
+
+    rate = 48000
+    rng = np.random.default_rng(3)
+    t = np.arange(int(1.7 * rate)) / rate
+    mono = (np.sin(2 * np.pi * 196 * t) * np.exp(-t) + 0.3 * np.sin(2 * np.pi * 330 * t)
+            + 0.05 * rng.standard_normal(len(t)))
+    mono[int(0.6 * rate):int(0.8 * rate)] = 0.0
+    frame, hop = int(0.046 * rate), int(0.023 * rate)
+    low, high = int(rate / 1200.0), int(rate / 60.0)
+    expected_p, expected_s = [], []
+    for start in range(0, len(mono) - frame, hop):
+        window = mono[start:start + frame] - mono[start:start + frame].mean()
+        if (window**2).sum() <= 1e-12:
+            expected_p.append(0.0), expected_s.append(0.0)
+            continue
+        c = np.correlate(window, window, mode="full")[frame - 1:]
+        band = c[low:high]
+        expected_p.append(rate / (int(np.argmax(band)) + low))
+        expected_s.append(band.max() / c[0])
+    pitches, scores = F._frame_periodicity(mono, rate, frame, hop, low, high, chunk=7)
+    np.testing.assert_array_equal(pitches, expected_p)
+    np.testing.assert_allclose(scores, expected_s, rtol=0, atol=1e-12)
