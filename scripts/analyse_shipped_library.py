@@ -6,8 +6,9 @@
     python scripts/analyse_shipped_library.py score --run runs/lib-pr12-shipped \\
       --no-di-run runs/start-pr12-shipped --json lib-pr12.json
 
-The analysis was fixed before the runs' final results were read (recorded in
-`docs/tone-matching-plan.md`, "The real-guitar probe from the shipped presets").
+The analysis was written down before the runs' final results were read
+(`docs/library-arm-analysis-plan.md`); the results are in `docs/tone-matching-plan.md`,
+"The real-guitar probe, from neutral settings and from the shipped presets".
 
 `render-calc` renders, for every part of a `--arm library` run, the shipped preset
 with a match's calculated settings applied and no search (`search.starting_settings`
@@ -24,7 +25,8 @@ the run's library match and `calc-noise` from the no-DI match of `--no-di-run`.
              removed from the start of reference and render
 It reports how many parts the first arm ends closer on, the median change, and
 an exact two-sided sign-flip test over the bands (catalog `group`) of each
-band's median log ratio. An answer with no measurable loudness counts as a loss.
+band's median log ratio. A render with no measurable loudness counts as a loss
+for its arm (a win for the other), whatever its distance.
 The decision rule: the library search is adopted if it is closer than the
 template on a majority of parts under both readings and the corrected band p is
 under 0.05; "not shown" if only the majority holds; the template otherwise.
@@ -162,7 +164,10 @@ def corrected_pair(reference, first, second):
         a, b = (compare(reference, x, profile="unpaired-v3") for x in (first, second))
     finally:
         C._timbre = original
-    keys = (set(a.values) & set(b.values)) - {"level"}
+    # `compare` lists every dimension, with None where one could not be measured,
+    # so "measured on both sides" is the dimensions neither leaves as None.
+    keys = {k for k in a.values if k != "level"
+            and a.values.get(k) is not None and b.values.get(k) is not None}
     return tuple(scalar(Objectives(values={k: o.values[k] for k in keys},
                                    profile="unpaired-v3")) for o in (a, b))
 
@@ -185,22 +190,32 @@ def sign_flip(by_band: dict) -> float:
 
 
 def summarise(rows, first, second) -> dict:
-    """`rows`: per part, {"band", "lost" (first arm unmeasurable), "stored": (a, b),
-    "corrected": (a, b)}."""
+    """`rows`: per part, {"band", "lost": (first, second) unmeasurable,
+    "stored": (a, b), "corrected": (a, b)}. An unmeasurable render loses its pair
+    whatever its distance, and counts at a log ratio of 1 against its arm; a pair
+    with both unmeasurable, or a distance missing otherwise, is left out."""
     out = {"first": first, "second": second}
     for reading in ("stored", "corrected"):
-        both = [r for r in rows if None not in r[reading]]
-        by_band = {}
-        for r in both:
+        closer, counted, changes, by_band = 0, 0, [], {}
+        for r in rows:
             a, b = r[reading]
-            ratio = math.log(a / b)
-            by_band.setdefault(r["band"], []).append(abs(ratio) + 1e-9 if r["lost"] else ratio)
+            first_lost, second_lost = r["lost"]
+            if first_lost and second_lost:
+                continue
+            if first_lost or second_lost:
+                ratio = 1.0 if first_lost else -1.0
+            elif a is None or b is None:
+                continue
+            else:
+                ratio = math.log(a / b)
+                changes.append(a / b - 1)
+            counted += 1
+            closer += ratio < 0
+            by_band.setdefault(r["band"], []).append(ratio)
         out[reading] = {
-            "first_closer": sum(r[reading][0] < r[reading][1] and not r["lost"] for r in both),
-            "of": len(both),
-            "median_change": (round(statistics.median(a / b - 1 for a, b in
-                                                      (r[reading] for r in both)), 3)
-                              if both else None),
+            "first_closer": closer,
+            "of": counted,
+            "median_change": round(statistics.median(changes), 3) if changes else None,
             "bands_first_closer": sum(statistics.median(v) < 0 for v in by_band.values()),
             "bands": len(by_band),
             "band_sign_flip_p": round(sign_flip(by_band), 4) if by_band else None}
@@ -218,6 +233,8 @@ def decide(main: dict) -> str:
 
 
 def score(args) -> dict:
+    from analysis import io
+
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     band = {(s["source"], s["song"]): s.get("group") or f"{s['source']}/{s['song']}"
             for s in catalog["sessions"]}
@@ -236,19 +253,24 @@ def score(args) -> dict:
         renders = {arm: path for arm, path in renders.items() if path.exists()}
         ref_cut, ref_whole = load_cut(reference, "isolated_stem"), load_whole(reference, "isolated_stem")
         cut = {arm: load_cut(path, "probe") for arm, path in renders.items()}
+        lost = {arm: io.loudness_lufs(io.load(path)) is None for arm, path in renders.items()}
         stored = {arm: stored_distance(ref_whole, load_whole(path, "probe"))
                   for arm, path in renders.items()}
-        lost = {"library": (result.get("library") or {}).get("lufs", 0) is None}
         for first, second in PAIRS:
             pair = (corrected_pair(ref_cut, cut[first], cut[second])
                     if first in cut and second in cut else (None, None))
             per_pair[(first, second)].append({
-                "band": band[(source, song)], "lost": lost.get(first, False),
+                "band": band[(source, song)],
+                "lost": (lost.get(first, False), lost.get(second, False)),
                 "stored": (stored.get(first), stored.get(second)), "corrected": pair})
         stored_rows.append({"part": result["part"], "band": band[(source, song)],
-                            "stored_v3_no_level": stored})
+                            "stored_v3_no_level": stored,
+                            "unmeasurable": sorted(arm for arm, gone in lost.items() if gone)})
     pairs = [summarise(per_pair[pair], *pair) for pair in PAIRS]
-    return {"run": str(args.run), "no_di_run": str(args.no_di_run), "cut_s": args.cut_s,
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PLUGIN_ROOT,
+                            capture_output=True, text=True).stdout.strip() or None
+    return {"source_commit": commit, "command": " ".join(sys.argv),
+            "run": str(args.run), "no_di_run": str(args.no_di_run), "cut_s": args.cut_s,
             "parts": len(stored_rows),
             "missing": {arm: [r["part"] for r in stored_rows
                               if arm not in r["stored_v3_no_level"]]

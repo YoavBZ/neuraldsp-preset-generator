@@ -21,12 +21,30 @@ def test_the_band_sign_flip_is_exact_and_two_sided():
     assert A.sign_flip({"a": [0.1], "b": [-0.1]}) == 1.0
 
 
-def test_an_unmeasurable_answer_counts_as_a_loss():
-    rows = [{"band": "a", "lost": True, "stored": (0.5, 1.0), "corrected": (0.5, 1.0)},
-            {"band": "b", "lost": False, "stored": (0.5, 1.0), "corrected": (0.5, 1.0)}]
+def test_an_unmeasurable_render_loses_its_pair_whatever_its_distance():
+    rows = [{"band": "a", "lost": (True, False), "stored": (0.5, 1.0), "corrected": (None, 1.0)},
+            {"band": "b", "lost": (False, False), "stored": (0.5, 1.0), "corrected": (0.5, 1.0)},
+            {"band": "c", "lost": (False, True), "stored": (2.0, 1.0), "corrected": (2.0, None)},
+            {"band": "d", "lost": (True, True), "stored": (0.5, 1.0), "corrected": (0.5, 1.0)}]
     out = A.summarise(rows, "library", "template")
-    assert out["stored"]["first_closer"] == 1 and out["stored"]["of"] == 2
-    assert out["corrected"]["bands_first_closer"] == 1
+    for reading in ("stored", "corrected"):
+        assert out[reading]["of"] == 3                   # both-unmeasurable left out
+        assert out[reading]["first_closer"] == 2         # b by distance, c by default
+        assert out[reading]["median_change"] == -0.5     # only the measured pair
+    assert out["corrected"]["bands_first_closer"] == 2
+
+
+def test_a_pair_is_scored_over_the_dimensions_both_sides_measured(monkeypatch):
+    from analysis import compare as C
+    from analysis.compare import Objectives
+
+    a = Objectives(values={"timbre": 1.0, "ambience": None, "level": 3.0}, profile="unpaired-v3")
+    b = Objectives(values={"timbre": 2.0, "ambience": 0.1, "level": 0.0}, profile="unpaired-v3")
+    answers = iter((a, b))
+    monkeypatch.setattr(C, "compare", lambda *args, **kw: next(answers))
+    first, second = A.corrected_pair(None, None, None)
+    # Ambience is measured on one side only, and level is left out: timbre alone.
+    assert (first, second) == (1.0, 2.0)
 
 
 def _pair(stored, corrected, p):
