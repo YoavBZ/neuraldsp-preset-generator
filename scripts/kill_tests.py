@@ -321,7 +321,8 @@ def main():
                                          if D.get((p, c, "A", metric)) is not None])
                    for c in factory}
             const = min(med, key=med.get)
-            row = {"part": part, "band": band, "oracle": oracle, "constant": const}
+            row = {"part": part, "band": band, "oracle_preset": oracle,
+                   "constant_preset": const}
             for name, cand in (("oracle", oracle), ("constant", const), ("template", "template")):
                 v = D.get((part, cand, "B", metric))
                 row[name] = None if v is None else math.log(v / base)
