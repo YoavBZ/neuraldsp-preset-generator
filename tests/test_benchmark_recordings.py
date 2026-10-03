@@ -225,6 +225,15 @@ def test_library_from_needs_the_library_signal():
     assert args.library_from == "other-source"
     assert R.build_parser().parse_args(["--amp", "x", "--signal", "noise"]).library_from \
         == "other-bands"
+    argv = ["benchmark_recordings.py", "--amp", "x", "--signal", "noise",
+                        "--library-from", "other-source"]
+    import sys
+    saved, sys.argv = sys.argv, argv
+    try:
+        with pytest.raises(SystemExit):
+            R.main()
+    finally:
+        sys.argv = saved
 
 
 def test_without_a_search_each_inversion_is_paired_with_neutral_and_the_reference():

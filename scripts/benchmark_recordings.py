@@ -324,6 +324,8 @@ def main() -> None:
     args = build_parser().parse_args()
     if len(set(args.signal)) != len(args.signal):
         die("each --signal once")
+    if args.library_from != "other-bands" and "library" not in args.signal:
+        die("--library-from shapes the library signal: add --signal library")
 
     from analysis import io, require
 
@@ -346,8 +348,6 @@ def main() -> None:
     others = [other_di_index(parts, index) for index in range(len(parts))]
     groups = part_groups(catalog, parts)
     libraries = [None] * len(parts)
-    if args.library_from != "other-bands" and "library" not in args.signal:
-        die("--library-from shapes the library signal: add --signal library")
     if "library" in args.signal:
         # Drawn from every set-2 development part, whichever parts are scored, so
         # `--part` does not shrink it; set 1 (one Guitar-TECHS player and rig,

@@ -279,3 +279,55 @@ def test_the_library_arm_is_paired_with_the_template_and_the_no_di_arm():
                                                       "median_change": -0.2}
     assert pairs["library_closer_than_no_di"]["closer"] == 3
     assert P.build_parser().parse_args([]).arm is None and P.DEFAULT_ARMS == ("no_di", "di")
+
+
+def _library_runner(tmp_path, monkeypatch, probe, silent_counts, extra=()):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    monkeypatch.setattr(P, "score", lambda reference, wav: {
+        "lufs": -18.0, "vs_reference_lu": 0.0, "v3": 1.0, "v3_no_level": 1.0})
+    counts = iter(silent_counts)
+
+    def match(self, crop, out, arm):
+        (out / arm).mkdir(exist_ok=True)
+        return {"caveats": [], "search": {"accounting": {"silent": next(counts)}}}, False
+
+    monkeypatch.setattr(P.Runner, "match", match)
+    monkeypatch.setattr(P.Runner, "render", lambda self, *a: None)
+    args = P.build_parser().parse_args(["--arm", "library", *extra])
+    runner = P.Runner(args, tmp_path, "abc123", {("s", "song", "g"): (probe, ["t/x/g"])})
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    return runner
+
+
+def test_a_library_search_with_silent_renders_is_set_aside_once(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
+    probe = np.linspace(-0.1, 0.1, 4800).astype(np.float32)
+    runner = _library_runner(tmp_path, monkeypatch, probe, [12, 12],
+                             ["--library-from", "other-source"])
+    part = ("s", "song", "g")
+    first = runner.part(part, ["library"], None, None)
+    assert "silent renders" in first["errors"]["library"] and "library" not in first
+    assert (tmp_path / P.slug(part) / "library.silent-attempt-1").is_dir()
+    second = runner.part(part, ["library"], None, None)   # silent again: kept
+    assert second["library"]["silent_trials"] == 12 and "errors" not in second
+    assert second["library"]["library_from_mode"] == "other-source"
+    assert P.summarise([second])["library"]["silent_trials"] == ["s/song/g"]
+
+
+def test_a_finished_library_arm_is_refused_when_its_library_changed(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
+    probe = np.linspace(-0.1, 0.1, 4800).astype(np.float32)
+    part = ("s", "song", "g")
+    done = _library_runner(tmp_path, monkeypatch, probe, [0]).part(part, ["library"],
+                                                                    None, None)
+    assert "library" in done and "errors" not in done
+    changed = _library_runner(tmp_path, monkeypatch, probe * 0.5, [])
+    again = changed.part(part, ["library"], None, None)
+    assert "another library" in again["errors"]["library"]
