@@ -268,7 +268,7 @@ def main():
             slug = "-".join(x.replace("/", "_").replace(" ", "_")
                             for x in (s["source"], s["song"], p["part"]))
             meta[slug] = {"band": s.get("group") or f"{s['source']}/{s['song']}",
-                          "lag": int(round(p.get("lag_ms", 0) * SR / 1000))}
+                          "lag": int(round((p.get("lag_ms") or 0) * SR / 1000))}
     files = {}
     for row in index["rows"]:
         if "file" in row:
