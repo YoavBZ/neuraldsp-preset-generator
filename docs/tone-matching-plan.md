@@ -2555,7 +2555,8 @@ aside.
   --loss-profile unpaired-v3 --workers 3 --json docs/recordings-benchmark-set2-pr12.json
 ```
 
-It ran from a8a45b0 in 348 minutes. A first attempt started 18 minutes before
+It ran from a8a45b0 in 348 minutes, in the checkout described under
+"Provenance" below, with #97 and #99 already applied there. A first attempt started 18 minutes before
 the licence daemon was killed at 00:15:44 (see "Song-only starting points"
 below), so its reused plugin instances may have gone silent; it was stopped and
 the run above started on fresh instances. No answer in it lacks a `level`
@@ -2610,37 +2611,58 @@ closer to the recording than every other option on most parts.
   | Reset All Settings | 30 of 43 | 10% closer | 0.13 |
   | neutral | 28 of 43 | 16% closer | 0.02 |
 
-  The three starts as they are tie with one another (Reset against neutral 22 to
-  21).
+  The three starts as they are tie with one another (Default against neutral 22
+  to 21, Reset against neutral 21 to 22, Default against Reset 19 to 24).
 - **SW50R:** neutral searched beat every other option on most parts, but reliably
   only its rival from the shipped template (33 of 43); against neutral as it is,
   24 of 43 (p = 0.31).
 
+The p values are Wilcoxon signed-rank, treating parts as independent though
+several share a band. By a sign test three of the wins above are not
+significant: PR12's shipped preset against neutral searched (p = 0.13), AC20's
+against neutral as it is (p = 0.07), and Tone King's neutral against its search
+(p = 0.07).
+
 **What it means.** Across four amps, the no-DI search did not reliably beat a
 plain starting preset. From a good one (the shipped PR12 and AC20 presets) it
-made things clearly worse, and on Tone King it made every start worse. Searching
+made things clearly worse, and on Tone King it made every start worse on most
+parts (28–30 of 43). Searching
 from neutral settings, the best case, was no better than not searching on SW50R
 and PR12 (25 of 43, p = 0.17) or AC20 (20 of 43). This is the objective proxy,
 not listening, and "as it is" leaves the level where the preset has it: neutral
-settings play 19–36 LU too quiet until a level is set, which a calculation does
-without a search. Whether a search-free match through real guitar does better
+settings on the three Morgan amps play a median 19–36 LU too quiet until a level
+is set, which a calculation does without a search (Tone King's neutral start is
+about level, a median +0.1 LU). Whether a search-free match through real guitar does better
 still is round 1's E1 (`docs/research-song-only-matching.md`).
 
 **Provenance.**
 - PR12's runs ran from 621ac13 in a separate checkout.
-- Tone King's and AC20's ran from a8a45b0 in another. During those runs, two
-  changes that cannot alter results were applied to that checkout:
+- Tone King's and AC20's, and the PR12 recordings benchmark above, ran from
+  a8a45b0 in another. During those runs, two changes meant not to alter results
+  were applied to that checkout (the PR12 recordings benchmark started after
+  both):
   - the Swift build cache (#97), whose binaries are byte-identical;
-  - the faster fingerprint (#99), whose fingerprints are byte-identical in
+  - the faster fingerprint (#99), whose fingerprints were byte-identical in its
     review.
 - On 2026-10-03 at 00:15:44 the PACE licence daemon both plugins use was killed
   by macOS for leaking mach ports. Each plugin process launch leaks about 10, and
   AC20's per-render processes drove it. One Tone King match running then rendered
   silence. It was set aside and rerun, and #100 now fails such a match.
-- Eight Tone King parts first failed with silent renders, mostly after AC20's
-  fresh-process load began. They were rerun cleanly by resuming the runs.
-- No answer in the committed JSONs has a silent trial.
-- About 8 minutes a match (AC20 about 20), one to three parts at once per run.
+- Eight Tone King part-runs (seven distinct parts) first failed, all after
+  AC20's fresh-process load began at 20:56. Their logs were overwritten when they
+  were rerun by resuming the runs, so the cause is not recorded. Four had failed
+  at the answer's render; resuming re-rendered the answer but kept the original
+  search, which is why they show 0.2–0.4 minutes.
+- Every match's own summary counts no silent render (`accounting.silent` is 0
+  on all 301). The committed JSONs predate #100's `silent_trials` field.
+- One answer has no measurable loudness through its part's DI: Tone King Reset
+  on Telefunken "Hikikomori - Love Does" GTR (`summary.no_di.unmeasurable`). It
+  passed the guitar check, level with the template through the synthetic guitar
+  (−17.5 LUFS), but this part's DI plays nearly silent through these starts too
+  (Reset as it is −50.6 LUFS, Tone King neutral −52, AC20 neutral −55). It
+  counts as a search win (1.66 against 2.81) in Reset's 30 of 43, which changes
+  no conclusion.
+- About 8 minutes a match (AC20 about 15), one part at a time (AC20 two).
 
 ```bash
 .venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
