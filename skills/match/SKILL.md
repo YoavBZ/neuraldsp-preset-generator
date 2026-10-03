@@ -153,7 +153,7 @@ from the shipped presets"):
   search did not recover: it ended further on PR12 and AC20 and no closer on SW50R
   and Tone King;
 - through clips of other players' real guitar, the search ended level with the
-  shipped preset as it is (closer on 23–29 of 43, no amp significant), though it
+  shipped preset as it is (closer on 23–30 of 43, no amp significant), though it
   beat the noise-probe search on every amp.
 
 So without a DI, choose the starting preset with the generate skill's research
