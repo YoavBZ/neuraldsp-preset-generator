@@ -6,8 +6,9 @@ recording play the same notes at the same instants and can be compared frame by
 frame. On a blind 16-trial test the corrected `unpaired-v3` agreed with the
 listener 7 times; an aligned log-mel distance frozen before the answers were read
 agreed 12 times, as did an unpaired long-term loudness distance. This distance was
-built after those answers were read and agrees 14 times, so that 14 is a sanity
-check, not validation.
+built after those answers were read, its family chosen with them in view; it agrees
+on 12 of the 14 it scores (it refuses the two whose window the DI plays under
+half), so that is a sanity check, not validation.
 
 `aligned_distance` compares log-mel spectra (64 bands, 50 Hz–16 kHz, three frame
 sizes) of the loudness-normalised render and recording, after:
@@ -18,20 +19,19 @@ sizes) of the loudness-normalised render and recording, after:
 - **frames**: those where the DI plays, plus `tail_s` after each (notes played just
   before the window included), so reverb and delay tails count where a part leaves
   room for them;
+- **bands**: those within `floor_db` of the recording's long-term peak, the same
+  for every candidate;
+- **level**: the render's level difference is taken out first (the median over the
+  cells where the DI plays and the recording is above its floor), then what is left
+  of the mean after flooring, so only tone is left (output level is a separate
+  control);
 - **floor**: in each frame, both sides are clamped at `mask_db` under the
-  recording's loudest band in that frame, a rough stand-in for masking. Without it,
-  -40 dB of pink noise added to a render brought it closer to the amp track in a
-  quarter of the cases tried: the noise filled cells where the recording holds its
-  own hiss;
-- **bins**: those within `floor_db` of either side's long-term peak (union, so a
-  boost the recording lacks is still seen; a judgement call, since it makes the
-  band set depend on the candidate);
-- **level**: the mean difference over the scored cells is removed, so only tone is
-  left (output level is a separate control).
+  recording's loudest band in that frame, a rough stand-in for masking (40 dB is a
+  judgement call between measured alternatives, `docs/measuring-closeness.md`).
 
-Bleed from other instruments is not handled here: on the parts where the DI plays
-most of the time it cannot be measured, and the parts where it can are excluded by
-the material's selection instead.
+Windows where the DI plays in under `min_playing` of the frames are refused: there
+most scored frames are pauses, where the ranking of candidates depends on hiss and
+on bleed from other instruments, which this distance does not handle.
 
 It reports the distance (mean absolute dB difference over the scored cells) and its
 two parts: `tonal`, the long-term per-band difference, and `temporal`, what is left
@@ -129,6 +129,9 @@ def _signal(x, name: str):
 
     x = np.asarray(x, dtype=np.float64)
     if x.ndim == 2:
+        if x.shape[1] > 8 or x.shape[1] > x.shape[0]:
+            raise ValueError(f"the {name} looks channels-first {x.shape}: pass "
+                             f"(samples, channels)")
         x = x.mean(axis=1)
     if x.ndim != 1 or len(x) == 0:
         raise ValueError(f"the {name} is not a non-empty mono or (samples, channels) signal")
@@ -165,7 +168,7 @@ def estimate_lag(recording, renders, sample_rate: int = SAMPLE_RATE,
     magnitudes of each render's normalised cross-correlation with the recording,
     band-limited to 80 Hz–2 kHz. A real rig and a plugin share the performance's
     low-frequency waveform closely enough, and the magnitude ignores polarity
-    (inverted on 20 of the 43 development parts). One render alone can lock onto
+    (inverted on 19 of the 43 development parts). One render alone can lock onto
     another pitch period: 6 ms off on one of 27 parts, where nine pooled renders
     agreed with another estimate to 0.3 ms on 25. A higher peak just outside the
     window (within twice its width) is refused: the hint is probably wrong.
@@ -214,7 +217,8 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
                      sample_rate: int = SAMPLE_RATE, start_s: float = 1.0,
                      end_s: Optional[float] = None, tail_s: float = 1.5,
                      floor_db: float = 30.0, mask_db: float = 40.0,
-                     di_floor_db: float = 40.0, min_frames: int = 8) -> AlignedDistance:
+                     di_floor_db: float = 40.0, min_frames: int = 8,
+                     min_playing: float = 0.5) -> AlignedDistance:
     """Distance between `render` (the preset through `di`) and `recording` (the same
     performance through the real rig), over [start_s, end_s) of the recording.
 
@@ -269,18 +273,21 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         playing, scored = playing[pre: pre + k], scored[pre: pre + k]
         if playing.sum() < min_frames:
             return refuse("the DI plays in too few frames", int(playing.sum()))
+        if playing.mean() < min_playing:
+            return refuse(f"the DI plays in {playing.mean():.0%} of the window, under "
+                          f"{min_playing:.0%}", int(playing.sum()))
         # One floor for both sides, from the recording alone: `mask_db` under its
         # loudest band in each frame (70 dB under its loudest cell at most).
         floor = np.maximum(R.max() - 70.0, R.max(axis=1, keepdims=True) - mask_db)
         audible = R >= floor
         ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor)[scored] / 10), axis=0))
-        ltas_x = 10 * np.log10(np.mean(10 ** (np.maximum(X, R.max() - 70.0)[scored] / 10),
-                                       axis=0))
-        bins = (ltas_r >= ltas_r.max() - floor_db) | (ltas_x >= ltas_x.max() - floor_db)
+        bins = ltas_r >= ltas_r.max() - floor_db
         # Level before the floor, so a render that sits a few dB low is not clipped
         # unevenly by it: the median difference where the DI plays and the recording
         # is above its floor, which a silent stretch on one side cannot drag.
         cells = audible[playing][:, bins]
+        if cells.sum() < min_frames * bins.sum():
+            return refuse("the recording is inaudible where the DI plays", int(playing.sum()))
         level = float(np.median((X[playing][:, bins] - R[playing][:, bins])[cells]))
         R, X = np.maximum(R, floor), np.maximum(X - level, floor)
         D = X[scored][:, bins] - R[scored][:, bins]
@@ -294,6 +301,8 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         offsets.append(offset)
         if n_fft == 2048:
             kept = {"frames": int(scored.sum()), "bands": int(bins.sum())}
+    if not np.all(np.isfinite(totals + tonals + temporals + offsets)):
+        return refuse("the comparison produced a non-finite value")
     return AlignedDistance(
         distance=float(np.mean(totals)), tonal=float(np.mean(tonals)),
         temporal=float(np.mean(temporals)), offset_db=float(np.mean(offsets)),

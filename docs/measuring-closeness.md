@@ -12,8 +12,9 @@ to a recording. This document records what that number is, why it changed on
   judged by the score it was optimised against.
 - **The judge is `analysis/aligned.py`**: the preset rendered through the DI of the
   very take the recording captured, compared with that recording frame by frame.
-  It applies wherever a part's own DI exists (the validation material). It does not
-  apply to the product's song-only use, which has no DI.
+  It applies wherever a part's own DI exists (the validation material) and the DI
+  plays in at least half the window; it refuses the rest. It does not apply to the
+  product's song-only use, which has no DI.
 - **It is not validated yet.** Listening validation is stage 0b of
   `docs/supervised-model-plan.md` (about 100 trials). Until then it is the best
   measure available, not ground truth.
@@ -35,7 +36,12 @@ with the listener:
 | aligned log-mel (ALM, frozen before the answers were read) | 12/16 |
 | an unpaired long-term loudness distance (frozen) | 12/16 |
 | ALM with its level offset removed | 14/16 |
-| `analysis/aligned.py` (built after the answers were read) | 14/16 |
+| `analysis/aligned.py` (built after the answers were read) | 12/14 scored |
+
+`analysis/aligned.py` refuses the two trials on Lost Alive, whose window the DI
+plays under half; with that refusal off it agrees on 14 of 16. Its design was
+chosen after the answers were read: the per-frame floor's family scored 14 where a
+per-band floor's scored 11–13, and that was in view when the choice was made.
 
 Because the listener chose the template 15 times out of 16, a score that always
 says "template" gets 15/16. The informative part is the 8 trials where
@@ -53,16 +59,22 @@ both halves, scored against the real amp track (486 changes):
 | v3, level left out | 58% | 56% (chance) |
 | v3c | 74% | 68% |
 | ALM | 92% | 90% |
-| `analysis/aligned.py` | 91% | 86% |
+| `analysis/aligned.py` | 94% | 88% |
 
 So searches driven by v3 followed a signal that barely points the right way.
 
 The last column counts the 386 changes that unambiguously move the octave towards
 or away from the recording, with "the octave's gap" measured against the total
-power. The ground truth depends on that choice: measured against the mean over
-the scored mel bands instead, the review of an earlier version of this distance
-found it ahead of ALM (89.6% against 88.6%). Read the two as level. Both are
-weakest at 400 Hz (72% here, ALM 74%).
+power. That ground truth is a choice. Under three conventions:
+
+| Octave gap measured against | `analysis/aligned.py` | ALM |
+|---|---|---|
+| total power | 87.6% | 89.6% |
+| loudness alone | 86.7% | 89.0% |
+| the mean over the scored mel bands | 87.8% | 88.6% |
+
+ALM points the right way slightly more often; read the two as close. Both are
+weakest at 400 Hz (73% here, ALM 74%).
 
 **Specific defects in v3**, each reproduced by a reviewer:
 
@@ -91,51 +103,77 @@ after:
   every candidate. `estimate_lag` pools several unlike renders: the peak of their
   summed 80 Hz–2 kHz cross-correlation magnitudes, within ±15 ms of the catalogued
   lag less the plugin latency; a higher peak just outside that window is refused.
-  Catalogued lags are quantised to 10 ms and wrong by 2.5 ms or more on 9 of 43
-  parts. Pooled over nine renders, the estimate agrees with another estimate of
-  the same family (a full-band correlation against one same-take render) to 0.3 ms
-  on 25 of 27 parts; the two misses are Drag Me Down 4 (0.3 ms, borderline) and
-  Strangest Places, whose correlation has two peaks. One render alone was 6 ms off
-  on one part, and earlier versions that estimated per candidate over ±50 ms missed
-  by up to about 2,000 samples on the listening trials. GCC-PHAT finds spurious
-  zero-lag peaks on distorted renders. The lag that minimises the distance sits a
-  median 1.2 ms later than the estimate (26 of 27 parts), at a cost of at most
-  0.055 dB.
+  - Catalogued lags are quantised to 10 ms and off by 2.5 ms or more on 11 of 43
+    parts, by 61 ms on Prodigal 4 and 38 ms on Hikikomori. On Prodigal 4 the
+    catalogued hint is refused, as it should be; a caller falls back to no hint
+    over ±50 ms and says so.
+  - Pooled over nine renders, the estimate agrees with another estimate of the
+    same family (a full-band correlation against one same-take render) to 0.3 ms
+    on 25 of 27 parts. The misses are Drag Me Down 4 (0.3 ms, borderline) and
+    Strangest Places, whose correlation has two peaks; pooling the whole panel
+    there picks the other one.
+  - One render alone was 6 ms off on one part, and earlier versions that estimated
+    per candidate over ±50 ms missed by up to about 2,000 samples on the listening
+    trials. GCC-PHAT finds spurious zero-lag peaks on distorted renders.
+  - The lag that minimises the distance sits a median 0.75 ms later than the
+    estimate (26 of 27 parts), at a cost of at most 0.055 dB.
 - **Frames**: where the DI plays, plus 1.5 s after, including notes played just
   before the window, so reverb and delay tails count where a part leaves gaps. On
   the 27 parts where the DI plays most of the time the tails changed nothing: the
   template with its delay, reverb and compressor on scored 0.97 dB from the same
-  template with them off, with or without tails, against 4.14 between two random
-  factory presets.
+  template with them off, with or without tails, against 4.49 between two random
+  factory presets (median over 5 fixed draws, 3.97–4.86).
+- **Bands**: those within 30 dB of the recording's long-term peak, the same for
+  every candidate. The union with the candidate's bands, tried first, did not show
+  its intended benefit on real renders (a +6 dB octave at 8 kHz scored 0.39 either
+  way), pointed the right way less often (85.8% against 87.6%), agreed across
+  halves less often (90.5% against 93.8%), and changed the best factory preset on
+  8 of 27 parts, mostly by 0.05 dB or less. Fizz in bands the recording holds more
+  than 30 dB down is not seen.
+- **Level**: the render's level difference is taken out first (the median over the
+  cells where the DI plays and the recording is above its floor), then what is left
+  of the mean after the floor. ALM's mean signed difference exceeded 2 dB on 71% of
+  comparisons, and output level is a separate control.
 - **Floor**: in each frame both sides are clamped 40 dB under the recording's
-  loudest band in that frame, a rough stand-in for masking. Without it, -40 dB of
-  pink noise added to a render brought it more than 0.1 dB closer to the amp track
-  in 42 of 162 cases on the 27 active parts (6 renders each) and 39 of 90 on 15
-  sparse ones: the noise filled cells where the recording holds its own hiss. With
-  it, 8 of 162 and 16 of 90. A 30 dB floor cut that to 2 of 162 but the EQ test
-  above fell to 82%; a 50 dB floor let 25 of 162 through. In pauses the
-  recording's own hiss is the loudest thing in the frame and is audible, so
-  matching it still counts.
-- **Bands**: those within 30 dB of either side's long-term peak. ALM took the
-  reference's bands only and stopped at 10 kHz. The union makes the band set depend
-  on the candidate, a judgement call: a boost the recording lacks is seen, at the
-  cost of a jump where a band crosses the boundary.
-- **Level**: the render's level difference is taken out before the floor (the
-  median over the frames where the DI plays and the recording is above its floor),
-  and what is left of the mean after it. ALM's mean signed difference exceeded 2 dB
-  on 71% of comparisons, and output level is a separate control.
+  loudest band in that frame, a rough stand-in for masking. 40 dB is a judgement
+  call between measured alternatives (pink noise at -40 dB added to 6 renders on
+  each of the 27 active parts, counted where it brought the render more than
+  0.1 dB closer to the amp track; the EQ test above, total-power convention):
+
+  | Floor | Noise rewarded | EQ right way | Mel-band convention |
+  |---|---|---|---|
+  | none | 40 of 162 | 87.3% | 89.6% |
+  | 30 dB | 2 of 162 | 82.1% | 85.9% |
+  | 40 dB (used) | 8 of 162 | 87.6% | 87.8% |
+  | 50 dB | 24 of 162 | 88.9% | 89.6% |
+
+  Applying the floor before the level step instead gave 0 of 162 but pointed the
+  right way less often (84.5%, earlier band set). The 8 cases left are not pauses:
+  they are on Signs 2 and Today's The Day 07 and 10, where the template render is
+  far darker than the recording at 1.8–5 kHz and the noise fills a real tonal
+  deficit, by up to 1.79 dB on Today's 07. When a render is much darker than the
+  recording, the distance cannot tell broadband noise from missing treble. In
+  pauses the recording's own hiss is the loudest thing in the frame, presumably
+  audible, so matching it still counts; whether this listener hears it is one of
+  the listening checks below.
+- **Refusals.** A window where the DI plays in under half the frames is refused:
+  there most scored frames are pauses, and on the 15 sparse parts scoring only the
+  frames where the DI plays against scoring all of them changed the best preset on
+  6 and moved the ranking to a median ρ of 0.968 (0.199 at worst), while on the
+  27 active parts it changed nothing (measured on the version before the band
+  change). So is a recording that is inaudible where the
+  DI plays, and non-finite or channels-first input.
 - **No bleed handling.** An earlier version dropped bands where the recording held
   other instruments while the DI rested. On the 27 active parts the DI never rests
   long enough to measure that, and where it does the check took a high-gain
   preset's own noise, or a band holding only the recording's noise floor, for
-  bleed. Parts with heavy bleed (the two live-room parts whose top octave is
-  mostly cymbals) are excluded by the material's selection instead; both have the
-  DI playing under half the time.
+  bleed. The catalogue has no bleed flag yet. The two live-room parts whose top
+  octave is mostly cymbals have the DI playing under half the time, so the refusal
+  above keeps them out at any window the DI does not fill.
 
 It reports the distance in dB and two parts: `tonal` (the long-term per-band
 difference) and `temporal` (what is left frame by frame: attack, drive texture,
-tails). Non-finite input is refused with an error; a window it cannot score
-returns no distance and a reason.
+tails).
 
 ### How it responds to known changes
 
@@ -149,13 +187,13 @@ median over 27 parts, in units of a +3 dB octave EQ at 1.6 kHz:
 | +6 dB octave at 8 kHz | 0.35 | 0.39 |
 | 420 ms echo at -6 dB | 3.86 | 4.04 |
 | 0.8 s reverb at -8 dB | 2.32 | 2.29 |
-| 4:1 compression, half the time | 0.81 | 0.73 |
-| soft clipping (tanh, ×4) | 2.52 | 2.47 |
+| 4:1 compression, half the time | 0.81 | 0.76 |
+| soft clipping (tanh, ×4) | 2.52 | 2.08 |
 | pink noise at -40 dB (against the render itself) | 0.26 | 0.14 |
-| a 3 ms misalignment | 1.01 | 0.87 |
+| a 3 ms misalignment | 1.01 | 0.86 |
 
 Against a copy of itself, a 3 ms misalignment costs about as much as an audible EQ
-change. Against a real recording, already 2–17 dB away, the distance is far
+change. Against a real recording, already 1.5–20 dB away, the distance is far
 flatter (the 0.055 dB above). Correcting the catalogue's lags kept ALM's ranking
 of the 44 presets at ρ ≥ 0.993 and changed the best preset on 1 of 30 parts.
 
@@ -195,9 +233,15 @@ other players' DIs.
   printed 2.5 Hz tremolo, and six have dead-flat dynamics. Flag single-part
   verdicts on them.
 - **Mostly silent crops.** 13 of 43 crops have the DI active under half the time;
-  the distance gates on the DI, but those parts carry few frames, more of their
-  scored frames are pauses where hiss counts, and bleed is not handled.
-- **400 Hz.** The weakest octave on the EQ test (72%).
+  a window there is refused unless the caller lowers `min_playing`, and then the
+  ranking depends on pauses, hiss and bleed.
+- **400 Hz.** The weakest octave on the EQ test (73%).
+- **Near ties.** In the lowest quarter of |log(dA/dB)| between two candidates
+  (under about 0.09), 7–16% of pairs swap order under any one reasonable
+  alternative design (bands, floor, tails); in the top quarter, under 1%
+  (measured on the version before the band change).
+- **Renders much darker than the recording**, where added noise and missing treble
+  look alike (above).
 - **The song.** On the one released master on disk (Fragments), the guitar as
   mixed differs from its amp track by 2.3 dB rms of EQ, panning and 1.6 dB less
   crest. Scored against the guitar as mixed instead of the amp track, ALM's
@@ -213,8 +257,8 @@ other players' DIs.
   answers, with catches, hidden repeats, second-microphone anchors and trials
   where the measures disagree; can't-tell answers modelled, never counted as half
   agreement.
-- Data: per-recording sample-accurate lags in the catalogue, crops re-cut where
-  the DI plays, and bleed flags.
+- Data: per-recording sample-accurate lags in the catalogue (Prodigal 4 and
+  Hikikomori first), crops re-cut where the DI plays, and bleed flags.
 - Listening checks the review asked for: whether hiss matters to this listener
   (a render against itself with -40 dB of pink noise) and whether drive with a
   matched spectrum is heard as ALM or as the spectral measures weight it.

@@ -135,7 +135,7 @@ def test_the_di_timeline_follows_the_lag_and_the_latency():
     burst = np.zeros(len(di))
     burst[int(6.5 * SR): int(8.5 * SR)] = rng.standard_normal(2 * SR)
     recording = _delay(render, lag) + 0.5 * np.std(render) * burst
-    kwargs = dict(lag=lag, start_s=1.0, tail_s=0.2)
+    kwargs = dict(lag=lag, start_s=1.0, tail_s=0.2, min_playing=0.2)   # a long rest
     right = aligned_distance(recording, render, di, render_latency=latency, **kwargs)
     assert right.distance == pytest.approx(0.0, abs=0.05)
     for wrong in (0, -latency):
@@ -192,7 +192,8 @@ def test_a_note_just_before_the_window_still_has_its_tail_judged():
     span = slice(int(start * SR), int(start * SR) + SR)
     ring[span] = np.random.default_rng(4).standard_normal(SR) * np.exp(-np.arange(SR) / (0.3 * SR))
     tail = dry + np.std(dry) * ring                       # a tail the recording lacks
-    result = aligned_distance(dry, tail, di, render_latency=0, lag=0, start_s=start)
+    result = aligned_distance(dry, tail, di, render_latency=0, lag=0, start_s=start,
+                              min_playing=0.2)
     assert result.distance > 0.3
 
 
@@ -210,11 +211,62 @@ def test_noise_the_guitar_masks_does_not_bring_a_render_closer():
     assert added.distance >= clean.distance - 0.1
 
 
-def test_fizz_the_recording_lacks_is_seen():
+def test_too_much_top_end_registers_and_the_bands_are_the_recordings():
     di = _performance(seed=16)
-    b, a = scipy_signal.butter(8, 4000, btype="low", fs=SR)
-    recording = scipy_signal.lfilter(b, a, _amp(di))
+    bright = _amp(di, drive=8.0, tone=(200, 16000))
     b, a = scipy_signal.butter(4, [8000, 12000], btype="bandpass", fs=SR)
     fizz = scipy_signal.lfilter(b, a, np.tanh(20 * di))
-    fizzy = recording + 0.25 * np.std(recording) / np.std(fizz) * fizz
-    assert aligned_distance(recording, fizzy, di, render_latency=0, lag=0).distance > 1.0
+    recording = bright + 0.3 * np.std(bright) / np.std(fizz) * fizz
+    hotter = bright + 0.6 * np.std(bright) / np.std(fizz) * fizz     # +6 dB of fizz
+    darker = _shelf(recording, 3000, -6)
+    a_ = aligned_distance(recording, hotter, di, render_latency=0, lag=0)
+    b_ = aligned_distance(recording, darker, di, render_latency=0, lag=0)
+    assert a_.distance > 0.5
+    assert a_.bands == b_.bands                     # one band set per recording
+
+
+def test_a_quiet_passage_is_judged_against_its_own_frames():
+    """The floor follows each frame: an EQ change in a passage 35 dB down still
+    counts, where one floor for the whole window would clamp most of it away."""
+    di = _performance(seed=18)
+    gain = np.ones(len(di))
+    gain[len(di) // 2:] = 10 ** (-35 / 20)
+    recording = _amp(di) * gain
+    render = recording.copy()
+    render[len(di) // 2:] = _shelf(recording, 1000, 6)[len(di) // 2:]
+    assert aligned_distance(recording, render, di, render_latency=0, lag=0,
+                            start_s=5.5).distance > 0.75
+
+
+def test_an_echo_late_in_a_rest_needs_the_whole_tail():
+    di = _performance(seed=17, rest=(4.0, 6.2))
+    dry = _amp(di)
+    before_rest = dry.copy()
+    before_rest[: 3 * SR] = 0.0
+    before_rest[int(4.7 * SR):] = 0.0
+    echo = dry + 0.7 * _delay(before_rest, int(1.3 * SR))
+    result = aligned_distance(dry, echo, di, render_latency=0, lag=0)
+    assert result.distance > 4.0 and result.temporal > result.tonal
+
+
+def test_a_lag_longer_than_the_start_trims_the_window():
+    di = _performance(seed=19)
+    render = _amp(di)
+    recording = _delay(render, int(1.5 * SR))
+    result = aligned_distance(recording, render, di, render_latency=0, lag=int(1.5 * SR))
+    assert result.distance == pytest.approx(0.0, abs=1e-3) and result.frames > 0
+
+
+def test_windows_it_cannot_judge_are_refused():
+    di = _performance(seed=20, rest=(3.0, 4.5))
+    render = _amp(di)
+    inaudible = 10 ** (-90 / 20) * render                # the guitar 90 dB down...
+    inaudible[int(3.2 * SR): int(4.3 * SR)] = 0.1 * np.random.default_rng(1).standard_normal(
+        int(1.1 * SR))                                     # ...under loud content in the rest
+    quiet = aligned_distance(inaudible, render, di, render_latency=0, lag=0)
+    assert quiet.distance is None and "inaudible" in quiet.reason
+    sparse = aligned_distance(render, render, di, render_latency=0, lag=0, start_s=2.6,
+                              end_s=5.0)
+    assert sparse.distance is None and "plays in" in sparse.reason
+    with pytest.raises(ValueError, match="channels-first"):
+        aligned_distance(render, np.stack([render, render]), di, render_latency=0, lag=0)
