@@ -110,6 +110,7 @@ def test_the_searches_render_with_the_process_policy_asked_for(tmp_path, monkeyp
     assert match[1].endswith("match_preset.py")
     assert match[match.index("--process-policy") + 1] == "fresh"
     assert match[match.index("--amp") + 1] == "ac20"
+    assert "--search-without-di" in match      # the no-DI arm keeps measuring the search
 
 
 def test_the_committed_summary_is_what_its_parts_summarise_to():

@@ -38,7 +38,7 @@ For a future SW50R test, this is the command-block shape. It is an example,
       "primary_output": "{run}/with-di/match-1.json"
     },
     "no_di_match": {
-      "argv": ["{python}", "scripts/match_preset.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--reference", "{run}/crops/reference.wav", "--reference-mode", "isolated_stem", "--excerpt", "0", "--loss-profile", "unpaired-v3", "--pack", "morgan", "--amp", "sw50r", "--renderer", "swift", "--process-policy", "fresh", "--budget", "300", "--shortlist", "3", "--seed", "0", "--out-dir", "{run}/no-di"],
+      "argv": ["{python}", "scripts/match_preset.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--reference", "{run}/crops/reference.wav", "--reference-mode", "isolated_stem", "--excerpt", "0", "--search-without-di", "--loss-profile", "unpaired-v3", "--pack", "morgan", "--amp", "sw50r", "--renderer", "swift", "--process-policy", "fresh", "--budget", "300", "--shortlist", "3", "--seed", "0", "--out-dir", "{run}/no-di"],
       "outputs": ["{run}/no-di/match-1.json", "{run}/no-di/summary.json", "{run}/no-di/trials.sqlite3"],
       "primary_output": "{run}/no-di/match-1.json"
     },

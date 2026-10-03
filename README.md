@@ -65,7 +65,7 @@ Then:
 
 ```
 /neuraldsp-preset-generator:generate  Hotel California, clean rhythm
-/neuraldsp-preset-generator:match     my-preset.xml  reference-guitar.wav
+/neuraldsp-preset-generator:match     my-preset.xml  reference-guitar.wav  its-di.wav
 /neuraldsp-preset-generator:edit      my-preset.xml  more reverb, tighter low end
 ```
 
@@ -78,9 +78,11 @@ You don't have to use the slash commands — just describing what you want
   the tone was recorded, measures supplied audio when present, maps both to the
   plugin's amps and effects, writes a preset, and puts it where the plugin will
   find it.
-- **`match`** — supply reference audio and a starting preset; the skill measures
-  the recording, calculates what can be inverted, searches the remaining
-  controls, and presents a measured shortlist before writing.
+- **`match`** — supply reference audio, a DI of that performance and a starting
+  preset; the skill measures the recording, calculates what can be inverted,
+  searches the remaining controls, and presents a measured shortlist before
+  writing. Without a DI it measures and describes the recording and keeps the
+  starting preset: no search without one has been shown to beat it.
 - **`edit`** — point at an existing preset, describe the change in plain
   English, get a new preset back. The input is never overwritten.
 
@@ -354,19 +356,23 @@ clone with no dependencies at all, and a test enforces it.
 
 ## Optional: match a recording
 
-With `[match]` as well, the loop closes: given a recording you like and a preset
-to start from, `match_preset.py` measures the reference, calculates what can be
-calculated, searches the rest on a render budget you set, and writes a spec plus
-a report.
+With `[match]` as well, the loop closes: given a recording you like, a DI of
+that performance and a preset to start from, `match_preset.py` measures the
+reference, calculates what can be calculated, searches the rest on a render
+budget you set, and writes a spec plus a report.
 
 ```bash
 pip install -e '.[analysis,match]'
 python scripts/match_preset.py \
   --template samples/Example_Clean_PR12.xml \
   --reference song-excerpt.wav --reference-mode separated_stem \
-  --renderer swift \
+  --probe-di performance-di.wav --renderer swift \
   --budget 300 --out-dir runs/hotel-california-001
 ```
+
+Without a DI it refuses and says to keep the template: on 43 recordings per amp,
+no search or calculation without a DI was shown to end closer to the recording
+than the starting preset as it is ([the measurements](docs/tone-matching-plan.md)).
 
 It writes `match-1.json` — a spec `apply_spec.py` turns into a preset — plus a
 self-contained `report.html` and compact `summary.json`. **Read the caveats before

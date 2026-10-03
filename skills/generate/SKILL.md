@@ -60,7 +60,7 @@ its character.
 
 ## 2. Research the tone
 
-When the user supplies audio, measure it before choosing values:
+When the user supplies audio, measure it to describe the recording:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
@@ -83,14 +83,19 @@ clean description of the wrong instrument. Two things to look at every time:
 [reading-a-reference.md](../../reference/reading-a-reference.md) covers this,
 what each regime's confidence is worth, and — importantly for a `mix` or a
 `separated_stem` — **which bands of the measurement to believe and which are
-artifacts**. Read it before letting a measurement move a value.
+artifacts**. Read it before reading anything into a measurement.
 
 Classify the reference conservatively: `isolated_stem` only for an original
 multitrack stem, `separated_stem` for source-separated guitar, and `mix` for a
 finished mix. Report the regime and its confidence together with the measured
 level, spectral tilt and roll-off, dynamics, time effects, harmonic confidence,
-and all caveats. Then follow the [match skill](../match/SKILL.md) when a template
-is available. Measurement moves values; it does not identify the recorded rig.
+and all caveats. The measurement describes the recording; it does not identify
+the recorded rig, and without a DI it does not set values either: settings
+calculated from a recording ended further from it than the starting preset as it
+is on all four amps (`docs/tone-matching-plan.md`, "The real-guitar probe, from neutral settings and from the shipped presets"). So choose the topology and values from
+research and the pack's `tone.md`, and use the measurement to describe and
+sanity-check them. Follow the [match skill](../match/SKILL.md) only when the user
+also has a DI of the performance.
 
 Use WebSearch and WebFetch to find how it was actually recorded and choose the
 topology. Good sources:

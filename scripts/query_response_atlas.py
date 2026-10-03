@@ -149,8 +149,8 @@ def main() -> None:
         print("these are observed ranges on the atlas probe, not mathematical "
               "limits; a target outside one is evidence to distrust the topology, "
               "not proof that no denser sample can reach it")
-    print("\napply one spec to the topology template, then use match_preset.py for "
-          "local refinement")
+    print("\napply one spec to the topology template; match_preset.py can refine it "
+          "only with a DI of the recorded performance (--probe-di)")
 
 
 if __name__ == "__main__":

@@ -93,19 +93,24 @@ Practical consequences:
 - **Never take amp bass or a high-pass from a mix.** Below roughly 250 Hz you are
   looking at the bass guitar and the kick.
 - **A mix's high end is inflated** by cymbals and air. So if the *mix* is still
-  20+ dB down at 4–6 kHz, the guitar alone is at least that dark — closing a
-  low-pass on that evidence is safe in a way it is not on a stem.
+  20+ dB down at 4–6 kHz, the guitar alone is at least that dark — a conclusion
+  that is safe in a way it is not on a stem.
 - **On a stem, distrust the low end and the time effects.** A search fitting a
   stem will spend its budget on frequencies the separator removed, and will
   switch delay and reverb off because the tail was stripped.
 - The midrange is what both agree on, and it is where the tone lives.
 
-## Measurement moves values; it does not identify a rig
+## Measurement describes; it neither identifies a rig nor sets values
 
 A fingerprint tells you where this recording sits. It does not tell you what amp
 made it, and no amount of confidence changes that. Choose the topology — amp,
 channel, drive stage, time effects — from research into how the part was
-recorded, then let the measurement move the values inside it.
+recorded, and the values from that research and the pack's `tone.md`. Without a
+DI, do not let the measurement move values: settings calculated from a recording
+ended further from it than the starting preset as it is on all four amps, 43
+recordings each (`docs/tone-matching-plan.md`, "The real-guitar probe, from
+neutral settings and from the shipped presets"). Use it to describe the tone and
+to sanity-check the research.
 
 Corollary: a measured number that disagrees with a documented rig is usually the
 arrangement, not a discovery. A 4.5 s reverb tail measured off a ballad with a
