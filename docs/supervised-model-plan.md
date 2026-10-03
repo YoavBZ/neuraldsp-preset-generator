@@ -10,6 +10,53 @@ wrong. It is committed before any of its renders or training runs, and each
 stage's analysis plan is committed in its own merged commit before that stage's
 results are read.
 
+## 0. First: a local proof of concept (decided 2026-10-03)
+
+Before any of the sharing, runtime or new-data work below, test whether the
+approach works at all, trained locally on every DI already on disk (Tier C, §7:
+never published). Only if it works do open recordings, licences, a shareable model
+and the product integration follow. The POC keeps what makes the answer honest —
+players held out by band, the starting preset as the bar, criteria fixed here
+before any result — and drops everything else.
+
+**Scope.** SW50R only. All development DIs of set 2 (the 13 bands' DIs, usable or
+not, and the extra training-only DIs; not the "Keys GTR" DIs; one of Zeno
+ElecGtr8/9), none from set 1 or the held-out sessions. Rendered through the
+plugin: input gain, the amp's knobs and switches, the two drive pedals and the
+compressor (on/off and knobs), and the 9-band EQ with its filters (in the render
+unless gate F0, §3.1, passes first). Fixed at the template: cab, mics and room, FX
+off, output gain 0. About 2,000 settings × 12 players crossed (~25k clips, ~1–2 h of
+renders, ~25k licence-daemon ports at about one per render).
+
+**Models.** The ladder's rungs 0–3 (§4.2): no learning, nearest neighbour, per-head
+ridge/boosting, and the small CNN with pooling. Contrastive training, joint heads
+and calibration wait.
+
+**What "works" means** (each decided per fold, players held out by band, 4 folds
+of 3–4 bands):
+
+- **P1, simulation.** On new players × new settings, the CNN's median error in
+  audible steps for effective drive, the amp's tone knobs and the EQ curve is
+  ≤0.6× the prior sampler's, and its topology accuracy is ≥20 points above the
+  prior's, in ≥3 of 4 folds. If the model cannot read settings from its own
+  renders across players, stop here.
+- **P2, real amp tracks.** For each of the 43 development parts, the preset
+  predicted from the part's amp track by the fold model that never saw its band,
+  rendered through the part's own DI, against the shipped preset as it is, level
+  left out, under the corrected `unpaired-v3` (v3c) and the aligned log-mel
+  distance (ALM, §5.3). Works if both metrics put the model ahead on a majority of
+  parts with a band-level point estimate of ≥10% (median log ratio ≤ log 0.9); the
+  band sign-flip p is reported, not required (13 bands cannot resolve 10%, §1).
+  Nearest neighbour is scored the same way, so a win by the CNN alone is visible.
+- **P3, listening.** 16 blind R-A-B trials, model against the shipped preset, on
+  P2 parts chosen by a seeded rule (8 the metrics favour each way). Works if the
+  user picks the model on ≥10 of the decided trials.
+- **P4, stems** (only after P2): the same as P2 with htdemucs_6s stems of the
+  instrumental mix as input.
+
+A POC that passes P1–P3 earns the full plan; one that fails P1 or P2 is written up
+as such and the work stops.
+
 ## 1. The bar, and what the evidence allows
 
 - **The bar is the starting preset as it is.** Without a DI no search or
