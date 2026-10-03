@@ -10,52 +10,82 @@ wrong. It is committed before any of its renders or training runs, and each
 stage's analysis plan is committed in its own merged commit before that stage's
 results are read.
 
-## 0. First: a local proof of concept (decided 2026-10-03)
+## 0. First: a local proof of concept, starting with two kill tests
 
-Before any of the sharing, runtime or new-data work below, test whether the
-approach works at all, trained locally on every DI already on disk (Tier C, §7:
-never published). Only if it works do open recordings, licences, a shareable model
-and the product integration follow. The POC keeps what makes the answer honest —
-players held out by band, the starting preset as the bar, criteria fixed here
-before any result — and drops everything else.
+Decided 2026-10-03, revised the same day after an independent review (verdict:
+"rethink"). Before any sharing, runtime or new-data work, find out locally whether
+the approach can work at all, using every DI already on disk (never published). The
+review's point is that two cheap tests decide that before any model is built: is
+there room to beat the bar, and can settings be told apart across players? Both run
+on one crossed set of renders.
 
-**Scope.** SW50R only. All development DIs of set 2 (the 13 bands' DIs, usable or
-not, and the extra training-only DIs; not the "Keys GTR" DIs; one of Zeno
-ElecGtr8/9), none from set 1 or the held-out sessions. Rendered through the
-plugin: input gain, the amp's knobs and switches, the two drive pedals and the
-compressor (on/off and knobs), and the 9-band EQ with its filters (in the render
-unless gate F0, §3.1, passes first). Fixed at the template: cab, mics and room, FX
-off, output gain 0. About 2,000 settings × 12 players crossed (~25k clips, ~1–2 h of
-renders, ~25k licence-daemon ports at about one per render).
+**The bar, made fair.** The shipped Morgan templates have delay (mix 0.22), rack
+reverb (0.3), the compressor and the gate on, while the development references are
+dry amp tracks; a model whose time effects are "set by rule" could win by switching
+them off without reading the song. So every arm — the template included — gets the
+same rule set R: delay, rack reverb, tremolo and doubler off, spring reverb 0, gate
+off, output gain as the preset has it. The bar is the template with R
+("template+R"). Effective drive is converted back to `inputGain` at the assumed
+level (−22.9 LUFS), never at the part's own DI level, which a user's song does not
+reveal.
 
-**Models.** The ladder's rungs 0–3 (§4.2): no learning, nearest neighbour, per-head
-ridge/boosting, and the small CNN with pooling. Contrastive training, joint heads
-and calibration wait.
+**Renders (SW50R).** Every SW50R factory preset (44) and the template, each with R,
+through each of the 43 development parts' own DI crop: about 2,000 renders in a
+reused process with a discarded warm-up, scored on two halves of each crop (1.0–5.5 s
+and 5.5–10 s). Level is left out; both distances are used: v3c (the audit's
+corrected `unpaired-v3`) and ALM (an aligned log-mel distance, §5.3).
 
-**What "works" means** (each decided per fold, players held out by band, 4 folds
-of 3–4 bands):
+**K1, headroom.** Per part, choose the preset that is closest on half A and score it
+on half B (a split-half oracle over the presets); compare it with template+R on half
+B. Also score the best constant preset chosen leave-one-band-out (the preset with
+the best median on the other bands' parts) — a cheap product improvement if it wins.
+**Stop** if the oracle's band-median log ratio against template+R is not ≤ log 0.75
+on both distances: if even picking the best of 44 real presets with the answer in
+hand does not gain 25%, an estimator that has to guess will not reach the 15% the
+gates need.
 
-- **P1, simulation.** On new players × new settings, the CNN's median error in
-  audible steps for effective drive, the amp's tone knobs and the EQ curve is
-  ≤0.6× the prior sampler's, and its topology accuracy is ≥20 points above the
-  prior's, in ≥3 of 4 folds. If the model cannot read settings from its own
-  renders across players, stop here.
-- **P2, real amp tracks.** For each of the 43 development parts, the preset
-  predicted from the part's amp track by the fold model that never saw its band,
-  rendered through the part's own DI, against the shipped preset as it is, level
-  left out, under the corrected `unpaired-v3` (v3c) and the aligned log-mel
-  distance (ALM, §5.3). Works if both metrics put the model ahead on a majority of
-  parts with a band-level point estimate of ≥10% (median log ratio ≤ log 0.9); the
-  band sign-flip p is reported, not required (13 bands cannot resolve 10%, §1).
-  Nearest neighbour is scored the same way, so a win by the CNN alone is visible.
-- **P3, listening.** 16 blind R-A-B trials, model against the shipped preset, on
-  P2 parts chosen by a seeded rule (8 the metrics favour each way). Works if the
-  user picks the model on ≥10 of the decided trials.
-- **P4, stems** (only after P2): the same as P2 with htdemucs_6s stems of the
-  instrumental mix as input.
+**K2, identifiability across players.** From the same renders, features of each
+render (the long-term log-mel and the lean fingerprint of §4.2) labelled by
+preset; train on the renders through the DIs of the training bands and predict the
+preset from a held-out band's render (4 folds of 3–4 bands), with nearest neighbour,
+LDA and NCA in numpy/scikit-learn. Score top-1/top-5 accuracy against chance (1/44)
+and the regret — the distance between the predicted preset's render and the true
+preset's render through the held-out DI, both already rendered — against a
+constant guess (the best LOBO constant). **Stop** if no row reaches ≥3× chance
+top-1 accuracy and ≤0.75× the constant guess's median distance: settings that
+cannot be told apart across players with the answer's own presets as the menu will
+not be estimated from a song.
 
-A POC that passes P1–P3 earns the full plan; one that fails P1 or P2 is written up
-as such and the work stops.
+**If both pass, the model POC** (§6's stages 1–2, cut down): SW50R, all development
+DIs of set 2 (not the "Keys GTR" DIs; one of Zeno ElecGtr8/9; nothing from set 1 or
+the held-out sessions), about 2,000 settings × 12 players crossed, rendered through
+the plugin with R (EQ in the render; no factorisation, tail calibration or
+sensitivity ladders yet). Re-costed: about 2–3 h of renders (the review measured
+roughly 3× the earlier estimate per 8-s clip) and ~25k licence-daemon ports. Models:
+the ladder's rungs 0–3 plus numpy LDA/NCA at rung 1; rungs and hyperparameters
+chosen on simulation only, never on the real parts; TC-1M only; 1–2 seeds.
+
+- **P1, simulation.** On new players × new settings drawn from factory and
+  hand-made presets (not the coverage sampler), the distance between the
+  prediction's render and the truth's render through the held-out DI: the CNN's
+  must be lower than nearest neighbour's and than the best constant's, judged on
+  the difference in log distance with a confidence interval over folds.
+- **P2, real amp tracks.** For each development part, the preset predicted from its
+  amp track by the fold model that never saw its band, rendered through the part's
+  own DI, against template+R, the best LOBO constant and a shuffled-input control
+  (the model fed another part's audio), level left out, under v3c and ALM. The
+  model must beat all three on a majority of parts under both distances, with a
+  one-sided band-level p < 0.05 and a band-median gain of at least 8% (13 bands
+  detect a true gain reliably only at about 22%, §1). Also rendered through another
+  band's DI, since the user's guitar is not the recording's.
+- **P3, listening.** 16 blind R-A-B trials, model against template+R, on P2 parts
+  chosen by a seeded rule fixed before P2 is read; the model must be picked on ≥10
+  of the decided trials.
+- **P4, stems** after P2 only: the same as P2 from htdemucs_6s stems of the
+  instrumental mix.
+
+A failed kill test or P1/P2 ends the work with a write-up. The deliverable of a
+passing POC is local-only until Neural DSP's EULA is known (§7).
 
 ## 1. The bar, and what the evidence allows
 
