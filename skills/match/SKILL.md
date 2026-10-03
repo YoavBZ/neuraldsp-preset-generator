@@ -165,7 +165,8 @@ while a match through the same take's DI (a reamp, the best case) was closer on
 all 43. The other amps agree: with loudness set aside, the shipped PR12 and AC20
 templates as they are ended closer than their own no-DI search on 34 and 38 of
 43 (also by band), and three Tone King starts beat their own search on 28–30 of
-43 (by band, shown only for neutral settings). So
+43 (suggestive: none holds once parts are grouped by band and the number of
+comparisons is allowed for). So
 without a DI, show the starting preset beside the searched one and
 do not present the search as an improvement. Tell the user a match made without
 a DI is at best a starting point, not a measured match, and that a DI of their
