@@ -166,10 +166,10 @@ def estimate_lag(recording, renders, sample_rate: int = SAMPLE_RATE,
     """Samples the recording lags the renders by (recording[t] ~ render[t - lag]).
 
     `renders` is one render of the recording's DI (an array, mono or (samples,
-    channels)) or, better, a list of several unlike ones (the template and a handful of presets):
-    the lag is the peak, within ±`max_lag_s` of `hint` (0 when none), of the summed
-    magnitudes of each render's normalised cross-correlation with the recording,
-    band-limited to 80 Hz–2 kHz. A real rig and a plugin share the performance's
+    channels)) or, better, a list of several unlike ones (the template and a
+    handful of presets): the lag is the peak, within ±`max_lag_s` of `hint` (0 when
+    none), of the summed magnitudes of each render's normalised cross-correlation
+    with the recording, band-limited to 80 Hz–2 kHz. A real rig and a plugin share the performance's
     low-frequency waveform closely enough, and the magnitude ignores polarity
     (inverted on 19 of the 43 development parts). One render alone can lock onto
     another pitch period: 6 ms off on one of 27 parts, where nine pooled renders

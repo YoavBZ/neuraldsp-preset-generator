@@ -105,7 +105,8 @@ after:
   lag less the plugin latency; a higher peak just outside that window is refused.
   - Catalogued lags are quantised to 10 ms and off by 2.5 ms or more on 9 of 43
     parts, by 42 ms on Prodigal 4. There the catalogued hint is refused, as it
-    should be, and the lag is found without it (it also gives the lowest distance).
+    should be, and the lag is found without it (the lowest distance of the lags
+    tried).
     `estimate_lag` only refuses; a caller widens the window itself.
   - Pooled over nine renders, the estimate agrees with another estimate of the
     same family (a full-band correlation against one same-take render) to 0.3 ms
@@ -127,17 +128,23 @@ after:
   factory presets (median over 5 fixed draws, 3.97–4.86).
 - **Bands**: by default those within 30 dB of the recording's long-term peak, the
   same for every candidate. On the stage-0b windows the highest such band is under
-  6.4 kHz on 27 of 29 parts and under 4 kHz on 8; on K1's windows 21–56 of the 64
+  6.4 kHz on 27 of 29 parts, under 4 kHz on 8 and at 910 Hz on one; on K1's halves
+  18–56 of the 64
   bands are scored. Treble above that is not scored, so excess top end the
   recording lacks is barely seen: a +12 dB octave at 8 kHz, scored against the
   real recordings on the 8 parts where it moves the render away from them, costs
   +0.10 dB. `bands="union"` adds the bands within 30 dB of the candidate's own
   peak; there the same boost costs +0.26 dB, but known EQ moves are tracked less
   well (the table above) and halves agree less often (91% against 94%). Scoring
-  every band costs more still (83% right way, 88% across halves). This is a
-  trade-off the listening test should settle: stage 0b scores both band sets, and
-  K1 conclusions about search answers that raised the top EQ bands carry this
-  caveat.
+  every band costs more still (83% right way, 88% across halves). A listening test
+  cannot settle this cheaply: the two band sets order a pair differently almost
+  only when it is a near-tie (on the stage-0b pool, 16% of pairs in the lowest
+  quarter of |log(dA/dB)|, 2.7% in the second, 0.5% in the third, none in the
+  top), and the dry template with +12 dB
+  at 8 kHz, set against every factory preset, gives one part where they disagree
+  by more than 0.05 in log ratio. So the choice moves magnitudes more than orders.
+  Stage 0b reports both; K1 conclusions about search answers that raised the top
+  EQ bands should be checked under both.
 - **Level**: the render's level difference is taken out first (the median over the
   cells where the DI plays and the recording is above its floor), then what is left
   of the mean after the floor. ALM's mean signed difference exceeded 2 dB on 71% of
@@ -157,9 +164,10 @@ after:
 
   Applying the floor before the level step instead gave 0 of 162 but pointed the
   right way less often (84.5%, earlier band set). The 8 cases left are not pauses:
-  they are on Signs 2 and Today's The Day 07 and 10, on renders (two of them the
-  template, the worst Benny Tele, by 1.79 dB on Today's 07) that sit 12–30 dB
-  under the recording at 1.8–5 kHz, so the noise fills a real tonal deficit. When a render is much darker than the
+  they are on Signs 2 and Today's The Day 07 and 10, on renders (three of them the
+  template, the worst Benny Tele, by 1.79 dB on Today's 07) whose long-term level
+  at 1.8–5 kHz sits a mean 8–27 dB under the recording's after loudness matching,
+  so the noise fills a real tonal deficit. When a render is much darker than the
   recording, the distance cannot tell broadband noise from missing treble. In
   pauses the recording's own hiss is the loudest thing in the frame, presumably
   audible, so matching it still counts; whether this listener hears it is one of
@@ -171,8 +179,13 @@ after:
   parts, scoring only the frames where the DI plays against scoring all of them
   changed the best preset on 6 and moved the ranking to a median ρ of 0.968 (0.199
   at worst), while on the 27 active parts it changed nothing (measured before the
-  band change). A recording inaudible where the DI plays is refused too, and
-  non-finite or channels-first input raises an error.
+  band change). The rule is coarse: windows it accepts can still lean on pauses
+  (She's Gone, 26% pauses, changes its best preset when only playing frames are
+  scored; It Was My Fault 4, 39%, moves to ρ 0.74), a window with under a second
+  of playing can pass, and Prodigal 2's refusal hinges on two 20 ms DI blips. On
+  K1's halves and the stage-0b windows pauses are at most 8% and 6%. A recording
+  inaudible where the DI plays is refused too, and non-finite or channels-first
+  input raises an error.
 - **No bleed handling.** An earlier version dropped bands where the recording held
   other instruments while the DI rested. On the 27 active parts the DI never rests
   long enough to measure that, and where it does the check took a high-gain
@@ -265,10 +278,10 @@ other players' DIs.
 - Re-check the conclusions that rested on v3: the kill tests' v3c arm, the
   library-vs-template result (`docs/library-arm-analysis-*.json`) and every "search
   beats its start" count.
-- Stage 0b listening validation, scoring both band sets: about 100 trials
-  balanced between the two answers, with catches, hidden repeats, second-microphone anchors and trials
-  where the measures disagree; can't-tell answers modelled, never counted as half
-  agreement.
+- Stage 0b listening validation, reporting both band sets: about 100 trials
+  balanced between the two answers, with catches, hidden repeats,
+  second-microphone anchors and trials where the measures disagree; can't-tell
+  answers modelled, never counted as half agreement.
 - Data: one recorded lag per recording in the catalogue (Prodigal 4 first), crops
   re-cut where the DI plays, and bleed flags.
 - Listening checks the review asked for: whether hiss matters to this listener
