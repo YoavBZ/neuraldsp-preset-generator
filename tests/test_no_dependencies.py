@@ -148,7 +148,7 @@ def test_analysis_entry_points_explain_themselves_without_the_extra():
 
 @pytest.mark.parametrize("module", ["analysis", "analysis.io", "analysis.features",
                                     "analysis.align", "analysis.fingerprint",
-                                    "analysis.compare", "analysis.refchain",
+                                    "analysis.compare", "analysis.refchain", "analysis.aligned",
                                     "match", "match.renderer", "match.renderer_synth",
                                     "match.space", "match.invert", "match.search",
                                     "match.store", "match.report", "match.verdict",
