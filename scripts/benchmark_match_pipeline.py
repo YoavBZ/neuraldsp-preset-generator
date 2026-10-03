@@ -12,7 +12,8 @@ validation sets) it cuts the part's declared crops with `build_validation_crops.
 
   template  renders the template through the part's own DI
   no_di     match_preset.py against the amp track with no DI: the noise-probe
-            search, the guitar check and the level trim, as shipped
+            search, the guitar check and the level trim (`--search-without-di`,
+            which the tool now needs before it searches without a DI)
   di        match_preset.py with the part's own DI (`paired_di`), a same-take
             reamp: the best case a player's DI can reach
   library   match_preset.py with no DI of the part but the recordings benchmark's
@@ -185,7 +186,7 @@ class Runner:
             argv += ["--reference-mode", "isolated_stem", "--probe-di",
                      str(out / "library-probe.wav")]
         else:
-            argv += ["--reference-mode", "isolated_stem"]
+            argv += ["--reference-mode", "isolated_stem", "--search-without-di"]
         if not (out / arm / "summary.json").exists():
             self.run(argv, out / f"{arm}-match.log")
         summary = json.loads((out / arm / "summary.json").read_text())

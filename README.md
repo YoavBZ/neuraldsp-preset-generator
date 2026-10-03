@@ -354,19 +354,23 @@ clone with no dependencies at all, and a test enforces it.
 
 ## Optional: match a recording
 
-With `[match]` as well, the loop closes: given a recording you like and a preset
-to start from, `match_preset.py` measures the reference, calculates what can be
-calculated, searches the rest on a render budget you set, and writes a spec plus
-a report.
+With `[match]` as well, the loop closes: given a recording you like, a DI of
+that performance and a preset to start from, `match_preset.py` measures the
+reference, calculates what can be calculated, searches the rest on a render
+budget you set, and writes a spec plus a report.
 
 ```bash
 pip install -e '.[analysis,match]'
 python scripts/match_preset.py \
   --template samples/Example_Clean_PR12.xml \
   --reference song-excerpt.wav --reference-mode separated_stem \
-  --renderer swift \
+  --probe-di performance-di.wav --renderer swift \
   --budget 300 --out-dir runs/hotel-california-001
 ```
+
+Without a DI it refuses and says to keep the template: on 43 recordings per amp,
+no search or calculation without a DI ended closer to the recording than the
+starting preset as it is ([the measurements](docs/tone-matching-plan.md)).
 
 It writes `match-1.json` — a spec `apply_spec.py` turns into a preset — plus a
 self-contained `report.html` and compact `summary.json`. **Read the caveats before

@@ -62,6 +62,22 @@ RENDERERS = ("synthetic", "swift", "pedalboard")
 # anything: one note and a gap is not a distribution of onsets.
 MINIMUM_REFERENCE_S = 1.0
 
+# Without a DI, every search measured so far ended no closer to a recording than
+# the preset it started from, and through the noise probe further from it
+# (docs/tone-matching-plan.md, "The real-guitar probe, from neutral settings and
+# from the shipped presets"). A `probe` reference is a render through that same
+# probe, so it still searches.
+NO_DI_REFUSAL = (
+    "without a DI there is nothing here that beats the starting preset: on 43 "
+    "recordings per amp (SW50R, PR12, AC20, Tone King), the noise probe's calculated "
+    "settings and search ended further from the recording than the template as it "
+    "is, and a search through real guitar clips ended level with it "
+    "(docs/tone-matching-plan.md, \"The real-guitar probe, from neutral settings and "
+    "from the shipped presets\"). So the template is the answer: use it as it is.\n"
+    "  Give --probe-di with a DI of this performance to match it, or pass "
+    "--search-without-di to search through the noise probe anyway (measured worse "
+    "than not searching).")
+
 # `fingerprint` floors a silent band at -300 dB rather than returning None, so this is
 # how silence is recognised rather than matched.
 SILENCE_FLOOR_DB = -120.0
@@ -190,6 +206,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--no-invert", action="store_true",
                     help="skip the calculated step and search from the template alone. "
                          "For measuring what the search contributes on its own")
+    ap.add_argument("--search-without-di", action="store_true",
+                    help="with no --probe-di, search through the noise-burst probe "
+                         "anyway. Measured on 43 recordings per amp, that ended further "
+                         "from the recording than the starting preset as it is, so "
+                         "without this flag a no-DI match against a recording refuses "
+                         "and says to keep the template; it remains for benchmarks")
     return ap
 
 
@@ -200,6 +222,9 @@ def main() -> None:
     from analysis import require
 
     require("matching a preset")
+    if (args.probe_di is None and args.reference_mode != "probe"
+            and not args.search_without_di and not args.list_enumerable):
+        die(NO_DI_REFUSAL)
 
     import numpy as np
 

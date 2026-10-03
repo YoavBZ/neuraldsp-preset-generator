@@ -6,7 +6,9 @@ description: >-
   presenting a shortlist before writing. Use when someone supplies or points to
   audio and asks to match, copy, recreate, approximate, or get closer to its
   guitar tone, including a DI/reamp pair, isolated or source-separated stem, or
-  full mix. Use generate instead when there is no audio reference.
+  full mix. It searches only with a DI of the performance: from a song or stem
+  alone no search has beaten the starting preset, so it keeps that preset. Use
+  generate instead when there is no audio reference.
 allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 ---
 
@@ -135,68 +137,40 @@ Use `--renderer synthetic` when the plugin is unavailable. It completes the full
 workflow without the plugin, but its scores describe a Python approximation of
 the topology, not Neural DSP's processing.
 
-Use the user's own DI as `--probe-di` when available, and ask for one before
-matching without it — of this part if they can, which is the nearest a player
-can get to the recorded take (a guess, not a measurement); otherwise of anything
-they play. Against real amp recordings (14 parts on each of SW50R and Tone
-King's rhythm channel, `docs/tone-matching-plan.md`), a search through the DI of
-the very take the amp recorded ended about half as far as one through the DI of
-another session (13 and 14 of 14 closer), and the other session's DI still beat
-no DI on 11 and 13 of 14. Half of those other DIs were another excerpt of the
-same player and rig, and they did no better than the rest. On 43 more parts from
-13 other bands the same held on SW50R (43 and 39 of 43) and on Tone King (43 and
-35 of 43, with different pairings); on SW50R another song by the same band ended
-closer than another band's DI, though that was not designed to be shown. A
-user's own DI of the part is a different performance from the recording, so it
-lies somewhere between the first two; it was not measured.
+**Without a DI, do not search: the starting preset is the answer.**
+`match_preset.py` refuses a recording reference without `--probe-di`. Measured on
+43 development recordings per amp (SW50R, PR12, AC20 and Tone King's rhythm
+channel), with loudness set aside and parts grouped by band
+(`docs/tone-matching-plan.md`, "The real-guitar probe, from neutral settings and
+from the shipped presets"):
+- through the noise-burst probe, the calculated settings alone ended further
+  from the recording than the shipped preset on 33–36 of 43 on every amp, and the
+  search did not recover;
+- through clips of other players' real guitar, the search ended level with the
+  shipped preset as it is (closer on 23–29 of 43, no amp significant), though it
+  beat the noise-probe search on every amp.
 
-Without a DI, omit the flag; the tool uses a six-second sequence of decaying
-white-noise bursts and records that limitation. Do not substitute another probe:
-on SW50R neither turning it down to a guitar's loudness nor replacing it with a
-synthetic strummed guitar helped reliably. Every candidate is then noise through
-the amp compared with a guitar, so a no-DI run's own scores are
-noise-against-guitar distances and a falling score is not evidence the tone got
-closer. Against real amp recordings a no-DI search was no better than its
-starting settings on SW50R and ended further from the recording than them on
-Tone King on all 14 parts and on 38 of 43 more, and still on most with loudness
-set aside; on 43 more SW50R recordings the shipped no-DI match ended further
-from the recording than the unsearched template on 28, with loudness set aside,
-while a match through the same take's DI (a reamp, the best case) was closer on
-all 43. The other amps agree: with loudness set aside, the shipped PR12 and AC20
-templates as they are ended closer than their own no-DI search on 34 and 38 of
-43 (also by band), and three Tone King starts beat their own search on 28–30 of
-43 (suggestive: none holds once parts are grouped by band and the number of
-comparisons is allowed for). So
-without a DI, show the starting preset beside the searched one and
-do not present the search as an improvement. Tell the user a match made without
-a DI is at best a starting point, not a measured match, and that a DI of their
-playing would change that. Without a DI the tool sets each passing candidate's
-output gain through a synthetic guitar rather than the noise probe
-(`search.guitar_check.level_trim` in `summary.json`); on 43 SW50R recordings
-that brought answers from a median of 13 LU over their recordings to 4 over (3
-under to 11 over), so tell the user to expect it a little loud and to trim it by
-ear, and report the caveat that names any candidate whose level was left as the
-search set it.
+So without a DI, choose the starting preset with the generate skill's research
+about the song, and deliver it as it is. Use `fingerprint.py` on the reference
+only to describe it and its caveats, not to change settings, and do not ask the
+user to record a DI to make up for it. `--search-without-di` runs the old
+noise-probe search, with its guitar check and level trim, for benchmarks; do not
+offer its answer as better than the starting preset.
 
-A no-DI match can also leave the guitar all but silent: from the shipped SW50R
-template, three of six held-out parts matched without a DI turned the preamp
-volume or the amp's level nearly to zero, and through a real guitar played 16–35
-LU under the recording or not at all (`docs/heldout-listening-sw50r.md`). So
-without `--probe-di` the tool renders the template and the shortlist through a
-synthetic guitar and moves any candidate with no measurable loudness there, 20
-dB or more under the template, or that loses its loudness when its level is set,
-behind those that pass (`search.guitar_check` in `summary.json`; lines set on
-SW50R in sample, so treat a pass as "a guitar gets through", nothing more — on
-43 SW50R recordings two answers that passed played 13 and 18 LU quiet, and the
-level caveat had flagged both). Report that caveat when it fires; if every
-candidate failed, offer the starting preset instead, and in any case tell the
-user to confirm the preset plays with their own guitar.
+When the user does supply a DI, pass it as `--probe-di`. Against real amp
+recordings (14 parts on each of SW50R and Tone King's rhythm channel,
+`docs/tone-matching-plan.md`), a search through the DI of the very take the amp
+recorded ended about half as far as one through the DI of another session (13
+and 14 of 14 closer), and the other session's DI still beat no DI on 11 and 13 of
+14. On 43 more parts from 13 other bands the same held on SW50R (43 and 39 of
+43) and on Tone King (43 and 35 of 43, with different pairings). A user's own DI
+of the part is a different performance from the recording, so it lies somewhere
+between the first two; it was not measured.
 
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
-(each decision is under `search.level_trims` in `summary.json`); without a DI the
-output level is set through the synthetic guitar as above, and otherwise it is
-left to the search. A residual-weighted paired run must
+(each decision is under `search.level_trims` in `summary.json`); otherwise the
+output level is left to the search. A residual-weighted paired run must
 use the complete DI and reamp: omit `--excerpt` or pass `--excerpt 0`; a partial
 statistical fingerprint cannot be combined with a full-performance waveform
 residual.
