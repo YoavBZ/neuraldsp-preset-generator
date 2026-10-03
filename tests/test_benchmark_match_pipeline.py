@@ -227,3 +227,107 @@ def test_a_plugin_that_goes_silent_mid_match_is_a_failure_set_aside_for_a_rerun(
     # A second dead attempt keeps the first.
     runner.part(("s", "song", "g"), ["no_di"], None, None)
     assert (part / "no_di.silent-attempt-2" / "no_di" / "summary.json").exists()
+
+
+def test_the_library_arm_searches_through_its_probe_and_records_it(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    monkeypatch.setattr(P, "score", lambda reference, wav: {
+        "lufs": -18.0, "vs_reference_lu": 0.0, "v3": 1.0, "v3_no_level": 1.0})
+    argvs = []
+
+    def run(self, argv, log):
+        argvs.append(argv)
+        if argv[1].endswith("match_preset.py"):
+            out = pathlib.Path(argv[argv.index("--out-dir") + 1])
+            out.mkdir(parents=True)
+            (out / "summary.json").write_text('{"caveats": ["nothing beat the preset '
+                                              'you started from"]}')
+
+    monkeypatch.setattr(P.Runner, "run", run)
+    monkeypatch.setattr(P.Runner, "render", lambda self, *a: None)
+    part = ("s", "song", "g")
+    probe = np.linspace(-0.1, 0.1, 4800).astype(np.float32)
+    args = P.build_parser().parse_args(["--arm", "library"])
+    runner = P.Runner(args, tmp_path, "abc123", {part: (probe, ["t/x/g", "s/y/g"])})
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    result = runner.part(part, ["library"], None, None)
+    match = argvs[0]
+    out = tmp_path / P.slug(part)
+    assert match[match.index("--probe-di") + 1] == str(out / "library-probe.wav")
+    assert match[match.index("--reference-mode") + 1] == "isolated_stem"
+    assert (out / "library-probe.wav").exists()
+    assert result["library"]["library_from"] == ["t/x/g", "s/y/g"]
+    assert result["library"]["fallback_to_template"] is True
+    # Another library in the same directory is refused, not mixed in.
+    other = P.Runner(args, tmp_path, "abc123", {part: (probe * 0.5, ["t/x/g"])})
+    with pytest.raises(RuntimeError, match="another library"):
+        other._library_probe(part, out)
+
+
+def test_the_library_arm_is_paired_with_the_template_and_the_no_di_arm():
+    rows = [{"part": f"p{i}", "template": _arm(0, 1.0), "no_di": _arm(0, 1.2),
+             "library": _arm(None, 0.8)} for i in range(3)]
+    pairs = P.summarise(rows)["paired_v3_no_level"]
+    assert pairs["library_closer_than_template"] == {"closer": 3, "of": 3,
+                                                      "median_change": -0.2}
+    assert pairs["library_closer_than_no_di"]["closer"] == 3
+    assert P.build_parser().parse_args([]).arm is None and P.DEFAULT_ARMS == ("no_di", "di")
+
+
+def _library_runner(tmp_path, monkeypatch, probe, silent_counts, extra=()):
+    import benchmark_recordings
+
+    crop = {"reference_lufs": -18.0,
+            "outputs": {"reference": {"path": "ref.wav", "sha256": "r"},
+                        "di": {"path": "di.wav", "sha256": "d"}}}
+    monkeypatch.setattr(benchmark_recordings, "crops_for", lambda *a: crop)
+    monkeypatch.setattr(P, "score", lambda reference, wav: {
+        "lufs": -18.0, "vs_reference_lu": 0.0, "v3": 1.0, "v3_no_level": 1.0})
+    counts = iter(silent_counts)
+
+    def match(self, crop, out, arm):
+        (out / arm).mkdir(exist_ok=True)
+        return {"caveats": [], "search": {"accounting": {"silent": next(counts)}}}, False
+
+    monkeypatch.setattr(P.Runner, "match", match)
+    monkeypatch.setattr(P.Runner, "render", lambda self, *a: None)
+    args = P.build_parser().parse_args(["--arm", "library", *extra])
+    runner = P.Runner(args, tmp_path, "abc123", {("s", "song", "g"): (probe, ["t/x/g"])})
+    monkeypatch.setattr(runner, "log", lambda message: None)
+    return runner
+
+
+def test_a_library_search_with_silent_renders_is_set_aside_once(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
+    probe = np.linspace(-0.1, 0.1, 4800).astype(np.float32)
+    runner = _library_runner(tmp_path, monkeypatch, probe, [12, 12],
+                             ["--library-from", "other-source"])
+    part = ("s", "song", "g")
+    first = runner.part(part, ["library"], None, None)
+    assert "silent renders" in first["errors"]["library"] and "library" not in first
+    assert (tmp_path / P.slug(part) / "library.silent-attempt-1").is_dir()
+    second = runner.part(part, ["library"], None, None)   # silent again: kept
+    assert second["library"]["silent_trials"] == 12 and "errors" not in second
+    assert second["library"]["library_from_mode"] == "other-source"
+    assert P.summarise([second])["library"]["silent_trials"] == ["s/song/g"]
+
+
+def test_a_finished_library_arm_is_refused_when_its_library_changed(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    pytest.importorskip("soundfile", reason="needs the analysis extra")
+    probe = np.linspace(-0.1, 0.1, 4800).astype(np.float32)
+    part = ("s", "song", "g")
+    done = _library_runner(tmp_path, monkeypatch, probe, [0]).part(part, ["library"],
+                                                                    None, None)
+    assert "library" in done and "errors" not in done
+    changed = _library_runner(tmp_path, monkeypatch, probe * 0.5, [])
+    again = changed.part(part, ["library"], None, None)
+    assert "another library" in again["errors"]["library"]

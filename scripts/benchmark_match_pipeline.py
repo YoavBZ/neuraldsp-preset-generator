@@ -15,7 +15,20 @@ validation sets) it cuts the part's declared crops with `build_validation_crops.
             search, the guitar check and the level trim, as shipped
   di        match_preset.py with the part's own DI (`paired_di`), a same-take
             reamp: the best case a player's DI can reach
+  library   match_preset.py with no DI of the part but the recordings benchmark's
+            `library` probe as `--probe-di` (four clips of other bands' set-2
+            development DIs; set 2 only). As with any DI, the guitar check and
+            the level trim do not run, so its level is the search's own:
+            compare it with level left out. `--library-from other-source` takes
+            its clips only from the other source's bands, as the recordings
+            benchmark's flag does; a resumed run refuses a part whose probe the
+            current catalog and code would build differently
 
+Only `no_di` and `di` run unless `--arm` names `library`.
+
+With no guitar check to notice a plugin that died mid-search, a `di` or `library`
+search with silent renders is set aside and the part fails until a rerun; a
+second attempt that is silent again is kept, with its count in `silent_trials`.
 `--process-policy fresh` runs every search candidate in its own plugin process,
 as AC20 needs; a finished arm searched under another policy is refused, not reused.
 Each answer becomes a preset (apply_spec.py, or the template when the match says
@@ -66,7 +79,8 @@ FRESH_CAVEAT = (
     "template and every answer rendered through the DI. `measured_commit` on each "
     "arm is the checkout that ran it; `source_commit` is the one that wrote this "
     "summary")
-ARMS = ("no_di", "di")
+ARMS = ("no_di", "di", "library")
+DEFAULT_ARMS = ("no_di", "di")
 NOTHING_BEAT = "nothing beat the preset you started from"
 
 
@@ -81,7 +95,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--part", action="append", metavar="SOURCE/SONG/PART",
                     help="only these development parts (default: every usable one)")
     ap.add_argument("--arm", action="append", choices=ARMS,
-                    help="repeatable (default: both); the template is always rendered")
+                    help="repeatable (default: no_di and di); the template is always "
+                         "rendered")
+    ap.add_argument("--library-from", choices=("other-bands", "other-source"),
+                    default="other-bands",
+                    help="the library arm's clips, as benchmark_recordings.py builds "
+                         "them: any other band (default), or only another source's")
     ap.add_argument("--budget", default="300")
     ap.add_argument("--seed", default="0")
     ap.add_argument("--process-policy", choices=("reuse", "fresh"), default="reuse",
@@ -125,8 +144,11 @@ def score(reference_path, wav) -> dict:
 
 
 class Runner:
-    def __init__(self, args, out_dir: pathlib.Path, commit: str | None = None):
+    def __init__(self, args, out_dir: pathlib.Path, commit: str | None = None,
+                 libraries=None):
         self.args, self.out_dir, self.commit = args, out_dir, commit
+        # part -> (probe samples, the parts its clips came from), for `library`.
+        self.libraries = libraries or {}
         self.python = sys.executable
         self.lock = threading.Lock()
 
@@ -156,9 +178,14 @@ class Runner:
                 "--loss-profile", "unpaired-v3", "--pack", a.pack, "--amp", a.amp,
                 "--renderer", "swift", "--process-policy", a.process_policy, "--budget",
                 a.budget, "--shortlist", "3", "--seed", a.seed, "--out-dir", str(out / arm)]
-        argv += (["--reference-mode", "paired_di", "--probe-di",
-                  crop["outputs"]["di"]["path"]] if arm == "di"
-                 else ["--reference-mode", "isolated_stem"])
+        if arm == "di":
+            argv += ["--reference-mode", "paired_di", "--probe-di",
+                     crop["outputs"]["di"]["path"]]
+        elif arm == "library":
+            argv += ["--reference-mode", "isolated_stem", "--probe-di",
+                     str(out / "library-probe.wav")]
+        else:
+            argv += ["--reference-mode", "isolated_stem"]
         if not (out / arm / "summary.json").exists():
             self.run(argv, out / f"{arm}-match.log")
         summary = json.loads((out / arm / "summary.json").read_text())
@@ -202,6 +229,10 @@ class Runner:
             errors.pop(stage, None)
             for arm in arms:
                 stage = arm
+                if arm == "library":
+                    # Checked even for a finished arm, so a resumed run never mixes
+                    # probes built from different libraries.
+                    library = self._library_probe(part, out)
                 if arm in result:
                     found = result[arm].get("process_policy", "reuse")
                     if found != self.args.process_policy:
@@ -225,6 +256,17 @@ class Runner:
                     raise RuntimeError("the plugin went silent during the match (the "
                                        "starting preset plays through its DI but not "
                                        "in the guitar check); rerun this part")
+                silent = (search.get("accounting") or {}).get("silent")
+                if (arm != "no_di" and silent
+                        and not (out / f"{arm}.silent-attempt-1").exists()):
+                    # Without the guitar check nothing else would notice a plugin
+                    # that died mid-search (e.g. its licence daemon killed), and a
+                    # search of silent renders is no measurement. Silence can also
+                    # be a candidate's own (a volume at zero), so a second attempt
+                    # that is silent again is kept, with its count recorded.
+                    _set_aside(out, arm)
+                    raise RuntimeError(f"{silent} silent renders during the search; "
+                                       "set aside, rerun this part to confirm")
                 self.render(crop, out / f"{arm}.xml", out / f"{arm}.wav", out)
                 entry = score(reference, out / f"{arm}.wav")
                 entry.update(silent_trials=(search.get("accounting") or {}).get("silent"),
@@ -234,6 +276,9 @@ class Runner:
                              process_policy=self.args.process_policy,
                              caveats=summary.get("caveats"),
                              guitar_check=(summary.get("search") or {}).get("guitar_check"))
+                if arm == "library":
+                    entry.update(library_from=library[0], library_sha256=library[1],
+                                 library_from_mode=self.args.library_from)
                 result[arm] = entry
                 errors.pop(arm, None)
                 result_path.write_text(json.dumps(result, indent=1))
@@ -246,6 +291,29 @@ class Runner:
             result.pop("errors")
         result_path.write_text(json.dumps(result, indent=1))
         return result
+
+
+    def _library_probe(self, part, out: pathlib.Path):
+        """Write the part's library probe once; a later run must find the same one."""
+        import hashlib
+
+        import soundfile as sf
+
+        from analysis import io
+
+        samples, sources = self.libraries[part]
+        sha = hashlib.sha256(samples.tobytes()).hexdigest()
+        path = out / "library-probe.wav"
+        record = out / "library-probe.json"
+        if record.exists():
+            if json.loads(record.read_text())["sha256"] != sha:
+                raise RuntimeError(f"{path} was built from another library; choose "
+                                   "another --out-dir")
+        else:
+            sf.write(path, samples, io.SAMPLE_RATE, subtype="FLOAT")
+            record.write_text(json.dumps({"sha256": sha, "from": sources,
+                                          "mode": self.args.library_from}, indent=1))
+        return sources, sha
 
 
 def _set_aside(out: pathlib.Path, arm: str) -> None:
@@ -297,6 +365,9 @@ def summarise(results) -> dict:
         if arm != "template":
             summary[arm]["fell_back_to_template"] = sum(
                 r[arm]["fallback_to_template"] for r in done)
+            if any("silent_trials" in r[arm] for r in done):   # since #100
+                summary[arm]["silent_trials"] = [r["part"] for r in done
+                                                 if r[arm].get("silent_trials")]
     no_di = [r for r in results if "no_di" in r]
     fired, moves, before, off = [], [], [], []
     for r in no_di:
@@ -324,7 +395,9 @@ def summarise(results) -> dict:
         "clamped": sum(bool((match_one_trim(r["no_di"]) or {}).get("clamped"))
                        for r in no_di)}
     pairs = {}
-    for first, second in (("di", "no_di"), ("di", "template"), ("no_di", "template")):
+    for first, second in (("di", "no_di"), ("di", "template"), ("no_di", "template"),
+                          ("library", "template"), ("library", "no_di"),
+                          ("di", "library")):
         both = [r for r in results if first in r and second in r]
         if both:
             pairs[f"{first}_closer_than_{second}"] = {
@@ -336,6 +409,30 @@ def summarise(results) -> dict:
                     for r in both), 3)}
     summary["paired_v3_no_level"] = pairs
     return summary
+
+
+def library_probes(catalog, parts, data_root, crops_dir, other_source_only=False) -> dict:
+    """Each part's `library` probe, built exactly as the recordings benchmark's:
+    from every set-2 development part, never the part's band nor its `other` DI's."""
+    from analysis import io
+    from benchmark_recordings import (CATALOG, crops_for, development_parts,
+                                      library_probe, other_di_index, part_groups)
+
+    pool = development_parts(catalog, None, [2])
+    missing = [part for part in parts if part not in pool]
+    if missing:
+        die("--arm library scores set-2 development parts only: "
+            + ", ".join("/".join(part) for part in missing))
+    dis = [io.load(crops_for(CATALOG, data_root, crops_dir, *part)
+                   ["outputs"]["di"]["path"]).mono() for part in pool]
+    groups = part_groups(catalog, pool)
+    probes = {}
+    for part in parts:
+        other = pool[other_di_index(pool, pool.index(part))]
+        probes[part] = library_probe(part, pool, dis, groups,
+                                     exclude={groups[pool.index(other)]},
+                                     other_source_only=other_source_only)
+    return probes
 
 
 def main() -> None:
@@ -357,8 +454,14 @@ def main() -> None:
     if not parts:
         die("no usable development parts selected")
     data_root = pathlib.Path(catalog["root"]).expanduser()
-    arms = args.arm or list(ARMS)
-    runner = Runner(args, out_dir, _source_commit())
+    arms = list(dict.fromkeys(args.arm or DEFAULT_ARMS))
+    libraries = {}
+    if "library" in arms:
+        libraries = library_probes(catalog, parts, data_root, args.crops_dir,
+                                   args.library_from == "other-source")
+    elif args.library_from != "other-bands":
+        die("--library-from shapes the library arm: add --arm library")
+    runner = Runner(args, out_dir, _source_commit(), libraries)
     runner.log(f"{len(parts)} parts, arms {arms}, {args.parallel} at once, {out_dir}")
     results = {}
     for arm in arms:  # every part's no-DI arm before any DI arm
@@ -373,6 +476,7 @@ def main() -> None:
             "schema": SCHEMA, "source_commit": _source_commit(),
             "command": " ".join(sys.argv), "template": args.template,
             "pack": args.pack, "amp": args.amp, "budget": args.budget, "seed": args.seed,
+            "library_from_mode": args.library_from if "library" in arms else None,
             "loss_profile": "unpaired-v3",
             "process_policy": {"search": args.process_policy, "scoring_renders": "fresh"},
             "measurement_caveat": (MEASUREMENT_CAVEAT if args.process_policy == "reuse"
