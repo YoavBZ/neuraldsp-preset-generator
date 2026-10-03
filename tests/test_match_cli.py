@@ -551,16 +551,23 @@ def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):
     assert "Traceback" not in done.stderr
 
 
-def test_without_a_di_a_recording_is_not_searched_and_the_template_kept(audio, tmp_path):
+@pytest.mark.parametrize("regime", ["mix", "separated_stem", "isolated_stem"])
+def test_without_a_di_a_recording_is_not_searched_and_the_template_kept(
+        audio, tmp_path, regime):
     """Measured on 43 recordings per amp, no search without a DI beat the starting
     preset as it is, so the tool refuses rather than write a worse preset."""
     done = run("match_preset.py", "--template", TEMPLATE,
-               "--reference", audio / "ref.wav", "--reference-mode", "mix",
+               "--reference", audio / "ref.wav", "--reference-mode", regime,
                "--amp", "sw50r", "--renderer", "synthetic", "--budget", "60",
                "--out-dir", tmp_path / "run")
     assert done.returncode != 0 and "Traceback" not in done.stderr
     assert "use it as it is" in done.stderr and "--search-without-di" in done.stderr
-    assert not (tmp_path / "run" / "match-1.json").exists()
+    assert not (tmp_path / "run").exists()        # no store, no spec, nothing written
+    # The flag is for a run with no DI; with one it is a contradiction.
+    done = run("match_preset.py", "--search-without-di", "--template", TEMPLATE,
+               "--reference", audio / "ref.wav", "--probe-di", audio / "probe.wav",
+               "--amp", "sw50r", "--renderer", "synthetic", "--out-dir", tmp_path / "both")
+    assert done.returncode != 0 and "drop one of them" in done.stderr
     # A `probe` reference is a render through the noise probe itself: still searched.
     done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--reference-mode", "probe",
@@ -1201,8 +1208,8 @@ def test_only_a_paired_reamp_has_its_output_level_trimmed(audio, tmp_path, with_
     loudness matched through the probe does not carry over, so an unpaired match
     runs no trim — with a DI or without — and the summary says so by being empty."""
     out = tmp_path / "run"
-    di = ["--probe-di", audio / "probe.wav"] if with_di else []
-    done = run("match_preset.py", "--search-without-di", "--template", TEMPLATE,
+    di = ["--probe-di", audio / "probe.wav"] if with_di else ["--search-without-di"]
+    done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
                *di, "--amp", "sw50r", "--budget", "40", "--shortlist", "1",
                "--out-dir", out)
@@ -1383,9 +1390,10 @@ def test_a_failed_first_choice_is_written_as_the_last_match(audio, tmp_path, mon
 
 
 def test_only_a_match_without_a_di_runs_the_guitar_check(audio, tmp_path):
-    for label, extra in (("no-di", []), ("di", ["--probe-di", audio / "probe.wav"])):
+    for label, extra in (("no-di", ["--search-without-di"]),
+                         ("di", ["--probe-di", audio / "probe.wav"])):
         out = tmp_path / label
-        done = run("match_preset.py", "--search-without-di", "--template", TEMPLATE,
+        done = run("match_preset.py", "--template", TEMPLATE,
                    "--reference", audio / "ref.wav", "--reference-mode", "isolated_stem",
                    *extra, "--amp", "sw50r", "--renderer", "synthetic",
                    "--budget", "80", "--shortlist", "2", "--seed", "0",
@@ -1570,16 +1578,18 @@ def test_a_candidate_that_goes_silent_when_trimmed_moves_behind_those_that_pass(
         cli._guitar_level_caveat(check)[1])
 
 
-def test_a_residual_weighted_run_without_a_di_completes_the_level_trim(audio, tmp_path):
-    """The trim's scorer needs the reference samples a residual profile weighs."""
-    out = tmp_path / "paired-no-di"
-    done = run("match_preset.py", "--search-without-di", "--template", TEMPLATE,
-               "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
-               "--loss-profile", "paired-v2", "--excerpt", "0", "--amp", "sw50r",
-               "--renderer", "synthetic", "--budget", "80", "--shortlist", "2",
-               "--seed", "0", "--out-dir", out)
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert (out / "match-1.json").exists()
+def test_paired_di_without_its_di_is_refused_by_name(audio, tmp_path):
+    """A reamp's own DI is what paired_di asserts; without it there is no pair, and
+    the no-DI search flag does not stand in for one."""
+    for extra in ([], ["--search-without-di"]):
+        out = tmp_path / f"paired-no-di{len(extra)}"
+        done = run("match_preset.py", *extra, "--template", TEMPLATE,
+                   "--reference", audio / "paired-ref.wav", "--reference-mode", "paired_di",
+                   "--loss-profile", "paired-v2", "--excerpt", "0", "--amp", "sw50r",
+                   "--renderer", "synthetic", "--budget", "80", "--out-dir", out)
+        assert done.returncode != 0 and "Traceback" not in done.stderr
+        assert "paired_di needs the reference's own DI" in done.stderr
+        assert not out.exists()
 
 
 def test_a_trimmed_score_past_the_templates_is_said_so(audio, tmp_path, monkeypatch):

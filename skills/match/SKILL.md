@@ -17,6 +17,11 @@ allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 Measure a recording, match a preset to it, and show the evidence before writing.
 Read [preset-spec.md](../../reference/preset-spec.md) before applying the result.
 
+**A match needs a DI of the performance.** With a song or stem alone, measure and
+describe the reference (steps 1–2), then hand over the starting preset as it is
+and stop: no search or calculation without a DI has been shown to end closer to
+the recording than that preset (step 3).
+
 ## 1. Inspect the template and classify the reference
 
 Run `show.py` on the template first. Detect the pack from its header and note the
@@ -74,7 +79,7 @@ distortion character from them. A missing measurement is not zero.
 
 ## 2. Choose topology from evidence
 
-Measurement moves values; it does not identify an artist's rig. When the request
+Measurement describes a recording; it does not identify an artist's rig. When the request
 names a song or artist, research the recorded amp, cabinet, microphone and effects
 with reliable sources. Use that evidence and the pack's `tone.md` to choose the
 template, amp/channel and discrete topology before matching. Keep source links.
@@ -145,7 +150,8 @@ channel), with loudness set aside and parts grouped by band
 from the shipped presets"):
 - through the noise-burst probe, the calculated settings alone ended further
   from the recording than the shipped preset on 33–36 of 43 on every amp, and the
-  search did not recover;
+  search did not recover: it ended further on PR12 and AC20 and no closer on SW50R
+  and Tone King;
 - through clips of other players' real guitar, the search ended level with the
   shipped preset as it is (closer on 23–29 of 43, no amp significant), though it
   beat the noise-probe search on every amp.
@@ -157,7 +163,11 @@ user to record a DI to make up for it. `--search-without-di` runs the old
 noise-probe search, with its guitar check and level trim, for benchmarks; do not
 offer its answer as better than the starting preset.
 
-When the user does supply a DI, pass it as `--probe-di`. Against real amp
+When the user does supply a DI, pass it as `--probe-di`. Only the DI of the
+very take recorded has been shown to beat the starting preset; a DI of another
+performance, the user's own included, is unproven against it (other players'
+clips ended level with it above), so present that answer beside the starting
+preset, not as an improvement. Against real amp
 recordings (14 parts on each of SW50R and Tone King's rhythm channel,
 `docs/tone-matching-plan.md`), a search through the DI of the very take the amp
 recorded ended about half as far as one through the DI of another session (13
@@ -221,7 +231,7 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
   from one are different kinds of number. The run says outright when two candidates
   are closer together than their scores can resolve; pass that on rather than
   presenting the order as a finding;
-- every caveat, especially synthetic probe use, low harmonic confidence,
+- every caveat, especially low harmonic confidence,
   separation artefacts, absent measured EQ data, and unverified pack paths.
 
 Lower distance is evidence, not a listening verdict. Ask the user to audition the

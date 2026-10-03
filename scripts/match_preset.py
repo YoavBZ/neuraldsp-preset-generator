@@ -68,10 +68,11 @@ MINIMUM_REFERENCE_S = 1.0
 # from the shipped presets"). A `probe` reference is a render through that same
 # probe, so it still searches.
 NO_DI_REFUSAL = (
-    "without a DI there is nothing here that beats the starting preset: on 43 "
+    "without a DI nothing here has been shown to beat the starting preset: on 43 "
     "recordings per amp (SW50R, PR12, AC20, Tone King), the noise probe's calculated "
-    "settings and search ended further from the recording than the template as it "
-    "is, and a search through real guitar clips ended level with it "
+    "settings ended further from the recording than the template as it is and its "
+    "search no closer (further on PR12 and AC20), and a search through real guitar "
+    "clips ended level with it "
     "(docs/tone-matching-plan.md, \"The real-guitar probe, from neutral settings and "
     "from the shipped presets\"). So the template is the answer: use it as it is.\n"
     "  Give --probe-di with a DI of this performance to match it, or pass "
@@ -126,8 +127,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "benchmarks use (1.0)")
     ap.add_argument("--probe-di", type=pathlib.Path,
                     help="the DI every candidate is rendered through. Without one a "
-                         "synthetic decaying noise-burst sequence is used, and the "
-                         "report says so")
+                         "recording reference is refused (keep the template), unless "
+                         "--search-without-di is given or the reference is a "
+                         "`probe` render; those use a synthetic decaying "
+                         "noise-burst sequence, and the report says so")
     ap.add_argument("--paired-provenance", type=pathlib.Path,
                     help="paired-di-reference-1 sidecar proving that --reference "
                          "was rendered from this exact --probe-di")
@@ -208,10 +211,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "For measuring what the search contributes on its own")
     ap.add_argument("--search-without-di", action="store_true",
                     help="with no --probe-di, search through the noise-burst probe "
-                         "anyway. Measured on 43 recordings per amp, that ended further "
-                         "from the recording than the starting preset as it is, so "
-                         "without this flag a no-DI match against a recording refuses "
-                         "and says to keep the template; it remains for benchmarks")
+                         "anyway. Measured on 43 recordings per amp, its calculated "
+                         "settings ended further from the recording than the starting "
+                         "preset as it is and its search no closer, so without this "
+                         "flag a no-DI match against a recording refuses and says to "
+                         "keep the template; it remains for benchmarks")
     return ap
 
 
@@ -222,6 +226,11 @@ def main() -> None:
     from analysis import require
 
     require("matching a preset")
+    if args.search_without_di and args.probe_di is not None:
+        die("--search-without-di is for a run with no --probe-di; drop one of them")
+    if args.probe_di is None and args.reference_mode == "paired_di":
+        die("--reference-mode paired_di needs the reference's own DI: pass it as "
+            "--probe-di")
     if (args.probe_di is None and args.reference_mode != "probe"
             and not args.search_without_di and not args.list_enumerable):
         die(NO_DI_REFUSAL)
