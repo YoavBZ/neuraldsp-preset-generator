@@ -207,6 +207,26 @@ def test_a_library_probe_falls_back_skips_short_dis_and_honours_exclusions():
         R.library_probe(pool[0], pool[:3], dis[:3], groups[:3])
 
 
+def test_a_library_probe_can_leave_out_the_parts_own_source():
+    np, rate, pool, groups, dis = _library_fixture()
+    probe, sources = R.library_probe(pool[0], pool, dis, groups, other_source_only=True)
+    used = [groups[pool.index(tuple(src.split("/")))] for src in sources]
+    assert len(probe) == 4 * int(1.5 * rate)
+    assert all(src[0] == "t" for src in sources) and len(set(used)) == 4
+    # Without enough bands on the other source it refuses rather than fill in.
+    with pytest.raises(SystemExit):
+        R.library_probe(pool[0], pool, dis, groups, exclude={"D", "E"},
+                        other_source_only=True)
+
+
+def test_library_from_needs_the_library_signal():
+    args = R.build_parser().parse_args(["--amp", "x", "--signal", "library",
+                                        "--library-from", "other-source"])
+    assert args.library_from == "other-source"
+    assert R.build_parser().parse_args(["--amp", "x", "--signal", "noise"]).library_from \
+        == "other-bands"
+
+
 def test_without_a_search_each_inversion_is_paired_with_neutral_and_the_reference():
     pytest.importorskip("scipy", reason="needs the analysis extra")
     from match.signal_benchmark import SignalOutcome

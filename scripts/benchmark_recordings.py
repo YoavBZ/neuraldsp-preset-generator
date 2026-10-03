@@ -22,7 +22,9 @@ and selectors held:
   noise   the synthetic noise-burst probe match_preset.py uses with no DI
   library one 6-second probe of real guitar: the loudest 1.5 s of four
           development DIs from bands other than the part's own (catalog `group`),
-          each set to the median development-DI loudness, with short fades
+          each set to the median development-DI loudness, with short fades;
+          with `--library-from other-source`, only from bands of the other
+          source, so no clip shares the part's dataset (studio or library)
 
 `--no-search` scores only the neutral start and each signal's inversion (the
 calculated EQ and level, a handful of renders): what a deterministic,
@@ -85,6 +87,10 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--crops-dir", type=pathlib.Path,
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"),
                     help="private directory for the 10-second crops")
+    ap.add_argument("--library-from", choices=("other-bands", "other-source"),
+                    default="other-bands",
+                    help="the library's clips: any other band (default), or only "
+                         "bands of another source than the part's own")
     ap.add_argument("--no-search", action="store_true",
                     help="score the neutral start and each signal's inversion only")
     ap.add_argument("--json", type=pathlib.Path)
@@ -173,7 +179,8 @@ def part_groups(catalog: dict, parts) -> list:
     return [by_session.get(tuple(part[:2])) or "/".join(part[:2]) for part in parts]
 
 
-def library_probe(target, pool, dis, groups, exclude=(), rate=48000):
+def library_probe(target, pool, dis, groups, exclude=(), rate=48000,
+                  other_source_only=False):
     """A fixed probe of real guitar for one part, never from its own band.
 
     The bands other than the part's own (and any in `exclude`) are split into the
@@ -184,7 +191,9 @@ def library_probe(target, pool, dis, groups, exclude=(), rate=48000):
     faded in and out; a DI too short or unmeasurable passes to the band's next.
     LIBRARY_LUFS is the median of whole development crops, so each clip, the
     busiest stretch of its DI, plays about 1 LU softer than its own crop's busiest
-    stretch would. Returns the samples and the parts the clips came from.
+    stretch would. With `other_source_only` the part's own source contributes
+    nothing, so no clip shares its dataset (for set 2, its studio or library).
+    Returns the samples and the parts the clips came from.
     """
     import random
 
@@ -221,7 +230,8 @@ def library_probe(target, pool, dis, groups, exclude=(), rate=48000):
     source_of = {group: pool[items[0]][0] for group, items in members.items()}
     queues = []
     for own in (False, True):
-        bands = sorted(g for g in members if (source_of[g] == target[0]) == own)
+        bands = sorted(g for g in members if (source_of[g] == target[0]) == own
+                       and not (own and other_source_only))
         rng.shuffle(bands)
         queues.append(bands)
     clips, sources, turn = [], [], 0
@@ -336,6 +346,8 @@ def main() -> None:
     others = [other_di_index(parts, index) for index in range(len(parts))]
     groups = part_groups(catalog, parts)
     libraries = [None] * len(parts)
+    if args.library_from != "other-bands" and "library" not in args.signal:
+        die("--library-from shapes the library signal: add --signal library")
     if "library" in args.signal:
         # Drawn from every set-2 development part, whichever parts are scored, so
         # `--part` does not shrink it; set 1 (one Guitar-TECHS player and rig,
@@ -355,7 +367,8 @@ def main() -> None:
         pool_others = [pool[other_di_index(pool, pool.index(part))] for part in parts]
         other_dis = [pool_dis[pool.index(part)] for part in pool_others]
         libraries = [library_probe(part, pool, pool_dis, pool_groups,
-                                   exclude={pool_groups[pool.index(pool_others[index])]})
+                                   exclude={pool_groups[pool.index(pool_others[index])]},
+                                   other_source_only=args.library_from == "other-source")
                      for index, part in enumerate(parts)]
     if ("other" in args.signal and "library" not in args.signal
             and any(other is None for other in others)):
@@ -451,7 +464,7 @@ def main() -> None:
             "elapsed_s": round(elapsed, 1),
             "catalog_sha256": _sha(CATALOG),
             "pack": args.pack, "amp": amp, "signals": args.signal,
-            "search": not args.no_search,
+            "search": not args.no_search, "library_from_mode": args.library_from,
             "reference": reference, "budget": args.budget, "seed": args.seed,
             "loss_profile": args.loss_profile, "workers": args.workers,
             "no_di_seconds": NO_DI_SECONDS,
