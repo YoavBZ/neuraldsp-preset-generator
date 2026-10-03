@@ -2710,6 +2710,149 @@ The neutral and Tone King runs differ only in `--template` (the neutral spec
 applied with `apply_spec.py` onto the shipped template, or onto Tone King's
 `Default`) and `--pack toneking --amp rhythm`.
 
+#### The real-guitar probe, from neutral settings and from the shipped presets
+
+Round 1 of the song-only research (`docs/research-song-only-matching.md`) ranked
+first a probe of real guitar in place of the noise burst. Here the probe is its
+L1: for each part, the loudest 1.5 s of four DIs from other set-2 development
+bands, each set to −22.9 LUFS (`benchmark_recordings.py --signal library`). These
+DIs come from the local datasets and cannot ship with the plugin. All figures are
+with `level` left out, on the 43 development parts, with a band p: an exact
+two-sided sign-flip over the 13 bands of each band's median log ratio (see "Paired
+by part, and by band" above).
+
+**Calculated settings only, from neutral (E1).** The inversion through each
+signal, a handful of renders and no search (`--no-search`):
+
+| amp | library closer than noise | band p | library closer than neutral | band p |
+|---|---:|---:|---:|---:|
+| SW50R | 37/43 (−34%) | 0.003 | 33/43 (−19%) | 0.03 |
+| Tone King rhythm | 33/43 (−26%) | 0.003 | 27/43 (−11%) | 0.33 |
+| PR12 | 35/43 (−31%) | 0.001 | 32/43 (−32%) | 0.07 |
+| AC20 | 39/43 (−37%) | <0.001 | 36/43 (−25%) | <0.001 |
+
+The part's own DI, the ceiling, was closer than neutral on 41–42/43 on every amp
+(band p < 0.001). With the library drawn only from the other source (Cambridge
+parts hear only Telefunken clips and the reverse, `--library-from other-source`,
+E1x), the results held: closer than noise on 38/43 (SW50R) and 37/43 (Tone King),
+band p ≤ 0.003, and closer than neutral on 31 and 31. So the gain does not come
+from clips sharing the target's studio or library.
+
+**Searched through the probe, from neutral (E2 SW50R, E3 Tone King).** Budget 300:
+- SW50R: closer than neutral on 40/43 (−24%, band p < 0.001, 13/13 bands), and
+  the search improved on its own calculated start on 28/43 (−13%, band p 0.006).
+- Tone King: closer than neutral on 26/43 (−8%, band p 0.87), and no better than
+  its calculated start (24/43, band p 0.49). It fails round 1's E3 gate.
+
+**From the shipped presets, as the tool would run it.** The match-pipeline
+benchmark's `library` arm runs `match_preset.py` from each amp's shipped preset
+(Tone King: the plugin's `Default`) with the part's library probe as
+`--probe-di`, seed 11. Every render is through the part's own DI. The analysis
+was fixed in writing before the final results were read
+(`docs/library-arm-analysis-plan.md`, committed with these results, so git
+does not show that order); an interim count on the first 13–18 parts per amp had
+been seen. It scores two ways:
+- **stored:** `v3_no_level` as the benchmark scores it;
+- **corrected:** the audit's fixes applied to both sides alike: `band_shape` over
+  the bands within 30 dB of the reference's peak; each pair over the dimensions
+  measured on both; for Tone King, the first second cut from reference and
+  render (the start-up mute). A render with no measurable loudness loses its
+  pair; none did.
+
+The rule: adopt the library search for an amp if it is closer than the shipped
+preset as it is on most parts under both readings and the corrected band p is
+under 0.05.
+
+| amp | library search vs shipped preset as it is, stored | corrected | band p (corrected) |
+|---|---:|---:|---:|
+| PR12 | 29/43 (−14%) | 25/43 (−8%) | 0.82 |
+| SW50R | 34/43 (−31%) | 30/43 (−18%) | 0.09 |
+| Tone King | 31/43 (−26%) | 23/43 (−3%) | 0.70 |
+| AC20 | 28/43 (−20%) | 26/43 (−8%) | 0.70 |
+
+Under the rule, "not shown" on all four amps. The stored scores favour the
+search much more than the corrected ones: `band_shape`'s far-below-peak bands
+inflate unchanged presets' distances more than searched answers'.
+
+The same matches also show where the harm comes from. The shipped preset with a
+match's calculated settings applied and no search (`search.starting_settings`),
+rendered through the DI, corrected reading:
+
+| amp | noise calculation vs shipped preset | band p | library calculation vs shipped preset | band p | library search vs its calculation | band p | library search vs noise search | band p |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| PR12 | 9/43 (+33%) | <0.001 | 17/43 (+10%) | 0.10 | 25/43 (−1%) | 0.21 | 36/43 (−38%) | 0.009 |
+| SW50R | 10/43 (+33%) | 0.003 | 21/43 (0%) | 0.31 | 27/43 (−11%) | 0.04 | 33/43 (−37%) | 0.007 |
+| Tone King | 10/43 (+23%) | 0.02 | 23/43 (−12%) | 0.82 | 25/43 (−4%) | 0.58 | 37/43 (−32%) | 0.007 |
+| AC20 | 7/43 (+51%) | <0.001 | 21/43 (+1%) | 0.58 | 29/43 (−3%) | 0.08 | 40/43 (−32%) | 0.001 |
+
+**What it means.**
+- The noise probe's calculated settings are what make a no-DI match worse: they
+  land further from the recording than the preset they start from on 33–36 of
+  43 parts on every amp (band p ≤ 0.02), and the noise search does not recover.
+- Through real guitar neither the calculation nor the search is significantly
+  different from the shipped preset as it is on any amp (closer on 17–30 of 43,
+  band p 0.09–0.82); the search beats its own calculation by band only on SW50R
+  (p 0.04). Both beat the noise probe's: the search on every amp (band p ≤
+  0.009).
+- So without a DI the real-guitar options are statistically tied with the
+  shipped preset as it is, everything through the noise probe is worse, and the
+  rule fixed beforehand defaults to the preset. Level was left out throughout, so
+  nothing here says how loud to set it. Whether a listener hears the real-guitar
+  answers as closer is not measured; the loss's agreement with listening is the
+  audit's open result 7.
+
+**Caveats.**
+- The shipped SW50R, PR12 and AC20 presets have the rack reverb on, which carries
+  state between renders in a reused instance when a guitar is played; the skill
+  asks for fresh processes then (and always for AC20). Fresh processes on every
+  candidate would have cost about 130k licence-daemon ports, so these searches
+  reused theirs, which handicaps the library arm.
+- The inversion switched on Morgan's tremolo on 27/43 library answers, mostly
+  falsely (audit D-M7). An exploratory split shows no consistent handicap: with
+  it on, PR12's library won less often (13/27 against 10/16) and SW50R's more
+  often (19/27 against 10/16).
+- After Tone King's 1 s cut, Hikikomori's reference is near-silent (−59 LUFS) and
+  still scored; leaving it out gives 23/42.
+- E3's second batch ran with the machine heavily loaded (a load average near 70);
+  Tone King renders are not sample-exact even unloaded.
+- The noise-search comparisons are across runs (the no-DI runs of "Song-only
+  starting points" above, same seed and template).
+
+**Provenance.** E1 on SW50R and Tone King, E2 and E3 ran from 434ba58; E1 on PR12
+and AC20 and the four shipped-preset runs from c65a1cd; E1x from fec2806, the
+#105 branch before its review fixes (the probe it builds is unchanged by them).
+All in a separate checkout; JSONs copied here:
+- `docs/recordings-benchmark-set2-e1-{sw50r,toneking-rhythm,pr12,ac20}.json`,
+  `-e1x-{sw50r,toneking-rhythm}.json`, `-e2-sw50r-library.json`,
+  `-e3-toneking-library-batch{0,1}.json`;
+- `docs/match-pipeline-set2-{pr12,sw50r,ac20,toneking-default}-library.json`;
+- `docs/library-arm-analysis-set2-{pr12,sw50r,ac20,toneking}.json`, from
+  `scripts/analyse_shipped_library.py`.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp sw50r --set 2 --signal noise --signal library --signal other --signal same \
+  --no-search --loss-profile unpaired-v3 --workers 3 \
+  --json docs/recordings-benchmark-set2-e1-sw50r.json
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp sw50r --set 2 --signal library --budget 300 --seed 11 \
+  --loss-profile unpaired-v3 --workers 3 \
+  --json docs/recordings-benchmark-set2-e2-sw50r-library.json
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm library \
+  --parallel 2 --pack morgan --amp pr12 --template samples/Example_Clean_PR12.xml \
+  --out-dir runs/lib-pr12-shipped --json docs/match-pipeline-set2-pr12-library.json
+.venv/bin/python scripts/analyse_shipped_library.py render-calc \
+  --run runs/lib-pr12-shipped --no-di-run runs/start-pr12-shipped \
+  --template samples/Example_Clean_PR12.xml
+.venv/bin/python scripts/analyse_shipped_library.py score \
+  --run runs/lib-pr12-shipped --no-di-run runs/start-pr12-shipped \
+  --json docs/library-arm-analysis-set2-pr12.json
+```
+
+The other amps differ in `--pack`/`--amp`/`--template`; E1x adds
+`--library-from other-source` with `--signal noise --signal library`; Tone King's
+E3 ran as two `--part` batches, and its analysis adds `--cut-s 1.0`.
+
 ---
 
 ## 8. Dependency and CI policy

@@ -1,0 +1,1952 @@
+{
+ "schema": "match-pipeline-benchmark-1",
+ "source_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+ "command": "scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm library --parallel 2 --pack toneking --amp rhythm --template runs/tk-default.xml --out-dir runs/lib-tk-default --json /Users/yoavbz/ndsp-presets/runs/lib-shipped/lib-tk-default.json",
+ "template": "runs/tk-default.xml",
+ "pack": "toneking",
+ "amp": "rhythm",
+ "budget": "300",
+ "seed": "11",
+ "library_from_mode": "other-bands",
+ "loss_profile": "unpaired-v3",
+ "process_policy": {
+  "search": "reuse",
+  "scoring_renders": "fresh"
+ },
+ "measurement_caveat": "each search ran in one reused plugin process, which the Swift backend reports as reproducible=False (identical states can render slightly differently); the template and every answer were then rendered through the DI in a fresh process each. `measured_commit` on each arm is the checkout that ran it; `source_commit` is the one that wrote this summary; Tone King's renders are not sample-exact even in a fresh process (its manifest: fresh_process_reproducible false), so its scoring renders carry that noise too",
+ "summary": {
+  "parts": 43,
+  "failed": [],
+  "template": {
+   "parts": 43,
+   "vs_reference_lu": {
+    "n": 43,
+    "min": -6.07,
+    "median": -0.17,
+    "max": 12.25
+   },
+   "within_3_lu": 26,
+   "unmeasurable": [],
+   "v3_no_level": {
+    "n": 43,
+    "min": 0.452,
+    "median": 1.178,
+    "max": 2.99
+   },
+   "v3": {
+    "n": 43,
+    "min": 0.449,
+    "median": 1.154,
+    "max": 2.872
+   }
+  },
+  "no_di": {
+   "parts": 0,
+   "vs_reference_lu": null,
+   "within_3_lu": 0,
+   "unmeasurable": [],
+   "v3_no_level": null,
+   "v3": null,
+   "fell_back_to_template": 0
+  },
+  "di": {
+   "parts": 0,
+   "vs_reference_lu": null,
+   "within_3_lu": 0,
+   "unmeasurable": [],
+   "v3_no_level": null,
+   "v3": null,
+   "fell_back_to_template": 0
+  },
+  "library": {
+   "parts": 43,
+   "vs_reference_lu": {
+    "n": 43,
+    "min": -6.29,
+    "median": 1.07,
+    "max": 11.12
+   },
+   "within_3_lu": 32,
+   "unmeasurable": [],
+   "v3_no_level": {
+    "n": 43,
+    "min": 0.354,
+    "median": 0.921,
+    "max": 2.066
+   },
+   "v3": {
+    "n": 43,
+    "min": 0.361,
+    "median": 0.898,
+    "max": 1.942
+   },
+   "fell_back_to_template": 0,
+   "silent_trials": []
+  },
+  "guitar_check_failed_a_candidate": [],
+  "no_di_silent_trials": [],
+  "level_trim_on_match_1": {
+   "applied": 0,
+   "moved_db": null,
+   "landed_off_target": [],
+   "vs_reference_lu_before_trim": null,
+   "clamped": 0
+  },
+  "paired_v3_no_level": {
+   "library_closer_than_template": {
+    "closer": 31,
+    "of": 43,
+    "median_change": -0.258
+   }
+  }
+ },
+ "parts": [
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr3",
+   "reference_lufs": -17.329991467862698,
+   "crops": {
+    "di": "e69bd45134ea39f66482e730543feb78eddb85ea64a4169b61beae6972290507",
+    "reference": "609e71399ebfb3cafcd1ff4f26caac021f49c9a94659e880934c1dea4e899c9e",
+    "mix": "5c897684d2f1ec348d20760e9549b6e93571400c4ac68df3ed053539ed115173",
+    "backing": "f4f3493addbbc5620bd2f2090db789b2693ce2a73e0b15427b2b214ee45d7d60",
+    "mix_instrumental": "0b9cb5b5491abc676895cb3ea0e6e564a74e746eccb87c5f738528f403c18a10",
+    "backing_instrumental": "716eca429cdd326a6b170c78c11aee5af13022325ad043d2559227b402647172"
+   },
+   "template": {
+    "lufs": -19.01,
+    "vs_reference_lu": -1.68,
+    "v3": 1.1149337255512077,
+    "v3_no_level": 1.1587442828315662,
+    "v2": 1.6323079316709554,
+    "v2_no_level": 1.7022410576494962,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.01,
+    "vs_reference_lu": -0.68,
+    "v3": 0.7835215196267029,
+    "v3_no_level": 0.8274837448603899,
+    "v2": 0.704840607318298,
+    "v2_no_level": 0.7360258643173172,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/Russian Cream/GTR 2",
+     "cambridge/It Was My Fault For Waiting/ElecGtr4"
+    ],
+    "library_sha256": "186c87c644c72aaf21e9afda0b552693c024d18cc1820823b9439c320547f2d0",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr4",
+   "reference_lufs": -17.743919039535257,
+   "crops": {
+    "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400",
+    "reference": "6dc563bbfc2dd124c1d4bf8cc7bb4fc2457bff74355a1adfd65e8c72eff9ba25",
+    "mix": "fdfdfa86a393a0912419a4997a35ad63fb7c5a577f93cb42332bd645f71326d7",
+    "backing": "dc283f9cf1f8f0f1cdbaf409c97bad02bf56677b4820f4b158cafba8164457d6",
+    "mix_instrumental": "b231671954ffae4b19bef0927b475d5b60a62c8038a1588539f4b6dc0c9c23f8",
+    "backing_instrumental": "218a23ce72b27e79bfe57ab682955a95d4c884f0cdca0f796fc71728a5fa522b"
+   },
+   "template": {
+    "lufs": -18.12,
+    "vs_reference_lu": -0.37,
+    "v3": 1.101063418842475,
+    "v3_no_level": 1.1779894782247755,
+    "v2": 0.9716139468237079,
+    "v2_no_level": 1.026719204225254,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.7,
+    "vs_reference_lu": -0.96,
+    "v3": 0.819231864203946,
+    "v3_no_level": 0.8586449061147838,
+    "v2": 0.7282737459819757,
+    "v2_no_level": 0.754900294632974,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 18.6,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Strangest Places/GTR",
+     "cambridge/Prodigal/ElecGtr5",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Quicksand/ElecGtr1"
+    ],
+    "library_sha256": "f6a150f706dc8415d4e3fabc3ba03d6df5b67c5ae716ef6751d979578b03fb8d",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+   "reference_lufs": -18.24112269257386,
+   "crops": {
+    "di": "d6b6c584693c45e1d38c22770c9f71a9c84245a675fe5ad925397b01a8048dc2",
+    "reference": "645598dea297e57ef5f53c4c338ce9b540f91e5b16542f077a78365e0e64cf38",
+    "mix": "9b360c4e6112fbe83ca106ac31d2066373e62e59e96625e3eb5ec3cbccf43214",
+    "backing": "60abc55a4917f78cb7f2c7340c935c7f5fd0026b63e32caedaf61f2b5d694ae3",
+    "mix_instrumental": "e34eb8608b566457326178000747e80db4ed0d2602b791d8ffd6094174b24d4e",
+    "backing_instrumental": "9abc92b6e0dbebde410c970394424045b3e9f4acce7f56590ca57b06200839aa"
+   },
+   "template": {
+    "lufs": -18.72,
+    "vs_reference_lu": -0.48,
+    "v3": 1.8622932773197092,
+    "v3_no_level": 1.9966848518449494,
+    "v2": 1.6072729757072433,
+    "v2_no_level": 1.7016603436881503,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.08,
+    "vs_reference_lu": 1.16,
+    "v3": 1.0008516899220339,
+    "v3_no_level": 1.0493399812316682,
+    "v2": 1.2653550880326583,
+    "v2_no_level": 1.322660854643484,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 19.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Measurements/GTR",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Quicksand/ElecGtr2"
+    ],
+    "library_sha256": "c89909b88d0af35cbac7b115ef5b6331b177bc2b93612b84dc3b03a1ec146473",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr1",
+   "reference_lufs": -19.918900426194938,
+   "crops": {
+    "di": "3920ba8856c6769961ce758ce0dc7207b864cfdfa74adb5b752f6885a8515629",
+    "reference": "97fb54a3f9bc0e7815cc9489bc72672e1aad1091629ce847e5c3f24b73b3e7e4",
+    "mix": "a9e232b7eb9cde2c67f0c3a11f611df057a0cfe73e910c375acab2c408bc1b8d",
+    "backing": "8e4f9ebdb608588f27207cd35be571cbd6b4f96634013a85dbcc887196822a18",
+    "mix_instrumental": "c720527bfb82429490555c02fb0d08dd4e9effd01c3d2998125a43d1ec162876",
+    "backing_instrumental": "3604a454f347c509505b447625bcef17f9a85c1c052675fa32b51a603d6f477e"
+   },
+   "template": {
+    "lufs": -16.88,
+    "vs_reference_lu": 3.04,
+    "v3": 1.3298829498122127,
+    "v3_no_level": 1.3548737090079135,
+    "v2": 1.3298829498122127,
+    "v2_no_level": 1.3548737090079135,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.65,
+    "vs_reference_lu": 2.27,
+    "v3": 0.9778895955832088,
+    "v3_no_level": 0.9953545636555672,
+    "v2": 0.9778895955832088,
+    "v2_no_level": 0.9953545636555672,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 13.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Farthest Step/GTR",
+     "cambridge/Prodigal/ElecGtr3",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Drag Me Down/ElecGtr4"
+    ],
+    "library_sha256": "6d029a03481d12e3b1b20fe6ca7a9b2f8b2cabdc3bb76737da1ef388bdb694f4",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr2",
+   "reference_lufs": -19.646842255772444,
+   "crops": {
+    "di": "5de10fe27c6f417265098aa67c22ee8460354fe708265928f9d4f7cb0b829d66",
+    "reference": "12bbf177c3ea2170d3537518898bf36e91e352974eafdc52b8ffa64c4838d443",
+    "mix": "aee8300f5bd28334b3ebcd5136d16ef2441da60223e88c515a3c3390973688ad",
+    "backing": "6ec241e1edd863b3e5e07de25b934aa8261329e9aa45d9378790f41d3136ee27",
+    "mix_instrumental": "52090a2392ab3c93dfb49f6e0dd1a2493edcf7c730b52facf5912535520ce20d",
+    "backing_instrumental": "eaab43d450f5b2bb633f809fe916430418c262b5ff77089ce45961adeab15fb4"
+   },
+   "template": {
+    "lufs": -16.68,
+    "vs_reference_lu": 2.97,
+    "v3": 1.6348443017834662,
+    "v3_no_level": 1.6857530624505819,
+    "v2": 1.6348443017834662,
+    "v2_no_level": 1.6857530624505819,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -19.17,
+    "vs_reference_lu": 0.48,
+    "v3": 0.8299361138544923,
+    "v3_no_level": 0.8828258070535312,
+    "v2": 0.8299361138544923,
+    "v2_no_level": 0.8828258070535312,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 12.4,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Prodigal/ElecGtr5"
+    ],
+    "library_sha256": "dfd75d32f3b127ccbbcdb54f54be071c1f0dccf5dc4649669f8178ab5d9df42f",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr3",
+   "reference_lufs": -27.540806848925694,
+   "crops": {
+    "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4",
+    "reference": "5cd0ae05d36f3f8f49e16d81e93b53b69a25b22f3e9e655063b70cc2761e9142",
+    "mix": "a281420788ed2a396eb481a7bdb1e29142dfd80e5b53835b8b3d81adf41f3554",
+    "backing": "25cb6299c366d243d0af035eeaf02945165ced74cb9c20b4af778111a3aab900",
+    "mix_instrumental": "685564d33d70266117098fd85494ac1fac2979264f794f595675bd0e08921387",
+    "backing_instrumental": "6605af795d7945346c475878f991c1851d50e9f4fcdd60b203643fdd2f460e2c"
+   },
+   "template": {
+    "lufs": -18.5,
+    "vs_reference_lu": 9.04,
+    "v3": 1.8817574749061596,
+    "v3_no_level": 1.7924225387145407,
+    "v2": 1.6127374790647824,
+    "v2_no_level": 1.5213942711777029,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -28.67,
+    "vs_reference_lu": -1.13,
+    "v3": 1.9423761263196773,
+    "v3_no_level": 2.0659847678712304,
+    "v2": 1.64924416284167,
+    "v2_no_level": 1.7322383473748224,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Passing Ships/ElecGtr6",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+    ],
+    "library_sha256": "946ac11025d0d25afb0ef8e536cfa14bfe88fb58b4a096fabbb28091a7b3c616",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr4",
+   "reference_lufs": -30.31973119379635,
+   "crops": {
+    "di": "8220506429afe96e775b637e2aedcebb672dfabc26a15f686f72b1b394bf0000",
+    "reference": "77c232fc97cb9183b5c19a498f3c43476228f09ede1e2532bcaddcbc4f5b46c8",
+    "mix": "14216d0bfdc9a12384b77cdac0d9e6428e9447ef212d1b25bbcb34b33e038bf0",
+    "backing": "29638f2cfc28e937921a64c3044b2193f7d735d6c73d4163c1e1a7ca4e7ceec7",
+    "mix_instrumental": "a43fd0b98407ce2b1e903567547809b9e84788191867818e26bdbdc2a8370e9a",
+    "backing_instrumental": "9c3a67c288e5e0ab4543ed5cc0106e73fb4a5191631f54ecc1febbe2b3c5f968"
+   },
+   "template": {
+    "lufs": -18.94,
+    "vs_reference_lu": 11.38,
+    "v3": 1.1130461152319993,
+    "v3_no_level": 0.901444492750315,
+    "v2": 1.2477309176422082,
+    "v2_no_level": 1.0817133687927871,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -26.56,
+    "vs_reference_lu": 3.76,
+    "v3": 1.0873380555314625,
+    "v3_no_level": 1.074233165178683,
+    "v2": 1.149903185848183,
+    "v2_no_level": 1.1431577414469773,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 7.2,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Passing Ships/ElecGtr4",
+     "telefunken/Strangest Places/GTR",
+     "cambridge/Signs/ElecGtr3"
+    ],
+    "library_sha256": "f057aad2bbb78cfb300e4f3d768d64a71caedd66257bb74d038b9d3f59a5b60d",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr07",
+   "reference_lufs": -19.065141007326048,
+   "crops": {
+    "di": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c",
+    "reference": "09a1134a39f81514d035bd3f21c9654c2e7ba28df3ba01fe93f2ff5d5b02e9b3",
+    "mix": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+    "backing": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e",
+    "mix_instrumental": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+    "backing_instrumental": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e"
+   },
+   "template": {
+    "lufs": -19.32,
+    "vs_reference_lu": -0.25,
+    "v3": 1.4678603992561623,
+    "v3_no_level": 1.5771651676184906,
+    "v2": 1.3157223821815578,
+    "v2_no_level": 1.3960955810194853,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -22.95,
+    "vs_reference_lu": -3.89,
+    "v3": 1.117727147546935,
+    "v3_no_level": 1.1038635013006404,
+    "v2": 1.0099346774727902,
+    "v2_no_level": 0.991452156438407,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 7.3,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/She's Gone/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr3",
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Drag Me Down/ElecGtr3"
+    ],
+    "library_sha256": "47264cf128280b038491e80d00518d5b7c7d49d54fb8abb4d0ff1341d51854a9",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr10",
+   "reference_lufs": -19.32506125640489,
+   "crops": {
+    "di": "146bae7fb6d8427ef292ab131e36c77338608809cdefeef14a4981ca61afdf1b",
+    "reference": "91c67c2421425bae5481c726f1f2447d64d30fceed54972cb5b87f934ff674b9",
+    "mix": "1d69fe32d4558b51104b44bf798e0aeb61705826074e5f2ff0bc7b161f7eb591",
+    "backing": "c0efcfc1963c06bf3db84d3149061d05ee5b2d644f7208c89579d61321d4e320",
+    "mix_instrumental": "e633c00238414c84090f27dbc99dcedc82c0e10a09140da6d22280ed6acc914c",
+    "backing_instrumental": "fffe2c39092220b6702660738cf9144df8d0c49dcb656d34d74c68a6b92ead3b"
+   },
+   "template": {
+    "lufs": -19.77,
+    "vs_reference_lu": -0.45,
+    "v3": 1.4445191522854093,
+    "v3_no_level": 1.5469811906237307,
+    "v2": 1.3301537742083618,
+    "v2_no_level": 1.4073377160045593,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -15.48,
+    "vs_reference_lu": 3.85,
+    "v3": 0.6658339327896354,
+    "v3_no_level": 0.617083980115133,
+    "v2": 0.6403877898842213,
+    "v2_no_level": 0.598456558789714,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 18.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr4",
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Signs/ElecGtr2"
+    ],
+    "library_sha256": "9c457eeefe78e37badb192b008b038c2bc3bde3c97679faf09a4c53fa30637bc",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr1",
+   "reference_lufs": -31.532307942338687,
+   "crops": {
+    "di": "246491edfcac92937413d6539d14a8ff15cfd900a8f75f98fc998ae24dec35bb",
+    "reference": "7f9e0a0213165987f68094904818cb656d04e60e107fa94009330fd48389f3df",
+    "mix": "af8b6dc9fbbefa546ebd9033fca07ce9e35e092f2775fae856aed850e38551d8",
+    "backing": "e05ef762027f21af8c0985e046ba526c64d8b47bfd2a1f5047c6b348f803f421",
+    "mix_instrumental": "67abef3533122dc1d66ca93fdecfe0c265c1f157bc5fd7f9f1614d7f3b43080b",
+    "backing_instrumental": "219a604215288bfb7e5fb70f43d5d9d7429492df7f36c8dd8b9e5f73e7e28042"
+   },
+   "template": {
+    "lufs": -19.28,
+    "vs_reference_lu": 12.25,
+    "v3": 1.6267965433420237,
+    "v3_no_level": 1.363596172985812,
+    "v2": 1.8791106520928829,
+    "v2_no_level": 1.6954254286561785,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -31.82,
+    "vs_reference_lu": -0.29,
+    "v3": 0.8653141613046137,
+    "v3_no_level": 0.9476692500158223,
+    "v2": 0.6949540540749024,
+    "v2_no_level": 0.744811336358922,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 19.8,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Drag Me Down/ElecGtr4",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Today's The Day/ElecGtr07"
+    ],
+    "library_sha256": "b5b829e1b14c572075380e60a63c5fd1db5c6d1356731dbc4a5b966a3d643edd",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr2",
+   "reference_lufs": -22.34655331093456,
+   "crops": {
+    "di": "2538e174f2eab9a739624d13c9754ac5c2a50956ba1c2218c5c5d1a8a499b74c",
+    "reference": "501e3833a5f17b263fae9556874d96016dd6ea07ce42225e8cd074f688a83561",
+    "mix": "db1129ed2c6552789a9bfc256233afd821edf6898f0a98ee4a3ba455ba7fb5c5",
+    "backing": "03b83bd17c9f726f33beb7af85bbe6e6a44de0fe750bd2ab886320bff3465603",
+    "mix_instrumental": "ea32ecbcd95981a8f515a894bf2934676992aaf891a983cf27dd8e004f4f4c70",
+    "backing_instrumental": "578e465932684c821859e8b0dfee5a033e1f0ec46d32d8be1fe4274744fd469f"
+   },
+   "template": {
+    "lufs": -20.35,
+    "vs_reference_lu": 1.99,
+    "v3": 1.8154543593157881,
+    "v3_no_level": 1.906148124524929,
+    "v2": 3.700757212769368,
+    "v2_no_level": 3.8986326831673703,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -27.04,
+    "vs_reference_lu": -4.69,
+    "v3": 1.0505560586144986,
+    "v3_no_level": 1.0100736421893273,
+    "v2": 3.148237429065131,
+    "v2_no_level": 3.251600739656335,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 0.2,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Russian Cream/GTR 1",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+     "telefunken/Measurements/GTR",
+     "cambridge/Signs/ElecGtr2"
+    ],
+    "library_sha256": "c76fa588bf54e01ce19668f2ab9aaffc9fe81cb5e0b96185537cb55723cde47b",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr3",
+   "reference_lufs": -26.20445977900647,
+   "crops": {
+    "di": "d1a66b47c0fe9b738d824e5573ded3f1d89d0ab079d9259e4d5f2e587009c1a6",
+    "reference": "1e3c154589b263f9b8ab844d8222aa48ee7b8c101456292045d28316bfa18be5",
+    "mix": "990ec3342ffb991bca87e6adddd064f9790eb99aa1c2762a5ddfac899e457d2c",
+    "backing": "a60514a7a22e1008bbda2150a696b70720efd5a007e887b36e0d75d08ca57731",
+    "mix_instrumental": "97c0b7793904c7806bfb73d5af8d32a1973b95c2c9bc27c6780cb03ad6cdb925",
+    "backing_instrumental": "816679db60b68e173c4bda15b76e77347ea868f698771ba7beee801c8ad32fb8"
+   },
+   "template": {
+    "lufs": -18.75,
+    "vs_reference_lu": 7.46,
+    "v3": 1.3597990183211677,
+    "v3_no_level": 1.2710989408202071,
+    "v2": 1.1583761078218575,
+    "v2_no_level": 1.0719658539841526,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -29.57,
+    "vs_reference_lu": -3.36,
+    "v3": 1.1018953476042648,
+    "v3_no_level": 1.1002028750467068,
+    "v2": 0.9428971855402787,
+    "v2_no_level": 0.93112961068421,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 23.8,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/First Offering/GTR 2",
+     "cambridge/Today's The Day/ElecGtr07",
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Signs/ElecGtr2"
+    ],
+    "library_sha256": "208ce849da56279917acedc2658f53be6d52ef82954ff024a0a2562ccb398a39",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr4",
+   "reference_lufs": -17.389281497844784,
+   "crops": {
+    "di": "703d871f3c893c5b1bb3c0e2fe6e2f6eb8b9a874e8d6f73e9476acfa2dad74a5",
+    "reference": "e3677ccb468647d1512ea9ceb3adadbca7a611a86b1ed20bb22842f60733ff35",
+    "mix": "bb5c5104f6de7968b3b66d61304e4c33d4584111db51b2d92cfad5ae709c39b5",
+    "backing": "181bb24095061836112327db3834ceafc07c4ac56d3ed433262809aab933bc03",
+    "mix_instrumental": "179671fd597e53e5490c419d528e66633ae7970fda79d8e2abd418e76193a099",
+    "backing_instrumental": "ecadd03a30d9d563b1b1f4fce2777f99d61555f8cc5ba4f2c75c230562428a9b"
+   },
+   "template": {
+    "lufs": -18.61,
+    "vs_reference_lu": -1.22,
+    "v3": 1.8571014779416328,
+    "v3_no_level": 2.0125052077210936,
+    "v2": 1.8571014779416328,
+    "v2_no_level": 2.0125052077210936,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.33,
+    "vs_reference_lu": 0.05,
+    "v3": 0.7915496085849394,
+    "v3_no_level": 0.8742156380761829,
+    "v2": 0.7915496085849394,
+    "v2_no_level": 0.8742156380761829,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 18.5,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Long Way Home/GTR",
+     "cambridge/Signs/ElecGtr3",
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+    ],
+    "library_sha256": "f7a347ef858bda9b6bd26230d1d9bdbeec5bd338aabd70f1db22481c3088b2c9",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr5",
+   "reference_lufs": -30.28343784380781,
+   "crops": {
+    "di": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af",
+    "reference": "6c958a5df2ec3ce8e028420b77b419b5ada3b6eedbced3bee2c5cb558f64eb82",
+    "mix": "532c288ad4a58d10ec3ecef4b25ceeb76a8fc339df613d000cd628641284f0a6",
+    "backing": "169498245b2644cb0e047ccd062a4bf90a7c0b01820a163fdd1352274eac683e",
+    "mix_instrumental": "df56e953a8214bfcc12b8caf217442c765bccf2143fa090eb10228ed553f17a7",
+    "backing_instrumental": "071d1b5e81fc09103faa8f327c8c205e32f9ff9bf64890475e603bd5abd97078"
+   },
+   "template": {
+    "lufs": -21.46,
+    "vs_reference_lu": 8.82,
+    "v3": 0.9405477833900672,
+    "v3_no_level": 0.7826962926050725,
+    "v2": 0.9929737190226283,
+    "v2_no_level": 0.865993744176278,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -30.52,
+    "vs_reference_lu": -0.23,
+    "v3": 0.7789054809952252,
+    "v3_no_level": 0.8340822294948481,
+    "v2": 0.9395563431644457,
+    "v2_no_level": 0.9956143655447356,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 18.4,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/First Offering/GTR 1",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/Fragments/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr3"
+    ],
+    "library_sha256": "7f9e8f3d846ade6d7c24f9c68ac9562fafbd402580c82afedbb024672ffaddac",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr2",
+   "reference_lufs": -29.666203952982016,
+   "crops": {
+    "di": "2b428e29c58595a251b28f2e5ebf440d2eac0cb0fedd62b8134221ecb4c55ee7",
+    "reference": "253305c814d1837e77d95ce6bbe65c2c16a79197b46f6a4ccf6bbb5859e264d7",
+    "mix": "700c80fbc56f2f8db02bc15ec7b102326be674173e01ac5d0a8b7cd3fa7c1eeb",
+    "backing": "889e48205341a4cb2af5ebc35d511726c7daad42d1cd023aa6b82522e5920796",
+    "mix_instrumental": "d23f23948b70cc1169e95ce3301fc59f995d63b6c8d025fb27f3a9f613504243",
+    "backing_instrumental": "104ef594d17eb057e480d7b23a07af20e37d6afd4eb823e85423c33565a813a3"
+   },
+   "template": {
+    "lufs": -20.28,
+    "vs_reference_lu": 9.39,
+    "v3": 1.594459164389781,
+    "v3_no_level": 1.47323225631529,
+    "v2": 1.3749253955229683,
+    "v2_no_level": 1.260464008274466,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -28.6,
+    "vs_reference_lu": 1.07,
+    "v3": 1.1452151858132518,
+    "v3_no_level": 1.2074690162721926,
+    "v2": 0.9946371690627009,
+    "v2_no_level": 1.0362439409580944,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 13.7,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr4",
+     "telefunken/Gym Hours/GTR 2",
+     "cambridge/Signs/ElecGtr6"
+    ],
+    "library_sha256": "0ee346bd655783af1b29805c452342ba8857be7eebdcedca0147931bf23ed382",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr3",
+   "reference_lufs": -18.280368624998832,
+   "crops": {
+    "di": "55951b8dd9528468ea34f75fa1daa90c339192c3f5d8ff470a59383f5b45a1db",
+    "reference": "327416249e6217648c3c288e336bdcd7048bb1a1f8700d61381202e8b2adc5e9",
+    "mix": "5f2386d1b2cdf770d85481f66affba3a3a4f2032de6697a389fc2bbd4076cd5d",
+    "backing": "9239d5a5b05e7720b31a2e500fad5b5ae13a77b0b224db1aed98254b29336b3a",
+    "mix_instrumental": "25e5bdc3a90577b209c756428c1fd986f96763d7388dc2eb92dbfb6cfd36518c",
+    "backing_instrumental": "4edf1251f62c27901bc57770fdd3c0059f133b2ac124b861f90b5dc7ef7f20aa"
+   },
+   "template": {
+    "lufs": -19.65,
+    "vs_reference_lu": -1.37,
+    "v3": 1.5410338857985877,
+    "v3_no_level": 1.6572160878484363,
+    "v2": 1.2522846637003369,
+    "v2_no_level": 1.3185861634531428,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.39,
+    "vs_reference_lu": 0.89,
+    "v3": 1.0683300756068213,
+    "v3_no_level": 1.1292508710494649,
+    "v2": 1.397062666322612,
+    "v2_no_level": 1.4688276228219126,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 13.2,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Sculptor's Request/GTR 1",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+    ],
+    "library_sha256": "a797e3028a42840c6621704895b2f1d9b28169df3fa3f2a4db5e8858b8f72e01",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr4",
+   "reference_lufs": -23.898266662173747,
+   "crops": {
+    "di": "3b0faca1c51a6e3bd36dd750a2cfd6ea295c5b642cd727c104d9aa8b7adc1ec8",
+    "reference": "1630b78b23d1085daac6029a102c7ce77c1901c368cb1aab9b1c3b81cd9abc92",
+    "mix": "a872642bfae5aefd966eee539027bfff885fe9da1d0f9dc93566ba77bbef41bf",
+    "backing": "fa03fff699a620b6c93be836868a03e1cf6cffd0a036e1f664df20dd259d7da4",
+    "mix_instrumental": "0fcdddd94181fcabc410840d17d99bde6848a3cb64a0bda5fa1ad7b55faf2f5e",
+    "backing_instrumental": "49f429503ad402f22764149d96d0c3b63323fc84b2c048c6ba28df1c8ce69e7a"
+   },
+   "template": {
+    "lufs": -17.81,
+    "vs_reference_lu": 6.09,
+    "v3": 1.124820185831283,
+    "v3_no_level": 1.0533586215548052,
+    "v2": 1.035824054391821,
+    "v2_no_level": 0.9709864927217223,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -23.95,
+    "vs_reference_lu": -0.05,
+    "v3": 0.7946369492427381,
+    "v3_no_level": 0.8560556557619017,
+    "v2": 0.7066347556602983,
+    "v2_no_level": 0.7516326745077091,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 13.4,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Signs/ElecGtr2",
+     "telefunken/Honey/GTR",
+     "cambridge/Today's The Day/ElecGtr10"
+    ],
+    "library_sha256": "a551a3ce25c24474a2d3a7e70c717513be17cea1e249b571ab3c3cb244e72087",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr6",
+   "reference_lufs": -15.012893380794852,
+   "crops": {
+    "di": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c",
+    "reference": "640ed93679f07ad2e205aa1f98ec5c7357631a9701b0cd1675fe6ba2fa56dc11",
+    "mix": "e3593dfbb5873961ef7e6af3d623a3ce7e23bded65851a0e740bc93e443c3f96",
+    "backing": "c7f816ae8add0560e0b9fdeec615714563e392a65fc3426cf2fc7d5e12fba03b",
+    "mix_instrumental": "cd45b7a0cc5f06a6251cc817dc75805e1c2c0197f7b80c1f2fbec2844d48936c",
+    "backing_instrumental": "9df140aaa9456196bdba7f0e8662ad4edd8560b645095a6fde62769fbada7b8b"
+   },
+   "template": {
+    "lufs": -16.99,
+    "vs_reference_lu": -1.98,
+    "v3": 0.6250263753318338,
+    "v3_no_level": 0.6212792012602445,
+    "v2": 0.5112527484321844,
+    "v2_no_level": 0.49885714413486637,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -13.95,
+    "vs_reference_lu": 1.06,
+    "v3": 0.7084076194062406,
+    "v3_no_level": 0.7464512929140521,
+    "v2": 0.5921370281237408,
+    "v2_no_level": 0.6120373360229415,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 12.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Long Way Home/GTR",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Signs/ElecGtr2"
+    ],
+    "library_sha256": "d3d283601a3a8e72f9ebe34ef70b2bd2da23b546805f4ea6e4ce579bac278f93",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr1",
+   "reference_lufs": -17.22169956174666,
+   "crops": {
+    "di": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893",
+    "reference": "7027b8f861fceec99aafe93a51addb74b50b042c54b24404b1cda9e0367c9153",
+    "mix": "8ea0368e4fda9cbb0136abb7b1bdb392b1a1684faa773b947e599206cfaaa946",
+    "backing": "36572bebc532928cdddf629500cf4698d0f2368bb584e507273a87ce71c09caa",
+    "mix_instrumental": "338a70ac44ae63426ca78da62991b10c99ceb71d8911063f07425256b9db6c35",
+    "backing_instrumental": "35314dbcbaa4900ecccb2369b1e1a1a232b29f59f5ff9f8032a66dfc7007ff41"
+   },
+   "template": {
+    "lufs": -18.42,
+    "vs_reference_lu": -1.2,
+    "v3": 0.8454588887015014,
+    "v3_no_level": 0.8806266957042514,
+    "v2": 0.7376355443904732,
+    "v2_no_level": 0.7596552538072432,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -16.66,
+    "vs_reference_lu": 0.56,
+    "v3": 0.997905560546347,
+    "v3_no_level": 1.0619507363789533,
+    "v2": 0.997905560546347,
+    "v2_no_level": 1.0619507363789533,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 9.7,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Gym Hours/GTR 2",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Measurements/GTR",
+     "cambridge/Prodigal/ElecGtr2"
+    ],
+    "library_sha256": "0ce978ec0fd62c2b90ae44cf17d094bfe0bc60318f41d8af6ace4f064b889a99",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr2",
+   "reference_lufs": -22.68008635040345,
+   "crops": {
+    "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce",
+    "reference": "a46fd45c1c0b54fe20ac7269cb0c4fff60052ec7bc6131a9e585d5f4f209cbf9",
+    "mix": "a6fc6f2fe7e7a5654c4966d65993e55d2a387c93cb42ef4979c204ed5656fac6",
+    "backing": "0bd1b731a7db876bd4810ad9797a3473a58d444328a172a27b85ee26abbea180",
+    "mix_instrumental": "f87134d2576ef00d370529074bb2cbc357222486062e2ac1c140ebb4f50e907a",
+    "backing_instrumental": "8c58641f913020ce0ab17fcb521300d27632cee9872976d679c682c3edc5722f"
+   },
+   "template": {
+    "lufs": -17.49,
+    "vs_reference_lu": 5.19,
+    "v3": 0.7147178078541714,
+    "v3_no_level": 0.6345639505795007,
+    "v2": 0.7271182239569539,
+    "v2_no_level": 0.6617128907367552,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -20.85,
+    "vs_reference_lu": 1.83,
+    "v3": 0.8978527152323649,
+    "v3_no_level": 0.9205779295928148,
+    "v2": 0.9261055811998458,
+    "v2_no_level": 0.9467211625824444,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 9.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Blind Spots/GTR",
+     "cambridge/Today's The Day/ElecGtr07",
+     "telefunken/Russian Cream/GTR 1",
+     "cambridge/Drag Me Down/ElecGtr4"
+    ],
+    "library_sha256": "7aa2e58412512cd87865caf46a871ee211e6a2f2159a1cb1a96904ad9cba77a0",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr2",
+   "reference_lufs": -11.181691685929126,
+   "crops": {
+    "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa",
+    "reference": "8e0099eb67d4066240154436b979adc253b43ea7b29adcd1e19c3b13133f1d19",
+    "mix": "98559fbc0b85f16d1557dffe2274a1ec8bde9c654a953a808f6ddfda6b4e6ff2",
+    "backing": "80cf2d38c68e65953bb3cf249d6f922e11804d96f42e91a1c3b7d7c5cfaf0942",
+    "mix_instrumental": "cd8158aea60f9619448c9cd3dd7092346de4109dbb70d34cb07e2282c07275c8",
+    "backing_instrumental": "23070ac9f521d932043ef568330f99e130bc483326dfd774a01c0d4424f0545e"
+   },
+   "template": {
+    "lufs": -15.33,
+    "vs_reference_lu": -4.15,
+    "v3": 2.8720684682114968,
+    "v3_no_level": 2.9896001893860884,
+    "v2": 2.79140598852706,
+    "v2_no_level": 2.883236813865781,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -7.04,
+    "vs_reference_lu": 4.14,
+    "v3": 1.3600005291155055,
+    "v3_no_level": 1.3584216235193611,
+    "v2": 1.5864554071576733,
+    "v2_no_level": 1.5999198902331737,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/Long Way Home/GTR",
+     "cambridge/Today's The Day/ElecGtr07"
+    ],
+    "library_sha256": "f32f67312459fa4454e8a494a019fe66f8f4a74c19324333e0f0f87f2ff06575",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr3",
+   "reference_lufs": -14.317262046447553,
+   "crops": {
+    "di": "3304bc6a6758dd2de464a051c0ea3170c3b1a184570ee897e84e43b98e8d7593",
+    "reference": "5898f681ec6af7db1443e387f4a0685716b625c2ba8784c12993cd2b15bd7a45",
+    "mix": "816a878a09cc51b462caa868588fc3747fcf50a37cc84007962f89d76f38c352",
+    "backing": "7cf139d8572b31f55b0903c9cb363a21103befd7d73fc1444720d7b6f5bde7b4",
+    "mix_instrumental": "060c854c25c7fe9a04e83a9572efade6779182edc6e398be24e42314dfe0a6eb",
+    "backing_instrumental": "3294f433aca6b94f7e4a1ebf5544dd7c89b0071c0669ef1db1c9a66035101407"
+   },
+   "template": {
+    "lufs": -16.97,
+    "vs_reference_lu": -2.65,
+    "v3": 1.1656028158322715,
+    "v3_no_level": 1.1958459746714434,
+    "v2": 1.1656028158322715,
+    "v2_no_level": 1.1958459746714434,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -14.15,
+    "vs_reference_lu": 0.17,
+    "v3": 0.8130299938028134,
+    "v3_no_level": 0.8940689217102576,
+    "v2": 0.7527078761118091,
+    "v2_no_level": 0.8107113102322376,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Bloomlight/GTR",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Prodigal/ElecGtr3"
+    ],
+    "library_sha256": "79be557848c5ae6f446d8a4780b7d48793c965653bc9f37958c72de415526a82",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr6",
+   "reference_lufs": -17.29808019736488,
+   "crops": {
+    "di": "ab0aea68cf62baa81d9daeb929f62469f58a564f45a8d7721015f052e44e57bf",
+    "reference": "25a2937c6265d4c999dfb0736c33a35174e1b4add8bcb3b7ec14b2da69e97b1c",
+    "mix": "167f55b940ea8c348051efe9f9775595bfbf008cb17b0b643e0a09f2021f7d87",
+    "backing": "b8271755e37862ca64485e187b56eec5ba2724c75a49575a8aab79bd9d27ccc1",
+    "mix_instrumental": "0678afea0924137195a4ad12018985f9b7fa633345a5bcc966c3d155127728a4",
+    "backing_instrumental": "5f334a9e20f56f54950a4f3047b3c4afe39d565e337f612a2d0a83db12b1f828"
+   },
+   "template": {
+    "lufs": -20.82,
+    "vs_reference_lu": -3.53,
+    "v3": 1.4890726396749705,
+    "v3_no_level": 1.513999427017731,
+    "v2": 1.2880342081721172,
+    "v2_no_level": 1.2955147000094291,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -23.59,
+    "vs_reference_lu": -6.29,
+    "v3": 1.0330474485954233,
+    "v3_no_level": 0.9490775103266409,
+    "v2": 1.2954996638941416,
+    "v2_no_level": 1.2432496419741943,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+     "telefunken/She's Gone/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr2"
+    ],
+    "library_sha256": "ab939b18adb5add1285a364ecfd219b5715571f2ca8849edc044b51ec04a86e5",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 1",
+   "reference_lufs": -17.01346402702433,
+   "crops": {
+    "di": "5f70954c5a278613bdddd65aec232f8448ecfe102a24050d6079c1d9551c031d",
+    "reference": "a9ff2ca174f75db47b9042f998e28ed1f251f4a209105a635aacb208928fb07d",
+    "mix": "c98e51ba13d5cd845548c5b65c0af82c949ac72156b7b9d8b922ef6bc6c53c94",
+    "backing": "cb4ae150edccc37176d6e18761f7279281b2b6d75363d992921946a58577cc89",
+    "mix_instrumental": "f8ad48ac97ca576f0727be60532035f074d870de321d9057ff90746ed2a5ff01",
+    "backing_instrumental": "e3d779e6cc12ac4ced10da60b97e4bae15ffefcdc4aef31e0968961f24890172"
+   },
+   "template": {
+    "lufs": -17.18,
+    "vs_reference_lu": -0.17,
+    "v3": 0.8917896481805586,
+    "v3_no_level": 0.9577204098790237,
+    "v2": 0.7576441826007039,
+    "v2_no_level": 0.8033601075529236,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -14.61,
+    "vs_reference_lu": 2.41,
+    "v3": 0.512500748285118,
+    "v3_no_level": 0.4898034389392063,
+    "v2": 0.48130931649343733,
+    "v2_no_level": 0.4605251414821397,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Signs/ElecGtr2",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "2d7e42bd71ee7905459972a1dedcfd623e593c9dbef68b2702faa568e47b8421",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 2",
+   "reference_lufs": -11.956007316473874,
+   "crops": {
+    "di": "f8bd2c62a8b27efd9a14ceabf838e701073a7d379a4094c9b9f5aeeb874bb019",
+    "reference": "5ae9d945f2130145c99f935df5ddfc1f4a89fecdd940480266e1a2f979d7a639",
+    "mix": "cc6f1725f96d110efd7e9dd1076422969a94f450662cf3a0513def3960ebd124",
+    "backing": "867bbf512ad4ad2353fa4a3d34407f468c9757776cb537aad830a0aec0201cab",
+    "mix_instrumental": "41231dcea77f45367060d8278ec686aab34b6aa7ecd8b424a164ade8b94629a1",
+    "backing_instrumental": "59f93f8b62f3bae1cdb97526ae08b263eccbb35425883dda36ced2d2c2fc894e"
+   },
+   "template": {
+    "lufs": -18.03,
+    "vs_reference_lu": -6.07,
+    "v3": 0.871338273787325,
+    "v3_no_level": 0.7803912954021138,
+    "v2": 0.8570152400675545,
+    "v2_no_level": 0.7809510165936993,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -9.6,
+    "vs_reference_lu": 2.36,
+    "v3": 1.2119659097660895,
+    "v3_no_level": 1.2455421658002546,
+    "v2": 1.164262723883657,
+    "v2_no_level": 1.1888885537021563,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Signs/ElecGtr2",
+     "telefunken/Fragments/GTR"
+    ],
+    "library_sha256": "f72711a1f5b792f04e66c933b524944e2ade8c3da703b4c188ac16a906b85c93",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 1",
+   "reference_lufs": -15.347553025859503,
+   "crops": {
+    "di": "12ebe02f987fa851291ece87653dd424e6335d3034e5778ce41cd05d0fb9fd53",
+    "reference": "e183700c7a8dba00af15b2bc9d2550f60ba82920e8881fd8b8012e85185743a3",
+    "mix": "86cac506e22724612aae1f1ab99a058d4292e2a935b7cbaa32b898c711d02912",
+    "backing": "fb27c949c79fb50ca9c177939b71d8834ff057c5d260820d9e012fd411e7e299",
+    "mix_instrumental": "b3060315571706184aff72cb3e932a745c22fa44e9f377c378586de271672af4",
+    "backing_instrumental": "412a5eebee87c37a606e062bf70d9fcf98d75201623e7d256e029810a7c551a2"
+   },
+   "template": {
+    "lufs": -18.24,
+    "vs_reference_lu": -2.89,
+    "v3": 1.2203833552763488,
+    "v3_no_level": 1.2406767780613235,
+    "v2": 1.0961948976884783,
+    "v2_no_level": 1.1048597823203357,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -14.04,
+    "vs_reference_lu": 1.31,
+    "v3": 0.673506816946359,
+    "v3_no_level": 0.6922047235473873,
+    "v2": 0.5985613845170371,
+    "v2_no_level": 0.6091197356811917,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Signs/ElecGtr6",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Long Way Home/GTR"
+    ],
+    "library_sha256": "91107d8ed7853935e388addd35eb3a8792de17512b16433eaca1adbaab67be00",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 2",
+   "reference_lufs": -18.571057046419053,
+   "crops": {
+    "di": "4983760b0de0465e65bfe6e6132be90e3981d57e355a2508653917292ac3aa75",
+    "reference": "bada295faff7eb4ebc410235852f3c1e385486e478153f98ee8a882223ebb6f8",
+    "mix": "cef6acb2e8ab1fe9cfcc48abc94c39716bab332eafdeb4bf8425167784c7e33e",
+    "backing": "906ea127749765456316eb8d4b7897e5d5f73db30a77bc348badb66eee7fdbce",
+    "mix_instrumental": "27a35bcbc7f37ca05049e793834ab33c234cc59395558da4a2685f74bf34376c",
+    "backing_instrumental": "15ad04eb54b44dcd98f1310a0a9163b1cdd6abb347d47db96267bc8f5e017852"
+   },
+   "template": {
+    "lufs": -18.88,
+    "vs_reference_lu": -0.31,
+    "v3": 1.294466131328139,
+    "v3_no_level": 1.3885029311698343,
+    "v2": 1.2593254337676816,
+    "v2_no_level": 1.3347162229264435,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -13.43,
+    "vs_reference_lu": 5.14,
+    "v3": 0.8805174407909728,
+    "v3_no_level": 0.8147688176955232,
+    "v2": 1.0203321720743523,
+    "v2_no_level": 0.9751364441661577,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Fragments/GTR",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "9540b88398bbaa26064ad26b51d1d732ee792ec1a3213563c165e6f7055e4a38",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 1",
+   "reference_lufs": -15.769275455315936,
+   "crops": {
+    "di": "0f002c3e8301bf3b2c5cfaf3abaf7260ad45401c393c8fb65186534a661b28f2",
+    "reference": "947c29c329cb0f0c070b43c2e0f60705fe23b0256322bab562733740b7627829",
+    "mix": "0e18a5892d52684796446704dc65c9752d17e0affab3447d9f2f349082712ab6",
+    "backing": "beb01c59ef217bae3dcb5e6f2a04e01fe0ee4706f96374e588669d44f2c7e93f",
+    "mix_instrumental": "591000b34f28df64c02328326b8b718436394e8cda6f545f4a0bc9d62ab30e5c",
+    "backing_instrumental": "c24c7be89c4a8fcc2887ef146e50a6620e37fb83af5558345db1e20bd155a28c"
+   },
+   "template": {
+    "lufs": -17.12,
+    "vs_reference_lu": -1.35,
+    "v3": 1.1970004068402453,
+    "v3_no_level": 1.2559741231697383,
+    "v2": 1.0201283393764773,
+    "v2_no_level": 1.057310622379291,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.03,
+    "vs_reference_lu": -2.26,
+    "v3": 0.6001121573776804,
+    "v3_no_level": 0.5880157487496026,
+    "v2": 0.625451285772699,
+    "v2_no_level": 0.6171111522361359,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.8,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr3",
+     "telefunken/Honey/GTR",
+     "cambridge/Quicksand/ElecGtr1",
+     "telefunken/Farthest Step/GTR"
+    ],
+    "library_sha256": "b40766a382ada770d0e2627ce1f4942d7150c248fc7ca20777afe9984a4aac4e",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 2",
+   "reference_lufs": -11.413877536749261,
+   "crops": {
+    "di": "98b19a38e6613077c0d8516251fc56615985a5f2069b95e1740cc4da6f4a40a5",
+    "reference": "f4e4452bd18ee464ee7b10fa048cfd5d286da73a516a3d9002a98dd1b57135c7",
+    "mix": "e14736f4c2b7ec6ca7d79f6e0d7b97c72f47c18eab577b70893c0da641dd0595",
+    "backing": "495f9feb9f7d4ad5c52ec7462e3e3c40e50467fbe97f879d5d8d7588435fd4a5",
+    "mix_instrumental": "db0947742c727fb847534c7205b10ff9766afb133389176348b06b26f890aa7b",
+    "backing_instrumental": "396857fb716c5c188f2001ff65c4d766fb9621d667367fd8e8fb9e690237e32a"
+   },
+   "template": {
+    "lufs": -17.36,
+    "vs_reference_lu": -5.95,
+    "v3": 1.0238730238685116,
+    "v3_no_level": 0.9481261573318153,
+    "v2": 0.9020253463515328,
+    "v2_no_level": 0.831505260244024,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -7.95,
+    "vs_reference_lu": 3.46,
+    "v3": 0.5757431499268059,
+    "v3_no_level": 0.5301439249210272,
+    "v2": 0.5568793789073591,
+    "v2_no_level": 0.5179802079665345,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/Measurements/GTR",
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "dd26e3d177719ff0702e18afc733d525af6f97954c96a2f3631f9baed7258237",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 1",
+   "reference_lufs": -16.036150181106958,
+   "crops": {
+    "di": "4da302485038bb03f8362ea2e0fc842ff1d319e41a3df8a8ff13ca71998bb23d",
+    "reference": "36929221ccf32c5dc161c703cd81f7901dfa0c86d9566884b7a0e68eec1c996f",
+    "mix": "8339e336965fe104c3c02b5058eb27f44daea8a187a144cf19c38610dd54cea8",
+    "backing": "df0730937c3bbdc8e0a3a8f46b30e7eac9e1a85ca5837d611843f4d32c6ff091",
+    "mix_instrumental": "2f399eafad892160fc0f82bd73094eaa6cd126d921ea4280e81375310d6e9954",
+    "backing_instrumental": "93be84812ee858f6adc2775c57d0d494b415f3aeff70534be2062fafc81b2be6"
+   },
+   "template": {
+    "lufs": -17.36,
+    "vs_reference_lu": -1.33,
+    "v3": 1.1663519986629562,
+    "v3_no_level": 1.2236955775047687,
+    "v2": 1.1372121829066562,
+    "v2_no_level": 1.1826825426614382,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -13.71,
+    "vs_reference_lu": 2.32,
+    "v3": 0.7321515594650693,
+    "v3_no_level": 0.7286372088965222,
+    "v2": 0.9716671511402242,
+    "v2_no_level": 0.9843845740406736,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/Until I Get Back/GTR"
+    ],
+    "library_sha256": "39a08762b4bea3c040b69a297d4effeefa2cab1df88d180dc74860a4c5e4186a",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 2",
+   "reference_lufs": -19.912949821206013,
+   "crops": {
+    "di": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77",
+    "reference": "5a95a7f6b132578d7e067d9a1b5190c73a75588da71a37978b0b557cebb5c3cb",
+    "mix": "cabf68b10116449e754ae7c82f765356b4866f445ceba254c008a08a78174a6c",
+    "backing": "8ac66eed20e0dfaa71a23986fba88cd034bfaffbc12d0fa6a38b3f05a2249768",
+    "mix_instrumental": "d131ec1fcdb9c0dfd817b080183def0f5587a19733ea4fbe82dd0daaeda2fa4f",
+    "backing_instrumental": "fe536d82b71bdff38394c22235fbda19af0dd028e1285e040f4bf8d5cb72a660"
+   },
+   "template": {
+    "lufs": -19.62,
+    "vs_reference_lu": 0.3,
+    "v3": 1.2710184796841653,
+    "v3_no_level": 1.3637304649223887,
+    "v2": 1.129274801971871,
+    "v2_no_level": 1.1966188107961233,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.65,
+    "vs_reference_lu": 1.27,
+    "v3": 1.0081632689220459,
+    "v3_no_level": 1.0545972112053652,
+    "v2": 0.9005561059505199,
+    "v2_no_level": 0.9318967215559886,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr3",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/Hikikomori - Love Does/GTR"
+    ],
+    "library_sha256": "57bee17c5b7ef8f6c98cf664025d41aaa299de24f079784cf7a12c4e9df40eab",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Blind Spots/GTR",
+   "reference_lufs": -18.052638645410415,
+   "crops": {
+    "di": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021",
+    "reference": "109805a446829d4d4e1b9cf7631eaf9197f633076bcd6e484a69e036bbe011e7",
+    "mix": "27479ebc4c7296ec555b8cc64e3f9c012b6661b0fbc658d01010d5999adb3fca",
+    "backing": "e9a6bc2ad86625db90c0deeae1c1b4733a413e244335bd19aec0dd026efa4c6a",
+    "mix_instrumental": "94ed120abe3d5eab62c9bc9efe547c1d5ef2864973cf5fdf87490b2346d4f569",
+    "backing_instrumental": "a73564a34145f9b22118e09ccc1b390c16aa523187308c4c74dde93091eb1701"
+   },
+   "template": {
+    "lufs": -18.7,
+    "vs_reference_lu": -0.64,
+    "v3": 1.033174930601582,
+    "v3_no_level": 1.097636109333286,
+    "v2": 0.8998411738609409,
+    "v2_no_level": 0.9443960330257849,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.64,
+    "vs_reference_lu": -0.58,
+    "v3": 0.9571654617380526,
+    "v3_no_level": 1.0172048402963199,
+    "v2": 0.9571654617380526,
+    "v2_no_level": 1.0172048402963199,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr5",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/Gym Hours/GTR 1"
+    ],
+    "library_sha256": "663513107601734865c36491d9701e767fc9be640fad907b17d633a7bc570bbd",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Long Way Home/GTR",
+   "reference_lufs": -17.090679032065733,
+   "crops": {
+    "di": "32827faee831bf62afe6c4a443826e8b0cc8d1e110d804a7be549fe219684b0f",
+    "reference": "e2658d965c6451f8c2abe391cf509dd0efdda38fa336b54cac034d8a4c14fa31",
+    "mix": "888091427cd067188e31c6c4dc56748ebc9cce60e58c21aeadde1c55d97c47b6",
+    "backing": "38de631ae664811495c119b63b1c45d3877cac05d4a8985c3bae3e70857eb505",
+    "mix_instrumental": "ac7f16e56008bdd3c0b0ecd7bb1f62b11f43c49a9e54b54c2d965df1f206db72",
+    "backing_instrumental": "d3e1510d0e8990032d85fa8f739a73c3212764d01dc478d823504a61d512d5c1"
+   },
+   "template": {
+    "lufs": -17.6,
+    "vs_reference_lu": -0.51,
+    "v3": 0.9680941510265575,
+    "v3_no_level": 1.0311015840023383,
+    "v2": 0.8415557276946992,
+    "v2_no_level": 0.8853528403704404,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.2,
+    "vs_reference_lu": -0.11,
+    "v3": 0.679219776373736,
+    "v3_no_level": 0.729947653455873,
+    "v2": 0.6176058496095449,
+    "v2_no_level": 0.6554931876275586,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/Gym Hours/GTR 1",
+     "cambridge/Drag Me Down/ElecGtr3",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "f38f3f0c432866a532ec7e44b0bb8958269587db144e2a96129ad819e70fc431",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Measurements/GTR",
+   "reference_lufs": -19.00950824498236,
+   "crops": {
+    "di": "80ab75206b554796e3b16a484d8b9db4f2c6235ca7af7c2ac2f735e5385b295d",
+    "reference": "6e10b2602acddc3c1d5ed6bde4b704bdf1ad9558f82c390fe7f8913e37b07073",
+    "mix": "c9f7f04d6e64d8c5fb5244df4acc70ea6d25babc5e6cef530aa09be71cc9dd89",
+    "backing": "724ab63191d4fd2445047a2fa0ff6f8be74586c7d3c9b26a5efa9d2c5dff807a",
+    "mix_instrumental": "5bdbbb3ed49247ed7034d9affc42f8494f0313f9fb0495bbe4f5670726813530",
+    "backing_instrumental": "ab2a60f11a5c6d1f50fc427b3d70104212cdd39b2fa30c0283e70621c7642ed3"
+   },
+   "template": {
+    "lufs": -17.57,
+    "vs_reference_lu": 1.44,
+    "v3": 2.274823538492465,
+    "v3_no_level": 2.4165201336366064,
+    "v2": 1.915375477861692,
+    "v2_no_level": 2.008986922070063,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -17.51,
+    "vs_reference_lu": 1.5,
+    "v3": 1.7808112788421757,
+    "v3_no_level": 1.8819279587507682,
+    "v2": 1.5316155560654747,
+    "v2_no_level": 1.5988948314610492,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.1,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Passing Ships/ElecGtr6",
+     "telefunken/Lost Alive/GTR",
+     "cambridge/Drag Me Down/ElecGtr4",
+     "telefunken/Gym Hours/GTR 2"
+    ],
+    "library_sha256": "d30f89c181b4f65b19a9c6f597f3e1832757d666c37f5e3a405c460af74d454c",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Strangest Places/GTR",
+   "reference_lufs": -22.29489122945679,
+   "crops": {
+    "di": "e25f5bb972e596bfc816bcdef0137aaefc7b2a3c4dead87fc7dab1603f69c016",
+    "reference": "edf57aeaad1e89151fce8a97c5dd22f5e54d124e04e17d7373cd6ce4395a7296",
+    "mix": "8b9da1b653bc9d18af15fce28eb42ff3f971e1fe14c3e217be3325e2c29d07a5",
+    "backing": "f661981e69409f5410522cab10462df98e0a247165583463fd37d34c06ee69c8",
+    "mix_instrumental": "577f35fb98ad84f96d2a430ab222d8eb3e89e34d552f4286421534738079459d",
+    "backing_instrumental": "193de8f0adfbd35f2da25cfe5d46fe605a5aa436439bea098e1bd83922f5ab63"
+   },
+   "template": {
+    "lufs": -17.93,
+    "vs_reference_lu": 4.37,
+    "v3": 1.1544567673696784,
+    "v3_no_level": 1.1308612490041265,
+    "v2": 1.0244670907772075,
+    "v2_no_level": 0.9964975532191993,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -11.18,
+    "vs_reference_lu": 11.12,
+    "v3": 1.04885950436558,
+    "v3_no_level": 0.8392957810260203,
+    "v2": 0.9130764621899129,
+    "v2_no_level": 0.731103187984907,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/Gym Hours/GTR 2"
+    ],
+    "library_sha256": "96b82255dda645f72374a6aa16387ce52b5cf8e02888d457bc88ea5f65b092b6",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Bloomlight/GTR",
+   "reference_lufs": -20.1978416899645,
+   "crops": {
+    "di": "eddb3a475225a372bc3c4310302ce03b1ff8dc256f0afab0e15b9ad56260e168",
+    "reference": "993035fc8d967f1e0beb82ecff11c4cf74abd8b89562830a520ced4f1c25a720",
+    "mix": "db80bfdded7162c8b97d9199d38cb6adfcdafdede0f2bdf4cdaa588837d3bb5e",
+    "backing": "b93e1399895df4bb4a191da653443b90a9dcac272e8ea6b1920263a07b82e407",
+    "mix_instrumental": "0c54e6ee257aa844884d0787c8b65a6d3a1bb96f2ef76a069df0b51e24004048",
+    "backing_instrumental": "3d0aeed7d5f75a57a901eac616ba88f24f5b37b85382ea98888577eba64c8921"
+   },
+   "template": {
+    "lufs": -17.53,
+    "vs_reference_lu": 2.67,
+    "v3": 0.6839843906075906,
+    "v3_no_level": 0.6677200003924004,
+    "v2": 0.5766327407975383,
+    "v2_no_level": 0.5561957456321605,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.87,
+    "vs_reference_lu": 1.33,
+    "v3": 0.36057618182176066,
+    "v3_no_level": 0.35404272249189966,
+    "v2": 0.3115934017691051,
+    "v2_no_level": 0.3030016671018728,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 6.0,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Signs/ElecGtr3",
+     "telefunken/Until I Get Back/GTR",
+     "cambridge/Passing Ships/ElecGtr4",
+     "telefunken/Long Way Home/GTR"
+    ],
+    "library_sha256": "b1a72ba113fef77301f019444c12c45afd2b715524cb7d7c52c8023fe6ba8f44",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Farthest Step/GTR",
+   "reference_lufs": -18.237533185959563,
+   "crops": {
+    "di": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4",
+    "reference": "1c8a8373f6e8845967d20f519168bc45e1bfe6e0ab59894bca9e2f7639271f57",
+    "mix": "f33a28d8706eff97ae35d3e03315fc787ea532c43f76cb7e0959b59811fe9262",
+    "backing": "1c525c39600a581c89d42ec101ce539cdd0b5ac1d1e53f4ca7d2cb5b3572f4c3",
+    "mix_instrumental": "ec8e620911bc246f00f4ada603807fcd972c5b00addbba671c98461be267a859",
+    "backing_instrumental": "8edfbf5ecaa904ebd134d4f54a5191c6b84361f0293315817c7d848a1a547a6e"
+   },
+   "template": {
+    "lufs": -17.0,
+    "vs_reference_lu": 1.24,
+    "v3": 0.4487222967298177,
+    "v3_no_level": 0.4515161622611191,
+    "v2": 0.3968029946344335,
+    "v2_no_level": 0.395724929067114,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -16.31,
+    "vs_reference_lu": 1.93,
+    "v3": 0.6255833449310586,
+    "v3_no_level": 0.6241820300571947,
+    "v2": 0.5331425243570872,
+    "v2_no_level": 0.5259561672499407,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr2",
+     "telefunken/She's Gone/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr4",
+     "telefunken/Russian Cream/GTR 2"
+    ],
+    "library_sha256": "d5320a41bc75beb5a76e5d9988a4e12512135d2c1da1045776f55c3b4bd1b7fd",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Fragments/GTR",
+   "reference_lufs": -17.587179799077717,
+   "crops": {
+    "di": "c48d223c2ead47194d8b7003492d5e79342efbee204bb51aa15ef779a41539d0",
+    "reference": "2fc27e4fb2d3910d6a855038bfd34f932dfa105086b8002ebde663c4c0a38ebb",
+    "mix": "da317ec72a335e7bbc50deb9a4574ab0a96eb5b81a17f267bae104883909614e",
+    "backing": "5d186f98599a251e2809478900ee86d1259b892181a0baf7537688b836b72601",
+    "mix_instrumental": "a8d8e7fec5468ad316387aafee45d03e8e8ddcc1e17902c7bb39b5da311bbf9e",
+    "backing_instrumental": "f1bb438b317a518a1ddb449475f89dd92c85156b5ac5db27872001c68bdf18e5"
+   },
+   "template": {
+    "lufs": -18.01,
+    "vs_reference_lu": -0.43,
+    "v3": 0.723959745142801,
+    "v3_no_level": 0.7700618302856536,
+    "v2": 0.6188332706412873,
+    "v2_no_level": 0.6500615274222409,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -16.35,
+    "vs_reference_lu": 1.24,
+    "v3": 0.739787708426466,
+    "v3_no_level": 0.7655604222496082,
+    "v2": 0.6829336958452211,
+    "v2_no_level": 0.700516328182953,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.8,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Drag Me Down/ElecGtr4",
+     "telefunken/She's Gone/GTR",
+     "cambridge/Signs/ElecGtr3",
+     "telefunken/Russian Cream/GTR 1"
+    ],
+    "library_sha256": "41da547028f6b510caabca9da6e95ff080ca9f0319f5f44285f274365603d26e",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Hikikomori - Love Does/GTR",
+   "reference_lufs": -28.981806162349454,
+   "crops": {
+    "di": "5ff37dc0cef3258395350f0f5385b78ce41f8597b2ba3b002eba34674be743be",
+    "reference": "5de4361dfc7089f1caca07de833ff32af421f293ee11929a304c1d3b6851c441",
+    "mix": "24e2853244958f8a3633c758a3a4880457da507c3c857fc561466c62b8fb196e",
+    "backing": "4a8a72aba16a0e9bc8f5e5014db483310a9a9bdbb6b654ae6f0d646f2cb22af0"
+   },
+   "template": {
+    "lufs": -24.72,
+    "vs_reference_lu": 4.27,
+    "v3": 0.9771159266590261,
+    "v3_no_level": 0.9296640616582074,
+    "v2": 0.9771159266590261,
+    "v2_no_level": 0.9296640616582074,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -26.31,
+    "vs_reference_lu": 2.67,
+    "v3": 1.6095925898448549,
+    "v3_no_level": 1.6866917958996603,
+    "v2": 1.3419867783909392,
+    "v2_no_level": 1.3796523432568506,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.9,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Signs/ElecGtr6",
+     "telefunken/Sculptor's Request/GTR 2",
+     "cambridge/Today's The Day/ElecGtr10",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "e6e7c6ddd4ad02871e567fecfca7b3024afe469d3b074c8a2a3b06e49baaf8af",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Honey/GTR",
+   "reference_lufs": -24.508931645038782,
+   "crops": {
+    "di": "ecbaa429c72e6689c994b29ff54297bb8b4d5c70ff8297896995535e4c6679c0",
+    "reference": "2f6bd5007ea4d4943c1b5938b644693957d18d61060f5029f780bb88001a6e00",
+    "mix": "352e08d0f2401344aada9df3836f95a40f6e4ec39857d4b10eb3e7ce210fdd86",
+    "backing": "def2e90e300ac16e146906cbc058dde8dd1ce391c91f83782b40fb8d9226ff91",
+    "mix_instrumental": "b883cb97cc685281017555b29dc1364d59489e7eb71cc30f8dda3371f54b1d5a",
+    "backing_instrumental": "07565eb4b05ba542908a66c1426014e17e31b12f59bf4542af57b5518175ddb6"
+   },
+   "template": {
+    "lufs": -20.01,
+    "vs_reference_lu": 4.5,
+    "v3": 1.1466849589810877,
+    "v3_no_level": 1.1187916662690682,
+    "v2": 1.3197348001627427,
+    "v2_no_level": 1.3079783740863997,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -25.17,
+    "vs_reference_lu": -0.66,
+    "v3": 1.4981707368515937,
+    "v3_no_level": 1.5990789529188247,
+    "v2": 1.283746122592789,
+    "v2_no_level": 1.3531208697184058,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.7,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/Fragments/GTR",
+     "cambridge/It Was My Fault For Waiting/ElecGtr4",
+     "telefunken/First Offering/GTR 2"
+    ],
+    "library_sha256": "ef5744493b227f00f4b8d4f1f16eedb829bb10699019f2302549906148bee251",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Lost Alive/GTR",
+   "reference_lufs": -18.88038300804911,
+   "crops": {
+    "di": "e008508664e6c9b5cd9a286ae9e0fd59b8b6c0a6fa5ecfadec51dbc5066fb352",
+    "reference": "ff15f97c6e4fbc668bc6e6171acf8af323c4a74e62e3ccc7d61d1b2433f50aa0",
+    "mix": "83a4aada7abc30ce174d94ba498b24d23b9361dc620c1e5904a8b331c84a4ced",
+    "backing": "ca8456cf5398e544aff0a1c083687799298a16198edfc8bc0f97b1d2f2ae99c7",
+    "mix_instrumental": "2c9371cdf7899474c89881240cff4ddb6e23628f06d471115013e6158a2eae2b",
+    "backing_instrumental": "1dc2c904f15979b1d9dde6ebfbf718cc9057667ddce92e0f1fc5d9e9288f2aea"
+   },
+   "template": {
+    "lufs": -18.64,
+    "vs_reference_lu": 0.24,
+    "v3": 0.8786875932875531,
+    "v3_no_level": 0.9417418769681493,
+    "v2": 0.872332953635616,
+    "v2_no_level": 0.9240068419161994,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -18.0,
+    "vs_reference_lu": 0.88,
+    "v3": 0.8025872995738849,
+    "v3_no_level": 0.8427915600665599,
+    "v2": 0.9493520076391929,
+    "v2_no_level": 0.9921358342243577,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.6,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/It Was My Fault For Waiting/ElecGtr1",
+     "telefunken/Gym Hours/GTR 1",
+     "cambridge/Signs/ElecGtr2",
+     "telefunken/Strangest Places/GTR"
+    ],
+    "library_sha256": "ef24fdbd7f35ac6bda2e0d82244fdb68a917fe0599a33057d98b1504c0d862dc",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/She's Gone/GTR",
+   "reference_lufs": -25.00667699126408,
+   "crops": {
+    "di": "a3275fd2e09208b5fdc824f0afcdd6c71dabcf0a7a8a9b8cf25459b95cfc6aef",
+    "reference": "1d5ce11809cde15a184792b2dfbb4adf7fe29be1887c425974180468e94b814b",
+    "mix": "b5bee10f79db2f2a857775133292de37a36c9820a8bcfdc0cfea10a6bb72a5ce",
+    "backing": "a7ac197cf49ac1564db6b9f39c082745704ec223f183a0ea57b13f21bd71c4a9",
+    "mix_instrumental": "e6ac717e0463ae2babe8b75f0e60e33aae31ef3ab683cef9c668b115e35f9cb7",
+    "backing_instrumental": "a60c23cae01698b9273285adb51edd62f696b129b2140749ea874416a6443a50"
+   },
+   "template": {
+    "lufs": -18.03,
+    "vs_reference_lu": 6.98,
+    "v3": 0.9961769192568695,
+    "v3_no_level": 0.8911382549876748,
+    "v2": 1.0203121204625183,
+    "v2_no_level": 0.9351150848405085,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -20.8,
+    "vs_reference_lu": 4.21,
+    "v3": 0.96250633195255,
+    "v3_no_level": 0.9277042002645934,
+    "v2": 0.9914206636087186,
+    "v2_no_level": 0.9645567938440697,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.7,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Prodigal/ElecGtr3",
+     "telefunken/Hikikomori - Love Does/GTR",
+     "cambridge/Passing Ships/ElecGtr2",
+     "telefunken/Measurements/GTR"
+    ],
+    "library_sha256": "36cca1c9f328fe3ce72ec521802c4c15ee56aa707da418beadc1d15d158a0020",
+    "library_from_mode": "other-bands"
+   }
+  },
+  {
+   "part": "telefunken/Until I Get Back/GTR",
+   "reference_lufs": -18.56575016649175,
+   "crops": {
+    "di": "f93f76ea81bed5b9223d18f02acfd1e7a384dfb489aa73d050d8ccd05bc5851e",
+    "reference": "20516bcc2f061490db44ae71e7200a11dd25202d709c7a33a70fcdfe800de02d",
+    "mix": "bac78490f95db2083ea8ca6507278844f7fdd4acfd227a797e6eac6d80150507",
+    "backing": "4e12d20056e4047d2bfa3b1b3e7f22c1f57fa521ecc2978b349c53e18b907004",
+    "mix_instrumental": "8b241708f0c63054bed5591327a27635ea38b1db28df2cef6f1b70c060f7ad4a",
+    "backing_instrumental": "ce47dc9765598d243b9178d27d336dc621b4963cc0affebbb909a7483e4ba39b"
+   },
+   "template": {
+    "lufs": -18.55,
+    "vs_reference_lu": 0.01,
+    "v3": 0.8857311274818904,
+    "v3_no_level": 0.955130953335724,
+    "v2": 0.8293461717403655,
+    "v2_no_level": 0.8829991829408241,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f"
+   },
+   "library": {
+    "lufs": -16.21,
+    "vs_reference_lu": 2.36,
+    "v3": 1.3057620089548208,
+    "v3_no_level": 1.346743220188096,
+    "v2": 1.2459606989513332,
+    "v2_no_level": 1.275914657578594,
+    "silent_trials": 0,
+    "fallback_to_template": false,
+    "minutes": 5.6,
+    "measured_commit": "c65a1cd6bb5737cb68e52f1bffe58b473131894f",
+    "process_policy": "reuse",
+    "guitar_check": null,
+    "library_from": [
+     "cambridge/Signs/ElecGtr2",
+     "telefunken/First Offering/GTR 2",
+     "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+     "telefunken/She's Gone/GTR"
+    ],
+    "library_sha256": "0884a2afe235ac4ca3177b5e911101e61ba85a71e7cd95fdedc5384534bdf96a",
+    "library_from_mode": "other-bands"
+   }
+  }
+ ]
+}
