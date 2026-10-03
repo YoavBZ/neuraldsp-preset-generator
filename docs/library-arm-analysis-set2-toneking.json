@@ -1,4 +1,6 @@
 {
+ "source_commit": "130ad1c7586b367b163fba8a960f724211dcf009",
+ "command": "scripts/analyse_shipped_library.py score --run /Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-set2/runs/lib-tk-default --no-di-run /Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-tk/runs/start-tk-default --cut-s 1.0 --json docs/library-arm-analysis-set2-toneking.json",
  "run": "/Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-set2/runs/lib-tk-default",
  "no_di_run": "/Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-tk/runs/start-tk-default",
  "cut_s": 1.0,
@@ -26,7 +28,7 @@
     "median_change": -0.025,
     "bands_first_closer": 7,
     "bands": 13,
-    "band_sign_flip_p": 0.7439
+    "band_sign_flip_p": 0.7043
    }
   },
   {
@@ -41,7 +43,7 @@
     "band_sign_flip_p": 0.155
    },
    "corrected": {
-    "first_closer": 24,
+    "first_closer": 23,
     "of": 43,
     "median_change": -0.121,
     "bands_first_closer": 7,
@@ -66,7 +68,7 @@
     "median_change": -0.043,
     "bands_first_closer": 9,
     "bands": 13,
-    "band_sign_flip_p": 0.5491
+    "band_sign_flip_p": 0.5762
    }
   },
   {
@@ -86,7 +88,7 @@
     "median_change": 0.227,
     "bands_first_closer": 4,
     "bands": 13,
-    "band_sign_flip_p": 0.0208
+    "band_sign_flip_p": 0.0183
    }
   },
   {
@@ -101,7 +103,7 @@
     "band_sign_flip_p": 0.0022
    },
    "corrected": {
-    "first_closer": 32,
+    "first_closer": 31,
     "of": 43,
     "median_change": -0.289,
     "bands_first_closer": 11,
@@ -123,10 +125,10 @@
    "corrected": {
     "first_closer": 37,
     "of": 43,
-    "median_change": -0.298,
+    "median_change": -0.324,
     "bands_first_closer": 11,
     "bands": 13,
-    "band_sign_flip_p": 0.0078
+    "band_sign_flip_p": 0.0068
    }
   }
  ],
@@ -141,7 +143,8 @@
     "calc-library": 1.2677761636861973,
     "calc-noise": 0.9728533916786635,
     "no_di": 1.8347664796596916
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Drag Me Down/ElecGtr4",
@@ -152,7 +155,8 @@
     "calc-library": 0.7504397858889578,
     "calc-noise": 1.5407552228740622,
     "no_di": 1.6406178251203276
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/It Was My Fault For Waiting/ElecGtr1",
@@ -163,7 +167,8 @@
     "calc-library": 0.9447636570974758,
     "calc-noise": 1.380988038859978,
     "no_di": 1.2945542302576272
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/It Was My Fault For Waiting/ElecGtr2",
@@ -174,7 +179,8 @@
     "calc-library": 0.974753350254455,
     "calc-noise": 1.721412031483312,
     "no_di": 1.6752689166846815
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/It Was My Fault For Waiting/ElecGtr3",
@@ -185,7 +191,8 @@
     "calc-library": 1.55894766045846,
     "calc-noise": 1.8814261774470171,
     "no_di": 2.727974502616938
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/It Was My Fault For Waiting/ElecGtr4",
@@ -196,7 +203,8 @@
     "calc-library": 1.414527253184041,
     "calc-noise": 1.156803604958502,
     "no_di": 1.699945150923064
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
@@ -207,7 +215,8 @@
     "calc-library": 1.13252269069785,
     "calc-noise": 1.5920167020250835,
     "no_di": 1.8331763362514892
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Passing Ships/ElecGtr2",
@@ -218,7 +227,8 @@
     "calc-library": 1.0079545181832958,
     "calc-noise": 1.9472975970843494,
     "no_di": 2.078195644338796
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Passing Ships/ElecGtr3",
@@ -229,7 +239,8 @@
     "calc-library": 0.8328628379830222,
     "calc-noise": 1.1582052967896095,
     "no_di": 1.8655968542862102
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Passing Ships/ElecGtr4",
@@ -240,7 +251,8 @@
     "calc-library": 0.9585065810316016,
     "calc-noise": 1.4531742707995285,
     "no_di": 1.1113926763269806
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Passing Ships/ElecGtr6",
@@ -251,7 +263,8 @@
     "calc-library": 0.6605415631899079,
     "calc-noise": 1.2092312886216936,
     "no_di": 1.2179227642619355
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Prodigal/ElecGtr1",
@@ -262,7 +275,8 @@
     "calc-library": 0.7323493151513596,
     "calc-noise": 1.134296329940293,
     "no_di": 1.4185571228593408
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Prodigal/ElecGtr2",
@@ -273,7 +287,8 @@
     "calc-library": 0.9618648449132199,
     "calc-noise": 2.506852770565741,
     "no_di": 0.9726200048221485
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Prodigal/ElecGtr3",
@@ -284,7 +299,8 @@
     "calc-library": 0.9227549176959626,
     "calc-noise": 1.142004773567881,
     "no_di": 1.5455035498527998
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Prodigal/ElecGtr4",
@@ -295,7 +311,8 @@
     "calc-library": 0.9427100184181513,
     "calc-noise": 1.8102222177301555,
     "no_di": 1.5591795599856435
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Prodigal/ElecGtr5",
@@ -306,7 +323,8 @@
     "calc-library": 0.8455482102628403,
     "calc-noise": 1.1964626586441778,
     "no_di": 1.5698090105599651
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Quicksand/ElecGtr1",
@@ -317,7 +335,8 @@
     "calc-library": 0.8987485650733712,
     "calc-noise": 1.2696009729868336,
     "no_di": 1.2863204737220597
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Quicksand/ElecGtr2",
@@ -328,7 +347,8 @@
     "calc-library": 1.0099872748375764,
     "calc-noise": 1.1561944278717904,
     "no_di": 0.837336411006854
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Signs/ElecGtr2",
@@ -339,7 +359,8 @@
     "calc-library": 3.4109778451721184,
     "calc-noise": 3.225562173079808,
     "no_di": 2.0480565019717294
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Signs/ElecGtr3",
@@ -350,7 +371,8 @@
     "calc-library": 0.8522122621560816,
     "calc-noise": 1.318629652605707,
     "no_di": 1.1380945668928246
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Signs/ElecGtr6",
@@ -361,7 +383,8 @@
     "calc-library": 1.1761499123371035,
     "calc-noise": 1.182421442627522,
     "no_di": 1.580705454915551
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Today's The Day/ElecGtr07",
@@ -372,7 +395,8 @@
     "calc-library": 1.5284888723108352,
     "calc-noise": 1.3685619607548025,
     "no_di": 1.7282354982045556
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "cambridge/Today's The Day/ElecGtr10",
@@ -383,7 +407,8 @@
     "calc-library": 1.126368343320649,
     "calc-noise": 1.3829688067297725,
     "no_di": 0.9271935039974271
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Blind Spots/GTR",
@@ -394,7 +419,8 @@
     "calc-library": 0.6782172134172487,
     "calc-noise": 1.3774362396576958,
     "no_di": 1.424959442846029
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Bloomlight/GTR",
@@ -405,7 +431,8 @@
     "calc-library": 0.8988701972961193,
     "calc-noise": 1.0347303600737296,
     "no_di": 1.4944400633656898
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Farthest Step/GTR",
@@ -416,7 +443,8 @@
     "calc-library": 0.40801025246410827,
     "calc-noise": 0.9275563021091813,
     "no_di": 1.0678784748978858
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/First Offering/GTR 1",
@@ -427,7 +455,8 @@
     "calc-library": 0.6706902070159553,
     "calc-noise": 1.2256024877329343,
     "no_di": 0.9994421874853738
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/First Offering/GTR 2",
@@ -438,7 +467,8 @@
     "calc-library": 1.2524313761711856,
     "calc-noise": 0.9433477747397805,
     "no_di": 1.3826171421572053
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Fragments/GTR",
@@ -449,7 +479,8 @@
     "calc-library": 0.6141769916586258,
     "calc-noise": 1.1451479130259863,
     "no_di": 1.6626502890640333
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Gym Hours/GTR 1",
@@ -460,7 +491,8 @@
     "calc-library": 1.1939398167098805,
     "calc-noise": 1.6708312818671853,
     "no_di": 1.3114270437045528
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Gym Hours/GTR 2",
@@ -471,7 +503,8 @@
     "calc-library": 0.7355605884669535,
     "calc-noise": 1.2438971691958836,
     "no_di": 1.0764442941591605
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Hikikomori - Love Does/GTR",
@@ -482,7 +515,8 @@
     "calc-library": 1.597546601439439,
     "calc-noise": 1.699870706488733,
     "no_di": 1.5737647235511893
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Honey/GTR",
@@ -493,7 +527,8 @@
     "calc-library": 1.5658104717608259,
     "calc-noise": 1.3070765039799466,
     "no_di": 1.1947881981681598
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Long Way Home/GTR",
@@ -504,7 +539,8 @@
     "calc-library": 0.7565981348400752,
     "calc-noise": 1.3280118637633802,
     "no_di": 1.2642996058764422
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Lost Alive/GTR",
@@ -515,7 +551,8 @@
     "calc-library": 1.5703492613901109,
     "calc-noise": 1.0717724868410117,
     "no_di": 1.0472423253290217
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Measurements/GTR",
@@ -526,7 +563,8 @@
     "calc-library": 2.7116377516876105,
     "calc-noise": 2.6004891660611076,
     "no_di": 2.348360045798566
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Russian Cream/GTR 1",
@@ -537,7 +575,8 @@
     "calc-library": 0.9537355760285056,
     "calc-noise": 1.374877003436011,
     "no_di": 1.1816211621925394
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Russian Cream/GTR 2",
@@ -548,7 +587,8 @@
     "calc-library": 0.5412474981888172,
     "calc-noise": 1.0586733769928174,
     "no_di": 1.280055805440342
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Sculptor's Request/GTR 1",
@@ -559,7 +599,8 @@
     "calc-library": 1.1111718026539894,
     "calc-noise": 1.6305781888873514,
     "no_di": 1.138647691292723
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Sculptor's Request/GTR 2",
@@ -570,7 +611,8 @@
     "calc-library": 0.8943751029893517,
     "calc-noise": 1.3626047240418255,
     "no_di": 1.4180027072834347
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/She's Gone/GTR",
@@ -581,7 +623,8 @@
     "calc-library": 0.8880145399499736,
     "calc-noise": 1.224768465926088,
     "no_di": 1.371195165704447
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Strangest Places/GTR",
@@ -592,7 +635,8 @@
     "calc-library": 1.3330701044441835,
     "calc-noise": 1.181876557233596,
     "no_di": 1.317886599986958
-   }
+   },
+   "unmeasurable": []
   },
   {
    "part": "telefunken/Until I Get Back/GTR",
@@ -603,7 +647,8 @@
     "calc-library": 0.9484644869370245,
     "calc-noise": 1.5249983064437773,
     "no_di": 1.9156622685505527
-   }
+   },
+   "unmeasurable": []
   }
  ]
 }

@@ -2749,13 +2749,15 @@ benchmark's `library` arm runs `match_preset.py` from each amp's shipped preset
 (Tone King: the plugin's `Default`) with the part's library probe as
 `--probe-di`, seed 11. Every render is through the part's own DI. The analysis
 was fixed in writing before the final results were read
-(`docs/library-arm-analysis-plan.md`); an interim count on the first 13–18 parts
-per amp had been seen. It scores two ways:
+(`docs/library-arm-analysis-plan.md`, committed with these results, so git
+does not show that order); an interim count on the first 13–18 parts per amp had
+been seen. It scores two ways:
 - **stored:** `v3_no_level` as the benchmark scores it;
 - **corrected:** the audit's fixes applied to both sides alike: `band_shape` over
   the bands within 30 dB of the reference's peak; each pair over the dimensions
   measured on both; for Tone King, the first second cut from reference and
-  render (the start-up mute).
+  render (the start-up mute). A render with no measurable loudness loses its
+  pair; none did.
 
 The rule: adopt the library search for an amp if it is closer than the shipped
 preset as it is on most parts under both readings and the corrected band p is
@@ -2763,10 +2765,10 @@ under 0.05.
 
 | amp | library search vs shipped preset as it is, stored | corrected | band p (corrected) |
 |---|---:|---:|---:|
-| PR12 | 29/43 (−14%) | 23/43 (−2%) | 0.76 |
-| SW50R | 34/43 (−31%) | 29/43 (−18%) | 0.09 |
-| Tone King | 31/43 (−26%) | 23/43 (−3%) | 0.74 |
-| AC20 | 28/43 (−20%) | 25/43 (−3%) | 0.85 |
+| PR12 | 29/43 (−14%) | 25/43 (−8%) | 0.82 |
+| SW50R | 34/43 (−31%) | 30/43 (−18%) | 0.09 |
+| Tone King | 31/43 (−26%) | 23/43 (−3%) | 0.70 |
+| AC20 | 28/43 (−20%) | 26/43 (−8%) | 0.70 |
 
 Under the rule, "not shown" on all four amps. The stored scores favour the
 search much more than the corrected ones: `band_shape`'s far-below-peak bands
@@ -2778,33 +2780,39 @@ rendered through the DI, corrected reading:
 
 | amp | noise calculation vs shipped preset | band p | library calculation vs shipped preset | band p | library search vs its calculation | band p | library search vs noise search | band p |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| PR12 | 8/43 (+33%) | 0.001 | 16/43 (+11%) | 0.04 | 26/43 (−2%) | 0.13 | 36/43 (−37%) | 0.01 |
-| SW50R | 10/43 (+33%) | 0.005 | 21/43 (0%) | 0.37 | 27/43 (−11%) | 0.04 | 33/43 (−37%) | 0.007 |
-| Tone King | 10/43 (+23%) | 0.02 | 24/43 (−12%) | 0.82 | 25/43 (−4%) | 0.55 | 37/43 (−30%) | 0.008 |
-| AC20 | 7/43 (+42%) | 0.001 | 18/43 (+9%) | 0.38 | 29/43 (−3%) | 0.08 | 40/43 (−31%) | 0.001 |
+| PR12 | 9/43 (+33%) | <0.001 | 17/43 (+10%) | 0.10 | 25/43 (−1%) | 0.21 | 36/43 (−38%) | 0.009 |
+| SW50R | 10/43 (+33%) | 0.003 | 21/43 (0%) | 0.31 | 27/43 (−11%) | 0.04 | 33/43 (−37%) | 0.007 |
+| Tone King | 10/43 (+23%) | 0.02 | 23/43 (−12%) | 0.82 | 25/43 (−4%) | 0.58 | 37/43 (−32%) | 0.007 |
+| AC20 | 7/43 (+51%) | <0.001 | 21/43 (+1%) | 0.58 | 29/43 (−3%) | 0.08 | 40/43 (−32%) | 0.001 |
 
 **What it means.**
 - The noise probe's calculated settings are what make a no-DI match worse: they
   land further from the recording than the preset they start from on 33–36 of
   43 parts on every amp (band p ≤ 0.02), and the noise search does not recover.
-- Through real guitar the calculation is not significantly different from the
-  preset on SW50R, Tone King and AC20 and worse on PR12; the search recovers that, so the
-  real-guitar search ends about level with the shipped preset as it is. It beats
-  the noise search on every amp (band p ≤ 0.01).
-- So without a DI, the measured best is the shipped preset with only its level
-  set, with the real-guitar search no better by this measure. Whether a listener
-  hears the real-guitar answers as closer is not measured; the loss's agreement
-  with listening is the audit's open result 7.
+- Through real guitar neither the calculation nor the search is significantly
+  different from the shipped preset as it is on any amp (closer on 17–30 of 43,
+  band p 0.09–0.82); the search beats its own calculation by band only on SW50R
+  (p 0.04). Both beat the noise probe's: the search on every amp (band p ≤
+  0.009).
+- So without a DI the real-guitar options are statistically tied with the
+  shipped preset as it is, everything through the noise probe is worse, and the
+  rule fixed beforehand defaults to the preset. Level was left out throughout, so
+  nothing here says how loud to set it. Whether a listener hears the real-guitar
+  answers as closer is not measured; the loss's agreement with listening is the
+  audit's open result 7.
 
 **Caveats.**
-- The shipped SW50R and PR12 presets have the rack reverb on, which carries state
-  between renders in a reused instance when a guitar is played; the skill asks
-  for fresh processes then. Fresh processes on every candidate would have cost
-  about 130k licence-daemon ports, so these searches reused theirs, which
-  handicaps the library arm. AC20, which the skill also runs fresh, reused too.
+- The shipped SW50R, PR12 and AC20 presets have the rack reverb on, which carries
+  state between renders in a reused instance when a guitar is played; the skill
+  asks for fresh processes then (and always for AC20). Fresh processes on every
+  candidate would have cost about 130k licence-daemon ports, so these searches
+  reused theirs, which handicaps the library arm.
 - The inversion switched on Morgan's tremolo on 27/43 library answers, mostly
-  falsely (audit D-M7). An exploratory split found the library winning about as
-  often with it on as off (PR12 13/27 against 10/16, SW50R 19/27 against 10/16).
+  falsely (audit D-M7). An exploratory split shows no consistent handicap: with
+  it on, PR12's library won less often (13/27 against 10/16) and SW50R's more
+  often (19/27 against 10/16).
+- After Tone King's 1 s cut, Hikikomori's reference is near-silent (−59 LUFS) and
+  still scored; leaving it out gives 23/42.
 - E3's second batch ran with the machine heavily loaded (a load average near 70);
   Tone King renders are not sample-exact even unloaded.
 - The noise-search comparisons are across runs (the no-DI runs of "Song-only
