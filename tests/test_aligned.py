@@ -1,5 +1,6 @@
 """The aligned distance: zero for the same audio, blind to level, monotonic in tone
-changes, robust to lag, sensitive to tails, and deaf to bleed it should not judge."""
+changes, on the DI's own timeline, sensitive to tails and excess fizz, deaf to noise
+under the recording's own floor, and refusing input it cannot score."""
 
 from __future__ import annotations
 
@@ -51,6 +52,16 @@ def _shelf(x, freq, gain_db):
     return scipy_signal.lfilter(b, a, x)
 
 
+def _pink(n, rng):
+    """Unit-RMS pink noise (-3 dB per octave)."""
+    spectrum = np.fft.rfft(rng.standard_normal(n))
+    f = np.fft.rfftfreq(n, 1.0 / SR)
+    spectrum[1:] /= np.sqrt(f[1:])
+    spectrum[0] = 0.0
+    x = np.fft.irfft(spectrum, n)
+    return x / np.std(x)
+
+
 def _delay(x, samples):
     return np.concatenate([np.zeros(samples), x])[: len(x)]
 
@@ -79,21 +90,13 @@ def test_the_lag_is_found_and_the_timelines_follow_it():
     di = _performance(seed=1)
     render = _amp(di)
     recording = _delay(render, 960)              # the recording 20 ms behind the render
-    assert estimate_lag(recording, render) == 960
-    found = aligned_distance(recording, render, di, render_latency=0)
+    lag = estimate_lag(recording, render)
+    assert lag == 960
+    found = aligned_distance(recording, render, di, render_latency=0, lag=lag)
     assert found.lag_samples == 960
     assert found.distance == pytest.approx(0.0, abs=1e-3)
     wrong = aligned_distance(recording, render, di, render_latency=0, lag=0)
     assert wrong.distance > found.distance + 0.5
-
-
-def test_a_window_to_the_end_is_trimmed_to_where_the_render_reaches():
-    di = _performance(seed=5)
-    render = _amp(di)
-    recording = np.concatenate([render[480:], np.zeros(480)])   # the recording 10 ms ahead
-    result = aligned_distance(recording, render, di, render_latency=0, lag=-480,
-                              start_s=5.0, end_s=10.0)
-    assert result.distance == pytest.approx(0.0, abs=1e-3)
 
 
 def test_an_echo_the_recording_lacks_is_heard_in_the_tails():
@@ -103,33 +106,6 @@ def test_an_echo_the_recording_lacks_is_heard_in_the_tails():
     with_tails = aligned_distance(recording, echo, di, render_latency=0, lag=0)
     no_tails = aligned_distance(recording, echo, di, render_latency=0, lag=0, tail_s=0.0)
     assert with_tails.distance > no_tails.distance > 0
-
-
-def test_bleed_in_a_band_is_dropped_rather_than_judged():
-    di = _performance(seed=3, rest=(4.0, 7.0))
-    recording = _amp(di, tone=(200, 3000))
-    rng = np.random.default_rng(7)
-    b, a = scipy_signal.butter(4, [9000, 14000], btype="bandpass", fs=SR)
-    cymbals = scipy_signal.lfilter(b, a, rng.standard_normal(len(recording)))
-    cymbals *= 0.5 * np.std(recording) / np.std(cymbals)
-    bled = recording + cymbals                    # present whether the DI plays or not
-    result = aligned_distance(bled, recording, di, render_latency=0, lag=0)
-    assert result.bleed_checked and result.bleed_bands and min(result.bleed_bands) > 6000
-    clean = aligned_distance(recording, recording, di, render_latency=0, lag=0)
-    assert result.distance < 1.0 and clean.distance == pytest.approx(0.0, abs=1e-6)
-
-
-def test_the_guitars_own_reverb_is_not_taken_for_bleed():
-    di = _performance(seed=6, rest=(4.0, 7.0))
-    dry = _amp(di)
-    rng = np.random.default_rng(8)
-    t = np.arange(int(1.5 * SR)) / SR
-    tail = rng.standard_normal(len(t)) * 10 ** (-3 * t / 1.5)   # a 1.5-s RT60 reverb
-    wet = scipy_signal.fftconvolve(dry, tail)[: len(dry)]
-    room = dry + np.std(dry) / np.std(wet) * wet
-    result = aligned_distance(room, dry, di, render_latency=0, lag=0)
-    assert result.bleed_checked and not result.bleed_bands
-    assert result.distance > 0.5                      # the reverb is judged, not dropped
 
 
 def test_it_refuses_rather_than_scores_silence():
@@ -147,3 +123,98 @@ def test_the_lag_is_found_across_different_rigs_and_inverted_polarity():
     assert abs(estimate_lag(recording, render) - 480) <= 48
     other = _amp(di, drive=1.0, tone=(100, 2000))
     assert abs(estimate_lag(recording, [render, other], hint=500, max_lag_s=0.015) - 480) <= 48
+
+
+def test_the_di_timeline_follows_the_lag_and_the_latency():
+    """A burst in the recording while the DI rests is not judged, wherever the
+    lag and the plugin's latency put that rest."""
+    latency, lag = SR // 2, int(0.8 * SR)
+    di = _performance(seed=9, rest=(4.0, 7.5))
+    render = _delay(_amp(di), latency)
+    rng = np.random.default_rng(3)
+    burst = np.zeros(len(di))
+    burst[int(6.5 * SR): int(8.5 * SR)] = rng.standard_normal(2 * SR)
+    recording = _delay(render, lag) + 0.5 * np.std(render) * burst
+    kwargs = dict(lag=lag, start_s=1.0, tail_s=0.2)
+    right = aligned_distance(recording, render, di, render_latency=latency, **kwargs)
+    assert right.distance == pytest.approx(0.0, abs=0.05)
+    for wrong in (0, -latency):
+        assert aligned_distance(recording, render, di, render_latency=wrong,
+                                **kwargs).distance > 0.3
+
+
+def test_a_level_offset_from_content_outside_the_bands_is_removed():
+    di = _performance(seed=10)
+    recording = _amp(di)
+    t = np.arange(len(di)) / SR
+    hiss_above = recording + 3 * np.std(recording) * np.sin(2 * np.pi * 18000 * t)
+    result = aligned_distance(recording, hiss_above, di, render_latency=0, lag=0)
+    assert result.offset_db < -1.0 and result.distance < 0.1
+
+
+def test_a_hint_reaches_a_lag_the_default_window_cannot():
+    di = _performance(seed=11)
+    render = _amp(di)
+    recording = _delay(render, 3000)                      # 62.5 ms
+    assert estimate_lag(recording, render, hint=2900, max_lag_s=0.015) == 3000
+    with pytest.raises(ValueError, match="outside"):
+        estimate_lag(recording, render)                   # ±50 ms around 0
+    with pytest.raises(ValueError, match="outside"):
+        estimate_lag(recording, render, hint=2900, max_lag_s=0.0015)
+
+
+def test_a_stereo_render_is_one_render():
+    di = _performance(seed=12)
+    render = _amp(di)
+    recording = _delay(render, 480)
+    assert estimate_lag(recording, np.stack([render, render], axis=1)) == 480
+
+
+def test_bad_input_is_refused_rather_than_scored():
+    di = _performance(seed=13)
+    render = _amp(di)
+    broken = render.copy()
+    broken[1000] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        aligned_distance(render, broken, di, render_latency=0, lag=0)
+    with pytest.raises(ValueError, match="finite"):
+        estimate_lag(render, [render, broken])
+    silent_di = aligned_distance(render, render, np.zeros_like(di), render_latency=0, lag=0)
+    assert silent_di.distance is None and "DI" in silent_di.reason
+
+
+def test_a_note_just_before_the_window_still_has_its_tail_judged():
+    di = _performance(seed=14, rest=(2.0, 6.0))
+    dry = _amp(di)
+    last = np.flatnonzero(np.abs(di[: 6 * SR]) > 0)[-1] / SR
+    start = last + 0.05                                   # the window opens in the note's tail
+    ring = np.zeros(len(di))
+    span = slice(int(start * SR), int(start * SR) + SR)
+    ring[span] = np.random.default_rng(4).standard_normal(SR) * np.exp(-np.arange(SR) / (0.3 * SR))
+    tail = dry + np.std(dry) * ring                       # a tail the recording lacks
+    result = aligned_distance(dry, tail, di, render_latency=0, lag=0, start_s=start)
+    assert result.distance > 0.3
+
+
+def test_noise_the_guitar_masks_does_not_bring_a_render_closer():
+    """Over the frames where the guitar plays, noise far under it is clamped away;
+    in pauses the recording's own hiss is audible, so matching it still counts."""
+    di = _performance(seed=15)
+    rng = np.random.default_rng(5)
+    recording = _amp(di, drive=6.0)
+    recording = recording + 10 ** (-35 / 20) * np.std(recording) * _pink(len(di), rng)
+    render = _amp(di)
+    noisy = render + 10 ** (-40 / 20) * np.std(render) * _pink(len(di), rng)
+    clean = aligned_distance(recording, render, di, render_latency=0, lag=0, tail_s=0.0)
+    added = aligned_distance(recording, noisy, di, render_latency=0, lag=0, tail_s=0.0)
+    assert added.distance >= clean.distance - 0.1
+
+
+def test_fizz_the_recording_lacks_is_seen():
+    di = _performance(seed=16)
+    b, a = scipy_signal.butter(8, 4000, btype="low", fs=SR)
+    recording = scipy_signal.lfilter(b, a, _amp(di))
+    b, a = scipy_signal.butter(4, [8000, 12000], btype="bandpass", fs=SR)
+    fizz = scipy_signal.lfilter(b, a, np.tanh(20 * di))
+    fizzy = recording + 0.25 * np.std(recording) / np.std(fizz) * fizz
+    assert aligned_distance(recording, fizzy, di, render_latency=0, lag=0).distance > 1.0

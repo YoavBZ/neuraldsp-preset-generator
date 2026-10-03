@@ -3,32 +3,35 @@
 The project's judge of closeness (`docs/measuring-closeness.md`). A preset is
 rendered through the DI of the very take a recording captured, so render and
 recording play the same notes at the same instants and can be compared frame by
-frame — which an unpaired statistic cannot. On a blind 16-trial test the corrected
-`unpaired-v3` agreed with the listener 7 times (it rewarded hiss, reverb and tremolo
-the listener heard as wrong) and an aligned log-mel distance frozen before the
-answers were read 12 times. This distance was built after those answers
-were read and agrees 14 times, so that 14 is a sanity check, not validation.
+frame. On a blind 16-trial test the corrected `unpaired-v3` agreed with the
+listener 7 times; an aligned log-mel distance frozen before the answers were read
+agreed 12 times, as did an unpaired long-term loudness distance. This distance was
+built after those answers were read and agrees 14 times, so that 14 is a sanity
+check, not validation.
 
 `aligned_distance` compares log-mel spectra (64 bands, 50 Hz–16 kHz, three frame
 sizes) of the loudness-normalised render and recording, after:
 
-- **alignment**: the recording's lag behind the render is given, or estimated by
-  `estimate_lag` (best once per recording from several renders, around a
-  catalogued hint), and the DI's own timeline follows from it and the plugin's
-  latency;
-- **frames**: those where the DI plays, plus `tail_s` after each, so reverb and
-  delay tails count;
+- **alignment**: the recording's lag behind the render, which belongs to the
+  recording, is given (`estimate_lag` estimates it once per recording from several
+  renders), and the DI's timeline follows from it and the plugin's latency;
+- **frames**: those where the DI plays, plus `tail_s` after each (notes played just
+  before the window included), so reverb and delay tails count where a part leaves
+  room for them;
+- **floor**: in each frame, both sides are clamped at `mask_db` under the
+  recording's loudest band in that frame, a rough stand-in for masking. Without it,
+  -40 dB of pink noise added to a render brought it closer to the amp track in a
+  quarter of the cases tried: the noise filled cells where the recording holds its
+  own hiss;
 - **bins**: those within `floor_db` of either side's long-term peak (union, so a
-  boost the reference lacks is still seen);
-- **bleed**: bands where the recording, in frames at least `bleed_gap_s` after the
-  DI last played, sits less than `bleed_min_db` under its level while the DI plays
-  are dropped — a live-room amp track's top octave can be cymbals. The gap keeps
-  the guitar's own sustain out: counted from the DI's last frame instead, a plain
-  render standing in for the recording had bands flagged in 17 of 162 comparisons
-  and every band in 3; from 0.6 s on, none, with the cymbal bleed of two live-room
-  parts still found. Without such frames bleed is not measured (`bleed_checked`);
+  boost the recording lacks is still seen; a judgement call, since it makes the
+  band set depend on the candidate);
 - **level**: the mean difference over the scored cells is removed, so only tone is
   left (output level is a separate control).
+
+Bleed from other instruments is not handled here: on the parts where the DI plays
+most of the time it cannot be measured, and the parts where it can are excluded by
+the material's selection instead.
 
 It reports the distance (mean absolute dB difference over the scored cells) and its
 two parts: `tonal`, the long-term per-band difference, and `temporal`, what is left
@@ -37,8 +40,8 @@ frame by frame (attack, sustain, drive texture, tails).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, Optional
 
 from . import require
 
@@ -57,8 +60,6 @@ class AlignedDistance:
     lag_samples: int                    # recording[t] corresponds to render[t − lag]
     frames: int                         # scored frames at the middle frame size
     bands: int                          # scored mel bands at the middle frame size
-    bleed_bands: List[float] = field(default_factory=list)   # dropped band centres, Hz
-    bleed_checked: bool = False         # whether the DI was silent long enough to look
     reason: Optional[str] = None        # why nothing was scored, when distance is None
 
     def as_dict(self) -> Dict:
@@ -100,7 +101,7 @@ def _frames(x, n_fft: int):
 def _logmel(x, n_fft: int, sample_rate: int):
     import numpy as np
 
-    key = (n_fft, sample_rate)
+    key = (n_fft, sample_rate, FMIN, FMAX, MEL_BANDS)
     if key not in _MELS:
         _MELS[key] = _mel_matrix(n_fft, sample_rate)
     matrix, centres = _MELS[key]
@@ -122,11 +123,29 @@ def _extend(mask, frames: int):
     return out
 
 
-def _mono(x):
+def _signal(x, name: str):
+    """`x` as mono float64 (a (samples, channels) array is folded), or a refusal."""
     import numpy as np
 
     x = np.asarray(x, dtype=np.float64)
-    return x.mean(axis=1) if x.ndim == 2 else x
+    if x.ndim == 2:
+        x = x.mean(axis=1)
+    if x.ndim != 1 or len(x) == 0:
+        raise ValueError(f"the {name} is not a non-empty mono or (samples, channels) signal")
+    if not np.all(np.isfinite(x)):
+        raise ValueError(f"the {name} holds values that are not finite")
+    return x
+
+
+def _segment(x, start: int, length: int):
+    """`x[start:start + length]`, zero-padded where that runs off either end."""
+    import numpy as np
+
+    out = np.zeros(length)
+    lo, hi = max(start, 0), min(start + length, len(x))
+    if hi > lo:
+        out[lo - start: hi - start] = x[lo:hi]
+    return out
 
 
 def _normalise(x, sample_rate: int):
@@ -140,119 +159,134 @@ def estimate_lag(recording, renders, sample_rate: int = SAMPLE_RATE,
                  max_lag_s: float = 0.05, hint: Optional[int] = None) -> int:
     """Samples the recording lags the renders by (recording[t] ~ render[t - lag]).
 
-    `renders` is one render of the recording's DI or, better, several unlike ones
-    (the template and a handful of presets): the lag is the peak, within
-    ±`max_lag_s` of `hint` (0 when none), of the summed magnitudes of each render's
-    normalised cross-correlation with the recording, band-limited to 80 Hz–2 kHz.
-    A real rig and a plugin share the performance's low-frequency waveform closely
-    enough, and the magnitude ignores polarity (inverted on 20 of the 43 development
-    parts). One render alone can lock onto another pitch period: 6 ms off on one of
-    27 parts, where nine pooled renders agreed with an independent estimate to
-    0.3 ms on 25. Not GCC-PHAT, whose whitening found spurious zero-lag peaks on
-    distorted renders.
+    `renders` is one render of the recording's DI (mono or (samples, channels)) or,
+    better, a list of several unlike ones (the template and a handful of presets):
+    the lag is the peak, within ±`max_lag_s` of `hint` (0 when none), of the summed
+    magnitudes of each render's normalised cross-correlation with the recording,
+    band-limited to 80 Hz–2 kHz. A real rig and a plugin share the performance's
+    low-frequency waveform closely enough, and the magnitude ignores polarity
+    (inverted on 20 of the 43 development parts). One render alone can lock onto
+    another pitch period: 6 ms off on one of 27 parts, where nine pooled renders
+    agreed with another estimate to 0.3 ms on 25. A higher peak just outside the
+    window (within twice its width) is refused: the hint is probably wrong.
 
     The plugin's latency is the same for every preset, so the lag belongs to the
     recording: estimate it once, with a hint such as its catalogued DI-to-recording
     lag less the latency and a window of ±15 ms, and pass it to `aligned_distance`
-    for every candidate."""
+    for every candidate. (`analysis.align.find_alignment` measures one pair,
+    full-band, with the opposite sign.)"""
+    require("estimating a lag")
     import numpy as np
 
-    if isinstance(renders, np.ndarray) and renders.ndim == 1:
+    if isinstance(renders, np.ndarray) and (renders.ndim == 1 or (
+            renders.ndim == 2 and renders.shape[1] <= 2)):
         renders = [renders]
-    a = _mono(recording)
+    a = _signal(recording, "recording")
     centre = 0 if hint is None else int(hint)
     span = int(max_lag_s * sample_rate)
-    lags = np.arange(centre - span, centre + span + 1)
-    total = np.zeros(len(lags))
+    lags = np.arange(centre - 2 * span, centre + 2 * span + 1)   # twice the window
+    total, used = np.zeros(len(lags)), 0
     for render in renders:
-        b = _mono(render)
+        b = _signal(render, "render")
         n = min(len(a), len(b))
         x, y = a[:n] - a[:n].mean(), b[:n] - b[:n].mean()
+        norm = np.linalg.norm(x) * np.linalg.norm(y)
+        if norm == 0:
+            continue
         size = 1 << int(np.ceil(np.log2(2 * n)))
         freqs = np.fft.rfftfreq(size, 1.0 / sample_rate)
         keep = (freqs >= 80.0) & (freqs <= 2000.0)
         corr = np.abs(np.fft.irfft(np.fft.rfft(x, size) * keep
                                    * np.conj(np.fft.rfft(y, size) * keep), size))
-        total += corr[lags % size] / (np.linalg.norm(x) * np.linalg.norm(y) + 1e-20)
-    return int(lags[np.argmax(total)])
+        total += corr[lags % size] / norm
+        used += 1
+    if not used:
+        raise ValueError("the recording or every render is silent; no lag to find")
+    inside = np.abs(lags - centre) <= span
+    if total[~inside].max() > total[inside].max():
+        raise ValueError(f"the correlation peaks outside the search window "
+                         f"({centre - span}..{centre + span} samples): the hint is "
+                         f"probably wrong")
+    return int(lags[inside][np.argmax(total[inside])])
 
 
-def aligned_distance(recording, render, di, *, sample_rate: int = SAMPLE_RATE,
-                     render_latency: int = 52, lag: Optional[int] = None,
-                     lag_hint: Optional[int] = None,
-                     start_s: float = 1.0, end_s: Optional[float] = None,
-                     tail_s: float = 1.5, floor_db: float = 30.0,
-                     di_floor_db: float = 40.0, bleed_min_db: float = 15.0,
-                     bleed_gap_s: float = 1.0, min_frames: int = 8) -> AlignedDistance:
+def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 52,
+                     sample_rate: int = SAMPLE_RATE, start_s: float = 1.0,
+                     end_s: Optional[float] = None, tail_s: float = 1.5,
+                     floor_db: float = 30.0, mask_db: float = 40.0,
+                     di_floor_db: float = 40.0, min_frames: int = 8) -> AlignedDistance:
     """Distance between `render` (the preset through `di`) and `recording` (the same
     performance through the real rig), over [start_s, end_s) of the recording.
 
-    `render_latency`: samples the render lags the DI (the plugin's latency; 52 for
-    Morgan, 51 for Tone King). `lag`: samples the recording lags the render; estimated
-    when not given, around `lag_hint` if one is known (e.g. a catalogued DI-to-recording
-    lag less the latency).
+    `lag`: samples the recording lags the render (`estimate_lag`, once per
+    recording). `render_latency`: samples the render lags the DI (the plugin's
+    latency; 52 for Morgan, 51 for Tone King). Non-finite input is refused with a
+    ValueError; a window that cannot be scored gives `distance=None` and a reason.
     """
     require("measuring aligned distance")
+    import math
+
     import numpy as np
 
-    recording, render, di = _mono(recording), _mono(render), _mono(di)
-    shift = (estimate_lag(recording, render, sample_rate, hint=lag_hint)
-             if lag is None else int(lag))
+    recording = _signal(recording, "recording")
+    render = _signal(render, "render")
+    di = _signal(di, "DI")
+    shift = int(lag)
+
+    def refuse(reason, frames=0):
+        return AlignedDistance(None, None, None, None, shift, frames, 0, reason=reason)
+
+    if not np.any(di):
+        return refuse("the DI is silent")
     # The window, trimmed to where the render covers the recording once aligned.
     end = min(len(recording), len(render) + shift)
     if end_s is not None:
         end = min(end, int(end_s * sample_rate))
     start = max(int(start_s * sample_rate), shift if shift > 0 else 0)
     if end - start < sample_rate:
-        return AlignedDistance(None, None, None, None, shift, 0, 0,
-                               reason="under a second to compare once aligned")
+        return refuse("under a second to compare once aligned")
     ref = recording[start:end]
     ren = render[start - shift: end - shift]
-    di_start = start - shift - render_latency
-    dseg = di[max(di_start, 0): max(di_start, 0) + len(ref)]
-    dseg = np.pad(dseg, (0, len(ref) - len(dseg)))
+    di_start = start - shift - render_latency      # recording[t] <-> di[t - shift - latency]
     ref_n, ren_n = _normalise(ref, sample_rate), _normalise(ren, sample_rate)
     if ref_n is None or ren_n is None:
-        return AlignedDistance(None, None, None, None, shift, 0, 0,
-                               reason="no measurable loudness on one side")
-    di_peak = _frame_db(_mono(di), 2048).max()
+        return refuse("no measurable loudness on one side")
 
     totals, tonals, temporals, offsets, kept = [], [], [], [], {}
-    bleed_hz: List[float] = []
     for n_fft in FRAME_SIZES:
-        R, centres = _logmel(ref_n, n_fft, sample_rate)
+        hop = n_fft // 4
+        R, _ = _logmel(ref_n, n_fft, sample_rate)
         X, _ = _logmel(ren_n, n_fft, sample_rate)
         k = min(len(R), len(X))
-        # Both sides share one floor, 70 dB under the recording's loudest cell, so a
-        # silent tail against a noisy one counts as 70 dB at most, not 120.
-        floor = R[:k].max() - 70.0
-        R, X = np.maximum(R[:k], floor), np.maximum(X[:k], floor)
-        playing = _frame_db(dseg, n_fft)[:k] >= di_peak - di_floor_db
-        hop_s = (n_fft // 4) / sample_rate
-        scored = _extend(playing, int(round(tail_s / hop_s)))
-        # Bleed is what the recording holds once the guitar has stopped sounding.
-        silent = ~_extend(playing, int(round(bleed_gap_s / hop_s)))
+        R, X = R[:k], X[:k]
+        # The DI's frames on the same grid, starting early enough that a note played
+        # just before the window still has its tail scored.
+        tail = int(round(tail_s * sample_rate / hop))
+        pre = int(math.ceil(tail_s * sample_rate / hop))
+        dseg = _segment(di, di_start - pre * hop, len(ref) + pre * hop)
+        playing = _frame_db(dseg, n_fft) >= _frame_db(di, n_fft).max() - di_floor_db
+        scored = _extend(playing, tail)
+        playing, scored = playing[pre: pre + k], scored[pre: pre + k]
         if playing.sum() < min_frames:
-            return AlignedDistance(None, None, None, None, shift, int(playing.sum()), 0,
-                                   reason="the DI plays in too few frames")
-        ltas_r = 10 * np.log10(np.mean(10 ** (R[scored] / 10), axis=0))
-        ltas_x = 10 * np.log10(np.mean(10 ** (X[scored] / 10), axis=0))
+            return refuse("the DI plays in too few frames", int(playing.sum()))
+        # One floor for both sides, from the recording alone: `mask_db` under its
+        # loudest band in each frame (70 dB under its loudest cell at most).
+        floor = np.maximum(R.max() - 70.0, R.max(axis=1, keepdims=True) - mask_db)
+        audible = R >= floor
+        ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor)[scored] / 10), axis=0))
+        ltas_x = 10 * np.log10(np.mean(10 ** (np.maximum(X, R.max() - 70.0)[scored] / 10),
+                                       axis=0))
         bins = (ltas_r >= ltas_r.max() - floor_db) | (ltas_x >= ltas_x.max() - floor_db)
-        checked = bool(silent.sum() >= min_frames)
-        if checked:
-            bleed = 10 * np.log10(np.mean(10 ** (R[silent] / 10), axis=0))
-            playing_level = 10 * np.log10(np.mean(10 ** (R[playing] / 10), axis=0))
-            noisy = playing_level - bleed < bleed_min_db
-            if n_fft == 2048:
-                audible = ltas_r >= ltas_r.max() - 40.0
-                bleed_hz = [round(float(c), 1) for c in centres[noisy & audible]]
-            bins &= ~noisy
-        if bins.sum() == 0:
-            return AlignedDistance(None, None, None, None, shift, int(scored.sum()), 0,
-                                   reason="no band is both audible and free of bleed")
+        # Level before the floor, so a render that sits a few dB low is not clipped
+        # unevenly by it: the median difference where the DI plays and the recording
+        # is above its floor, which a silent stretch on one side cannot drag.
+        cells = audible[playing][:, bins]
+        level = float(np.median((X[playing][:, bins] - R[playing][:, bins])[cells]))
+        R, X = np.maximum(R, floor), np.maximum(X - level, floor)
         D = X[scored][:, bins] - R[scored][:, bins]
         offset = float(D.mean())
         D = D - offset
+        offset += level
         per_band = D.mean(axis=0)
         totals.append(float(np.mean(np.abs(D))))
         tonals.append(float(np.mean(np.abs(per_band))))
@@ -263,5 +297,4 @@ def aligned_distance(recording, render, di, *, sample_rate: int = SAMPLE_RATE,
     return AlignedDistance(
         distance=float(np.mean(totals)), tonal=float(np.mean(tonals)),
         temporal=float(np.mean(temporals)), offset_db=float(np.mean(offsets)),
-        lag_samples=shift, frames=kept.get("frames", 0), bands=kept.get("bands", 0),
-        bleed_bands=bleed_hz, bleed_checked=checked)
+        lag_samples=shift, frames=kept.get("frames", 0), bands=kept.get("bands", 0))
