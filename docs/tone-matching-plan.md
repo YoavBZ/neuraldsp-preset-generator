@@ -2592,48 +2592,67 @@ Neutral settings are the benchmark's centred start, written out as
 | SW50R, shipped (above) | 1.43 | 1.59 |
 | SW50R, neutral (above) | 1.25 | 1.34 |
 
-**The rule, applied.** On each amp, an option is the song-only start if it ends
-closer to the recording than every other option on most parts.
-- **PR12:** the shipped clean preset as it is wins against every other option:
-  - against itself searched, 34 of 43 (a median 29% closer, p < 0.001);
-  - against neutral as it is, 32 (p = 0.001);
-  - against neutral searched, 27 (p = 0.02).
-- **AC20:** the shipped template as it is wins:
-  - against itself searched, 38 of 43 (29%, p < 0.001);
-  - against neutral as it is, 28 (p = 0.02);
-  - against neutral searched, 31 (p < 0.001).
-- **Tone King:** no option beats every other. Each start as it is beat its own
-  search, with the start preferred on:
+**Paired by part, and by band.** Each comparison below gives the parts on which
+the first option ended closer (level left out), the Wilcoxon p over parts, and an
+exact sign-flip p over the 13 bands (each band's median log ratio). Parts in a
+band share players and rooms, so the band p is the one to trust (the
+ground-truth audit of 2026-10-03, below, found part-level Wilcoxon gives 13–25%
+false positives at these cluster sizes).
 
-  | start | parts | median | p |
-  |---|---:|---:|---:|
-  | Default | 30 of 43 | 10% closer | 0.009 |
-  | Reset All Settings | 30 of 43 | 10% closer | 0.13 |
-  | neutral | 28 of 43 | 16% closer | 0.02 |
+| comparison | closer | Wilcoxon p | band p |
+|---|---:|---:|---:|
+| PR12 shipped as it is vs itself searched | 34/43 | <0.001 | 0.001 |
+| PR12 shipped as it is vs neutral as it is | 32/43 | 0.001 | 0.06 |
+| PR12 shipped as it is vs neutral searched | 27/43 | 0.02 | 0.50 |
+| PR12 neutral searched vs shipped searched | 33/43 | 0.005 | 0.01 |
+| AC20 shipped as it is vs itself searched | 38/43 | <0.001 | <0.001 |
+| AC20 shipped as it is vs neutral as it is | 28/43 | 0.02 | 0.11 |
+| AC20 shipped as it is vs neutral searched | 31/43 | <0.001 | 0.002 |
+| AC20 neutral searched vs shipped searched | 33/43 | <0.001 | 0.004 |
+| Tone King Default as it is vs its search | 30/43 | 0.009 | 0.17 |
+| Tone King Reset as it is vs its search | 30/43 | 0.13 | 0.30 |
+| Tone King neutral as it is vs its search | 28/43 | 0.02 | 0.02 |
+| SW50R shipped as it is vs itself searched | 25/43 | 0.25 | 0.24 |
+| SW50R neutral searched vs neutral as it is | 24/43 | 0.31 | 0.56 |
+| SW50R neutral searched vs shipped searched | 33/43 | <0.001 | 0.07 |
 
-  The three starts as they are tie with one another (Default against neutral 22
-  to 21, Reset against neutral 21 to 22, Default against Reset 19 to 24).
-- **SW50R:** neutral searched beat every other option on most parts, but reliably
-  only its rival from the shipped template (33 of 43); against neutral as it is,
-  24 of 43 (p = 0.31).
+The Tone King starts as they are tie with one another (Default against neutral 22
+to 21, Reset against neutral 21 to 22, Default against Reset 19 to 24; band p
+0.14–0.25), as do SW50R's (band p ≥ 0.38).
 
-The p values are Wilcoxon signed-rank, treating parts as independent though
-several share a band. By a sign test three of the wins above are not
-significant: PR12's shipped preset against neutral searched (p = 0.13), AC20's
-against neutral as it is (p = 0.07), and Tone King's neutral against its search
-(p = 0.07).
+**What it means.**
+- **Established:** the no-DI search made the shipped PR12 and AC20 presets
+  worse, by band as well as by part, and survives every loss and excerpt variant
+  the audit tried. Searching from neutral settings did better than searching
+  from those presets, but on AC20 still worse than the shipped preset as it is.
+- **Suggestive only:** Tone King's Default and Reset starts beating their own
+  search, and the shipped PR12 preset beating neutral settings. They pass by
+  part, not by band.
+- **Not shown:** any winner among SW50R's options or among Tone King's starts.
+  A rule of the form "the option that beats every other on most parts" names
+  some winner 69–84% of the time even when all options are the same, so it is not
+  used to choose between them.
 
-**What it means.** Across four amps, the no-DI search did not reliably beat a
-plain starting preset. From a good one (the shipped PR12 and AC20 presets) it
-made things clearly worse, and on Tone King it made every start worse on most
-parts (28–30 of 43). Searching
-from neutral settings, the best case, was no better than not searching on SW50R
-and PR12 (25 of 43, p = 0.17) or AC20 (20 of 43). This is the objective proxy,
-not listening, and "as it is" leaves the level where the preset has it: neutral
-settings on the three Morgan amps play a median 19–36 LU too quiet until a level
-is set, which a calculation does without a search (Tone King's neutral start is
-about level, a median +0.1 LU). Whether a search-free match through real guitar does better
-still is round 1's E1 (`docs/research-song-only-matching.md`).
+This is the objective proxy, not listening, and "as it is" leaves the level where
+the preset has it. With the repository's metering, neutral settings on the three
+Morgan amps play a median 19–36 LU too quiet until a level is set (Tone King's
+neutral start is about level, +0.1 LU). The metering reads a mono reference
+3.01 LU louder than the same audio in stereo; with consistent metering those are
+22–39 LU and −2.9 LU (audit D-M4).
+
+**After the audit.** The ground-truth audit (2026-10-03) confirmed three
+mechanisms that bear on these numbers; none reverses an established result:
+- `band_shape`, the largest timbre term, counts bands far below the guitar's peak,
+  which inflates the distance of unchanged starts (10–28%) more than of searched
+  answers (6–14%). Restricted to bands within 30 dB of the peak, every
+  search-against-start comparison moves further toward the start.
+- Every fresh Tone King process starts with about 0.4 s of exact zeros (0.87 s
+  for the Reset and neutral states), and the scoring renders here used no
+  pre-roll. With the first second cut from both sides the start-win counts
+  become 27, 30 and 30 (Default, Reset, neutral) against 30, 30 and 28; the ties
+  between starts are unchanged.
+- A candidate under the −70 LUFS gate loses its level term, so near-silence can
+  score as close. Counted as a loss, Tone King Reset's start wins become 31.
 
 **Provenance.**
 - PR12's runs ran from 621ac13 in a separate checkout.
@@ -2657,11 +2676,11 @@ still is round 1's E1 (`docs/research-song-only-matching.md`).
   on all 301). The committed JSONs predate #100's `silent_trials` field.
 - One answer has no measurable loudness through its part's DI: Tone King Reset
   on Telefunken "Hikikomori - Love Does" GTR (`summary.no_di.unmeasurable`). It
-  passed the guitar check, level with the template through the synthetic guitar
-  (−17.5 LUFS), but this part's DI plays nearly silent through these starts too
-  (Reset as it is −50.6 LUFS, Tone King neutral −52, AC20 neutral −55). It
-  counts as a search win (1.66 against 2.81) in Reset's 30 of 43, which changes
-  no conclusion.
+  passed the guitar check through the synthetic guitar (−17.5 LUFS), but 99.98%
+  of this part's DI crop's energy lies in its first 0.6 s, inside the fresh Tone
+  King process's start-up mute, so its Reset and neutral scoring renders are all
+  zeros. It counts as a search win (1.66 against 2.81) in Reset's 30 of 43, which
+  changes no conclusion.
 - About 8 minutes a match (AC20 about 15), one part at a time (AC20 two).
 
 ```bash
