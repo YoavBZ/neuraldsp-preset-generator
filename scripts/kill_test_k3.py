@@ -8,9 +8,10 @@ features and folds are K2's (`kill_tests.py`): trained on the panel renders of t
 training bands, they pick a preset from each held-out part's real amp-track crop.
 That preset's render through the part's own DI is scored against the amp track,
 against template+R, under ALM and v3c over 1.0–10 s, level left out. Comparators:
-the K1 constant chosen on the training bands, a shuffled control (the recogniser
-given another held-out part's amp track) and, where K1 scored the part, the split-
-half oracle's pick.
+the constant chosen per distance on the training bands, a shuffled control (the
+recogniser given every other-band part's amp track in turn, averaged) and, where K1
+scored the part, the split-half oracle's pick (an optimistic bound). The pass rule,
+amended before any result was read, also requires beating the constant.
 """
 
 from __future__ import annotations
@@ -126,8 +127,11 @@ def main():
         return cache[key]
 
     picks = {name: {} for name in ("1nn", "lda", "lda+1nn")}
+    # The shuffled control: for each part, the recogniser's picks from every
+    # other-band part's amp track (amended before any result: never the same band).
     shuffled = {name: {} for name in picks}
-    constants = {}
+    constants = {"alm": {}, "v3c": {}}
+    all_features = {p: features(refs[p], dis[p], meta[p]["lag"]) for p in eligible}
     for f_ in range(4):
         tr = fold != f_
         test_parts = [p for p in eligible if fold_of[meta[p]["band"]] == f_]
@@ -149,28 +153,30 @@ def main():
         W = V[:, np.argsort(-w.real)[: len(cls) - 1]].real
         Ptr = Xtr @ W
         cm = np.stack([means[c] @ W for c in cls])
-        qf = {}
-        for p in test_parts:
-            f = features(refs[p], dis[p], meta[p]["lag"])
-            if f is not None:
-                qf[p] = (f - mu) / sd
-        order = [p for p in test_parts if p in qf]
-        for i, p in enumerate(order):
-            q = qf[p]
-            other = qf[order[(i + 1) % len(order)]] if len(order) > 1 else q
-            for target, store in ((q, picks), (other, shuffled)):
-                d1 = ((Xtr - target) ** 2).sum(1)
-                store["1nn"][p] = factory[int(y[tr][np.argmin(d1)])]
-                pt = target @ W
-                store["lda"][p] = factory[int(cls[np.argmin(((cm - pt) ** 2).sum(1))])]
-                store["lda+1nn"][p] = factory[int(y[tr][np.argmin(((Ptr - pt) ** 2).sum(1))])]
-        train_parts = [p for p in eligible if fold_of[meta[p]["band"]] != f_]
-        med = {c: statistics.median([distance(p, c, "alm") for p in train_parts
-                                     if distance(p, c, "alm") is not None] or [1e9])
-               for c in factory}
-        best = min(med, key=med.get)
+        def pick(target):
+            d1 = ((Xtr - target) ** 2).sum(1)
+            pt = target @ W
+            return {"1nn": factory[int(y[tr][np.argmin(d1)])],
+                    "lda": factory[int(cls[np.argmin(((cm - pt) ** 2).sum(1))])],
+                    "lda+1nn": factory[int(y[tr][np.argmin(((Ptr - pt) ** 2).sum(1))])]}
+
+        order = [p for p in test_parts if all_features.get(p) is not None]
         for p in order:
-            constants[p] = best
+            for name, cand in pick((all_features[p] - mu) / sd).items():
+                picks[name][p] = cand
+            others = [o for o in eligible if meta[o]["band"] != meta[p]["band"]
+                      and all_features.get(o) is not None]
+            controls = [pick((all_features[o] - mu) / sd) for o in others]
+            for name in picks:
+                shuffled[name][p] = [c[name] for c in controls]
+        train_parts = [p for p in eligible if fold_of[meta[p]["band"]] != f_]
+        for metric in ("alm", "v3c"):
+            med = {c: statistics.median([distance(p, c, metric) for p in train_parts
+                                         if distance(p, c, metric) is not None] or [1e9])
+                   for c in factory}
+            best = min(med, key=med.get)
+            for p in order:
+                constants[metric][p] = best
         print(f"fold {f_}: {len(order)} parts", flush=True)
 
     oracle = {}
@@ -189,13 +195,17 @@ def main():
             for p, cand in picks[name].items():
                 base = distance(p, "template+R", metric)
                 d = distance(p, cand, metric)
-                ds = distance(p, shuffled[name][p], metric)
-                dc = distance(p, constants[p], metric)
-                if None in (base, d, ds, dc):
+                dss = [distance(p, c, metric) for c in shuffled[name][p]]
+                dss = [v for v in dss if v is not None]
+                dc = distance(p, constants[metric][p], metric)
+                if None in (base, d, dc) or not dss or base <= 0:
                     continue
+                shuffled_log = statistics.mean(math.log(v / base) for v in dss)
                 row = {"part": p, "band": meta[p]["band"], "pick": cand,
-                       "model": math.log(d / base), "shuffled": math.log(ds / base),
-                       "constant": math.log(dc / base), "model_vs_shuffled": math.log(d / ds)}
+                       "model": math.log(d / base), "shuffled": shuffled_log,
+                       "constant": math.log(dc / base),
+                       "model_vs_shuffled": math.log(d / base) - shuffled_log,
+                       "model_vs_constant": math.log(d / dc)}
                 if p in oracle and distance(p, oracle[p], metric) is not None:
                     row["oracle"] = math.log(distance(p, oracle[p], metric) / base)
                 rows.append(row)
@@ -204,7 +214,12 @@ def main():
                 "shuffled_vs_templateR": K.band_stat(rows, "shuffled"),
                 "constant_vs_templateR": K.band_stat(rows, "constant"),
                 "oracle_vs_templateR": K.band_stat(rows, "oracle"),
-                "model_better_than_shuffled": sum(r["model_vs_shuffled"] < 0 for r in rows),
+                "model_better_than_shuffled": sum(1.0 if r["model_vs_shuffled"] < 0 else
+                                                  0.5 if r["model_vs_shuffled"] == 0 else 0.0
+                                                  for r in rows),
+                "model_better_than_constant": sum(1.0 if r["model_vs_constant"] < 0 else
+                                                  0.5 if r["model_vs_constant"] == 0 else 0.0
+                                                  for r in rows),
                 "parts": len(rows), "rows": rows}
         out["results"][metric] = res
     passed = []
@@ -215,7 +230,8 @@ def main():
             s = r["model_vs_templateR"]
             ok &= (s is not None and s["band_median_log_ratio"] <= math.log(0.9)
                    and s["parts_better"] > s["parts"] / 2
-                   and r["model_better_than_shuffled"] > r["parts"] / 2)
+                   and r["model_better_than_shuffled"] > r["parts"] / 2
+                   and r["model_better_than_constant"] > r["parts"] / 2)
         if ok:
             passed.append(name)
     out["k3_pass"] = bool(passed)

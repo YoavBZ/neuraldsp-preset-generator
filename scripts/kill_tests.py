@@ -425,6 +425,79 @@ def main():
         row = k2["rows"][name]
         row["regret_ratio"] = round(row["median_alm_regret"] / row["constant_median_alm_regret"], 4)
         row["pass"] = row["top1"] >= 3 * k2["chance_top1"] and row["regret_ratio"] <= 0.75
+    # Added after K2's first result, on the review's finding (both reported):
+    # mean regret (the median is 0 once top-1 passes 50%), the medoid preset as the
+    # render-space constant, and an open-set version — each preset held out of
+    # training, so the recogniser can only pick another preset — which is what
+    # estimating unseen settings needs.
+    cache_reg = {}
+
+    def regret_cached(i, q):
+        key = (owners[i], int(q), int(y[i]))
+        if key not in cache_reg:
+            cache_reg[key] = regret(i, q)
+        return cache_reg[key]
+
+    medoid = np.zeros(len(y), dtype=int)
+    for f_ in range(4):
+        tr_parts = sorted({owners[i] for i in range(len(y)) if fold[i] != f_})
+        te = np.where(fold == f_)[0]
+        if not len(te):
+            continue
+        score = {}
+        for c in range(len(factory)):
+            vals = []
+            for part in tr_parts[:8]:                     # a fixed subset keeps it cheap
+                idx = [i for i in range(len(y)) if owners[i] == part and y[i] == c]
+                if not idx:
+                    continue
+                i = idx[0]
+                vals += [regret_cached(j, c) for j in range(len(y))
+                         if owners[j] == part and y[j] != c]
+            score[c] = statistics.mean([v for v in vals if v is not None] or [1e9])
+        medoid[te] = min(score, key=score.get)
+    medoid_reg = [regret_cached(i, medoid[i]) for i in range(len(y))]
+    for name in preds:
+        reg = [regret_cached(i, preds[name][i]) for i in range(len(y))]
+        ok = [(r, m) for r, m in zip(reg, medoid_reg) if r is not None and m is not None]
+        row = k2["rows"][name]
+        row["mean_alm_regret"] = round(statistics.mean([r for r, _ in ok]), 4)
+        row["medoid_mean_alm_regret"] = round(statistics.mean([m for _, m in ok]), 4)
+        row["mean_ratio_vs_medoid"] = round(row["mean_alm_regret"] / row["medoid_mean_alm_regret"], 4)
+
+    open_set = {name: [] for name in preds}
+    nearest = []
+    for f_ in range(4):
+        te_all = np.where(fold == f_)[0]
+        if not len(te_all):
+            continue
+        for c in range(len(factory)):
+            tr = (fold != f_) & (y != c)
+            te = te_all[y[te_all] == c]
+            if not len(te) or not tr.any():
+                continue
+            mu, sd = X[tr].mean(0), X[tr].std(0) + 1e-9
+            Xtr, Xte = (X[tr] - mu) / sd, (X[te] - mu) / sd
+            cls = np.unique(y[tr])
+            d1 = ((Xte[:, None] - Xtr[None]) ** 2).sum(-1)
+            p1 = y[tr][np.argmin(d1, 1)]
+            W, means = lda_fit(Xtr, y[tr])
+            Ptr, Pte = Xtr @ W, Xte @ W
+            cm = np.stack([means[k] @ W for k in cls])
+            pl = cls[np.argmin(((Pte[:, None] - cm[None]) ** 2).sum(-1), 1)]
+            pln = y[tr][np.argmin(((Pte[:, None] - Ptr[None]) ** 2).sum(-1), 1)]
+            for j, i in enumerate(te):
+                for name, pred in (("1nn", p1), ("lda", pl), ("lda+1nn", pln)):
+                    open_set[name].append(regret_cached(i, pred[j]))
+                others = [regret_cached(i, k) for k in range(len(factory)) if k != c]
+                nearest.append(min(v for v in others if v is not None))
+    med_open = [medoid_reg[i] if medoid[i] != y[i] else None for i in range(len(y))]
+    k2["open_set"] = {
+        name: {"mean_alm_regret": round(statistics.mean([v for v in vals if v is not None]), 4)}
+        for name, vals in open_set.items()}
+    k2["open_set"]["medoid_constant"] = {"mean_alm_regret": round(statistics.mean(
+        [v for v in med_open if v is not None]), 4)}
+    k2["open_set"]["best_available_preset"] = {"mean_alm_regret": round(statistics.mean(nearest), 4)}
     k2["renders"] = int(len(y)); k2["folds"] = {b: fold_of[b] for b in bands}
     out["k2"] = k2
     out["k2_pass"] = any(r["pass"] for r in k2["rows"].values())
