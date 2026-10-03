@@ -2527,6 +2527,135 @@ The batches add a `--part` for each of their parts (`-rerunN.json` lists them un
 minutes beside the neutral-start SW50R no-DI run, and the JSONs were written
 outside the checkout and copied here.
 
+#### The second set on PR12
+
+The recordings benchmark on PR12, the 43 development parts, `unpaired-v3`, Morgan
+1.1.1 through the reused Swift server (`reproducible=False`, band noise 0.23 dB).
+Mean / median:
+
+| searched through | PR12, second set |
+|---|---:|
+| the part's own DI (same take) | 0.479 / 0.445 |
+| another session's DI | 1.146 / 0.992 |
+| the noise probe (no DI) | 1.658 / 1.653 |
+| *no search:* neutral settings | 1.959 / 1.873 |
+
+Paired by part: the same-take DI ended closer than another session's on 43 (a
+median 55% closer), and another session's closer than no DI on 35 (29 with
+`level` left out). Against neutral settings: the same-take DI closer on 43,
+another session's on 39 (36 with `level` left out), and no DI on 31, but with
+`level` left out on 26 (a median 14% closer, p = 0.1). It repeats SW50R's and
+Tone King's order: the part's own DI, then another session's, then none, and a
+search without a DI is not shown better than its start once loudness is set
+aside.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp pr12 --set 2 --signal same --signal other --signal noise --budget 300 \
+  --loss-profile unpaired-v3 --workers 3 --json docs/recordings-benchmark-set2-pr12.json
+```
+
+It ran from a8a45b0 in 348 minutes. A first attempt started 18 minutes before
+the licence daemon was killed at 00:15:44 (see "Song-only starting points"
+below), so its reused plugin instances may have gone silent; it was stopped and
+the run above started on fresh instances. No answer in it lacks a `level`
+dimension.
+
+#### Song-only starting points on all four amps
+
+"The no-DI starting point" found that, without a DI, the shipped SW50R template
+was a worse start for the search than neutral settings. The same comparison was
+run on PR12, AC20 and Tone King's rhythm channel, and each start was scored both
+as it is, with no search, and after the shipped no-DI search, through each part's
+own DI against its amp track, `unpaired-v3` with `level` left out, the 43
+development parts, seed 11:
+
+- **PR12:** the shipped `samples/Example_Clean_PR12.xml` and neutral settings.
+- **AC20:** the shipped `samples/AC20_Atlas_Topology.xml` and neutral settings,
+  in fresh processes, as AC20 needs.
+- **Tone King rhythm:** the plugin's own `Default` and `Reset All Settings` presets
+  (local only, not committed) and neutral settings written onto `Default`.
+
+Neutral settings are the benchmark's centred start, written out as
+`docs/neutral-{pr12,ac20,toneking-rhythm}-spec.json`. Median distance:
+
+| | as it is | after the no-DI search |
+|---|---:|---:|
+| PR12, shipped | **1.19** | 1.60 |
+| PR12, neutral | 1.40 | 1.34 |
+| AC20, shipped | **1.19** | 1.66 |
+| AC20, neutral | 1.29 | 1.43 |
+| Tone King, Default | 1.16 | 1.42 |
+| Tone King, Reset All Settings | 1.16 | 1.19 |
+| Tone King, neutral | 1.13 | 1.25 |
+| SW50R, shipped (above) | 1.43 | 1.59 |
+| SW50R, neutral (above) | 1.25 | 1.34 |
+
+**The rule, applied.** On each amp, an option is the song-only start if it ends
+closer to the recording than every other option on most parts.
+- **PR12:** the shipped clean preset as it is wins against every other option:
+  - against itself searched, 34 of 43 (a median 29% closer, p < 0.001);
+  - against neutral as it is, 32 (p = 0.001);
+  - against neutral searched, 27 (p = 0.02).
+- **AC20:** the shipped template as it is wins:
+  - against itself searched, 38 of 43 (29%, p < 0.001);
+  - against neutral as it is, 28 (p = 0.02);
+  - against neutral searched, 31 (p < 0.001).
+- **Tone King:** no option beats every other. Each start as it is beat its own
+  search, with the start preferred on:
+
+  | start | parts | median | p |
+  |---|---:|---:|---:|
+  | Default | 30 of 43 | 10% closer | 0.009 |
+  | Reset All Settings | 30 of 43 | 10% closer | 0.13 |
+  | neutral | 28 of 43 | 16% closer | 0.02 |
+
+  The three starts as they are tie with one another (Reset against neutral 22 to
+  21).
+- **SW50R:** neutral searched beat every other option on most parts, but reliably
+  only its rival from the shipped template (33 of 43); against neutral as it is,
+  24 of 43 (p = 0.31).
+
+**What it means.** Across four amps, the no-DI search did not reliably beat a
+plain starting preset. From a good one (the shipped PR12 and AC20 presets) it
+made things clearly worse, and on Tone King it made every start worse. Searching
+from neutral settings, the best case, was no better than not searching on SW50R
+and PR12 (25 of 43, p = 0.17) or AC20 (20 of 43). This is the objective proxy,
+not listening, and "as it is" leaves the level where the preset has it: neutral
+settings play 19–36 LU too quiet until a level is set, which a calculation does
+without a search. Whether a search-free match through real guitar does better
+still is round 1's E1 (`docs/research-song-only-matching.md`).
+
+**Provenance.**
+- PR12's runs ran from 621ac13 in a separate checkout.
+- Tone King's and AC20's ran from a8a45b0 in another. During those runs, two
+  changes that cannot alter results were applied to that checkout:
+  - the Swift build cache (#97), whose binaries are byte-identical;
+  - the faster fingerprint (#99), whose fingerprints are byte-identical in
+    review.
+- On 2026-10-03 at 00:15:44 the PACE licence daemon both plugins use was killed
+  by macOS for leaking mach ports. Each plugin process launch leaks about 10, and
+  AC20's per-render processes drove it. One Tone King match running then rendered
+  silence. It was set aside and rerun, and #100 now fails such a match.
+- Eight Tone King parts first failed with silent renders, mostly after AC20's
+  fresh-process load began. They were rerun cleanly by resuming the runs.
+- No answer in the committed JSONs has a silent trial.
+- About 8 minutes a match (AC20 about 20), one to three parts at once per run.
+
+```bash
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+  --pack morgan --amp pr12 --template samples/Example_Clean_PR12.xml \
+  --out-dir runs/start-pr12-shipped --json docs/match-pipeline-set2-pr12-shipped.json
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+  --pack morgan --amp ac20 --process-policy fresh \
+  --template samples/AC20_Atlas_Topology.xml \
+  --out-dir runs/start-ac20-shipped --json docs/match-pipeline-set2-ac20-shipped.json
+```
+
+The neutral and Tone King runs differ only in `--template` (the neutral spec
+applied with `apply_spec.py` onto the shipped template, or onto Tone King's
+`Default`) and `--pack toneking --amp rhythm`.
+
 ---
 
 ## 8. Dependency and CI policy

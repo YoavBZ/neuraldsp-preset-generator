@@ -162,7 +162,10 @@ Tone King on all 14 parts and on 38 of 43 more, and still on most with loudness
 set aside; on 43 more SW50R recordings the shipped no-DI match ended further
 from the recording than the unsearched template on 28, with loudness set aside,
 while a match through the same take's DI (a reamp, the best case) was closer on
-all 43 — so without a DI, show the starting preset beside the searched one and
+all 43. The other amps agree: with loudness set aside, the shipped PR12 and AC20
+templates as they are ended closer than their own no-DI search on 34 and 38 of
+43, and each of three Tone King starts beat its own search on 28–30 of 43. So
+without a DI, show the starting preset beside the searched one and
 do not present the search as an improvement. Tell the user a match made without
 a DI is at best a starting point, not a measured match, and that a DI of their
 playing would change that. Without a DI the tool sets each passing candidate's

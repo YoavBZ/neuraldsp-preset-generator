@@ -1,0 +1,265 @@
+{
+ "name": "Neutral rhythm",
+ "parameters": [
+  {
+   "module": "",
+   "key": "ampAttenuation",
+   "value": "5"
+  },
+  {
+   "module": "",
+   "key": "ampHfc",
+   "value": "0"
+  },
+  {
+   "module": "",
+   "key": "ampReverb",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "ampTremoloDepth",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "ampTremoloSpeed",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "ampType",
+   "value": "Rhythm Channel"
+  },
+  {
+   "module": "",
+   "key": "ampsActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "cab1Active",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "cab1Distance",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "cab1Level",
+   "value": -12.0
+  },
+  {
+   "module": "",
+   "key": "cab1MicIR",
+   "value": 0
+  },
+  {
+   "module": "",
+   "key": "cab1Pan",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "cab1Phase",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "cab1Position",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "cab1RoomActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "cab2Active",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "cab2Distance",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "cab2Level",
+   "value": -12.0
+  },
+  {
+   "module": "",
+   "key": "cab2MicIR",
+   "value": 0
+  },
+  {
+   "module": "",
+   "key": "cab2Pan",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "cab2Phase",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "cab2Position",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "cab2RoomActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "cabSectionActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "chorusActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "compActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "delayActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "delaySync",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "drive1Active",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "drive2Active",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "eqActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "eqBand1",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand2",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand3",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand4",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand5",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand6",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand7",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand8",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqBand9",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "eqSectionActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "gateThreshold",
+   "value": -96.0
+  },
+  {
+   "module": "",
+   "key": "inputGain",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "outputGain",
+   "value": 0.0
+  },
+  {
+   "module": "",
+   "key": "pedalSectionActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "reverbActive",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "rhythmAmpBass",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "rhythmAmpTreble",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "rhythmAmpVolume",
+   "value": 0.5
+  },
+  {
+   "module": "",
+   "key": "rhythmAttBypass",
+   "value": false
+  },
+  {
+   "module": "",
+   "key": "timeSectionActive",
+   "value": true
+  },
+  {
+   "module": "",
+   "key": "wahActive",
+   "value": false
+  }
+ ]
+}
