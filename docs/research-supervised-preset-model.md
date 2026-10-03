@@ -11,24 +11,24 @@ run of `scripts/benchmark_recordings.py --no-search` on 2026-10-03.
 
 ## 1. Verdict
 
-A supervised model can be built here, and rendering time and compute are not what stops it. A decisive SW50R pilot needs about 25–40k renders, which is 1.5–4 hours on reused plugin processes, plus small networks that train on this Mac. Producing the full training set would take about one night of rendering per amp or channel.
+A supervised model can be built here, and rendering time and compute are not what stops it. A decisive SW50R pilot needs about 25–40k renders, which is 1.5–4 hours on reused plugin processes, plus small networks that train on this Mac. Producing the full training set would take about one night of rendering per Morgan amp; Tone King may need 2–3 nights per channel, and AC20 may be left out (see "Staying within the licence-daemon limits").
 
 Whether it works depends on three things that more renders cannot fix:
 - **Players.** The training DIs are 13 development bands, but only about 8 recording chains, because six of the bands were recorded in the same Telefunken room.
 - **Real recordings and stems.** Features learned from plugin renders may not carry over to real mic'd amps and separated stems.
-- **What can be learned.** The model can learn about 20–25 quantities the audio actually reveals, plus the topology (amp or channel, pedals on/off, mic family). It cannot learn ~150 raw knobs.
+- **What can be learned.** The model can learn a few tens of quantities at most, plus the topology (amp or channel, pedals on/off, mic family); round 2 expects only 10–15 independent quantities per amp (see "Outputs"). It cannot learn all ~128 writable Morgan controls or ~95 Tone King ones.
 
 This refines round 2's verdict rather than overturning it:
 - **Where round 2 is right:** the limit is the data, not the network.
-- **Where round 2 is wrong:** its cost estimate. It said about two-thirds of pilot renders would need fresh processes. That is no longer true once time effects and the amps' spring reverbs are off in training renders. SW50R and PR12 can then train entirely in reused processes, with no licence-daemon problem.
+- **Where this differs from round 2: render policy and size.** Round 2 counted 93 of 108 presets as needing fresh processes and already offered leaving time effects off in training renders as the fix. This report adds pinning the spring reverbs (SW50R's, and PR12's Reverb/Dwell) and proposes training SW50R and PR12 in reused processes, but only if Step 0's reused-against-fresh gate passes; as round 2 says, S0 decides. Its pilot is also larger than round 2's: 25–40k renders and about 5 days of code, against 10–12k and 2 days.
 - **Where round 2 is too cautious:** its timing. It holds the model back until the hand-built drive features fail. The simulation pilot is cheap enough to run as extra rows inside round 2's recoverability screen, on the same renders.
 
-This morning's inversion-only run (E1) set a concrete bar. Measurements are with level left out and are uncommitted:
+This morning's inversion-only run (E1) set a concrete bar. Measurements are with level left out and are uncommitted. It is a partial E1: its `library` signal is round 1's L1, four clips from other set-2 development bands, and it had no L2, `retrieved`, `oracle_pick` or `amptrack_as_di` arms. For a Telefunken part two of the four clips come from the same room, so the bar may be optimistic there.
 - **SW50R:** inversion through a library DI ended closer than neutral settings on 33 of 43 parts, with a median 19% closer.
 - **Tone King rhythm:** 27 of 43 parts, 11% closer.
 - **For comparison, the part's own DI:** 42/43 and 41/43.
 
-My estimate is a 15–30% chance that a learned model clearly beats that bar on real song stems. It is most likely to earn its place on drive and topology, where the hand features are weakest: 22–34% right picks across performances, against 14% chance.
+My estimate is a 15–30% chance that a learned model clearly beats that bar on real song stems. It is most likely to earn its place on drive and topology, where the hand features are weakest: 22–27% right picks across performances in timbre and dynamics, against 14% chance (level reached 34%, but a loudness-normalised model cannot use it).
 
 **Against round 2's deterministic estimator:**
 - The estimator is cheaper, needs no torch, and labels every control.
@@ -47,14 +47,14 @@ One product consequence: the useful training DIs are licensed for non-commercial
 
 ### Data
 
-**Players and DIs (training uses only the DI, so parts that failed pairing still count)**
+**Players and DIs (training uses only the DI, so parts that failed pairing still count; the 74 below include 5 "Keys GTR" DIs, 22.7 minutes, that the catalog excludes as possibly a keyboard through a guitar amp, so drop them)**
 - **Set-2 development material:**
   - 13 bands, 74 DI tracks, 273 minutes, of which about 163 minutes is actual playing.
   - Six Telefunken bands share one room, and their backings carry bleed of the same amp. Report them separately from Cambridge.
-- **Set 1:** development DIs only. Guitar-TECHS P3 never enters training or a library.
-- **The cheapest extra diversity: about 15 more Cambridge sessions with DI tracks.**
-  - The scratch catalogue lists 32 Cambridge sessions with paired electric-guitar DIs; 16 are on disk.
-  - Training needs no pairing test, so the rest are usable as they are. Held-out bands (e.g. Forkupines, Lights Off Clarity) stay excluded.
+- **Set 1:** development DIs only. Guitar-TECHS P3 never enters training or a library. These add Whiskey Heart and Coltraine beyond the 13 set-2 bands above; both share players with set-1 held-out sessions (57 Chevy, Memphis), so training on them weakens any later held-out test on those sessions.
+- **The cheapest extra diversity: Cambridge sessions that failed pairing.**
+  - The local candidate list (`~/ndsp-presets/references/datasets/validation-candidates.json`) names 19 Cambridge sessions: the 14 used in set 2, plus 5 that failed pairing and are no longer on disk (Dunning Kruger ×2, Eat The Feeder "Wickerman", Magician's Nephew, The Long Wait), holding 20 DIs. The Cambridge library may hold more; that was not checked.
+  - Training needs no pairing test, so those are usable as they are. Held-out bands (e.g. Forkupines, Lights Off Clarity) stay excluded.
 - **Public sets:**
   - Guitar-TECHS P1/P2: 2 players playing exercises, CC BY. https://arxiv.org/html/2501.03720
   - EGFxSet: a Stratocaster at 5 pickup positions, CC BY, single notes. Use it to calibrate pickup augmentation. https://zenodo.org/records/7044411
@@ -72,7 +72,7 @@ One product consequence: the useful training DIs are licensed for non-commercial
   - 30% draws from the factory frequencies;
   - 30% coverage sampling in perceptual units.
 - Amps and channels are balanced.
-- Factory-only sampling would teach accidents as facts. For example, Dynamic 57 is the left mic in 79 of 107 Morgan presets, and there are only 20 distinct amp × drive × compressor combinations.
+- Factory-only sampling would teach accidents as facts. For example, Dynamic 57 is the left mic in 79 of 107 Morgan presets, and the 20 amp × drive × compressor combinations present (of 24 possible; AC20 never has the second drive on) are heavily skewed.
 - The sampling distribution acts as the model's prior when several settings sound alike, so choose it on purpose.
 
 **Augmentation before the plugin**
@@ -84,7 +84,7 @@ One product consequence: the useful training DIs are licensed for non-commercial
 **Augmentation after the render (no plugin time)**
 - **Backing mix:**
   - Mix into the session's own time-aligned backing. Random backings make separation unrealistically easy. https://www.merl.com/publications/docs/TR2024-030.pdf
-  - Use the measured balance: on the development crops the guitar sits a median 7.2 LU below its backing (10th–90th percentile −13.8 to −2.2).
+  - Use the measured balance: on the development crops the guitar sits a median 7.7 LU below its backing over the 43 set-2 development parts (10th–90th percentile −13.7 to −2.1).
 - **Mastering:** bus compression and a limiter to −14 to −8 LUFS, via dasp-pytorch (Apache-2.0). https://github.com/csteinmetz1/dasp-pytorch
 - **Codec:** MP3 or AAC on about 30% of clips.
 - **Separation:** precomputed for a share of clips.
@@ -98,7 +98,7 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - **Precedent:** 1M renders of a commercial plugin in about 24 h on a 2018 Mac mini. https://arxiv.org/html/2407.16643
 
 **Render-hours on this Mac**
-- Reused Morgan renders take about 0.3 s each (up to 0.9 s under load), with 3–4 workers.
+- Reused Morgan renders take about 0.3 s each (up to 0.9 s under load), with 3–4 workers. Training clips are 6 s; the pilot's range allows for slow renders under load and for its 10-s evaluation targets.
 - Pilot: 1.5–4 h in total.
 - Production: about 6–12 h per family, so one night each.
 - Tone King may need 2–3 nights if it must run on one worker (see below).
@@ -108,18 +108,18 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - **Reused workers only:**
   - Restart each worker every 2,000 renders, and immediately when the daemon's PID changes.
   - Run a canary render every 200 renders.
-  - That costs about 1.5k ports per 300k renders, against the ~267k at which macOS kills the daemon.
+  - Restarts alone would cost about 1.5k ports per 300k renders, against the ~267k at which macOS kills the daemon. But reused processes leak too: the daemon held at about 86k ports overnight once the fresh-process runs ended, then rose about 20k an hour from 07:30 on 2026-10-03 while two reused-process benchmarks ran (E2 and E3), roughly one port per render. If that holds, 300k renders would kill the daemon. Step 0 must measure ports per 1,000 renders before any large render.
 - **Things that would otherwise force fresh processes stay off:**
   - Time effects and the gate.
-  - SW50R's spring reverb, pinned off or flushed with a 6-s warm-up. Its tail carries up to 0.15 into the next render; the warm-up clears it completely.
+  - The spring reverbs (SW50R's, and PR12's Reverb/Dwell), pinned off or flushed with a 6-s warm-up. SW50R's tail carries up to 0.15 into the next render; the warm-up clears it completely.
 - **AC20:**
-  - Its render history is measured at about 0.09–0.1 spread (SW50R about 0.01, PR12 about 0.001), and only a new instance resets it.
-  - Fresh-process AC20 at production scale would be about 1.5M ports, several daemon kills.
+  - Its render history is measured at about 0.09–0.1 spread (SW50R about 0.01, PR12 about 0.001), and only a new instance resets it. These are noise-probe `unpaired-v1` measurements. Through played DIs under `unpaired-v3`, SW50R's committed neutral repeats in the set-2 recordings benchmark spread a median 0.14, up to 0.60, after other parts' searches (round 2's ground rule 3), more than the spring's carry-over explains. So reused-process training is not established for any amp until Step 0 measures it.
+  - Fresh-process AC20 at production scale would be about 2–3M ports (200–300k renders × about 10), many daemon kills.
   - So AC20 trains in reused processes only if that history noise is ≤0.15× the typical distance between settings. Otherwise it is left to the estimator.
 - **Tone King:**
   - Needs round 2's renderer hardening and discarded warm-up renders.
-  - Needs a test of one serial instance against four concurrent ones. Concurrency moved one EQ band's on-screen movement 39× further in §12j, and Tone King scaled only 2.28× in §12k.
-- **Never alongside other overnight queues.** The critic read the daemon at about 88k ports this morning, rising about 14k/h under other jobs.
+  - Needs a test of one serial instance against four concurrent ones. Concurrency moved one EQ band's search-screen movement statistic (`Screen.movement`) 39× further than one instance's offset in §12j, and Tone King scaled only 2.28× in §12k.
+- **Never alongside other overnight queues.**
 
 ### Model and outputs
 
@@ -131,7 +131,10 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - Not general encoders: MERT is amplitude-invariant and non-commercial. https://arxiv.org/html/2607.03806
 - Not large transformers from scratch at this data scale.
 
-**Outputs: only quantities the audio can identify**
+**Outputs: candidate heads**
+
+Round 2 judges several of these unmeasurable or set by rule: voicing switches, the compressor in a mastered song, coarse tone knobs beside the EQ bands, and Volume and pedal gain apart from effective drive. It expects 10–15 independent quantities per amp. The pilot keeps them as heads only to measure that, and drops any head that does no better than its prior.
+
 - **Topology heads:** amp or channel, pedals on/off, compressor on/off, voicing switches, mic family (Morgan's two mic slots sorted, removing a swap symmetry).
 - **Continuous heads**, each a choice among bins aligned to the plugin's grid:
   - effective drive;
@@ -244,7 +247,7 @@ One product consequence: the useful training DIs are licensed for non-commercial
 **Renders**
 - 2,000 settings × 12 development bands, crossed (this includes round 2's S4 design of 600 × 12, so the two share renders).
 - About 6k for the settings curve.
-- About 1–2k 10-s targets on held-out bands.
+- About 1–2k 10-s targets on fold-out development bands (never the declared held-out split).
 
 **Rows, all in one run**
 - neutral;
@@ -296,11 +299,11 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - Pass: keeps ≥50% of the amp-track gain over neutral.
 - Fail: retrain with an overnight precompute of 2–4k separated Cambridge windows. Pass then needs ≥3 more parts than the clean-trained model.
 
-**Go/no-go:** about 2–3 weeks of work, about 6–10 h of plugin time and 2–3 nights of training.
+**Go/no-go:** about 2–3 weeks of work, about 4.5–8 h of plugin time and 2–3 nights of training.
 
 ### Scaling, only after SW50R passes
 
-- **PR12** (history about 0.001, reused processes): train SW50R and PR12 together with an amp head. Compare that head with round 2's S3 imitation test, which says whether the amps can be told apart at all.
+- **PR12** (history about 0.001 on the noise probe; reused processes if Step 0 passes): train SW50R and PR12 together with an amp head. Compare that head with round 2's S3 imitation test, which says whether the amps can be told apart at all.
 - **AC20:** joins only if Step 0's history-noise gate passes. Otherwise the learned amp head covers SW50R against PR12, and AC20 is chosen by the estimator.
 - **Tone King:** after the renderer hardening. One model with a rhythm/lead head, warm-up renders discarded, and one worker if the concurrency test fails (2–3 nights per channel). E1 shows the most room here: library inversion beats neutral on only 27/43.
 - **Production size per family:** set by the settings curve, likely 100–150k settings × 2 clips. Pin the plugin version; an update means about a night of re-rendering per family.
@@ -313,12 +316,12 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - **Telefunken inflates results.** The shared room and the backing bleed make cross-band results look better than they are.
 - **Label noise from render history.** SW50R's spring reverb (up to 0.15), AC20 (about 0.1), Tone King concurrency.
 - **Clean development mixes flatter real songs.** They are unmastered unity sums; check on Telefunken's real "Fragments" master.
-- **Weak statistics.** Gates like 26 of 43 alone have p ≈ 0.11, so count wins by band too.
+- **Weak statistics.** Gates like 26 of 43 alone have p ≈ 0.22 (two-sided, round 1's convention), so count wins by band too.
 - **Plugin updates invalidate the dataset.**
 - **Neural DSP's licence terms on training models from plugin renders were not checked.**
 
 **What not to do**
-- Regress all ~150 raw controls, or choose models by parameter error.
+- Regress all ~128 (Morgan) or ~95 (Tone King) raw controls, or choose models by parameter error.
 - Train with a spectral loss alone, or through a neural proxy.
 - Put time effects, output level, pans or the gate inside the model.
 - Render one fresh process per training render, or run training renders alongside other overnight jobs.
@@ -326,14 +329,14 @@ One product consequence: the useful training DIs are licensed for non-commercial
 - Use Moises or Music.AI output as training data, or random backings as the only mixing scheme.
 - Augment with EQ, which hides what the model must estimate.
 - Train on held-out parts, set-1 P3 or IDMT, or ship weights trained on non-commercial DIs.
-- Build an embedding-search model or a reward-trained token decoder now. Both need orders of magnitude more data.
+- Build a reward-trained token decoder now; it needs orders of magnitude more data. (An embedding-search model is round 1's approach 3(c) and E9, a contrastive encoder from about 16k renders; this report does not re-rank it.)
 - Use same-DI search answers as labels for amp, pedal or mic choices; the search holds them fixed.
 
 ## 5. Decisions for you
 
 1. **Torch in an optional `[learn]` extra for local experiments,** so the learned rows can join round 2's screen now rather than after F2 fails. I recommend yes.
 2. **Downloads:**
-   - Now: about 15 more Cambridge sessions with DI tracks, Guitar-TECHS P1/P2 (CC BY) and EGFxSet clean (CC BY).
+   - Now: the 5 Cambridge sessions that failed pairing (20 DIs), Guitar-TECHS P1/P2 (CC BY) and EGFxSet clean (CC BY).
    - Only if the gates call for it: one SynthTab clean zip (under 50 GB, non-commercial) and a GOAT request.
 3. **Cloud GPU:**
    - Not needed for the pilot.
