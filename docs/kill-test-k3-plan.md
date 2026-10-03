@@ -80,9 +80,10 @@ floored) differs from ALM's, so the same ratio is not the same audible step.
 frozen before any result in `docs/kill-tests-judge-lags.json` (`estimate_lag`
 pooled over the part's whole panel, ±15 ms around the catalogued lag less the
 latency; all 30 parts K1 or K3 uses were found inside it). On Signs 3 and Strangest
-Places a nine-render pool gives a different lag (−29 against 18, −89 against −16
-samples); the verdict uses the frozen lags, and those two parts are reported again
-at the other lag. ALM uses the catalogued lags, which are 9.5–14 ms off on Signs 2,
+Places the pooled lag depends on which renders are pooled: the whole panel gives −29
+and −89 samples (frozen, used for the verdict), nine-render pools 17–20 and −14 to
+−16. Those two parts are scored again at 18 and −16 (in the same file, under
+"alternate") and reported, not deciding. ALM uses the catalogued lags, which are 9.5–14 ms off on Signs 2,
 Today's The Day 07 and 10 (K1 and K3) and It Was My Fault 1 (K3).
 
 **What decides.**
@@ -92,8 +93,9 @@ Today's The Day 07 and 10 (K1 and K3) and It Was My Fault 1 (K3).
 | K1 | the oracle's band-median log ratio is ≤ log 0.75 under ALM, under the judge with default bands, and under the judge with union bands |
 | K3 | one recogniser meets the declared rule under ALM, under the judge with default bands and under the judge with union bands, and its most common pick is no more than half its parts' picks under either band set |
 
-Any other outcome is "not passed", and the model POC's gate stays closed
-(`docs/supervised-model-plan.md` §0). Where the measures disagree, the write-up says
+Any other outcome is "not passed". The model POC's gate opens only if K1 and K3 pass
+as above and K2 passes as declared (`docs/supervised-model-plan.md` §0); the script
+reports this as `gate_open`. Where the measures disagree, the write-up says
 which way each went; that is description, not a third verdict. The verdict as first
 declared (ALM and v3c) is reported beside this one and does not decide. K2's rule
 never used v3c, so it stands as declared under ALM.
@@ -101,8 +103,13 @@ never used v3c, so it stands as declared under ALM.
 **Reported, not deciding.** For K3, per recogniser and band set: the number of
 distinct picks, the most common pick's share, and the band median with each part
 given the pick made for a part of the next band (picks moved one band along), so a
-pass that is one good preset for everything shows as such. Parts any distance
-refused, parts without a lag, and K1's excluded parts are listed in the output.
+pass that is one good preset for everything shows as such. Windows the judge
+refused, parts without a lag, K1's excluded parts and eligible K3 parts the
+recognisers made no pick for are listed in the output. The script refuses K1–K3
+outputs older than the panel's `index.json`, so the earlier render's outputs cannot
+be scored by mistake.
 
-**If stage 0b later fails to validate the judge,** these verdicts are void with it,
-and stage 0b's own rule (stop model work if no distance validates) applies.
+**If stage 0b later validates** the judge but not ALM, or ALM but not the judge, the
+verdicts are recomputed with only the validated distance's conditions (both band sets
+for the judge), from the outputs already written. If it validates neither, these
+verdicts are void and stage 0b's own rule (stop model work) applies.

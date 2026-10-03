@@ -113,9 +113,11 @@ def unrounded_band_median(rows, key):
 
 
 def k3_alm_pass(r):
-    """The declared K3 rule for one recogniser under ALM, from kill_test_k3.py's output."""
+    """The declared K3 rule for one recogniser under ALM, from kill_test_k3.py's output
+    (its band median recomputed unrounded from the rows)."""
     s = r.get("model_vs_templateR")
-    return bool(s is not None and s["band_median_log_ratio"] <= math.log(0.9)
+    median = unrounded_band_median(r.get("rows", []), "model")
+    return bool(s is not None and median is not None and median <= math.log(0.9)
                 and s["parts_better"] > s["parts"] / 2
                 and r["model_better_than_shuffled"] > r["parts"] / 2
                 and r["model_better_than_constant"] > r["parts"] / 2)
@@ -170,15 +172,31 @@ def main():
     k3 = json.loads(args.k3_json.expanduser().read_text())
     kj = json.loads(args.k_json.expanduser().read_text())
     for source, name in ((frozen, "lag table"), (k3, "K3 output"), (kj, "K1-K2 output")):
-        if pathlib.Path(source["panel"]).expanduser() != panel:
+        if pathlib.Path(source["panel"]).expanduser().resolve() != panel.resolve():
             raise SystemExit(f"the {name} is for another panel: {source['panel']}")
-    picked = sorted({p for name in k3["picks"] for p in k3["picks"][name]})
-    if picked != sorted(p for p in k3_parts if p in picked) or set(picked) - set(k3_parts):
-        raise SystemExit("K3's picks cover parts outside the declared eligibility")
+    # The panel was re-rendered in place: outputs older than its index are from the
+    # earlier render and must not be scored against it.
+    rendered = (panel / "index.json").stat().st_mtime
+    for path, name in ((args.k_json, "K1-K2 output"), (args.k3_json, "K3 output")):
+        if path.expanduser().stat().st_mtime < rendered:
+            raise SystemExit(f"the {name} {path} is older than the panel's index.json")
+    for name, chosen in k3["picks"].items():
+        if set(chosen) - set(k3_parts):
+            raise SystemExit(f"K3's {name} picks cover parts outside the declared eligibility")
+    without_pick = sorted(set(k3_parts) - {p for c in k3["picks"].values() for p in c})
+    if k3.get("eligible_parts") not in (None, len(k3_parts)):
+        raise SystemExit("K3's eligible part count differs from the declared eligibility")
+    if sorted(e["part"] for e in kj.get("k1_excluded", [])) != sorted(
+            p for p in parts if p not in k1_parts):
+        raise SystemExit("K1's excluded parts differ from the declared eligibility")
     skipped = {p: s["reason"] for p, s in lags.items() if s["lag"] is None}
+    alternates = frozen.get("alternate", {})
     with ProcessPoolExecutor(args.workers) as ex:
         scored = dict(ex.map(score_part, [(p, files[p], lags[p]["lag"], crops)
                                           for p in used if p not in skipped]))
+        scored_alt = dict(ex.map(score_part, [(p, files[p], lag, crops)
+                                              for p, lag in alternates.items()
+                                              if not p.startswith("_")]))
 
     def dist(part, cand, window, bands):
         return scored[part]["d"].get(f"{cand}|{window}|{bands}") if part in scored else None
@@ -186,7 +204,7 @@ def main():
     out = {"panel": str(panel), "k_json": str(args.k_json), "k3_json": str(args.k3_json),
            "lags": lags, "parts_without_lag": skipped,
            "k1_parts": k1_parts, "k1_excluded": [p for p in parts if p not in k1_parts],
-           "k3_parts": k3_parts,
+           "k3_parts": k3_parts, "k3_parts_without_pick": without_pick,
            "refused": {p: s["refused"] for p, s in scored.items() if s["refused"]},
            "k1": {}, "k3": {}}
 
@@ -225,7 +243,7 @@ def main():
     rng.shuffle(bands_sorted)
     fold_of = {b: i % 4 for i, b in enumerate(bands_sorted)}
     picks, shuffled = k3["picks"], k3["shuffled_picks"]
-    eligible = picked
+    eligible = k3_parts
     for bands in BAND_SETS:
         constants = {}
         for f_ in range(4):
@@ -258,7 +276,7 @@ def main():
             median = unrounded_band_median(rows, "model")
             # Is it recognition, or one good preset for everything? The share of the
             # most common pick, and the picks moved one band along (each part gets the
-            # pick made for a part of the next band in the fold order).
+            # pick made for a part of the next band in alphabetical order).
             counts = statistics.multimode([r["pick"] for r in rows]) if rows else []
             top_share = (max(sum(r["pick"] == c for r in rows) for c in counts) / len(rows)
                          if rows else None)
@@ -298,8 +316,8 @@ def main():
 
     # The declared verdict: ALM and the judge under both band sets; for K3 the same
     # recogniser, and not one that mostly picks a single preset.
-    alm_k1 = kj["k1"]["alm"]["oracle_vs_templateR"]
-    k1_alm_pass = alm_k1 is not None and alm_k1["band_median_log_ratio"] <= math.log(0.75)
+    alm_median = unrounded_band_median(kj["k1_rows"]["alm"], "oracle")
+    k1_alm_pass = alm_median is not None and alm_median <= math.log(0.75)
     k3_by = {}
     for name in picks:
         alm_ok = k3_alm_pass(k3["results"]["alm"][name])
@@ -313,9 +331,37 @@ def main():
         "k1": {"alm": k1_alm_pass, **{f"judge_{b}": out["k1"][b]["pass"] for b in BAND_SETS},
                "pass": k1_alm_pass and all(out["k1"][b]["pass"] for b in BAND_SETS)},
         "k3": {"by_recogniser": k3_by, "pass": any(v["pass"] for v in k3_by.values())},
+        "k2": kj.get("k2_pass"),
         "as_first_declared": {"k1_alm_and_v3c": kj.get("k1_pass"),
                               "k2": kj.get("k2_pass"),
                               "k3_alm_and_v3c": k3.get("k3_pass")}}
+    out["verdict"]["gate_open"] = bool(out["verdict"]["k1"]["pass"] and out["verdict"]["k2"]
+                                       and out["verdict"]["k3"]["pass"])
+
+    # Reported, not deciding: the parts whose pooled lag depends on which renders are
+    # pooled, scored again at the other lag.
+    out["alternate_lags"] = {}
+    for part, s_alt in scored_alt.items():
+        def dist_alt(cand, window, bands):
+            return s_alt["d"].get(f"{cand}|{window}|{bands}")
+        rep_ = {"lag": alternates[part], "frozen_lag": lags[part]["lag"]}
+        for bands in BAND_SETS:
+            row = {}
+            if part in k1_parts:
+                on_a = {c: dist_alt(c, "A", bands) for c in factory}
+                on_a = {c: v for c, v in on_a.items() if v is not None}
+                base = dist_alt("template+R", "B", bands)
+                if on_a and base:
+                    oracle = min(on_a, key=on_a.get)
+                    row["k1_oracle"] = {"preset": oracle,
+                                        "log_ratio": math.log(dist_alt(oracle, "B", bands) / base)}
+            if part in k3_parts:
+                base = dist_alt("template+R", "full", bands)
+                row["k3_model_log_ratio"] = {
+                    name: math.log(dist_alt(picks[name][part], "full", bands) / base)
+                    for name in picks if base and dist_alt(picks[name][part], "full", bands)}
+            rep_[bands] = row
+        out["alternate_lags"][part] = rep_
 
     summary = {"k1": {b: {k: v for k, v in r.items() if k != "rows"}
                       for b, r in out["k1"].items()},

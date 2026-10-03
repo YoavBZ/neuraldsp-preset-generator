@@ -121,5 +121,10 @@
    "lag": -89,
    "window_ms": 15.0
   }
+ },
+ "alternate": {
+  "_source": "nine-render pools of the panel (the first nine index.json rows of each part) put these two parts' lags in another cluster; reported, not deciding",
+  "cambridge-Signs-ElecGtr3": 18,
+  "telefunken-Strangest_Places-GTR": -16
  }
 }
