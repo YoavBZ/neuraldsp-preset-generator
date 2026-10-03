@@ -1,0 +1,1463 @@
+{
+  "schema": "recordings-benchmark-1",
+  "source_commit": "434ba58a57d0180f212eb063c967fa8a6bc86038",
+  "command": "scripts/benchmark_recordings.py --renderer swift --pack toneking --amp rhythm --set 2 --signal library --budget 300 --seed 11 --loss-profile unpaired-v3 --workers 3 --part 'cambridge/Drag Me Down/ElecGtr3' --part 'cambridge/Drag Me Down/ElecGtr4' --part 'cambridge/Nosso Mundo Deixou De Existir/ElecGtr03' --part 'cambridge/It Was My Fault For Waiting/ElecGtr1' --part 'cambridge/It Was My Fault For Waiting/ElecGtr2' --part 'cambridge/It Was My Fault For Waiting/ElecGtr3' --part 'cambridge/It Was My Fault For Waiting/ElecGtr4' --part 'cambridge/Today'\"'\"'s The Day/ElecGtr07' --part 'cambridge/Today'\"'\"'s The Day/ElecGtr10' --part cambridge/Prodigal/ElecGtr1 --part cambridge/Prodigal/ElecGtr2 --part cambridge/Prodigal/ElecGtr3 --part cambridge/Prodigal/ElecGtr4 --part cambridge/Prodigal/ElecGtr5 --part 'cambridge/Passing Ships/ElecGtr2' --part 'cambridge/Passing Ships/ElecGtr3' --part 'cambridge/Passing Ships/ElecGtr4' --part 'cambridge/Passing Ships/ElecGtr6' --part cambridge/Quicksand/ElecGtr1 --part cambridge/Quicksand/ElecGtr2 --part cambridge/Signs/ElecGtr2 --part cambridge/Signs/ElecGtr3 --json /Users/yoavbz/ndsp-presets/runs/e3/e3-toneking-library-batch0.json",
+  "elapsed_s": 2474.1,
+  "catalog_sha256": "0bb9594417e1d006847f37785f8dac8b3beb3e28cb5cf2ade1bf95c2f0054df1",
+  "pack": "toneking",
+  "amp": "rhythm",
+  "signals": [
+    "library"
+  ],
+  "search": true,
+  "reference": "library",
+  "budget": 300,
+  "seed": 11,
+  "loss_profile": "unpaired-v3",
+  "workers": 3,
+  "no_di_seconds": 6.0,
+  "parts": [
+    {
+      "source": "cambridge",
+      "song": "Drag Me Down",
+      "part": "ElecGtr3",
+      "other_di_from": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+      "crops": {
+        "di": "e69bd45134ea39f66482e730543feb78eddb85ea64a4169b61beae6972290507",
+        "reference": "609e71399ebfb3cafcd1ff4f26caac021f49c9a94659e880934c1dea4e899c9e",
+        "mix": "5c897684d2f1ec348d20760e9549b6e93571400c4ac68df3ed053539ed115173",
+        "backing": "f4f3493addbbc5620bd2f2090db789b2693ce2a73e0b15427b2b214ee45d7d60",
+        "mix_instrumental": "0b9cb5b5491abc676895cb3ea0e6e564a74e746eccb87c5f738528f403c18a10",
+        "backing_instrumental": "716eca429cdd326a6b170c78c11aee5af13022325ad043d2559227b402647172"
+      },
+      "excerpt_start_s": 171.0,
+      "group": "Adam Buckley",
+      "library_from": [
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Prodigal/ElecGtr2",
+        "telefunken/Russian Cream/GTR 2",
+        "cambridge/It Was My Fault For Waiting/ElecGtr4"
+      ],
+      "library_sha256": "186c87c644c72aaf21e9afda0b552693c024d18cc1820823b9439c320547f2d0"
+    },
+    {
+      "source": "cambridge",
+      "song": "Drag Me Down",
+      "part": "ElecGtr4",
+      "other_di_from": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+      "crops": {
+        "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400",
+        "reference": "6dc563bbfc2dd124c1d4bf8cc7bb4fc2457bff74355a1adfd65e8c72eff9ba25",
+        "mix": "fdfdfa86a393a0912419a4997a35ad63fb7c5a577f93cb42332bd645f71326d7",
+        "backing": "dc283f9cf1f8f0f1cdbaf409c97bad02bf56677b4820f4b158cafba8164457d6",
+        "mix_instrumental": "b231671954ffae4b19bef0927b475d5b60a62c8038a1588539f4b6dc0c9c23f8",
+        "backing_instrumental": "218a23ce72b27e79bfe57ab682955a95d4c884f0cdca0f796fc71728a5fa522b"
+      },
+      "excerpt_start_s": 114.0,
+      "group": "Adam Buckley",
+      "library_from": [
+        "telefunken/Strangest Places/GTR",
+        "cambridge/Prodigal/ElecGtr5",
+        "telefunken/She's Gone/GTR",
+        "cambridge/Quicksand/ElecGtr1"
+      ],
+      "library_sha256": "f6a150f706dc8415d4e3fabc3ba03d6df5b67c5ae716ef6751d979578b03fb8d"
+    },
+    {
+      "source": "cambridge",
+      "song": "Nosso Mundo Deixou De Existir",
+      "part": "ElecGtr03",
+      "other_di_from": "cambridge/It Was My Fault For Waiting/ElecGtr1",
+      "crops": {
+        "di": "d6b6c584693c45e1d38c22770c9f71a9c84245a675fe5ad925397b01a8048dc2",
+        "reference": "645598dea297e57ef5f53c4c338ce9b540f91e5b16542f077a78365e0e64cf38",
+        "mix": "9b360c4e6112fbe83ca106ac31d2066373e62e59e96625e3eb5ec3cbccf43214",
+        "backing": "60abc55a4917f78cb7f2c7340c935c7f5fd0026b63e32caedaf61f2b5d694ae3",
+        "mix_instrumental": "e34eb8608b566457326178000747e80db4ed0d2602b791d8ffd6094174b24d4e",
+        "backing_instrumental": "9abc92b6e0dbebde410c970394424045b3e9f4acce7f56590ca57b06200839aa"
+      },
+      "excerpt_start_s": 40.0,
+      "group": "Ale Lak",
+      "library_from": [
+        "telefunken/Measurements/GTR",
+        "cambridge/Drag Me Down/ElecGtr3",
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Quicksand/ElecGtr2"
+      ],
+      "library_sha256": "c89909b88d0af35cbac7b115ef5b6331b177bc2b93612b84dc3b03a1ec146473"
+    },
+    {
+      "source": "cambridge",
+      "song": "It Was My Fault For Waiting",
+      "part": "ElecGtr1",
+      "other_di_from": "cambridge/Today's The Day/ElecGtr07",
+      "crops": {
+        "di": "3920ba8856c6769961ce758ce0dc7207b864cfdfa74adb5b752f6885a8515629",
+        "reference": "97fb54a3f9bc0e7815cc9489bc72672e1aad1091629ce847e5c3f24b73b3e7e4",
+        "mix": "a9e232b7eb9cde2c67f0c3a11f611df057a0cfe73e910c375acab2c408bc1b8d",
+        "backing": "8e4f9ebdb608588f27207cd35be571cbd6b4f96634013a85dbcc887196822a18",
+        "mix_instrumental": "c720527bfb82429490555c02fb0d08dd4e9effd01c3d2998125a43d1ec162876",
+        "backing_instrumental": "3604a454f347c509505b447625bcef17f9a85c1c052675fa32b51a603d6f477e"
+      },
+      "excerpt_start_s": 12.5,
+      "group": "Atlantis Bound",
+      "library_from": [
+        "telefunken/Farthest Step/GTR",
+        "cambridge/Prodigal/ElecGtr3",
+        "telefunken/She's Gone/GTR",
+        "cambridge/Drag Me Down/ElecGtr4"
+      ],
+      "library_sha256": "6d029a03481d12e3b1b20fe6ca7a9b2f8b2cabdc3bb76737da1ef388bdb694f4"
+    },
+    {
+      "source": "cambridge",
+      "song": "It Was My Fault For Waiting",
+      "part": "ElecGtr2",
+      "other_di_from": "cambridge/Today's The Day/ElecGtr07",
+      "crops": {
+        "di": "5de10fe27c6f417265098aa67c22ee8460354fe708265928f9d4f7cb0b829d66",
+        "reference": "12bbf177c3ea2170d3537518898bf36e91e352974eafdc52b8ffa64c4838d443",
+        "mix": "aee8300f5bd28334b3ebcd5136d16ef2441da60223e88c515a3c3390973688ad",
+        "backing": "6ec241e1edd863b3e5e07de25b934aa8261329e9aa45d9378790f41d3136ee27",
+        "mix_instrumental": "52090a2392ab3c93dfb49f6e0dd1a2493edcf7c730b52facf5912535520ce20d",
+        "backing_instrumental": "eaab43d450f5b2bb633f809fe916430418c262b5ff77089ce45961adeab15fb4"
+      },
+      "excerpt_start_s": 153.0,
+      "group": "Atlantis Bound",
+      "library_from": [
+        "telefunken/Until I Get Back/GTR",
+        "cambridge/Passing Ships/ElecGtr2",
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Prodigal/ElecGtr5"
+      ],
+      "library_sha256": "dfd75d32f3b127ccbbcdb54f54be071c1f0dccf5dc4649669f8178ab5d9df42f"
+    },
+    {
+      "source": "cambridge",
+      "song": "It Was My Fault For Waiting",
+      "part": "ElecGtr3",
+      "other_di_from": "cambridge/Today's The Day/ElecGtr07",
+      "crops": {
+        "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4",
+        "reference": "5cd0ae05d36f3f8f49e16d81e93b53b69a25b22f3e9e655063b70cc2761e9142",
+        "mix": "a281420788ed2a396eb481a7bdb1e29142dfd80e5b53835b8b3d81adf41f3554",
+        "backing": "25cb6299c366d243d0af035eeaf02945165ced74cb9c20b4af778111a3aab900",
+        "mix_instrumental": "685564d33d70266117098fd85494ac1fac2979264f794f595675bd0e08921387",
+        "backing_instrumental": "6605af795d7945346c475878f991c1851d50e9f4fcdd60b203643fdd2f460e2c"
+      },
+      "excerpt_start_s": 19.5,
+      "group": "Atlantis Bound",
+      "library_from": [
+        "telefunken/Lost Alive/GTR",
+        "cambridge/Passing Ships/ElecGtr6",
+        "telefunken/She's Gone/GTR",
+        "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+      ],
+      "library_sha256": "946ac11025d0d25afb0ef8e536cfa14bfe88fb58b4a096fabbb28091a7b3c616"
+    },
+    {
+      "source": "cambridge",
+      "song": "It Was My Fault For Waiting",
+      "part": "ElecGtr4",
+      "other_di_from": "cambridge/Today's The Day/ElecGtr07",
+      "crops": {
+        "di": "8220506429afe96e775b637e2aedcebb672dfabc26a15f686f72b1b394bf0000",
+        "reference": "77c232fc97cb9183b5c19a498f3c43476228f09ede1e2532bcaddcbc4f5b46c8",
+        "mix": "14216d0bfdc9a12384b77cdac0d9e6428e9447ef212d1b25bbcb34b33e038bf0",
+        "backing": "29638f2cfc28e937921a64c3044b2193f7d735d6c73d4163c1e1a7ca4e7ceec7",
+        "mix_instrumental": "a43fd0b98407ce2b1e903567547809b9e84788191867818e26bdbdc2a8370e9a",
+        "backing_instrumental": "9c3a67c288e5e0ab4543ed5cc0106e73fb4a5191631f54ecc1febbe2b3c5f968"
+      },
+      "excerpt_start_s": 59.0,
+      "group": "Atlantis Bound",
+      "library_from": [
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Passing Ships/ElecGtr4",
+        "telefunken/Strangest Places/GTR",
+        "cambridge/Signs/ElecGtr3"
+      ],
+      "library_sha256": "f057aad2bbb78cfb300e4f3d768d64a71caedd66257bb74d038b9d3f59a5b60d"
+    },
+    {
+      "source": "cambridge",
+      "song": "Today's The Day",
+      "part": "ElecGtr07",
+      "other_di_from": "cambridge/Prodigal/ElecGtr1",
+      "crops": {
+        "di": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c",
+        "reference": "09a1134a39f81514d035bd3f21c9654c2e7ba28df3ba01fe93f2ff5d5b02e9b3",
+        "mix": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+        "backing": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e",
+        "mix_instrumental": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+        "backing_instrumental": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e"
+      },
+      "excerpt_start_s": 224.5,
+      "group": "Eat The Feeder",
+      "library_from": [
+        "telefunken/She's Gone/GTR",
+        "cambridge/It Was My Fault For Waiting/ElecGtr3",
+        "telefunken/Lost Alive/GTR",
+        "cambridge/Drag Me Down/ElecGtr3"
+      ],
+      "library_sha256": "47264cf128280b038491e80d00518d5b7c7d49d54fb8abb4d0ff1341d51854a9"
+    },
+    {
+      "source": "cambridge",
+      "song": "Today's The Day",
+      "part": "ElecGtr10",
+      "other_di_from": "cambridge/Prodigal/ElecGtr1",
+      "crops": {
+        "di": "146bae7fb6d8427ef292ab131e36c77338608809cdefeef14a4981ca61afdf1b",
+        "reference": "91c67c2421425bae5481c726f1f2447d64d30fceed54972cb5b87f934ff674b9",
+        "mix": "1d69fe32d4558b51104b44bf798e0aeb61705826074e5f2ff0bc7b161f7eb591",
+        "backing": "c0efcfc1963c06bf3db84d3149061d05ee5b2d644f7208c89579d61321d4e320",
+        "mix_instrumental": "e633c00238414c84090f27dbc99dcedc82c0e10a09140da6d22280ed6acc914c",
+        "backing_instrumental": "fffe2c39092220b6702660738cf9144df8d0c49dcb656d34d74c68a6b92ead3b"
+      },
+      "excerpt_start_s": 202.5,
+      "group": "Eat The Feeder",
+      "library_from": [
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/It Was My Fault For Waiting/ElecGtr4",
+        "telefunken/Lost Alive/GTR",
+        "cambridge/Signs/ElecGtr2"
+      ],
+      "library_sha256": "9c457eeefe78e37badb192b008b038c2bc3bde3c97679faf09a4c53fa30637bc"
+    },
+    {
+      "source": "cambridge",
+      "song": "Prodigal",
+      "part": "ElecGtr1",
+      "other_di_from": "cambridge/Passing Ships/ElecGtr2",
+      "crops": {
+        "di": "246491edfcac92937413d6539d14a8ff15cfd900a8f75f98fc998ae24dec35bb",
+        "reference": "7f9e0a0213165987f68094904818cb656d04e60e107fa94009330fd48389f3df",
+        "mix": "af8b6dc9fbbefa546ebd9033fca07ce9e35e092f2775fae856aed850e38551d8",
+        "backing": "e05ef762027f21af8c0985e046ba526c64d8b47bfd2a1f5047c6b348f803f421",
+        "mix_instrumental": "67abef3533122dc1d66ca93fdecfe0c265c1f157bc5fd7f9f1614d7f3b43080b",
+        "backing_instrumental": "219a604215288bfb7e5fb70f43d5d9d7429492df7f36c8dd8b9e5f73e7e28042"
+      },
+      "excerpt_start_s": 2.0,
+      "group": "Starnes And Shah",
+      "library_from": [
+        "telefunken/Lost Alive/GTR",
+        "cambridge/Drag Me Down/ElecGtr4",
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Today's The Day/ElecGtr07"
+      ],
+      "library_sha256": "b5b829e1b14c572075380e60a63c5fd1db5c6d1356731dbc4a5b966a3d643edd"
+    },
+    {
+      "source": "cambridge",
+      "song": "Prodigal",
+      "part": "ElecGtr2",
+      "other_di_from": "cambridge/Passing Ships/ElecGtr2",
+      "crops": {
+        "di": "2538e174f2eab9a739624d13c9754ac5c2a50956ba1c2218c5c5d1a8a499b74c",
+        "reference": "501e3833a5f17b263fae9556874d96016dd6ea07ce42225e8cd074f688a83561",
+        "mix": "db1129ed2c6552789a9bfc256233afd821edf6898f0a98ee4a3ba455ba7fb5c5",
+        "backing": "03b83bd17c9f726f33beb7af85bbe6e6a44de0fe750bd2ab886320bff3465603",
+        "mix_instrumental": "ea32ecbcd95981a8f515a894bf2934676992aaf891a983cf27dd8e004f4f4c70",
+        "backing_instrumental": "578e465932684c821859e8b0dfee5a033e1f0ec46d32d8be1fe4274744fd469f"
+      },
+      "excerpt_start_s": 118.5,
+      "group": "Starnes And Shah",
+      "library_from": [
+        "telefunken/Russian Cream/GTR 1",
+        "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+        "telefunken/Measurements/GTR",
+        "cambridge/Signs/ElecGtr2"
+      ],
+      "library_sha256": "c76fa588bf54e01ce19668f2ab9aaffc9fe81cb5e0b96185537cb55723cde47b"
+    },
+    {
+      "source": "cambridge",
+      "song": "Prodigal",
+      "part": "ElecGtr3",
+      "other_di_from": "cambridge/Passing Ships/ElecGtr2",
+      "crops": {
+        "di": "d1a66b47c0fe9b738d824e5573ded3f1d89d0ab079d9259e4d5f2e587009c1a6",
+        "reference": "1e3c154589b263f9b8ab844d8222aa48ee7b8c101456292045d28316bfa18be5",
+        "mix": "990ec3342ffb991bca87e6adddd064f9790eb99aa1c2762a5ddfac899e457d2c",
+        "backing": "a60514a7a22e1008bbda2150a696b70720efd5a007e887b36e0d75d08ca57731",
+        "mix_instrumental": "97c0b7793904c7806bfb73d5af8d32a1973b95c2c9bc27c6780cb03ad6cdb925",
+        "backing_instrumental": "816679db60b68e173c4bda15b76e77347ea868f698771ba7beee801c8ad32fb8"
+      },
+      "excerpt_start_s": 128.0,
+      "group": "Starnes And Shah",
+      "library_from": [
+        "telefunken/First Offering/GTR 2",
+        "cambridge/Today's The Day/ElecGtr07",
+        "telefunken/Lost Alive/GTR",
+        "cambridge/Signs/ElecGtr2"
+      ],
+      "library_sha256": "208ce849da56279917acedc2658f53be6d52ef82954ff024a0a2562ccb398a39"
+    },
+    {
+      "source": "cambridge",
+      "song": "Prodigal",
+      "part": "ElecGtr4",
+      "other_di_from": "cambridge/Passing Ships/ElecGtr2",
+      "crops": {
+        "di": "703d871f3c893c5b1bb3c0e2fe6e2f6eb8b9a874e8d6f73e9476acfa2dad74a5",
+        "reference": "e3677ccb468647d1512ea9ceb3adadbca7a611a86b1ed20bb22842f60733ff35",
+        "mix": "bb5c5104f6de7968b3b66d61304e4c33d4584111db51b2d92cfad5ae709c39b5",
+        "backing": "181bb24095061836112327db3834ceafc07c4ac56d3ed433262809aab933bc03",
+        "mix_instrumental": "179671fd597e53e5490c419d528e66633ae7970fda79d8e2abd418e76193a099",
+        "backing_instrumental": "ecadd03a30d9d563b1b1f4fce2777f99d61555f8cc5ba4f2c75c230562428a9b"
+      },
+      "excerpt_start_s": 80.0,
+      "group": "Starnes And Shah",
+      "library_from": [
+        "telefunken/Long Way Home/GTR",
+        "cambridge/Signs/ElecGtr3",
+        "telefunken/Until I Get Back/GTR",
+        "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+      ],
+      "library_sha256": "f7a347ef858bda9b6bd26230d1d9bdbeec5bd338aabd70f1db22481c3088b2c9"
+    },
+    {
+      "source": "cambridge",
+      "song": "Prodigal",
+      "part": "ElecGtr5",
+      "other_di_from": "cambridge/Passing Ships/ElecGtr2",
+      "crops": {
+        "di": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af",
+        "reference": "6c958a5df2ec3ce8e028420b77b419b5ada3b6eedbced3bee2c5cb558f64eb82",
+        "mix": "532c288ad4a58d10ec3ecef4b25ceeb76a8fc339df613d000cd628641284f0a6",
+        "backing": "169498245b2644cb0e047ccd062a4bf90a7c0b01820a163fdd1352274eac683e",
+        "mix_instrumental": "df56e953a8214bfcc12b8caf217442c765bccf2143fa090eb10228ed553f17a7",
+        "backing_instrumental": "071d1b5e81fc09103faa8f327c8c205e32f9ff9bf64890475e603bd5abd97078"
+      },
+      "excerpt_start_s": 139.5,
+      "group": "Starnes And Shah",
+      "library_from": [
+        "telefunken/First Offering/GTR 1",
+        "cambridge/Today's The Day/ElecGtr10",
+        "telefunken/Fragments/GTR",
+        "cambridge/It Was My Fault For Waiting/ElecGtr3"
+      ],
+      "library_sha256": "7f9e8f3d846ade6d7c24f9c68ac9562fafbd402580c82afedbb024672ffaddac"
+    },
+    {
+      "source": "cambridge",
+      "song": "Passing Ships",
+      "part": "ElecGtr2",
+      "other_di_from": "cambridge/Quicksand/ElecGtr1",
+      "crops": {
+        "di": "2b428e29c58595a251b28f2e5ebf440d2eac0cb0fedd62b8134221ecb4c55ee7",
+        "reference": "253305c814d1837e77d95ce6bbe65c2c16a79197b46f6a4ccf6bbb5859e264d7",
+        "mix": "700c80fbc56f2f8db02bc15ec7b102326be674173e01ac5d0a8b7cd3fa7c1eeb",
+        "backing": "889e48205341a4cb2af5ebc35d511726c7daad42d1cd023aa6b82522e5920796",
+        "mix_instrumental": "d23f23948b70cc1169e95ce3301fc59f995d63b6c8d025fb27f3a9f613504243",
+        "backing_instrumental": "104ef594d17eb057e480d7b23a07af20e37d6afd4eb823e85423c33565a813a3"
+      },
+      "excerpt_start_s": 45.5,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/It Was My Fault For Waiting/ElecGtr4",
+        "telefunken/Gym Hours/GTR 2",
+        "cambridge/Signs/ElecGtr6"
+      ],
+      "library_sha256": "0ee346bd655783af1b29805c452342ba8857be7eebdcedca0147931bf23ed382"
+    },
+    {
+      "source": "cambridge",
+      "song": "Passing Ships",
+      "part": "ElecGtr3",
+      "other_di_from": "cambridge/Quicksand/ElecGtr1",
+      "crops": {
+        "di": "55951b8dd9528468ea34f75fa1daa90c339192c3f5d8ff470a59383f5b45a1db",
+        "reference": "327416249e6217648c3c288e336bdcd7048bb1a1f8700d61381202e8b2adc5e9",
+        "mix": "5f2386d1b2cdf770d85481f66affba3a3a4f2032de6697a389fc2bbd4076cd5d",
+        "backing": "9239d5a5b05e7720b31a2e500fad5b5ae13a77b0b224db1aed98254b29336b3a",
+        "mix_instrumental": "25e5bdc3a90577b209c756428c1fd986f96763d7388dc2eb92dbfb6cfd36518c",
+        "backing_instrumental": "4edf1251f62c27901bc57770fdd3c0059f133b2ac124b861f90b5dc7ef7f20aa"
+      },
+      "excerpt_start_s": 76.0,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Sculptor's Request/GTR 1",
+        "cambridge/Today's The Day/ElecGtr10",
+        "telefunken/She's Gone/GTR",
+        "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03"
+      ],
+      "library_sha256": "a797e3028a42840c6621704895b2f1d9b28169df3fa3f2a4db5e8858b8f72e01"
+    },
+    {
+      "source": "cambridge",
+      "song": "Passing Ships",
+      "part": "ElecGtr4",
+      "other_di_from": "cambridge/Quicksand/ElecGtr1",
+      "crops": {
+        "di": "3b0faca1c51a6e3bd36dd750a2cfd6ea295c5b642cd727c104d9aa8b7adc1ec8",
+        "reference": "1630b78b23d1085daac6029a102c7ce77c1901c368cb1aab9b1c3b81cd9abc92",
+        "mix": "a872642bfae5aefd966eee539027bfff885fe9da1d0f9dc93566ba77bbef41bf",
+        "backing": "fa03fff699a620b6c93be836868a03e1cf6cffd0a036e1f664df20dd259d7da4",
+        "mix_instrumental": "0fcdddd94181fcabc410840d17d99bde6848a3cb64a0bda5fa1ad7b55faf2f5e",
+        "backing_instrumental": "49f429503ad402f22764149d96d0c3b63323fc84b2c048c6ba28df1c8ce69e7a"
+      },
+      "excerpt_start_s": 232.5,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Signs/ElecGtr2",
+        "telefunken/Honey/GTR",
+        "cambridge/Today's The Day/ElecGtr10"
+      ],
+      "library_sha256": "a551a3ce25c24474a2d3a7e70c717513be17cea1e249b571ab3c3cb244e72087"
+    },
+    {
+      "source": "cambridge",
+      "song": "Passing Ships",
+      "part": "ElecGtr6",
+      "other_di_from": "cambridge/Quicksand/ElecGtr1",
+      "crops": {
+        "di": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c",
+        "reference": "640ed93679f07ad2e205aa1f98ec5c7357631a9701b0cd1675fe6ba2fa56dc11",
+        "mix": "e3593dfbb5873961ef7e6af3d623a3ce7e23bded65851a0e740bc93e443c3f96",
+        "backing": "c7f816ae8add0560e0b9fdeec615714563e392a65fc3426cf2fc7d5e12fba03b",
+        "mix_instrumental": "cd45b7a0cc5f06a6251cc817dc75805e1c2c0197f7b80c1f2fbec2844d48936c",
+        "backing_instrumental": "9df140aaa9456196bdba7f0e8662ad4edd8560b645095a6fde62769fbada7b8b"
+      },
+      "excerpt_start_s": 197.0,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Long Way Home/GTR",
+        "cambridge/Today's The Day/ElecGtr10",
+        "telefunken/Hikikomori - Love Does/GTR",
+        "cambridge/Signs/ElecGtr2"
+      ],
+      "library_sha256": "d3d283601a3a8e72f9ebe34ef70b2bd2da23b546805f4ea6e4ce579bac278f93"
+    },
+    {
+      "source": "cambridge",
+      "song": "Quicksand",
+      "part": "ElecGtr1",
+      "other_di_from": "cambridge/Signs/ElecGtr2",
+      "crops": {
+        "di": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893",
+        "reference": "7027b8f861fceec99aafe93a51addb74b50b042c54b24404b1cda9e0367c9153",
+        "mix": "8ea0368e4fda9cbb0136abb7b1bdb392b1a1684faa773b947e599206cfaaa946",
+        "backing": "36572bebc532928cdddf629500cf4698d0f2368bb584e507273a87ce71c09caa",
+        "mix_instrumental": "338a70ac44ae63426ca78da62991b10c99ceb71d8911063f07425256b9db6c35",
+        "backing_instrumental": "35314dbcbaa4900ecccb2369b1e1a1a232b29f59f5ff9f8032a66dfc7007ff41"
+      },
+      "excerpt_start_s": 120.5,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Gym Hours/GTR 2",
+        "cambridge/Drag Me Down/ElecGtr3",
+        "telefunken/Measurements/GTR",
+        "cambridge/Prodigal/ElecGtr2"
+      ],
+      "library_sha256": "0ce978ec0fd62c2b90ae44cf17d094bfe0bc60318f41d8af6ace4f064b889a99"
+    },
+    {
+      "source": "cambridge",
+      "song": "Quicksand",
+      "part": "ElecGtr2",
+      "other_di_from": "cambridge/Signs/ElecGtr2",
+      "crops": {
+        "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce",
+        "reference": "a46fd45c1c0b54fe20ac7269cb0c4fff60052ec7bc6131a9e585d5f4f209cbf9",
+        "mix": "a6fc6f2fe7e7a5654c4966d65993e55d2a387c93cb42ef4979c204ed5656fac6",
+        "backing": "0bd1b731a7db876bd4810ad9797a3473a58d444328a172a27b85ee26abbea180",
+        "mix_instrumental": "f87134d2576ef00d370529074bb2cbc357222486062e2ac1c140ebb4f50e907a",
+        "backing_instrumental": "8c58641f913020ce0ab17fcb521300d27632cee9872976d679c682c3edc5722f"
+      },
+      "excerpt_start_s": 77.5,
+      "group": "The Travelling Band",
+      "library_from": [
+        "telefunken/Blind Spots/GTR",
+        "cambridge/Today's The Day/ElecGtr07",
+        "telefunken/Russian Cream/GTR 1",
+        "cambridge/Drag Me Down/ElecGtr4"
+      ],
+      "library_sha256": "7aa2e58412512cd87865caf46a871ee211e6a2f2159a1cb1a96904ad9cba77a0"
+    },
+    {
+      "source": "cambridge",
+      "song": "Signs",
+      "part": "ElecGtr2",
+      "other_di_from": "telefunken/First Offering/GTR 1",
+      "crops": {
+        "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa",
+        "reference": "8e0099eb67d4066240154436b979adc253b43ea7b29adcd1e19c3b13133f1d19",
+        "mix": "98559fbc0b85f16d1557dffe2274a1ec8bde9c654a953a808f6ddfda6b4e6ff2",
+        "backing": "80cf2d38c68e65953bb3cf249d6f922e11804d96f42e91a1c3b7d7c5cfaf0942",
+        "mix_instrumental": "cd8158aea60f9619448c9cd3dd7092346de4109dbb70d34cb07e2282c07275c8",
+        "backing_instrumental": "23070ac9f521d932043ef568330f99e130bc483326dfd774a01c0d4424f0545e"
+      },
+      "excerpt_start_s": 92.0,
+      "group": "Zeno",
+      "library_from": [
+        "telefunken/Until I Get Back/GTR",
+        "cambridge/Prodigal/ElecGtr2",
+        "telefunken/Long Way Home/GTR",
+        "cambridge/Today's The Day/ElecGtr07"
+      ],
+      "library_sha256": "f32f67312459fa4454e8a494a019fe66f8f4a74c19324333e0f0f87f2ff06575"
+    },
+    {
+      "source": "cambridge",
+      "song": "Signs",
+      "part": "ElecGtr3",
+      "other_di_from": "telefunken/First Offering/GTR 1",
+      "crops": {
+        "di": "3304bc6a6758dd2de464a051c0ea3170c3b1a184570ee897e84e43b98e8d7593",
+        "reference": "5898f681ec6af7db1443e387f4a0685716b625c2ba8784c12993cd2b15bd7a45",
+        "mix": "816a878a09cc51b462caa868588fc3747fcf50a37cc84007962f89d76f38c352",
+        "backing": "7cf139d8572b31f55b0903c9cb363a21103befd7d73fc1444720d7b6f5bde7b4",
+        "mix_instrumental": "060c854c25c7fe9a04e83a9572efade6779182edc6e398be24e42314dfe0a6eb",
+        "backing_instrumental": "3294f433aca6b94f7e4a1ebf5544dd7c89b0071c0669ef1db1c9a66035101407"
+      },
+      "excerpt_start_s": 74.5,
+      "group": "Zeno",
+      "library_from": [
+        "telefunken/Bloomlight/GTR",
+        "cambridge/Drag Me Down/ElecGtr3",
+        "telefunken/She's Gone/GTR",
+        "cambridge/Prodigal/ElecGtr3"
+      ],
+      "library_sha256": "79be557848c5ae6f446d8a4780b7d48793c965653bc9f37958c72de415526a82"
+    }
+  ],
+  "backend": {
+    "renderer_id": "swift",
+    "sample_rate": 48000,
+    "block_size": 512,
+    "plugin_version": "1.0.3",
+    "renderer_build": "audio-unit-renderer-810ebcd7a922",
+    "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+    "reproducible": false,
+    "band_noise_db": 5.228794,
+    "notes": [
+      "toneking through aumf TKI2 NDSP, one reused plugin instance in a batched server",
+      "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+    ]
+  },
+  "measurement_caveat": "rendered by swift (plugin 1.0.3), which reports reproducible=False: identical-state observations from one reused instance differ, and per-band levels move by up to 5.228794 dB. Every number below carries that, and none of them may be committed without it",
+  "summary": {
+    "library": {
+      "targets": 22,
+      "failures": 0,
+      "objective_mean": 1.0682,
+      "objective_median": 0.9707,
+      "search_belief_mean": 0.6124,
+      "parameter_mae": null,
+      "inversion_objective_mean": 1.2557,
+      "inversion_objective_median": 1.0942,
+      "neutral_objective_mean": 1.2933,
+      "neutral_objective_median": 1.142,
+      "baseline_failures": 0,
+      "renders": 6625,
+      "against_neutral": {
+        "targets": 22,
+        "closer": 17,
+        "mean_change_fraction": -0.1740840305904925,
+        "wilcoxon_p": 0.05869007110595703
+      },
+      "against_inversion": {
+        "targets": 22,
+        "closer": 14,
+        "mean_change_fraction": -0.14934648286766963,
+        "wilcoxon_p": 0.09841060638427734
+      }
+    }
+  },
+  "outcomes": [
+    {
+      "signal": "library",
+      "target_index": 0,
+      "position": 0,
+      "objective": 1.4099901176174192,
+      "objective_spread": 0.018181097827963733,
+      "search_belief": 0.8717417796650652,
+      "parameter_mae": null,
+      "inversion_objective": 1.264931993167229,
+      "neutral_objective": 1.4365956079512234,
+      "inversion_spread": 0.00404973805253972,
+      "neutral_spread": 0.35365899610273055,
+      "objective_dimensions": {
+        "dynamics": 1.9767795626001288,
+        "harmonic": 0.6353700769691052,
+        "level": 0.8399999999999993,
+        "timbre": 1.268772857266948
+      },
+      "inversion_dimensions": {
+        "dynamics": 0.3164582006350395,
+        "harmonic": 0.35699020195568193,
+        "level": 4.752222222222222,
+        "timbre": 1.1212279758218553
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.4099024163094427,
+        "harmonic": 0.3821792473845178,
+        "level": 0.1877777777777787,
+        "timbre": 1.6345955591339523
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 1,
+      "position": 0,
+      "objective": 0.7196067236469869,
+      "objective_spread": 0.006257733004160659,
+      "search_belief": 0.5286031994847731,
+      "parameter_mae": null,
+      "inversion_objective": 1.0999887906902306,
+      "neutral_objective": 0.9888049438892562,
+      "inversion_spread": 0.007454170356293366,
+      "neutral_spread": 0.011875174779256148,
+      "objective_dimensions": {
+        "ambience": 0.5326875388888889,
+        "dynamics": 0.4908761561374848,
+        "harmonic": 0.25432847984648455,
+        "level": 0.7633333333333331,
+        "timbre": 0.8979995515768843
+      },
+      "inversion_dimensions": {
+        "ambience": 0.45857751666666663,
+        "dynamics": 0.333150521645116,
+        "harmonic": 0.3241170817966012,
+        "level": 4.343333333333333,
+        "timbre": 1.240928053923593
+      },
+      "neutral_dimensions": {
+        "ambience": 0.5965922666666668,
+        "dynamics": 0.5047267104774605,
+        "harmonic": 0.22616295848772414,
+        "level": 0.21444444444444444,
+        "timbre": 1.4946966507819912
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 2,
+      "position": 0,
+      "objective": 2.1370471221418454,
+      "objective_spread": 0.07148450837996645,
+      "search_belief": 0.9421743988623718,
+      "parameter_mae": null,
+      "inversion_objective": 1.263216809980116,
+      "neutral_objective": 1.0330560902875414,
+      "inversion_spread": 0.011149741627049181,
+      "neutral_spread": 0.24896857100597403,
+      "objective_dimensions": {
+        "ambience": 3.757389055555555,
+        "dynamics": 3.284667744527313,
+        "harmonic": 0.18152006602291013,
+        "level": 2.0633333333333326,
+        "timbre": 0.8788849748020796
+      },
+      "inversion_dimensions": {
+        "ambience": 1.721353677777777,
+        "dynamics": 2.019791558637708,
+        "harmonic": 0.141217541192301,
+        "level": 0.3333333333333333,
+        "timbre": 0.8710009981152659
+      },
+      "neutral_dimensions": {
+        "ambience": 1.7246486111111103,
+        "dynamics": 1.2426189420086324,
+        "harmonic": 0.3144477642122321,
+        "level": 0.03888888888888826,
+        "timbre": 0.7525597693971182
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 3,
+      "position": 0,
+      "objective": 1.1708744695684674,
+      "objective_spread": 0.0035843347269610693,
+      "search_belief": 0.38012945728341824,
+      "parameter_mae": null,
+      "inversion_objective": 0.9843602240508501,
+      "neutral_objective": 0.6274204698343643,
+      "inversion_spread": 0.006071706505762164,
+      "neutral_spread": 0.0024921836915687834,
+      "objective_dimensions": {
+        "ambience": 0.07123562222222225,
+        "dynamics": 0.5542378591180782,
+        "level": 1.3266666666666673,
+        "timbre": 1.9439797078570151
+      },
+      "inversion_dimensions": {
+        "ambience": 0.07713598888888894,
+        "dynamics": 0.5421118183628796,
+        "level": 0.36666666666666714,
+        "timbre": 1.7075257375146464
+      },
+      "neutral_dimensions": {
+        "ambience": 0.23362703333333326,
+        "dynamics": 0.3204634576987989,
+        "level": 0.25333333333333385,
+        "timbre": 1.0032130634142604
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 4,
+      "position": 0,
+      "objective": 0.6390228401784882,
+      "objective_spread": 0.0027506584361912667,
+      "search_belief": 0.5766337409735386,
+      "parameter_mae": null,
+      "inversion_objective": 0.8023987117613567,
+      "neutral_objective": 0.9582368259495252,
+      "inversion_spread": 0.0012864523258612204,
+      "neutral_spread": 0.0011553271119686404,
+      "objective_dimensions": {
+        "ambience": 0.3748333333333333,
+        "dynamics": 0.11463662723862171,
+        "level": 0.7133333333333335,
+        "timbre": 0.9697255048037853
+      },
+      "inversion_dimensions": {
+        "ambience": 1.0,
+        "dynamics": 0.2370407260702355,
+        "level": 0.9233333333333332,
+        "timbre": 0.9116010686826866
+      },
+      "neutral_dimensions": {
+        "ambience": 1.0,
+        "dynamics": 0.21829462226654786,
+        "level": 0.2533333333333327,
+        "timbre": 1.3390676442899074
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 5,
+      "position": 0,
+      "objective": 1.6296661190304533,
+      "objective_spread": 0.009782311863756332,
+      "search_belief": 0.7131360097519898,
+      "parameter_mae": null,
+      "inversion_objective": 1.310870033386329,
+      "neutral_objective": 1.1900844333528127,
+      "inversion_spread": 0.0022748559654697242,
+      "neutral_spread": 0.001645603624329972,
+      "objective_dimensions": {
+        "ambience": 4.394004566666666,
+        "dynamics": 0.6375676580458757,
+        "harmonic": 0.13093610392477972,
+        "level": 0.5333333333333338,
+        "timbre": 0.8087861974607459
+      },
+      "inversion_dimensions": {
+        "dynamics": 0.9368260071160792,
+        "harmonic": 0.18189539385930206,
+        "level": 2.2733333333333334,
+        "timbre": 1.316118148902378
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.056541075393617,
+        "harmonic": 0.13371641374363233,
+        "level": 2.996666666666666,
+        "timbre": 0.9725144415394124
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 6,
+      "position": 0,
+      "objective": 1.5659682159499748,
+      "objective_spread": 0.0024033517907486868,
+      "search_belief": 0.5824381209482523,
+      "parameter_mae": null,
+      "inversion_objective": 1.707660203871976,
+      "neutral_objective": 1.1692157240967365,
+      "inversion_spread": 0.00706781194215389,
+      "neutral_spread": 0.0054148005600211935,
+      "objective_dimensions": {
+        "ambience": 0.5741766222222221,
+        "dynamics": 2.051428049786351,
+        "harmonic": 1.9766122106222148,
+        "level": 1.6000000000000003,
+        "timbre": 1.8625753116717962
+      },
+      "inversion_dimensions": {
+        "ambience": 0.5757859111111109,
+        "dynamics": 2.0423272569961672,
+        "harmonic": 1.9659873448554686,
+        "level": 3.563333333333334,
+        "timbre": 1.8613795595835276
+      },
+      "neutral_dimensions": {
+        "ambience": 0.5664710666666665,
+        "dynamics": 2.1494546925658065,
+        "harmonic": 2.240812615459116,
+        "level": 3.84,
+        "timbre": 0.6778748240386534
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 7,
+      "position": 0,
+      "objective": 1.2664236139092335,
+      "objective_spread": 0.01563202521520579,
+      "search_belief": 0.39736329666460307,
+      "parameter_mae": null,
+      "inversion_objective": 1.384694232654569,
+      "neutral_objective": 1.3830248040943254,
+      "inversion_spread": 0.008243734535156921,
+      "neutral_spread": 0.009612857762446358,
+      "objective_dimensions": {
+        "dynamics": 0.2131902713959489,
+        "harmonic": 0.4239819491897335,
+        "level": 0.31333333333333374,
+        "timbre": 1.830680493000932
+      },
+      "inversion_dimensions": {
+        "ambience": 1.5963158666666668,
+        "dynamics": 0.2793284788434207,
+        "harmonic": 0.365988071902907,
+        "level": 0.2900000000000003,
+        "timbre": 1.8852338520711645
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.21157037036745432,
+        "harmonic": 0.3755070187438299,
+        "level": 0.36666666666666714,
+        "timbre": 2.0040602981992226
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 8,
+      "position": 0,
+      "objective": 0.7389806891401287,
+      "objective_spread": 0.0034385037097947047,
+      "search_belief": 0.721727742008668,
+      "parameter_mae": null,
+      "inversion_objective": 1.0645943116461074,
+      "neutral_objective": 0.8862499441606296,
+      "inversion_spread": 0.0026681843480658163,
+      "neutral_spread": 0.006143409861285254,
+      "objective_dimensions": {
+        "ambience": 0.7049469888888887,
+        "dynamics": 0.6147248330330303,
+        "harmonic": 0.6024010439326158,
+        "level": 0.07666666666666681,
+        "timbre": 0.9050469850796073
+      },
+      "inversion_dimensions": {
+        "ambience": 0.6347577833333332,
+        "dynamics": 0.5371143674422515,
+        "harmonic": 0.6594656567394351,
+        "level": 3.117777777777777,
+        "timbre": 1.1825270335642866
+      },
+      "neutral_dimensions": {
+        "ambience": 0.5657916666666666,
+        "dynamics": 0.39863427456844186,
+        "harmonic": 0.6170796841648193,
+        "level": 0.16666666666666666,
+        "timbre": 1.349462842368581
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 9,
+      "position": 0,
+      "objective": 1.0882036788192855,
+      "objective_spread": 0.024724081736801073,
+      "search_belief": 0.6239619909145134,
+      "parameter_mae": null,
+      "inversion_objective": 1.0883370106328374,
+      "neutral_objective": 1.7003834450272237,
+      "inversion_spread": 0.10721166658485726,
+      "neutral_spread": 0.0010366015529317263,
+      "objective_dimensions": {
+        "dynamics": 2.0911860552344312,
+        "harmonic": 0.18874501515391576,
+        "level": 0.086666666666666,
+        "timbre": 0.8372412800761201
+      },
+      "inversion_dimensions": {
+        "dynamics": 1.684670801340004,
+        "harmonic": 0.2151247359472236,
+        "level": 3.3333333333333335,
+        "timbre": 0.5130540459448962
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.9187344502613828,
+        "harmonic": 2.591306310088555,
+        "level": 3.9500000000000006,
+        "timbre": 1.275600559687643
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 10,
+      "position": 0,
+      "objective": 2.1923382424408655,
+      "objective_spread": 0.021190694764301465,
+      "search_belief": 1.3126720010100963,
+      "parameter_mae": null,
+      "inversion_objective": 2.8610644922299913,
+      "neutral_objective": 3.022376730085424,
+      "inversion_spread": 0.017276023147239083,
+      "neutral_spread": 0.054978049484546876,
+      "objective_dimensions": {
+        "ambience": 0.4394437666666667,
+        "dynamics": 7.82372590990811,
+        "harmonic": 15.262651817929553,
+        "level": 0.4333333333333324,
+        "timbre": 1.0800811497071958
+      },
+      "inversion_dimensions": {
+        "ambience": 0.4218987666666667,
+        "dynamics": 8.178084494049813,
+        "harmonic": 5.80724000317466,
+        "level": 2.4600000000000004,
+        "timbre": 2.0139990281182247
+      },
+      "neutral_dimensions": {
+        "ambience": 0.44685165555555556,
+        "dynamics": 8.999980658099988,
+        "harmonic": 28.321086940153346,
+        "level": 0.8033333333333333,
+        "timbre": 2.251954205657345
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 11,
+      "position": 0,
+      "objective": 1.0327933643134417,
+      "objective_spread": 0.0014989553464872518,
+      "search_belief": 0.5970127170041739,
+      "parameter_mae": null,
+      "inversion_objective": 1.1571702311750693,
+      "neutral_objective": 1.145382848329118,
+      "inversion_spread": 0.0008893426060947451,
+      "neutral_spread": 0.004681684931713281,
+      "objective_dimensions": {
+        "ambience": 0.6623124666666667,
+        "dynamics": 2.285521895217172,
+        "harmonic": 0.3116069779150503,
+        "level": 0.5233333333333334,
+        "timbre": 0.7933614054223529
+      },
+      "inversion_dimensions": {
+        "ambience": 0.6618184444444444,
+        "dynamics": 2.3026869303342714,
+        "harmonic": 0.3361597955440474,
+        "level": 1.073333333333333,
+        "timbre": 0.9592149795529611
+      },
+      "neutral_dimensions": {
+        "ambience": 0.6893676111111112,
+        "dynamics": 2.141222006415393,
+        "harmonic": 0.31766941174255653,
+        "level": 2.1699999999999995,
+        "timbre": 0.821362230952979
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 12,
+      "position": 0,
+      "objective": 0.4927772326213442,
+      "objective_spread": 0.005855126184580228,
+      "search_belief": 0.578847936283496,
+      "parameter_mae": null,
+      "inversion_objective": 1.145964798731202,
+      "neutral_objective": 1.1386930370119057,
+      "inversion_spread": 0.010460692410445338,
+      "neutral_spread": 0.004636211910579613,
+      "objective_dimensions": {
+        "dynamics": 0.5378966570304878,
+        "level": 0.206666666666667,
+        "timbre": 0.5176460477508883
+      },
+      "inversion_dimensions": {
+        "dynamics": 1.1626327574370883,
+        "level": 2.3366666666666664,
+        "timbre": 0.9606923350585274
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.5702251979154294,
+        "level": 0.6600000000000001,
+        "timbre": 1.037884128202282
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 13,
+      "position": 0,
+      "objective": 0.9086451578787567,
+      "objective_spread": 0.0018757254144016189,
+      "search_belief": 0.5201982329475153,
+      "parameter_mae": null,
+      "inversion_objective": 0.9040027609379551,
+      "neutral_objective": 1.194963030533286,
+      "inversion_spread": 0.002065327928585825,
+      "neutral_spread": 0.006484133197755648,
+      "objective_dimensions": {
+        "ambience": 0.9576147555555555,
+        "dynamics": 0.7123144601022534,
+        "harmonic": 0.6190787144162756,
+        "level": 0.13333333333333286,
+        "timbre": 1.0789894118327719
+      },
+      "inversion_dimensions": {
+        "ambience": 0.8348114444444444,
+        "dynamics": 0.8656982816587181,
+        "harmonic": 1.2230158464033705,
+        "level": 0.10666666666666676,
+        "timbre": 1.073520625037098
+      },
+      "neutral_dimensions": {
+        "ambience": 0.8619862,
+        "dynamics": 0.6152778802327367,
+        "harmonic": 0.4069851606067773,
+        "level": 3.2600000000000002,
+        "timbre": 1.2835699605001416
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 14,
+      "position": 0,
+      "objective": 1.256452929380938,
+      "objective_spread": 0.0034366929543667712,
+      "search_belief": 0.6759815114560414,
+      "parameter_mae": null,
+      "inversion_objective": 1.641534701108973,
+      "neutral_objective": 1.9325274382799706,
+      "inversion_spread": 0.012223389750743774,
+      "neutral_spread": 0.0020642703840660914,
+      "objective_dimensions": {
+        "ambience": 0.7411891500000002,
+        "dynamics": 1.7325749367097378,
+        "harmonic": 0.07060227999632514,
+        "level": 0.033333333333333805,
+        "timbre": 1.5071039555470278
+      },
+      "inversion_dimensions": {
+        "ambience": 0.5686311111111112,
+        "dynamics": 1.6351983933458076,
+        "harmonic": 0.0870380354861729,
+        "level": 1.8066666666666673,
+        "timbre": 2.155751224379516
+      },
+      "neutral_dimensions": {
+        "ambience": 0.5550006888888889,
+        "dynamics": 1.89733840336949,
+        "harmonic": 0.3037079685000339,
+        "level": 3.0266666666666673,
+        "timbre": 2.471245542681699
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 15,
+      "position": 0,
+      "objective": 1.0356413004829916,
+      "objective_spread": 0.015156599768350487,
+      "search_belief": 0.8895658046894229,
+      "parameter_mae": null,
+      "inversion_objective": 1.0751490567437425,
+      "neutral_objective": 2.218817772328908,
+      "inversion_spread": 0.002730653601576538,
+      "neutral_spread": 0.0075850922246485375,
+      "objective_dimensions": {
+        "ambience": 1.1302025,
+        "dynamics": 1.088947515927739,
+        "harmonic": 0.3594693511969948,
+        "level": 0.7133333333333335,
+        "timbre": 1.0153844096190372
+      },
+      "inversion_dimensions": {
+        "ambience": 0.008947866666666679,
+        "dynamics": 1.4628414134289767,
+        "harmonic": 0.1692442222127518,
+        "level": 2.423333333333334,
+        "timbre": 1.250945067619748
+      },
+      "neutral_dimensions": {
+        "dynamics": 3.8896549883237395,
+        "harmonic": 0.18409715664702234,
+        "level": 0.7133333333333335,
+        "timbre": 1.776305551780311
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 16,
+      "position": 0,
+      "objective": 0.8554788867979162,
+      "objective_spread": 0.004624110144303528,
+      "search_belief": 0.48724460403865705,
+      "parameter_mae": null,
+      "inversion_objective": 0.8544034864954688,
+      "neutral_objective": 0.9555731461404267,
+      "inversion_spread": 0.00996164762396523,
+      "neutral_spread": 0.0034993836743205664,
+      "objective_dimensions": {
+        "ambience": 1.1780985333333331,
+        "dynamics": 0.6704086520733542,
+        "harmonic": 0.24398296051000268,
+        "level": 0.129999999999999,
+        "timbre": 0.8770189904397198
+      },
+      "inversion_dimensions": {
+        "ambience": 0.889244711111111,
+        "dynamics": 0.9330434251435343,
+        "harmonic": 0.31387072279608463,
+        "level": 1.3299999999999994,
+        "timbre": 0.7341874217027419
+      },
+      "neutral_dimensions": {
+        "dynamics": 1.0140040648679027,
+        "harmonic": 0.26215143663027307,
+        "level": 1.3766666666666663,
+        "timbre": 0.8690367505705002
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 17,
+      "position": 0,
+      "objective": 0.4465037093266098,
+      "objective_spread": 0.006078739994741789,
+      "search_belief": 0.561941209000438,
+      "parameter_mae": null,
+      "inversion_objective": 0.42432540382525613,
+      "neutral_objective": 0.7285414279677771,
+      "inversion_spread": 0.006020211054526992,
+      "neutral_spread": 0.004798855536579549,
+      "objective_dimensions": {
+        "dynamics": 0.33203195461105756,
+        "harmonic": 0.04542627516547736,
+        "level": 0.38000000000000017,
+        "timbre": 0.5022679676118221
+      },
+      "inversion_dimensions": {
+        "dynamics": 0.3602475623634878,
+        "harmonic": 0.036564733593966836,
+        "level": 0.4799999999999998,
+        "timbre": 0.4416053509837518
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.4620775993777419,
+        "harmonic": 0.034745985753692685,
+        "level": 0.9099999999999996,
+        "timbre": 0.8079081735989577
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 18,
+      "position": 0,
+      "objective": 0.46124861738224987,
+      "objective_spread": 0.0012423596215988542,
+      "search_belief": 0.3380257837224271,
+      "parameter_mae": null,
+      "inversion_objective": 0.6528934586291668,
+      "neutral_objective": 0.660464157675107,
+      "inversion_spread": 0.001541758870929777,
+      "neutral_spread": 0.005839763537256237,
+      "objective_dimensions": {
+        "ambience": 0.03423670000000001,
+        "dynamics": 0.1519356851123745,
+        "harmonic": 0.44844304520394607,
+        "level": 0.37555555555555503,
+        "timbre": 0.811333708255329
+      },
+      "inversion_dimensions": {
+        "ambience": 0.8170301499999999,
+        "dynamics": 0.2200042303076454,
+        "harmonic": 0.4482283354732,
+        "level": 0.3855555555555558,
+        "timbre": 0.7840814897334004
+      },
+      "neutral_dimensions": {
+        "ambience": 1.2203833333333332,
+        "dynamics": 0.14571591763815225,
+        "harmonic": 0.474017358662177,
+        "level": 0.5933333333333337,
+        "timbre": 0.5964734895120417
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 19,
+      "position": 0,
+      "objective": 0.8901625812126883,
+      "objective_spread": 0.0023144070694529617,
+      "search_belief": 0.3000447185845396,
+      "parameter_mae": null,
+      "inversion_objective": 0.8216648602844385,
+      "neutral_objective": 0.7499216680778923,
+      "inversion_spread": 0.0007738597551079085,
+      "neutral_spread": 0.005483337523302767,
+      "objective_dimensions": {
+        "ambience": 0.17620519999999998,
+        "dynamics": 0.32494002527633636,
+        "harmonic": 0.5477273851358163,
+        "level": 0.8333333333333334,
+        "timbre": 1.4817546813754763
+      },
+      "inversion_dimensions": {
+        "ambience": 0.15285756666666667,
+        "dynamics": 0.33977616465807653,
+        "harmonic": 1.7175580575135772,
+        "level": 0.8733333333333336,
+        "timbre": 1.3410737143865348
+      },
+      "neutral_dimensions": {
+        "ambience": 0.12012535555555559,
+        "dynamics": 0.40616705315407886,
+        "harmonic": 1.4199519724834164,
+        "level": 2.013333333333333,
+        "timbre": 1.0128099205202696
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 304,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 20,
+      "position": 0,
+      "objective": 0.8433007792632199,
+      "objective_spread": 0.001831237137012831,
+      "search_belief": 0.564091826276714,
+      "parameter_mae": null,
+      "inversion_objective": 3.3137082558417528,
+      "neutral_objective": 2.5288179614627135,
+      "inversion_spread": 0.0005833740284133526,
+      "neutral_spread": 0.004481527767966842,
+      "objective_dimensions": {
+        "ambience": 0.47598250000000003,
+        "dynamics": 0.5924569943016053,
+        "harmonic": 2.20171558270607,
+        "level": 1.9933333333333332,
+        "timbre": 0.9547925497689586
+      },
+      "inversion_dimensions": {
+        "ambience": 8.151709333333331,
+        "dynamics": 0.5961938485678461,
+        "harmonic": 2.8980383673392063,
+        "level": 3.2433333333333336,
+        "timbre": 1.992269718381788
+      },
+      "neutral_dimensions": {
+        "ambience": 7.724786399999999,
+        "dynamics": 0.4120429495204954,
+        "harmonic": 0.7375951949389594,
+        "level": 3.073333333333333,
+        "timbre": 0.6958664411903647
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    },
+    {
+      "signal": "library",
+      "target_index": 21,
+      "position": 0,
+      "objective": 0.7183412902059043,
+      "objective_spread": 0.0124970629250164,
+      "search_belief": 0.30835643685812564,
+      "parameter_mae": null,
+      "inversion_objective": 0.8022592831286245,
+      "neutral_objective": 0.803461775793591,
+      "inversion_spread": 0.011154459629733049,
+      "neutral_spread": 0.00526245659016078,
+      "objective_dimensions": {
+        "dynamics": 0.1197819707617172,
+        "level": 0.64,
+        "timbre": 0.9695162115144648
+      },
+      "inversion_dimensions": {
+        "dynamics": 0.3596234973672825,
+        "level": 0.9900000000000002,
+        "timbre": 0.9511524899024549
+      },
+      "neutral_dimensions": {
+        "dynamics": 0.3135758798712665,
+        "level": 1.6300000000000001,
+        "timbre": 0.8754354005315594
+      },
+      "level_trim_db": null,
+      "level_trim_record": null,
+      "untrimmed_objective": null,
+      "untrimmed_dimensions": null,
+      "renders": 301,
+      "answer_unmeasurable": false,
+      "failed": false,
+      "error": null
+    }
+  ]
+}

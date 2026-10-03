@@ -1,0 +1,609 @@
+{
+ "run": "/Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-set2/runs/lib-sw50r-shipped",
+ "no_di_run": "/Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/bench-nodi/runs/match-pipeline-template-s11",
+ "cut_s": 0.0,
+ "parts": 43,
+ "missing": {
+  "calc-library": [],
+  "calc-noise": [],
+  "no_di": []
+ },
+ "pairs": [
+  {
+   "first": "library",
+   "second": "template",
+   "stored": {
+    "first_closer": 34,
+    "of": 43,
+    "median_change": -0.307,
+    "bands_first_closer": 12,
+    "bands": 13,
+    "band_sign_flip_p": 0.0007
+   },
+   "corrected": {
+    "first_closer": 29,
+    "of": 43,
+    "median_change": -0.178,
+    "bands_first_closer": 8,
+    "bands": 13,
+    "band_sign_flip_p": 0.0901
+   }
+  },
+  {
+   "first": "calc-library",
+   "second": "template",
+   "stored": {
+    "first_closer": 26,
+    "of": 43,
+    "median_change": -0.159,
+    "bands_first_closer": 8,
+    "bands": 13,
+    "band_sign_flip_p": 0.0769
+   },
+   "corrected": {
+    "first_closer": 21,
+    "of": 43,
+    "median_change": 0.0,
+    "bands_first_closer": 6,
+    "bands": 13,
+    "band_sign_flip_p": 0.3677
+   }
+  },
+  {
+   "first": "library",
+   "second": "calc-library",
+   "stored": {
+    "first_closer": 29,
+    "of": 43,
+    "median_change": -0.141,
+    "bands_first_closer": 11,
+    "bands": 13,
+    "band_sign_flip_p": 0.0264
+   },
+   "corrected": {
+    "first_closer": 27,
+    "of": 43,
+    "median_change": -0.113,
+    "bands_first_closer": 10,
+    "bands": 13,
+    "band_sign_flip_p": 0.0425
+   }
+  },
+  {
+   "first": "calc-noise",
+   "second": "template",
+   "stored": {
+    "first_closer": 11,
+    "of": 43,
+    "median_change": 0.205,
+    "bands_first_closer": 2,
+    "bands": 13,
+    "band_sign_flip_p": 0.0142
+   },
+   "corrected": {
+    "first_closer": 10,
+    "of": 43,
+    "median_change": 0.325,
+    "bands_first_closer": 3,
+    "bands": 13,
+    "band_sign_flip_p": 0.0054
+   }
+  },
+  {
+   "first": "calc-library",
+   "second": "calc-noise",
+   "stored": {
+    "first_closer": 36,
+    "of": 43,
+    "median_change": -0.278,
+    "bands_first_closer": 12,
+    "bands": 13,
+    "band_sign_flip_p": 0.0007
+   },
+   "corrected": {
+    "first_closer": 28,
+    "of": 43,
+    "median_change": -0.25,
+    "bands_first_closer": 8,
+    "bands": 13,
+    "band_sign_flip_p": 0.0652
+   }
+  },
+  {
+   "first": "library",
+   "second": "no_di",
+   "stored": {
+    "first_closer": 34,
+    "of": 43,
+    "median_change": -0.347,
+    "bands_first_closer": 10,
+    "bands": 13,
+    "band_sign_flip_p": 0.0029
+   },
+   "corrected": {
+    "first_closer": 33,
+    "of": 43,
+    "median_change": -0.368,
+    "bands_first_closer": 10,
+    "bands": 13,
+    "band_sign_flip_p": 0.0071
+   }
+  }
+ ],
+ "decision": "not shown: the template by default, the library search as an option",
+ "rows": [
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr3",
+   "band": "Adam Buckley",
+   "stored_v3_no_level": {
+    "template": 2.2831208399795497,
+    "library": 0.7803452174548833,
+    "calc-library": 0.8192278367733431,
+    "calc-noise": 1.3456901266727042,
+    "no_di": 1.2683479382178293
+   }
+  },
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr4",
+   "band": "Adam Buckley",
+   "stored_v3_no_level": {
+    "template": 0.7925318336550177,
+    "library": 0.9684702712818111,
+    "calc-library": 1.3767552718527782,
+    "calc-noise": 1.4746802763965252,
+    "no_di": 1.7626663555854143
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr1",
+   "band": "Atlantis Bound",
+   "stored_v3_no_level": {
+    "template": 1.8412838020630566,
+    "library": 1.5027103824534234,
+    "calc-library": 1.4835970808180132,
+    "calc-noise": 1.7244399030476594,
+    "no_di": 1.4903660536749723
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr2",
+   "band": "Atlantis Bound",
+   "stored_v3_no_level": {
+    "template": 1.544448970659319,
+    "library": 0.95708108045666,
+    "calc-library": 1.598640914361802,
+    "calc-noise": 2.401204490815345,
+    "no_di": 2.451696872343271
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr3",
+   "band": "Atlantis Bound",
+   "stored_v3_no_level": {
+    "template": 0.906881088342219,
+    "library": 1.0302836586070252,
+    "calc-library": 0.9404357772300593,
+    "calc-noise": 2.5511938439468937,
+    "no_di": 2.41499065768445
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr4",
+   "band": "Atlantis Bound",
+   "stored_v3_no_level": {
+    "template": 0.9011867077524923,
+    "library": 1.088221647195445,
+    "calc-library": 3.758846926231906,
+    "calc-noise": 1.6293734195932963,
+    "no_di": 2.1905655402090787
+   }
+  },
+  {
+   "part": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+   "band": "Ale Lak",
+   "stored_v3_no_level": {
+    "template": 1.6521964352098595,
+    "library": 1.6397598621157443,
+    "calc-library": 1.3839925862048132,
+    "calc-noise": 2.0594888634638693,
+    "no_di": 2.4022228791314157
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr2",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 1.6365671478743375,
+    "library": 2.1853330407946086,
+    "calc-library": 2.190923654746278,
+    "calc-noise": 2.252995514796788,
+    "no_di": 3.3489898372716267
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr3",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 1.2869176226686416,
+    "library": 0.9628988686628214,
+    "calc-library": 1.473944352895703,
+    "calc-noise": 2.8565464648081482,
+    "no_di": 2.7385913691340487
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr4",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 0.975775221531824,
+    "library": 0.8836930010828424,
+    "calc-library": 0.8286401033029674,
+    "calc-noise": 1.2830194600993023,
+    "no_di": 1.8367455470589384
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr6",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 1.3427740846155447,
+    "library": 0.7566783845330193,
+    "calc-library": 1.3897607213938135,
+    "calc-noise": 1.794608390239594,
+    "no_di": 1.08927541679601
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr1",
+   "band": "Starnes And Shah",
+   "stored_v3_no_level": {
+    "template": 1.7224758603907808,
+    "library": 1.2598582835924874,
+    "calc-library": 1.093861597014724,
+    "calc-noise": 2.0219010944266564,
+    "no_di": 1.8204878104726832
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr2",
+   "band": "Starnes And Shah",
+   "stored_v3_no_level": {
+    "template": 1.3280061494382938,
+    "library": 1.1217115498067494,
+    "calc-library": 1.0687037052454829,
+    "calc-noise": 1.2803404038623531,
+    "no_di": 1.247043454296178
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr3",
+   "band": "Starnes And Shah",
+   "stored_v3_no_level": {
+    "template": 0.9593071163455241,
+    "library": 0.4141373929917573,
+    "calc-library": 0.7994400131963184,
+    "calc-noise": 1.196731267397116,
+    "no_di": 1.2364502979483827
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr4",
+   "band": "Starnes And Shah",
+   "stored_v3_no_level": {
+    "template": 1.5892282362249472,
+    "library": 0.5908993526869788,
+    "calc-library": 1.149791999409623,
+    "calc-noise": 2.519302508320947,
+    "no_di": 2.2776321357666247
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr5",
+   "band": "Starnes And Shah",
+   "stored_v3_no_level": {
+    "template": 1.0364500738199383,
+    "library": 0.8849978292502768,
+    "calc-library": 0.9249432798797921,
+    "calc-noise": 1.71626049275403,
+    "no_di": 1.6484109730936378
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr1",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 1.2217663412707995,
+    "library": 0.7625589900154126,
+    "calc-library": 1.5000640002413523,
+    "calc-noise": 1.458210319670194,
+    "no_di": 1.6267461491337185
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr2",
+   "band": "The Travelling Band",
+   "stored_v3_no_level": {
+    "template": 1.1861986156965656,
+    "library": 0.9119961063123205,
+    "calc-library": 1.2673031141900541,
+    "calc-noise": 1.3297717067716468,
+    "no_di": 0.9500702429844109
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr2",
+   "band": "Zeno",
+   "stored_v3_no_level": {
+    "template": 3.4732531768650348,
+    "library": 1.703369368013738,
+    "calc-library": 3.832860257015777,
+    "calc-noise": 3.345799862690092,
+    "no_di": 1.9836520947263343
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr3",
+   "band": "Zeno",
+   "stored_v3_no_level": {
+    "template": 1.6317745085833573,
+    "library": 0.9362603567697924,
+    "calc-library": 1.7610154820374546,
+    "calc-noise": 1.8751167438519305,
+    "no_di": 1.8120940454354992
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr6",
+   "band": "Zeno",
+   "stored_v3_no_level": {
+    "template": 1.4848686657565688,
+    "library": 0.8299286651997375,
+    "calc-library": 1.9208568735177347,
+    "calc-noise": 2.1565150377956055,
+    "no_di": 1.6112477343051073
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr07",
+   "band": "Eat The Feeder",
+   "stored_v3_no_level": {
+    "template": 2.9468633623009737,
+    "library": 0.918056109995843,
+    "calc-library": 1.9851509980692168,
+    "calc-noise": 2.335870382329327,
+    "no_di": 1.496363202069361
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr10",
+   "band": "Eat The Feeder",
+   "stored_v3_no_level": {
+    "template": 1.9008732145559064,
+    "library": 0.7454937988364769,
+    "calc-library": 1.1978987616127217,
+    "calc-noise": 1.8383258152832984,
+    "no_di": 2.054541878756829
+   }
+  },
+  {
+   "part": "telefunken/Blind Spots/GTR",
+   "band": "Doom Flamingo",
+   "stored_v3_no_level": {
+    "template": 1.099934787912314,
+    "library": 1.0084832513901418,
+    "calc-library": 0.9536304931546272,
+    "calc-noise": 1.1677390262437608,
+    "no_di": 1.197177562197776
+   }
+  },
+  {
+   "part": "telefunken/Bloomlight/GTR",
+   "band": "Eggy",
+   "stored_v3_no_level": {
+    "template": 0.9360648947051418,
+    "library": 0.45911382681465784,
+    "calc-library": 0.7872962862611204,
+    "calc-noise": 1.1277464285873318,
+    "no_di": 1.2079856839208545
+   }
+  },
+  {
+   "part": "telefunken/Farthest Step/GTR",
+   "band": "Eggy",
+   "stored_v3_no_level": {
+    "template": 1.0159383347304167,
+    "library": 1.127462296823612,
+    "calc-library": 0.7007252282876172,
+    "calc-noise": 1.207703289767714,
+    "no_di": 0.895714717525414
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 1",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.4704920442013096,
+    "library": 0.9394650598698129,
+    "calc-library": 1.143916923309249,
+    "calc-noise": 1.5869522665462257,
+    "no_di": 0.8729289474939232
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 2",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 0.94742007017114,
+    "library": 1.833470982430911,
+    "calc-library": 1.2479939167767753,
+    "calc-noise": 1.4370674681721434,
+    "no_di": 1.1630196239282027
+   }
+  },
+  {
+   "part": "telefunken/Fragments/GTR",
+   "band": "Eggy",
+   "stored_v3_no_level": {
+    "template": 0.8033852556515895,
+    "library": 0.49897315447285456,
+    "calc-library": 0.5441810442349009,
+    "calc-noise": 1.9845911652394859,
+    "no_di": 1.867843563681919
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 1",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.6136033776618002,
+    "library": 1.9086735128327719,
+    "calc-library": 1.8939049442609082,
+    "calc-noise": 2.6218000085168662,
+    "no_di": 1.882842834278523
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 2",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.4107811707732314,
+    "library": 0.9772481627203509,
+    "calc-library": 0.9417411092991737,
+    "calc-noise": 2.1152366783297594,
+    "no_di": 1.5880638934000513
+   }
+  },
+  {
+   "part": "telefunken/Hikikomori - Love Does/GTR",
+   "band": "John Morgan Kimock",
+   "stored_v3_no_level": {
+    "template": 1.87034448878556,
+    "library": 1.8042857530347114,
+    "calc-library": 2.0073882704808597,
+    "calc-noise": 2.1489276805026125,
+    "no_di": 1.7828155618271875
+   }
+  },
+  {
+   "part": "telefunken/Honey/GTR",
+   "band": "Swatkins",
+   "stored_v3_no_level": {
+    "template": 1.3764562609904474,
+    "library": 2.332369229842926,
+    "calc-library": 1.8138691978594499,
+    "calc-noise": 1.6990320536748866,
+    "no_di": 1.4453463856456568
+   }
+  },
+  {
+   "part": "telefunken/Long Way Home/GTR",
+   "band": "Doom Flamingo",
+   "stored_v3_no_level": {
+    "template": 1.3248157596430743,
+    "library": 0.7542416084118186,
+    "calc-library": 0.8373077161532477,
+    "calc-noise": 1.2667260507106644,
+    "no_di": 0.8204962337357878
+   }
+  },
+  {
+   "part": "telefunken/Lost Alive/GTR",
+   "band": "Swatkins",
+   "stored_v3_no_level": {
+    "template": 1.7385347980318528,
+    "library": 1.7587883999951344,
+    "calc-library": 2.6632478674731277,
+    "calc-noise": 1.3936971981460473,
+    "no_di": 1.4802309371158422
+   }
+  },
+  {
+   "part": "telefunken/Measurements/GTR",
+   "band": "Doom Flamingo",
+   "stored_v3_no_level": {
+    "template": 2.381022828189258,
+    "library": 0.9078364068636152,
+    "calc-library": 1.9208938437337737,
+    "calc-noise": 1.5169819789528427,
+    "no_di": 1.9231268752062531
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 1",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.7205611594715835,
+    "library": 0.6623662916889311,
+    "calc-library": 1.1522555366556906,
+    "calc-noise": 1.6549696914323209,
+    "no_di": 1.0221650735425718
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 2",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.2891078738023785,
+    "library": 0.7692287075533177,
+    "calc-library": 0.8951763397309789,
+    "calc-noise": 1.566160517754095,
+    "no_di": 1.076237434136492
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 1",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.6542692791061633,
+    "library": 1.0254154217997902,
+    "calc-library": 1.3015073404872701,
+    "calc-noise": 1.6810975013543792,
+    "no_di": 1.5547589764428489
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 2",
+   "band": "Dom McLennon",
+   "stored_v3_no_level": {
+    "template": 1.425999760983485,
+    "library": 0.8758302591828894,
+    "calc-library": 0.811191874171435,
+    "calc-noise": 2.239454751698854,
+    "no_di": 1.535033847746235
+   }
+  },
+  {
+   "part": "telefunken/She's Gone/GTR",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "stored_v3_no_level": {
+    "template": 0.9253922828631593,
+    "library": 0.7963861677222424,
+    "calc-library": 0.8705413616390418,
+    "calc-noise": 1.0510875333848573,
+    "no_di": 0.7412832167933614
+   }
+  },
+  {
+   "part": "telefunken/Strangest Places/GTR",
+   "band": "Doom Flamingo",
+   "stored_v3_no_level": {
+    "template": 1.7921480889481967,
+    "library": 0.6911085241353443,
+    "calc-library": 1.2045764990292047,
+    "calc-noise": 1.158721381117468,
+    "no_di": 0.7490370272849612
+   }
+  },
+  {
+   "part": "telefunken/Until I Get Back/GTR",
+   "band": "Swatkins",
+   "stored_v3_no_level": {
+    "template": 1.4650943891202033,
+    "library": 1.3993809839905234,
+    "calc-library": 0.9884260567623465,
+    "calc-noise": 2.06111829035011,
+    "no_di": 1.9577660509108523
+   }
+  }
+ ]
+}
