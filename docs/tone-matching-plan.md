@@ -2527,6 +2527,189 @@ The batches add a `--part` for each of their parts (`-rerunN.json` lists them un
 minutes beside the neutral-start SW50R no-DI run, and the JSONs were written
 outside the checkout and copied here.
 
+#### The second set on PR12
+
+The recordings benchmark on PR12, the 43 development parts, `unpaired-v3`, Morgan
+1.1.1 through the reused Swift server (`reproducible=False`, band noise 0.23 dB).
+Mean / median:
+
+| searched through | PR12, second set |
+|---|---:|
+| the part's own DI (same take) | 0.479 / 0.445 |
+| another session's DI | 1.146 / 0.992 |
+| the noise probe (no DI) | 1.658 / 1.653 |
+| *no search:* neutral settings | 1.959 / 1.873 |
+
+Paired by part: the same-take DI ended closer than another session's on 43 (a
+median 55% closer), and another session's closer than no DI on 35 (29 with
+`level` left out). Against neutral settings: the same-take DI closer on 43,
+another session's on 39 (36 with `level` left out), and no DI on 31, but with
+`level` left out on 26 (a median 14% closer, p = 0.1). It repeats SW50R's and
+Tone King's order: the part's own DI, then another session's, then none, and a
+search without a DI is not shown better than its start once loudness is set
+aside.
+
+```bash
+.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+  --amp pr12 --set 2 --signal same --signal other --signal noise --budget 300 \
+  --loss-profile unpaired-v3 --workers 3 --json docs/recordings-benchmark-set2-pr12.json
+```
+
+It ran from a8a45b0 in 348 minutes, in the checkout described under
+"Provenance" below, with #97 and #99 already applied there. A first attempt started 18 minutes before
+the licence daemon was killed at 00:15:44 (see "Song-only starting points"
+below), so its reused plugin instances may have gone silent; it was stopped and
+the run above started on fresh instances. No answer in it lacks a `level`
+dimension.
+
+#### Song-only starting points on all four amps
+
+"The no-DI starting point" found that, without a DI, the shipped SW50R template
+was a worse start for the search than neutral settings. The same comparison was
+run on PR12, AC20 and Tone King's rhythm channel, and each start was scored both
+as it is, with no search, and after the shipped no-DI search, through each part's
+own DI against its amp track, `unpaired-v3` with `level` left out, the 43
+development parts, seed 11:
+
+- **PR12:** the shipped `samples/Example_Clean_PR12.xml` and neutral settings.
+- **AC20:** the shipped `samples/AC20_Atlas_Topology.xml` and neutral settings,
+  in fresh processes, as AC20 needs.
+- **Tone King rhythm:** the plugin's own `Default` and `Reset All Settings` presets
+  (local only, not committed) and neutral settings written onto `Default`.
+
+Neutral settings are the benchmark's centred start, written out as
+`docs/neutral-{pr12,ac20,toneking-rhythm}-spec.json`. Median distance:
+
+| | as it is | after the no-DI search |
+|---|---:|---:|
+| PR12, shipped | **1.19** | 1.60 |
+| PR12, neutral | 1.40 | 1.34 |
+| AC20, shipped | **1.19** | 1.66 |
+| AC20, neutral | 1.29 | 1.43 |
+| Tone King, Default | 1.16 | 1.42 |
+| Tone King, Reset All Settings | 1.16 | 1.19 |
+| Tone King, neutral | 1.13 | 1.25 |
+| SW50R, shipped (above) | 1.43 | 1.59 |
+| SW50R, neutral (above) | 1.25 | 1.34 |
+
+**Paired by part, and by band.** Each comparison below gives the parts on which
+the first option ended closer (level left out); a Wilcoxon p over parts, on the
+raw differences; an exact two-sided sign-flip p over the 13 bands, on each band's
+median log ratio; and that band p after Holm's correction across the 14 rows.
+Parts in a band share players and rooms, so the band p is the one to trust: the
+ground-truth audit (`docs/ground-truth-audit-2026-10-03.md`, D-M5) found a
+part-level Wilcoxon gives 13–25% false positives at these cluster sizes.
+
+| comparison | closer | Wilcoxon p | band p | band p, Holm |
+|---|---:|---:|---:|---:|
+| PR12 shipped as it is vs itself searched | 34/43 | <0.001 | 0.001 | 0.02 |
+| PR12 shipped as it is vs neutral as it is | 32/43 | 0.001 | 0.06 | 0.46 |
+| PR12 shipped as it is vs neutral searched | 27/43 | 0.02 | 0.50 | 0.99 |
+| PR12 neutral searched vs shipped searched | 33/43 | 0.005 | 0.01 | 0.12 |
+| AC20 shipped as it is vs itself searched | 38/43 | <0.001 | <0.001 | 0.01 |
+| AC20 shipped as it is vs neutral as it is | 28/43 | 0.02 | 0.11 | 0.66 |
+| AC20 shipped as it is vs neutral searched | 31/43 | <0.001 | 0.002 | 0.02 |
+| AC20 neutral searched vs shipped searched | 33/43 | <0.001 | 0.004 | 0.04 |
+| Tone King Default as it is vs its search | 30/43 | 0.009 | 0.17 | 0.86 |
+| Tone King Reset as it is vs its search | 30/43 | 0.13 | 0.30 | 0.95 |
+| Tone King neutral as it is vs its search | 28/43 | 0.02 | 0.02 | 0.20 |
+| SW50R shipped as it is vs itself searched | 25/43 | 0.25 | 0.24 | 0.95 |
+| SW50R neutral searched vs neutral as it is | 24/43 | 0.31 | 0.56 | 0.99 |
+| SW50R neutral searched vs shipped searched | 33/43 | <0.001 | 0.07 | 0.46 |
+
+The Tone King starts as they are tie with one another (Default against neutral 22
+to 21, Reset against neutral 21 to 22, Default against Reset 19 to 24; band p
+0.14–0.25), and so do SW50R's two starts as they are (band p 0.44).
+
+**What it means.**
+- **Established** (band p, after Holm): the no-DI search made the shipped PR12
+  and AC20 presets worse, and the result survives every loss and excerpt variant
+  the audit tried. On AC20, searching from neutral settings did better than
+  searching from the shipped preset, but still worse than the shipped preset as
+  it is.
+- **By band, but not after Holm:** on PR12, neutral searched beating shipped
+  searched; on Tone King, neutral settings as they are beating their own search.
+- **By part only:** the shipped PR12 and AC20 presets beating neutral settings
+  as they are; Tone King Default beating its search; on SW50R, neutral searched
+  beating shipped searched.
+- **Neither:** Tone King Reset beating its search. It hinges on one artifact part
+  (Hikikomori, under "Provenance"): leaving that part out moves the band p for
+  Reset from 0.30 to 0.04, Default from 0.17 to 0.045 and neutral from 0.02 to
+  0.01.
+- **Not shown:** any winner among SW50R's options or among Tone King's starts.
+  A rule of the form "the option that beats every other on most parts" names
+  some winner 69–84% of the time even when all options are the same, so it is not
+  used to choose between them.
+
+This is the objective proxy, not listening, and "as it is" leaves the level where
+the preset has it. With the repository's metering, neutral settings on the three
+Morgan amps play a median 19–36 LU too quiet until a level is set (Tone King's
+neutral start is about level, +0.1 LU). That metering reads a mono reference
+3.01 LU quieter than the same audio as dual-mono stereo; metered consistently,
+those are 22–39 LU and −2.9 LU (audit D-M4).
+
+**After the audit.** The audit confirmed three mechanisms that bear on these
+numbers; none reverses an established result:
+- `band_shape`, the largest timbre term, counts bands far below the guitar's peak,
+  which inflates the distance of unchanged starts (10–28%) more than of searched
+  answers (6–14%) (D-H3). Restricted to bands within 30 dB of the peak, the
+  search-against-start comparisons move toward the start by Wilcoxon p and by
+  median distance; by count, Tone King Reset's start wins fall from 30 to 29 and
+  PR12 neutral's stay at 18.
+- Every fresh Tone King process starts with exact zeros (first non-zero sample a
+  median 0.41 s in), and the Reset and neutral renders have a second zero run
+  ending near 0.87 s; the scoring renders here used no pre-roll (D-M1). With the
+  first second cut from both sides the start-win counts become 27, 30 and 30
+  (Default, Reset, neutral) against 30, 30 and 28; the ties between starts are
+  unchanged.
+- A candidate under the −70 LUFS gate loses its level term, so near-silence can
+  score as close (D-M3). Counted as a loss, Tone King Reset's start wins become
+  31, with Wilcoxon p 0.045–0.06 and band p 0.02–0.04.
+
+**Provenance.**
+- PR12's runs ran from 621ac13 in a separate checkout.
+- Tone King's and AC20's, and the PR12 recordings benchmark above, ran from
+  a8a45b0 in another. During those runs, two changes meant not to alter results
+  were applied to that checkout (the PR12 recordings benchmark started after
+  both):
+  - the Swift build cache (#97), whose binaries are byte-identical;
+  - the faster fingerprint (#99), whose fingerprints were byte-identical in its
+    review.
+- On 2026-10-03 at 00:15:44 the PACE licence daemon both plugins use was killed
+  by macOS for leaking mach ports. Each plugin process launch leaks about 10, and
+  AC20's per-render processes drove it. One Tone King match running then rendered
+  silence. It was set aside and rerun, and #100 now fails such a match.
+- Eight Tone King part-runs (seven distinct parts) first failed, all after
+  AC20's fresh-process load began at 20:56. Their logs were overwritten when they
+  were rerun by resuming the runs, so the cause is not recorded. Four had failed
+  at the answer's render; resuming re-rendered the answer but kept the original
+  search, which is why they show 0.2–0.4 minutes.
+- Every match's own summary counts no silent render (`accounting.silent` is 0
+  on all 301). The committed JSONs predate #100's `silent_trials` field.
+- One answer has no measurable loudness through its part's DI: Tone King Reset
+  searched on Telefunken "Hikikomori - Love Does" GTR (`summary.no_di.unmeasurable`).
+  It passed the guitar check through the synthetic guitar (−17.5 LUFS). This
+  part's DI is about −30 dBFS for its first 0.6 s, inside a fresh Tone King
+  process's start-up mute, and about −81 dBFS after it, so through these starts
+  it plays near-silent (Reset as it is −50.6 LUFS, neutral −52.2). It counts as a
+  search win (1.66 against 2.81) in Reset's 30 of 43, and it decides Tone King's
+  band-level results (see "What it means").
+- About 8 minutes a match (AC20 about 15), one part at a time (AC20 two).
+
+```bash
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+  --pack morgan --amp pr12 --template samples/Example_Clean_PR12.xml \
+  --out-dir runs/start-pr12-shipped --json docs/match-pipeline-set2-pr12-shipped.json
+.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+  --pack morgan --amp ac20 --process-policy fresh \
+  --template samples/AC20_Atlas_Topology.xml \
+  --out-dir runs/start-ac20-shipped --json docs/match-pipeline-set2-ac20-shipped.json
+```
+
+The neutral and Tone King runs differ only in `--template` (the neutral spec
+applied with `apply_spec.py` onto the shipped template, or onto Tone King's
+`Default`) and `--pack toneking --amp rhythm`.
+
 ---
 
 ## 8. Dependency and CI policy

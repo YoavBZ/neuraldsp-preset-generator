@@ -1,0 +1,5132 @@
+{
+ "schema": "match-pipeline-benchmark-1",
+ "source_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+ "command": "scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di --parallel 1 --pack toneking --amp rhythm --template runs/tk-default.xml --out-dir runs/start-tk-default --json runs/start-tk-default.json",
+ "template": "runs/tk-default.xml",
+ "pack": "toneking",
+ "amp": "rhythm",
+ "budget": "300",
+ "seed": "11",
+ "loss_profile": "unpaired-v3",
+ "process_policy": {
+  "search": "reuse",
+  "scoring_renders": "fresh"
+ },
+ "measurement_caveat": "each search ran in one reused plugin process, which the Swift backend reports as reproducible=False (identical states can render slightly differently); the template and every answer were then rendered through the DI in a fresh process each. `measured_commit` on each arm is the checkout that ran it; `source_commit` is the one that wrote this summary; Tone King's renders are not sample-exact even in a fresh process (its manifest: fresh_process_reproducible false), so its scoring renders carry that noise too",
+ "summary": {
+  "parts": 43,
+  "failed": [],
+  "template": {
+   "parts": 43,
+   "vs_reference_lu": {
+    "n": 43,
+    "min": -10.53,
+    "median": -0.26,
+    "max": 12.2
+   },
+   "within_3_lu": 26,
+   "unmeasurable": [],
+   "v3_no_level": {
+    "n": 43,
+    "min": 0.45,
+    "median": 1.158,
+    "max": 2.985
+   },
+   "v3": {
+    "n": 43,
+    "min": 0.447,
+    "median": 1.165,
+    "max": 2.869
+   }
+  },
+  "no_di": {
+   "parts": 43,
+   "vs_reference_lu": {
+    "n": 43,
+    "min": -1.42,
+    "median": 3.69,
+    "max": 16.24
+   },
+   "within_3_lu": 19,
+   "unmeasurable": [],
+   "v3_no_level": {
+    "n": 43,
+    "min": 0.837,
+    "median": 1.418,
+    "max": 2.728
+   },
+   "v3": {
+    "n": 43,
+    "min": 0.778,
+    "median": 1.394,
+    "max": 2.626
+   },
+   "fell_back_to_template": 0
+  },
+  "di": {
+   "parts": 0,
+   "vs_reference_lu": null,
+   "within_3_lu": 0,
+   "unmeasurable": [],
+   "v3_no_level": null,
+   "v3": null,
+   "fell_back_to_template": 0
+  },
+  "guitar_check_failed_a_candidate": [],
+  "level_trim_on_match_1": {
+   "applied": 43,
+   "moved_db": {
+    "n": 43,
+    "min": -18.4,
+    "median": -13.5,
+    "max": -2.4
+   },
+   "landed_off_target": [],
+   "vs_reference_lu_before_trim": {
+    "n": 43,
+    "min": 7.99,
+    "median": 16.77,
+    "max": 23.37
+   },
+   "clamped": 4
+  },
+  "paired_v3_no_level": {
+   "no_di_closer_than_template": {
+    "closer": 13,
+    "of": 43,
+    "median_change": 0.108
+   }
+  }
+ },
+ "parts": [
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr3",
+   "reference_lufs": -17.329991467862698,
+   "crops": {
+    "di": "e69bd45134ea39f66482e730543feb78eddb85ea64a4169b61beae6972290507",
+    "reference": "609e71399ebfb3cafcd1ff4f26caac021f49c9a94659e880934c1dea4e899c9e",
+    "mix": "5c897684d2f1ec348d20760e9549b6e93571400c4ac68df3ed053539ed115173",
+    "backing": "f4f3493addbbc5620bd2f2090db789b2693ce2a73e0b15427b2b214ee45d7d60",
+    "mix_instrumental": "0b9cb5b5491abc676895cb3ea0e6e564a74e746eccb87c5f738528f403c18a10",
+    "backing_instrumental": "716eca429cdd326a6b170c78c11aee5af13022325ad043d2559227b402647172"
+   },
+   "template": {
+    "lufs": -19.01,
+    "vs_reference_lu": -1.68,
+    "v3": 1.0923588610937722,
+    "v3_no_level": 1.1343871922327542,
+    "v2": 1.6265231401967313,
+    "v2_no_level": 1.6960789971660832,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -17.02,
+    "vs_reference_lu": 0.31,
+    "v3": 1.7080762494406898,
+    "v3_no_level": 1.8347664796596916,
+    "v2": 1.5191019322917845,
+    "v2_no_level": 1.611434667006466,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -1.05,
+       "vs_template_db": 17.01,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 0.79,
+       "vs_template_db": 18.86,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -5.46,
+       "vs_template_db": 12.6,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.33,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -16.28,
+        "before": 8.5,
+        "after": -7.8,
+        "clamped": false,
+        "lufs_after": -17.09,
+        "residual_db": 0.24,
+        "trial_before": 234,
+        "trial_after": 290,
+        "total_before": 0.7808,
+        "total_after": 1.1051
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -18.12,
+        "before": 8.5,
+        "after": -9.6,
+        "clamped": false,
+        "lufs_after": -17.31,
+        "residual_db": 0.02,
+        "trial_before": 240,
+        "trial_after": 291,
+        "total_before": 0.813,
+        "total_after": 1.0516
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.87,
+        "before": -0.9,
+        "after": -12.8,
+        "clamped": false,
+        "lufs_after": -17.37,
+        "residual_db": -0.04,
+        "trial_before": 233,
+        "trial_after": 292,
+        "total_before": 0.8068,
+        "total_after": 1.069
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Drag Me Down/ElecGtr4",
+   "reference_lufs": -17.743919039535257,
+   "crops": {
+    "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400",
+    "reference": "6dc563bbfc2dd124c1d4bf8cc7bb4fc2457bff74355a1adfd65e8c72eff9ba25",
+    "mix": "fdfdfa86a393a0912419a4997a35ad63fb7c5a577f93cb42332bd645f71326d7",
+    "backing": "dc283f9cf1f8f0f1cdbaf409c97bad02bf56677b4820f4b158cafba8164457d6",
+    "mix_instrumental": "b231671954ffae4b19bef0927b475d5b60a62c8038a1588539f4b6dc0c9c23f8",
+    "backing_instrumental": "218a23ce72b27e79bfe57ab682955a95d4c884f0cdca0f796fc71728a5fa522b"
+   },
+   "template": {
+    "lufs": -18.15,
+    "vs_reference_lu": -0.4,
+    "v3": 1.0834481194375958,
+    "v3_no_level": 1.1581940236037216,
+    "v2": 0.9690851610179886,
+    "v2_no_level": 1.0233733236930747,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.77,
+    "vs_reference_lu": 0.98,
+    "v3": 1.544231154989572,
+    "v3_no_level": 1.6406178251203276,
+    "v2": 1.3418102418917481,
+    "v2_no_level": 1.408232648971645,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -5.66,
+       "vs_template_db": 12.4,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -6.16,
+       "vs_template_db": 11.91,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -2.24,
+       "vs_template_db": 15.82,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.74,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.08,
+        "before": 2.7,
+        "after": -9.4,
+        "clamped": false,
+        "lufs_after": -17.72,
+        "residual_db": 0.02,
+        "trial_before": 218,
+        "trial_after": 290,
+        "total_before": 0.6618,
+        "total_after": 1.0079
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.58,
+        "before": 3.1,
+        "after": -8.5,
+        "clamped": false,
+        "lufs_after": -17.67,
+        "residual_db": 0.07,
+        "trial_before": 235,
+        "trial_after": 291,
+        "total_before": 0.7331,
+        "total_after": 1.0482
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -15.5,
+        "before": 0.4,
+        "after": -15.1,
+        "clamped": false,
+        "lufs_after": -17.8,
+        "residual_db": -0.06,
+        "trial_before": 246,
+        "trial_after": 292,
+        "total_before": 0.7705,
+        "total_after": 1.0759
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Nosso Mundo Deixou De Existir/ElecGtr03",
+   "reference_lufs": -18.24112269257386,
+   "crops": {
+    "di": "d6b6c584693c45e1d38c22770c9f71a9c84245a675fe5ad925397b01a8048dc2",
+    "reference": "645598dea297e57ef5f53c4c338ce9b540f91e5b16542f077a78365e0e64cf38",
+    "mix": "9b360c4e6112fbe83ca106ac31d2066373e62e59e96625e3eb5ec3cbccf43214",
+    "backing": "60abc55a4917f78cb7f2c7340c935c7f5fd0026b63e32caedaf61f2b5d694ae3",
+    "mix_instrumental": "e34eb8608b566457326178000747e80db4ed0d2602b791d8ffd6094174b24d4e",
+    "backing_instrumental": "9abc92b6e0dbebde410c970394424045b3e9f4acce7f56590ca57b06200839aa"
+   },
+   "template": {
+    "lufs": -18.74,
+    "vs_reference_lu": -0.5,
+    "v3": 1.7501353267771769,
+    "v3_no_level": 1.8751460104701119,
+    "v2": 1.512869758944754,
+    "v2_no_level": 1.6006656127889771,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.18,
+    "vs_reference_lu": 0.06,
+    "v3": 1.7005048970135757,
+    "v3_no_level": 1.8331763362514892,
+    "v2": 1.5171347651423173,
+    "v2_no_level": 1.6147739889559465,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.82,
+       "vs_template_db": 13.24,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -9.52,
+       "vs_template_db": 8.54,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -7.13,
+       "vs_template_db": 10.93,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.24,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.42,
+        "before": 9.2,
+        "after": -4.2,
+        "clamped": false,
+        "lufs_after": -18.17,
+        "residual_db": 0.07,
+        "trial_before": 251,
+        "trial_after": 290,
+        "total_before": 1.276,
+        "total_after": 1.4533
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -8.72,
+        "before": 10.0,
+        "after": 1.3,
+        "clamped": false,
+        "lufs_after": -18.16,
+        "residual_db": 0.08,
+        "trial_before": 243,
+        "trial_after": 291,
+        "total_before": 1.2672,
+        "total_after": 1.4551
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.11,
+        "before": 9.5,
+        "after": -1.6,
+        "clamped": false,
+        "lufs_after": -18.23,
+        "residual_db": 0.01,
+        "trial_before": 262,
+        "trial_after": 292,
+        "total_before": 1.1965,
+        "total_after": 1.432
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr1",
+   "reference_lufs": -19.918900426194938,
+   "crops": {
+    "di": "3920ba8856c6769961ce758ce0dc7207b864cfdfa74adb5b752f6885a8515629",
+    "reference": "97fb54a3f9bc0e7815cc9489bc72672e1aad1091629ce847e5c3f24b73b3e7e4",
+    "mix": "a9e232b7eb9cde2c67f0c3a11f611df057a0cfe73e910c375acab2c408bc1b8d",
+    "backing": "8e4f9ebdb608588f27207cd35be571cbd6b4f96634013a85dbcc887196822a18",
+    "mix_instrumental": "c720527bfb82429490555c02fb0d08dd4e9effd01c3d2998125a43d1ec162876",
+    "backing_instrumental": "3604a454f347c509505b447625bcef17f9a85c1c052675fa32b51a603d6f477e"
+   },
+   "template": {
+    "lufs": -16.88,
+    "vs_reference_lu": 3.03,
+    "v3": 1.3257261464324979,
+    "v3_no_level": 1.3503887369403265,
+    "v2": 1.3257261464324979,
+    "v2_no_level": 1.3503887369403265,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.57,
+    "vs_reference_lu": 3.35,
+    "v3": 1.2815380670680447,
+    "v3_no_level": 1.2945542302576272,
+    "v2": 1.2815380670680447,
+    "v2_no_level": 1.2945542302576272,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.05,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -6.5,
+       "vs_template_db": 11.55,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -7.1,
+       "vs_template_db": 10.95,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -11.18,
+       "vs_template_db": 6.87,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.92,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.42,
+        "before": 6.72,
+        "after": -6.7,
+        "clamped": false,
+        "lufs_after": -19.96,
+        "residual_db": -0.04,
+        "trial_before": 254,
+        "trial_after": 298,
+        "total_before": 0.641,
+        "total_after": 0.9851
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.82,
+        "before": 6.72,
+        "after": -6.1,
+        "clamped": false,
+        "lufs_after": -19.77,
+        "residual_db": 0.15,
+        "trial_before": 246,
+        "trial_after": 299,
+        "total_before": 0.6586,
+        "total_after": 0.9608
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -8.74,
+        "before": 6.72,
+        "after": -2.0,
+        "clamped": false,
+        "lufs_after": -19.88,
+        "residual_db": 0.04,
+        "trial_before": 268,
+        "trial_after": 300,
+        "total_before": 0.6505,
+        "total_after": 0.8879
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr2",
+   "reference_lufs": -19.646842255772444,
+   "crops": {
+    "di": "5de10fe27c6f417265098aa67c22ee8460354fe708265928f9d4f7cb0b829d66",
+    "reference": "12bbf177c3ea2170d3537518898bf36e91e352974eafdc52b8ffa64c4838d443",
+    "mix": "aee8300f5bd28334b3ebcd5136d16ef2441da60223e88c515a3c3390973688ad",
+    "backing": "6ec241e1edd863b3e5e07de25b934aa8261329e9aa45d9378790f41d3136ee27",
+    "mix_instrumental": "52090a2392ab3c93dfb49f6e0dd1a2493edcf7c730b52facf5912535520ce20d",
+    "backing_instrumental": "eaab43d450f5b2bb633f809fe916430418c262b5ff77089ce45961adeab15fb4"
+   },
+   "template": {
+    "lufs": -16.71,
+    "vs_reference_lu": 2.94,
+    "v3": 1.6047174804284188,
+    "v3_no_level": 1.654037281514873,
+    "v2": 1.6047174804284188,
+    "v2_no_level": 1.654037281514873,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -17.92,
+    "vs_reference_lu": 1.72,
+    "v3": 1.5948833861955585,
+    "v3_no_level": 1.6752689166846815,
+    "v2": 1.5948833861955585,
+    "v2_no_level": 1.6752689166846815,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -9.69,
+       "vs_template_db": 8.37,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.35,
+       "vs_template_db": 12.71,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -13.83,
+       "vs_template_db": 4.23,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.65,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -9.96,
+        "before": -1.3,
+        "after": -11.3,
+        "clamped": false,
+        "lufs_after": -19.55,
+        "residual_db": 0.1,
+        "trial_before": 241,
+        "trial_after": 290,
+        "total_before": 0.9319,
+        "total_after": 1.1728
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -14.3,
+        "before": -3.1,
+        "after": -17.4,
+        "clamped": false,
+        "lufs_after": -19.66,
+        "residual_db": -0.01,
+        "trial_before": 204,
+        "trial_after": 291,
+        "total_before": 0.9831,
+        "total_after": 1.1504
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -5.82,
+        "before": -11.3,
+        "after": -17.1,
+        "clamped": false,
+        "lufs_after": -19.62,
+        "residual_db": 0.03,
+        "trial_before": 246,
+        "trial_after": 292,
+        "total_before": 0.9876,
+        "total_after": 1.1535
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr3",
+   "reference_lufs": -27.540806848925694,
+   "crops": {
+    "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4",
+    "reference": "5cd0ae05d36f3f8f49e16d81e93b53b69a25b22f3e9e655063b70cc2761e9142",
+    "mix": "a281420788ed2a396eb481a7bdb1e29142dfd80e5b53835b8b3d81adf41f3554",
+    "backing": "25cb6299c366d243d0af035eeaf02945165ced74cb9c20b4af778111a3aab900",
+    "mix_instrumental": "685564d33d70266117098fd85494ac1fac2979264f794f595675bd0e08921387",
+    "backing_instrumental": "6605af795d7945346c475878f991c1851d50e9f4fcdd60b203643fdd2f460e2c"
+   },
+   "template": {
+    "lufs": -18.5,
+    "vs_reference_lu": 9.04,
+    "v3": 1.8889741979578807,
+    "v3_no_level": 1.8002090030598186,
+    "v2": 1.6171872915814227,
+    "v2_no_level": 1.526134288858472,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -23.54,
+    "vs_reference_lu": 4.0,
+    "v3": 2.6259275877913084,
+    "v3_no_level": 2.727974502616938,
+    "v2": 2.2686803995110396,
+    "v2_no_level": 2.3296812951313246,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -9.17,
+       "vs_template_db": 8.89,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -11.66,
+       "vs_template_db": 6.4,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -10.44,
+       "vs_template_db": 7.62,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -27.54,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -18.37,
+        "before": -0.5,
+        "after": -18.9,
+        "clamped": false,
+        "lufs_after": -27.44,
+        "residual_db": 0.1,
+        "trial_before": 258,
+        "trial_after": 300,
+        "total_before": 1.3039,
+        "total_after": 1.6115
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -15.88,
+        "before": 2.0,
+        "after": -13.9,
+        "clamped": false,
+        "lufs_after": -27.49,
+        "residual_db": 0.05,
+        "trial_before": 236,
+        "trial_after": 301,
+        "total_before": 1.3266,
+        "total_after": 1.6608
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -17.1,
+        "before": -1.7,
+        "after": -18.8,
+        "clamped": false,
+        "lufs_after": -27.55,
+        "residual_db": -0.01,
+        "trial_before": 161,
+        "trial_after": 302,
+        "total_before": 1.3478,
+        "total_after": 1.6258
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/It Was My Fault For Waiting/ElecGtr4",
+   "reference_lufs": -30.31973119379635,
+   "crops": {
+    "di": "8220506429afe96e775b637e2aedcebb672dfabc26a15f686f72b1b394bf0000",
+    "reference": "77c232fc97cb9183b5c19a498f3c43476228f09ede1e2532bcaddcbc4f5b46c8",
+    "mix": "14216d0bfdc9a12384b77cdac0d9e6428e9447ef212d1b25bbcb34b33e038bf0",
+    "backing": "29638f2cfc28e937921a64c3044b2193f7d735d6c73d4163c1e1a7ca4e7ceec7",
+    "mix_instrumental": "a43fd0b98407ce2b1e903567547809b9e84788191867818e26bdbdc2a8370e9a",
+    "backing_instrumental": "9c3a67c288e5e0ab4543ed5cc0106e73fb4a5191631f54ecc1febbe2b3c5f968"
+   },
+   "template": {
+    "lufs": -18.93,
+    "vs_reference_lu": 11.39,
+    "v3": 1.1168160890659917,
+    "v3_no_level": 0.9052489382027804,
+    "v2": 1.2509912222926367,
+    "v2_no_level": 1.0849689107030258,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -23.77,
+    "vs_reference_lu": 6.54,
+    "v3": 1.7353150179286936,
+    "v3_no_level": 1.699945150923064,
+    "v2": 1.7800171252293664,
+    "v2_no_level": 1.7537138942660642,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -15.35,
+       "vs_template_db": 2.71,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -12.86,
+       "vs_template_db": 5.2,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -15.53,
+       "vs_template_db": 2.53,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -30.32,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.97,
+        "before": -11.9,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -27.39,
+        "residual_db": 2.93,
+        "trial_before": 249,
+        "trial_after": 300,
+        "total_before": 0.956,
+        "total_after": 1.199
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -17.46,
+        "before": -4.6,
+        "after": -22.1,
+        "clamped": false,
+        "lufs_after": -30.37,
+        "residual_db": -0.05,
+        "trial_before": 242,
+        "trial_after": 301,
+        "total_before": 0.9239,
+        "total_after": 1.2586
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -14.79,
+        "before": -4.7,
+        "after": -19.5,
+        "clamped": false,
+        "lufs_after": -30.35,
+        "residual_db": -0.03,
+        "trial_before": 192,
+        "trial_after": 302,
+        "total_before": 0.8966,
+        "total_after": 1.2227
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr07",
+   "reference_lufs": -19.065141007326048,
+   "crops": {
+    "di": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c",
+    "reference": "09a1134a39f81514d035bd3f21c9654c2e7ba28df3ba01fe93f2ff5d5b02e9b3",
+    "mix": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+    "backing": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e",
+    "mix_instrumental": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e",
+    "backing_instrumental": "2fffda5d41ff257ff95391c015ae015545d6199cdc07622477630aa3da9d1d1e"
+   },
+   "template": {
+    "lufs": -19.33,
+    "vs_reference_lu": -0.26,
+    "v3": 1.4566592094650679,
+    "v3_no_level": 1.5648165154754679,
+    "v2": 1.3064242510424495,
+    "v2_no_level": 1.385973658719131,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.37,
+    "vs_reference_lu": 0.7,
+    "v3": 1.618852412970076,
+    "v3_no_level": 1.7282354982045556,
+    "v2": 1.618852412970076,
+    "v2_no_level": 1.7282354982045556,
+    "fallback_to_template": false,
+    "minutes": 8.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.31,
+       "vs_template_db": 13.76,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -9.86,
+       "vs_template_db": 8.2,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -6.21,
+       "vs_template_db": 11.86,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.07,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.76,
+        "before": 7.57,
+        "after": -7.2,
+        "clamped": false,
+        "lufs_after": -19.06,
+        "residual_db": 0.01,
+        "trial_before": 226,
+        "trial_after": 295,
+        "total_before": 0.4446,
+        "total_after": 1.2223
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -9.21,
+        "before": 7.57,
+        "after": -1.6,
+        "clamped": false,
+        "lufs_after": -18.96,
+        "residual_db": 0.11,
+        "trial_before": 269,
+        "trial_after": 296,
+        "total_before": 0.4725,
+        "total_after": 0.7527
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.86,
+        "before": 7.57,
+        "after": -5.3,
+        "clamped": false,
+        "lufs_after": -19.18,
+        "residual_db": -0.11,
+        "trial_before": 270,
+        "trial_after": 297,
+        "total_before": 0.4773,
+        "total_after": 0.9475
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Today's The Day/ElecGtr10",
+   "reference_lufs": -19.32506125640489,
+   "crops": {
+    "di": "146bae7fb6d8427ef292ab131e36c77338608809cdefeef14a4981ca61afdf1b",
+    "reference": "91c67c2421425bae5481c726f1f2447d64d30fceed54972cb5b87f934ff674b9",
+    "mix": "1d69fe32d4558b51104b44bf798e0aeb61705826074e5f2ff0bc7b161f7eb591",
+    "backing": "c0efcfc1963c06bf3db84d3149061d05ee5b2d644f7208c89579d61321d4e320",
+    "mix_instrumental": "e633c00238414c84090f27dbc99dcedc82c0e10a09140da6d22280ed6acc914c",
+    "backing_instrumental": "fffe2c39092220b6702660738cf9144df8d0c49dcb656d34d74c68a6b92ead3b"
+   },
+   "template": {
+    "lufs": -19.75,
+    "vs_reference_lu": -0.43,
+    "v3": 1.4497688734507286,
+    "v3_no_level": 1.5531716792494703,
+    "v2": 1.3337663368980093,
+    "v2_no_level": 1.4116206632174446,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -20.75,
+    "vs_reference_lu": -1.42,
+    "v3": 0.8939842232171277,
+    "v3_no_level": 0.9271935039974271,
+    "v2": 0.8866740305427483,
+    "v2_no_level": 0.9136310325346665,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -9.88,
+       "vs_template_db": 8.18,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -11.79,
+       "vs_template_db": 6.27,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -12.22,
+       "vs_template_db": 5.84,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.33,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -9.45,
+        "before": 7.31,
+        "after": -2.1,
+        "clamped": false,
+        "lufs_after": -19.28,
+        "residual_db": 0.05,
+        "trial_before": 253,
+        "trial_after": 300,
+        "total_before": 0.9281,
+        "total_after": 1.0868
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -7.54,
+        "before": 7.31,
+        "after": -0.2,
+        "clamped": false,
+        "lufs_after": -19.29,
+        "residual_db": 0.04,
+        "trial_before": 269,
+        "trial_after": 301,
+        "total_before": 0.9688,
+        "total_after": 1.1323
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -7.11,
+        "before": 7.31,
+        "after": 0.2,
+        "clamped": false,
+        "lufs_after": -19.32,
+        "residual_db": 0.01,
+        "trial_before": 254,
+        "trial_after": 302,
+        "total_before": 1.0615,
+        "total_after": 1.2237
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr1",
+   "reference_lufs": -31.532307942338687,
+   "crops": {
+    "di": "246491edfcac92937413d6539d14a8ff15cfd900a8f75f98fc998ae24dec35bb",
+    "reference": "7f9e0a0213165987f68094904818cb656d04e60e107fa94009330fd48389f3df",
+    "mix": "af8b6dc9fbbefa546ebd9033fca07ce9e35e092f2775fae856aed850e38551d8",
+    "backing": "e05ef762027f21af8c0985e046ba526c64d8b47bfd2a1f5047c6b348f803f421",
+    "mix_instrumental": "67abef3533122dc1d66ca93fdecfe0c265c1f157bc5fd7f9f1614d7f3b43080b",
+    "backing_instrumental": "219a604215288bfb7e5fb70f43d5d9d7429492df7f36c8dd8b9e5f73e7e28042"
+   },
+   "template": {
+    "lufs": -19.33,
+    "vs_reference_lu": 12.2,
+    "v3": 1.7878115835940045,
+    "v3_no_level": 1.5436485389790762,
+    "v2": 1.9194657335350105,
+    "v2_no_level": 1.7405323224407054,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -21.73,
+    "vs_reference_lu": 9.81,
+    "v3": 1.5974064335503726,
+    "v3_no_level": 1.4185571228593408,
+    "v2": 1.4941445649480052,
+    "v2_no_level": 1.3464343898047832,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -21.79,
+       "vs_template_db": -3.73,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -14.23,
+       "vs_template_db": 3.83,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -15.9,
+       "vs_template_db": 2.17,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -31.53,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -9.74,
+        "before": -20.2,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -25.33,
+        "residual_db": 6.2,
+        "trial_before": 240,
+        "trial_after": 290,
+        "total_before": 0.9703,
+        "total_after": 1.1379
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -17.3,
+        "before": -16.3,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -21.86,
+        "residual_db": 9.67,
+        "trial_before": 256,
+        "trial_after": 291,
+        "total_before": 1.0035,
+        "total_after": 1.0387
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -15.63,
+        "before": -15.6,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -24.3,
+        "residual_db": 7.23,
+        "trial_before": 262,
+        "trial_after": 292,
+        "total_before": 1.0537,
+        "total_after": 1.2272
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr2",
+   "reference_lufs": -22.34655331093456,
+   "crops": {
+    "di": "2538e174f2eab9a739624d13c9754ac5c2a50956ba1c2218c5c5d1a8a499b74c",
+    "reference": "501e3833a5f17b263fae9556874d96016dd6ea07ce42225e8cd074f688a83561",
+    "mix": "db1129ed2c6552789a9bfc256233afd821edf6898f0a98ee4a3ba455ba7fb5c5",
+    "backing": "03b83bd17c9f726f33beb7af85bbe6e6a44de0fe750bd2ab886320bff3465603",
+    "mix_instrumental": "ea32ecbcd95981a8f515a894bf2934676992aaf891a983cf27dd8e004f4f4c70",
+    "backing_instrumental": "578e465932684c821859e8b0dfee5a033e1f0ec46d32d8be1fe4274744fd469f"
+   },
+   "template": {
+    "lufs": -19.75,
+    "vs_reference_lu": 2.59,
+    "v3": 1.8763130320868273,
+    "v3_no_level": 1.9560219556726295,
+    "v2": 5.62029047881813,
+    "v2_no_level": 5.930309423088876,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -21.81,
+    "vs_reference_lu": 0.54,
+    "v3": 0.9146234191034548,
+    "v3_no_level": 0.9726200048221485,
+    "v2": 5.424354202972154,
+    "v2_no_level": 5.76637730316599,
+    "fallback_to_template": false,
+    "minutes": 8.5,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -7.58,
+       "vs_template_db": 10.48,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -9.43,
+       "vs_template_db": 8.63,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": 0.19,
+       "vs_template_db": 18.25,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -22.35,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.77,
+        "before": 2.9,
+        "after": -11.9,
+        "clamped": false,
+        "lufs_after": -22.2,
+        "residual_db": 0.15,
+        "trial_before": 183,
+        "trial_after": 300,
+        "total_before": 1.5127,
+        "total_after": 1.757
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.92,
+        "before": -9.8,
+        "after": -22.7,
+        "clamped": false,
+        "lufs_after": -22.32,
+        "residual_db": 0.03,
+        "trial_before": 181,
+        "trial_after": 301,
+        "total_before": 1.4699,
+        "total_after": 1.8359
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -22.54,
+        "before": -0.9,
+        "after": -23.4,
+        "clamped": false,
+        "lufs_after": -22.35,
+        "residual_db": 0.0,
+        "trial_before": 275,
+        "trial_after": 302,
+        "total_before": 1.4936,
+        "total_after": 1.6406
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr3",
+   "reference_lufs": -26.20445977900647,
+   "crops": {
+    "di": "d1a66b47c0fe9b738d824e5573ded3f1d89d0ab079d9259e4d5f2e587009c1a6",
+    "reference": "1e3c154589b263f9b8ab844d8222aa48ee7b8c101456292045d28316bfa18be5",
+    "mix": "990ec3342ffb991bca87e6adddd064f9790eb99aa1c2762a5ddfac899e457d2c",
+    "backing": "a60514a7a22e1008bbda2150a696b70720efd5a007e887b36e0d75d08ca57731",
+    "mix_instrumental": "97c0b7793904c7806bfb73d5af8d32a1973b95c2c9bc27c6780cb03ad6cdb925",
+    "backing_instrumental": "816679db60b68e173c4bda15b76e77347ea868f698771ba7beee801c8ad32fb8"
+   },
+   "template": {
+    "lufs": -18.74,
+    "vs_reference_lu": 7.46,
+    "v3": 1.2322059001370573,
+    "v3_no_level": 1.133169523832088,
+    "v2": 1.0513250941215588,
+    "v2_no_level": 0.9577158611294865,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -9.96,
+    "vs_reference_lu": 16.24,
+    "v3": 1.828515485229424,
+    "v3_no_level": 1.5455035498527998,
+    "v2": 1.5989519563799066,
+    "v2_no_level": 1.350187953535118,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -13.45,
+       "vs_template_db": 4.62,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -12.57,
+       "vs_template_db": 5.5,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -13.69,
+       "vs_template_db": 4.37,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -26.2,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.75,
+        "before": -20.1,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -16.89,
+        "residual_db": 9.31,
+        "trial_before": 271,
+        "trial_after": 300,
+        "total_before": 0.6131,
+        "total_after": 0.6046
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -13.63,
+        "before": -18.9,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -17.97,
+        "residual_db": 8.23,
+        "trial_before": 243,
+        "trial_after": 301,
+        "total_before": 0.5914,
+        "total_after": 0.6015
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.51,
+        "before": -15.1,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -22.53,
+        "residual_db": 3.67,
+        "trial_before": 206,
+        "trial_after": 302,
+        "total_before": 0.6074,
+        "total_after": 0.8747
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr4",
+   "reference_lufs": -17.389281497844784,
+   "crops": {
+    "di": "703d871f3c893c5b1bb3c0e2fe6e2f6eb8b9a874e8d6f73e9476acfa2dad74a5",
+    "reference": "e3677ccb468647d1512ea9ceb3adadbca7a611a86b1ed20bb22842f60733ff35",
+    "mix": "bb5c5104f6de7968b3b66d61304e4c33d4584111db51b2d92cfad5ae709c39b5",
+    "backing": "181bb24095061836112327db3834ceafc07c4ac56d3ed433262809aab933bc03",
+    "mix_instrumental": "179671fd597e53e5490c419d528e66633ae7970fda79d8e2abd418e76193a099",
+    "backing_instrumental": "ecadd03a30d9d563b1b1f4fce2777f99d61555f8cc5ba4f2c75c230562428a9b"
+   },
+   "template": {
+    "lufs": -18.56,
+    "vs_reference_lu": -1.17,
+    "v3": 1.681778551825691,
+    "v3_no_level": 1.8201833966641578,
+    "v2": 1.681778551825691,
+    "v2_no_level": 1.8201833966641578,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.72,
+    "vs_reference_lu": 0.67,
+    "v3": 1.4299041186967103,
+    "v3_no_level": 1.5591795599856435,
+    "v2": 1.4299041186967103,
+    "v2_no_level": 1.5591795599856435,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.05,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -2.39,
+       "vs_template_db": 15.66,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -4.16,
+       "vs_template_db": 13.89,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.5,
+       "vs_template_db": 13.55,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.39,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -15.0,
+        "before": 9.25,
+        "after": -5.8,
+        "clamped": false,
+        "lufs_after": -17.41,
+        "residual_db": -0.02,
+        "trial_before": 151,
+        "trial_after": 298,
+        "total_before": 0.9737,
+        "total_after": 1.2849
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -13.23,
+        "before": 9.25,
+        "after": -4.0,
+        "clamped": false,
+        "lufs_after": -17.33,
+        "residual_db": 0.06,
+        "trial_before": 270,
+        "trial_after": 299,
+        "total_before": 0.9635,
+        "total_after": 1.313
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.89,
+        "before": 9.25,
+        "after": -3.6,
+        "clamped": false,
+        "lufs_after": -17.34,
+        "residual_db": 0.05,
+        "trial_before": 265,
+        "trial_after": 300,
+        "total_before": 0.9607,
+        "total_after": 1.3729
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Prodigal/ElecGtr5",
+   "reference_lufs": -30.28343784380781,
+   "crops": {
+    "di": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af",
+    "reference": "6c958a5df2ec3ce8e028420b77b419b5ada3b6eedbced3bee2c5cb558f64eb82",
+    "mix": "532c288ad4a58d10ec3ecef4b25ceeb76a8fc339df613d000cd628641284f0a6",
+    "backing": "169498245b2644cb0e047ccd062a4bf90a7c0b01820a163fdd1352274eac683e",
+    "mix_instrumental": "df56e953a8214bfcc12b8caf217442c765bccf2143fa090eb10228ed553f17a7",
+    "backing_instrumental": "071d1b5e81fc09103faa8f327c8c205e32f9ff9bf64890475e603bd5abd97078"
+   },
+   "template": {
+    "lufs": -21.43,
+    "vs_reference_lu": 8.85,
+    "v3": 0.9421168839361872,
+    "v3_no_level": 0.7835997958258861,
+    "v2": 0.8979035355850419,
+    "v2_no_level": 0.7640711574710227,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -30.19,
+    "vs_reference_lu": 0.09,
+    "v3": 1.4571400585677725,
+    "v3_no_level": 1.5698090105599651,
+    "v2": 1.67679738773365,
+    "v2_no_level": 1.784197217368453,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -15.98,
+       "vs_template_db": 2.08,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -20.47,
+       "vs_template_db": -2.41,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -17.98,
+       "vs_template_db": 0.08,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -30.28,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.3,
+        "before": -7.2,
+        "after": -21.5,
+        "clamped": false,
+        "lufs_after": -30.15,
+        "residual_db": 0.13,
+        "trial_before": 254,
+        "trial_after": 300,
+        "total_before": 0.6257,
+        "total_after": 0.7784
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -9.81,
+        "before": -5.1,
+        "after": -14.9,
+        "clamped": false,
+        "lufs_after": -30.45,
+        "residual_db": -0.17,
+        "trial_before": 242,
+        "trial_after": 301,
+        "total_before": 0.6495,
+        "total_after": 0.8875
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.3,
+        "before": -4.9,
+        "after": -17.2,
+        "clamped": false,
+        "lufs_after": -30.32,
+        "residual_db": -0.04,
+        "trial_before": 144,
+        "trial_after": 302,
+        "total_before": 0.6323,
+        "total_after": 1.0646
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr2",
+   "reference_lufs": -29.666203952982016,
+   "crops": {
+    "di": "2b428e29c58595a251b28f2e5ebf440d2eac0cb0fedd62b8134221ecb4c55ee7",
+    "reference": "253305c814d1837e77d95ce6bbe65c2c16a79197b46f6a4ccf6bbb5859e264d7",
+    "mix": "700c80fbc56f2f8db02bc15ec7b102326be674173e01ac5d0a8b7cd3fa7c1eeb",
+    "backing": "889e48205341a4cb2af5ebc35d511726c7daad42d1cd023aa6b82522e5920796",
+    "mix_instrumental": "d23f23948b70cc1169e95ce3301fc59f995d63b6c8d025fb27f3a9f613504243",
+    "backing_instrumental": "104ef594d17eb057e480d7b23a07af20e37d6afd4eb823e85423c33565a813a3"
+   },
+   "template": {
+    "lufs": -20.29,
+    "vs_reference_lu": 9.37,
+    "v3": 1.5953739176860249,
+    "v3_no_level": 1.4744823848717636,
+    "v2": 1.375978024516402,
+    "v2_no_level": 1.2618026782892107,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -25.48,
+    "vs_reference_lu": 4.19,
+    "v3": 2.0283276703627866,
+    "v3_no_level": 2.078195644338796,
+    "v2": 1.7927778199196616,
+    "v2_no_level": 1.8186111560013785,
+    "fallback_to_template": false,
+    "minutes": 8.5,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -18.9,
+       "vs_template_db": -0.84,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -21.35,
+       "vs_template_db": -3.29,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -12.15,
+       "vs_template_db": 5.92,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -29.67,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -10.77,
+        "before": -13.3,
+        "after": -24.0,
+        "clamped": false,
+        "lufs_after": -29.27,
+        "residual_db": 0.4,
+        "trial_before": 274,
+        "trial_after": 300,
+        "total_before": 1.0069,
+        "total_after": 1.1917
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -8.32,
+        "before": -15.5,
+        "after": -23.8,
+        "clamped": false,
+        "lufs_after": -29.91,
+        "residual_db": -0.24,
+        "trial_before": 275,
+        "trial_after": 301,
+        "total_before": 1.0206,
+        "total_after": 1.2144
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -17.52,
+        "before": -7.5,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -28.63,
+        "residual_db": 1.04,
+        "trial_before": 253,
+        "trial_after": 302,
+        "total_before": 0.9689,
+        "total_after": 1.202
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr3",
+   "reference_lufs": -18.280368624998832,
+   "crops": {
+    "di": "55951b8dd9528468ea34f75fa1daa90c339192c3f5d8ff470a59383f5b45a1db",
+    "reference": "327416249e6217648c3c288e336bdcd7048bb1a1f8700d61381202e8b2adc5e9",
+    "mix": "5f2386d1b2cdf770d85481f66affba3a3a4f2032de6697a389fc2bbd4076cd5d",
+    "backing": "9239d5a5b05e7720b31a2e500fad5b5ae13a77b0b224db1aed98254b29336b3a",
+    "mix_instrumental": "25e5bdc3a90577b209c756428c1fd986f96763d7388dc2eb92dbfb6cfd36518c",
+    "backing_instrumental": "4edf1251f62c27901bc57770fdd3c0059f133b2ac124b861f90b5dc7ef7f20aa"
+   },
+   "template": {
+    "lufs": -19.66,
+    "vs_reference_lu": -1.38,
+    "v3": 1.4798922155510763,
+    "v3_no_level": 1.5891663815029773,
+    "v2": 1.2004575603351348,
+    "v2_no_level": 1.2621623570297293,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -12.66,
+    "vs_reference_lu": 5.62,
+    "v3": 1.8661629381189266,
+    "v3_no_level": 1.8655968542862102,
+    "v2": 1.6343374585129273,
+    "v2_no_level": 1.6187507710246398,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -2.92,
+       "vs_template_db": 15.14,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.49,
+       "vs_template_db": 12.57,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -6.69,
+       "vs_template_db": 11.37,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.28,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -15.36,
+        "before": 8.36,
+        "after": -7.0,
+        "clamped": false,
+        "lufs_after": -18.03,
+        "residual_db": 0.25,
+        "trial_before": 263,
+        "trial_after": 290,
+        "total_before": 1.0259,
+        "total_after": 1.1436
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.79,
+        "before": 8.36,
+        "after": -4.4,
+        "clamped": false,
+        "lufs_after": -18.26,
+        "residual_db": 0.02,
+        "trial_before": 234,
+        "trial_after": 291,
+        "total_before": 1.0091,
+        "total_after": 1.4675
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.59,
+        "before": 8.36,
+        "after": -3.2,
+        "clamped": false,
+        "lufs_after": -18.4,
+        "residual_db": -0.12,
+        "trial_before": 238,
+        "trial_after": 292,
+        "total_before": 0.9681,
+        "total_after": 1.5236
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr4",
+   "reference_lufs": -23.898266662173747,
+   "crops": {
+    "di": "3b0faca1c51a6e3bd36dd750a2cfd6ea295c5b642cd727c104d9aa8b7adc1ec8",
+    "reference": "1630b78b23d1085daac6029a102c7ce77c1901c368cb1aab9b1c3b81cd9abc92",
+    "mix": "a872642bfae5aefd966eee539027bfff885fe9da1d0f9dc93566ba77bbef41bf",
+    "backing": "fa03fff699a620b6c93be836868a03e1cf6cffd0a036e1f664df20dd259d7da4",
+    "mix_instrumental": "0fcdddd94181fcabc410840d17d99bde6848a3cb64a0bda5fa1ad7b55faf2f5e",
+    "backing_instrumental": "49f429503ad402f22764149d96d0c3b63323fc84b2c048c6ba28df1c8ce69e7a"
+   },
+   "template": {
+    "lufs": -17.84,
+    "vs_reference_lu": 6.06,
+    "v3": 1.1165918371461672,
+    "v3_no_level": 1.0452701400787594,
+    "v2": 0.9613492256849925,
+    "v2_no_level": 0.8923067838818398,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.52,
+    "vs_reference_lu": 5.38,
+    "v3": 1.161290773181104,
+    "v3_no_level": 1.1113926763269806,
+    "v2": 0.9981003670334695,
+    "v2_no_level": 0.9462373474921739,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -10.69,
+       "vs_template_db": 7.37,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -9.96,
+       "vs_template_db": 8.1,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -12.03,
+       "vs_template_db": 6.03,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -23.9,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.21,
+        "before": -0.1,
+        "after": -13.3,
+        "clamped": false,
+        "lufs_after": -23.84,
+        "residual_db": 0.06,
+        "trial_before": 217,
+        "trial_after": 290,
+        "total_before": 0.3988,
+        "total_after": 0.7626
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -13.94,
+        "before": 3.6,
+        "after": -10.3,
+        "clamped": false,
+        "lufs_after": -23.73,
+        "residual_db": 0.17,
+        "trial_before": 191,
+        "trial_after": 291,
+        "total_before": 0.4758,
+        "total_after": 0.8092
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.87,
+        "before": -9.9,
+        "after": -21.8,
+        "clamped": false,
+        "lufs_after": -23.95,
+        "residual_db": -0.05,
+        "trial_before": 203,
+        "trial_after": 292,
+        "total_before": 0.5361,
+        "total_after": 0.8797
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Passing Ships/ElecGtr6",
+   "reference_lufs": -15.012893380794852,
+   "crops": {
+    "di": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c",
+    "reference": "640ed93679f07ad2e205aa1f98ec5c7357631a9701b0cd1675fe6ba2fa56dc11",
+    "mix": "e3593dfbb5873961ef7e6af3d623a3ce7e23bded65851a0e740bc93e443c3f96",
+    "backing": "c7f816ae8add0560e0b9fdeec615714563e392a65fc3426cf2fc7d5e12fba03b",
+    "mix_instrumental": "cd45b7a0cc5f06a6251cc817dc75805e1c2c0197f7b80c1f2fbec2844d48936c",
+    "backing_instrumental": "9df140aaa9456196bdba7f0e8662ad4edd8560b645095a6fde62769fbada7b8b"
+   },
+   "template": {
+    "lufs": -17.03,
+    "vs_reference_lu": -2.01,
+    "v3": 0.6354269623257444,
+    "v3_no_level": 0.6313655654320741,
+    "v2": 0.5212539388609881,
+    "v2_no_level": 0.5085806559882926,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -11.22,
+    "vs_reference_lu": 3.79,
+    "v3": 1.2223173354623933,
+    "v3_no_level": 1.2179227642619355,
+    "v2": 0.9970710492690668,
+    "v2_no_level": 0.9748825255970444,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 1.75,
+       "vs_template_db": 19.81,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 2.24,
+       "vs_template_db": 20.3,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.4,
+       "vs_template_db": 13.66,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -15.01,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -16.76,
+        "before": 11.63,
+        "after": -5.1,
+        "clamped": false,
+        "lufs_after": -14.94,
+        "residual_db": 0.07,
+        "trial_before": 7,
+        "trial_after": 290,
+        "total_before": 0.7754,
+        "total_after": 1.0449
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -17.25,
+        "before": 11.63,
+        "after": -5.6,
+        "clamped": false,
+        "lufs_after": -15.0,
+        "residual_db": 0.01,
+        "trial_before": 67,
+        "trial_after": 291,
+        "total_before": 0.7535,
+        "total_after": 1.015
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -10.61,
+        "before": 10.7,
+        "after": 0.1,
+        "clamped": false,
+        "lufs_after": -15.0,
+        "residual_db": 0.01,
+        "trial_before": 173,
+        "trial_after": 292,
+        "total_before": 0.81,
+        "total_after": 1.1126
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr1",
+   "reference_lufs": -17.22169956174666,
+   "crops": {
+    "di": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893",
+    "reference": "7027b8f861fceec99aafe93a51addb74b50b042c54b24404b1cda9e0367c9153",
+    "mix": "8ea0368e4fda9cbb0136abb7b1bdb392b1a1684faa773b947e599206cfaaa946",
+    "backing": "36572bebc532928cdddf629500cf4698d0f2368bb584e507273a87ce71c09caa",
+    "mix_instrumental": "338a70ac44ae63426ca78da62991b10c99ceb71d8911063f07425256b9db6c35",
+    "backing_instrumental": "35314dbcbaa4900ecccb2369b1e1a1a232b29f59f5ff9f8032a66dfc7007ff41"
+   },
+   "template": {
+    "lufs": -18.33,
+    "vs_reference_lu": -1.11,
+    "v3": 0.8316514326090615,
+    "v3_no_level": 0.8680975983413559,
+    "v2": 0.7156394827890624,
+    "v2_no_level": 0.7381811881883491,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -13.53,
+    "vs_reference_lu": 3.69,
+    "v3": 1.2821994634497138,
+    "v3_no_level": 1.2863204737220597,
+    "v2": 1.0956070118157637,
+    "v2_no_level": 1.0868422517167917,
+    "fallback_to_template": false,
+    "minutes": 8.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 0.58,
+       "vs_template_db": 18.64,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 1.21,
+       "vs_template_db": 19.27,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -8.13,
+       "vs_template_db": 9.93,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.22,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -17.8,
+        "before": 9.42,
+        "after": -8.4,
+        "clamped": false,
+        "lufs_after": -17.22,
+        "residual_db": 0.0,
+        "trial_before": 7,
+        "trial_after": 300,
+        "total_before": 1.006,
+        "total_after": 1.2394
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -18.43,
+        "before": 9.42,
+        "after": -9.0,
+        "clamped": false,
+        "lufs_after": -17.27,
+        "residual_db": -0.05,
+        "trial_before": 67,
+        "trial_after": 301,
+        "total_before": 1.0518,
+        "total_after": 1.239
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -9.09,
+        "before": -24.0,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -8.14,
+        "residual_db": 9.08,
+        "trial_before": 264,
+        "trial_after": 302,
+        "total_before": 0.9807,
+        "total_after": 0.9772
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Quicksand/ElecGtr2",
+   "reference_lufs": -22.68008635040345,
+   "crops": {
+    "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce",
+    "reference": "a46fd45c1c0b54fe20ac7269cb0c4fff60052ec7bc6131a9e585d5f4f209cbf9",
+    "mix": "a6fc6f2fe7e7a5654c4966d65993e55d2a387c93cb42ef4979c204ed5656fac6",
+    "backing": "0bd1b731a7db876bd4810ad9797a3473a58d444328a172a27b85ee26abbea180",
+    "mix_instrumental": "f87134d2576ef00d370529074bb2cbc357222486062e2ac1c140ebb4f50e907a",
+    "backing_instrumental": "8c58641f913020ce0ab17fcb521300d27632cee9872976d679c682c3edc5722f"
+   },
+   "template": {
+    "lufs": -17.53,
+    "vs_reference_lu": 5.15,
+    "v3": 0.7244086596100182,
+    "v3_no_level": 0.6460725011581776,
+    "v2": 0.7372633959161073,
+    "v2_no_level": 0.6733892695628101,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -22.6,
+    "vs_reference_lu": 0.08,
+    "v3": 0.7780191126404988,
+    "v3_no_level": 0.837336411006854,
+    "v2": 0.7651118471779501,
+    "v2_no_level": 0.8132713154721642,
+    "fallback_to_template": false,
+    "minutes": 8.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -8.25,
+       "vs_template_db": 9.81,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -11.61,
+       "vs_template_db": 6.45,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -5.37,
+       "vs_template_db": 12.69,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -22.68,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.43,
+        "before": 3.96,
+        "after": -10.5,
+        "clamped": false,
+        "lufs_after": -22.75,
+        "residual_db": -0.07,
+        "trial_before": 234,
+        "trial_after": 290,
+        "total_before": 1.0641,
+        "total_after": 1.2649
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.07,
+        "before": 3.96,
+        "after": -7.1,
+        "clamped": false,
+        "lufs_after": -22.72,
+        "residual_db": -0.04,
+        "trial_before": 252,
+        "trial_after": 291,
+        "total_before": 1.0922,
+        "total_after": 1.3486
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -17.31,
+        "before": 3.96,
+        "after": -13.3,
+        "clamped": false,
+        "lufs_after": -22.67,
+        "residual_db": 0.01,
+        "trial_before": 7,
+        "trial_after": 292,
+        "total_before": 1.0939,
+        "total_after": 1.2764
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr2",
+   "reference_lufs": -11.181691685929126,
+   "crops": {
+    "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa",
+    "reference": "8e0099eb67d4066240154436b979adc253b43ea7b29adcd1e19c3b13133f1d19",
+    "mix": "98559fbc0b85f16d1557dffe2274a1ec8bde9c654a953a808f6ddfda6b4e6ff2",
+    "backing": "80cf2d38c68e65953bb3cf249d6f922e11804d96f42e91a1c3b7d7c5cfaf0942",
+    "mix_instrumental": "cd8158aea60f9619448c9cd3dd7092346de4109dbb70d34cb07e2282c07275c8",
+    "backing_instrumental": "23070ac9f521d932043ef568330f99e130bc483326dfd774a01c0d4424f0545e"
+   },
+   "template": {
+    "lufs": -15.39,
+    "vs_reference_lu": -4.21,
+    "v3": 2.86883707148881,
+    "v3_no_level": 2.9845347350274003,
+    "v2": 2.790198110588461,
+    "v2_no_level": 2.8806458134529254,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -0.74,
+    "vs_reference_lu": 10.44,
+    "v3": 2.1528328554859932,
+    "v3_no_level": 2.0480565019717294,
+    "v2": 1.8571622521295645,
+    "v2_no_level": 1.7513250077032316,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 0.68,
+       "vs_template_db": 18.74,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 0.19,
+       "vs_template_db": 18.25,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": 4.03,
+       "vs_template_db": 22.1,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -11.18,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -11.86,
+        "before": -3.7,
+        "after": -15.6,
+        "clamped": false,
+        "lufs_after": -10.76,
+        "residual_db": 0.42,
+        "trial_before": 222,
+        "trial_after": 290,
+        "total_before": 0.804,
+        "total_after": 1.187
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.37,
+        "before": 4.3,
+        "after": -7.1,
+        "clamped": false,
+        "lufs_after": -11.92,
+        "residual_db": -0.74,
+        "trial_before": 264,
+        "trial_after": 291,
+        "total_before": 0.8152,
+        "total_after": 1.1711
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -15.21,
+        "before": 4.5,
+        "after": -10.7,
+        "clamped": false,
+        "lufs_after": -11.13,
+        "residual_db": 0.05,
+        "trial_before": 198,
+        "trial_after": 292,
+        "total_before": 0.8743,
+        "total_after": 1.2175
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr3",
+   "reference_lufs": -14.317262046447553,
+   "crops": {
+    "di": "3304bc6a6758dd2de464a051c0ea3170c3b1a184570ee897e84e43b98e8d7593",
+    "reference": "5898f681ec6af7db1443e387f4a0685716b625c2ba8784c12993cd2b15bd7a45",
+    "mix": "816a878a09cc51b462caa868588fc3747fcf50a37cc84007962f89d76f38c352",
+    "backing": "7cf139d8572b31f55b0903c9cb363a21103befd7d73fc1444720d7b6f5bde7b4",
+    "mix_instrumental": "060c854c25c7fe9a04e83a9572efade6779182edc6e398be24e42314dfe0a6eb",
+    "backing_instrumental": "3294f433aca6b94f7e4a1ebf5544dd7c89b0071c0669ef1db1c9a66035101407"
+   },
+   "template": {
+    "lufs": -16.98,
+    "vs_reference_lu": -2.66,
+    "v3": 1.1647028946905973,
+    "v3_no_level": 1.194492490550304,
+    "v2": 1.1647028946905973,
+    "v2_no_level": 1.194492490550304,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -9.23,
+    "vs_reference_lu": 5.08,
+    "v3": 1.1921499313870674,
+    "v3_no_level": 1.1380945668928246,
+    "v2": 0.9775956630194994,
+    "v2_no_level": 0.9176730793822354,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 0.64,
+       "vs_template_db": 18.7,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -1.36,
+       "vs_template_db": 16.7,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -0.55,
+       "vs_template_db": 17.52,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -14.32,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.96,
+        "before": -3.8,
+        "after": -18.8,
+        "clamped": false,
+        "lufs_after": -14.38,
+        "residual_db": -0.06,
+        "trial_before": 259,
+        "trial_after": 290,
+        "total_before": 0.8362,
+        "total_after": 1.2075
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.96,
+        "before": 3.3,
+        "after": -9.7,
+        "clamped": false,
+        "lufs_after": -14.18,
+        "residual_db": 0.14,
+        "trial_before": 260,
+        "trial_after": 291,
+        "total_before": 0.7856,
+        "total_after": 1.1435
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -13.77,
+        "before": 1.8,
+        "after": -12.0,
+        "clamped": false,
+        "lufs_after": -14.34,
+        "residual_db": -0.02,
+        "trial_before": 229,
+        "trial_after": 292,
+        "total_before": 0.8962,
+        "total_after": 1.2848
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "cambridge/Signs/ElecGtr6",
+   "reference_lufs": -17.29808019736488,
+   "crops": {
+    "di": "ab0aea68cf62baa81d9daeb929f62469f58a564f45a8d7721015f052e44e57bf",
+    "reference": "25a2937c6265d4c999dfb0736c33a35174e1b4add8bcb3b7ec14b2da69e97b1c",
+    "mix": "167f55b940ea8c348051efe9f9775595bfbf008cb17b0b643e0a09f2021f7d87",
+    "backing": "b8271755e37862ca64485e187b56eec5ba2724c75a49575a8aab79bd9d27ccc1",
+    "mix_instrumental": "0678afea0924137195a4ad12018985f9b7fa633345a5bcc966c3d155127728a4",
+    "backing_instrumental": "5f334a9e20f56f54950a4f3047b3c4afe39d565e337f612a2d0a83db12b1f828"
+   },
+   "template": {
+    "lufs": -20.8,
+    "vs_reference_lu": -3.5,
+    "v3": 1.4254636707618709,
+    "v3_no_level": 1.4458950131904396,
+    "v2": 1.2346904778075947,
+    "v2_no_level": 1.2391268133167859,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -17.57,
+    "vs_reference_lu": -0.27,
+    "v3": 1.4716294460192911,
+    "v3_no_level": 1.580705454915551,
+    "v2": 1.329056774306408,
+    "v2_no_level": 1.409864824804652,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -3.22,
+       "vs_template_db": 14.84,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -4.91,
+       "vs_template_db": 13.15,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -1.7,
+       "vs_template_db": 16.36,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.3,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.08,
+        "before": 9.34,
+        "after": -4.7,
+        "clamped": false,
+        "lufs_after": -17.07,
+        "residual_db": 0.23,
+        "trial_before": 211,
+        "trial_after": 290,
+        "total_before": 0.6772,
+        "total_after": 0.9946
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.39,
+        "before": 9.34,
+        "after": -3.1,
+        "clamped": false,
+        "lufs_after": -17.37,
+        "residual_db": -0.07,
+        "trial_before": 213,
+        "trial_after": 291,
+        "total_before": 0.6805,
+        "total_after": 1.0445
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -15.6,
+        "before": 9.34,
+        "after": -6.3,
+        "clamped": false,
+        "lufs_after": -17.3,
+        "residual_db": -0.0,
+        "trial_before": 240,
+        "trial_after": 292,
+        "total_before": 0.714,
+        "total_after": 1.0703
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 1",
+   "reference_lufs": -17.01346402702433,
+   "crops": {
+    "di": "5f70954c5a278613bdddd65aec232f8448ecfe102a24050d6079c1d9551c031d",
+    "reference": "a9ff2ca174f75db47b9042f998e28ed1f251f4a209105a635aacb208928fb07d",
+    "mix": "c98e51ba13d5cd845548c5b65c0af82c949ac72156b7b9d8b922ef6bc6c53c94",
+    "backing": "cb4ae150edccc37176d6e18761f7279281b2b6d75363d992921946a58577cc89",
+    "mix_instrumental": "f8ad48ac97ca576f0727be60532035f074d870de321d9057ff90746ed2a5ff01",
+    "backing_instrumental": "e3d779e6cc12ac4ced10da60b97e4bae15ffefcdc4aef31e0968961f24890172"
+   },
+   "template": {
+    "lufs": -17.18,
+    "vs_reference_lu": -0.17,
+    "v3": 0.894628576838976,
+    "v3_no_level": 0.9607834644841583,
+    "v2": 0.7600081966404179,
+    "v2_no_level": 0.8058782964213147,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -10.71,
+    "vs_reference_lu": 6.3,
+    "v3": 1.0799708079132735,
+    "v3_no_level": 0.9994421874853738,
+    "v2": 0.9275191314958748,
+    "v2_no_level": 0.8510529878977796,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -3.83,
+       "vs_template_db": 14.23,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -6.43,
+       "vs_template_db": 11.63,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -2.31,
+       "vs_template_db": 15.76,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.01,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.18,
+        "before": 8.1,
+        "after": -5.1,
+        "clamped": false,
+        "lufs_after": -17.17,
+        "residual_db": -0.16,
+        "trial_before": 251,
+        "trial_after": 290,
+        "total_before": 0.3937,
+        "total_after": 0.7259
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -10.58,
+        "before": 7.8,
+        "after": -2.8,
+        "clamped": false,
+        "lufs_after": -17.03,
+        "residual_db": -0.02,
+        "trial_before": 230,
+        "trial_after": 291,
+        "total_before": 0.4442,
+        "total_after": 0.6783
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -14.7,
+        "before": 2.3,
+        "after": -12.4,
+        "clamped": false,
+        "lufs_after": -17.02,
+        "residual_db": -0.01,
+        "trial_before": 226,
+        "trial_after": 292,
+        "total_before": 0.4328,
+        "total_after": 0.7361
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/First Offering/GTR 2",
+   "reference_lufs": -11.956007316473874,
+   "crops": {
+    "di": "f8bd2c62a8b27efd9a14ceabf838e701073a7d379a4094c9b9f5aeeb874bb019",
+    "reference": "5ae9d945f2130145c99f935df5ddfc1f4a89fecdd940480266e1a2f979d7a639",
+    "mix": "cc6f1725f96d110efd7e9dd1076422969a94f450662cf3a0513def3960ebd124",
+    "backing": "867bbf512ad4ad2353fa4a3d34407f468c9757776cb537aad830a0aec0201cab",
+    "mix_instrumental": "41231dcea77f45367060d8278ec686aab34b6aa7ecd8b424a164ade8b94629a1",
+    "backing_instrumental": "59f93f8b62f3bae1cdb97526ae08b263eccbb35425883dda36ced2d2c2fc894e"
+   },
+   "template": {
+    "lufs": -18.03,
+    "vs_reference_lu": -6.08,
+    "v3": 0.8786101722161793,
+    "v3_no_level": 0.7882372910753512,
+    "v2": 0.8633899209476152,
+    "v2_no_level": 0.7877414375311554,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -8.5,
+    "vs_reference_lu": 3.46,
+    "v3": 1.365840278096922,
+    "v3_no_level": 1.3826171421572053,
+    "v2": 1.1880360662659812,
+    "v2_no_level": 1.19029928797898,
+    "fallback_to_template": false,
+    "minutes": 9.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 1.46,
+       "vs_template_db": 19.52,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 1.88,
+       "vs_template_db": 19.94,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -2.37,
+       "vs_template_db": 15.69,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -11.96,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.42,
+        "before": 2.0,
+        "after": -11.4,
+        "clamped": false,
+        "lufs_after": -11.76,
+        "residual_db": 0.2,
+        "trial_before": 253,
+        "trial_after": 300,
+        "total_before": 0.7329,
+        "total_after": 1.0186
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -13.84,
+        "before": 13.4,
+        "after": -0.4,
+        "clamped": false,
+        "lufs_after": -12.14,
+        "residual_db": -0.18,
+        "trial_before": 255,
+        "trial_after": 301,
+        "total_before": 0.7573,
+        "total_after": 1.0705
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -9.59,
+        "before": 7.1,
+        "after": -2.5,
+        "clamped": false,
+        "lufs_after": -11.97,
+        "residual_db": -0.01,
+        "trial_before": 238,
+        "trial_after": 302,
+        "total_before": 0.7917,
+        "total_after": 1.0163
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 1",
+   "reference_lufs": -15.347553025859503,
+   "crops": {
+    "di": "12ebe02f987fa851291ece87653dd424e6335d3034e5778ce41cd05d0fb9fd53",
+    "reference": "e183700c7a8dba00af15b2bc9d2550f60ba82920e8881fd8b8012e85185743a3",
+    "mix": "86cac506e22724612aae1f1ab99a058d4292e2a935b7cbaa32b898c711d02912",
+    "backing": "fb27c949c79fb50ca9c177939b71d8834ff057c5d260820d9e012fd411e7e299",
+    "mix_instrumental": "b3060315571706184aff72cb3e932a745c22fa44e9f377c378586de271672af4",
+    "backing_instrumental": "412a5eebee87c37a606e062bf70d9fcf98d75201623e7d256e029810a7c551a2"
+   },
+   "template": {
+    "lufs": -18.23,
+    "vs_reference_lu": -2.88,
+    "v3": 1.2088702710627606,
+    "v3_no_level": 1.2285179240413993,
+    "v2": 1.0865845104470273,
+    "v2_no_level": 1.0948400219979204,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -7.24,
+    "vs_reference_lu": 8.11,
+    "v3": 1.4132738453847076,
+    "v3_no_level": 1.3114270437045528,
+    "v2": 1.260997851659561,
+    "v2_no_level": 1.1669324941590975,
+    "fallback_to_template": false,
+    "minutes": 9.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.92,
+       "vs_template_db": 13.14,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.01,
+       "vs_template_db": 13.05,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.9,
+       "vs_template_db": 13.16,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -15.35,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -10.43,
+        "before": -0.9,
+        "after": -11.3,
+        "clamped": false,
+        "lufs_after": -14.9,
+        "residual_db": 0.45,
+        "trial_before": 136,
+        "trial_after": 300,
+        "total_before": 0.6309,
+        "total_after": 0.8491
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -10.34,
+        "before": -3.0,
+        "after": -13.3,
+        "clamped": false,
+        "lufs_after": -15.16,
+        "residual_db": 0.19,
+        "trial_before": 158,
+        "trial_after": 301,
+        "total_before": 0.6189,
+        "total_after": 0.8409
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -10.45,
+        "before": 15.1,
+        "after": 4.6,
+        "clamped": false,
+        "lufs_after": -15.39,
+        "residual_db": -0.04,
+        "trial_before": 126,
+        "trial_after": 302,
+        "total_before": 0.577,
+        "total_after": 0.8407
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Gym Hours/GTR 2",
+   "reference_lufs": -18.571057046419053,
+   "crops": {
+    "di": "4983760b0de0465e65bfe6e6132be90e3981d57e355a2508653917292ac3aa75",
+    "reference": "bada295faff7eb4ebc410235852f3c1e385486e478153f98ee8a882223ebb6f8",
+    "mix": "cef6acb2e8ab1fe9cfcc48abc94c39716bab332eafdeb4bf8425167784c7e33e",
+    "backing": "906ea127749765456316eb8d4b7897e5d5f73db30a77bc348badb66eee7fdbce",
+    "mix_instrumental": "27a35bcbc7f37ca05049e793834ab33c234cc59395558da4a2685f74bf34376c",
+    "backing_instrumental": "15ad04eb54b44dcd98f1310a0a9163b1cdd6abb347d47db96267bc8f5e017852"
+   },
+   "template": {
+    "lufs": -18.88,
+    "vs_reference_lu": -0.31,
+    "v3": 1.2914982928162793,
+    "v3_no_level": 1.3853007896175644,
+    "v2": 1.25555131127428,
+    "v2_no_level": 1.330695962009559,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.44,
+    "vs_reference_lu": 2.13,
+    "v3": 1.0496312970255635,
+    "v3_no_level": 1.0764442941591605,
+    "v2": 1.1768031507196821,
+    "v2_no_level": 1.2072468344622702,
+    "fallback_to_template": false,
+    "minutes": 9.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.25,
+       "vs_template_db": 13.81,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -6.2,
+       "vs_template_db": 11.87,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -3.8,
+       "vs_template_db": 14.26,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.57,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.32,
+        "before": 8.07,
+        "after": -6.2,
+        "clamped": false,
+        "lufs_after": -18.57,
+        "residual_db": 0.0,
+        "trial_before": 240,
+        "trial_after": 300,
+        "total_before": 0.7189,
+        "total_after": 1.0896
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.37,
+        "before": 8.07,
+        "after": -4.3,
+        "clamped": false,
+        "lufs_after": -18.61,
+        "residual_db": -0.04,
+        "trial_before": 254,
+        "trial_after": 301,
+        "total_before": 0.7795,
+        "total_after": 1.0354
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -14.77,
+        "before": 8.07,
+        "after": -6.7,
+        "clamped": false,
+        "lufs_after": -18.6,
+        "residual_db": -0.03,
+        "trial_before": 273,
+        "trial_after": 302,
+        "total_before": 0.7848,
+        "total_after": 1.0729
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 1",
+   "reference_lufs": -15.769275455315936,
+   "crops": {
+    "di": "0f002c3e8301bf3b2c5cfaf3abaf7260ad45401c393c8fb65186534a661b28f2",
+    "reference": "947c29c329cb0f0c070b43c2e0f60705fe23b0256322bab562733740b7627829",
+    "mix": "0e18a5892d52684796446704dc65c9752d17e0affab3447d9f2f349082712ab6",
+    "backing": "beb01c59ef217bae3dcb5e6f2a04e01fe0ee4706f96374e588669d44f2c7e93f",
+    "mix_instrumental": "591000b34f28df64c02328326b8b718436394e8cda6f545f4a0bc9d62ab30e5c",
+    "backing_instrumental": "c24c7be89c4a8fcc2887ef146e50a6620e37fb83af5558345db1e20bd155a28c"
+   },
+   "template": {
+    "lufs": -17.13,
+    "vs_reference_lu": -1.36,
+    "v3": 1.1859176944430199,
+    "v3_no_level": 1.2437533018990476,
+    "v2": 1.0282612902330144,
+    "v2_no_level": 1.06575659176995,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -10.5,
+    "vs_reference_lu": 5.27,
+    "v3": 1.2236976625199147,
+    "v3_no_level": 1.1816211621925394,
+    "v2": 1.0441316777062128,
+    "v2_no_level": 0.9976620045131396,
+    "fallback_to_template": false,
+    "minutes": 9.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 2.28,
+       "vs_template_db": 20.34,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -7.79,
+       "vs_template_db": 10.27,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -1.14,
+       "vs_template_db": 16.92,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -15.77,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -18.05,
+        "before": 12.2,
+        "after": -5.9,
+        "clamped": false,
+        "lufs_after": -15.96,
+        "residual_db": -0.19,
+        "trial_before": 216,
+        "trial_after": 300,
+        "total_before": 0.4586,
+        "total_after": 0.6613
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -7.98,
+        "before": 5.3,
+        "after": -2.7,
+        "clamped": false,
+        "lufs_after": -15.8,
+        "residual_db": -0.03,
+        "trial_before": 238,
+        "trial_after": 301,
+        "total_before": 0.5249,
+        "total_after": 0.6933
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -14.63,
+        "before": 10.6,
+        "after": -4.0,
+        "clamped": false,
+        "lufs_after": -15.77,
+        "residual_db": -0.0,
+        "trial_before": 206,
+        "trial_after": 302,
+        "total_before": 0.4638,
+        "total_after": 0.7213
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Russian Cream/GTR 2",
+   "reference_lufs": -11.413877536749261,
+   "crops": {
+    "di": "98b19a38e6613077c0d8516251fc56615985a5f2069b95e1740cc4da6f4a40a5",
+    "reference": "f4e4452bd18ee464ee7b10fa048cfd5d286da73a516a3d9002a98dd1b57135c7",
+    "mix": "e14736f4c2b7ec6ca7d79f6e0d7b97c72f47c18eab577b70893c0da641dd0595",
+    "backing": "495f9feb9f7d4ad5c52ec7462e3e3c40e50467fbe97f879d5d8d7588435fd4a5",
+    "mix_instrumental": "db0947742c727fb847534c7205b10ff9766afb133389176348b06b26f890aa7b",
+    "backing_instrumental": "396857fb716c5c188f2001ff65c4d766fb9621d667367fd8e8fb9e690237e32a"
+   },
+   "template": {
+    "lufs": -17.37,
+    "vs_reference_lu": -5.95,
+    "v3": 1.0068840439022857,
+    "v3_no_level": 0.9295327842103607,
+    "v2": 0.8876532243765876,
+    "v2_no_level": 0.8159784346620171,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -5.29,
+    "vs_reference_lu": 6.12,
+    "v3": 1.335661478213,
+    "v3_no_level": 1.280055805440342,
+    "v2": 1.267273357660917,
+    "v2_no_level": 1.2168781418561943,
+    "fallback_to_template": false,
+    "minutes": 9.4,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": 3.16,
+       "vs_template_db": 21.22,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": 1.55,
+       "vs_template_db": 19.61,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": 0.78,
+       "vs_template_db": 18.84,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -11.41,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.57,
+        "before": 19.3,
+        "after": 4.7,
+        "clamped": false,
+        "lufs_after": -11.23,
+        "residual_db": 0.18,
+        "trial_before": 194,
+        "trial_after": 300,
+        "total_before": 0.4875,
+        "total_after": 0.785
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.96,
+        "before": 13.6,
+        "after": 0.6,
+        "clamped": false,
+        "lufs_after": -11.57,
+        "residual_db": -0.16,
+        "trial_before": 272,
+        "trial_after": 301,
+        "total_before": 0.4698,
+        "total_after": 0.7525
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.19,
+        "before": 17.7,
+        "after": 5.5,
+        "clamped": false,
+        "lufs_after": -11.46,
+        "residual_db": -0.05,
+        "trial_before": 258,
+        "trial_after": 302,
+        "total_before": 0.559,
+        "total_after": 0.7412
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 1",
+   "reference_lufs": -16.036150181106958,
+   "crops": {
+    "di": "4da302485038bb03f8362ea2e0fc842ff1d319e41a3df8a8ff13ca71998bb23d",
+    "reference": "36929221ccf32c5dc161c703cd81f7901dfa0c86d9566884b7a0e68eec1c996f",
+    "mix": "8339e336965fe104c3c02b5058eb27f44daea8a187a144cf19c38610dd54cea8",
+    "backing": "df0730937c3bbdc8e0a3a8f46b30e7eac9e1a85ca5837d611843f4d32c6ff091",
+    "mix_instrumental": "2f399eafad892160fc0f82bd73094eaa6cd126d921ea4280e81375310d6e9954",
+    "backing_instrumental": "93be84812ee858f6adc2775c57d0d494b415f3aeff70534be2062fafc81b2be6"
+   },
+   "template": {
+    "lufs": -17.36,
+    "vs_reference_lu": -1.32,
+    "v3": 1.1669993006343582,
+    "v3_no_level": 1.2243939822633867,
+    "v2": 1.1371501665350763,
+    "v2_no_level": 1.1826164817438858,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -7.52,
+    "vs_reference_lu": 8.52,
+    "v3": 1.263136884612768,
+    "v3_no_level": 1.138647691292723,
+    "v2": 1.152204140369093,
+    "v2_no_level": 1.0421304973496859,
+    "fallback_to_template": false,
+    "minutes": 9.0,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -1.38,
+       "vs_template_db": 16.69,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -3.44,
+       "vs_template_db": 14.62,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.51,
+       "vs_template_db": 13.55,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -16.04,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.66,
+        "before": 7.9,
+        "after": -6.8,
+        "clamped": false,
+        "lufs_after": -16.23,
+        "residual_db": -0.19,
+        "trial_before": 181,
+        "trial_after": 290,
+        "total_before": 0.4339,
+        "total_after": 0.7077
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.6,
+        "before": 8.5,
+        "after": -4.1,
+        "clamped": false,
+        "lufs_after": -16.12,
+        "residual_db": -0.08,
+        "trial_before": 177,
+        "trial_after": 291,
+        "total_before": 0.5261,
+        "total_after": 0.8651
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.53,
+        "before": 3.7,
+        "after": -7.8,
+        "clamped": false,
+        "lufs_after": -16.03,
+        "residual_db": 0.01,
+        "trial_before": 207,
+        "trial_after": 292,
+        "total_before": 0.5107,
+        "total_after": 0.7706
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Sculptor's Request/GTR 2",
+   "reference_lufs": -19.912949821206013,
+   "crops": {
+    "di": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77",
+    "reference": "5a95a7f6b132578d7e067d9a1b5190c73a75588da71a37978b0b557cebb5c3cb",
+    "mix": "cabf68b10116449e754ae7c82f765356b4866f445ceba254c008a08a78174a6c",
+    "backing": "8ac66eed20e0dfaa71a23986fba88cd034bfaffbc12d0fa6a38b3f05a2249768",
+    "mix_instrumental": "d131ec1fcdb9c0dfd817b080183def0f5587a19733ea4fbe82dd0daaeda2fa4f",
+    "backing_instrumental": "fe536d82b71bdff38394c22235fbda19af0dd028e1285e040f4bf8d5cb72a660"
+   },
+   "template": {
+    "lufs": -19.68,
+    "vs_reference_lu": 0.24,
+    "v3": 1.2688752489677373,
+    "v3_no_level": 1.3629969791494008,
+    "v2": 1.1215042262723922,
+    "v2_no_level": 1.1896458062466786,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -19.05,
+    "vs_reference_lu": 0.86,
+    "v3": 1.3352220213846469,
+    "v3_no_level": 1.4180027072834347,
+    "v2": 1.1580608834605017,
+    "v2_no_level": 1.2148909410774908,
+    "fallback_to_template": false,
+    "minutes": 9.0,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.05,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.55,
+       "vs_template_db": 13.5,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.15,
+       "vs_template_db": 12.9,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -6.93,
+       "vs_template_db": 11.12,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.91,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -15.36,
+        "before": -2.2,
+        "after": -17.6,
+        "clamped": false,
+        "lufs_after": -20.09,
+        "residual_db": -0.18,
+        "trial_before": 202,
+        "trial_after": 290,
+        "total_before": 0.5699,
+        "total_after": 0.89
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -14.76,
+        "before": -1.9,
+        "after": -16.7,
+        "clamped": false,
+        "lufs_after": -19.94,
+        "residual_db": -0.03,
+        "trial_before": 249,
+        "trial_after": 291,
+        "total_before": 0.5775,
+        "total_after": 0.9236
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.98,
+        "before": -2.9,
+        "after": -15.9,
+        "clamped": false,
+        "lufs_after": -19.94,
+        "residual_db": -0.03,
+        "trial_before": 250,
+        "trial_after": 292,
+        "total_before": 0.5469,
+        "total_after": 0.846
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Blind Spots/GTR",
+   "reference_lufs": -18.052638645410415,
+   "crops": {
+    "di": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021",
+    "reference": "109805a446829d4d4e1b9cf7631eaf9197f633076bcd6e484a69e036bbe011e7",
+    "mix": "27479ebc4c7296ec555b8cc64e3f9c012b6661b0fbc658d01010d5999adb3fca",
+    "backing": "e9a6bc2ad86625db90c0deeae1c1b4733a413e244335bd19aec0dd026efa4c6a",
+    "mix_instrumental": "94ed120abe3d5eab62c9bc9efe547c1d5ef2864973cf5fdf87490b2346d4f569",
+    "backing_instrumental": "a73564a34145f9b22118e09ccc1b390c16aa523187308c4c74dde93091eb1701"
+   },
+   "template": {
+    "lufs": -18.68,
+    "vs_reference_lu": -0.63,
+    "v3": 1.0209959644084137,
+    "v3_no_level": 1.0850219615985515,
+    "v2": 0.8889174594468159,
+    "v2_no_level": 0.9331946850629126,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.33,
+    "vs_reference_lu": 1.72,
+    "v3": 1.3626453372719294,
+    "v3_no_level": 1.424959442846029,
+    "v2": 1.296122159567272,
+    "v2_no_level": 1.343260561278181,
+    "fallback_to_template": false,
+    "minutes": 9.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.05,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -4.56,
+       "vs_template_db": 13.49,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -10.92,
+       "vs_template_db": 7.13,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -5.56,
+       "vs_template_db": 12.49,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.05,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.49,
+        "before": 13.6,
+        "after": 0.1,
+        "clamped": false,
+        "lufs_after": -17.95,
+        "residual_db": 0.1,
+        "trial_before": 181,
+        "trial_after": 300,
+        "total_before": 0.6041,
+        "total_after": 0.9084
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -7.13,
+        "before": 14.0,
+        "after": 6.9,
+        "clamped": false,
+        "lufs_after": -17.93,
+        "residual_db": 0.12,
+        "trial_before": 216,
+        "trial_after": 301,
+        "total_before": 0.6237,
+        "total_after": 0.8149
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.49,
+        "before": 8.6,
+        "after": -3.9,
+        "clamped": false,
+        "lufs_after": -18.07,
+        "residual_db": -0.02,
+        "trial_before": 146,
+        "trial_after": 302,
+        "total_before": 0.6289,
+        "total_after": 0.9092
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Long Way Home/GTR",
+   "reference_lufs": -17.090679032065733,
+   "crops": {
+    "di": "32827faee831bf62afe6c4a443826e8b0cc8d1e110d804a7be549fe219684b0f",
+    "reference": "e2658d965c6451f8c2abe391cf509dd0efdda38fa336b54cac034d8a4c14fa31",
+    "mix": "888091427cd067188e31c6c4dc56748ebc9cce60e58c21aeadde1c55d97c47b6",
+    "backing": "38de631ae664811495c119b63b1c45d3877cac05d4a8985c3bae3e70857eb505",
+    "mix_instrumental": "ac7f16e56008bdd3c0b0ecd7bb1f62b11f43c49a9e54b54c2d965df1f206db72",
+    "backing_instrumental": "d3e1510d0e8990032d85fa8f739a73c3212764d01dc478d823504a61d512d5c1"
+   },
+   "template": {
+    "lufs": -17.58,
+    "vs_reference_lu": -0.49,
+    "v3": 0.9855898051159906,
+    "v3_no_level": 1.050504789730411,
+    "v2": 0.8561176074387967,
+    "v2_no_level": 0.9012991905326312,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -11.68,
+    "vs_reference_lu": 5.42,
+    "v3": 1.3037410981293855,
+    "v3_no_level": 1.2642996058764422,
+    "v2": 1.1663259995208703,
+    "v2_no_level": 1.1247820429678836,
+    "fallback_to_template": false,
+    "minutes": 9.1,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -3.88,
+       "vs_template_db": 14.18,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.62,
+       "vs_template_db": 12.44,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.96,
+       "vs_template_db": 13.1,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.09,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.21,
+        "before": -5.2,
+        "after": -18.4,
+        "clamped": false,
+        "lufs_after": -17.18,
+        "residual_db": -0.09,
+        "trial_before": 228,
+        "trial_after": 290,
+        "total_before": 0.5044,
+        "total_after": 0.8612
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.47,
+        "before": -8.6,
+        "after": -20.1,
+        "clamped": false,
+        "lufs_after": -16.82,
+        "residual_db": 0.27,
+        "trial_before": 248,
+        "trial_after": 291,
+        "total_before": 0.5606,
+        "total_after": 0.8259
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.13,
+        "before": -17.1,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -11.89,
+        "residual_db": 5.2,
+        "trial_before": 187,
+        "trial_after": 292,
+        "total_before": 0.5512,
+        "total_after": 0.6628
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Measurements/GTR",
+   "reference_lufs": -19.00950824498236,
+   "crops": {
+    "di": "80ab75206b554796e3b16a484d8b9db4f2c6235ca7af7c2ac2f735e5385b295d",
+    "reference": "6e10b2602acddc3c1d5ed6bde4b704bdf1ad9558f82c390fe7f8913e37b07073",
+    "mix": "c9f7f04d6e64d8c5fb5244df4acc70ea6d25babc5e6cef530aa09be71cc9dd89",
+    "backing": "724ab63191d4fd2445047a2fa0ff6f8be74586c7d3c9b26a5efa9d2c5dff807a",
+    "mix_instrumental": "5bdbbb3ed49247ed7034d9affc42f8494f0313f9fb0495bbe4f5670726813530",
+    "backing_instrumental": "ab2a60f11a5c6d1f50fc427b3d70104212cdd39b2fa30c0283e70621c7642ed3"
+   },
+   "template": {
+    "lufs": -17.64,
+    "vs_reference_lu": 1.37,
+    "v3": 2.3862161844945504,
+    "v3_no_level": 2.5385490411651723,
+    "v2": 2.0102112683376463,
+    "v2_no_level": 2.1115293945335796,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.44,
+    "vs_reference_lu": 0.57,
+    "v3": 2.1904312619596467,
+    "v3_no_level": 2.348360045798566,
+    "v2": 1.8502881855163373,
+    "v2_no_level": 1.958567849789142,
+    "fallback_to_template": false,
+    "minutes": 9.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -6.52,
+       "vs_template_db": 11.54,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -3.52,
+       "vs_template_db": 14.54,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -7.58,
+       "vs_template_db": 10.47,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -19.01,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.49,
+        "before": 20.0,
+        "after": 7.5,
+        "clamped": false,
+        "lufs_after": -19.08,
+        "residual_db": -0.07,
+        "trial_before": 220,
+        "trial_after": 290,
+        "total_before": 1.8463,
+        "total_after": 2.1168
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -15.49,
+        "before": 14.1,
+        "after": -1.4,
+        "clamped": false,
+        "lufs_after": -18.91,
+        "residual_db": 0.1,
+        "trial_before": 246,
+        "trial_after": 291,
+        "total_before": 1.8362,
+        "total_after": 2.1306
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -11.43,
+        "before": 17.7,
+        "after": 6.3,
+        "clamped": false,
+        "lufs_after": -18.95,
+        "residual_db": 0.06,
+        "trial_before": 196,
+        "trial_after": 292,
+        "total_before": 1.7963,
+        "total_after": 2.0725
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Strangest Places/GTR",
+   "reference_lufs": -22.29489122945679,
+   "crops": {
+    "di": "e25f5bb972e596bfc816bcdef0137aaefc7b2a3c4dead87fc7dab1603f69c016",
+    "reference": "edf57aeaad1e89151fce8a97c5dd22f5e54d124e04e17d7373cd6ce4395a7296",
+    "mix": "8b9da1b653bc9d18af15fce28eb42ff3f971e1fe14c3e217be3325e2c29d07a5",
+    "backing": "f661981e69409f5410522cab10462df98e0a247165583463fd37d34c06ee69c8",
+    "mix_instrumental": "577f35fb98ad84f96d2a430ab222d8eb3e89e34d552f4286421534738079459d",
+    "backing_instrumental": "193de8f0adfbd35f2da25cfe5d46fe605a5aa436439bea098e1bd83922f5ab63"
+   },
+   "template": {
+    "lufs": -17.94,
+    "vs_reference_lu": 4.35,
+    "v3": 1.1424684704753147,
+    "v3_no_level": 1.1181896655128396,
+    "v2": 1.014497665550252,
+    "v2_no_level": 0.9860953393904859,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -15.23,
+    "vs_reference_lu": 7.07,
+    "v3": 1.3936509951098635,
+    "v3_no_level": 1.317886599986958,
+    "v2": 1.1915168877007334,
+    "v2_no_level": 1.1157462499420856,
+    "fallback_to_template": false,
+    "minutes": 9.7,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -12.23,
+       "vs_template_db": 5.83,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -7.37,
+       "vs_template_db": 10.69,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.2,
+       "vs_template_db": 13.87,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -22.29,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -10.06,
+        "before": -0.5,
+        "after": -10.6,
+        "clamped": false,
+        "lufs_after": -22.4,
+        "residual_db": -0.11,
+        "trial_before": 237,
+        "trial_after": 290,
+        "total_before": 0.5928,
+        "total_after": 0.7693
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -14.92,
+        "before": -3.5,
+        "after": -18.4,
+        "clamped": false,
+        "lufs_after": -22.44,
+        "residual_db": -0.15,
+        "trial_before": 257,
+        "trial_after": 291,
+        "total_before": 0.6108,
+        "total_after": 0.9407
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -18.09,
+        "before": 5.0,
+        "after": -13.1,
+        "clamped": false,
+        "lufs_after": -22.36,
+        "residual_db": -0.07,
+        "trial_before": 252,
+        "trial_after": 292,
+        "total_before": 0.628,
+        "total_after": 0.8791
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Bloomlight/GTR",
+   "reference_lufs": -20.1978416899645,
+   "crops": {
+    "di": "eddb3a475225a372bc3c4310302ce03b1ff8dc256f0afab0e15b9ad56260e168",
+    "reference": "993035fc8d967f1e0beb82ecff11c4cf74abd8b89562830a520ced4f1c25a720",
+    "mix": "db80bfdded7162c8b97d9199d38cb6adfcdafdede0f2bdf4cdaa588837d3bb5e",
+    "backing": "b93e1399895df4bb4a191da653443b90a9dcac272e8ea6b1920263a07b82e407",
+    "mix_instrumental": "0c54e6ee257aa844884d0787c8b65a6d3a1bb96f2ef76a069df0b51e24004048",
+    "backing_instrumental": "3d0aeed7d5f75a57a901eac616ba88f24f5b37b85382ea98888577eba64c8921"
+   },
+   "template": {
+    "lufs": -17.54,
+    "vs_reference_lu": 2.66,
+    "v3": 0.6719607849402979,
+    "v3_no_level": 0.6550103205934792,
+    "v2": 0.5666715817440848,
+    "v2_no_level": 0.5458023370752207,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.48,
+    "vs_reference_lu": 1.72,
+    "v3": 1.4270420099486882,
+    "v3_no_level": 1.4944400633656898,
+    "v2": 1.3797675868141666,
+    "v2_no_level": 1.4323611250846557,
+    "fallback_to_template": false,
+    "minutes": 9.3,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -5.25,
+       "vs_template_db": 12.81,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.44,
+       "vs_template_db": 12.61,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -7.45,
+       "vs_template_db": 10.61,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -20.2,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -14.95,
+        "before": 6.43,
+        "after": -8.5,
+        "clamped": false,
+        "lufs_after": -20.24,
+        "residual_db": -0.04,
+        "trial_before": 258,
+        "trial_after": 290,
+        "total_before": 0.5751,
+        "total_after": 0.8928
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -14.76,
+        "before": 6.43,
+        "after": -8.3,
+        "clamped": false,
+        "lufs_after": -20.02,
+        "residual_db": 0.18,
+        "trial_before": 194,
+        "trial_after": 291,
+        "total_before": 0.565,
+        "total_after": 0.8985
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -12.75,
+        "before": 6.43,
+        "after": -6.3,
+        "clamped": false,
+        "lufs_after": -20.13,
+        "residual_db": 0.07,
+        "trial_before": 189,
+        "trial_after": 292,
+        "total_before": 0.5771,
+        "total_after": 0.859
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Farthest Step/GTR",
+   "reference_lufs": -18.237533185959563,
+   "crops": {
+    "di": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4",
+    "reference": "1c8a8373f6e8845967d20f519168bc45e1bfe6e0ab59894bca9e2f7639271f57",
+    "mix": "f33a28d8706eff97ae35d3e03315fc787ea532c43f76cb7e0959b59811fe9262",
+    "backing": "1c525c39600a581c89d42ec101ce539cdd0b5ac1d1e53f4ca7d2cb5b3572f4c3",
+    "mix_instrumental": "ec8e620911bc246f00f4ada603807fcd972c5b00addbba671c98461be267a859",
+    "backing_instrumental": "8edfbf5ecaa904ebd134d4f54a5191c6b84361f0293315817c7d848a1a547a6e"
+   },
+   "template": {
+    "lufs": -17.02,
+    "vs_reference_lu": 1.22,
+    "v3": 0.4472572525578997,
+    "v3_no_level": 0.4504617724966813,
+    "v2": 0.3958501135701552,
+    "v2_no_level": 0.39514468619429577,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -15.97,
+    "vs_reference_lu": 2.27,
+    "v3": 1.0451068791736502,
+    "v3_no_level": 1.0678784748978858,
+    "v2": 0.9026134410077895,
+    "v2_no_level": 0.9121317088996019,
+    "fallback_to_template": false,
+    "minutes": 8.6,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -6.06,
+       "vs_template_db": 12.0,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -6.43,
+       "vs_template_db": 11.63,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -8.23,
+       "vs_template_db": 9.83,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.24,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.18,
+        "before": -2.8,
+        "after": -15.0,
+        "clamped": false,
+        "lufs_after": -18.16,
+        "residual_db": 0.08,
+        "trial_before": 216,
+        "trial_after": 290,
+        "total_before": 0.6061,
+        "total_after": 0.8899
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.81,
+        "before": -12.5,
+        "after": -24.0,
+        "clamped": false,
+        "lufs_after": -17.97,
+        "residual_db": 0.27,
+        "trial_before": 158,
+        "trial_after": 291,
+        "total_before": 0.6968,
+        "total_after": 0.956
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -10.01,
+        "before": -12.4,
+        "after": -22.4,
+        "clamped": false,
+        "lufs_after": -18.2,
+        "residual_db": 0.04,
+        "trial_before": 247,
+        "trial_after": 292,
+        "total_before": 0.7189,
+        "total_after": 0.9396
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Fragments/GTR",
+   "reference_lufs": -17.587179799077717,
+   "crops": {
+    "di": "c48d223c2ead47194d8b7003492d5e79342efbee204bb51aa15ef779a41539d0",
+    "reference": "2fc27e4fb2d3910d6a855038bfd34f932dfa105086b8002ebde663c4c0a38ebb",
+    "mix": "da317ec72a335e7bbc50deb9a4574ab0a96eb5b81a17f267bae104883909614e",
+    "backing": "5d186f98599a251e2809478900ee86d1259b892181a0baf7537688b836b72601",
+    "mix_instrumental": "a8d8e7fec5468ad316387aafee45d03e8e8ddcc1e17902c7bb39b5da311bbf9e",
+    "backing_instrumental": "f1bb438b317a518a1ddb449475f89dd92c85156b5ac5db27872001c68bdf18e5"
+   },
+   "template": {
+    "lufs": -18.01,
+    "vs_reference_lu": -0.42,
+    "v3": 0.7275134246144692,
+    "v3_no_level": 0.7738960633998219,
+    "v2": 0.6221307415148896,
+    "v2_no_level": 0.6535740507441213,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -16.23,
+    "vs_reference_lu": 1.36,
+    "v3": 1.5741636825471528,
+    "v3_no_level": 1.6626502890640333,
+    "v2": 1.3747707858388218,
+    "v2_no_level": 1.4348645327413536,
+    "fallback_to_template": false,
+    "minutes": 8.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.05,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -0.41,
+       "vs_template_db": 17.64,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -5.38,
+       "vs_template_db": 12.68,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -4.12,
+       "vs_template_db": 13.94,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -17.59,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -17.18,
+        "before": 9.05,
+        "after": -8.1,
+        "clamped": false,
+        "lufs_after": -17.55,
+        "residual_db": 0.04,
+        "trial_before": 208,
+        "trial_after": 300,
+        "total_before": 0.4214,
+        "total_after": 0.7463
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.21,
+        "before": 9.05,
+        "after": -3.2,
+        "clamped": false,
+        "lufs_after": -17.52,
+        "residual_db": 0.07,
+        "trial_before": 224,
+        "trial_after": 301,
+        "total_before": 0.4229,
+        "total_after": 0.7675
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -13.47,
+        "before": 9.05,
+        "after": -4.4,
+        "clamped": false,
+        "lufs_after": -17.49,
+        "residual_db": 0.1,
+        "trial_before": 186,
+        "trial_after": 302,
+        "total_before": 0.3826,
+        "total_after": 0.7231
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Hikikomori - Love Does/GTR",
+   "reference_lufs": -28.981806162349454,
+   "crops": {
+    "di": "5ff37dc0cef3258395350f0f5385b78ce41f8597b2ba3b002eba34674be743be",
+    "reference": "5de4361dfc7089f1caca07de833ff32af421f293ee11929a304c1d3b6851c441",
+    "mix": "24e2853244958f8a3633c758a3a4880457da507c3c857fc561466c62b8fb196e",
+    "backing": "4a8a72aba16a0e9bc8f5e5014db483310a9a9bdbb6b654ae6f0d646f2cb22af0"
+   },
+   "template": {
+    "lufs": -39.51,
+    "vs_reference_lu": -10.53,
+    "v3": 2.563567492349077,
+    "v3_no_level": 2.4621640093864783,
+    "v2": 2.563567492349077,
+    "v2_no_level": 2.4621640093864783,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -20.04,
+    "vs_reference_lu": 8.94,
+    "v3": 1.7098520083688162,
+    "v3_no_level": 1.5737647235511893,
+    "v2": 1.7098520083688162,
+    "v2_no_level": 1.5737647235511893,
+    "fallback_to_template": false,
+    "minutes": 11.8,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -16.27,
+       "vs_template_db": 1.79,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -18.06,
+       "vs_template_db": 0.0,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -18.74,
+       "vs_template_db": -0.68,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -28.98,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.71,
+        "before": -21.6,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -18.73,
+        "residual_db": 10.25,
+        "trial_before": 217,
+        "trial_after": 300,
+        "total_before": 1.3307,
+        "total_after": 1.3264
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -10.92,
+        "before": -24.0,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -18.04,
+        "residual_db": 10.94,
+        "trial_before": 212,
+        "trial_after": 301,
+        "total_before": 1.3272,
+        "total_after": 1.3307
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -10.24,
+        "before": -24.0,
+        "after": -24.0,
+        "clamped": true,
+        "lufs_after": -18.74,
+        "residual_db": 10.24,
+        "trial_before": 232,
+        "trial_after": 302,
+        "total_before": 1.3595,
+        "total_after": 1.3495
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Honey/GTR",
+   "reference_lufs": -24.508931645038782,
+   "crops": {
+    "di": "ecbaa429c72e6689c994b29ff54297bb8b4d5c70ff8297896995535e4c6679c0",
+    "reference": "2f6bd5007ea4d4943c1b5938b644693957d18d61060f5029f780bb88001a6e00",
+    "mix": "352e08d0f2401344aada9df3836f95a40f6e4ec39857d4b10eb3e7ce210fdd86",
+    "backing": "def2e90e300ac16e146906cbc058dde8dd1ce391c91f83782b40fb8d9226ff91",
+    "mix_instrumental": "b883cb97cc685281017555b29dc1364d59489e7eb71cc30f8dda3371f54b1d5a",
+    "backing_instrumental": "07565eb4b05ba542908a66c1426014e17e31b12f59bf4542af57b5518175ddb6"
+   },
+   "template": {
+    "lufs": -20.06,
+    "vs_reference_lu": 4.45,
+    "v3": 1.143120669010596,
+    "v3_no_level": 1.1162617744588006,
+    "v2": 1.316549527242151,
+    "v2_no_level": 1.3056723224970739,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -18.69,
+    "vs_reference_lu": 5.82,
+    "v3": 1.2493158909851236,
+    "v3_no_level": 1.1947881981681598,
+    "v2": 1.3497234456821778,
+    "v2_no_level": 1.3112271486614506,
+    "fallback_to_template": false,
+    "minutes": 7.2,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -9.32,
+       "vs_template_db": 8.74,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -12.0,
+       "vs_template_db": 6.06,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -7.46,
+       "vs_template_db": 10.6,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -24.51,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -15.19,
+        "before": 2.6,
+        "after": -12.6,
+        "clamped": false,
+        "lufs_after": -24.21,
+        "residual_db": 0.3,
+        "trial_before": 196,
+        "trial_after": 290,
+        "total_before": 0.7565,
+        "total_after": 1.014
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.51,
+        "before": 5.7,
+        "after": -6.8,
+        "clamped": false,
+        "lufs_after": -24.53,
+        "residual_db": -0.02,
+        "trial_before": 210,
+        "trial_after": 291,
+        "total_before": 0.7716,
+        "total_after": 1.0567
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -17.05,
+        "before": 3.3,
+        "after": -13.8,
+        "clamped": false,
+        "lufs_after": -24.55,
+        "residual_db": -0.04,
+        "trial_before": 242,
+        "trial_after": 292,
+        "total_before": 0.8075,
+        "total_after": 0.9285
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Lost Alive/GTR",
+   "reference_lufs": -18.88038300804911,
+   "crops": {
+    "di": "e008508664e6c9b5cd9a286ae9e0fd59b8b6c0a6fa5ecfadec51dbc5066fb352",
+    "reference": "ff15f97c6e4fbc668bc6e6171acf8af323c4a74e62e3ccc7d61d1b2433f50aa0",
+    "mix": "83a4aada7abc30ce174d94ba498b24d23b9361dc620c1e5904a8b331c84a4ced",
+    "backing": "ca8456cf5398e544aff0a1c083687799298a16198edfc8bc0f97b1d2f2ae99c7",
+    "mix_instrumental": "2c9371cdf7899474c89881240cff4ddb6e23628f06d471115013e6158a2eae2b",
+    "backing_instrumental": "1dc2c904f15979b1d9dde6ebfbf718cc9057667ddce92e0f1fc5d9e9288f2aea"
+   },
+   "template": {
+    "lufs": -18.62,
+    "vs_reference_lu": 0.26,
+    "v3": 0.8823205813079429,
+    "v3_no_level": 0.9451353640427805,
+    "v2": 0.8747119996977091,
+    "v2_no_level": 0.9261062605475597,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -12.89,
+    "vs_reference_lu": 5.99,
+    "v3": 1.1167123990854348,
+    "v3_no_level": 1.0472423253290217,
+    "v2": 1.2735193318195366,
+    "v2_no_level": 1.2263575491121153,
+    "fallback_to_template": false,
+    "minutes": 7.1,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -5.39,
+       "vs_template_db": 12.68,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -6.2,
+       "vs_template_db": 11.86,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -9.34,
+       "vs_template_db": 8.72,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.88,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.49,
+        "before": 18.9,
+        "after": 5.4,
+        "clamped": false,
+        "lufs_after": -18.92,
+        "residual_db": -0.04,
+        "trial_before": 261,
+        "trial_after": 300,
+        "total_before": 1.1248,
+        "total_after": 1.4063
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -12.68,
+        "before": 17.8,
+        "after": 5.1,
+        "clamped": false,
+        "lufs_after": -18.86,
+        "residual_db": 0.02,
+        "trial_before": 243,
+        "trial_after": 301,
+        "total_before": 1.0724,
+        "total_after": 1.5049
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -9.54,
+        "before": 16.7,
+        "after": 7.2,
+        "clamped": false,
+        "lufs_after": -18.86,
+        "residual_db": 0.02,
+        "trial_before": 272,
+        "trial_after": 302,
+        "total_before": 1.1718,
+        "total_after": 1.4112
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/She's Gone/GTR",
+   "reference_lufs": -25.00667699126408,
+   "crops": {
+    "di": "a3275fd2e09208b5fdc824f0afcdd6c71dabcf0a7a8a9b8cf25459b95cfc6aef",
+    "reference": "1d5ce11809cde15a184792b2dfbb4adf7fe29be1887c425974180468e94b814b",
+    "mix": "b5bee10f79db2f2a857775133292de37a36c9820a8bcfdc0cfea10a6bb72a5ce",
+    "backing": "a7ac197cf49ac1564db6b9f39c082745704ec223f183a0ea57b13f21bd71c4a9",
+    "mix_instrumental": "e6ac717e0463ae2babe8b75f0e60e33aae31ef3ab683cef9c668b115e35f9cb7",
+    "backing_instrumental": "a60c23cae01698b9273285adb51edd62f696b129b2140749ea874416a6443a50"
+   },
+   "template": {
+    "lufs": -18.02,
+    "vs_reference_lu": 6.99,
+    "v3": 0.9871679316128223,
+    "v3_no_level": 0.8811548735822556,
+    "v2": 1.0131575592228113,
+    "v2_no_level": 0.9272765304764727,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -25.12,
+    "vs_reference_lu": -0.12,
+    "v3": 1.273546738945585,
+    "v3_no_level": 1.371195165704447,
+    "v2": 1.161753935027607,
+    "v2_no_level": 1.2351291916598421,
+    "fallback_to_template": false,
+    "minutes": 6.9,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -11.54,
+       "vs_template_db": 6.52,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -9.15,
+       "vs_template_db": 8.91,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -11.71,
+       "vs_template_db": 6.35,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -25.01,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -13.47,
+        "before": -2.8,
+        "after": -16.3,
+        "clamped": false,
+        "lufs_after": -24.96,
+        "residual_db": 0.05,
+        "trial_before": 228,
+        "trial_after": 290,
+        "total_before": 0.8626,
+        "total_after": 1.1498
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -15.86,
+        "before": 0.7,
+        "after": -15.2,
+        "clamped": false,
+        "lufs_after": -25.0,
+        "residual_db": 0.01,
+        "trial_before": 252,
+        "trial_after": 291,
+        "total_before": 0.8761,
+        "total_after": 1.1457
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -13.3,
+        "before": -2.0,
+        "after": -15.3,
+        "clamped": false,
+        "lufs_after": -25.04,
+        "residual_db": -0.03,
+        "trial_before": 158,
+        "trial_after": 292,
+        "total_before": 0.874,
+        "total_after": 1.1915
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  },
+  {
+   "part": "telefunken/Until I Get Back/GTR",
+   "reference_lufs": -18.56575016649175,
+   "crops": {
+    "di": "f93f76ea81bed5b9223d18f02acfd1e7a384dfb489aa73d050d8ccd05bc5851e",
+    "reference": "20516bcc2f061490db44ae71e7200a11dd25202d709c7a33a70fcdfe800de02d",
+    "mix": "bac78490f95db2083ea8ca6507278844f7fdd4acfd227a797e6eac6d80150507",
+    "backing": "4e12d20056e4047d2bfa3b1b3e7f22c1f57fa521ecc2978b349c53e18b907004",
+    "mix_instrumental": "8b241708f0c63054bed5591327a27635ea38b1db28df2cef6f1b70c060f7ad4a",
+    "backing_instrumental": "ce47dc9765598d243b9178d27d336dc621b4963cc0affebbb909a7483e4ba39b"
+   },
+   "template": {
+    "lufs": -18.26,
+    "vs_reference_lu": 0.31,
+    "v3": 0.8800692768200146,
+    "v3_no_level": 0.9413905355163316,
+    "v2": 0.8245173503380339,
+    "v2_no_level": 0.8715510905774709,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9"
+   },
+   "no_di": {
+    "lufs": -13.52,
+    "vs_reference_lu": 5.05,
+    "v3": 1.898662590363927,
+    "v3_no_level": 1.9156622685505527,
+    "v2": 1.8011519719005036,
+    "v2_no_level": 1.8088357961548844,
+    "fallback_to_template": false,
+    "minutes": 6.9,
+    "measured_commit": "a8a45b0892348f0f8b9510a2e64dd19fe693d7d9",
+    "process_policy": "reuse",
+    "guitar_check": {
+     "signal": {
+      "kind": "analysis.probes.synthetic_guitar",
+      "seconds": 6.0,
+      "seed": 13,
+      "lufs": -24.0
+     },
+     "fails_below_template_db": 20.0,
+     "template_lufs": -18.06,
+     "candidates": [
+      {
+       "search_rank": 1,
+       "lufs": -6.0,
+       "vs_template_db": 12.06,
+       "passes": true,
+       "match": 1
+      },
+      {
+       "search_rank": 2,
+       "lufs": -7.53,
+       "vs_template_db": 10.53,
+       "passes": true,
+       "match": 2
+      },
+      {
+       "search_rank": 3,
+       "lufs": -7.72,
+       "vs_template_db": 10.35,
+       "passes": true,
+       "match": 3
+      }
+     ],
+     "renders": 10,
+     "level_trim": {
+      "control": "/outputGain",
+      "target_lufs": -18.57,
+      "landing_tolerance_db": 1.0,
+      "records": [
+       {
+        "match": 1,
+        "applied": true,
+        "gap_db": -12.57,
+        "before": -1.0,
+        "after": -13.6,
+        "clamped": false,
+        "lufs_after": -18.84,
+        "residual_db": -0.27,
+        "trial_before": 203,
+        "trial_after": 290,
+        "total_before": 1.2843,
+        "total_after": 1.6009
+       },
+       {
+        "match": 2,
+        "applied": true,
+        "gap_db": -11.04,
+        "before": 0.7,
+        "after": -10.3,
+        "clamped": false,
+        "lufs_after": -18.42,
+        "residual_db": 0.15,
+        "trial_before": 178,
+        "trial_after": 291,
+        "total_before": 1.283,
+        "total_after": 1.5281
+       },
+       {
+        "match": 3,
+        "applied": true,
+        "gap_db": -10.85,
+        "before": -9.9,
+        "after": -20.8,
+        "clamped": false,
+        "lufs_after": -18.62,
+        "residual_db": -0.05,
+        "trial_before": 226,
+        "trial_after": 292,
+        "total_before": 1.3074,
+        "total_after": 1.5298
+       }
+      ],
+      "scoring_renders": 3
+     }
+    }
+   }
+  }
+ ]
+}

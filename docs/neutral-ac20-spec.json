@@ -1,0 +1,275 @@
+{
+ "name": "Neutral ac20",
+ "parameters": [
+  {
+   "module": "",
+   "key": "selectedAmp",
+   "value": "AC20"
+  },
+  {
+   "module": "parameters",
+   "key": "inputGain",
+   "value": 0.0
+  },
+  {
+   "module": "parameters",
+   "key": "outputGain",
+   "value": 0.0
+  },
+  {
+   "module": "parameters",
+   "key": "gateActive",
+   "value": false
+  },
+  {
+   "module": "parameters",
+   "key": "doublerActive",
+   "value": false
+  },
+  {
+   "module": "ampParameters",
+   "key": "sectionActive",
+   "value": true
+  },
+  {
+   "module": "eqParameters",
+   "key": "sectionActive",
+   "value": true
+  },
+  {
+   "module": "pedalParameters",
+   "key": "sectionActive",
+   "value": true
+  },
+  {
+   "module": "cabParameters",
+   "key": "sectionActive",
+   "value": true
+  },
+  {
+   "module": "fxParameters",
+   "key": "sectionActive",
+   "value": true
+  },
+  {
+   "module": "ac20Amp",
+   "key": "ac20Volume",
+   "value": 50.0
+  },
+  {
+   "module": "ac20Amp",
+   "key": "ac20Cut",
+   "value": 50.0
+  },
+  {
+   "module": "ac20Amp",
+   "key": "ac20Bright",
+   "value": false
+  },
+  {
+   "module": "ac20Amp",
+   "key": "ac20BassTreble",
+   "value": false
+  },
+  {
+   "module": "ac20Amp",
+   "key": "ac20Power",
+   "value": 50.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQActive",
+   "value": true
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand1",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand2",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand3",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand4",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand5",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand6",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand7",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand8",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQBand9",
+   "value": 0.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQHpf",
+   "value": 260.0
+  },
+  {
+   "module": "ac20EQ",
+   "key": "ac20EQLpf",
+   "value": 10500.0
+  },
+  {
+   "module": "compressor",
+   "key": "compressorActive",
+   "value": false
+  },
+  {
+   "module": "compressor",
+   "key": "compressorRelease",
+   "value": false
+  },
+  {
+   "module": "drive1",
+   "key": "drive1Active",
+   "value": false
+  },
+  {
+   "module": "drive2",
+   "key": "drive2Active",
+   "value": false
+  },
+  {
+   "module": "tremolo",
+   "key": "tremoloActive",
+   "value": false
+  },
+  {
+   "module": "tremolo",
+   "key": "tremoloSync",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabActive",
+   "value": true
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftMicType",
+   "value": 0
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabPosition",
+   "value": 0.5
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabDistance",
+   "value": 0.5
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabMicLevel",
+   "value": -17.0
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabPhase",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabStereo",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftCabPan",
+   "value": 0.0
+  },
+  {
+   "module": "cabParameters",
+   "key": "leftRoomActive",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabActive",
+   "value": true
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightMicType",
+   "value": 0
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabPosition",
+   "value": 0.5
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabDistance",
+   "value": 0.5
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabMicLevel",
+   "value": -17.0
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabPhase",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabStereo",
+   "value": false
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightCabPan",
+   "value": 0.0
+  },
+  {
+   "module": "cabParameters",
+   "key": "rightRoomActive",
+   "value": false
+  },
+  {
+   "module": "reverb",
+   "key": "reverbActive",
+   "value": false
+  },
+  {
+   "module": "delay",
+   "key": "delayActive",
+   "value": false
+  },
+  {
+   "module": "delay",
+   "key": "delayPingPong",
+   "value": false
+  }
+ ]
+}
