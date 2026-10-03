@@ -8,15 +8,17 @@ renders: every factory preset of one Morgan amp (from the plugin's own preset
 folder, never `User/`) and the shipped template, each with the rule set R applied,
 through the 10-second DI crop of each set-2 development part. R switches off what
 the model will set by rule rather than estimate — delay, rack reverb, tremolo,
-doubler, the gate, and the amp's spring reverb — so no arm wins by switching off
-time effects a dry amp track does not have. The template is also rendered as
+doubler, the gate, the amp's spring reverb and transpose — so no arm wins by
+switching off time effects a dry amp track does not have, and none plays in another
+key. The template is also rendered as
 shipped, for reference.
 
 A preset is sent as attribute edits of every writable parameter it stores (plus
 `selectAmp`), so the plugin renders the preset itself, not the search space's view
 of it. Each worker reuses one plugin process, renders a discarded warm-up per part,
-and checks at the end that its first render repeats; outputs are 24-bit FLAC
-named by preset, with an index of what was rendered. Held-out parts are refused.
+and checks at the end that its first render repeats; outputs are float WAV
+named by preset (integer PCM would clip hot presets), with an index of what was
+rendered. Held-out parts are refused.
 """
 
 from __future__ import annotations
@@ -45,7 +47,8 @@ SPRING = {"sw50r": "sw50rAmp/sw50rReverb", "pr12": "pr12Amp/pr12Reverb"}
 # silence for every later command (measured 2026-10-03, two factory presets in a row).
 RULE_SET = {"reverb/reverbActive": False, "delay/delayActive": False,
             "tremolo/tremoloActive": False, "parameters/doublerActive": False,
-            "parameters/gateActive": False, "fxParameters/sectionActive": True}
+            "parameters/gateActive": False, "fxParameters/sectionActive": True,
+            "parameters/transpose": 0}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -149,10 +152,12 @@ def work(job):
             out = args.out_dir / slug
             out.mkdir(parents=True, exist_ok=True)
             for name in panel:
-                path = out / f"{_slug(name)}.flac"
+                path = out / f"{_slug(name)}.wav"
                 if not path.exists():
                     audio = np.asarray(renderer.render(di, {"panel": name}).audio)
-                    sf.write(path, audio, 48000, subtype="PCM_24")
+                    # Float, not 24-bit PCM: presets with a hot output go past full
+                    # scale, and integer PCM clipped 156 of the first panel's renders.
+                    sf.write(path, audio, 48000, subtype="FLOAT")
                     if first is None:
                         first = (slug, name, audio)
                 rows.append({"part": slug, "candidate": name, "file": str(path)})

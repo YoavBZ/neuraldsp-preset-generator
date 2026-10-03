@@ -25,3 +25,24 @@ the shuffled control on a majority of parts. The band sign-flip p is reported, n
 
 **If it fails,** renders do not transfer to real recordings at this level even for whole-preset
 recognition, and the model POC would need domain adaptation before it is worth building.
+
+## Amendment, before any K3 result was read (2026-10-03)
+
+An independent review of the design (its results unread by anyone) found the first version
+biased and incomplete, and two render defects (24-bit PCM clipped 156 renders of four hot
+presets; R did not reset transpose, so six presets played pitch-shifted). The panel is
+re-rendered as float with transpose 0 in R, K1 and K2 are re-run on it, and K3 changes:
+
+- **Shuffled control**: the recogniser is given every other-band part's amp track in turn (never
+  the same band, whose own best preset already gains 20–28%), and the control is the mean log
+  ratio over those picks rendered through the part's DI. "Better than the shuffled control"
+  compares the part's own pick with that mean; ties count half.
+- **Constant**: chosen on the training bands' parts per distance (median full-window distance).
+- **Pass** additionally needs the recogniser closer than that constant on a majority of parts
+  under both distances.
+- **Open-set reading**: real amp tracks are never one of the 44 presets, so K3 is open-set by
+  nature. K2 is extended with an open-set version (each preset held out of training), reported
+  beside the closed-set K2, so a K3 failure can be read against it.
+
+The oracle comparator is chosen on half A and scored on 1–10 s (which includes A), so it is an
+optimistic upper bound; reported, not used in the pass rule.
