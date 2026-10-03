@@ -49,7 +49,7 @@ Every control can get a value from the song alone, but not every control can be 
 
 **Fallback.** One learned model over the whole preset, if the hand-made drive measurements fail. Its limit is how few distinct guitarists exist to train on, not the network.
 
-**First step.** None of this should be built before a recoverability screen: about 3–4 days of code and 5–6 hours of plugin time on an idle machine, measuring per control what the song can and cannot tell us.
+**First step.** None of this should be built before a recoverability screen: about 3–4 days of code and about 7–8 hours of plugin time on an idle machine, measuring per control what the song can and cannot tell us.
 
 **Tone King's flakiness is mostly ours to fix (section 7).**
 - The late silences line up with macOS killing the iLok licence daemon, which our habit of starting a new plugin process per render wears out.
@@ -65,7 +65,7 @@ The verdicts below are expectations, to be confirmed or overturned by the screen
 - **S4:** a probe given the true DI's loudness.
 
 The writable controls are:
-- **Morgan:** amp selector, about 88 continuous controls, 32 switches.
+- **Morgan:** amp selector, about 88 continuous controls, 32 switches, and 7 other selectors (2 cab mic types, 2 room-mic slots, delay sync mode and 2 sync notes).
 - **Tone King:** channel, 61 continuous controls, 21 switches, 12 selectors.
 
 Expect roughly 10–15 independent quantities per amp or channel to be measurable. The rest of the roughly 90 controls end up as a rule or a prior.
@@ -105,7 +105,7 @@ Expect roughly 10–15 independent quantities per amp or channel to be measurabl
   - the Phase 2 drive screen (F2).
 
 **Amp choice and Tone King channel**
-- Why only partly: the differences are real but subtle. Herbst found five real valve amps differed little in roughness, flux or tonalness. In §12p, even with the same probe signal on both sides, the Bright switch was picked right only 64–65% of the time (chance 50%).
+- Why only partly: the differences are real but subtle. Herbst found five real valve amps differed little in roughness, flux or tonalness.
 - Measured by: S3, in the song-like arm where target and candidates go through different DIs.
 
 **Drive pedal on/off and pedal tone**
@@ -256,7 +256,7 @@ One song plays the same preset at many intensities, so these slopes trace the am
 **Controls covered:** amp or channel, voicing switches, pedal and compressor on/off, and the mic pair (factory pairs), always as a coherent whole topology.
 
 **Benefit and confidence.**
-- Low to medium. It is capped by how much a better topology can ever gain, which has never been measured, and choices made across performances have been weak (22–34% right picks; Bright switch 64–65%).
+- Low to medium. It is capped by how much a better topology can ever gain, which has never been measured, and choices made across performances have been weak (22–27% right picks across performances, level left out).
 - Most likely value: speed, and a shortlist with genuinely different voices.
 
 **Cost.**
@@ -322,14 +322,14 @@ Every written control carries a label: estimated, estimated as part of a group, 
 **Controls covered:** all, as probabilities.
 
 **Benefit and confidence: low.** Data limits it, not the architecture:
-- Training DIs would come mostly from 7 local set-2 development bands. Guitar-TECHS P1/P2 must be downloaded, and IDMT is non-commercial and no-derivatives.
+- Training DIs would come mostly from the 13 local set-2 development bands (7 Cambridge, 6 Telefunken), used leave-band-out, which round 1's E9 avoided by training on CC BY DIs only. Guitar-TECHS P1/P2 must be downloaded, and IDMT is non-commercial and no-derivatives.
 - So it may learn the players rather than the tone.
 - M7-2 showed per-knob losses can improve parameter error while the sound gets worse.
 - Weights trained on non-commercial DIs and backings stay on your Mac.
 
 **Cost.**
 - Pilot: about 2 days of code and 10–12k renders.
-- About two-thirds of those renders need fresh processes, because the rack reverb is on in 91 of 108 factory presets, so they take about 3–5 hours. MPS training time is unmeasured; benchmark it for 10 minutes first.
+- Most of those renders need fresh processes if drawn from the factory presets: 93 of 108 have the rack reverb or tremolo on or are AC20 (91 have the reverb switch on, 88 of them with the effects section on), so they take about 4–6 hours, or time effects are handled by approach 1 and left off in training renders. MPS training time is unmeasured; benchmark it for 10 minutes first.
 - Production at 150–300k renders per pack would kill the licence daemon repeatedly (section 7) unless time effects are handled by approach 1 and renders stay in reused processes.
 - Torch in an optional extra.
 
@@ -353,7 +353,7 @@ New:
 1. **Decide process policy from S0, not by habit.** Reuse a process where its gap to fresh is at most 0.15× the distance between settings.
 2. **Watch the licence daemon on every run.** Log its PID and port count, run the watchdog, and limit fresh processes to one per candidate (section 7).
 3. **Render the in-run neutral fresh, or after a fixed predecessor.** SW50R's committed neutral repeats spread a median of 0.14 (up to 0.60) after other parts' searches, against 0.002–0.004 on the first two parts. This also affects round 1's E2 counts.
-4. **Run Tone King in a reused, warmed-up instance.** Restart it when the daemon restarts.
+4. **Tone King's process policy comes from S0 like every other section** (rule 1); until then run it as today, and restart when the daemon restarts.
 
 ### Phase 0: fixes and zero-render checks
 
@@ -364,9 +364,9 @@ About 2 days of code, plus passive logging during existing overnight runs.
 - a count of non-finite samples in the server's reply, plus a finiteness check in Python;
 - discard warm-up renders on Tone King instance start;
 - report band noise over 63 Hz–16 kHz;
-- keep the gate out of no-DI searches.
+- test, by rescoring stored no-DI answers with the gate reset, whether to keep the gate out of no-DI searches.
 
-Changing `au_render_server.swift` changes the renderer hash, so the calibrations must be re-measured (Tone King EQ basis about 77 s, drive curve about 330 s, plus Morgan's). Python-side changes do not.
+Changing `match/renderer_au.py`, `au_render_server.swift` or `au_probe.swift` changes the renderer hash (`_renderer_build`), and `invert.py` refuses a calibration from another build, so the calibrations must be re-measured (Tone King EQ basis about 77 s, drive curve about 330 s, plus Morgan's). The watchdog, canary and warm-up discard all live in `renderer_au.py`.
 
 Gate, passive: in the next overnight runs, every Tone King silent or failed render follows a daemon restart. If one does not, the S0 host test below becomes urgent.
 
@@ -388,7 +388,7 @@ Also commit the 20-part draw.
 
 ### Phase 1: the recoverability screen
 
-About 3–4 days of code and about 5–6 hours of plugin time in batches of 2 hours or less, on an idle machine.
+About 3–4 days of code and about 7–8 hours of plugin time (the itemised steps below add to 6.7–7.7 h) in batches of 2 hours or less, on an idle machine.
 
 `scripts/study_recoverability.py` is numpy and scipy, reusing `match/space.py` and `match/renderer_au.py`. Renders go through 8 set-2 development DIs from 8 bands at their own recorded levels (−32 to −10 LUFS), never noise.
 
@@ -484,10 +484,10 @@ About 1.5 weeks. Runs can share nights.
 - Pass: ≥ 15 of 20 closer, with a median ≥ 5% closer. The library-probe leg must keep ≥ 50% of that gain.
 
 **How this connects to round 1.**
-- **E1/E2 (library-DI probe)** run first or alongside Phase 1. The screen uses the same clip banks, and approach 5's checking renders only make sense if E2 shows a library DI beats neutral (≥ 15 of 20). If E2 fails, checking uses the median over several DIs and abstains more often.
+- **E1/E2 (library-DI probe)** run first or alongside Phase 1. The screen uses the same clip banks, and approach 5's checking renders only make sense if E2 shows a library DI beats neutral (≥ 15 of 20). If E2 fails, Phase 3 is not built (as it says), and the families that passed ship only as estimators of their own controls.
 - **E4 (mix rungs)** gives every family its in-mix column. Run F1's stem rung, and F2/F3 on stems, only after E4 shows the stem keeps ≥ 50% of the gain.
 - **E5** hosts F3, **E6** shares renders with F2, and **E7** (DI recovery) is unchanged.
-- **B0** (Tone King without a DI returns neutral settings) stands until Phase 3 beats neutral on Tone King.
+- **B0** (Tone King without a DI returns neutral settings) is still your call (round 1, §5). If adopted, it stands until Phase 3 beats neutral on Tone King.
 
 ### Phase 3: assemble the deterministic estimator
 
@@ -538,7 +538,7 @@ Declare it in a committed file before running, following the `docs/heldout-liste
 - Phase 2: about 1.5 weeks.
 - Phase 3: about 1 week.
 
-That is roughly a month to a working estimator, and any gate can stop it earlier. Plugin time is about 5–6 hours in Phase 1, 3–4 in Phase 2 and 4–5 in Phase 3, all in batches on an idle machine.
+That is roughly a month to a working estimator, and any gate can stop it earlier. Plugin time is about 7–8 hours in Phase 1, 3–4 in Phase 2 and 4–5 in Phase 3, all in batches on an idle machine.
 
 ## 5. What not to do
 
@@ -559,8 +559,9 @@ That is roughly a month to a working estimator, and any gate can stop it earlier
 ## 6. Decisions needed from you
 
 1. **Labelled answers.** Every control gets a value, but some will be shown as "set by rule" or "typical factory value" rather than measured. I recommend showing these labels in the shortlist. Needed before Phase 3.
-2. **Optional: your pickup output, once.** A one-time preference (low, medium or high output pickups), with no recording. Without it, presets assume a median-level guitar, and the input gain may be off for you: on PR12, tripling the input moves the distortion point from 66% to 28% of the knob. Needed before Phase 3.
-3. **Round 1's open decisions still apply.** Guitar-TECHS P1/P2 as the shipped clip source (needed before shipping, not for the screen, which uses local DIs), and Demucs or torch extras later. Nothing new here.
+2. **Optional: your pickup output, once.** A one-time preference (low, medium or high output pickups), with no recording. Without it, presets assume a median-level guitar, and the input gain may be off for you: on PR12, tripling the input moves the distortion point from 66% to 28% of the knob. Ask it only if Z2 and F2 show the input level matters and cannot be read from the song; needed before Phase 3.
+3. **B0, from round 1:** whether Tone King without a DI returns neutral settings. Still open.
+4. **Round 1's open decisions still apply.** Guitar-TECHS P1/P2 as the shipped clip source (needed before shipping, not for the screen, which uses local DIs), and Demucs or torch extras later. Nothing new here.
 
 ## 7. Tone King flakiness: is it something we do?
 
@@ -568,14 +569,14 @@ Mostly yes. The plugin's audio repeats well; the failures come from how we run i
 
 **1. The late silences follow the iLok licence daemon being killed.**
 - macOS killed PACE's licence daemon for "allocating too many mach ports" twice:
-  - 07:10:05 on 2 Oct, at 267,657 ports;
+  - 07:10 on 2 Oct (the kill line has since rotated out of the system log; the daemon restarted at 07:10:06 under a new PID and lasted 17.1 h);
   - 00:15:44 tonight, at 267,659 ports.
 - Tone King set-2 run 1 started at about 04:48 and went silent 2.2–2.45 h in. The kill came 2.37 h in.
 - Tonight, a running Tone King search's last six renders came back silent about five minutes after the 00:15 kill. That comes from the review's check of its trial log; I did not re-check it.
 - The daemon gains about 10 ports for every plugin host process started. In a 4-minute sample tonight it rose by 2,133 while 212 new host processes appeared.
 - The leak is PACE's, but our process churn wears the daemon out within hours: a new process per render for AC20, tremolo and fresh-policy benchmarks, with several workers and jobs at once. The daemon started at boot (31 Aug) lasted until 2 Oct; its replacement lasted 17 h.
 - Nothing in `match/renderer_au.py` notices that the daemon restarted.
-- **Live warning.** The current daemon (started 00:15:45) held 22,623 ports at 00:48. At tonight's rate it reaches the limit again roughly between 06:30 and 08:30 if the load continues, and a Tone King job running then will likely go silent.
+- The current daemon (started 00:15:45) held 22,723 ports at 00:48 and 86,451 at 07:21; the count went flat once the fresh-process load ended at about 06:13, with no further kill.
 
 **2. The "~5 dB band noise" is our own statistic.**
 - It is the largest difference over five repeats in the 25 Hz band: 3.38 dB on rhythm, 4.39 dB on lead, in a band with almost no energy.
@@ -589,10 +590,10 @@ Mostly yes. The plugin's audio repeats well; the failures come from how we run i
 
 **4. Two of our templates add their own noise.**
 - Through the noise probe, repeats spread:
-  - neutral template: median 0.014;
+  - neutral template: median 0.013;
   - Default (delay and reverb on): 0.056, mostly in the ambience score;
   - Reset All Settings (gate at −80 dB): 0.35, mostly in dynamics.
-- The no-DI search pushed the gate above −60 dB on 7–11 of 43 answers, where it cuts into the note decays.
+- The no-DI search pushed the gate above −60 dB on 7 of 43 answers from the neutral start, 11 from Reset All Settings and 1 from Default, where it cuts into the note decays. These counts and the template spreads come from the 2026-10-02 starting-point runs, written up separately.
 
 **5. Our silence check cannot see NaN.**
 - The server computes its peak with Swift's `max`, which skips NaN, so an all-NaN render reports a peak of 0.
@@ -601,7 +602,7 @@ Mostly yes. The plugin's audio repeats well; the failures come from how we run i
 
 **6. Untested: the host's offline flag and run loop.**
 - The render server never sets the Audio Unit's offline-render flag, which Apple's header recommends for hosts without realtime deadlines, and never runs the main run loop.
-- JUCE-based hosts, pedalboard included, do not set that flag on hosted Audio Units either. So this is a possible cause of the tiny fresh-process differences (−31 to −48 dB), not a known one.
+- JUCE-based hosts, pedalboard included, do not set that flag on hosted Audio Units either. So this is a possible cause of the tiny fresh-process differences (−31.3 and −39.5 dB in the repo's measurements), not a known one.
 - S0 tests it in about 40 minutes on an idle machine.
 
 **Fixes (Phase 0, R0):**
@@ -609,5 +610,5 @@ Mostly yes. The plugin's audio repeats well; the failures come from how we run i
 - far fewer process spawns;
 - discard warm-up renders;
 - measure the noise floor over 63 Hz–16 kHz;
-- keep the gate out of no-DI searches;
+- the gate test above;
 - check for non-finite samples.
