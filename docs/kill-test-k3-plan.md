@@ -52,26 +52,57 @@ optimistic upper bound; reported, not used in the pass rule.
 K1–K3 were declared under ALM and v3c. Since then `docs/measuring-closeness.md` has
 retired v3c as a judge and made `analysis/aligned.py` the judge (PR #109). The tests
 are still computed and reported exactly as declared, and in addition
-`scripts/kill_tests_judge.py` scores K1 and K3 under the judge:
+`scripts/kill_tests_judge.py` scores K1 and K3 under the judge and emits the verdict
+below.
 
-- **The same choices**: K1's split-half oracle (closest factory preset on half A,
-  scored on half B against template+R) and leave-one-band-out constant, chosen under
-  the judge; K3's recognisers' picks and shuffled picks as `kill_test_k3.py` made
-  them, its folds, and its constant re-chosen under the judge on the training bands.
-- **The judge's settings**: default bands, with the union band set reported beside
-  them; one lag per part, `estimate_lag` pooled over the part's whole panel around the
-  catalogued lag less the latency (±15 ms), or without the hint (±50 ms) where that is
-  refused, recorded in the output.
-- **K2** is not re-scored: its accuracy needs no distance, and its per-item picks are
-  not stored.
+**What was known when this was written.**
+- K1 and K2 on the earlier, 24-bit panel had been read: both passed under ALM and
+  v3c, with ALM's K1 oracle gain about 31%. That panel was clipped on 156 renders and
+  pitch-shifted on six presets, which is why it was re-rendered.
+- The judge was built after the 16 listening answers were read, on the same 27 K1
+  parts and this panel's renders, and is not yet validated by listening (stage 0b).
+- The script was run once on three parts with stand-in K3 picks to check that it
+  runs; its K1 summary for those three parts was seen by its author and a reviewer.
+  Nothing from it is used.
+- The judge and ALM are close relatives (both aligned log-mel distances), so "ALM
+  and the judge" is closer to one test than "ALM and v3c" was. The rule below asks
+  for both band sets as well, partly to offset that.
 
-**What decides.** The declared pass rules with v3c replaced by the judge (default
-bands): K1 passes if the oracle's band-median log ratio is ≤ log 0.75 under ALM and
-under the judge; K3 passes if one recogniser meets the declared rule under ALM and
-under the judge. The verdicts under the original rule (ALM and v3c) are reported
-beside it. If the default and union band sets disagree on a verdict, it is reported
-as not established, since the choice between them is open (measuring-closeness.md,
-"Bands").
+**The same choices.** K1's split-half oracle (closest factory preset on half A,
+scored on half B against template+R) and leave-one-band-out constant, chosen under
+the judge; K3's recognisers' picks and shuffled picks as `kill_test_k3.py` made them,
+its folds, and its constant re-chosen under the judge on the training bands. The
+thresholds stay as declared: log 0.75 for K1, log 0.9 for K3. They are log ratios,
+so they carry over between distances, but the judge's scale (level offset removed,
+floored) differs from ALM's, so the same ratio is not the same audible step.
 
-The script was run once on three parts with stand-in K3 picks, to check that it
-runs; nothing from that run is used.
+**The judge's settings.** Both band sets (default and union). One lag per part,
+frozen before any result in `docs/kill-tests-judge-lags.json` (`estimate_lag`
+pooled over the part's whole panel, ±15 ms around the catalogued lag less the
+latency; all 30 parts K1 or K3 uses were found inside it). On Signs 3 and Strangest
+Places a nine-render pool gives a different lag (−29 against 18, −89 against −16
+samples); the verdict uses the frozen lags, and those two parts are reported again
+at the other lag. ALM uses the catalogued lags, which are 9.5–14 ms off on Signs 2,
+Today's The Day 07 and 10 (K1 and K3) and It Was My Fault 1 (K3).
+
+**What decides.**
+
+| Test | Passes only if |
+|---|---|
+| K1 | the oracle's band-median log ratio is ≤ log 0.75 under ALM, under the judge with default bands, and under the judge with union bands |
+| K3 | one recogniser meets the declared rule under ALM, under the judge with default bands and under the judge with union bands, and its most common pick is no more than half its parts' picks under either band set |
+
+Any other outcome is "not passed", and the model POC's gate stays closed
+(`docs/supervised-model-plan.md` §0). Where the measures disagree, the write-up says
+which way each went; that is description, not a third verdict. The verdict as first
+declared (ALM and v3c) is reported beside this one and does not decide. K2's rule
+never used v3c, so it stands as declared under ALM.
+
+**Reported, not deciding.** For K3, per recogniser and band set: the number of
+distinct picks, the most common pick's share, and the band median with each part
+given the pick made for a part of the next band (picks moved one band along), so a
+pass that is one good preset for everything shows as such. Parts any distance
+refused, parts without a lag, and K1's excluded parts are listed in the output.
+
+**If stage 0b later fails to validate the judge,** these verdicts are void with it,
+and stage 0b's own rule (stop model work if no distance validates) applies.
