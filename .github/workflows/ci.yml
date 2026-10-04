@@ -92,13 +92,7 @@ jobs:
         run: pip install -e ".[dev,analysis,match]"
 
       - name: Test
-        run: python -m pytest -q --shard ${{ matrix.shard }}/4 --record-durations=/tmp/durations.json
-
-      # TEMPORARY: one run's Linux timings, to seed tests/durations.json.
-      - uses: actions/upload-artifact@v7
-        with:
-          name: durations-${{ matrix.python-version }}-${{ matrix.shard }}
-          path: /tmp/durations.json
+        run: python -m pytest -q --shard ${{ matrix.shard }}/4
 
       # The two smoke checks below need no test split, so one shard runs them.
       - name: Fingerprint a signal with no plugin and no audio in the repository

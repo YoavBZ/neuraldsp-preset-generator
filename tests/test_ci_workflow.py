@@ -108,3 +108,25 @@ def test_the_slices_cover_every_test_exactly_once() -> None:
         assert len(parts) == count
         ran = [item.nodeid for part in parts for item in part]
         assert sorted(ran) == sorted(item.nodeid for item in items), count
+
+
+def test_the_slices_are_the_same_on_every_python(monkeypatch) -> None:
+    """3.12 made `sum()` of floats compensated, and summing recorded times as
+    floats cut the suite differently on 3.10 and 3.13: each still ran every test,
+    but a failing `--shard 1/4` named different tests on another interpreter.
+    Shadowing `sum` with the old left-to-right addition must change nothing."""
+    import functools
+    import operator
+
+    from tests import conftest
+
+    recorded = conftest._recorded()
+    items = [_Item(nodeid) for nodeid in sorted(recorded)]
+
+    def ids(parts):
+        return [[item.nodeid for item in part] for part in parts]
+
+    compensated = ids(conftest.slices(items, 4, recorded))
+    monkeypatch.setattr(conftest, "sum", lambda values, start=0: functools.reduce(
+        operator.add, values, start), raising=False)
+    assert ids(conftest.slices(items, 4, recorded)) == compensated

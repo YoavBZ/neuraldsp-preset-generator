@@ -34,8 +34,9 @@ import pytest
 
 DURATIONS = pathlib.Path(__file__).with_name("durations.json")
 
-# A module larger than this fraction of one slice is split into its tests.
-WHOLE_MODULE_LIMIT = 0.25
+# A module costing more than 1/WHOLE_MODULE_PARTS of one slice is split into
+# its tests.
+WHOLE_MODULE_PARTS = 4
 
 
 def pytest_addoption(parser):
@@ -81,17 +82,26 @@ def _module(nodeid: str) -> str:
 
 
 def _costs(items, recorded: dict) -> dict:
+    """Each item's recorded time in whole centiseconds.
+
+    Integers, not the floats they came from: Python 3.12 made `sum()` of floats
+    compensated, so 3.10 and 3.13 added the same times to different last bits,
+    broke near-ties between slices differently, and cut the suite differently.
+    Each version still ran every test, but `--shard 1/4` named different tests
+    on each, so a failing slice could not be rerun on another interpreter.
+    """
+    centis = {nodeid: round(seconds * 100) for nodeid, seconds in recorded.items()}
     by_module: dict = {}
-    for nodeid, seconds in recorded.items():
-        by_module.setdefault(_module(nodeid), []).append(seconds)
-    overall = sum(recorded.values()) / len(recorded) if recorded else 1.0
+    for nodeid, cost in centis.items():
+        by_module.setdefault(_module(nodeid), []).append(cost)
+    overall = sum(centis.values()) // len(centis) if centis else 100
     costs = {}
     for item in items:
-        if item.nodeid in recorded:
-            costs[item.nodeid] = recorded[item.nodeid]
+        if item.nodeid in centis:
+            costs[item.nodeid] = centis[item.nodeid]
         else:
             peers = by_module.get(_module(item.nodeid))
-            costs[item.nodeid] = sum(peers) / len(peers) if peers else overall
+            costs[item.nodeid] = sum(peers) // len(peers) if peers else overall
     return costs
 
 
@@ -101,18 +111,18 @@ def slices(items, count: int, recorded: dict) -> list:
     modules: dict = {}
     for item in items:
         modules.setdefault(_module(item.nodeid), []).append(item)
-    limit = WHOLE_MODULE_LIMIT * sum(costs.values()) / count
+    whole = sum(costs.values())
 
     units = []
     for name, members in modules.items():
         total = sum(costs[member.nodeid] for member in members)
-        if total <= limit:
+        if total * WHOLE_MODULE_PARTS * count <= whole:
             units.append((total, name, members))
         else:
             units.extend((costs[member.nodeid], member.nodeid, [member])
                          for member in members)
 
-    loads = [0.0] * count
+    loads = [0] * count
     chosen: list = [set() for _ in range(count)]
     # Sorting on the name as well makes every xdist worker, and every machine,
     # compute the same partition from the same collection.
