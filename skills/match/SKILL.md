@@ -159,6 +159,15 @@ from the shipped presets"):
   shipped preset as it is (closer on 23–30 of 43, no amp significant), though it
   beat the noise-probe search on every amp.
 
+These figures came from a score since retired as a measure of closeness. A re-check
+with its replacement, the judge, was inconclusive: its positive control, a search with
+the part's own DI, was closer in most bands but not significantly
+([the re-check](../../docs/no-di-rule-under-the-judge-results.md)). So the figures are
+unconfirmed. As a description, not a verdict, the median of each no-DI method there was
+further from the recording than its start, the library search's too, though not
+significantly. The rule stands, as the re-check's plan declares for an inconclusive
+result.
+
 So without a DI, choose the starting preset with the generate skill's research
 about the song, and deliver it as it is. Use `fingerprint.py` on the reference
 only to describe it and its caveats, not to change settings, and do not ask the

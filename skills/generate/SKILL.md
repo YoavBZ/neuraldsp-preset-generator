@@ -95,7 +95,7 @@ level, spectral tilt and roll-off, dynamics, time effects, harmonic confidence,
 and all caveats. The measurement describes the recording; it does not identify
 the recorded rig, and without a DI it does not set values either: settings
 calculated from a recording ended further from it than the starting preset as it
-is on all four amps (`docs/tone-matching-plan.md`, "The real-guitar probe, from neutral settings and from the shipped presets"). So choose the topology and values from
+is on all four amps (`docs/tone-matching-plan.md`, "The real-guitar probe, from neutral settings and from the shipped presets"; measured with a score since retired, and unconfirmed by the [re-check with the judge](../../docs/no-di-rule-under-the-judge-results.md)). So choose the topology and values from
 research and the pack's `tone.md`, and use the measurement to describe and
 sanity-check them. Follow the [match skill](../match/SKILL.md) only when the user
 also has a DI of the performance.
