@@ -568,7 +568,14 @@ def test_without_a_di_a_recording_is_not_searched_and_the_template_kept(
                "--reference", audio / "ref.wav", "--probe-di", audio / "probe.wav",
                "--amp", "sw50r", "--renderer", "synthetic", "--out-dir", tmp_path / "both")
     assert done.returncode != 0 and "drop one of them" in done.stderr
-    # A `probe` reference is a render through the noise probe itself: still searched.
+
+
+def test_a_probe_reference_without_a_di_is_still_searched(audio, tmp_path):
+    """A `probe` reference is a render through the noise probe itself: still searched.
+
+    Its own test rather than a third step of the one above, which it used to be: it
+    does not depend on that test's `regime`, and it is the only one of the three
+    steps that runs a search, so it was the same search paid for three times."""
     done = run("match_preset.py", "--template", TEMPLATE,
                "--reference", audio / "ref.wav", "--reference-mode", "probe",
                "--amp", "sw50r", "--renderer", "synthetic", "--budget", "60",

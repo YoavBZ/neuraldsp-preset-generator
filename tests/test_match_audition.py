@@ -27,13 +27,26 @@ def run(script: str, *args):
     )
 
 
-@pytest.fixture()
-def completed_run(tmp_path):
+@pytest.fixture(scope="session")
+def _built_run(tmp_path_factory):
+    """One match per worker, kept pristine beside the directory it was made in.
+
+    The match was the whole cost of this file: about ten seconds of setup for
+    every test, to build the same run from the same seed each time. It cannot
+    simply be copied into each test's `tmp_path`, because the run records
+    absolute paths — the reference, the probe, and the pairing sidecar whose
+    sha256 the summary pins — so a copy anywhere else is a different run. It is
+    built once in `work` and restored *there*, byte for byte, before each test.
+    One worker runs one test at a time, so nothing else is using `work` then.
+    """
+    import shutil
+
     from tests import fixtures_audio as fx
 
+    work = tmp_path_factory.mktemp("completed-run")
     probe = fx.plucks(seconds=2.0, gap=0.9, seed=73)
-    probe_path = tmp_path / "probe.wav"
-    reference_path = tmp_path / "reference.wav"
+    probe_path = work / "probe.wav"
+    reference_path = work / "reference.wav"
     fx.write_wav(str(probe_path), probe)
     rendered = run(
         "render_paired_reference.py", "--preset", TEMPLATE,
@@ -41,7 +54,7 @@ def completed_run(tmp_path):
         "--pack", "morgan", "--amp", "sw50r", "--renderer", "synthetic",
     )
     assert rendered.returncode == 0, rendered.stdout + rendered.stderr
-    run_dir = tmp_path / "run"
+    run_dir = work / "run"
     matched = run(
         "match_preset.py",
         "--template", TEMPLATE,
@@ -56,7 +69,20 @@ def completed_run(tmp_path):
         "--out-dir", run_dir,
     )
     assert matched.returncode == 0, matched.stdout + matched.stderr
-    return run_dir, probe_path
+    pristine = tmp_path_factory.mktemp("completed-run-pristine") / "copy"
+    shutil.copytree(work, pristine)
+    return work, pristine
+
+
+@pytest.fixture()
+def completed_run(_built_run):
+    """A freshly completed match, whatever the previous test did to it."""
+    import shutil
+
+    work, pristine = _built_run
+    shutil.rmtree(work)
+    shutil.copytree(pristine, work)
+    return work / "run", work / "probe.wav"
 
 
 def test_export_and_record_one_blind_match_verdict(completed_run, tmp_path):

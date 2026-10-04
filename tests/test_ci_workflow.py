@@ -68,3 +68,43 @@ def test_every_job_checks_out_full_history_unless_it_says_why_not() -> None:
         f"Confirm it uses full history and add the job to SHALLOW_BY_DESIGN, or "
         f"inline it: {sorted(set(unreviewable))}"
     )
+
+
+def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
+    """`--shard I/N` runs one slice and trusts the matrix for the rest. A matrix of
+    `[1, 2, 3]` beside a `/4` would leave a quarter of the suite unrun on every
+    build, and nothing would fail: each shard that did run would pass."""
+    import re
+
+    workflow = yaml.load(CI_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
+    job = workflow["jobs"]["analysis"]
+    shards = [int(shard) for shard in job["strategy"]["matrix"]["shard"]]
+    commands = [step["run"] for step in job["steps"] if "--shard" in step.get("run", "")]
+    assert len(commands) == 1, commands
+    split = re.search(r"--shard \$\{\{ matrix\.shard \}\}/(\d+)", commands[0])
+    assert split, commands[0]
+    count = int(split.group(1))
+    assert shards == list(range(1, count + 1))
+    assert f"{{{{ matrix.shard }}}}/{count})" in job["name"]
+
+
+class _Item:
+    def __init__(self, nodeid: str) -> None:
+        self.nodeid = nodeid
+
+
+def test_the_slices_cover_every_test_exactly_once() -> None:
+    """Including tests the recorded times have never seen, which is every test
+    written since they were last recorded."""
+    from tests import conftest
+
+    recorded = conftest._recorded()
+    assert recorded, "tests/durations.json is missing or empty"
+    items = [_Item(nodeid) for nodeid in sorted(recorded)]
+    items += [_Item("tests/test_new.py::test_unrecorded"),
+              _Item(f"{items[0].nodeid.split('::')[0]}::test_unrecorded_in_a_known_module")]
+    for count in range(1, 7):
+        parts = conftest.slices(items, count, recorded)
+        assert len(parts) == count
+        ran = [item.nodeid for part in parts for item in part]
+        assert sorted(ran) == sorted(item.nodeid for item in items), count
