@@ -22,7 +22,8 @@ presets are high-gain), stopped, and returned no answers. What changed:
   track) or a high-gain preset: one with a drive pedal on or the PR12's volume (its
   gain) above 0.75, read from the preset's settings, never from a distance. That
   leaves 21 of the 34 factory presets and the template with time effects off.
-- The clear cut is the new pool's median, recorded beside the trial list's sha256.
+- The clear cut is the median over the new pool's pairs of offered candidates, recorded
+  beside the trial list's sha256.
 - The trial list records the sha256 of every option's audio, and the builder refuses
   anything else.
 
@@ -110,7 +111,7 @@ Each is computed on exactly the 4 s the listener hears.
 - The trial list (pairs and every distance's prediction) and its seed stay in a
   private folder until every answer is in; a listener who saw the pairs could tell the
   options apart. Nobody opens it, the analyst included, before every answer is in.
-  This plan records only its sha256 and the clear cut:
+  This plan records its sha256, the clear cut and counts that name no pair:
   `4a0c547bf2a53c7ee77cf289ddbcea70378620b947e649a35813b671304b963a`; clear cut
   |log ratio| > 0.150 (about 16%). The draw: 22 candidates offered (13 left out as
   high-gain), 28 parts, 3,234 clear pairs, 24 test pairs over 11 bands, 10 of them
@@ -173,7 +174,7 @@ unvalidated range.
   work stops (supervised-model plan, stage 0); how closeness is measured is revisited
   before any decision rests on it.
 - **Inconclusive** or **void**: the test is run once more, with freshly drawn pairs
-  from the same panels (and, if void, a check of the playback set-up first), never
+  from the same panel and offered candidates (and, if void, a check of the playback set-up first), never
   pooled with this run.
   That second outcome is final: anything but "validated" counts as not validated, the
   kill-test verdicts are void, and model work stops. The rerun's trial-list sha256
