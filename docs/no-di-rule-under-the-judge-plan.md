@@ -60,7 +60,7 @@ same p is below 0.05; **not shown** otherwise. Its verdict is better or worse on
 both band sets agree; otherwise not shown.
 
 The verdict must also hold in three sensitivity readings, or it is reported as fragile:
-the five parts with ambiguous lags dropped; each render scored at its own best lag (the
+the four parts with ambiguous lags dropped; each render scored at its own best lag (the
 peak of its own 80 Hz–2 kHz correlation with the amp track, as `estimate_lag` computes
 it, within ±2 ms of the recorded lag); and the parts with over 20% of their scored
 frames pauses (the judge's own count, at 2048-point frames) dropped.
