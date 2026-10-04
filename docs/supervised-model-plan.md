@@ -407,12 +407,11 @@ before the held-out test.
 **Stage 0 — foundations (no model; about a week).**
 - 0a. This plan merged; the fold draw and the crop rule (≥90% DI activity, 3 crops
   per part) committed.
-- 0b. **Metric validation by listening**: v3c and ALM implemented with tests; about
-  85 blind R-A-B trials from existing renders (stratified by |Δ| with 15 per bin,
-  ~25 where the two metrics disagree, hidden repeats, catches, anchors), about 2.5 h
-  in eight 18-minute sessions. A metric is validated if it agrees with decided
-  verdicts ≥70% (p < 0.05) above the second |Δ| bin. **Stop** model work if none
-  validates. The 16-trial test now running is a first look.
+- 0b. **Metric validation by listening**, cut at the listener's request to about
+  20 minutes: 30 blind R-A-B trials on clear differences, testing the judge
+  (`docs/listening-validation-plan.md`, which supersedes the ~85-trial, 2.5-h design
+  first planned here). **Stop** model work if the judge is rejected; an inconclusive
+  result revises the format instead.
 - 0c. **Renderer measurements**, on an idle machine after a reboot (about 2 h):
   ports per command against per audio second; seconds per command against length;
   the level-fold check; the F0 null tests; history with a 2-s pre-roll on every amp
@@ -498,7 +497,7 @@ recordings), is the cheapest route to a claim of size. It needs downloads.
 
 ## 9. Decisions for the user
 
-1. **Listening time** for stage 0b (about 2.5 h in eight sessions).
+1. **Listening time** for stage 0b (about 20 minutes, `docs/listening-validation-plan.md`).
 2. **A reboot** before the stage-0c measurements and each bulk render (the licence
    daemon's ports reset only then).
 3. **Downloads**: Guitar-TECHS P1/P2 (~4 GB, CC BY), EGFxSet Clean (431 MB, CC BY),

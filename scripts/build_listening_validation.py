@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Stage 0b: build the listening-validation trials from the committed trial list.
 
-    python scripts/build_listening_validation.py --trials docs/listening-validation-trials.json \\
+    python scripts/build_listening_validation.py \\
+        --trials ~/ndsp-presets/runs/listening-validation/draw/trials.json \\
         --panel-dir ~/ndsp-presets/runs/kill/sw50r \\
         --out-dir ~/ndsp-presets/runs/listening-validation/trials \\
         --private-dir ~/ndsp-presets/runs/listening-validation/private
@@ -10,7 +11,9 @@ Trial numbers, the two sittings and every A/B assignment are drawn here from the
 system's randomness and written only to `--private-dir`, with the builder's output and
 the keys; the listener's folder gets the numbered trial files and an answer sheet,
 nothing else. Repeats go in the second sitting with their originals in the first; each
-sitting gets at least one hidden reference. `docs/listening-validation-plan.md`.
+sitting gets at least one hidden reference. On the test pairs the option the judge
+calls closer is A on exactly half, chosen at random, so a listener's lean towards A or
+B cannot add to or take from agreement. `docs/listening-validation-plan.md`.
 """
 
 from __future__ import annotations
@@ -61,17 +64,31 @@ def sittings(trials, rng):
     return first, second
 
 
+def seed_for(first_is_a: bool, rng) -> int:
+    """A seed under which `build_rab_audition.py` makes its first input A, or B."""
+    import random
+
+    while True:
+        seed = rng.getrandbits(63)
+        if (not random.Random(seed).getrandbits(1)) == first_is_a:   # its swap bit
+            return seed
+
+
 def main():
     args = build_parser().parse_args()
     from analysis import require
 
     require("building the listening validation")
-    plan = json.loads(args.trials.read_text())
+    import hashlib
+
+    trials_text = args.trials.expanduser().read_text()
+    plan = json.loads(trials_text)
     panel = args.panel_dir.expanduser()
     crops = args.crops_dir.expanduser()
     out_dir, private = args.out_dir.expanduser(), args.private_dir.expanduser()
-    if out_dir.resolve() == private.resolve() or private.resolve().is_relative_to(out_dir.resolve()):
-        die("the private folder must not be inside the listener's folder")
+    if (out_dir.resolve() == private.resolve() or private.resolve().is_relative_to(out_dir.resolve())
+            or out_dir.resolve().is_relative_to(private.resolve())):
+        die("the private folder and the listener's folder must be separate")
     for d in (out_dir, private):
         if d.exists() and any(d.iterdir()):
             die(f"{d} is not empty; trials are built once")
@@ -82,6 +99,8 @@ def main():
     by_id = {t["id"]: t for t in trials if "id" in t}
     rng = secrets.SystemRandom()
     first, second = sittings(trials, rng)
+    tests = [t for t in trials if t["kind"] == "test"]
+    judge_first_as_a = set(rng.sample([t["id"] for t in tests], len(tests) // 2))
     order = []
     for sitting, block in ((1, first), (2, second)):
         for t in block:
@@ -101,6 +120,12 @@ def main():
             return pathlib.Path(files[(pair_part, name)]), w["window_s"] - lag / SR, "SW50R"
 
         (a, a_start, a_model), (b, b_start, b_model) = source(row["first"]), source(row["second"])
+        if row["kind"] == "test":
+            # The judge's closer option is A on exactly half the test pairs.
+            judge_first = by_id[row["id"]]["log_ratio"]["judge"] < 0
+            seed = seed_for(judge_first == (row["id"] in judge_first_as_a), rng)
+        else:
+            seed = rng.getrandbits(63)
         n = f"{row['trial']:02d}"
         cmd = [sys.executable, str(PLUGIN_ROOT / "scripts" / "build_rab_audition.py"),
                "--reference", str(reference), "--reference-regime", "isolated_stem",
@@ -110,12 +135,15 @@ def main():
                "--duration", str(SEGMENT_S), "--mono",
                "--out", str(out_dir / f"trial-{n}.flac"),
                "--key", str(private / f"trial-{n}.key.json"),
-               "--seed", str(rng.getrandbits(63))]
+               "--seed", str(seed)]
         done = subprocess.run(cmd, capture_output=True, text=True)
         (private / f"build-{n}.log").write_text(done.stdout + done.stderr)
         if done.returncode:
             die(f"trial {n} failed to build; see {private / f'build-{n}.log'}")
-    (private / "order.json").write_text(json.dumps(order, indent=1) + "\n")
+    (private / "trials.json").write_text(trials_text)      # what the scorer checks against
+    (private / "order.json").write_text(json.dumps(
+        {"trials_sha256": hashlib.sha256(trials_text.encode()).hexdigest(), "order": order},
+        indent=1) + "\n")
     lines = ["# Answers", "",
              "For each trial: Reference, A, B, played twice. Which of A and B is closer to",
              "the Reference? Write A, B or ? (can't tell). Same headphones and level throughout.",

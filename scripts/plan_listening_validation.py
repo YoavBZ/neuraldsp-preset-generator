@@ -3,7 +3,7 @@
 
     python scripts/plan_listening_validation.py --panel-dir ~/ndsp-presets/runs/kill/sw50r \\
         --cache ~/ndsp-presets/runs/listening-validation/pool.json \\
-        --out docs/listening-validation-trials.json
+        --out ~/ndsp-presets/runs/listening-validation/draw/trials.json
 
 For every development part with a 4-s window where its DI plays in at least 90% of the
 frames, every panel candidate's distance to the part's amp track over exactly that
@@ -11,8 +11,11 @@ window: the judge (`analysis/aligned.py`, both band sets, one lag per part poole
 its whole panel), ALM and v3c (`kill_tests.py`). Then, with a fixed seed, 24 test pairs
 above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
 most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
-3 hidden repeats. The output names the pairs and every distance's prediction, not trial
-numbers or A/B: those are drawn privately when the files are built.
+3 hidden repeats. The seed is drawn from the system's randomness and kept with the
+output, which names the pairs and every distance's prediction: both stay private until
+every answer is in (the plan records only the file's sha256), since a listener who saw
+the pairs could tell the options apart. Trial numbers and A/B are drawn when the files
+are built.
 """
 
 from __future__ import annotations
@@ -35,7 +38,6 @@ import kill_tests as K
 
 SR, LATENCY = K.SR, K.LATENCY
 WINDOW_S, STEP_S, FIRST_S, MIN_ACTIVE = 4.0, 0.25, 0.5, 0.9
-SEED = 20261004
 TEST_PAIRS, MIN_DISAGREE, PER_PART, MIN_BANDS, PER_CANDIDATE = 24, 10, 2, 8, 3
 HIDDEN_REFERENCES, REPEATS = 3, 3
 DISTANCES = ("judge", "judge_union", "alm", "v3c")
@@ -52,7 +54,8 @@ def build_parser():
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"))
     ap.add_argument("--cache", type=pathlib.Path, required=True,
                     help="the pool's distances (computed once, reused when present)")
-    ap.add_argument("--out", type=pathlib.Path, required=True)
+    ap.add_argument("--out", type=pathlib.Path, required=True,
+                    help="the private trial list (refused if it exists)")
     ap.add_argument("--workers", type=int, default=3)
     return ap
 
@@ -104,9 +107,9 @@ def score_part(job):
     return part, {"window_s": w, "lag": lag, "candidates": out}
 
 
-def draw(pool, meta):
-    """The trials, by the plan's rules, with the fixed seed."""
-    rng = random.Random(SEED)
+def draw(pool, meta, seed):
+    """The trials, by the plan's rules, deterministic in `seed`."""
+    rng = random.Random(seed)
     pairs = []
     pool = {part: p for part, p in pool.items() if part not in BLEED_HEAVY}
     for part, p in sorted(pool.items()):
@@ -203,7 +206,13 @@ def main():
         pool = {p: s for p, s in scored.items() if s is not None}
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_text(json.dumps({"panel": str(args.panel_dir), "pool": pool}) + "\n")
-    out = draw(pool, meta)
+    import secrets
+
+    out_path = args.out.expanduser()
+    if out_path.exists():
+        die(f"{out_path} exists; the trials are drawn once")
+    seed = secrets.randbits(32)
+    out = draw(pool, meta, seed)
     for trial in out["trials"]:
         if trial["kind"] != "repeat":
             p = pool[trial["part"]]
@@ -212,13 +221,18 @@ def main():
                 c: p["candidates"].get(c) for c in (trial["first"], trial["second"])
                 if c != "reference"}
     used = [p for p in pool if p not in BLEED_HEAVY]
-    out.update(seed=SEED, panel=str(args.panel_dir), parts=len(used),
+    out.update(seed=seed, panel=str(args.panel_dir), parts=len(used),
                bands=len({meta[p]["band"] for p in used}))
-    args.out.write_text(json.dumps(out, indent=1) + "\n")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(out, indent=1) + "\n"
+    out_path.write_text(text)
+    import hashlib
+
     tests = [t for t in out["trials"] if t["kind"] == "test"]
-    print(f"{len(pool)} parts, {out['clear_pairs']} clear pairs; {len(tests)} test pairs over "
+    # Counts only: the pairs themselves stay private.
+    print(f"{len(used)} parts, {out['clear_pairs']} clear pairs; {len(tests)} test pairs over "
           f"{len({t['band'] for t in tests})} bands, {sum(t['disagree'] for t in tests)} where "
-          f"the judge and v3c disagree")
+          f"the judge and v3c disagree; sha256 {hashlib.sha256(text.encode()).hexdigest()}")
 
 
 if __name__ == "__main__":
