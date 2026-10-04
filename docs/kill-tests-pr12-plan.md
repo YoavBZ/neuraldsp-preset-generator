@@ -117,7 +117,7 @@ derived panel records. Outputs go to `~/ndsp-presets/runs/kill/`:
 - `k-judge-pr12-clean.json` (the judge's readings);
 - `verdict-pr12-clean.json` (this verdict).
 
-The run is once, at 69d34a2 (this plan's verdict code was then tightened, before any output was read, to count a dropped part as not closer and to check its inputs). A crash is fixed and rerun; a
+The run is once, at 69d34a2 (rebased as f5813d5, unchanged) (this plan's verdict code was then tightened, before any output was read, to count a dropped part as not closer and to check its inputs). A crash is fixed and rerun; a
 result is not.
 
 ## What is known before computing
