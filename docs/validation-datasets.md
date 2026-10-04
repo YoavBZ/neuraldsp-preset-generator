@@ -84,13 +84,15 @@ otherwise before it runs.
   per set-2 development part, measured on its 10-s validation crop. Candidates come
   from the cross-correlation of the amp track with all the part's SW50R panel renders;
   where a DI's buzz or pulse makes a comb of near-equal peaks, the judge chooses
-  between them; an onset-based estimate from the raw DI checks the result. Five are
-  ambiguous and `lag_samples` withholds them unless asked: Passing Ships ElecGtr3 and
-  Prodigal ElecGtr4 (combs the judge cannot split, or the onsets disagree), Strangest
-  Places and Signs ElecGtr3 (two close peaks), Nosso Mundo ElecGtr03 (the onsets
-  disagree by 2.6 ms). Of the 38 others, the catalogue is off by 2.5 ms or more on 6,
-  by up to 14 ms (Today's The Day ElecGtr10). Analyses declared before this file
-  existed keep the lags they declared.
+  between them, and the choice stands only if a clear onset peak from the raw DI
+  confirms it (the judge's preference is not independent evidence: every render
+  shares the part's DI and amp track). Four are ambiguous and `lag_samples` withholds
+  them unless asked: Passing Ships ElecGtr3 and Prodigal ElecGtr4 (combs the onsets
+  cannot confirm), Strangest Places (+37 samples; −37 is nearly as high) and Signs
+  ElecGtr3 (72; 23 is nearly as high), whose pooled subsets spread over 0.5 ms. Of the
+  39 others, the catalogue is off by 2.5 ms or more on 7, by up to 14 ms (Today's The
+  Day ElecGtr10). Analyses declared before this file existed keep the lags they
+  declared.
 - **The reference** is the part's amp track: for Telefunken the M80 microphone; the
   TF11 is used only by a test that names it. For Cambridge and Guitar-TECHS, the
   one amp track.

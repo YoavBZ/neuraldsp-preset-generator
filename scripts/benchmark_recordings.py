@@ -100,17 +100,17 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def lag_samples(part: str, allow_ambiguous: bool = False, lags_path=None):
+def lag_samples(part: str, *, allow_ambiguous: bool = False, lags_path=None):
     """Samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag]),
     as measured once and recorded (`docs/validation-lags.json`). None when the part has
     no recorded lag, or its lag is ambiguous and `allow_ambiguous` is false."""
-    record = lag_record(part, lags_path)
+    record = lag_record(part, lags_path=lags_path)
     if record is None or (record["ambiguous"] and not allow_ambiguous):
         return None
     return record["lag_samples"]
 
 
-def lag_record(part: str, lags_path=None):
+def lag_record(part: str, *, lags_path=None):
     """The part's whole recorded entry (lag, candidates, checks), or None. A missing
     file is an error, not an absent part."""
     path = LAGS if lags_path is None else lags_path

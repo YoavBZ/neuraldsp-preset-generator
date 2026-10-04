@@ -106,8 +106,8 @@ after:
   lag less the plugin latency; a higher peak just outside that window is refused.
   - Catalogued lags are quantised to 10 ms. One measured lag per development part,
     with its evidence, is in `docs/validation-lags.json` (`docs/validation-datasets.md`,
-    "Lags"): the catalogue is off by 2.5 ms or more on 6 of the 38 unambiguous parts,
-    and five parts are ambiguous, among them Prodigal 4, whose DI makes a comb of
+    "Lags"): the catalogue is off by 2.5 ms or more on 7 of the 39 unambiguous parts,
+    and four parts are ambiguous, among them Prodigal 4, whose DI makes a comb of
     near-equal peaks (an earlier reading of "42 ms off" there was one of its aliases).
     `estimate_lag` only refuses; a caller widens the window itself.
   - Pooled over nine renders, the estimate agrees with another estimate of the

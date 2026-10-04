@@ -24,7 +24,7 @@ def _slug(session, part):
 
 def test_every_set_two_development_part_has_one_lag_and_no_held_out_part_does():
     lags = json.loads(B.LAGS.read_text())
-    assert lags["schema"] == "validation-lags-2" and lags["latency_samples"] == 52
+    assert lags["schema"] == "validation-lags-3" and lags["latency_samples"] == 52
     catalog = json.loads(B.CATALOG.read_text())
     entry = {_slug(s, p): (p.get("split") or s.get("split"), s.get("set"), p.get("usable"))
              for s in catalog["sessions"] for p in s["parts"]}
@@ -35,12 +35,40 @@ def test_every_set_two_development_part_has_one_lag_and_no_held_out_part_does():
 
 
 def test_ambiguity_follows_the_declared_checks():
-    for part, row in json.loads(B.LAGS.read_text())["parts"].items():
-        split = len(row["candidates"]) > 1 and row["judge_win_share"] < 2 / 3
-        onset = abs(row["onset_lag_samples"] - row["lag_samples"]) / 48 > 1.0
-        assert row["onset_disagrees"] == onset, part
-        assert row["ambiguous"] == (split or row["subset_spread_ms"] > 0.5 or onset), part
+    lags = json.loads(B.LAGS.read_text())
+    assert lags["schema"] == "validation-lags-3"
+    for part, row in lags["parts"].items():
+        expected = R.classify(len(row["candidates"]), row["judge_win_share"],
+                              row["onset_runner_up"],
+                              abs(row["onset_lag_samples"] - row["lag_samples"]) / 48,
+                              row["subset_spread_ms"], row["search_refused"])
+        assert {k: row[k] for k in expected} == expected, part
         assert any(c["lag_samples"] == row["lag_samples"] for c in row["candidates"]), part
+
+
+@pytest.mark.parametrize("evidence, ambiguous", [
+    ((1, 1.0, 0.95, 3.0, 0.1), False),     # one peak; an unclear onset is no check
+    ((1, 1.0, 0.5, 3.0, 0.1), True),       # one peak; a clear onset 3 ms away
+    ((1, 1.0, 0.5, 0.9, 0.1), False),      # ...0.9 ms away is within tolerance
+    ((1, 1.0, 0.5, 0.0, 0.6), True),       # the subsets spread over 0.5 ms
+    ((2, 1.0, 0.5, 0.0, 0.1), False),      # several; the judge and a clear onset agree
+    ((2, 1.0, 0.95, 0.0, 0.1), True),      # several; the onset does not confirm
+    ((2, 0.6, 0.5, 0.0, 0.1), True),       # several; the judge's wins are split
+])
+def test_a_choice_among_aliases_needs_a_clear_onset(evidence, ambiguous):
+    assert R.classify(*evidence)["ambiguous"] is ambiguous
+    assert R.classify(*evidence, refused=True)["ambiguous"] is True
+
+
+def test_close_peaks_are_both_candidates():
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    lags = np.arange(-100, 101)
+    total = np.exp(-((lags + 37) / 6.0) ** 2) + 0.966 * np.exp(-((lags - 37) / 6.0) ** 2)
+    found = R.candidates(lags, total)
+    assert [lag for lag, _ in found] == [-37, 37]
+    assert found[1][1] == pytest.approx(0.966, abs=0.01)
+    shoulder = np.exp(-(lags / 20.0) ** 2)                 # one broad peak: one candidate
+    assert [lag for lag, _ in R.candidates(lags, shoulder)] == [0]
 
 
 def test_lag_samples_withholds_ambiguous_lags_unless_asked(tmp_path):
@@ -80,9 +108,11 @@ def test_the_lag_reads_recording_after_di_for_both_estimators():
     di = _guitar(np)
     render = _delay(np, np.tanh(4 * di), R.LATENCY)           # a render lags its DI by 52
     recording = _delay(np, np.tanh(6 * di), 960)              # the amp track by 960
-    lags, total = R.correlation(recording, [render], 960 - R.LATENCY, 720)
+    # Searched around zero, so a flipped sign would read -960, not +960.
+    lags, total = R.correlation(recording, [render], 0, 2400)
     assert R.candidates(lags, total)[0][0] + R.LATENCY == pytest.approx(960, abs=24)
-    assert R.onset_lag(di, recording, 960, 720) == pytest.approx(960, abs=48)
+    onset, runner_up = R.onset_lag(di, recording, 0, 2400)
+    assert onset == pytest.approx(960, abs=24) and runner_up < R.ONSET_CLEAR
 
 
 def test_the_script_refuses_a_panel_with_held_out_material(tmp_path, monkeypatch):

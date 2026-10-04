@@ -10,19 +10,28 @@ so it is quantised to 10 ms. Here, on each part's 10-s validation crop:
 1. **Candidates.** The summed, normalised 80 Hz-2 kHz cross-correlation of the amp track
    with every render of the part in the panel (`analysis.aligned.estimate_lag`'s
    statistic), within ±15 ms of the catalogued lag less the plugin's latency (±50 ms
-   where that is refused); every peak at least 0.9 of the highest, at least 2 ms from a
-   higher one. A DI with mains buzz or a steady pulse makes a comb of near-equal peaks,
-   so the highest alone can be an alias.
+   where that is refused; refused there too, the part is ambiguous); every local peak
+   at least 0.9 of the highest, at least 0.5 ms from a higher one. A DI with mains buzz
+   or a steady pulse makes a comb of near-equal peaks, so the highest alone can be an
+   alias.
 2. **Choice.** With one candidate, it. With several, the one that lets the judge
    (`aligned_distance`, all frames scored) put the renders closest to the amp track on
-   average; ambiguous unless it wins on at least two thirds of the renders.
+   average, over the renders it scores at every candidate. The judge is not
+   independent evidence here (every render shares the part's DI and amp track, and it
+   prefers a made-up 10-ms alias on a part with one clean peak), so a choice among
+   several must be confirmed by the onsets.
 3. **Cross-check.** An independent estimate from the raw DI: the 1-4 kHz onset
-   envelopes of the DI and the amp track, cross-correlated (`onset_lag_samples`).
-4. **Stability.** The same window pooled over five random sets of nine renders.
+   envelopes of the DI and the amp track, cross-correlated (`onset_lag`). It is a
+   check only where its peak is clear (no other peak, 1 ms or more away, within 0.9
+   of it); on the panel's renders it reads within 1 ms of the plugin's latency on
+   about 90%.
+4. **Stability.** Five random sets of nine renders, each pooled, within 2 ms of the
+   choice.
 
-A part is **ambiguous** when the judge's choice between candidates is split (under two
-thirds of the renders), the subsets spread over 0.5 ms, or the onset estimate is more
-than 1 ms away; its chosen lag is still recorded, with the evidence.
+A part is **ambiguous** when the onsets clearly disagree (more than 1 ms away), when
+several candidates were found and the onsets do not clearly confirm the choice (or the
+judge's choice is split, under two thirds of the renders), or the subsets spread over
+0.5 ms; its chosen lag is still recorded, with the evidence.
 
 The lag is expressed DI-to-amp-track by adding the latency back. Held-out parts are
 never opened. `lag_samples(part)` in `benchmark_recordings.py` reads the file.
@@ -45,9 +54,10 @@ from _cli import die, guarded
 
 SR = 48000
 LATENCY = 52            # Morgan's latency in samples: a render lags its DI by this
-NEAR, APART_S = 0.9, 0.002
-SUBSETS, SUBSET_SIZE = 5, 9
+NEAR, APART_S = 0.9, 0.0005
+SUBSETS, SUBSET_SIZE, SUBSET_WINDOW = 5, 9, int(0.002 * SR)   # ±2 ms of the choice
 WIN_SHARE, ONSET_TOLERANCE_MS, SPREAD_MS = 2 / 3, 1.0, 0.5
+ONSET_CLEAR = 0.9       # an onset peak is clear when nothing 1 ms or more away reaches this
 
 
 def build_parser():
@@ -82,14 +92,23 @@ def correlation(ref, renders, centre, span):
     return lags, total
 
 
-def candidates(lags, total, near=NEAR, apart=int(APART_S * SR)):
-    """Peaks at least `near` of the highest, each at least `apart` samples from a higher
-    one, highest first, as (lag, height relative to the highest)."""
+def _peaks(total):
+    """Indices of the local maxima of `total` (an end counts if above its neighbour)."""
     import numpy as np
 
-    order = np.argsort(-total)
-    top, kept = total[order[0]], []
-    for i in order:
+    left = np.concatenate([[-np.inf], total[:-1]])
+    right = np.concatenate([total[1:], [-np.inf]])
+    return np.flatnonzero((total >= left) & (total >= right))
+
+
+def candidates(lags, total, near=NEAR, apart=int(APART_S * SR)):
+    """Local peaks at least `near` of the highest, each at least `apart` samples from a
+    higher one, highest first, as (lag, height relative to the highest)."""
+    import numpy as np
+
+    peaks = _peaks(total)
+    top, kept = total.max(), []
+    for i in peaks[np.argsort(-total[peaks])]:
         if total[i] < near * top:
             break
         if all(abs(lags[i] - k) >= apart for k, _ in kept):
@@ -98,10 +117,12 @@ def candidates(lags, total, near=NEAR, apart=int(APART_S * SR)):
 
 
 def onset_lag(di, ref, centre, span, hop=4, floor_db=40.0):
-    """Samples the amp track lags the DI, from their 1-4 kHz onset envelopes: each
-    signal's band-passed level in dB (floored 40 dB under its peak), its rises
-    cross-correlated, at a resolution of `hop` samples. Checked on renders, whose lag is
-    the plugin's 52 samples: 52-56."""
+    """(samples the amp track lags the DI, the runner-up's height relative to the peak)
+    from their 1-4 kHz onset envelopes: each signal's band-passed level in dB (floored
+    40 dB under its peak), its rises cross-correlated, at a resolution of `hop` samples.
+    The runner-up is the highest local peak 1 ms or more away (0 when there is none).
+    On the SW50R panel's 1978 renders, whose lag is the plugin's 52 samples, 90% read
+    within 1 ms, and the worst is 49 ms off: trust a clear peak only."""
     import numpy as np
     from scipy import signal
 
@@ -120,7 +141,11 @@ def onset_lag(di, ref, centre, span, hop=4, floor_db=40.0):
     size = 1 << int(np.ceil(np.log2(2 * n)))
     c = np.fft.irfft(np.fft.rfft(a, size) * np.conj(np.fft.rfft(b, size)), size)
     lags = np.arange((centre - span) // hop, (centre + span) // hop + 1)
-    return int(lags[np.argmax(c[lags % size])] * hop)
+    curve = c[lags % size]
+    best = int(np.argmax(curve))
+    far = [i for i in _peaks(curve) if abs(lags[i] - lags[best]) * hop >= SR // 1000]
+    runner = max((curve[i] for i in far), default=0.0)
+    return int(lags[best] * hop), float(runner / curve[best]) if curve[best] > 0 else 1.0
 
 
 def measure(job):
@@ -144,7 +169,8 @@ def measure(job):
         span = int(width_ms * SR / 1000)
         lags, total = correlation(ref, renders, hint, 2 * span)
         inside = np.abs(lags - hint) <= span
-        if total[~inside].max() <= total[inside].max():
+        refused = bool(total[~inside].max() > total[inside].max())
+        if not refused:
             break                                          # its peak is inside the window
     cands = candidates(lags[inside], total[inside])
     evidence = []
@@ -153,41 +179,58 @@ def measure(job):
                               end_s=10.0, max_pauses=1.0).distance for x in renders]
         evidence.append({"render_lag": lag, "height": round(height, 4), "distances": d})
     if len(evidence) > 1:
-        means = [np.mean([v for v in e["distances"] if v is not None]) for e in evidence]
-        chosen = int(np.argmin(means))
-        wins = sum(1 for i in range(len(renders))
-                   if all(e["distances"][i] is not None for e in evidence)
-                   and min(range(len(evidence)), key=lambda j: evidence[j]["distances"][i]) == chosen)
-        for e, m in zip(evidence, means):
-            e["mean_distance"] = round(float(m), 4)
+        # Over the renders the judge scores at every candidate, so the means compare
+        # like with like; none of them leaves the choice to the correlation's peak.
+        common = [i for i in range(len(renders))
+                  if all(e["distances"][i] is not None for e in evidence)]
+        if common:
+            means = [float(np.mean([e["distances"][i] for i in common])) for e in evidence]
+            chosen = int(np.argmin(means))
+            wins = sum(1 for i in common
+                       if min(range(len(evidence)),
+                              key=lambda j: evidence[j]["distances"][i]) == chosen)
+            for e, m in zip(evidence, means):
+                e["mean_distance"] = round(m, 4)
+        else:
+            chosen, wins = 0, 0
         win_share = wins / len(renders)
     else:
         chosen, win_share = 0, 1.0
-    for e in evidence:
-        del e["distances"]
     render_lag = evidence[chosen]["render_lag"]
     rng = random.Random(part)                  # the subsets are fixed by the part's name
     subsets = []
     for _ in range(SUBSETS):
         pick = sorted(rng.sample(names, min(SUBSET_SIZE, len(names))))
         sl, st = correlation(ref, [renders[names.index(n)] for n in pick], hint, span)
-        near = np.abs(sl - render_lag) <= int(APART_S * SR)
+        near = np.abs(sl - render_lag) <= SUBSET_WINDOW
         subsets.append({"renders": pick, "lag": int(sl[near][np.argmax(st[near])]) + LATENCY})
     spread = (max(s["lag"] for s in subsets) - min(s["lag"] for s in subsets)) / SR * 1000
-    onset = onset_lag(di, ref, render_lag + LATENCY, span)
+    onset, runner = onset_lag(di, ref, render_lag + LATENCY, span)
     lag = render_lag + LATENCY
-    row = {"lag_samples": lag, "search_ms": width_ms, "renders": len(names),
-           "catalogue_lag_samples": catalogued,
+    row = {"lag_samples": lag, "search_ms": width_ms, "search_refused": refused,
+           "renders": len(names), "catalogue_lag_samples": catalogued,
            "candidates": [{**e, "lag_samples": e.pop("render_lag") + LATENCY} for e in evidence],
            "judge_win_share": round(win_share, 3),
-           "onset_lag_samples": onset,
-           "onset_disagrees": abs(onset - lag) / SR * 1000 > ONSET_TOLERANCE_MS,
+           "onset_lag_samples": onset, "onset_runner_up": round(runner, 3),
            "subsets": subsets, "subset_spread_ms": round(spread, 3)}
-    row["ambiguous"] = bool((len(evidence) > 1 and win_share < WIN_SHARE)
-                            or spread > SPREAD_MS or row["onset_disagrees"])
-    print(f"{part}: {lag} ({len(evidence)} candidates, judge {win_share:.2f}; onset {onset}; "
-          f"catalogue {catalogued})", flush=True)
+    row.update(classify(len(evidence), win_share, runner, abs(onset - lag) / SR * 1000,
+                        spread, refused))
+    print(f"{part}: {lag} ({len(evidence)} candidates, judge {win_share:.2f}; onset {onset} "
+          f"(runner-up {runner:.2f}); catalogue {catalogued})", flush=True)
     return part, row
+
+
+def classify(n_candidates, win_share, onset_runner_up, onset_off_ms, spread_ms,
+             refused=False):
+    """{"onset_clear", "onset_disagrees", "ambiguous"} for one part's evidence: the
+    onsets disagree only when their peak is clear and more than 1 ms away; with several
+    candidates the choice stands only if the judge's wins reach two thirds and a clear
+    onset confirms it."""
+    clear = onset_runner_up < ONSET_CLEAR
+    disagrees = clear and onset_off_ms > ONSET_TOLERANCE_MS
+    unconfirmed = n_candidates > 1 and (win_share < WIN_SHARE or not clear)
+    return {"onset_clear": clear, "onset_disagrees": disagrees,
+            "ambiguous": bool(refused or disagrees or unconfirmed or spread_ms > SPREAD_MS)}
 
 
 def _sha(path: pathlib.Path) -> str:
@@ -232,13 +275,13 @@ def main():
         row["crop"] = {"excerpt_start_frame": record["excerpt_start_frame"],
                        "excerpt_end_frame": record["excerpt_end_frame"]}
     document = {
-        "schema": "validation-lags-2",
+        "schema": "validation-lags-3",
         "meaning": "lag_samples: samples the part's amp track lags its DI at 48 kHz "
                    "(recording[t] ~ di[t - lag_samples]), measured on the part's 10-s "
                    "validation crop",
         "method": "scripts/record_part_lags.py: candidates from the pooled correlation "
-                  "with the panel's renders, chosen by the judge when several, checked "
-                  "against the DI's onsets",
+                  "with the panel's renders, chosen by the judge when several and then "
+                  "confirmed by a clear onset peak, checked against the DI's onsets",
         "panel": str(args.panel_dir), "latency_samples": LATENCY,
         "catalogue_sha256": _sha(CATALOG), "panel_index_sha256": _sha(panel / "index.json"),
         "parts": lags}
