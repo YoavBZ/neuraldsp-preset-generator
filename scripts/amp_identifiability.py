@@ -6,13 +6,15 @@
         --json amp-identifiability.json
 
 For every development part whose DI plays in at least half of 1.0-10 s, every offered
-render of the three amps through that part's DI (factory presets with no drive pedal and
-the amp's volume at most 0.75, and each amp's template with time effects off) is taken
-in turn as the target. Every other offered render of the same part is a candidate,
-scored against the target by the judge (`aligned_distance`, default bands, lag 0: both
-are renders of the same DI). In each of 20 draws, the same number of candidates is drawn
-from each amp (the target's own preset excluded), and the amp of the closest one is the
-guess. A target's accuracy is the share of draws that guess its amp; chance is 1/3.
+render of the three amps through that part's DI (factory presets with no drive pedal,
+the amp's volume at most 0.75 and the cab section on, and each amp's template with time
+effects off) is taken in turn as the target. Every offered render of the same part
+outside the target's family (its artist folder; the templates are one family) is a
+candidate, scored against the target by the judge (`aligned_distance`, default bands,
+lag 0: both are renders of the same DI). In each of 200 draws, the same number of
+candidates is drawn from each amp (the smallest amp's remaining pool), and the amp of
+the closest one is the guess. A target's accuracy is the share of draws that guess its
+amp; chance is 1/3.
 """
 
 from __future__ import annotations
@@ -32,8 +34,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
 
-LATENCY, DRAWS, CHANCE = 52, 20, 1 / 3
-RECOVERABLE, NOT_RECOVERABLE = 0.6, 0.45
+LATENCY, DRAWS, CHANCE = 52, 200, 1 / 3
+RECOVERABLE, NOT_RECOVERABLE, EVERY_AMP = 0.6, 0.45, 0.5
 
 
 def build_parser():
@@ -47,12 +49,38 @@ def build_parser():
     return ap
 
 
-def offered(candidate: str, high_gain) -> bool:
-    """A factory preset that is not high-gain, or an amp's template with time effects off."""
+def offered(candidate: str, high_gain, cab_on=lambda c: True) -> bool:
+    """A factory preset that is not high-gain and has its cab on, or an amp's template
+    with time effects off."""
     name = candidate.split(":", 1)[1]
     if name == "template+R":
         return True
-    return name.startswith("factory:") and not high_gain(candidate)
+    return name.startswith("factory:") and not high_gain(candidate) and cab_on(candidate)
+
+
+def family(candidate: str) -> str:
+    """The artist folder a factory preset comes from; the templates are one family, and
+    every other preset (Neural DSP's own, Default) is its own."""
+    name = candidate.split(":", 1)[1]
+    if name == "template+R":
+        return "templates"
+    parts = name[len("factory:"):].split("/")
+    return f"artist:{parts[1]}" if parts[0] == "Artists" and len(parts) > 2 else candidate
+
+
+def settings(candidate: str) -> dict:
+    """The preset's compressor, cab and volume, as stored."""
+    from format.parser import parse
+    from format.structured import build
+    from plan_listening_validation import preset_path
+
+    amp = candidate.split(":", 1)[0]
+    v = {(p.module_path, p.key): p.value
+         for p in build(parse(preset_path(candidate).read_bytes())).parameters}
+    on = lambda k: str(v.get(k, "false")).lower() == "true"                # noqa: E731
+    return {"compressor": on(("compressor", "compressorActive")),
+            "cab": on(("cabParameters", "sectionActive")),
+            "volume": float(v.get((f"{amp}Amp", f"{amp}Volume"), "nan"))}
 
 
 def distances(job):
@@ -65,34 +93,40 @@ def distances(job):
     renders = {c: K.mono(f) for c, f in files.items()}
     out = {}
     for t, x in renders.items():
-        out[t] = {c: aligned_distance(x, y, di, lag=0, render_latency=LATENCY, start_s=1.0,
-                                      end_s=10.0).distance
-                  for c, y in renders.items() if c != t}
+        out[t] = {}
+        for c, y in renders.items():
+            if c != t:
+                r = aligned_distance(x, y, di, lag=0, render_latency=LATENCY, start_s=1.0,
+                                     end_s=10.0)
+                out[t][c] = None if r.distance is None else [r.distance, r.tonal, r.temporal]
     print(part, flush=True)
     return part, out
 
 
-def guesses(matrix, seed):
-    """{target: share of draws whose closest equal-sized candidate set's amp is right}."""
+def guesses(matrix, seed, which=0, keep=lambda c: True, min_k=3):
+    """{target: (share of draws whose closest candidate's amp is right, the guesses'
+    counts by amp, k)}. Candidates exclude the target's family; each amp contributes k,
+    the smallest of the three remaining pools. `which` picks the distance (0 the
+    judge's, 2 its temporal part); `keep` limits targets and candidates."""
     amps = sorted({c.split(":", 1)[0] for c in matrix})
-    by_amp = {a: sorted(c for c in matrix if c.startswith(f"{a}:")) for a in amps}
-    k = min(len(v) for v in by_amp.values()) - 1
     rng = random.Random(seed)
     out = {}
-    for t in sorted(matrix):
+    for t in sorted(c for c in matrix if keep(c)):
         own = t.split(":", 1)[0]
-        pools = {a: [c for c in names if c != t and matrix[t].get(c) is not None]
-                 for a, names in by_amp.items()}
-        if any(len(pool) < k for pool in pools.values()):
-            out[t] = None                       # the judge refused too many of its pairs
+        pools = {a: [c for c in matrix[t] if c.startswith(f"{a}:") and keep(c)
+                     and family(c) != family(t) and matrix[t][c] is not None]
+                 for a in amps}
+        k = min(len(pool) for pool in pools.values())
+        if k < min_k:
+            out[t] = None                       # too few candidates left to compare
             continue
-        right = 0
+        counts = collections.Counter()
         for _ in range(DRAWS):
-            best = {a: min(matrix[t][c] for c in rng.sample(pool, k))
+            best = {a: min(matrix[t][c][which] for c in rng.sample(pool, k))
                     for a, pool in pools.items()}
-            right += min(best, key=best.get) == own
-        out[t] = right / DRAWS
-    return out, k
+            counts[min(best, key=best.get)] += 1
+        out[t] = (counts[own] / DRAWS, dict(counts), k)
+    return out
 
 
 def sign_flip_p(values):
@@ -127,7 +161,13 @@ def main():
         die("a panel holds a part that is not development material")
     crops = args.crops_dir.expanduser()
     names = sorted({c for d in files.values() for c in d})
-    kept = [c for c in names if offered(c, high_gain)]
+    preset = {c: settings(c) for c in names if c.split(":", 1)[1] != "template"}
+    kept = [c for c in names if offered(c, high_gain, lambda c: preset[c]["cab"])]
+    missing = [p for p in files if p not in meta]
+    if missing:
+        die(f"parts the catalogue does not know: {missing}")
+    if any(set(kept) - set(files[p]) for p in files):
+        die("a panel is missing a render of an offered preset")
     parts = [p for p in sorted(files)
              if K.active_fraction(K.mono(crops / p / "di.wav"), 1.0, 10.0) >= 0.5]
     from concurrent.futures import ProcessPoolExecutor
@@ -135,32 +175,52 @@ def main():
     with ProcessPoolExecutor(args.workers) as ex:
         matrices = dict(ex.map(distances, [(p, {c: files[p][c] for c in kept}, crops)
                                            for p in parts]))
-    rows, k_used = [], set()
-    for p in parts:
-        acc, k = guesses(matrices[p], seed=p)
-        k_used.add(k)
-        for t, a in acc.items():
-            rows.append({"part": p, "band": meta[p]["band"], "target": t,
-                         "amp": t.split(":", 1)[0], "accuracy": a})
-    scored = [r for r in rows if r["accuracy"] is not None]
-    by_band = collections.defaultdict(list)
-    for r in scored:
-        by_band[r["band"]].append(r["accuracy"])
-    band_means = {b: statistics.mean(v) for b, v in sorted(by_band.items())}
-    median = statistics.median(band_means.values())
-    p = sign_flip_p([v - CHANCE for v in band_means.values()])
-    verdict = ("recoverable" if median >= RECOVERABLE and p < 0.05
-               else "not recoverable" if median <= NOT_RECOVERABLE else "partly")
-    per_amp = {a: statistics.mean(r["accuracy"] for r in scored if r["amp"] == a)
-               for a in sorted({r["amp"] for r in scored})}
+    def reading(which=0, keep=lambda c: True):
+        rows = []
+        for p in parts:
+            for t, g in guesses(matrices[p], seed=p, which=which, keep=keep).items():
+                rows.append({"part": p, "band": meta[p]["band"], "target": t,
+                             "amp": t.split(":", 1)[0], "accuracy": None if g is None else g[0],
+                             "guessed": None if g is None else g[1],
+                             "k": None if g is None else g[2], **preset.get(t, {})})
+        scored = [r for r in rows if r["accuracy"] is not None]
+        if not scored:
+            return {"rows": rows, "verdict": "nothing scored"}
+        by_band = collections.defaultdict(list)
+        for r in scored:
+            by_band[r["band"]].append(r["accuracy"])
+        band_means = {b: statistics.mean(v) for b, v in sorted(by_band.items())}
+        median = statistics.median(band_means.values())
+        p = sign_flip_p([v - CHANCE for v in band_means.values()])
+        per_amp = {a: statistics.mean(r["accuracy"] for r in scored if r["amp"] == a)
+                   for a in sorted({r["amp"] for r in scored})}
+        confusion = {a: dict(sum((collections.Counter(r["guessed"]) for r in scored
+                                  if r["amp"] == a), collections.Counter()))
+                     for a in per_amp}
+        verdict = ("recoverable" if median >= RECOVERABLE and p < 0.05
+                   and min(per_amp.values()) >= EVERY_AMP
+                   else "no evidence across presets" if median <= NOT_RECOVERABLE
+                   else "partly")
+        return {"targets": len(rows), "unscored_targets": len(rows) - len(scored),
+                "k_range": [min(r["k"] for r in scored), max(r["k"] for r in scored)],
+                "bands": len(band_means), "band_mean_accuracy": band_means,
+                "median_band_accuracy": median, "sign_flip_p_one_sided": p,
+                "per_amp_accuracy": per_amp, "confusion": confusion, "verdict": verdict,
+                "rows": rows}
+
+    main_reading = reading()
     out = {"panels": index_hashes, "offered": kept, "parts": len(parts),
-           "bands": len(band_means), "candidates_per_amp_per_draw": sorted(k_used),
-           "targets": len(rows), "unscored_targets": len(rows) - len(scored),
-           "band_mean_accuracy": band_means, "median_band_accuracy": median,
-           "sign_flip_p_one_sided": p, "per_amp_accuracy": per_amp, "verdict": verdict,
-           "rows": rows, "distances": matrices}
-    print(json.dumps({k: v for k, v in out.items() if k not in ("rows", "distances",
-                                                                 "offered")}, indent=1))
+           "verdict": main_reading["verdict"], "main": main_reading,
+           "reported": {"temporal_part_only": reading(which=2),
+                        "compressor_on_only": reading(
+                            keep=lambda c: preset.get(c, {}).get("compressor", False))},
+           "distances": matrices}
+    def brief(r):
+        return {k: v for k, v in r.items() if k != "rows"}
+
+    print(json.dumps({"verdict": out["verdict"], "main": brief(main_reading),
+                      "reported": {k: brief(v) for k, v in out["reported"].items()}},
+                     indent=1))
     if args.json:
         args.json.expanduser().write_text(json.dumps(out) + "\n")
 

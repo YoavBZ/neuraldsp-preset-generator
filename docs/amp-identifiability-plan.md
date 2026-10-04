@@ -4,31 +4,38 @@ Declared on 2026-10-04, before anything is computed. The user asked why the gene
 does not choose among Morgan's amps (SW50R, PR12, AC20) as one more setting.
 
 **Why ask this first.** Choosing the amp by measurement means searching each amp and
-letting the judge pick the closest result. That only makes sense if the judge can tell
-the amps apart when the presets differ. This is the "imitation test" of
-`docs/research-full-plugin-estimation.md` (S3) for amp choice, run with the judge.
+letting the judge pick the closest result. A precondition is that the judge can tell
+the amps apart across presets: preset retrieval, with no refit. It is not the S3
+imitation test of `docs/research-full-plugin-estimation.md`. S3 refits each target on
+every amp from distortion-matched starts and decides with another DI; this check does
+none of that.
 
 ## Material
 
 - **Renders.** The SW50R, PR12 and AC20 panels (`scripts/render_preset_panel.py`): every
   factory preset of each amp with time effects off, through each development part's DI.
   The SW50R and PR12 panels already exist; the AC20 panel is rendered for this.
-- **What is offered.** Each amp's factory presets with no drive pedal and the amp's
-  volume at most 0.75, the rule stage 0b used for PR12 (17 SW50R, 21 PR12 and 17 AC20
-  presets), plus each amp's template with time effects off. So 17 candidates are drawn
-  per amp.
+- **What is offered.** Each amp's factory presets with no drive pedal, the amp's
+  volume at most 0.75 (the rule stage 0b used for PR12) and the cab section on, plus
+  each amp's template with time effects off: 18 SW50R, 21 PR12 and 18 AC20, in 25
+  families.
+- **Families.** A preset's family is its artist folder. The three templates are one
+  family. Neural DSP's own presets and Default are each their own.
 - **Parts.** Development parts whose DI plays in at least half of 1.0–10 s (the K3
   rule; 30 parts).
 
 ## Procedure
 
 For every part, every offered render is taken in turn as the target.
-- **The distance.** Every other offered render of the same part is a candidate. The
-  judge scores it against the target: `aligned_distance`, default bands, over 1.0–10 s,
-  lag 0, since both are renders of the same DI.
-- **The draws.** In each of 20 draws (seeded by the part's name), the same number of
-  candidates is drawn from each amp, the smallest amp's count less one, with the
-  target's own preset excluded. The guess is the amp of the closest candidate.
+- **The distance.** Every offered render of the same part outside the target's family
+  is a candidate. The family is left out because presets within one share settings:
+  two SW50R presets render identically once tremolo is off, and the templates match
+  outside the amp. The judge scores each candidate against the target:
+  `aligned_distance`, default bands, over 1.0–10 s, lag 0, since both are renders of
+  the same DI.
+- **The draws.** In each of 200 draws (seeded by the part's name), k candidates are
+  drawn from each amp, k being the smallest of the three remaining pools (at least 3,
+  or the target is not scored). The guess is the amp of the closest candidate.
 - **The score.** A target's accuracy is the share of draws whose guess is its amp.
   Chance is 1/3.
 
@@ -39,21 +46,33 @@ one-sided band sign-flip test against 1/3.
 
 | Outcome | Rule |
 |---|---|
-| **recoverable** | median ≥ 0.60 and p < 0.05 |
-| **not recoverable** | median ≤ 0.45 |
+| **recoverable** | median ≥ 0.60 and p < 0.05, and every amp's mean accuracy ≥ 0.50 |
+| **no evidence across presets** | median ≤ 0.45 |
 | **partly** | anything else |
 
-Reported, not deciding: per-amp accuracy, and the share of targets that could not be
-scored because the judge refused a window.
+The sign-flip test generalises over performances only: the same presets appear in
+every band.
+
+**Reported, not deciding:**
+- the 3×3 confusion matrix and each amp's accuracy;
+- the targets not scored;
+- each target's compressor state and volume;
+- the same reading on the judge's temporal part alone, which is less open to
+  differences an EQ could imitate;
+- the same reading on compressor-on presets only. The compressor is on in 19 of 21
+  PR12, 13 of 18 AC20 and 11 of 18 SW50R offered presets, and could separate the sets
+  instead of the amps.
 
 ## What follows
 
-- **Recoverable.** With a DI, amp choice can be measured. The next step is a declared
-  benchmark of "search each amp briefly, keep the judge's closest" against searching
-  one amp, before the matcher changes.
-- **Not recoverable.** The judge cannot tell the amps apart once the presets differ, so
-  measured amp choice would be noise. Amp choice stays a reasoned decision (the
-  generate skill's routing).
+- **Recoverable.** The precondition holds. The next step is a declared benchmark of
+  "search each amp briefly, keep the judge's closest" against searching one amp, with
+  a refit, before the matcher changes.
+- **No evidence across presets.** The judge does not tell the amps apart across
+  presets. That does not justify S3 or the benchmark yet, but it does not show that
+  searching each amp fails either, since a search removes the variation between
+  presets. Amp choice stays a reasoned decision (the generate skill's routing) until
+  a refit test says otherwise.
 - **Partly.** It is reported with its per-amp accuracies, and the user decides.
 
 ## Limits, stated now
@@ -66,6 +85,9 @@ scored because the judge refused a window.
   these amps, so this tests whether the judge separates the amps' characters, not
   whether it finds a real rig's amp.
 - **The volume rule.** "Volume at most 0.75" is not the same amount of drive on each
-  amp: SW50R has no master volume.
+  amp. PR12 has no master volume (`sw50rLevel` is SW50R's). The offered sets differ in
+  drive: PR12's reach 0.62–0.68, near its knee; AC20 includes "Mid-Gain Drive" (0.71);
+  SW50R's stay at or below 0.61. The judge hears drive, so drive could separate the
+  sets rather than the amps' character. Each target's volume is in the rows.
 - **Product scope.** The product's song-only use has no DI, and the judge does not apply
   there.
