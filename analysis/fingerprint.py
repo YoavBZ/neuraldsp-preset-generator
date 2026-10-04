@@ -39,12 +39,21 @@ REGIMES = {
 
 DEFAULT_EXCERPT_S = 20.0
 
-# Floors for "is this window even a guitar", not for "is this tone dark". Both
-# are set well under any real guitar: the darkest neck-pickup jazz sound in the
-# corpus that prompted them measured a 372 Hz centroid and a 737 Hz corner,
-# while the bass intro it was being confused with measured 183 Hz and 401 Hz.
-GUITAR_MIN_CENTROID_HZ = 250.0
-GUITAR_MIN_HF_CORNER_HZ = 500.0
+# Joint thresholds for "is this window dominated by a bass": a window is flagged
+# only when its centroid AND its -6 dB extent are both under them. On the 57
+# development amp tracks (real guitars, some very dark) and 52 bass tracks cut from
+# the same sessions at the same moments (about 29 performances, DI and microphone
+# copies), both together flagged 1 guitar and 50 basses, where the earlier
+# either-or floors of 250 Hz and 500 Hz flagged 15 guitars. On 20-s windows of the
+# development songs' mixes it flagged 1 of 958 windows with the guitar present and
+# caught 22 of 73 without it: it finds bass-dominated windows, not every window
+# without a guitar (drums lift the centroid). The margin is thin: the nearest
+# unflagged guitar sits at 200.7 Hz, the nearest flagged basses at 195-196 Hz; any
+# extent threshold from 340 to 548 Hz gives the same counts, so 450 Hz is set by
+# one track. The bass intro that first prompted the check (183 Hz reaching 401 Hz)
+# is still flagged.
+BASS_CENTROID_UNDER_HZ = 200.0
+BASS_HF_CORNER_UNDER_HZ = 450.0
 
 
 def _round(value) -> str:
@@ -128,24 +137,22 @@ class Fingerprint:
         return None
 
     def _implausible_for_guitar(self) -> bool:
-        """Whether this spectrum is too low **or** too narrow to be a guitar.
+        """Whether this spectrum is too low **and** too narrow to be a guitar.
 
-        A guarded sanity check on the *window*, not a judgement about tone. Even
-        a very dark neck-pickup jazz sound carries harmonics well past 500 Hz;
-        a measurement that does not is far more likely to be pointed at a bass,
-        a pad, an intro or a fade than at a guitar that happens to be dull.
-
-        Both thresholds sit well below anything a guitar produces and well above
-        the case that prompted them — a bass intro measuring a 183 Hz centroid
-        with a 401 Hz corner, against 372 Hz and 737 Hz for the guitar section of
-        the same track. Absent measurements do not trip it: an unmeasurable
+        A guarded sanity check on the *window*, not a judgement about tone. A
+        dark amp track can have a low centroid or a short extent; on the
+        development material one guitar in 57 had both, against 50 of 52 basses
+        (BASS_CENTROID_UNDER_HZ). It detects bass-dominated windows; a window
+        without a guitar but with drums usually passes, so no flag does not mean
+        a guitar is present. Absent measurements do not trip it: an unmeasurable
         spectrum is not evidence of a wrong window.
         """
         centroid = (self.spectrum.get("centroid_hz") or {}).get("p50")
         corner = self.spectrum.get("hf_corner_hz")
-        if centroid is not None and float(centroid) < GUITAR_MIN_CENTROID_HZ:
-            return True
-        return corner is not None and float(corner) < GUITAR_MIN_HF_CORNER_HZ
+        if centroid is None or corner is None:
+            return False
+        return (float(centroid) < BASS_CENTROID_UNDER_HZ
+                and float(corner) < BASS_HF_CORNER_UNDER_HZ)
 
     def caveats(self) -> list:
         """Everything a report has to say out loud about this measurement."""

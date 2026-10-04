@@ -226,10 +226,31 @@ def test_a_bass_like_spectrum_is_flagged_as_not_a_guitar():
 
 
 def test_a_guitar_like_spectrum_is_not_flagged():
-    """The thresholds must clear a genuinely dark tone, or the caveat is noise.
-    The darkest real guitar window behind these numbers measured 372 Hz."""
+    """The thresholds must clear a genuinely dark tone, or the caveat is noise."""
     fp = make(fx.band_limited(seconds=4.0, low=90, high=5000), regime="mix")
     assert not caveat_about(fp, "does not look like a guitar")
+
+
+def test_a_short_extent_alone_is_a_dark_guitar_not_another_instrument():
+    """Dark amp tracks can stop short without being low: the either-or floors
+    flagged 15 of 57 real guitar amp tracks, mostly on extent alone. Only a
+    spectrum both low and narrow is flagged."""
+    fp = make(fx.band_limited(seconds=4.0, low=200, high=400), regime="mix")
+    assert fp.spectrum["hf_corner_hz"] < 450          # under the extent threshold...
+    assert fp.spectrum["centroid_hz"]["p50"] > 200    # ...but not the centroid one
+    assert not caveat_about(fp, "does not look like a guitar")
+
+
+@pytest.mark.parametrize("centroid, corner, flagged", [
+    (183.0, 401.0, True),       # the bass intro that first prompted the check
+    (190.0, 548.0, False),      # a very dark real guitar: low, but not narrow
+    (307.0, 429.0, False),      # narrow, but not low
+    (183.0, None, False),       # one measurement missing is no evidence
+    (None, 401.0, False),
+])
+def test_only_a_spectrum_both_low_and_narrow_is_taken_for_a_bass(centroid, corner, flagged):
+    fp = Fingerprint(spectrum={"centroid_hz": {"p50": centroid}, "hf_corner_hz": corner})
+    assert fp._implausible_for_guitar() is flagged
 
 
 def test_a_synthetic_probe_is_exempt():

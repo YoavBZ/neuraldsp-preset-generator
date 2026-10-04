@@ -26,18 +26,23 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
   --regime mix --excerpt-start 264 --text
 ```
 
-**Before using any numbers, check the excerpt plausibly contains a guitar.** Two
-cheap tests, both reported in `--text`:
+**Before using any numbers, check the excerpt plausibly contains a guitar.** One
+cheap test on two measurements, reported in `--text`:
 
-| | implausible | the dark jazz tone this threshold was set against |
-|---|---|---|
-| spectral centroid | below 250 Hz | 372 Hz |
-| −6 dB extent | tops out below 500 Hz | 737 Hz |
+| | flagged when both hold |
+|---|---|
+| spectral centroid | below 200 Hz |
+| −6 dB extent | tops out below 450 Hz |
 
-A fingerprint that fails either is flagged, and the flag means *find a different
-window*, not *this is a dark tone*. Even a neck-pickup jazz sound with the tone
-rolled off carries harmonics well past 500 Hz; a bass, a pad, an intro or a fade
-does not.
+A flag means *find a different window*, not *this is a dark tone*: on 57 real
+guitar amp tracks one was flagged, against 50 of 52 bass tracks from the same
+sessions, and on 20-s windows of full mixes it flagged 1 of 958 windows with the
+guitar present. It detects windows dominated by a bass. It caught only 22 of 73 mix
+windows with no guitar in them, since drums lift the spectrum, so **no flag does
+not mean the guitar is there**: listen to the window, or check that the guitar's
+stem is loud in it. A separated guitar stem's bleed windows (a bass intro heard
+through the stem) measured just above the thresholds, at 255 Hz and 406 Hz, and
+passed.
 
 `--excerpt-start` is reported honestly when it could not be honoured, too. A
 start with no room for the requested length is clamped and says so

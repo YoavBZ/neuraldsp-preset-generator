@@ -62,8 +62,8 @@ any of:
   the earliest of them, so confirm it holds the part
 - a clamped or ignored `--excerpt-start` — the window you named was not the
   window measured
-- a "does not look like a guitar" caveat — centroid under 250 Hz or a −6 dB
-  extent under 500 Hz
+- a "does not look like a guitar" caveat — centroid under 200 Hz and a −6 dB
+  extent under 450 Hz
 
 [reading-a-reference.md](../../reference/reading-a-reference.md) has both checks,
 what each regime's confidence buys, and which bands of a `mix` or `separated_stem`
