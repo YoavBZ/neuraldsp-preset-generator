@@ -3,7 +3,7 @@
 
     python scripts/derive_panel.py --panel-dir ~/ndsp-presets/runs/kill/pr12 \\
         --out-dir ~/ndsp-presets/runs/kill/pr12-clean \\
-        --lags-json ~/ndsp-presets/runs/kill/pr12-clean/judge-lags.json
+        --lags-json ~/ndsp-presets/runs/kill/pr12-clean-judge-lags.json
 
 Writes a panel folder whose `index.json` lists only the source panel's rows for its
 factory presets that are not high-gain (`plan_listening_validation.high_gain`: a drive
@@ -46,6 +46,9 @@ def kept_rows(index, high_gain):
     amp = index["amp"]
     keep = {c for c in {r["candidate"] for r in index["rows"]}
             if not c.startswith("factory:") or not high_gain(f"{amp}:{c}")}
+    others = sorted(c for c in keep if not c.startswith("factory:"))
+    if others != ["template", "template+R"]:
+        raise ValueError(f"unexpected candidates besides the factory presets: {others}")
     rows = [r for r in index["rows"] if r["candidate"] in keep]
     return rows, sorted(c for c in keep if c.startswith("factory:"))
 
@@ -78,7 +81,7 @@ def main():
     if out.exists() and any(out.iterdir()):
         die(f"{out} is not empty")
     out.mkdir(parents=True, exist_ok=True)
-    config = {"source_panel": str(args.panel_dir),
+    config = {"source_panel": str(source),
               "source_index_sha256": hashlib.sha256(raw).hexdigest(),
               "rule": "factory presets with no drive pedal and amp volume <= 0.75",
               "factory_presets": presets}

@@ -33,22 +33,45 @@ informs it.
 panel.
 
 - **Lags.** The judge uses each part's recorded lag (`docs/validation-lags.json`) less
-  the 52-sample latency, written into the judge's lag table. The four parts whose lag
-  is ambiguous get none, so the judge leaves them out, and the output lists them.
-- **ALM.** It keeps its catalogued lags, as declared. It is reported, not deciding.
+  the 52-sample latency, written into the judge's lag table. These are stage 0b's
+  validated setting; they replace the SW50R run's pooled estimates.
+  - The four parts whose lag is ambiguous get none, so the judge leaves them out, and
+    the output lists them.
+  - Two of the four are K1 and K3 parts (Signs ElecGtr3, Strangest Places). That
+    leaves K1 with 25 parts in 9 bands and K3 with 28 in 11.
+  - The other parts' lags equal the SW50R run's frozen ones.
+- **ALM.** It keeps its catalogued lags, as declared, and still enters in two places:
+  - K2 decides under ALM, as in the SW50R verdict. Its regret is ALM between two
+    renders, which needs no lag. Its constant guess is chosen by ALM at the
+    catalogued lags.
+  - K3's recognisers read the amp track's frames where the DI plays at the catalogued
+    lags. Those are 9.5–14 ms off on four parts, about one 10.7-ms frame.
+  - ALM's own K1 and K3 readings are reported, not deciding.
 
 ## What decides
 
 The decision uses the judge alone, under both band sets: the kill tests' clause for
-"validates the judge but not ALM" (`docs/kill-test-k3-plan.md`). Stage 0b's own
-decision adds one condition: a gain below the clear cut, |log ratio| 0.150, rests on
-an unvalidated range and cannot open a gate.
+"validates the judge but not ALM" (`docs/kill-test-k3-plan.md`).
+
+One condition is new, added here, not prescribed by stage 0b: K3's gain against
+template+R must exceed the clear cut, |log ratio| 0.150. It replaces the declared
+log 0.9 (−0.105), which it implies. Stage 0b validated pairwise differences above the
+cut on 4-s windows; this applies the cut to a median of band medians over 1.0–10 s,
+in the same spirit as its rule that POC gains below the cut cannot open a gate. The
+majority-of-parts comparisons against the constant and the shuffled control remain
+near-ties, in the unvalidated range.
 
 | Test | Passes only if |
 |---|---|
 | K1 | the oracle's band-median log ratio against template+R is ≤ log 0.75 under the judge's default and union bands |
-| K2 | as declared (`docs/supervised-model-plan.md` §0): some recogniser reaches 3× chance top-1 (here 3/21) and at most 0.75× the constant guess's median regret |
-| K3 | one recogniser meets the declared rule under both of the judge's band sets, and its most common pick is no more than half its parts' picks. The declared rule asks for: a band-median log ratio against template+R ≤ log 0.9; closer than template+R, than the constant and than the shuffled control on a majority of parts. A tie counts as not closer, as the declaration's text says. In addition, its band-median log ratio against template+R is ≤ −0.150 under both band sets. |
+| K2 | as declared (`docs/supervised-model-plan.md` §0): some recogniser reaches 3× chance top-1 (here 3/21) and at most 0.75× the constant guess's median regret (that second condition is vacuous once top-1 is 50% or more) |
+| K3 | one recogniser, under both of the judge's band sets: a median of band medians against template+R below −0.150; closer than template+R on more than half its parts; better than the shuffled control on more than half (a tie counts half, as declared); closer than the constant on more than half (a tie counts as not closer, as the declaration's text says); and its most common pick no more than half its picks. Every count is out of all its parts, ties included. |
+
+`scripts/kill_tests_pr12_verdict.py`, committed with this plan, computes exactly this
+from the outputs, with unrounded medians. The scripts' own `pass`, `verdict` and
+`gate_open` fields apply the SW50R declaration and are not this verdict. On the SW50R
+outputs it reproduces the known readings: 1-NN passes the default bands' counts (18,
+23, 21 of 30) and fails the union bands' (15 of 30 against the constant).
 
 The gate here is "**passes on clean PR12**" only if K1, K2 and K3 all pass as above.
 Everything else is reported, not deciding:
@@ -64,11 +87,38 @@ Everything else is reported, not deciding:
   clean-to-crunch material (no drive pedal, low volume), under the four conditions in
   `docs/kill-test-results.md` ("What follows"), with results read only above the
   clear cut. The SW50R verdict stays "not passed" for high-gain material.
-- **Does not pass.** No evidence, even inside the validated range, that recognition
-  learned from renders carries over. The model POC as planned is not supported. The
-  write-up says which test failed and how, so the user can choose between stopping
+- **Does not pass.** What it means depends on which test failed:
+  - **K1:** the clean menu has no headroom over template+R. That says nothing about
+    transfer.
+  - **K2:** the 21 clean presets cannot be told apart across players. That says
+    nothing about transfer.
+  - **K3, with K1 and K2 passing:** no evidence, even inside the validated range,
+    that recognition learned from renders carries over to real amp tracks. The model
+    POC as planned is not supported.
+
+  This test is stricter than the SW50R one, so a pass means more than before and a
+  failure less:
+  - 21 similar presets;
+  - a top-1 bar of 14.3% rather than 6.8%;
+  - more picks equal to the constant, each counted as a loss;
+  - fewer parts;
+  - the −0.150 condition.
+
+  The write-up says which test failed and how, so the user can choose between stopping
   model work and a narrower next step.
 - **Either way,** the user decides.
+
+## How it is run
+
+The source panel's `index.json` must still hash to `18e5ffc4…0193`, the value the
+derived panel records. Outputs go to `~/ndsp-presets/runs/kill/`:
+- `k-pr12-clean.json` (K1, K2);
+- `k3-pr12-clean.json` (K3);
+- `k-judge-pr12-clean.json` (the judge's readings);
+- `verdict-pr12-clean.json` (this verdict).
+
+The run is once, at the commit that records this plan. A crash is fixed and rerun; a
+result is not.
 
 ## What is known before computing
 
