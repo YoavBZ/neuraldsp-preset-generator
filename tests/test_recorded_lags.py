@@ -38,24 +38,28 @@ def test_ambiguity_follows_the_declared_checks():
     lags = json.loads(B.LAGS.read_text())
     assert lags["schema"] == "validation-lags-3"
     for part, row in lags["parts"].items():
-        expected = R.classify(len(row["candidates"]), row["judge_win_share"],
-                              row["onset_runner_up"],
-                              abs(row["onset_lag_samples"] - row["lag_samples"]) / 48,
-                              row["subset_spread_ms"], row["search_refused"])
+        expected = R.classify([c["lag_samples"] for c in row["candidates"]],
+                              row["lag_samples"], row["judge_win_share"],
+                              row["onset_lag_samples"], row["onset_runner_up"],
+                              [s["lag"] for s in row["subsets"]], row["search_refused"])
         assert {k: row[k] for k in expected} == expected, part
         assert any(c["lag_samples"] == row["lag_samples"] for c in row["candidates"]), part
 
 
 @pytest.mark.parametrize("evidence, ambiguous", [
-    ((1, 1.0, 0.95, 3.0, 0.1), False),     # one peak; an unclear onset is no check
-    ((1, 1.0, 0.5, 3.0, 0.1), True),       # one peak; a clear onset 3 ms away
-    ((1, 1.0, 0.5, 0.9, 0.1), False),      # ...0.9 ms away is within tolerance
-    ((1, 1.0, 0.5, 0.0, 0.6), True),       # the subsets spread over 0.5 ms
-    ((2, 1.0, 0.5, 0.0, 0.1), False),      # several; the judge and a clear onset agree
-    ((2, 1.0, 0.95, 0.0, 0.1), True),      # several; the onset does not confirm
-    ((2, 0.6, 0.5, 0.0, 0.1), True),       # several; the judge's wins are split
+    (([500], 500, 1.0, 644, 0.95, [500] * 5), False),   # one peak; an unclear onset: no check
+    (([500], 500, 1.0, 644, 0.5, [500] * 5), True),     # one peak; a clear onset 3 ms away
+    (([500], 500, 1.0, 543, 0.5, [500] * 5), False),    # ...0.9 ms away is within tolerance
+    (([500], 500, 1.0, 500, 0.5, [500, 530]), True),    # a subset 0.6 ms from the choice
+    (([500, 600], 500, 1.0, 500, 0.5, [500] * 5), False),  # judge and a clear onset agree
+    (([500, 600], 500, 1.0, 500, 0.95, [500] * 5), True),  # the onset does not confirm
+    (([500, 600], 500, 0.6, 500, 0.5, [500] * 5), True),   # the judge's wins are split
+    # The onset between two candidates 49 samples apart, within 1 ms of both but
+    # nearer the one not chosen: no confirmation.
+    (([72, 23], 72, 1.0, 40, 0.3, [72] * 5), True),
+    (([72, 23], 72, 1.0, 60, 0.3, [72] * 5), False),
 ])
-def test_a_choice_among_aliases_needs_a_clear_onset(evidence, ambiguous):
+def test_a_choice_among_aliases_needs_a_clear_onset_nearest_it(evidence, ambiguous):
     assert R.classify(*evidence)["ambiguous"] is ambiguous
     assert R.classify(*evidence, refused=True)["ambiguous"] is True
 

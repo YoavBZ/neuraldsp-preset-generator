@@ -29,9 +29,10 @@ so it is quantised to 10 ms. Here, on each part's 10-s validation crop:
    choice.
 
 A part is **ambiguous** when the onsets clearly disagree (more than 1 ms away), when
-several candidates were found and the onsets do not clearly confirm the choice (or the
-judge's choice is split, under two thirds of the renders), or the subsets spread over
-0.5 ms; its chosen lag is still recorded, with the evidence.
+several candidates were found and a clear onset does not confirm the choice (within 1
+ms, and nearer it than any other candidate) or the judge's wins are split (under two
+thirds of the renders, counted over all of them), or a subset lands more than 0.5 ms
+from the choice; its chosen lag is still recorded, with the evidence.
 
 The lag is expressed DI-to-amp-track by adding the latency back. Held-out parts are
 never opened. `lag_samples(part)` in `benchmark_recordings.py` reads the file.
@@ -122,7 +123,10 @@ def onset_lag(di, ref, centre, span, hop=4, floor_db=40.0):
     40 dB under its peak), its rises cross-correlated, at a resolution of `hop` samples.
     The runner-up is the highest local peak 1 ms or more away (0 when there is none).
     On the SW50R panel's 1978 renders, whose lag is the plugin's 52 samples, 90% read
-    within 1 ms, and the worst is 49 ms off: trust a clear peak only."""
+    within 1 ms, and the worst is 49 ms off: trust a clear peak only. Within 1 ms by
+    runner-up: 99% below 0.7, 88-94% at 0.7-0.8, 78-86% at 0.8-0.85, 66-73% at
+    0.85-0.9; 96% of all clear peaks (under 0.9). A wrong clear onset can land near an
+    alias of the correlation (3 of 28 on Prodigal ElecGtr2)."""
     import numpy as np
     from scipy import signal
 
@@ -208,29 +212,36 @@ def measure(job):
     onset, runner = onset_lag(di, ref, render_lag + LATENCY, span)
     lag = render_lag + LATENCY
     row = {"lag_samples": lag, "search_ms": width_ms, "search_refused": refused,
-           "renders": len(names), "catalogue_lag_samples": catalogued,
+           "renders": len(names), "render_names": names, "catalogue_lag_samples": catalogued,
            "candidates": [{**e, "lag_samples": e.pop("render_lag") + LATENCY} for e in evidence],
            "judge_win_share": round(win_share, 3),
            "onset_lag_samples": onset, "onset_runner_up": round(runner, 3),
            "subsets": subsets, "subset_spread_ms": round(spread, 3)}
-    row.update(classify(len(evidence), win_share, runner, abs(onset - lag) / SR * 1000,
-                        spread, refused))
+    row.update(classify([c["lag_samples"] for c in row["candidates"]], lag,
+                        row["judge_win_share"], onset, row["onset_runner_up"],
+                        [s["lag"] for s in subsets], refused))
     print(f"{part}: {lag} ({len(evidence)} candidates, judge {win_share:.2f}; onset {onset} "
           f"(runner-up {runner:.2f}); catalogue {catalogued})", flush=True)
     return part, row
 
 
-def classify(n_candidates, win_share, onset_runner_up, onset_off_ms, spread_ms,
+def classify(candidates, lag, win_share, onset, onset_runner_up, subset_lags,
              refused=False):
-    """{"onset_clear", "onset_disagrees", "ambiguous"} for one part's evidence: the
-    onsets disagree only when their peak is clear and more than 1 ms away; with several
-    candidates the choice stands only if the judge's wins reach two thirds and a clear
-    onset confirms it."""
+    """{"onset_clear", "onset_disagrees", "ambiguous"} for one part's evidence (lags in
+    samples, as recorded): the onsets disagree only when their peak is clear and more
+    than 1 ms from the choice; with several candidates the choice stands only if the
+    judge's wins reach two thirds and a clear onset confirms it, by being within 1 ms
+    of it and nearer it than any other candidate; and every subset must land within
+    0.5 ms of the choice."""
+    tolerance = ONSET_TOLERANCE_MS * SR / 1000
     clear = onset_runner_up < ONSET_CLEAR
-    disagrees = clear and onset_off_ms > ONSET_TOLERANCE_MS
-    unconfirmed = n_candidates > 1 and (win_share < WIN_SHARE or not clear)
+    disagrees = clear and abs(onset - lag) > tolerance
+    nearest = min(candidates, key=lambda c: (abs(c - onset), c != lag))
+    confirmed = clear and nearest == lag and abs(onset - lag) <= tolerance
+    unconfirmed = len(candidates) > 1 and (win_share < WIN_SHARE or not confirmed)
+    unstable = any(abs(s - lag) > SPREAD_MS * SR / 1000 for s in subset_lags)
     return {"onset_clear": clear, "onset_disagrees": disagrees,
-            "ambiguous": bool(refused or disagrees or unconfirmed or spread_ms > SPREAD_MS)}
+            "ambiguous": bool(refused or disagrees or unconfirmed or unstable)}
 
 
 def _sha(path: pathlib.Path) -> str:

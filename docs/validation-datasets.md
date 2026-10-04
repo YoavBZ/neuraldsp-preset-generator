@@ -87,9 +87,10 @@ otherwise before it runs.
   between them, and the choice stands only if a clear onset peak from the raw DI
   confirms it (the judge's preference is not independent evidence: every render
   shares the part's DI and amp track). Four are ambiguous and `lag_samples` withholds
-  them unless asked: Passing Ships ElecGtr3 and Prodigal ElecGtr4 (combs the onsets
-  cannot confirm), Strangest Places (+37 samples; −37 is nearly as high) and Signs
-  ElecGtr3 (72; 23 is nearly as high), whose pooled subsets spread over 0.5 ms. Of the
+  them unless asked: Passing Ships ElecGtr3 (a comb the judge cannot split, its
+  onset between two of the peaks), Prodigal ElecGtr4 (a comb with no clear onset),
+  Strangest Places (+37 samples; −37 is nearly as high) and Signs ElecGtr3 (72; 23 is
+  nearly as high), whose pooled subsets land on both peaks. Of the
   39 others, the catalogue is off by 2.5 ms or more on 7, by up to 14 ms (Today's The
   Day ElecGtr10). Analyses declared before this file existed keep the lags they
   declared.
