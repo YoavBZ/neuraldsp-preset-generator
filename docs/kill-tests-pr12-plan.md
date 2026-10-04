@@ -64,8 +64,8 @@ near-ties, in the unvalidated range.
 | Test | Passes only if |
 |---|---|
 | K1 | the oracle's band-median log ratio against template+R is ≤ log 0.75 under the judge's default and union bands |
-| K2 | as declared (`docs/supervised-model-plan.md` §0): some recogniser reaches 3× chance top-1 (here 3/21) and at most 0.75× the constant guess's median regret (that second condition is vacuous once top-1 is 50% or more) |
-| K3 | one recogniser, under both of the judge's band sets: a median of band medians against template+R below −0.150; closer than template+R on more than half its parts; better than the shuffled control on more than half (a tie counts half, as declared); closer than the constant on more than half (a tie counts as not closer, as the declaration's text says); and its most common pick no more than half its picks. Every count is out of all its parts, ties included. |
+| K2 | as declared (`docs/supervised-model-plan.md` §0): some recogniser reaches 3× chance top-1 (here 3/21) and at most 0.75× the constant guess's median regret (that second condition is vacuous once top-1 is above 50%) |
+| K3 | one recogniser, under both of the judge's band sets: a median of band medians against template+R below −0.150; closer than template+R on more than half its parts; better than the shuffled control on more than half (a tie counts half, as declared); closer than the constant on more than half (a tie counts as not closer, as the declaration's text says); and its most common pick no more than half its picks. Every count is out of all the parts K3 should score (its eligible parts with a lag, 28), ties included; a part the judge drops or the recogniser makes no pick for counts as not closer. |
 
 `scripts/kill_tests_pr12_verdict.py`, committed with this plan, computes exactly this
 from the outputs, with unrounded medians. The scripts' own `pass`, `verdict` and
@@ -117,7 +117,7 @@ derived panel records. Outputs go to `~/ndsp-presets/runs/kill/`:
 - `k-judge-pr12-clean.json` (the judge's readings);
 - `verdict-pr12-clean.json` (this verdict).
 
-The run is once, at the commit that records this plan. A crash is fixed and rerun; a
+The run is once, at 69d34a2 (this plan's verdict code was then tightened, before any output was read, to count a dropped part as not closer and to check its inputs). A crash is fixed and rerun; a
 result is not.
 
 ## What is known before computing
