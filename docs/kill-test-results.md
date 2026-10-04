@@ -128,7 +128,9 @@ Stage 0b has since validated the judge, for clear differences between clean-to-c
 PR12 renders only (`docs/listening-validation-results.md`). The judge's readings here
 were already computed with both band sets, so under `docs/kill-test-k3-plan.md`'s
 "validates the judge" clause the verdict stays "not passed". This panel's SW50R presets are mostly high-gain,
-outside the validated range.
+outside the validated range. Re-run on the clean PR12 presets inside that range
+(`docs/kill-tests-pr12-results.md`), the kill tests did not pass either: K1's headroom
+fell just short and no recogniser reached K3's bar.
 
 Outputs: `~/ndsp-presets/runs/kill/k-sw50r-run2.json`, `k3-sw50r-run2.json`,
 `k-judge-run2.json` (local; not committed).
