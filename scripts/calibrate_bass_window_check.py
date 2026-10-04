@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure the "does not look like a guitar" check on real guitars and real basses.
 
-    python scripts/calibrate_guitar_check.py --json guitar-check.json
+    python scripts/calibrate_bass_window_check.py --json guitar-check.json
 
 Positives: every development amp-track crop (`~/ndsp-presets/references/validation-crops`).
 Negatives: every bass track (by name) in the sessions those crops come from, cut at the
@@ -58,7 +58,8 @@ def main():
     import soundfile as sf
 
     from analysis import io
-    from analysis.fingerprint import GUITAR_MIN_CENTROID_HZ, GUITAR_MIN_HF_CORNER_HZ
+    from analysis.fingerprint import (BASS_CENTROID_UNDER_HZ, BASS_HF_CORNER_UNDER_HZ,
+                                      Fingerprint)
     from benchmark_recordings import CATALOG
 
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
@@ -67,14 +68,13 @@ def main():
     guitars, basses, seen = [], [], set()
     for slug in sorted(os.listdir(crops)):
         record = json.loads((crops / slug / "record.json").read_text())
-        if record.get("split") != "development":
-            continue
-        guitars.append({"part": slug, "m": measure(
-            sf.read(str(crops / slug / "reference.wav"), dtype="float64")[0])})
         key = (record["source"], record["song"])
         session = sessions[key]
-        if key in seen or {p.get("split") or session.get("split")
-                           for p in session["parts"]} != {"development"}:
+        if record.get("split") != "development" or session.get("split") != "development":
+            continue                                      # checked before any audio
+        guitars.append({"part": slug, "m": measure(
+            sf.read(str(crops / slug / "reference.wav"), dtype="float64")[0])})
+        if key in seen:
             continue
         seen.add(key)
         a, b = record["excerpt_start_frame"], record["excerpt_end_frame"]
@@ -96,10 +96,12 @@ def main():
             out += rule(c, k)
         return out
 
-    both = lambda c, k: c < GUITAR_MIN_CENTROID_HZ and k < GUITAR_MIN_HF_CORNER_HZ  # noqa: E731
+    def both(c, k):                                       # the shipped rule itself
+        return Fingerprint(spectrum={"centroid_hz": {"p50": c},
+                                     "hf_corner_hz": k})._implausible_for_guitar()
     either = lambda c, k: c < 250.0 or k < 500.0                                     # noqa: E731
     summary = {"guitars": len(guitars), "basses": len(basses),
-               "floors": [GUITAR_MIN_CENTROID_HZ, GUITAR_MIN_HF_CORNER_HZ],
+               "thresholds": [BASS_CENTROID_UNDER_HZ, BASS_HF_CORNER_UNDER_HZ],
                "flagged_now": {"guitars": flagged(guitars, both), "basses": flagged(basses, both)},
                "flagged_by_either_250_500": {"guitars": flagged(guitars, either),
                                              "basses": flagged(basses, either)}}
