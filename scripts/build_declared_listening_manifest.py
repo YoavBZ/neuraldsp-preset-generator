@@ -27,6 +27,9 @@ from scripts._cli import guarded
 from scripts.score_listening import _require_private_out_dir
 
 
+# Crops cut by the first rule or by crop rule 2 (docs/validation-datasets.md).
+CROP_SCHEMAS = ("validation-crops-1", "validation-crops-2")
+
 def _sha(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -63,7 +66,7 @@ def build(crop_record: pathlib.Path, first_render: pathlib.Path,
         raise ValueError("manifest needs a declared held-out crop record")
     declaration = crop.get("declaration")
     outputs = crop.get("outputs")
-    if (crop.get("schema") != "validation-crops-1" or crop.get("split") != "held_out"
+    if (crop.get("schema") not in CROP_SCHEMAS or crop.get("split") != "held_out"
             or not isinstance(declaration, dict) or not declaration.get("test_id")
             or not isinstance(outputs, dict)
             or not isinstance(crop.get("reference_lufs"), (int, float))

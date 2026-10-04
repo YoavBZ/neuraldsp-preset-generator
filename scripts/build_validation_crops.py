@@ -188,7 +188,7 @@ def _window_by_di(di, reference, rate: int) -> tuple[int, int, float, float]:
     share = {s: float(np.mean(playing[s // 1024:(s + frames - 2048) // 1024 + 1]))
              for s in starts}
     top = max(share.values())
-    if top == 0:
+    if top == 0 or db.max() < -200.0:
         raise ValueError("the part's DI never plays")
     tied = [s for s in starts if share[s] >= top - DI_ACTIVITY_TIE]
     start = max(tied, key=lambda s: (float(np.mean(np.square(reference[s:s + frames],
@@ -208,6 +208,8 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     The CLI accepts only the unchanged committed catalog. A different catalog
     argument here permits synthetic unit fixtures, not held-out authorization.
     """
+    if rule not in ("loudness", "di-activity"):
+        raise ValueError(f"unknown excerpt rule {rule!r}")
     import numpy as np
     import soundfile as sf
     from analysis import io
@@ -264,11 +266,9 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     reference = _fit(load(part["reference"]), length)
     if rule == "di-activity":
         start, end, lufs, activity = _window_by_di(di, reference, io.SAMPLE_RATE)
-    elif rule == "loudness":
+    else:
         start, end, lufs = _window(reference, io.SAMPLE_RATE)
         activity = None
-    else:
-        raise ValueError(f"unknown excerpt rule {rule!r}")
     # A session that declares its mix tracks (the second set) is mixed from exactly
     # those, one amp track per guitar; the first set's sessions sum every stem but
     # the guitar DIs, as validation-datasets.md declared for them.
