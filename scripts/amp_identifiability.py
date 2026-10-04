@@ -49,27 +49,31 @@ def build_parser():
     return ap
 
 
-def offered(candidate: str, high_gain, cab_on=lambda c: True) -> bool:
-    """A factory preset that is not high-gain and has its cab on, or an amp's template
-    with time effects off."""
+def offered(candidate: str, high_gain, sections_on=lambda c: True) -> bool:
+    """A factory preset that is not high-gain and has its amp and cab sections on, or an
+    amp's template with time effects off."""
     name = candidate.split(":", 1)[1]
     if name == "template+R":
         return True
-    return name.startswith("factory:") and not high_gain(candidate) and cab_on(candidate)
+    return (name.startswith("factory:") and not high_gain(candidate)
+            and sections_on(candidate))
 
 
-def family(candidate: str) -> str:
-    """The artist folder a factory preset comes from; the templates are one family, and
-    every other preset (Neural DSP's own, Default) is its own."""
+def family(candidate: str, lookalikes=frozenset()) -> str:
+    """The artist folder a factory preset comes from. The templates are one family, with
+    any factory preset whose amp controls (the master level and the spring reverb, off
+    in every render, aside) and input gain equal its amp's template's (`lookalikes`); every other preset (Neural DSP's own, Default)
+    is its own."""
     name = candidate.split(":", 1)[1]
-    if name == "template+R":
+    if name == "template+R" or candidate in lookalikes:
         return "templates"
     parts = name[len("factory:"):].split("/")
     return f"artist:{parts[1]}" if parts[0] == "Artists" and len(parts) > 2 else candidate
 
 
 def settings(candidate: str) -> dict:
-    """The preset's compressor, cab and volume, as stored."""
+    """The preset's compressor, amp and cab sections, drive-related controls, and its amp
+    controls with input gain (to find look-alikes of the template), as stored."""
     from format.parser import parse
     from format.structured import build
     from plan_listening_validation import preset_path
@@ -79,8 +83,19 @@ def settings(candidate: str) -> dict:
          for p in build(parse(preset_path(candidate).read_bytes())).parameters}
     on = lambda k: str(v.get(k, "false")).lower() == "true"                # noqa: E731
     return {"compressor": on(("compressor", "compressorActive")),
+            "amp_section": on(("ampParameters", "sectionActive")),
             "cab": on(("cabParameters", "sectionActive")),
-            "volume": float(v.get((f"{amp}Amp", f"{amp}Volume"), "nan"))}
+            "volume": float(v.get((f"{amp}Amp", f"{amp}Volume"), "nan")),
+            "input_gain": float(v.get(("parameters", "inputGain"), "nan")),
+            "master": (float(v[("sw50rAmp", "sw50rLevel")])
+                       if ("sw50rAmp", "sw50rLevel") in v else None),
+            # The master level aside (loudness is normalised away; SW50R's is the only
+            # one), and the amp's spring reverb, which the panel's rule set R turns off.
+            "amp_controls": sorted((k[1], str(val)) for k, val in v.items()
+                                   if (k[0] == f"{amp}Amp"
+                                       and k[1] not in ("sw50rLevel", "sw50rReverb",
+                                                        "pr12Reverb"))
+                                   or k == ("parameters", "inputGain"))}
 
 
 def distances(job):
@@ -103,7 +118,7 @@ def distances(job):
     return part, out
 
 
-def guesses(matrix, seed, which=0, keep=lambda c: True, min_k=3):
+def guesses(matrix, seed, which=0, keep=lambda c: True, min_k=3, family_of=family):
     """{target: (share of draws whose closest candidate's amp is right, the guesses'
     counts by amp, k)}. Candidates exclude the target's family; each amp contributes k,
     the smallest of the three remaining pools. `which` picks the distance (0 the
@@ -114,7 +129,7 @@ def guesses(matrix, seed, which=0, keep=lambda c: True, min_k=3):
     for t in sorted(c for c in matrix if keep(c)):
         own = t.split(":", 1)[0]
         pools = {a: [c for c in matrix[t] if c.startswith(f"{a}:") and keep(c)
-                     and family(c) != family(t) and matrix[t][c] is not None]
+                     and family_of(c) != family_of(t) and matrix[t][c] is not None]
                  for a in amps}
         k = min(len(pool) for pool in pools.values())
         if k < min_k:
@@ -124,7 +139,8 @@ def guesses(matrix, seed, which=0, keep=lambda c: True, min_k=3):
         for _ in range(DRAWS):
             best = {a: min(matrix[t][c][which] for c in rng.sample(pool, k))
                     for a, pool in pools.items()}
-            counts[min(best, key=best.get)] += 1
+            low = min(best.values())
+            counts[rng.choice(sorted(a for a, d in best.items() if d == low))] += 1
         out[t] = (counts[own] / DRAWS, dict(counts), k)
     return out
 
@@ -157,15 +173,23 @@ def main():
                             for x in (s["source"], s["song"], p["part"]))
             meta[slug] = {"band": s.get("group") or f"{s['source']}/{s['song']}",
                           "split": p.get("split") or s.get("split")}
+    missing = [p for p in files if p not in meta]
+    if missing:
+        die(f"parts the catalogue does not know: {missing}")
     if any(meta[p]["split"] != "development" for p in files):
         die("a panel holds a part that is not development material")
     crops = args.crops_dir.expanduser()
     names = sorted({c for d in files.values() for c in d})
     preset = {c: settings(c) for c in names if c.split(":", 1)[1] != "template"}
-    kept = [c for c in names if offered(c, high_gain, lambda c: preset[c]["cab"])]
-    missing = [p for p in files if p not in meta]
-    if missing:
-        die(f"parts the catalogue does not know: {missing}")
+    kept = [c for c in names
+            if offered(c, high_gain, lambda c: preset[c]["cab"] and preset[c]["amp_section"])]
+    template_controls = {c.split(":", 1)[0]: preset[c]["amp_controls"]
+                         for c in names if c.endswith(":template+R")}
+    lookalikes = frozenset(c for c in kept if ":factory:" in c and preset[c]["amp_controls"]
+                           == template_controls[c.split(":", 1)[0]])
+
+    def family_of(c):
+        return family(c, lookalikes)
     if any(set(kept) - set(files[p]) for p in files):
         die("a panel is missing a render of an offered preset")
     parts = [p for p in sorted(files)
@@ -178,11 +202,14 @@ def main():
     def reading(which=0, keep=lambda c: True):
         rows = []
         for p in parts:
-            for t, g in guesses(matrices[p], seed=p, which=which, keep=keep).items():
+            for t, g in guesses(matrices[p], seed=p, which=which, keep=keep,
+                                family_of=family_of).items():
                 rows.append({"part": p, "band": meta[p]["band"], "target": t,
                              "amp": t.split(":", 1)[0], "accuracy": None if g is None else g[0],
                              "guessed": None if g is None else g[1],
-                             "k": None if g is None else g[2], **preset.get(t, {})})
+                             "k": None if g is None else g[2],
+                             **{k: v for k, v in preset.get(t, {}).items()
+                                if k != "amp_controls"}})
         scored = [r for r in rows if r["accuracy"] is not None]
         if not scored:
             return {"rows": rows, "verdict": "nothing scored"}
@@ -197,10 +224,10 @@ def main():
         confusion = {a: dict(sum((collections.Counter(r["guessed"]) for r in scored
                                   if r["amp"] == a), collections.Counter()))
                      for a in per_amp}
-        verdict = ("recoverable" if median >= RECOVERABLE and p < 0.05
+        verdict = ("recoverable" if median >= RECOVERABLE and p < 0.05 and len(per_amp) == 3
                    and min(per_amp.values()) >= EVERY_AMP
                    else "no evidence across presets" if median <= NOT_RECOVERABLE
-                   else "partly")
+                   and p >= 0.05 else "partly")
         return {"targets": len(rows), "unscored_targets": len(rows) - len(scored),
                 "k_range": [min(r["k"] for r in scored), max(r["k"] for r in scored)],
                 "bands": len(band_means), "band_mean_accuracy": band_means,
@@ -210,6 +237,7 @@ def main():
 
     main_reading = reading()
     out = {"panels": index_hashes, "offered": kept, "parts": len(parts),
+           "template_lookalikes": sorted(lookalikes),
            "verdict": main_reading["verdict"], "main": main_reading,
            "reported": {"temporal_part_only": reading(which=2),
                         "compressor_on_only": reading(

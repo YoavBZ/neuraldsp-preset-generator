@@ -41,12 +41,18 @@ def test_the_targets_family_is_left_out_so_a_twin_cannot_win():
             if t != name:
                 m[t][name] = [2.0, 0, 2.0]
     m[twin_a][twin_b] = m[twin_b][twin_a] = [0.0, 0, 0.0]          # identical renders
+    for t_, row in m.items():                      # everyone else: other amps are closer
+        for c in row:
+            if row[c] is not None and row[c][0] != 0.0:
+                same = c.split(":")[0] == t_.split(":")[0]
+                row[c] = [3.0 if same else 1.0, 0, 3.0 if same else 1.0]
     out = A.guesses(m, seed="p")
-    assert out[twin_a][0] < 1.0, "the twin is not a candidate, so it cannot decide"
+    assert out[twin_a][0] == 0.0, "without its twin, the target's own amp never wins"
 
 
 def test_families():
     assert A.family("pr12:template+R") == A.family("sw50r:template+R") == "templates"
+    assert A.family("ac20:factory:Default", {"ac20:factory:Default"}) == "templates"
     assert A.family("sw50r:factory:Artists/Neil Zaza/Bell") == "artist:Neil Zaza"
     assert A.family("pr12:factory:Neural DSP/Lush") == "pr12:factory:Neural DSP/Lush"
 
@@ -64,7 +70,7 @@ def test_only_clean_presets_with_their_cab_and_the_dry_templates_are_offered():
     loud = {"sw50r:factory:X/Metal"}.__contains__
     assert A.offered("sw50r:factory:X/Clean", loud)
     assert not A.offered("sw50r:factory:X/Metal", loud)
-    assert not A.offered("sw50r:factory:X/Clean", loud, cab_on=lambda c: False)
+    assert not A.offered("sw50r:factory:X/Clean", loud, sections_on=lambda c: False)
     assert A.offered("pr12:template+R", loud)
     assert not A.offered("pr12:template", loud)
 

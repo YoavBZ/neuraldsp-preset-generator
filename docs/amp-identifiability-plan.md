@@ -15,12 +15,16 @@ none of that.
 - **Renders.** The SW50R, PR12 and AC20 panels (`scripts/render_preset_panel.py`): every
   factory preset of each amp with time effects off, through each development part's DI.
   The SW50R and PR12 panels already exist; the AC20 panel is rendered for this.
-- **What is offered.** Each amp's factory presets with no drive pedal, the amp's
-  volume at most 0.75 (the rule stage 0b used for PR12) and the cab section on, plus
-  each amp's template with time effects off: 18 SW50R, 21 PR12 and 18 AC20, in 25
-  families.
-- **Families.** A preset's family is its artist folder. The three templates are one
-  family. Neural DSP's own presets and Default are each their own.
+- **What is offered.** Each amp's factory presets with no drive pedal and the amp's
+  volume at most 0.75 (the rule stage 0b used for PR12), with the amp and cab sections
+  on, plus each amp's template with time effects off: 18 SW50R, 21 PR12 and 17 AC20, in
+  23 families.
+- **Families.** A preset's family is its artist folder; the three templates are one
+  family. A factory preset whose amp controls and input gain equal its amp's
+  template's joins the templates. This compares every amp control except the master
+  level (loudness is normalised away) and the spring reverb (off in every render). Two
+  presets join that way: SW50R "TriTone Tremolo" and AC20 "Default". Neural DSP's own
+  presets are each their own family.
 - **Parts.** Development parts whose DI plays in at least half of 1.0–10 s (the K3
   rule; 30 parts).
 
@@ -46,12 +50,14 @@ one-sided band sign-flip test against 1/3.
 
 | Outcome | Rule |
 |---|---|
-| **recoverable** | median ≥ 0.60 and p < 0.05, and every amp's mean accuracy ≥ 0.50 |
-| **no evidence across presets** | median ≤ 0.45 |
+| **recoverable** | median ≥ 0.60 and p < 0.05, and each of the three amps' mean accuracy ≥ 0.50 |
+| **no evidence across presets** | median ≤ 0.45 and p ≥ 0.05 |
 | **partly** | anything else |
 
-The sign-flip test generalises over performances only: the same presets appear in
-every band.
+Exact ties between amps are broken at random. An amp's mean accuracy is over its
+target-and-part rows, not over bands; one band holds 8 of the 30 parts. The
+sign-flip test generalises over performances only: the same presets appear in every
+band.
 
 **Reported, not deciding:**
 - the 3×3 confusion matrix and each amp's accuracy;
@@ -60,7 +66,7 @@ every band.
 - the same reading on the judge's temporal part alone, which is less open to
   differences an EQ could imitate;
 - the same reading on compressor-on presets only. The compressor is on in 19 of 21
-  PR12, 13 of 18 AC20 and 11 of 18 SW50R offered presets, and could separate the sets
+  PR12, 12 of 17 AC20 and 11 of 18 SW50R offered presets, and could separate the sets
   instead of the amps.
 
 ## What follows
@@ -85,9 +91,14 @@ every band.
   these amps, so this tests whether the judge separates the amps' characters, not
   whether it finds a real rig's amp.
 - **The volume rule.** "Volume at most 0.75" is not the same amount of drive on each
-  amp. PR12 has no master volume (`sw50rLevel` is SW50R's). The offered sets differ in
-  drive: PR12's reach 0.62–0.68, near its knee; AC20 includes "Mid-Gain Drive" (0.71);
-  SW50R's stay at or below 0.61. The judge hears drive, so drive could separate the
-  sets rather than the amps' character. Each target's volume is in the rows.
+  amp. Only SW50R has a master (`sw50rLevel`, 0.17–0.90 here); PR12 and AC20 have
+  none. The offered sets differ in drive:
+  - PR12's volumes reach 0.62–0.68, near its knee;
+  - AC20 includes "Mid-Gain Drive" (0.71);
+  - SW50R's volumes stay at or below 0.61;
+  - input gain ranges from −20 to +1.8 dB on PR12 and SW50R, and down to −5.7 on AC20.
+
+  The judge hears drive, so drive could separate the sets rather than the amps'
+  character. Each target's volume, input gain and master are in the rows.
 - **Product scope.** The product's song-only use has no DI, and the judge does not apply
   there.
