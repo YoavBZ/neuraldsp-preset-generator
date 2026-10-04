@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Stage 0b: choose the listening-validation trials (`docs/listening-validation-plan.md`).
 
-    python scripts/plan_listening_validation.py --panel-dir ~/ndsp-presets/runs/kill/sw50r \\
-        --cache ~/ndsp-presets/runs/listening-validation/pool.json \\
-        --out ~/ndsp-presets/runs/listening-validation/draw/trials.json
+    python scripts/plan_listening_validation.py \\
+        --panel-dir ~/ndsp-presets/runs/kill/pr12 --panel-dir ~/ndsp-presets/runs/kill/ac20 \\
+        --cache ~/ndsp-presets/runs/listening-validation-2/pool.json \\
+        --out ~/ndsp-presets/runs/listening-validation-2/draw/trials.json
 
-For every development part with a 4-s window where its DI plays in at least 90% of the
-frames, every panel candidate's distance to the part's amp track over exactly that
-window: the judge (`analysis/aligned.py`, both band sets, one lag per part pooled over
-its whole panel), ALM and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs
+For every development part with an unambiguous recorded lag (`docs/validation-lags.json`)
+and a 4-s window where its DI plays in at least 90% of the frames, every candidate of
+every panel (named `<amp>:<candidate>`), its distance to the part's amp track over exactly
+that window: the judge (`analysis/aligned.py`, both band sets, at the recorded lag), ALM
+and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs
 above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
 most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
 3 hidden repeats. The seed is drawn from the system's randomness and kept with the
@@ -49,7 +51,8 @@ BLEED_HEAVY = ("telefunken-Lost_Alive-GTR", "telefunken-Until_I_Get_Back-GTR")
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--panel-dir", type=pathlib.Path, required=True)
+    ap.add_argument("--panel-dir", type=pathlib.Path, action="append", required=True,
+                    help="a panel of renders (render_preset_panel.py); repeat for several")
     ap.add_argument("--crops-dir", type=pathlib.Path,
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"))
     ap.add_argument("--cache", type=pathlib.Path, required=True,
@@ -77,20 +80,15 @@ def window(di):
 
 def score_part(job):
     """Every candidate's distances over the part's window, or None if it has none."""
-    part, files, catalogued, crops = job
-    from analysis.aligned import aligned_distance, estimate_lag
+    part, files, catalogued, recorded, crops = job
+    from analysis.aligned import aligned_distance
 
     di, ref = K.mono(crops / part / "di.wav"), K.mono(crops / part / "reference.wav")
     w = window(di)
     if w is None:
         return part, None
     renders = {c: K.mono(f) for c, f in files.items()}
-    try:
-        lag = estimate_lag(ref, list(renders.values()), hint=catalogued - LATENCY,
-                           max_lag_s=0.015)
-    except ValueError:
-        lag = estimate_lag(ref, list(renders.values()), hint=catalogued - LATENCY,
-                           max_lag_s=0.05)
+    lag = recorded - LATENCY                     # the recording lags every Morgan render
     a, b = int(w * SR), int((w + WINDOW_S) * SR)
     ref_fp = K.fp(ref[a:b], "isolated_stem")
     v3c = K._v3c_compare()
@@ -105,6 +103,19 @@ def score_part(job):
                   "v3c": v3c(ref_fp, K.fp(seg, "probe"))}
     print(f"{part}: window {w} s, lag {lag}", flush=True)
     return part, {"window_s": w, "lag": lag, "candidates": out}
+
+
+def panel_files(panel_dirs):
+    """{part: {"<amp>:<candidate>": render path}} over every panel; a part must be in
+    every panel."""
+    files = {}
+    for panel in panel_dirs:
+        index = json.loads((panel.expanduser() / "index.json").read_text())
+        for row in index["rows"]:
+            if "file" in row:
+                files.setdefault(row["part"], {})[f"{index['amp']}:{row['candidate']}"] = \
+                    pathlib.Path(row["file"])
+    return files
 
 
 def draw(pool, meta, seed):
@@ -166,7 +177,9 @@ def draw(pool, meta, seed):
     repeats = [{"kind": "repeat", "of": q["id"]} for q in rng.sample(tests, REPEATS)]
     return {"excluded_bleed_heavy": [p for p in BLEED_HEAVY], "median_abs_log_ratio": median,
             "pairs_in_pool": len(pairs),
-            "clear_pairs": len(clear), "trials": tests + hidden + repeats}
+            "clear_pairs": len(clear),
+            "clear_pairs_disagreeing": sum(q["disagree"] for q in clear),
+            "trials": tests + hidden + repeats}
 
 
 def main():
@@ -174,9 +187,8 @@ def main():
     from analysis import require
 
     require("planning the listening validation")
-    from benchmark_recordings import CATALOG
+    from benchmark_recordings import CATALOG, lag_samples
 
-    panel = args.panel_dir.expanduser()
     crops = args.crops_dir.expanduser()
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     meta = {}
@@ -187,13 +199,11 @@ def main():
             meta[slug] = {"band": s.get("group") or f"{s['source']}/{s['song']}",
                           "lag": int(round((p.get("lag_ms") or 0) * SR / 1000)),
                           "split": p.get("split") or s.get("split")}
-    index = json.loads((panel / "index.json").read_text())
-    files = {}
-    for row in index["rows"]:
-        if "file" in row:
-            files.setdefault(row["part"], {})[row["candidate"]] = pathlib.Path(row["file"])
+    files = panel_files(args.panel_dir)
     if any(meta[p]["split"] != "development" for p in files):
         die("the panel holds a part that is not development material")
+    recorded = {p: lag_samples(p) for p in files}
+    no_lag = sorted(p for p, lag in recorded.items() if lag is None)
     cache = args.cache.expanduser()
     if cache.exists():
         pool = json.loads(cache.read_text())["pool"]
@@ -201,11 +211,12 @@ def main():
         from concurrent.futures import ProcessPoolExecutor
 
         with ProcessPoolExecutor(args.workers) as ex:
-            scored = dict(ex.map(score_part, [(p, files[p], meta[p]["lag"], crops)
-                                              for p in sorted(files)]))
+            scored = dict(ex.map(score_part, [(p, files[p], meta[p]["lag"], recorded[p], crops)
+                                              for p in sorted(files) if p not in no_lag]))
         pool = {p: s for p, s in scored.items() if s is not None}
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(json.dumps({"panel": str(args.panel_dir), "pool": pool}) + "\n")
+        cache.write_text(json.dumps({"panels": [str(p) for p in args.panel_dir],
+                                     "pool": pool}) + "\n")
     import secrets
 
     out_path = args.out.expanduser()
@@ -221,8 +232,8 @@ def main():
                 c: p["candidates"].get(c) for c in (trial["first"], trial["second"])
                 if c != "reference"}
     used = [p for p in pool if p not in BLEED_HEAVY]
-    out.update(seed=seed, panel=str(args.panel_dir), parts=len(used),
-               bands=len({meta[p]["band"] for p in used}))
+    out.update(seed=seed, panels=[str(p) for p in args.panel_dir], parts=len(used),
+               bands=len({meta[p]["band"] for p in used}), excluded_no_clear_lag=no_lag)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(out, indent=1) + "\n"
     out_path.write_text(text)

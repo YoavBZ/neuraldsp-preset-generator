@@ -28,7 +28,8 @@ def _plan():
     hidden = [{"kind": "hidden_reference", "part": f"h{i}", "first": "reference",
                "second": f"x{i}"} for i in range(3)]
     repeats = [{"kind": "repeat", "of": f"t{i:02d}"} for i in (0, 1, 2)]
-    return {"trials": tests + hidden + repeats}
+    return {"clear_pairs": 1000, "clear_pairs_disagreeing": 170,
+            "trials": tests + hidden + repeats}
 
 
 def test_repeats_follow_their_originals_and_each_sitting_has_a_hidden_reference():
@@ -204,14 +205,19 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     for t in plan["trials"]:
         if t["kind"] != "repeat":
             t.update(window_s=1.0, lag=480)
+            for side in ("first", "second"):            # candidates from two panels
+                if t[side] != "reference":
+                    t[side] = f"{'pr12' if t[side].endswith('a') else 'ac20'}:{t[side]}"
     trials = tmp_path / "trials.json"
     trials.write_text(json.dumps(plan))
-    panel = tmp_path / "panel"
-    panel.mkdir()
-    rows = [{"part": t["part"], "candidate": c, "file": str(panel / f"{t['part']}-{c}.wav")}
-            for t in plan["trials"] if t["kind"] != "repeat"
-            for c in (t["first"], t["second"]) if c != "reference"]
-    (panel / "index.json").write_text(json.dumps({"rows": rows}))
+    panels = {amp: tmp_path / amp for amp in ("pr12", "ac20")}
+    for amp, panel in panels.items():
+        panel.mkdir()
+        rows = [{"part": t["part"], "candidate": c.split(":", 1)[1],
+                 "file": str(panel / f"{t['part']}-{c.split(':', 1)[1]}.wav")}
+                for t in plan["trials"] if t["kind"] != "repeat"
+                for c in (t["first"], t["second"]) if c.startswith(f"{amp}:")]
+        (panel / "index.json").write_text(json.dumps({"amp": amp, "rows": rows}))
     calls = []
 
     def fake_run(cmd, capture_output, text):
@@ -230,7 +236,9 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     monkeypatch.setattr(B, "declared_trials_sha256",
                         lambda: hashlib.sha256(trials.read_text().encode()).hexdigest())
     listener, private = tmp_path / "listen", tmp_path / "private"
-    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                      "--panel-dir", str(panels["pr12"]),
+                                      "--panel-dir", str(panels["ac20"]),
                                       "--crops-dir", str(tmp_path / "crops"),
                                       "--out-dir", str(listener), "--private-dir", str(private)])
     B.main()
@@ -245,6 +253,9 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
             start = float(cmd[cmd.index(side + "-start") + 1])
             expected = ref if path.endswith("reference.wav") else ref - 480 / 48000
             assert start == pytest.approx(expected)
+            model = cmd[cmd.index(side + "-amp-model") + 1]  # each render's own amp
+            assert model == ("non-Morgan" if path.endswith("reference.wav")
+                             else pathlib.Path(path).parent.name.upper())
     import random as r
 
     judge_a = 0                          # the judge's closer option is A on exactly half
@@ -256,13 +267,15 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     assert judge_a == 12
     with pytest.raises(SystemExit):
         B.main()                         # built once: the folders are no longer empty
-    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                      "--panel-dir", str(panels["pr12"]),
                                       "--out-dir", str(tmp_path / "x"),
                                       "--private-dir", str(tmp_path / "x" / "private")])
     with pytest.raises(SystemExit):
         B.main()                         # the private folder inside the listener's
     monkeypatch.setattr(B, "declared_trials_sha256", lambda: "0" * 64)
-    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                      "--panel-dir", str(panels["pr12"]),
                                       "--out-dir", str(tmp_path / "y"),
                                       "--private-dir", str(tmp_path / "z")])
     with pytest.raises(SystemExit):

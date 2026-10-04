@@ -47,8 +47,6 @@ def declared_trials_sha256() -> str:
 
 REPORTED = ("judge_union", "alm", "v3c")
 MIN_DECIDED, BAR = 12, 0.7
-# Of the pool's 15,525 clear pairs, 2,624 are ones where the judge and v3c disagree.
-POOL_DISAGREE_SHARE = 2624 / 15525
 
 
 def build_parser():
@@ -155,8 +153,8 @@ def score(plan: dict, order: list, keys: dict, answers: dict) -> dict:
     k, n = agreement["judge"]["agree"], agreement["judge"]["of"]
     out["judge"] = outcome(k, n, consistent)
     out["judge_upper_bound"] = upper_bound(k, n) if n else None
-    # Reweighted to the pool's split of pairs where the judge and v3c disagree.
-    share = POOL_DISAGREE_SHARE
+    # Reweighted to the pool's split of clear pairs where the judge and v3c disagree.
+    share = plan["clear_pairs_disagreeing"] / plan["clear_pairs"]
     by = {flag: [r for r in decided if by_id[r["id"]]["disagree"] == flag] for flag in (True, False)}
     if all(by.values()):
         rate = {flag: sum(chosen[r["trial"]] == predicted(r, "judge") for r in rows) / len(rows)
