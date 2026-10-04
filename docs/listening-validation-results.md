@@ -24,7 +24,7 @@ answer) by `scripts/score_listening_validation.py`. Its output is
 | Union band set | 17 of 22 (it predicts the judge's option on all 24) |
 | ALM | 18 of 22 (it differs from the judge on one pair, which the listener sided with) |
 | v3c | 12 of 22 (chance) |
-| Where the judge and v3c disagree | the listener sided with the judge on 7 of 9 (p 0.18) |
+| Where the judge and v3c disagree | the listener sided with the judge on 7 of 9 (two-sided p 0.18); v3c predicts the judge's option on 14 of 24 |
 | Repeats | 2 answered the same; 1 had a "?" the first time |
 | Reweighted to the pool's mix | 0.771 |
 
@@ -37,8 +37,8 @@ pairs means 16 or more. 17 meets it; the one-sided 95% upper bound is 0.906.
   - With one answer flipped, it still passes (16 of 22, p 0.026); with two, it is
     inconclusive.
   - If both "?" had gone against the judge, it would still pass (17 of 24, p 0.032).
-  - Leaving out any one part or any one band, it still passes (worst case 15 of 20,
-    p 0.021).
+  - Leaving out any one part or any one band, it still passes: at worst 15 of 20
+    (p 0.021) by share, and 13 of 17 (p 0.025, without the Dom McLennon band) by p.
 - **Nothing dominates.**
   - At most 2 pairs come from one part.
   - Agreement is 8 of 11 on Cambridge parts and 9 of 11 on Telefunken parts.
@@ -55,10 +55,10 @@ pairs means 16 or more. 17 meets it; the one-sided 95% upper bound is 0.906.
 
 ## The listener's notes
 
-- **Trial 8.** "Both don't have enough drive." The listener still chose an option, the
-  judge's. The amp track can be more driven than any clean-to-crunch option.
-- **Trial 9.** A "?": "A has more reverb similar to the reference but B has high
-  frequency notes similar to the reference". It is not scored. A was the template with
+- **Trial 8.** "though both 8A and 8B don't have enough drive". The listener still
+  chose an option, the judge's. The amp track can be more driven than any clean-to-crunch option.
+- **Trial 9.** A "?": "Sounds like A has more reverb similar to the reference but B has
+  high frequency notes similar to the reference". It is not scored. A was the template with
   time effects off, so the "reverb" was not the delay or reverb blocks. Its repeat
   (trial 22) went with the judge, but repeats are not scored.
 - **Trial 29**, a hidden reference. "I could hear the backing from the guitar mic." The
@@ -68,7 +68,7 @@ pairs means 16 or more. 17 meets it; the one-sided 95% upper bound is 0.906.
 
 ## Per trial
 
-`*` marks pairs where the judge and v3c disagree. The listener's and the judge's
+`*` marks pairs where the judge and v3c disagree (repeats 19 and 28 repeat such pairs). The listener's and the judge's
 options are given with where each was played.
 
 | # | kind | part | options | listener | judge | \|log ratio\| | agrees |
@@ -109,17 +109,20 @@ options are given with where each was played.
 - **What the judge covers:** clear differences, |log ratio| > 0.150 (about 16%),
   between clean-to-crunch PR12 renders, those with no drive pedal and a PR12 volume of
   0.75 or less.
+- **Reported beside it, never pooled:** the earlier 16 post hoc trials, on which the
+  judge agreed on 12 of the 14 it scored (`docs/measuring-closeness.md`).
 - **What it does not cover:**
   - High-gain material, other amps, and differences below the cut rest on an
     unvalidated range.
   - The test does not separate the judge from ALM or the judge's union band set.
 - **The kill tests.** The plan's validated branch recomputes them under the judge's
-  conditions with both band sets. They were already computed that way
-  (`docs/kill-test-results.md`, "Under the judge"). K3's union reading fails, so the
+  conditions with both band sets (`docs/kill-test-k3-plan.md`, "Under the judge"). They
+  were already computed that way (`docs/kill-test-results.md`, Verdict). K3's union reading fails, so the
   verdict stays **"not passed"**.
 - **Model work:**
   - Whether to proceed anyway is the user's decision.
-  - Condition 1 there is now met only on the validated range.
+  - Condition 1 of `docs/kill-test-results.md` ("What follows") is now met only on
+    the validated range.
   - The kill tests' own renders are SW50R presets, mostly high-gain, outside that range.
   - A POC gain below the cut, on high-gain material, or on another amp cannot by
     itself open a further gate.
