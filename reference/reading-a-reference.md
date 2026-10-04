@@ -120,7 +120,9 @@ recorded, and the values from that research and the pack's `tone.md`. Without a
 DI, do not let the measurement move values: settings calculated from a recording
 ended further from it than the starting preset as it is on all four amps, 43
 recordings each (`docs/tone-matching-plan.md`, "The real-guitar probe, from
-neutral settings and from the shipped presets"). Use it to describe the tone and
+neutral settings and from the shipped presets"; measured with a score since retired,
+and unconfirmed by the re-check with the judge,
+`docs/no-di-rule-under-the-judge-results.md`). Use it to describe the tone and
 to sanity-check the research.
 
 Corollary: a measured number that disagrees with a documented rig is usually the

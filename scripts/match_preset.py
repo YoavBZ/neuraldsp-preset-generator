@@ -65,8 +65,9 @@ MINIMUM_REFERENCE_S = 1.0
 # Without a DI, every search measured so far ended no closer to a recording than
 # the preset it started from, and through the noise probe further from it
 # (docs/tone-matching-plan.md, "The real-guitar probe, from neutral settings and
-# from the shipped presets"). A `probe` reference is a render through that same
-# probe, so it still searches.
+# from the shipped presets"), measured with a score since retired; a re-check with the
+# judge was inconclusive (docs/no-di-rule-under-the-judge-results.md). A `probe`
+# reference is a render through that same probe, so it still searches.
 NO_DI_REFUSAL = (
     "without a DI nothing here has been shown to beat the starting preset: on 43 "
     "recordings per amp (SW50R, PR12, AC20, Tone King), the noise probe's calculated "
@@ -74,14 +75,13 @@ NO_DI_REFUSAL = (
     "search no closer (further on PR12 and AC20), and a search through real guitar "
     "clips ended level with it "
     "(docs/tone-matching-plan.md, \"The real-guitar probe, from neutral settings and "
-    "from the shipped presets\"). Those figures used a score since retired; a re-check "
-    "under the validated measure was void, so they are not confirmed under it, though "
-    "every no-DI answer there leaned further from the recording than its start "
-    "(docs/no-di-rule-under-the-judge-results.md). So the template is the answer: use "
-    "it as it is.\n"
+"from the shipped presets\"). Those figures came from a score since retired as a "
+    "measure of closeness; a re-check with its replacement, the judge, was "
+    "inconclusive, so they are unconfirmed (docs/no-di-rule-under-the-judge-results.md). "
+    "So the template is the answer: use it as it is.\n"
     "  Give --probe-di with a DI of this performance to match it, or pass "
-    "--search-without-di to search through the noise probe anyway (measured worse "
-    "than not searching).")
+    "--search-without-di to search through the noise probe anyway (not shown to do "
+    "better than not searching).")
 
 # `fingerprint` floors a silent band at -300 dB rather than returning None, so this is
 # how silence is recognised rather than matched.
@@ -215,11 +215,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "For measuring what the search contributes on its own")
     ap.add_argument("--search-without-di", action="store_true",
                     help="with no --probe-di, search through the noise-burst probe "
-                         "anyway. Measured on 43 recordings per amp, its calculated "
-                         "settings ended further from the recording than the starting "
-                         "preset as it is and its search no closer, so without this "
-                         "flag a no-DI match against a recording refuses and says to "
-                         "keep the template; it remains for benchmarks")
+                         "anyway. Measured on 43 recordings per amp, with a score since "
+                         "retired (unconfirmed by the judge), its calculated settings "
+                         "ended further from the recording than the starting preset "
+                         "as it is and its search no closer, so without this flag a "
+                         "no-DI match against a recording refuses and says to keep "
+                         "the template; it remains for benchmarks")
     return ap
 
 
