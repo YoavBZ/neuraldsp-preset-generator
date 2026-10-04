@@ -38,6 +38,10 @@ again before any draw; the practice's part, options and the listener's verdict a
 recorded with the result. **No further withdrawal** once the draw is built: a trial
 that cannot be compared is answered "?".
 
+**Practice, heard on 2026-10-04 before the draw:** Signs ElecGtr3, the template with
+time effects off against "Lush Clean Wet". The listener could compare them, chose one,
+and noted that the amp track itself is driven and one option too clean.
+
 ## What it can and cannot show
 
 - A pass means that aligned log-mel measures order **clear** differences the way this
@@ -107,7 +111,10 @@ Each is computed on exactly the 4 s the listener hears.
   private folder until every answer is in; a listener who saw the pairs could tell the
   options apart. Nobody opens it, the analyst included, before every answer is in.
   This plan records only its sha256 and the clear cut:
-  `PENDING-DRAW`; clear cut PENDING-DRAW.
+  `4a0c547bf2a53c7ee77cf289ddbcea70378620b947e649a35813b671304b963a`; clear cut
+  |log ratio| > 0.150 (about 16%). The draw: 22 candidates offered (13 left out as
+  high-gain), 28 parts, 3,234 clear pairs, 24 test pairs over 11 bands, 10 of them
+  where the judge and v3c disagree.
 - Trial numbers, sittings and A/B assignments are drawn when the files are built and
   written, with the builder's output (which prints each file's seed), only to the
   private folder. The listener's folder holds the trial files and the answer sheet.
@@ -150,8 +157,8 @@ Each is computed on exactly the 4 s the listener hears.
 
 "Validated" covers clear differences between clean-to-crunch PR12 renders only: pairs
 whose |log(dA/dB)| under the judge exceeds the clear cut. (In the withdrawn SW50R pool
-that was 0.213, about 19%, already above the 15% the model POC's development gates
-use.) POC results below the cut, on high-gain material, or on other amps rest on an
+that was 0.213, about 19%; in this pool it is 0.150, about 16%, just above the 15% the
+model POC's development gates use.) POC results below the cut, on high-gain material, or on other amps rest on an
 unvalidated range.
 
 - **Validated**: the judge stays the judge for clear differences on clean-to-crunch
