@@ -15,9 +15,9 @@ to a recording. This document records what that number is, why it changed on
   It applies wherever a part's own DI exists (the validation material) and no more
   than half the scored frames are pauses; it refuses the rest. It does not apply to
   the product's song-only use, which has no DI.
-- **It is not validated yet.** Listening validation is stage 0b of
-  `docs/supervised-model-plan.md` (`docs/listening-validation-plan.md`, 30 trials on
-  clear differences). Until then it is the best
+- **It is validated for clear differences between clean-to-crunch PR12 renders
+  only** (stage 0b, `docs/listening-validation-results.md`: 17 of 22 decided pairs,
+  p 0.0085). Elsewhere (high gain, other amps, differences under about 16%) it is the best
   measure available, not ground truth.
 
 ## Why v3 was retired
