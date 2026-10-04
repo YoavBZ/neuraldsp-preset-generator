@@ -45,6 +45,7 @@ SPRING = {"sw50r": "sw50rAmp/sw50rReverb", "pr12": "pr12Amp/pr12Reverb"}
 # The FX section itself stays on: every effect in it is off under R, and switching
 # the section off and then on again in one reused instance left it rendering
 # silence for every later command (measured 2026-10-03, two factory presets in a row).
+SUBTYPE = "FLOAT"                 # not 24-bit PCM: hot presets went past full scale
 RULE_SET = {"reverb/reverbActive": False, "delay/delayActive": False,
             "tremolo/tremoloActive": False, "parameters/doublerActive": False,
             "parameters/gateActive": False, "fxParameters/sectionActive": True,
@@ -157,7 +158,7 @@ def work(job):
                     audio = np.asarray(renderer.render(di, {"panel": name}).audio)
                     # Float, not 24-bit PCM: presets with a hot output go past full
                     # scale, and integer PCM clipped 156 of the first panel's renders.
-                    sf.write(path, audio, 48000, subtype="FLOAT")
+                    sf.write(path, audio, 48000, subtype=SUBTYPE)
                     if first is None:
                         first = (slug, name, audio)
                 rows.append({"part": slug, "candidate": name, "file": str(path)})
@@ -170,6 +171,20 @@ def work(job):
     finally:
         renderer.close()
     return rows
+
+
+def check_out_dir(out_dir: pathlib.Path, config: dict):
+    """Renders already on disk are reused, so refuse a directory rendered under another
+    configuration, or holding renders with no record of how they were made; otherwise
+    stamp it. Returns the reason to refuse, or None."""
+    stamp = out_dir / "panel-config.json"
+    if stamp.exists():
+        if json.loads(stamp.read_text()) != config:
+            return f"{out_dir} holds renders made with another configuration; use a new directory"
+    elif (out_dir / "index.json").exists() or any(out_dir.glob("*/*.wav")):
+        return f"{out_dir} holds renders with no record of how they were made; use a new directory"
+    stamp.write_text(json.dumps(config, indent=1))
+    return None
 
 
 def main() -> None:
@@ -191,15 +206,11 @@ def main() -> None:
         die(f"crops missing for {', '.join(missing)}; run benchmark_recordings.py once")
     args.out_dir = args.out_dir.expanduser()
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    # Renders already on disk are reused, so a directory rendered under another rule
-    # set or format must not be resumed into.
-    config = {"amp": args.amp, "rule_set": RULE_SET, "spring_off": SPRING.get(args.amp),
-              "format": "FLOAT"}
-    stamp = args.out_dir / "panel-config.json"
-    if stamp.exists() and json.loads(stamp.read_text()) != config:
-        die(f"{args.out_dir} holds renders made with another configuration; use a new "
-            f"directory")
-    stamp.write_text(json.dumps(config, indent=1))
+    problem = check_out_dir(args.out_dir, {"amp": args.amp, "rule_set": RULE_SET,
+                                           "spring_off": SPRING.get(args.amp),
+                                           "format": SUBTYPE})
+    if problem:
+        die(problem)
     jobs = [(args, slugs[i::args.workers]) for i in range(args.workers)]
     with ProcessPoolExecutor(args.workers) as pool:
         rows = [row for result in pool.map(work, jobs) for row in result]

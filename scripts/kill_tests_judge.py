@@ -161,8 +161,8 @@ def main():
         with ProcessPoolExecutor(args.workers) as ex:
             lags = dict(ex.map(estimate_part_lag,
                                [(p, files[p], meta[p]["lag"], crops) for p in used]))
-        args.freeze_lags.expanduser().write_text(json.dumps({"panel": str(panel), "lags": lags},
-                                               indent=1) + "\n")
+        table = {"panel": str(args.panel_dir), "lags": lags}
+        args.freeze_lags.expanduser().write_text(json.dumps(table, indent=1) + "\n")
         print(json.dumps(lags, indent=1))
         return
     if not (args.lags and args.k3_json and args.k_json):
@@ -351,7 +351,7 @@ def main():
                 on_a = {c: dist_alt(c, "A", bands) for c in factory}
                 on_a = {c: v for c, v in on_a.items() if v is not None}
                 base = dist_alt("template+R", "B", bands)
-                if on_a and base:
+                if on_a and base and dist_alt(min(on_a, key=on_a.get), "B", bands):
                     oracle = min(on_a, key=on_a.get)
                     row["k1_oracle"] = {"preset": oracle,
                                         "log_ratio": math.log(dist_alt(oracle, "B", bands) / base)}

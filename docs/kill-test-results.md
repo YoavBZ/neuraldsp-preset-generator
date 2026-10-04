@@ -2,11 +2,15 @@
 
 Declared in `docs/supervised-model-plan.md` §0 (K1, K2) and `docs/kill-test-k3-plan.md`
 (K3, its amendment, and "Under the judge"). Computed by `scripts/kill_tests.py` and
-`scripts/kill_test_k3.py` (as merged in this PR; the run used byte-identical copies)
-on the float panel (1,978 renders, 44 factory presets plus the template with and
-without its time effects, through 43 development parts' DIs), then by
-`scripts/kill_tests_judge.py`. Two independent reviews re-scored every number from the
-renders and reproduced them exactly.
+`scripts/kill_test_k3.py` at 026ceed (identical to 1f67812, where they ran) on the
+float panel (1,978 renders, 44 factory presets plus the template with and without its
+time effects, through 43 development parts' DIs), then by `scripts/kill_tests_judge.py`
+at 7f98fca; later commits change only import order, path expansion and guards that do
+not fire on this run. Two independent reviews re-scored the numbers from the renders;
+the second corrected several labels and figures, which this version carries.
+
+Counts of parts "better than" a comparator count a tie as half where marked (half);
+the declaration counts a tie as half only against the shuffled control.
 
 ## Verdict
 
@@ -28,11 +32,11 @@ for the user, not something this result settles; the case for and against is bel
 | | judge, default bands | pass | 32% |
 | | judge, union bands | pass | 28%; leaving out one band, the worst is 25.2% against the 25% line |
 | K2 across players | as declared | pass | top-1 58% for LDA (chance 2.3%); closed set only (below) |
-| K3 real amp tracks | ALM | pass (1-NN) | 27% band median; better than template+R on 18 of 30 parts, than the shuffled control on 24, than the constant on 20.5 |
-| | judge, default bands | pass (1-NN) | 28%; 18, 23, 21.5 |
+| K3 real amp tracks | ALM | pass (1-NN) | 27% band median; better than template+R on 18 of 30 parts, than the shuffled control on 24, than the constant on 20 (20.5 half) |
+| | judge, default bands | pass (1-NN) | 28%; 18, 23, 21 (21.5 half) |
 | | judge, union bands | fail as declared | 27%; 16, 24 — and 15 better, 1 tied, 14 worse against the constant (15.5 if the tie counts half) |
 | | LDA, LDA+1-NN | fail | LDA 12–20% worse than template+R; LDA+1-NN from 2% better to 6% worse |
-| As first declared (ALM and v3c) | | pass | K1 under v3c 36%; K3 1-NN under v3c 13%, 22 of 30 parts, beats the shuffled control on 25 and the constant on 23 |
+| As first declared (ALM and v3c) | | pass | K1 under v3c 36%; K3 1-NN under v3c 13%, 22 of 30 parts, beats the shuffled control on 25 and the constant on 22 (23 half) |
 
 Under v3c the constant chosen on the training bands (band median 18%) does better
 than 1-NN (13%); v3c is retired as a judge (`docs/measuring-closeness.md`) and this
@@ -49,8 +53,9 @@ The tie is Fragments, where the 1-NN pick and the union constant are the same pr
   differs, and five oracle picks moved to formerly clipped or shifted presets.
 - **The picks are part-specific.** 1-NN makes 15 distinct picks, the most common on
   13% of parts. Given each part another band's pick, the gain is about zero; the
-  shuffled control is beaten on 23–24 of 30 parts (band p about 0.012). With the picks
-  permuted across parts, 0.1–0.2% of 2,000 permutations pass the whole rule.
+  shuffled control is beaten on 23–24 of 30 parts (band p about 0.006 one-sided). With
+  the picks permuted across parts, 0.1–0.2% of 2,000 permutations pass the whole rule
+  as coded (half ties); counting ties as losses, none of 2,000 does.
 - **Lags do not matter here.** At the other cluster's lag, Signs 3 and Strangest
   Places keep the same oracle presets and move by at most 0.007 in log ratio.
 - **Gating the amp-track features by the part's DI** is not a material leak: without
@@ -58,20 +63,21 @@ The tie is Fragments, where the 1-NN pick and the union constant are the same pr
 
 ## What does not
 
-- **The K3 margin.** Under the union bands, removing any one of 15 parts, or any one of
-  7 of the 11 bands, makes K3 fail; two of those pivotal parts (Honey, She's Gone) are
-  pause-heavy, where `docs/measuring-closeness.md` says rankings lean on pauses.
-  Gating the features without the DI changes 2 of 30 picks and flips that reading to
-  a fail (14.5 of 30).
+- **The K3 margin.** Even under the code's half-tie count, the union reading is a single
+  part from failing: removing any one of 15 parts, or any one of 7 of the 11 bands,
+  makes it fail; two of those pivotal parts (Honey, She's Gone) are pause-heavy, where
+  `docs/measuring-closeness.md` says rankings lean on pauses. Gating the features
+  without the DI changes 2 of 30 picks and takes that count to 14.5 of 30.
 - **The headline overstates the typical part.** The 27% is a median over band
   medians, where four one- or two-part Cambridge bands weigh as much as the eight-part
   Dom McLennon band. Per part, the median gain is 17% (ALM), 10% (judge default), 6%
   (judge union). Cambridge (14 parts): 11–12 better than template+R. Telefunken (16
   parts): 5–7 better, median part no gain; under the union bands only 4 of 16 beat the
-  constant. K1 mostly shows the same split, but not cleanly: under the judge the
-  Telefunken bands have 0–22% headroom, while under ALM Dom McLennon has 28% and the
-  Cambridge band Starnes And Shah only 9–10%.
-- **The recogniser that is among the best on renders is the worst on real tracks.**
+  constant. K1 shows a similar but not clean split: under the judge the Telefunken
+  bands have 0–22% headroom, but under ALM Dom McLennon (Telefunken) has 28%, and the
+  Cambridge band Starnes And Shah has 8.6% under ALM and about 10% under the judge.
+- **The recogniser that is among the best on renders is the worst on real tracks**
+  under ALM and the judge.
   LDA ties LDA+1-NN for K2's best closed-set top-1 (58%) on renders and is 12–20%
   worse than template+R on real amp tracks under ALM and the judge (12.6% better
   under the retired v3c). The plan chooses the POC's models and settings on

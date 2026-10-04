@@ -67,6 +67,17 @@ def test_every_panel_render_gets_the_rule_set():
         assert P.RULE_SET[effect] is False
 
 
+def test_a_panel_directory_is_resumed_only_under_its_own_configuration(tmp_path):
+    config = {"amp": "sw50r", "format": "FLOAT"}
+    assert P.check_out_dir(tmp_path, config) is None              # new: stamped
+    assert P.check_out_dir(tmp_path, config) is None              # same: resumed
+    assert "another configuration" in P.check_out_dir(tmp_path, {**config, "format": "PCM_24"})
+    old = tmp_path / "old"
+    (old / "part").mkdir(parents=True)
+    (old / "part" / "x.wav").write_bytes(b"")                     # renders, no stamp
+    assert "no record" in P.check_out_dir(old, config)
+
+
 def test_the_judge_reads_alm_k3_as_declared_from_unrounded_rows():
     rows = [{"band": "a", "model": -0.2}, {"band": "b", "model": -0.1053606},
             {"band": "c", "model": -0.3}]
@@ -76,7 +87,13 @@ def test_the_judge_reads_alm_k3_as_declared_from_unrounded_rows():
           "rows": rows}
     assert J.unrounded_band_median(rows, "model") == pytest.approx(-0.2)
     assert J.k3_alm_pass(k3)
-    k3["model_better_than_constant"] = 1.5                # a tie counted half: not a majority
+    k3["model_better_than_constant"] = 1.5                # half a part short of a majority
+    assert not J.k3_alm_pass(k3)
+    # Rounded to four places, -0.10535 reads -0.1054 and would clear log 0.9 (-0.105361);
+    # unrounded it does not.
+    near = [{"band": b, "model": -0.10535} for b in "abc"]
+    k3.update(rows=near, model_better_than_constant=2)
+    k3["model_vs_templateR"]["band_median_log_ratio"] = -0.1054
     assert not J.k3_alm_pass(k3)
 
 
