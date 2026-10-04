@@ -70,9 +70,12 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
 Any common audio file works — mp3 included, no conversion step needed.
 
 **Check the window before you use the numbers.** `--excerpt` ranks windows by
-broadband activity, so on a dense master it ranks nothing and measures the start
-of the file. A fingerprint of the wrong twenty seconds is not noisy; it is a
-clean description of the wrong instrument. Two things to look at every time:
+broadband activity, so on a dense master it ranks nothing and measures the middle
+of the file, which misses a given guitar part about a third of the time. For a
+full song, ask the user for a time where the guitar is clearly heard and pass it
+as `--excerpt-start SECONDS`. A fingerprint of the wrong twenty seconds is not
+noisy; it is a clean description of the wrong instrument. Two things to look at
+every time:
 
 - an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`,
   or a "does not look like a guitar" caveat — each means **look at the window

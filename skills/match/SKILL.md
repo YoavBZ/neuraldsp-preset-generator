@@ -53,13 +53,15 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
 
 **Then check the window actually holds the part, before spending anything on
 it.** `--excerpt` ranks by broadband activity, which on a dense master ranks
-nothing and returns the start of the file. A budget spent against the wrong
+nothing and returns the middle of the file; on full songs that missed a given
+guitar part about a third of the time. For a full song, ask the user for a time
+where the guitar is clearly heard and start there. A budget spent against the wrong
 twenty seconds buys a careful fit to the wrong instrument, and every score in the
 report will look normal. Re-measure with `--excerpt-start SECONDS` when you see
 any of:
 
 - `excerpt_policy: activity_tie` — several windows scored the same and this is
-  the earliest of them, so confirm it holds the part
+  the middle one of them, so confirm it holds the part
 - a clamped or ignored `--excerpt-start` — the window you named was not the
   window measured
 - a "does not look like a guitar" caveat — centroid under 200 Hz and a −6 dB

@@ -168,10 +168,11 @@ class Fingerprint:
             counted = (f"{tied} of {total} candidate windows"
                        if tied and total else "most candidate windows")
             notes.append(
-                f"{counted} scored the same, so this one is simply the earliest "
+                f"{counted} scored the same, so this one is simply the middle "
                 "of them rather than a distinguished choice. It may not contain "
-                "the part you meant — check it, and pass --excerpt-start to "
-                "measure a section you choose"
+                "the part you meant (on full songs it missed a given guitar part "
+                "about a third of the time) — check it, and pass --excerpt-start "
+                "to measure a section you choose"
             )
         if policy == "explicit_window_clamped":
             asked = self.source.get("excerpt_requested_start_s")
