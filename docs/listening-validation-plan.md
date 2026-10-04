@@ -9,14 +9,12 @@ stage 0b of `docs/supervised-model-plan.md`, cut to about 20 minutes of listenin
 the listener's request (from the ~2.5 h first planned).
 
 **Amended on 2026-10-04, before any answer was given.** The first build drew its
-options from the SW50R panel, and the listener, a few trials into the first sitting,
-found both options too distorted to compare with the amp track: most of the SW50R's
-factory presets are high-gain. The listener stopped a few trials into the first
-sitting and returned no answers. What changed:
+options from the SW50R panel. A few trials into the first sitting, the listener found
+both options too distorted to compare with the amp track (most of the SW50R's factory
+presets are high-gain), stopped, and returned no answers. What changed:
 
 - The options come from the PR12 panel, less its high-gain presets (below). AC20, the
-  other cleaner
-  Morgan amp, is not used: an audition of an AC20 render must come from a fresh plugin
+  other cleaner Morgan amp, is not used: an audition of an AC20 render must come from a fresh plugin
   process per render, and that many restarts wear out the plugin's licence service.
 - The judge's lag is each part's recorded lag, so the four parts whose lag is
   ambiguous are left out of the pool.
@@ -48,7 +46,7 @@ that cannot be compared is answered "?".
   withdrawn first draw; the new draw's count is reported). Nor does it reach near-ties, where the union and default band sets differ,
   or the size of the kill tests' per-part K3 gains (6–17%, below the "clear" cut). So
   it does not settle K3's union reading.
-- The options are PR12 renders with no drive pedal and a low volume (clean to
+- The options are PR12 renders with no drive pedal and a volume of 0.75 or less (clean to
   crunch); the kill tests used the SW50R.
   Whether the listener and the judge agree as often on high-gain options, or on other
   amps, is not tested.

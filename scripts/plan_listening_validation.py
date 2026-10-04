@@ -9,10 +9,11 @@ For every development part with an unambiguous recorded lag (`docs/validation-la
 and a 4-s window where its DI plays in at least 90% of the frames, every candidate of
 every panel (named `<amp>:<candidate>`), its distance to the part's amp track over exactly
 that window: the judge (`analysis/aligned.py`, both band sets, at the recorded lag), ALM
-and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs (never with an
-amp's shipped template, whose time effects are on) above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
-most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
-3 hidden repeats. The seed is drawn from the system's randomness and kept with the
+and v3c (`kill_tests.py`). Then, with a private seed, from the offered candidates only
+(not an amp's shipped template, whose time effects are on, nor a high-gain preset), 24
+test pairs above the judge's median |log(dA/dB)| over offered pairs (at least 10 where
+the judge and v3c disagree, at most 2 per part, at least 8 bands, no candidate in more
+than 3), 3 hidden references and 3 hidden repeats. The seed is drawn from the system's randomness and kept with the
 output, which names the pairs and every distance's prediction: both stay private until
 every answer is in (the plan records only the file's sha256), since a listener who saw
 the pairs could tell the options apart. Trial numbers and A/B are drawn when the files
@@ -323,7 +324,9 @@ def main():
 
     tests = [t for t in out["trials"] if t["kind"] == "test"]
     # Counts only: the pairs themselves stay private.
-    print(f"{len(used)} parts, {out['clear_pairs']} clear pairs; {len(tests)} test pairs over "
+    print(f"{len(out['offered'])} candidates offered, {len(out['left_out_high_gain'])} left out "
+          f"as high-gain; {len(used)} parts, {out['clear_pairs']} clear pairs; "
+          f"{len(tests)} test pairs over "
           f"{len({t['band'] for t in tests})} bands, {sum(t['disagree'] for t in tests)} where "
           f"the judge and v3c disagree; the clear cut |log ratio| > "
           f"{out['median_abs_log_ratio']:.3f}; sha256 "

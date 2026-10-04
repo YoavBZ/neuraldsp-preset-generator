@@ -95,6 +95,7 @@ def test_a_listener_who_agrees_with_the_judge_validates_it():
     assert out["valid"] and out["decided"] == 24
     assert out["agreement"]["judge"]["agree"] == 24 and out["judge"] == "validated"
     assert out["agreement"]["v3c"]["agree"] == 14                  # v3c wrong on its ten
+    assert out["same_prediction_as_judge"] == {"judge_union": 24, "alm": 24, "v3c": 14}
     assert out["judge_vs_v3c_where_they_disagree"]["listener_with_judge"] == 10
     assert all(r["same"] for r in out["repeats"])
 
@@ -197,7 +198,8 @@ def test_the_draw_keeps_its_rules_and_is_fixed_by_its_seed():
 
 
 
-def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_path, monkeypatch):
+def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_path, monkeypatch,
+                                                                           capsys):
     import json
     import subprocess
 
@@ -304,7 +306,22 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
                                       "--private-dir", str(tmp_path / "t")])
     with pytest.raises(SystemExit):
         B.main()                         # not the panels the trials were drawn from
+    assert "not the ones the trials were drawn from" in capsys.readouterr().err
     assert not (tmp_path / "u").exists()
+    unbound = json.loads(trials.read_text())
+    del next(t for t in unbound["trials"] if t["kind"] == "test")["files"]
+    trials.write_text(json.dumps(unbound))
+    monkeypatch.setattr(B, "declared_trials_sha256",
+                        lambda: hashlib.sha256(trials.read_text().encode()).hexdigest())
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                      "--panel-dir", str(panels["pr12"]),
+                                      "--panel-dir", str(panels["sw50r"]),
+                                      "--crops-dir", str(crops),
+                                      "--out-dir", str(tmp_path / "s"),
+                                      "--private-dir", str(tmp_path / "r")])
+    with pytest.raises(SystemExit):
+        B.main()                         # a trial whose options are not bound to audio
+    assert not (tmp_path / "s").exists()
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
                                       "--panel-dir", str(panels["sw50r"]),
