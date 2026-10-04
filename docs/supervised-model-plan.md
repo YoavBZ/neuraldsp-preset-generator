@@ -35,6 +35,12 @@ reused process with a discarded warm-up, scored on two halves of each crop (1.0�
 and 5.5–10 s). Level is left out; both distances are used: v3c (the audit's
 corrected `unpaired-v3`) and ALM (an aligned log-mel distance, §5.3).
 
+(Since PR #109 retired v3c as a judge, K1 and K3 decide under ALM and
+`analysis/aligned.py`; see `docs/kill-test-k3-plan.md`, "Under the judge".)
+**Results** (2026-10-04, `docs/kill-test-results.md`): K1 and K2 pass; K3 fails as
+declared on the judge's union reading (15 of 30 against the constant, one tie), so the
+gate does not open as declared. Whether to proceed is the user's decision.
+
 **K1, headroom.** Per part, choose the preset that is closest on half A and score it
 on half B (a split-half oracle over the presets); compare it with template+R on half
 B. Also score the best constant preset chosen leave-one-band-out (the preset with

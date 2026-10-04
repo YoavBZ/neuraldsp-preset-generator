@@ -1,0 +1,130 @@
+{
+ "panel": "~/ndsp-presets/runs/kill/sw50r",
+ "lags": {
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "lag": 914,
+   "window_ms": 15.0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "lag": -43,
+   "window_ms": 15.0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "lag": -43,
+   "window_ms": 15.0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+   "lag": 72,
+   "window_ms": 15.0
+  },
+  "cambridge-Passing_Ships-ElecGtr2": {
+   "lag": -46,
+   "window_ms": 15.0
+  },
+  "cambridge-Passing_Ships-ElecGtr4": {
+   "lag": -34,
+   "window_ms": 15.0
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "lag": -38,
+   "window_ms": 15.0
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "lag": -51,
+   "window_ms": 15.0
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "lag": -33,
+   "window_ms": 15.0
+  },
+  "cambridge-Quicksand-ElecGtr2": {
+   "lag": -33,
+   "window_ms": 15.0
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "lag": -26,
+   "window_ms": 15.0
+  },
+  "cambridge-Signs-ElecGtr3": {
+   "lag": -29,
+   "window_ms": 15.0
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "lag": -129,
+   "window_ms": 15.0
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "lag": 620,
+   "window_ms": 15.0
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "lag": -25,
+   "window_ms": 15.0
+  },
+  "telefunken-Bloomlight-GTR": {
+   "lag": -33,
+   "window_ms": 15.0
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "lag": -33,
+   "window_ms": 15.0
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "lag": -22,
+   "window_ms": 15.0
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "lag": -30,
+   "window_ms": 15.0
+  },
+  "telefunken-Fragments-GTR": {
+   "lag": -33,
+   "window_ms": 15.0
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "lag": -25,
+   "window_ms": 15.0
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "lag": -28,
+   "window_ms": 15.0
+  },
+  "telefunken-Honey-GTR": {
+   "lag": -12,
+   "window_ms": 15.0
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "lag": -25,
+   "window_ms": 15.0
+  },
+  "telefunken-Russian_Cream-GTR_1": {
+   "lag": -23,
+   "window_ms": 15.0
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "lag": -30,
+   "window_ms": 15.0
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "lag": -23,
+   "window_ms": 15.0
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "lag": -29,
+   "window_ms": 15.0
+  },
+  "telefunken-She's_Gone-GTR": {
+   "lag": -30,
+   "window_ms": 15.0
+  },
+  "telefunken-Strangest_Places-GTR": {
+   "lag": -89,
+   "window_ms": 15.0
+  }
+ },
+ "alternate": {
+  "_source": "nine-render pools of the panel (the first nine index.json rows of each part) put these two parts' lags in another cluster; reported, not deciding",
+  "cambridge-Signs-ElecGtr3": 18,
+  "telefunken-Strangest_Places-GTR": -16
+ }
+}
