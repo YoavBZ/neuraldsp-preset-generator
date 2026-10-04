@@ -22,7 +22,9 @@ none of that.
 - **Families.** A preset's family is its artist folder; the three templates are one
   family. A factory preset whose amp controls and input gain equal its amp's
   template's joins the templates. This compares every amp control except the master
-  level (loudness is normalised away) and the spring reverb (off in every render). Two
+  level and the spring reverb (off in every render). The master also adds some drive on
+  SW50R; grouping TriTone Tremolo (master 0.62 against the template's 0.30) errs toward
+  lower accuracy. Two
   presets join that way: SW50R "TriTone Tremolo" and AC20 "Default". Neural DSP's own
   presets are each their own family.
 - **Parts.** Development parts whose DI plays in at least half of 1.0–10 s (the K3
@@ -95,8 +97,9 @@ band.
   none. The offered sets differ in drive:
   - PR12's volumes reach 0.62–0.68, near its knee;
   - AC20 includes "Mid-Gain Drive" (0.71);
-  - SW50R's volumes stay at or below 0.61;
-  - input gain ranges from −20 to +1.8 dB on PR12 and SW50R, and down to −5.7 on AC20.
+  - SW50R's volumes stay at or below 0.615;
+  - input gain ranges from −20 to +1.8 dB on PR12, −20 to 0 on SW50R, and down to
+    −5.7 on AC20.
 
   The judge hears drive, so drive could separate the sets rather than the amps'
   character. Each target's volume, input gain and master are in the rows.

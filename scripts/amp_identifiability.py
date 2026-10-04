@@ -7,10 +7,10 @@
 
 For every development part whose DI plays in at least half of 1.0-10 s, every offered
 render of the three amps through that part's DI (factory presets with no drive pedal,
-the amp's volume at most 0.75 and the cab section on, and each amp's template with time
-effects off) is taken in turn as the target. Every offered render of the same part
-outside the target's family (its artist folder; the templates are one family) is a
-candidate, scored against the target by the judge (`aligned_distance`, default bands,
+the amp's volume at most 0.75 and the amp and cab sections on, and each amp's template
+with time effects off) is taken in turn as the target. Every offered render of the same
+part outside the target's family (its artist folder; the templates, with any factory
+preset whose amp controls match its template's, are one family) is a candidate, scored against the target by the judge (`aligned_distance`, default bands,
 lag 0: both are renders of the same DI). In each of 200 draws, the same number of
 candidates is drawn from each amp (the smallest amp's remaining pool), and the amp of
 the closest one is the guess. A target's accuracy is the share of draws that guess its
@@ -62,8 +62,8 @@ def offered(candidate: str, high_gain, sections_on=lambda c: True) -> bool:
 def family(candidate: str, lookalikes=frozenset()) -> str:
     """The artist folder a factory preset comes from. The templates are one family, with
     any factory preset whose amp controls (the master level and the spring reverb, off
-    in every render, aside) and input gain equal its amp's template's (`lookalikes`); every other preset (Neural DSP's own, Default)
-    is its own."""
+    in every render, aside) and input gain equal its amp's template's (`lookalikes`).
+    Every other preset (Neural DSP's own) is its own family."""
     name = candidate.split(":", 1)[1]
     if name == "template+R" or candidate in lookalikes:
         return "templates"
@@ -87,8 +87,9 @@ def settings(candidate: str) -> dict:
             "cab": on(("cabParameters", "sectionActive")),
             "volume": float(v.get((f"{amp}Amp", f"{amp}Volume"), "nan")),
             "input_gain": float(v.get(("parameters", "inputGain"), "nan")),
+            # Every Morgan preset stores sw50rLevel; it is a master only on SW50R.
             "master": (float(v[("sw50rAmp", "sw50rLevel")])
-                       if ("sw50rAmp", "sw50rLevel") in v else None),
+                       if amp == "sw50r" and ("sw50rAmp", "sw50rLevel") in v else None),
             # The master level aside (loudness is normalised away; SW50R's is the only
             # one), and the amp's spring reverb, which the panel's rule set R turns off.
             "amp_controls": sorted((k[1], str(val)) for k, val in v.items()
