@@ -125,7 +125,8 @@ otherwise before it runs.
 - **Bleed** is recorded per development part in `docs/validation-crop-rules.json`
   (`bleed_db`): the median level of the amp track where the DI is more than 60 dB
   under its loudest, less its median where the DI plays, over the whole session.
-  - The Cambridge sessions read below −100 dB: digital silence between the takes.
+  - Most Cambridge sessions read below −100 dB: digital silence between the takes.
+    Heather Jane reads about −60.
   - The Telefunken live-room sessions read −79 to −24 dB. The highest are Lost Alive,
     She's Gone, Honey, Hikikomori and Until I Get Back.
   - A listener heard the backing in Blind Spots' amp track, at −46.
