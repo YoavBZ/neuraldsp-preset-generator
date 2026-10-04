@@ -1,0 +1,120 @@
+{
+ "k1": {
+  "recording": {
+   "oracle_band_median": -0.26698141515587476,
+   "parts": 25,
+   "bands": 9,
+   "dropped_parts": [],
+   "pass": false
+  },
+  "union": {
+   "oracle_band_median": -0.20643174628901992,
+   "parts": 25,
+   "bands": 9,
+   "dropped_parts": [],
+   "pass": false
+  },
+  "pass": false
+ },
+ "k2": {
+  "pass": true
+ },
+ "k3": {
+  "by_recogniser": {
+   "1nn": {
+    "recording": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.01217247319276679,
+     "closer_than_templateR": 15,
+     "better_than_shuffled_ties_half": 16.0,
+     "closer_than_constant": 11,
+     "constant_ties": 2,
+     "distinct_picks": 13,
+     "most_common_pick_share": 0.2857142857142857,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "union": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.012709449264709894,
+     "closer_than_templateR": 17,
+     "better_than_shuffled_ties_half": 17.0,
+     "closer_than_constant": 13,
+     "constant_ties": 4,
+     "distinct_picks": 13,
+     "most_common_pick_share": 0.2857142857142857,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "pass": false
+   },
+   "lda": {
+    "recording": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.023401003739302106,
+     "closer_than_templateR": 16,
+     "better_than_shuffled_ties_half": 19.0,
+     "closer_than_constant": 13,
+     "constant_ties": 0,
+     "distinct_picks": 9,
+     "most_common_pick_share": 0.5357142857142857,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "union": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.00895652456044075,
+     "closer_than_templateR": 17,
+     "better_than_shuffled_ties_half": 19.0,
+     "closer_than_constant": 16,
+     "constant_ties": 3,
+     "distinct_picks": 9,
+     "most_common_pick_share": 0.5357142857142857,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "pass": false
+   },
+   "lda+1nn": {
+    "recording": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.06368937395202354,
+     "closer_than_templateR": 18,
+     "better_than_shuffled_ties_half": 19.0,
+     "closer_than_constant": 11,
+     "constant_ties": 1,
+     "distinct_picks": 9,
+     "most_common_pick_share": 0.5714285714285714,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "union": {
+     "parts": 28,
+     "rows": 28,
+     "band_median_vs_templateR": -0.029540774400232398,
+     "closer_than_templateR": 18,
+     "better_than_shuffled_ties_half": 18.0,
+     "closer_than_constant": 15,
+     "constant_ties": 3,
+     "distinct_picks": 9,
+     "most_common_pick_share": 0.5714285714285714,
+     "dropped_parts": [],
+     "pass": false
+    },
+    "pass": false
+   }
+  },
+  "pass": false
+ },
+ "passes_on_clean_pr12": false,
+ "inputs": {
+  "/Users/yoavbz/ndsp-presets/runs/kill/k-pr12-clean.json": "84e58956764037a4a0e9b1a08954df403170780d9ce5deb875585e2579694cbe",
+  "/Users/yoavbz/ndsp-presets/runs/kill/k-judge-pr12-clean.json": "9ac370e08d61b7bdf74d54ddf1586199303685a5535e06bb1ee8a8dff3a89a80"
+ },
+ "commit": "d82eddfd7bdbcec18059a7bb825e4d1298a75e99"
+}
