@@ -220,11 +220,17 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
             pathlib.Path(row["file"]).write_bytes(row["file"].encode())
         (panel / "index.json").write_text(json.dumps({"amp": amp, "rows": rows}))
     files, plan["panels"] = P.panel_files(list(panels.values()))
+    crops = tmp_path / "crops"
     for t in plan["trials"]:
         if t["kind"] != "repeat":
             t["files"] = {c: {"path": str(files[t["part"]][c]),
                               "sha256": P.file_sha256(files[t["part"]][c])}
                           for c in (t["first"], t["second"]) if c != "reference"}
+            (crops / t["part"]).mkdir(parents=True, exist_ok=True)
+            for n in ("reference", "di"):
+                (crops / t["part"] / f"{n}.wav").write_bytes(f"{t['part']}{n}".encode())
+            t["crops"] = {n: P.file_sha256(crops / t["part"] / f"{n}.wav")
+                          for n in ("reference", "di")}
     trials = tmp_path / "trials.json"
     trials.write_text(json.dumps(plan))
     calls = []
@@ -248,7 +254,7 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
                                       "--panel-dir", str(panels["sw50r"]),
-                                      "--crops-dir", str(tmp_path / "crops"),
+                                      "--crops-dir", str(crops),
                                       "--out-dir", str(listener), "--private-dir", str(private)])
     B.main()
     assert sorted(p.name for p in listener.iterdir()) == sorted(
@@ -276,18 +282,33 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     assert judge_a == 12
     with pytest.raises(SystemExit):
         B.main()                         # built once: the folders are no longer empty
-    pathlib.Path(files["p0"]["pr12:c0a"]).write_bytes(b"re-rendered")
+    option = pathlib.Path(files["p0"]["pr12:c0a"])
+    kept = option.read_bytes()
+    for changed in (option, crops / "p0" / "reference.wav"):
+        original = changed.read_bytes()
+        changed.write_bytes(b"re-rendered")
+        monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                          "--panel-dir", str(panels["pr12"]),
+                                          "--panel-dir", str(panels["sw50r"]),
+                                          "--crops-dir", str(crops),
+                                          "--out-dir", str(tmp_path / "w"),
+                                          "--private-dir", str(tmp_path / "v")])
+        with pytest.raises(SystemExit):
+            B.main()                     # audio that is not what the trial list recorded
+        assert not (tmp_path / "w").exists(), "refused before anything was written"
+        changed.write_bytes(original)
+    assert option.read_bytes() == kept
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
-                                      "--panel-dir", str(panels["sw50r"]),
-                                      "--out-dir", str(tmp_path / "w"),
-                                      "--private-dir", str(tmp_path / "v")])
+                                      "--out-dir", str(tmp_path / "u"),
+                                      "--private-dir", str(tmp_path / "t")])
     with pytest.raises(SystemExit):
-        B.main()                         # an option that is not the audio the judge scored
-    assert not (tmp_path / "w").exists(), "refused before anything was written"
+        B.main()                         # not the panels the trials were drawn from
+    assert not (tmp_path / "u").exists()
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
                                       "--panel-dir", str(panels["sw50r"]),
+                                      "--crops-dir", str(crops),
                                       "--out-dir", str(tmp_path / "x"),
                                       "--private-dir", str(tmp_path / "x" / "private")])
     with pytest.raises(SystemExit):
@@ -296,6 +317,7 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
                                       "--panel-dir", str(panels["sw50r"]),
+                                      "--crops-dir", str(crops),
                                       "--out-dir", str(tmp_path / "y"),
                                       "--private-dir", str(tmp_path / "z")])
     with pytest.raises(SystemExit):
@@ -362,6 +384,47 @@ def test_parts_without_a_clear_recorded_lag_are_left_out_and_the_lag_is_passed(t
     jobs, no_lag = P.pool_jobs(files, meta, tmp_path, lag_of={"p1": 1000, "p2": None}.get)
     assert no_lag == ["p2"]
     assert jobs == [("p1", {"pr12:x": "f1"}, 480, 1000, tmp_path)]
+
+
+def test_the_draw_refuses_a_cache_scored_from_other_panels(tmp_path, monkeypatch):
+    import json
+
+    panel = tmp_path / "panel"
+    panel.mkdir()
+    (panel / "index.json").write_text(json.dumps({"amp": "pr12", "rows": []}))
+    cache = tmp_path / "pool.json"
+    cache.write_text(json.dumps({"panels": {str(panel): "0" * 64}, "lags_sha256": "0" * 64,
+                                 "pool": {}}))
+    import analysis
+
+    monkeypatch.setattr(analysis, "require", lambda *_: None)
+    monkeypatch.setattr(sys, "argv", ["plan", "--panel-dir", str(panel), "--cache", str(cache),
+                                      "--out", str(tmp_path / "trials.json")])
+    with pytest.raises(SystemExit):
+        P.main()
+    assert not (tmp_path / "trials.json").exists()
+
+
+def test_eligible_options_are_neither_the_shipped_template_nor_high_gain():
+    loud = {"pr12:factory:Metal"}.__contains__
+    assert P.eligible("pr12:factory:Clean", gain_of=loud)
+    assert not P.eligible("pr12:factory:Metal", gain_of=loud)
+    assert not P.eligible("pr12:template", gain_of=loud)
+    pool = _pool()
+    banned = {"c0", "c1", "c2"}
+    for seed in range(3):
+        drawn = P.draw(pool, {k: {"band": f"b{i % 9}"} for i, k in enumerate(pool)}, seed,
+                       allowed=lambda c: c not in banned)["trials"]
+        assert not any(t.get(s) in banned for t in drawn for s in ("first", "second"))
+
+
+@pytest.mark.skipif(not P.preset_path("pr12:factory:Neural DSP/x").parent.parent.exists(),
+                    reason="needs the plugin's factory presets")
+def test_high_gain_is_read_from_the_presets_settings():
+    assert P.high_gain("pr12:factory:Neural DSP/Vintage Metal")         # drive 1 on, volume 0.88
+    assert P.high_gain("pr12:factory:Artists/Joseph Anidjar/Mean Little Crunchy Guy")   # volume 0.87
+    assert not P.high_gain("pr12:factory:Artists/Richard Henshall/Crystal Clean")
+    assert not P.high_gain("pr12:template+R")                          # volume 0.62
 
 
 def test_the_shipped_template_is_never_in_a_test_pair():

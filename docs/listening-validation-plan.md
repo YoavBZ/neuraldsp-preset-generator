@@ -11,25 +11,34 @@ the listener's request (from the ~2.5 h first planned).
 **Amended on 2026-10-04, before any answer was given.** The first build drew its
 options from the SW50R panel, and the listener, a few trials into the first sitting,
 found both options too distorted to compare with the amp track: most of the SW50R's
-factory presets are high-gain. The listener returned no answers. What changed:
+factory presets are high-gain. The listener stopped a few trials into the first
+sitting and returned no answers. What changed:
 
-- The options come from the PR12 panel (clean to crunch). AC20, the other cleaner
+- The options come from the PR12 panel, less its high-gain presets (below). AC20, the
+  other cleaner
   Morgan amp, is not used: an audition of an AC20 render must come from a fresh plugin
   process per render, and that many restarts wear out the plugin's licence service.
 - The judge's lag is each part's recorded lag, so the four parts whose lag is
   ambiguous are left out of the pool.
-- The amp's shipped template (time effects on, against a dry amp track) is never in a
-  test pair.
+- No trial offers the amp's shipped template (time effects on, against a dry amp
+  track) or a high-gain preset: one with a drive pedal on or the PR12's volume (its
+  gain) above 0.75, read from the preset's settings, never from a distance. That
+  leaves 21 of the 34 factory presets and the template with time effects off.
 - The clear cut is the new pool's median, recorded beside the trial list's sha256.
 - The trial list records the sha256 of every option's audio, and the builder refuses
   anything else.
 
 The first draw (its sha256 begins 1b057b79) is withdrawn unscored. Its trial list and
 keys stay private. Its pairs cannot recur, since every option is now another amp's
-render. It does not use up the one rerun allowed below. **No further withdrawal**:
-once this draw is built, a trial that cannot be compared is answered "?". Before the
-first sitting, the listener hears a practice file made from a part outside the pool,
-to check that this material can be compared.
+render. It does not use up the one rerun allowed below.
+
+**Practice first, then the draw.** Before anything is drawn, the listener hears one
+practice file, built like a trial from a part outside the pool (Signs ElecGtr3, whose
+lag is ambiguous): the template with time effects off against one offered factory
+preset drawn at random. If the listener cannot compare them, the material is amended
+again before any draw; the practice's part, options and the listener's verdict are
+recorded with the result. **No further withdrawal** once the draw is built: a trial
+that cannot be compared is answered "?".
 
 ## What it can and cannot show
 
@@ -39,7 +48,8 @@ to check that this material can be compared.
   withdrawn first draw; the new draw's count is reported). Nor does it reach near-ties, where the union and default band sets differ,
   or the size of the kill tests' per-part K3 gains (6–17%, below the "clear" cut). So
   it does not settle K3's union reading.
-- The options are clean-to-crunch PR12 renders; the kill tests used the SW50R.
+- The options are PR12 renders with no drive pedal and a low volume (clean to
+  crunch); the kill tests used the SW50R.
   Whether the listener and the judge agree as often on high-gain options, or on other
   amps, is not tested.
 - The pairs are chosen by the judge's own confidence. A pair the judge calls a
@@ -63,7 +73,9 @@ Each is computed on exactly the 4 s the listener hears.
 
 - **Renders**: the PR12 panel (`scripts/render_preset_panel.py`; 34 factory presets
   with time effects off, the template with them off, and the template as shipped),
-  each through the part's own DI.
+  each through the part's own DI. Trials offer only the 21 factory presets that are
+  not high-gain and the template with time effects off; the pool's distances cover
+  all 36.
 - **Parts**: development parts with an unambiguous recorded lag (four are left out)
   and a 4-s window where the DI plays in at least 90% of the frames; the window is the first such from 0.5 s, in 0.25-s steps. The two
   live-room parts whose amp track's top octave is mostly cymbals (Lost Alive, Until I
@@ -73,8 +85,8 @@ Each is computed on exactly the 4 s the listener hears.
 ## Trials (30, in two sittings of 15)
 
 - **Test pairs, 24.** Two candidates for one part, among pairs whose |log(dA/dB)|
-  under the judge is above the median of all candidate pairs of all parts (the clear
-  cut; the shipped template is in no test pair). Drawn with
+  under the judge is above the median over all pairs of offered candidates of all
+  parts (the clear cut). Drawn with
   a seed from the system's randomness: first one pair per band, then pairs where the
   judge and v3c pick different candidates until there are 10, then any; at most 2 per
   part, at least 8 bands, no candidate in more than 3 pairs.
@@ -96,8 +108,8 @@ Each is computed on exactly the 4 s the listener hears.
 - The trial list (pairs and every distance's prediction) and its seed stay in a
   private folder until every answer is in; a listener who saw the pairs could tell the
   options apart. Nobody opens it, the analyst included, before every answer is in.
-  This plan records only its sha256:
-  `PENDING-DRAW`.
+  This plan records only its sha256 and the clear cut:
+  `PENDING-DRAW`; clear cut PENDING-DRAW.
 - Trial numbers, sittings and A/B assignments are drawn when the files are built and
   written, with the builder's output (which prints each file's seed), only to the
   private folder. The listener's folder holds the trial files and the answer sheet.

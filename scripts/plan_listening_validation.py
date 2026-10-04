@@ -140,6 +140,40 @@ def shipped_template(candidate: str) -> bool:
     return candidate.split(":", 1)[-1] == "template"
 
 
+HIGH_GAIN_VOLUME = 0.75     # PR12's volume is its gain; the factory presets leave a gap
+                            # between 0.69 and 0.80
+
+
+def preset_path(candidate: str) -> pathlib.Path:
+    """The preset file a panel candidate was rendered from."""
+    from render_preset_panel import FACTORY, TEMPLATES
+
+    amp, name = candidate.split(":", 1)
+    if name.startswith("factory:"):
+        return FACTORY / f"{name[len('factory:'):]}.xml"
+    return PLUGIN_ROOT / TEMPLATES[amp]
+
+
+def high_gain(candidate: str) -> bool:
+    """A drive pedal on, or the amp's volume above HIGH_GAIN_VOLUME: read from the
+    preset's settings, never from any distance."""
+    from format.parser import parse
+    from format.structured import build
+
+    amp = candidate.split(":", 1)[0]
+    preset = build(parse(preset_path(candidate).read_bytes()))
+    v = {(p.module_path, p.key): p.value for p in preset.parameters}
+    on = lambda k: str(v.get(k, "false")).lower() == "true"                # noqa: E731
+    volume = float(v.get((f"{amp}Amp", f"{amp}Volume"), 0.0))
+    return on(("drive1", "drive1Active")) or on(("drive2", "drive2Active")) \
+        or volume > HIGH_GAIN_VOLUME
+
+
+def eligible(candidate: str, gain_of=high_gain) -> bool:
+    """A candidate a trial may offer: not the shipped template, not high-gain."""
+    return not shipped_template(candidate) and not gain_of(candidate)
+
+
 def pool_jobs(files, meta, crops, lag_of=None):
     """score_part's jobs, one per part with an unambiguous recorded lag, and the parts
     left out for want of one."""
@@ -152,15 +186,17 @@ def pool_jobs(files, meta, crops, lag_of=None):
     return jobs, no_lag
 
 
-def draw(pool, meta, seed):
-    """The trials, by the plan's rules, deterministic in `seed`."""
+def draw(pool, meta, seed, allowed=lambda c: not shipped_template(c)):
+    """The trials, by the plan's rules, deterministic in `seed`; only candidates
+    `allowed` are offered."""
     rng = random.Random(seed)
     pairs = []
-    pool = {part: p for part, p in pool.items() if part not in BLEED_HEAVY}
+    pool = {part: {**p, "candidates": {c: v for c, v in p["candidates"].items() if allowed(c)}}
+            for part, p in pool.items() if part not in BLEED_HEAVY}
     for part, p in sorted(pool.items()):
         ok = {c: v for c, v in p["candidates"].items()
               if all(v.get(d) is not None and v[d] > 0 for d in DISTANCES)}
-        for c1, c2 in itertools.combinations(sorted(c for c in ok if not shipped_template(c)), 2):
+        for c1, c2 in itertools.combinations(sorted(ok), 2):
             lr = {d: math.log(ok[c1][d] / ok[c2][d]) for d in DISTANCES}
             pairs.append({"part": part, "band": meta[part]["band"], "first": c1, "second": c2,
                           "log_ratio": lr, "disagree": (lr["judge"] > 0) != (lr["v3c"] > 0)})
@@ -258,7 +294,9 @@ def main():
     if out_path.exists():
         die(f"{out_path} exists; the trials are drawn once")
     seed = secrets.randbits(32)
-    out = draw(pool, meta, seed)
+    names = sorted({c for p in pool.values() for c in p["candidates"]})
+    offered = {c for c in names if eligible(c)}
+    out = draw(pool, meta, seed, allowed=offered.__contains__)
     for trial in out["trials"]:
         if trial["kind"] != "repeat":
             p = pool[trial["part"]]
@@ -270,8 +308,13 @@ def main():
             trial["files"] = {c: {"path": str(files[trial["part"]][c]),
                                   "sha256": file_sha256(files[trial["part"]][c])}
                               for c in (trial["first"], trial["second"]) if c != "reference"}
+            trial["crops"] = {n: file_sha256(crops / trial["part"] / f"{n}.wav")
+                              for n in ("reference", "di")}
     used = [p for p in pool if p not in BLEED_HEAVY]
-    out.update(seed=seed, **provenance, parts=len(used),
+    out.update(seed=seed, **provenance, offered=sorted(offered),
+               left_out_high_gain=sorted(c for c in names
+                                         if not shipped_template(c) and c not in offered),
+               parts=len(used),
                bands=len({meta[p]["band"] for p in used}), excluded_no_clear_lag=no_lag)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(out, indent=1) + "\n"

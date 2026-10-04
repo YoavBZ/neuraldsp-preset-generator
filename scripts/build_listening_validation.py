@@ -102,13 +102,25 @@ def main():
     if index_hashes != plan["panels"]:
         die("the panels are not the ones the trials were drawn from")
     files = {(part, c): f for part, cands in merged.items() for c, f in cands.items()}
-    # Every option is the very audio the judge scored, checked before anything is written.
-    for t in plan["trials"]:
-        for c, f in t.get("files", {}).items():
-            path = files.get((t["part"], c))
-            if path is None or str(path) != f["path"] or file_sha256(path) != f["sha256"]:
-                die(f"{t['part']} {c}: not the render the trials were drawn from")
     crops = args.crops_dir.expanduser()
+    # Every option and crop is the audio the trial list recorded, checked before anything
+    # is written; a refusal counts the mismatches without naming an option.
+    wrong = 0
+    for t in plan["trials"]:
+        if t["kind"] == "repeat":
+            continue
+        options = {c for c in (t["first"], t["second"]) if c != "reference"}
+        if set(t.get("files", {})) != options or set(t.get("crops", {})) != {"reference", "di"}:
+            wrong += 1
+            continue
+        for c, f in t["files"].items():
+            path = files.get((t["part"], c))
+            wrong += path is None or str(path) != f["path"] or file_sha256(path) != f["sha256"]
+        for n, sha in t["crops"].items():
+            crop = crops / t["part"] / f"{n}.wav"
+            wrong += not crop.exists() or file_sha256(crop) != sha
+    if wrong:
+        die(f"{wrong} of the trials' files are not the audio the trial list recorded")
     out_dir, private = args.out_dir.expanduser(), args.private_dir.expanduser()
     if (out_dir.resolve() == private.resolve() or private.resolve().is_relative_to(out_dir.resolve())
             or out_dir.resolve().is_relative_to(private.resolve())):
