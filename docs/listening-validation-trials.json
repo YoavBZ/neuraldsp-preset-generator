@@ -1,0 +1,1237 @@
+{
+ "excluded_bleed_heavy": [
+  "telefunken-Lost_Alive-GTR",
+  "telefunken-Until_I_Get_Back-GTR"
+ ],
+ "median_abs_log_ratio": 0.14955679322797788,
+ "pairs_in_pool": 6468,
+ "clear_pairs": 3234,
+ "clear_pairs_disagreeing": 573,
+ "trials": [
+  {
+   "kind": "test",
+   "id": "t00",
+   "part": "cambridge-Drag_Me_Down-ElecGtr4",
+   "band": "Adam Buckley",
+   "first": "pr12:factory:Artists/Charlie Robbins/Out of this World Clean",
+   "second": "pr12:factory:Artists/Richard Henshall/Crystal Clean",
+   "log_ratio": {
+    "judge": 0.3897531455573018,
+    "judge_union": 0.33617097659745526,
+    "alm": 0.445631463147879,
+    "v3c": 0.4671642247446386
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": 914,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "judge": 5.027999168140412,
+     "judge_union": 5.024869125689112,
+     "alm": 5.80804256893661,
+     "v3c": 0.953125258160694
+    },
+    "pr12:factory:Artists/Richard Henshall/Crystal Clean": {
+     "judge": 3.4050818576054227,
+     "judge_union": 3.5902736756619515,
+     "alm": 3.7195851517145617,
+     "v3c": 0.5973971325622816
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Drag_Me_Down-ElecGtr4/6fd2562ea8de.wav",
+     "sha256": "32889aa6191f40955663ff73f436b2f242313246593c426c1795adba6066722e"
+    },
+    "pr12:factory:Artists/Richard Henshall/Crystal Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Drag_Me_Down-ElecGtr4/d477e71aa967.wav",
+     "sha256": "a60048c77d9e0ed620c77f75da9fc2d17782f89e9c8063d817ae2e024a6f1296"
+    }
+   },
+   "crops": {
+    "reference": "6dc563bbfc2dd124c1d4bf8cc7bb4fc2457bff74355a1adfd65e8c72eff9ba25",
+    "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t01",
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+   "band": "Atlantis Bound",
+   "first": "pr12:factory:Artists/Charlie Robbins/Thump Tone",
+   "second": "pr12:factory:Artists/Pete Thorn/Wide And Lucious",
+   "log_ratio": {
+    "judge": -0.20298809732793624,
+    "judge_union": -0.1521433250118513,
+    "alm": -0.13502523928552682,
+    "v3c": 0.08415063326678152
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": 72,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "judge": 4.666763252891111,
+     "judge_union": 4.964967205360033,
+     "alm": 5.59826181739357,
+     "v3c": 0.9595690843270261
+    },
+    "pr12:factory:Artists/Pete Thorn/Wide And Lucious": {
+     "judge": 5.7170551283087,
+     "judge_union": 5.78084587610092,
+     "alm": 6.407578299093743,
+     "v3c": 0.8821249211458868
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3/218ceb5a2107.wav",
+     "sha256": "28b412596fdd5aa739c511fc5a604ec176d31b7edbd06d8337c2afc017acb211"
+    },
+    "pr12:factory:Artists/Pete Thorn/Wide And Lucious": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3/1f6eb3bb354a.wav",
+     "sha256": "f70b87f4cc8e5eb8e889a95217036abe49768f6116087c48576a415ffeb864e5"
+    }
+   },
+   "crops": {
+    "reference": "5cd0ae05d36f3f8f49e16d81e93b53b69a25b22f3e9e655063b70cc2761e9142",
+    "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t02",
+   "part": "telefunken-She's_Gone-GTR",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "first": "pr12:factory:Artists/Charlie Robbins/Out of this World Clean",
+   "second": "pr12:factory:Artists/Pete Thorn/Wide And Lucious",
+   "log_ratio": {
+    "judge": 0.3793767429877047,
+    "judge_union": 0.5494569778075727,
+    "alm": 0.2957075687002849,
+    "v3c": 0.5565064991506905
+   },
+   "disagree": false,
+   "window_s": 3.25,
+   "lag": -30,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "judge": 6.41925640087225,
+     "judge_union": 7.760872463002358,
+     "alm": 8.670494643757438,
+     "v3c": 1.447967020796572
+    },
+    "pr12:factory:Artists/Pete Thorn/Wide And Lucious": {
+     "judge": 4.392618605766714,
+     "judge_union": 4.480066010777807,
+     "alm": 6.450891077404648,
+     "v3c": 0.8299863856648033
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-She's_Gone-GTR/6fd2562ea8de.wav",
+     "sha256": "6aa7d946080e0f771ef36ccfd7cae2b1307161dd94ca8aeeb09fdf175caa5bee"
+    },
+    "pr12:factory:Artists/Pete Thorn/Wide And Lucious": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-She's_Gone-GTR/1f6eb3bb354a.wav",
+     "sha256": "568852cbbda94d6657a0940227bf0fa25574c3f1e5cdedf0041cccc356277c27"
+    }
+   },
+   "crops": {
+    "reference": "1d5ce11809cde15a184792b2dfbb4adf7fe29be1887c425974180468e94b814b",
+    "di": "a3275fd2e09208b5fdc824f0afcdd6c71dabcf0a7a8a9b8cf25459b95cfc6aef"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t03",
+   "part": "telefunken-First_Offering-GTR_1",
+   "band": "Dom McLennon",
+   "first": "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+   "second": "pr12:factory:Neural DSP/Clean-ish Ambient Solo",
+   "log_ratio": {
+    "judge": 0.15819428246925873,
+    "judge_union": 0.1520343567229995,
+    "alm": 0.20683419041882095,
+    "v3c": 0.2769050714179639
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -22,
+   "predictions": {
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "judge": 5.731279612421301,
+     "judge_union": 5.696083868453331,
+     "alm": 8.437774308562885,
+     "v3c": 1.0525401569715929
+    },
+    "pr12:factory:Neural DSP/Clean-ish Ambient Solo": {
+     "judge": 4.892701189052836,
+     "judge_union": 4.892701189052836,
+     "alm": 6.86121387570919,
+     "v3c": 0.7979585448596411
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-First_Offering-GTR_1/915dc02b9b74.wav",
+     "sha256": "50a876ea9c0422fc321e86b9dfe9bb05e72a4ab81991ceab253f8f1dab72dfcc"
+    },
+    "pr12:factory:Neural DSP/Clean-ish Ambient Solo": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-First_Offering-GTR_1/31dabf9d5725.wav",
+     "sha256": "96e2d642e4c8b29c8d85a9012d3400060bd39c899304c6ab59bd1aa26f0091cd"
+    }
+   },
+   "crops": {
+    "reference": "a9ff2ca174f75db47b9042f998e28ed1f251f4a209105a635aacb208928fb07d",
+    "di": "5f70954c5a278613bdddd65aec232f8448ecfe102a24050d6079c1d9551c031d"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t04",
+   "part": "telefunken-Blind_Spots-GTR",
+   "band": "Doom Flamingo",
+   "first": "pr12:factory:Artists/Charlie Robbins/Thump Tone",
+   "second": "pr12:template+R",
+   "log_ratio": {
+    "judge": 0.1715806536395155,
+    "judge_union": 0.1809579146494788,
+    "alm": 0.10163540854101233,
+    "v3c": 0.3391167801062602
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "judge": 6.01349196140924,
+     "judge_union": 6.027677714589914,
+     "alm": 6.390247007494338,
+     "v3c": 0.8644640934934699
+    },
+    "pr12:template+R": {
+     "judge": 5.065358683938548,
+     "judge_union": 5.029919097330381,
+     "alm": 5.772686178681049,
+     "v3c": 0.6158435720046416
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Blind_Spots-GTR/218ceb5a2107.wav",
+     "sha256": "b84210f82f69d9f5e340addabd846f5910ee9ef58203a0d562ba7ecc3b0f312e"
+    },
+    "pr12:template+R": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Blind_Spots-GTR/98f2aa3f8753.wav",
+     "sha256": "778d0a3619d7976dd25c53ab3c2f3dc3490c975ff4561db626add6f5425f9661"
+    }
+   },
+   "crops": {
+    "reference": "109805a446829d4d4e1b9cf7631eaf9197f633076bcd6e484a69e036bbe011e7",
+    "di": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t05",
+   "part": "cambridge-Today's_The_Day-ElecGtr07",
+   "band": "Eat The Feeder",
+   "first": "pr12:factory:Artists/Mark Johnston/Royally Ambient",
+   "second": "pr12:factory:Neural DSP/Overdriven Tremolo",
+   "log_ratio": {
+    "judge": 0.2941907308420664,
+    "judge_union": 0.2941907308420664,
+    "alm": 0.33035741911245214,
+    "v3c": 0.008329049552967505
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -129,
+   "predictions": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "judge": 12.11417733945923,
+     "judge_union": 12.11417733945923,
+     "alm": 14.838049459951383,
+     "v3c": 2.266501910136804
+    },
+    "pr12:factory:Neural DSP/Overdriven Tremolo": {
+     "judge": 9.026689751938463,
+     "judge_union": 9.026689751938463,
+     "alm": 10.663613853985522,
+     "v3c": 2.2477025026943758
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Today's_The_Day-ElecGtr07/0697b7b03809.wav",
+     "sha256": "c7765b69e2bf8cd9682113d1969dbf537d7a6d169d69c99fbf07f126125d5888"
+    },
+    "pr12:factory:Neural DSP/Overdriven Tremolo": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Today's_The_Day-ElecGtr07/b420256a55c6.wav",
+     "sha256": "2c1c57146d507193483188a362fc30140c59cd1eba18d63c86738805cb6d3c9a"
+    }
+   },
+   "crops": {
+    "reference": "09a1134a39f81514d035bd3f21c9654c2e7ba28df3ba01fe93f2ff5d5b02e9b3",
+    "di": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t06",
+   "part": "telefunken-Farthest_Step-GTR",
+   "band": "Eggy",
+   "first": "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+   "second": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+   "log_ratio": {
+    "judge": -0.2006256483348574,
+    "judge_union": -0.3318211555357247,
+    "alm": -0.23826485127642452,
+    "v3c": -0.01726733247177475
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "judge": 2.6472590232877127,
+     "judge_union": 2.6685640465181333,
+     "alm": 2.981473792332612,
+     "v3c": 0.8846295000455039
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "judge": 3.235393057794868,
+     "judge_union": 3.71865362118328,
+     "alm": 3.7836251737639706,
+     "v3c": 0.9000373350091971
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Farthest_Step-GTR/fbb7dcca8c2f.wav",
+     "sha256": "4ae7b8831574d4e3057545e1d124ea5cf72c36df20ebb6fd900753b2c3159793"
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Farthest_Step-GTR/369fea9231e0.wav",
+     "sha256": "02b0a40206b0b55d8da7cff24c09a8f3f0f0be8deefa8b9590498fa54f4d5bda"
+    }
+   },
+   "crops": {
+    "reference": "1c8a8373f6e8845967d20f519168bc45e1bfe6e0ab59894bca9e2f7639271f57",
+    "di": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t07",
+   "part": "cambridge-Prodigal-ElecGtr5",
+   "band": "Starnes And Shah",
+   "first": "pr12:factory:Artists/Charlie Robbins/Thump Tone",
+   "second": "pr12:factory:Artists/Jack Gardiner/Double Stop Funk",
+   "log_ratio": {
+    "judge": 0.23855467120753013,
+    "judge_union": 0.2933087325678017,
+    "alm": 0.16097037816663662,
+    "v3c": 0.7568191218094688
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -51,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "judge": 6.937695526221922,
+     "judge_union": 7.111100594435844,
+     "alm": 8.43142744945969,
+     "v3c": 1.2345248530752448
+    },
+    "pr12:factory:Artists/Jack Gardiner/Double Stop Funk": {
+     "judge": 5.46527801052416,
+     "judge_union": 5.303400902820544,
+     "alm": 7.177819952877712,
+     "v3c": 0.5791852177302972
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Thump Tone": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Prodigal-ElecGtr5/218ceb5a2107.wav",
+     "sha256": "6b5b9b3a8b50008afee30a6dc7122c2992ba25a7eda8dae7165592dbe1cf05aa"
+    },
+    "pr12:factory:Artists/Jack Gardiner/Double Stop Funk": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Prodigal-ElecGtr5/e1a7411a021a.wav",
+     "sha256": "6b93603ceae08603af4d866cdb3fb3f0f076d41a9c5e78f96bf12beb9912dcc2"
+    }
+   },
+   "crops": {
+    "reference": "6c958a5df2ec3ce8e028420b77b419b5ada3b6eedbced3bee2c5cb558f64eb82",
+    "di": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t08",
+   "part": "telefunken-Honey-GTR",
+   "band": "Swatkins",
+   "first": "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+   "second": "pr12:template+R",
+   "log_ratio": {
+    "judge": -0.4264330257304569,
+    "judge_union": -0.34962557000475986,
+    "alm": -0.6848400339604379,
+    "v3c": -0.3611011588521414
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -12,
+   "predictions": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "judge": 3.481474616563593,
+     "judge_union": 3.420481756511222,
+     "alm": 3.850317217981811,
+     "v3c": 0.506616570412747
+    },
+    "pr12:template+R": {
+     "judge": 5.332866882182465,
+     "judge_union": 4.852077557675707,
+     "alm": 7.636929107895891,
+     "v3c": 0.7269484774580154
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Honey-GTR/fbb7dcca8c2f.wav",
+     "sha256": "6918eb5f6da6919b5adf7c9cfe3bf7e331cd9f2e7f1bde048f063b63504d09b1"
+    },
+    "pr12:template+R": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Honey-GTR/98f2aa3f8753.wav",
+     "sha256": "a41b830eacfed7a9f984ae523e14e4380e8400cff4afde6d7f20c6096dafef8e"
+    }
+   },
+   "crops": {
+    "reference": "2f6bd5007ea4d4943c1b5938b644693957d18d61060f5029f780bb88001a6e00",
+    "di": "ecbaa429c72e6689c994b29ff54297bb8b4d5c70ff8297896995535e4c6679c0"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t09",
+   "part": "cambridge-Quicksand-ElecGtr2",
+   "band": "The Travelling Band",
+   "first": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+   "second": "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "log_ratio": {
+    "judge": -0.35175553462841574,
+    "judge_union": -0.3553691791141241,
+    "alm": -0.3806818198105836,
+    "v3c": -0.46451190217279464
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "judge": 3.536504462653405,
+     "judge_union": 3.523747855606375,
+     "alm": 3.902429500283001,
+     "v3c": 0.7232398275127805
+    },
+    "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean": {
+     "judge": 5.027356674760082,
+     "judge_union": 5.027356674760082,
+     "alm": 5.710354625518236,
+     "v3c": 1.1508462047258192
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr2/6f56e308f29a.wav",
+     "sha256": "376351d1c0297904a759cd94bcddb108c059af8b7321ee9ceabdeae83f3875a8"
+    },
+    "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr2/c78516408cc9.wav",
+     "sha256": "05cba9d5f675f3e1a97c841ceec40be281e00d804916d365d5ff86b0a0fd3cd5"
+    }
+   },
+   "crops": {
+    "reference": "a46fd45c1c0b54fe20ac7269cb0c4fff60052ec7bc6131a9e585d5f4f209cbf9",
+    "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t10",
+   "part": "cambridge-Signs-ElecGtr2",
+   "band": "Zeno",
+   "first": "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+   "second": "pr12:factory:Artists/John Connearn/Wet Room",
+   "log_ratio": {
+    "judge": 0.15154898038776535,
+    "judge_union": 0.15154898038776535,
+    "alm": 0.364955595928565,
+    "v3c": 0.06468544856770882
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -26,
+   "predictions": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "judge": 7.138596649741257,
+     "judge_union": 7.138596649741257,
+     "alm": 17.274383220125788,
+     "v3c": 1.487117632579978
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "judge": 6.1347371259589965,
+     "judge_union": 6.1347371259589965,
+     "alm": 11.992351474803025,
+     "v3c": 1.3939679533676501
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Signs-ElecGtr2/fbb7dcca8c2f.wav",
+     "sha256": "66c42245add212fae2a2f7c1f950b66f57a65a0b97387d5896e447bdd4482277"
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Signs-ElecGtr2/084e8bf1b1cd.wav",
+     "sha256": "cedc5037e2431f71b053f31bfefd349bacf598e9fe9806f27a4abbfc79784559"
+    }
+   },
+   "crops": {
+    "reference": "8e0099eb67d4066240154436b979adc253b43ea7b29adcd1e19c3b13133f1d19",
+    "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t11",
+   "part": "telefunken-Sculptor's_Request-GTR_2",
+   "band": "Dom McLennon",
+   "first": "pr12:factory:Artists/Charlie Robbins/Out of this World Clean",
+   "second": "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+   "log_ratio": {
+    "judge": -0.28951375713465316,
+    "judge_union": -0.2405096270452048,
+    "alm": -0.46594910452182303,
+    "v3c": 0.11979997276615247
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -29,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "judge": 6.28949993222103,
+     "judge_union": 6.778265599768204,
+     "alm": 7.103168112638948,
+     "v3c": 1.4777012921157935
+    },
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "judge": 8.4013744936095,
+     "judge_union": 8.621256890668205,
+     "alm": 11.319082317082902,
+     "v3c": 1.3108656579496476
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Out of this World Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Sculptor's_Request-GTR_2/6fd2562ea8de.wav",
+     "sha256": "a433b5981d58bb2d5c4eee23f3bfb18837fc1fb9e033f088607536d85bb2034c"
+    },
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Sculptor's_Request-GTR_2/915dc02b9b74.wav",
+     "sha256": "776f87e00c7b28b053b590a1420dea8f5f5119ab57c4e8eff936068c451fce6d"
+    }
+   },
+   "crops": {
+    "reference": "5a95a7f6b132578d7e067d9a1b5190c73a75588da71a37978b0b557cebb5c3cb",
+    "di": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t12",
+   "part": "cambridge-Quicksand-ElecGtr1",
+   "band": "The Travelling Band",
+   "first": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+   "second": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+   "log_ratio": {
+    "judge": 0.20260749730504748,
+    "judge_union": 0.015307452323736771,
+    "alm": 0.3339230049243503,
+    "v3c": -0.01608235822565187
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "judge": 4.1974007505316635,
+     "judge_union": 4.191840308294563,
+     "alm": 4.940798865240977,
+     "v3c": 0.6238666886240418
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "judge": 3.4275919783011335,
+     "judge_union": 4.128162528316998,
+     "alm": 3.5381501243289484,
+     "v3c": 0.633981049584493
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr1/3a431f8133b0.wav",
+     "sha256": "68a2292bf4553e9d885a6d70c4df1694c8dc0296f5ac401f4a000839ee1dff7e"
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr1/369fea9231e0.wav",
+     "sha256": "87cd849811cfbd365b19c9474c0047b922509113a11eba59c0d21950655e4c75"
+    }
+   },
+   "crops": {
+    "reference": "7027b8f861fceec99aafe93a51addb74b50b042c54b24404b1cda9e0367c9153",
+    "di": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t13",
+   "part": "cambridge-Drag_Me_Down-ElecGtr4",
+   "band": "Adam Buckley",
+   "first": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+   "second": "pr12:factory:Artists/John Connearn/Wet Room",
+   "log_ratio": {
+    "judge": -0.2673407991704302,
+    "judge_union": -0.26227859203907916,
+    "alm": -0.35450896284941796,
+    "v3c": 0.042192153237262636
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": 914,
+   "predictions": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "judge": 3.1051091384039657,
+     "judge_union": 3.1790946873350197,
+     "alm": 3.398726964574506,
+     "v3c": 0.592632098460029
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "judge": 4.056780436875269,
+     "judge_union": 4.132469039711448,
+     "alm": 4.8448190757260425,
+     "v3c": 0.5681478282766369
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Drag_Me_Down-ElecGtr4/6f56e308f29a.wav",
+     "sha256": "3273b286288f054856da0bc53b2eb8d5350f0158c48f43baef1af65e0f846663"
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Drag_Me_Down-ElecGtr4/084e8bf1b1cd.wav",
+     "sha256": "370fbd8ec52784b341702e09f686123f1e99c3e947864365605137b8209ecfe2"
+    }
+   },
+   "crops": {
+    "reference": "6dc563bbfc2dd124c1d4bf8cc7bb4fc2457bff74355a1adfd65e8c72eff9ba25",
+    "di": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t14",
+   "part": "telefunken-Fragments-GTR",
+   "band": "Eggy",
+   "first": "pr12:factory:Artists/Jack Gardiner/Double Stop Funk",
+   "second": "pr12:factory:Artists/John Connearn/Wet Room",
+   "log_ratio": {
+    "judge": 0.2215621713477292,
+    "judge_union": 0.22934084333402877,
+    "alm": 0.2045860530141641,
+    "v3c": -0.4571439276116847
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/Jack Gardiner/Double Stop Funk": {
+     "judge": 3.463231455839655,
+     "judge_union": 3.490275845700063,
+     "alm": 3.85481884550128,
+     "v3c": 0.5264352458642333
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "judge": 2.7749699786612823,
+     "judge_union": 2.7749699786612823,
+     "alm": 3.141618021926291,
+     "v3c": 0.831534061579591
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Jack Gardiner/Double Stop Funk": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Fragments-GTR/e1a7411a021a.wav",
+     "sha256": "9c678567cc65d55b3886be8023552a03fa68af173e65d405b5a83be41aa73095"
+    },
+    "pr12:factory:Artists/John Connearn/Wet Room": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Fragments-GTR/084e8bf1b1cd.wav",
+     "sha256": "13bdc085b2a00636e044502ca65289382a53b76cd0e5a57e35e637c6bdb4e31e"
+    }
+   },
+   "crops": {
+    "reference": "2fc27e4fb2d3910d6a855038bfd34f932dfa105086b8002ebde663c4c0a38ebb",
+    "di": "c48d223c2ead47194d8b7003492d5e79342efbee204bb51aa15ef779a41539d0"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t15",
+   "part": "cambridge-Passing_Ships-ElecGtr6",
+   "band": "The Travelling Band",
+   "first": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+   "second": "pr12:factory:Artists/Richard Henshall/Crystal Clean",
+   "log_ratio": {
+    "judge": 0.22074246146303025,
+    "judge_union": 0.24628140296254514,
+    "alm": 0.192413683007249,
+    "v3c": -0.11519720145773472
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -38,
+   "predictions": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "judge": 3.8818681955119168,
+     "judge_union": 4.608041795450422,
+     "alm": 3.9900730324651703,
+     "v3c": 0.8599235477906377
+    },
+    "pr12:factory:Artists/Richard Henshall/Crystal Clean": {
+     "judge": 3.112960086989967,
+     "judge_union": 3.6021165043575176,
+     "alm": 3.2916726887233985,
+     "v3c": 0.9649156506210465
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/John Connearn/Cleanish Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Passing_Ships-ElecGtr6/6f56e308f29a.wav",
+     "sha256": "e9915c61b8a23298658e30daba4751b5e9f5af14075da5b8b6d7aefcddaf0ea5"
+    },
+    "pr12:factory:Artists/Richard Henshall/Crystal Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Passing_Ships-ElecGtr6/d477e71aa967.wav",
+     "sha256": "39b0782452ed677000b859dbb61cf377f6d674cf17f0c47b22467a93393785f3"
+    }
+   },
+   "crops": {
+    "reference": "640ed93679f07ad2e205aa1f98ec5c7357631a9701b0cd1675fe6ba2fa56dc11",
+    "di": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t16",
+   "part": "telefunken-She's_Gone-GTR",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "first": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+   "second": "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+   "log_ratio": {
+    "judge": -0.22826077161399713,
+    "judge_union": -0.22852798772704705,
+    "alm": -0.06971584119511293,
+    "v3c": 0.14842575405185637
+   },
+   "disagree": true,
+   "window_s": 3.25,
+   "lag": -30,
+   "predictions": {
+    "pr12:factory:Artists/CARRTOONS/Bass Chords": {
+     "judge": 4.406948193446188,
+     "judge_union": 4.454086796279086,
+     "alm": 7.160946444384361,
+     "v3c": 0.9798975792193704
+    },
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "judge": 5.5369466459969265,
+     "judge_union": 5.597667782800994,
+     "alm": 7.67799156820378,
+     "v3c": 0.8447344360943638
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/CARRTOONS/Bass Chords": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-She's_Gone-GTR/c4f843fe1b32.wav",
+     "sha256": "a4fe7f3662f0330c4acb9cb9b60b8a5e4fc8ec8ab27d839e4bad9115dbe1eb16"
+    },
+    "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-She's_Gone-GTR/915dc02b9b74.wav",
+     "sha256": "8a54508a684db4d9f659dd0f4a23f8d67be6501496ddebbe9294073a7c8c1212"
+    }
+   },
+   "crops": {
+    "reference": "1d5ce11809cde15a184792b2dfbb4adf7fe29be1887c425974180468e94b814b",
+    "di": "a3275fd2e09208b5fdc824f0afcdd6c71dabcf0a7a8a9b8cf25459b95cfc6aef"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t17",
+   "part": "cambridge-Quicksand-ElecGtr2",
+   "band": "The Travelling Band",
+   "first": "pr12:factory:Artists/Mark Johnston/Royally Ambient",
+   "second": "pr12:factory:Artists/Rabea Massaad/Time To Chime",
+   "log_ratio": {
+    "judge": -0.1565860374568156,
+    "judge_union": -0.1565860374568156,
+    "alm": 0.036780526726570346,
+    "v3c": 0.29102691307215767
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "judge": 4.468125613853815,
+     "judge_union": 4.468125613853815,
+     "alm": 4.987027732652769,
+     "v3c": 1.066111950263836
+    },
+    "pr12:factory:Artists/Rabea Massaad/Time To Chime": {
+     "judge": 5.225523751667885,
+     "judge_union": 5.225523751667885,
+     "alm": 4.806934490166106,
+     "v3c": 0.79691394965342
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr2/0697b7b03809.wav",
+     "sha256": "ab9f41a8005ad63f4a2050c48474f82536a410272a9664f6f465b57badf1898e"
+    },
+    "pr12:factory:Artists/Rabea Massaad/Time To Chime": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Quicksand-ElecGtr2/31665b265224.wav",
+     "sha256": "131882bb1bfa2ae7b7173a6c3c0a2dc1497a9e2c4d8dea9dbe63863523e36cd8"
+    }
+   },
+   "crops": {
+    "reference": "a46fd45c1c0b54fe20ac7269cb0c4fff60052ec7bc6131a9e585d5f4f209cbf9",
+    "di": "497aba63cc29d22087f34cdff4ef0b38924908f8fd6680026f6d3853d14970ce"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t18",
+   "part": "telefunken-Farthest_Step-GTR",
+   "band": "Eggy",
+   "first": "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "second": "pr12:template+R",
+   "log_ratio": {
+    "judge": 0.1562790044959767,
+    "judge_union": 0.15129397329406435,
+    "alm": 0.10822668931348808,
+    "v3c": -0.09772869179683392
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean": {
+     "judge": 2.833828632195709,
+     "judge_union": 2.8587465272303714,
+     "alm": 3.005285674373601,
+     "v3c": 0.4915876646939021
+    },
+    "pr12:template+R": {
+     "judge": 2.423831775900045,
+     "judge_union": 2.4573641168714033,
+     "alm": 2.697015902488969,
+     "v3c": 0.5420558156347531
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Farthest_Step-GTR/c78516408cc9.wav",
+     "sha256": "7c5bfe5c845f9b616cd204d0a8bdc8fc12897996668ab9cf0869c730da782aa1"
+    },
+    "pr12:template+R": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Farthest_Step-GTR/98f2aa3f8753.wav",
+     "sha256": "b16bfda9c0ec1ac118f7efa331b15f78294974dcbe270ee612a8b5d4aa1f3cae"
+    }
+   },
+   "crops": {
+    "reference": "1c8a8373f6e8845967d20f519168bc45e1bfe6e0ab59894bca9e2f7639271f57",
+    "di": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t19",
+   "part": "telefunken-Gym_Hours-GTR_2",
+   "band": "Dom McLennon",
+   "first": "pr12:factory:Artists/Mark Johnston/Royally Ambient",
+   "second": "pr12:factory:Neural DSP/Overdriven Tremolo",
+   "log_ratio": {
+    "judge": -0.1780059855813895,
+    "judge_union": -0.18844134195166132,
+    "alm": -0.24927588296737405,
+    "v3c": 0.09645850177621314
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -28,
+   "predictions": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "judge": 5.1894697634786455,
+     "judge_union": 5.934541509431516,
+     "alm": 6.462331717266721,
+     "v3c": 1.1904320003871078
+    },
+    "pr12:factory:Neural DSP/Overdriven Tremolo": {
+     "judge": 6.200546990954258,
+     "judge_union": 7.1651651820782964,
+     "alm": 8.291791773976719,
+     "v3c": 1.0809688961293646
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Mark Johnston/Royally Ambient": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Gym_Hours-GTR_2/0697b7b03809.wav",
+     "sha256": "f1572b2e5523e3cd41c76705620ada48eafe85cd3a989570ee6d8fdee2d7117d"
+    },
+    "pr12:factory:Neural DSP/Overdriven Tremolo": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Gym_Hours-GTR_2/b420256a55c6.wav",
+     "sha256": "f78f545047698d2fc1bbbc1832918cadc3ae85fe9dd9ea545d531e21c9713618"
+    }
+   },
+   "crops": {
+    "reference": "bada295faff7eb4ebc410235852f3c1e385486e478153f98ee8a882223ebb6f8",
+    "di": "4983760b0de0465e65bfe6e6132be90e3981d57e355a2508653917292ac3aa75"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t20",
+   "part": "cambridge-Signs-ElecGtr2",
+   "band": "Zeno",
+   "first": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+   "second": "pr12:factory:Neural DSP/Clean-ish Ambient Solo",
+   "log_ratio": {
+    "judge": 0.31537242783042957,
+    "judge_union": 0.31537242783042957,
+    "alm": 0.35299273527953945,
+    "v3c": 0.15822414100082738
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -26,
+   "predictions": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "judge": 7.462519440571047,
+     "judge_union": 7.462519440571047,
+     "alm": 16.014180250198155,
+     "v3c": 1.5526722549847838
+    },
+    "pr12:factory:Neural DSP/Clean-ish Ambient Solo": {
+     "judge": 5.44403577371578,
+     "judge_union": 5.44403577371578,
+     "alm": 11.251279551525338,
+     "v3c": 1.3254517450092962
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Signs-ElecGtr2/3a431f8133b0.wav",
+     "sha256": "2f5436a00109f87c825898ac282ffa673567084faa02e6b44076f016065be6ca"
+    },
+    "pr12:factory:Neural DSP/Clean-ish Ambient Solo": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Signs-ElecGtr2/31dabf9d5725.wav",
+     "sha256": "188cb1c7f72efd5fe1ac7a17472ee3b5299cd7aa7ad2d7040ab9799087506b8f"
+    }
+   },
+   "crops": {
+    "reference": "8e0099eb67d4066240154436b979adc253b43ea7b29adcd1e19c3b13133f1d19",
+    "di": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t21",
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+   "band": "Atlantis Bound",
+   "first": "pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+   "second": "pr12:factory:Artists/Rabea Massaad/Time To Chime",
+   "log_ratio": {
+    "judge": 0.15097358548175283,
+    "judge_union": 0.09237130425607278,
+    "alm": 0.004960642147834476,
+    "v3c": 0.18140273605084004
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": 72,
+   "predictions": {
+    "pr12:factory:Artists/Charlie Robbins/Ambient Clean": {
+     "judge": 6.423619875737695,
+     "judge_union": 6.409278798937604,
+     "alm": 6.79592196372796,
+     "v3c": 0.9647388237840763
+    },
+    "pr12:factory:Artists/Rabea Massaad/Time To Chime": {
+     "judge": 5.5234806653684885,
+     "judge_union": 5.843765979320878,
+     "alm": 6.762293305631718,
+     "v3c": 0.8046880443194084
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Charlie Robbins/Ambient Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3/eaba6d985493.wav",
+     "sha256": "c07bbd0aafe4fdc294fc178e8cd1e77cf9fe33957dbae1794a1a983ac93ab7a9"
+    },
+    "pr12:factory:Artists/Rabea Massaad/Time To Chime": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3/31665b265224.wav",
+     "sha256": "2c033c073fa145dd59453652563965153922cf8ec331ab9cb102e6b0f13fe022"
+    }
+   },
+   "crops": {
+    "reference": "5cd0ae05d36f3f8f49e16d81e93b53b69a25b22f3e9e655063b70cc2761e9142",
+    "di": "433cc70fa0580cc05e1fde8c4bafd7d64ca5a237cc9878b227efb12ad59f18a4"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t22",
+   "part": "telefunken-Russian_Cream-GTR_2",
+   "band": "Dom McLennon",
+   "first": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+   "second": "pr12:factory:Artists/John Connearn/Pedal Steel",
+   "log_ratio": {
+    "judge": -0.23572103846744602,
+    "judge_union": -0.30924460958652955,
+    "alm": -0.2564368948704399,
+    "v3c": -0.32304262053854554
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -30,
+   "predictions": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "judge": 4.057368427847705,
+     "judge_union": 4.709665966628086,
+     "alm": 4.281618495199422,
+     "v3c": 0.4801254919273606
+    },
+    "pr12:factory:Artists/John Connearn/Pedal Steel": {
+     "judge": 5.135902751065091,
+     "judge_union": 6.416428118669699,
+     "alm": 5.533209273915138,
+     "v3c": 0.6632089718069762
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Russian_Cream-GTR_2/3a431f8133b0.wav",
+     "sha256": "673f96feb857821b0ff74b6371e1b73022e6fa5f4db7ec24146475cae17309ba"
+    },
+    "pr12:factory:Artists/John Connearn/Pedal Steel": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Russian_Cream-GTR_2/75a8f64c2245.wav",
+     "sha256": "d43fa21525646f38dc81634ec641fff724c20a4309cae139c8239b5d5a99a6a2"
+    }
+   },
+   "crops": {
+    "reference": "f4e4452bd18ee464ee7b10fa048cfd5d286da73a516a3d9002a98dd1b57135c7",
+    "di": "98b19a38e6613077c0d8516251fc56615985a5f2069b95e1740cc4da6f4a40a5"
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t23",
+   "part": "telefunken-First_Offering-GTR_2",
+   "band": "Dom McLennon",
+   "first": "pr12:factory:Artists/John Connearn/Pedal Steel",
+   "second": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+   "log_ratio": {
+    "judge": -0.26873541364026815,
+    "judge_union": -0.30209251905803747,
+    "alm": -0.23029894518022165,
+    "v3c": -0.3124822041701481
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -30,
+   "predictions": {
+    "pr12:factory:Artists/John Connearn/Pedal Steel": {
+     "judge": 5.630327600482761,
+     "judge_union": 5.976642179948727,
+     "alm": 7.423586608043011,
+     "v3c": 0.8240573526613133
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "judge": 7.366207904151292,
+     "judge_union": 8.084522416313941,
+     "alm": 9.346119738463427,
+     "v3c": 1.1263328111153041
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/John Connearn/Pedal Steel": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-First_Offering-GTR_2/75a8f64c2245.wav",
+     "sha256": "e066fc29134bf44676206bca7a93722db429c788a7aece16d9390fba21dda066"
+    },
+    "pr12:factory:Artists/Richard Henshall/Spacey Clean": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-First_Offering-GTR_2/369fea9231e0.wav",
+     "sha256": "b071a0d1eba4dcb8734d893aedefb2629437b026aadf5374f0e4d04d6aa4282d"
+    }
+   },
+   "crops": {
+    "reference": "5ae9d945f2130145c99f935df5ddfc1f4a89fecdd940480266e1a2f979d7a639",
+    "di": "f8bd2c62a8b27efd9a14ceabf838e701073a7d379a4094c9b9f5aeeb874bb019"
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "telefunken-Blind_Spots-GTR",
+   "band": "Doom Flamingo",
+   "first": "reference",
+   "second": "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "judge": 5.483710313330892,
+     "judge_union": 5.434582160116913,
+     "alm": 5.989100259210338,
+     "v3c": 0.5765681057158198
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Blind_Spots-GTR/fbb7dcca8c2f.wav",
+     "sha256": "ee2f790dd511ab58e50be44ad6ba71f4b0f35e340cedfdbeb16b28b9264070db"
+    }
+   },
+   "crops": {
+    "reference": "109805a446829d4d4e1b9cf7631eaf9197f633076bcd6e484a69e036bbe011e7",
+    "di": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021"
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "telefunken-Sculptor's_Request-GTR_2",
+   "band": "Dom McLennon",
+   "first": "reference",
+   "second": "pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash",
+   "window_s": 0.5,
+   "lag": -29,
+   "predictions": {
+    "pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash": {
+     "judge": 6.615731709119075,
+     "judge_union": 7.002596146160829,
+     "alm": 8.901672591285283,
+     "v3c": 1.090606523741221
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/telefunken-Sculptor's_Request-GTR_2/042404693e0e.wav",
+     "sha256": "39d1dce2a55171cd6655199501850dc629ae687858e0512712f1395b989784ab"
+    }
+   },
+   "crops": {
+    "reference": "5a95a7f6b132578d7e067d9a1b5190c73a75588da71a37978b0b557cebb5c3cb",
+    "di": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77"
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "cambridge-Passing_Ships-ElecGtr2",
+   "band": "The Travelling Band",
+   "first": "reference",
+   "second": "pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+   "window_s": 0.5,
+   "lag": -46,
+   "predictions": {
+    "pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow": {
+     "judge": 5.033511447069816,
+     "judge_union": 5.500434598817392,
+     "alm": 7.557013087986753,
+     "v3c": 2.090154489014325
+    }
+   },
+   "files": {
+    "pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow": {
+     "path": "/Users/yoavbz/ndsp-presets/runs/kill/pr12/cambridge-Passing_Ships-ElecGtr2/431a81938a7e.wav",
+     "sha256": "9002c9746f2a8a6bc0997f6ed0019f93a81926a8aa1663804666029f5374d17e"
+    }
+   },
+   "crops": {
+    "reference": "253305c814d1837e77d95ce6bbe65c2c16a79197b46f6a4ccf6bbb5859e264d7",
+    "di": "2b428e29c58595a251b28f2e5ebf440d2eac0cb0fedd62b8134221ecb4c55ee7"
+   }
+  },
+  {
+   "kind": "repeat",
+   "of": "t04"
+  },
+  {
+   "kind": "repeat",
+   "of": "t18"
+  },
+  {
+   "kind": "repeat",
+   "of": "t12"
+  }
+ ],
+ "seed": 3657570277,
+ "panels": {
+  "/Users/yoavbz/ndsp-presets/runs/kill/pr12": "18e5ffc4f53d04d1b08a0d1e5f60992bd857455b78f7e8dbad4389011b860193"
+ },
+ "lags_sha256": "0584b14f0b5a589c0c9b0453c3fc4806ecfeb7d5f760e757551cbd332218611c",
+ "offered": [
+  "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+  "pr12:factory:Artists/CARRTOONS/Bass Chords",
+  "pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+  "pr12:factory:Artists/Charlie Robbins/Out of this World Clean",
+  "pr12:factory:Artists/Charlie Robbins/Thump Tone",
+  "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+  "pr12:factory:Artists/Jack Gardiner/Double Stop Funk",
+  "pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash",
+  "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+  "pr12:factory:Artists/John Connearn/Pedal Steel",
+  "pr12:factory:Artists/John Connearn/Wet Room",
+  "pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+  "pr12:factory:Artists/Mark Johnston/Royally Ambient",
+  "pr12:factory:Artists/Pete Thorn/Wide And Lucious",
+  "pr12:factory:Artists/Rabea Massaad/Time To Chime",
+  "pr12:factory:Artists/Richard Henshall/Crystal Clean",
+  "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+  "pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+  "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+  "pr12:factory:Neural DSP/Clean-ish Ambient Solo",
+  "pr12:factory:Neural DSP/Overdriven Tremolo",
+  "pr12:template+R"
+ ],
+ "left_out_high_gain": [
+  "pr12:factory:Artists/Joseph Anidjar/Mean Little Crunchy Guy",
+  "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues",
+  "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+  "pr12:factory:Artists/Mark Johnston/One Pass Rhythm Guitars",
+  "pr12:factory:Artists/Mark Johnston/Ragged Rhythm",
+  "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+  "pr12:factory:Neural DSP/Izzy Come Back",
+  "pr12:factory:Neural DSP/Meet You In The Mids",
+  "pr12:factory:Neural DSP/Slow Dancing Bell Tone",
+  "pr12:factory:Neural DSP/The Creature of the Cave",
+  "pr12:factory:Neural DSP/US Breakup Tone",
+  "pr12:factory:Neural DSP/US Lead Tone",
+  "pr12:factory:Neural DSP/Vintage Metal"
+ ],
+ "parts": 28,
+ "bands": 11,
+ "excluded_no_clear_lag": [
+  "cambridge-Passing_Ships-ElecGtr3",
+  "cambridge-Prodigal-ElecGtr4",
+  "cambridge-Signs-ElecGtr3",
+  "telefunken-Strangest_Places-GTR"
+ ]
+}

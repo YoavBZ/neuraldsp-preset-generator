@@ -1,5 +1,8 @@
 # Stage 0b: does the judge order clear differences the way the listener does?
 
+**Result: validated** (17 of 22 decided pairs, p 0.0085), for clear differences
+between clean-to-crunch PR12 renders: `docs/listening-validation-results.md`.
+
 Declared before any trial was built, and amended once before any answer (below).
 `docs/measuring-closeness.md` makes
 `analysis/aligned.py` the judge of closeness, on evidence that is either indirect
@@ -49,8 +52,9 @@ and noted that the amp track itself is driven and one option too clean.
   listener does. It does not separate the judge from ALM or from the judge's union
   band set: on clear pairs they mostly predict the same answer (all 24 pairs of the
   withdrawn first draw; the new draw's count is reported). Nor does it reach near-ties, where the union and default band sets differ,
-  or the size of the kill tests' per-part K3 gains (6–17%, below the "clear" cut). So
-  it does not settle K3's union reading.
+  or the kill tests' per-part K3 gains (6–17%, most below the clear cut, all on SW50R
+  renders outside the tested material; corrected after scoring, when the cut had become
+  0.150, from "below the clear cut"). So it does not settle K3's union reading.
 - The options are PR12 renders with no drive pedal and a volume of 0.75 or less (clean to
   crunch); the kill tests used the SW50R.
   Whether the listener and the judge agree as often on high-gain options, or on other

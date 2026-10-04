@@ -1,0 +1,61 @@
+{
+ "hidden_references_missed": [],
+ "valid": true,
+ "test_pairs": 24,
+ "decided": 22,
+ "cant_tell_rate": 0.08333333333333337,
+ "agreement": {
+  "judge": {
+   "agree": 17,
+   "of": 22,
+   "share": 0.7727272727272727,
+   "p_one_sided": 0.00845026969909668
+  },
+  "judge_union": {
+   "agree": 17,
+   "of": 22,
+   "share": 0.7727272727272727,
+   "p_one_sided": 0.00845026969909668
+  },
+  "alm": {
+   "agree": 18,
+   "of": 22,
+   "share": 0.8181818181818182,
+   "p_one_sided": 0.002171754837036133
+  },
+  "v3c": {
+   "agree": 12,
+   "of": 22,
+   "share": 0.5454545454545454,
+   "p_one_sided": 0.4159059524536133
+  }
+ },
+ "same_prediction_as_judge": {
+  "judge_union": 24,
+  "alm": 23,
+  "v3c": 14
+ },
+ "repeats": [
+  {
+   "of": "t18",
+   "same": true
+  },
+  {
+   "of": "t04",
+   "same": null
+  },
+  {
+   "of": "t12",
+   "same": true
+  }
+ ],
+ "judge": "validated",
+ "judge_upper_bound": 0.9058906015849006,
+ "judge_share_reweighted_to_pool": 0.7707451278879851,
+ "judge_vs_v3c_where_they_disagree": {
+  "listener_with_judge": 7,
+  "of": 9,
+  "p_two_sided": 0.1796875
+ },
+ "answers_sha256": "261dca6bfe79254e6ab9db182489c93d94073821e7e74db50dd8794009d06b7a"
+}
