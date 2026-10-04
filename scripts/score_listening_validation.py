@@ -6,15 +6,17 @@
         --answers ~/ndsp-presets/runs/listening-validation/trials/ANSWERS.md --json score.json
 
 `--answers` is the listener's sheet: one line per trial, "NN: A", "NN: B" or "NN: ?"
-(can't tell). Every trial must be answered, and the sheet's sha256 is recorded, before
-any key is read. The trial list (`trials.json` in the private folder) must match the one
-the files were built from. Two or more missed hidden references void the test and
-nothing is scored. On the test pairs the listener decided, the judge (default bands) is
-**validated** at 70% or more agreement with a one-sided exact binomial p < 0.05,
-**rejected** when the one-sided 95% upper bound on its agreement is under 70%, and the
-result is **inconclusive** otherwise or with fewer than 12 decided pairs. ALM, the union
-band set and v3c are reported on the same pairs. Can't-tell answers are never counted as
-half.
+(can't tell). Every trial must be answered, and the sha256 of the sheet's bytes is
+recorded, before any key is read; a different sheet is refused afterwards. The trial
+list (`trials.json` in the private folder) must match both the plan's recorded hash and
+the one the files were built from. Two or more missed hidden references void the test
+and nothing is scored. On the test pairs the listener decided, the judge (default
+bands) is **validated** at 70% or more agreement with a one-sided exact binomial
+p < 0.05, **rejected** when the one-sided 95% upper bound on its agreement is under 70%
+and at least 2 of the 3 repeats were answered the same way, and **inconclusive**
+otherwise or with fewer than 12 decided pairs. ALM, the union band set and v3c are
+reported on the same pairs, with the judge's agreement reweighted to the pool's share
+of pairs where it and v3c disagree. Can't-tell answers are never counted as half.
 """
 
 from __future__ import annotations
@@ -174,12 +176,12 @@ def main():
     private = args.private_dir.expanduser()
     built = json.loads((private / "order.json").read_text())
     order = built["order"]
-    answers_text = args.answers.expanduser().read_text()
+    answers_bytes = args.answers.expanduser().read_bytes()
     try:
-        answers = parse_answers(answers_text, len(order))
+        answers = parse_answers(answers_bytes.decode("utf-8"), len(order))
     except ValueError as error:
         die(str(error))
-    answers_sha = hashlib.sha256(answers_text.encode()).hexdigest()
+    answers_sha = hashlib.sha256(answers_bytes).hexdigest()
     recorded = private / "answers.sha256"
     if recorded.exists() and recorded.read_text().strip() != answers_sha:
         die("these answers differ from the ones already scored")

@@ -72,14 +72,17 @@ Each is computed on exactly the 4 s the listener hears.
   written, with the builder's output (which prints each file's seed), only to the
   private folder. The listener's folder holds the trial files and the answer sheet.
 - Both scripts refuse a trial list whose sha256 differs from the one above.
-- The answer sheet's sha256 is committed and pushed before scoring, and the scorer
-  records it before any key is read and refuses a different sheet later
+- The answer sheet's sha256 (of its bytes) is committed and pushed, in
+  `docs/listening-validation-answers.sha256`, before scoring; the scorer records it
+  before any key is read and refuses a different sheet later
   (`scripts/score_listening_validation.py`).
 
 ## Analysis
 
 - **Reliability first.** If two or more hidden references are not picked, the test is
-  void and nothing is scored. The repeats' consistency is reported.
+  void and nothing is scored. The repeats' consistency is reported, and decides
+  whether a low count can be read as "rejected" (below); a repeat with "?" on
+  either side counts as not answered the same way.
 - **The judge**, on test pairs the listener decided (can't-tell is never counted as
   half):
   - **validated** at 70% or more agreement with a one-sided exact binomial p < 0.05
@@ -94,8 +97,9 @@ Each is computed on exactly the 4 s the listener hears.
   agreement reweighted to the pool's split is reported beside it.
 - **Power** (22 decided pairs): P(validated) is 0.96 for a judge right 85% of the
   time, 0.87 at 80%, 0.70 at 75%, 0.49 at 70%, 0.30 at 65% and 0.16 at 60%. A
-  listener guessing at chance is "rejected" (before the repeat condition) with
-  probability 0.58.
+  listener guessing at chance is "rejected" with probability 0.58 before the repeat
+  condition and 0.29 with it (a guesser answers at least 2 of 3 repeats the same way
+  half the time).
 - **Reported only**: ALM, the union band set and v3c on the same pairs; on the pairs
   where the judge and v3c disagree, which the listener sided with (sign test); the
   can't-tell rate; and the earlier 16 trials beside this, never pooled.
@@ -103,7 +107,7 @@ Each is computed on exactly the 4 s the listener hears.
 ## Decision
 
 "Validated" covers clear differences only: pairs whose |log(dA/dB)| under the judge
-exceeds 0.213 (about 19%; the median test pair is about 35%). That is above the 15%
+exceeds 0.213 (about 19%; the median test pair is about 32%). That is above the 15%
 the model POC's development gates use, so POC results at that scale would rest on an
 unvalidated range.
 
@@ -119,4 +123,11 @@ unvalidated range.
 - **Inconclusive** or **void**: the test is run once more, with freshly drawn pairs
   (and, if void, a check of the playback set-up first), never pooled with this run.
   That second outcome is final: anything but "validated" counts as not validated, the
-  kill-test verdicts are void, and model work stops.
+  kill-test verdicts are void, and model work stops. The rerun's trial-list sha256
+  replaces this one in the plan (the scripts read exactly one), and the first run's
+  list stays private until the second is scored, since pairs can recur.
+
+Under the kill tests' condition 1 (no POC result read until a measure is
+validated), a validated judge lets POC results be read, but any POC gain below the
+clear cut (about 19%) is reported as resting on an unvalidated range and cannot by
+itself open a further gate.

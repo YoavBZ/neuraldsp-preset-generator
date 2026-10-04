@@ -379,16 +379,16 @@ from the target's band.
   accuracy (a render within the repeat floor of the truth counts as right).
 - **Audio regret** (the primary quantity): r(p) = log D(model) − log D(starting
   preset as it is), level left out, rendered through the part's own DI against its
-  amp track on 3 active crops. D is the distance validated in stage 0b: the judge
-  (`docs/listening-validation-plan.md`). The original candidates were:
+  amp track on 3 active crops. D is the judge (`analysis/aligned.py`), if stage 0b
+  validates it (`docs/listening-validation-plan.md`). The original candidates were:
   - **v3c**: `unpaired-v3` with `band_shape` over bands within 30 dB of the peak,
     shared dimensions only, unmeasurable as a loss, and the ambience and decay
     terms dropped;
   - **ALM**: an aligned multi-resolution log-mel distance (23/46/93 ms, 50 Hz–
     10 kHz), both sides loudness-normalised, frames where the DI plays, bins within
     30 dB of the reference's peak.
-  Embedding distances are exploratory only. If checking renders rank candidates by
-  one metric, the other must agree in direction.
+  Embedding distances are exploratory only. ALM and the judge's union band set are
+  reported beside the judge and must agree in direction.
 - **Comparators at equal K**: the starting preset, the prior sampler, nearest
   neighbour, E1's calculation, neutral, and the same-DI answer (the ceiling).
 
@@ -412,7 +412,7 @@ before the held-out test.
   20 minutes: 30 blind R-A-B trials on clear differences, testing the judge
   (`docs/listening-validation-plan.md`, which supersedes the ~85-trial, 2.5-h design
   first planned here). **Stop** model work if the judge is rejected; an inconclusive
-  result revises the format instead.
+  or void result allows one rerun with fresh pairs, whose outcome is final.
 - 0c. **Renderer measurements**, on an idle machine after a reboot (about 2 h):
   ports per command against per audio second; seconds per command against length;
   the level-fold check; the F0 null tests; history with a 2-s pre-roll on every amp

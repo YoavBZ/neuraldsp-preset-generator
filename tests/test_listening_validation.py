@@ -288,3 +288,8 @@ def test_the_draw_refuses_to_overwrite_a_trial_list(tmp_path, monkeypatch):
         P.main()
     assert out.read_text() == "{}"
 
+
+
+def test_the_plan_declares_exactly_one_trial_list_hash():
+    sha = B.declared_trials_sha256()
+    assert len(sha) == 64 and S.declared_trials_sha256() == sha
