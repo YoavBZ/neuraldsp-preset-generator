@@ -71,7 +71,9 @@ Each is computed on exactly the 4 s the listener hears.
 - Trial numbers, sittings and A/B assignments are drawn when the files are built and
   written, with the builder's output (which prints each file's seed), only to the
   private folder. The listener's folder holds the trial files and the answer sheet.
-- The answer sheet's sha256 is recorded before any key is read
+- Both scripts refuse a trial list whose sha256 differs from the one above.
+- The answer sheet's sha256 is committed and pushed before scoring, and the scorer
+  records it before any key is read and refuses a different sheet later
   (`scripts/score_listening_validation.py`).
 
 ## Analysis
@@ -83,20 +85,38 @@ Each is computed on exactly the 4 s the listener hears.
   - **validated** at 70% or more agreement with a one-sided exact binomial p < 0.05
     against 0.5 (16 of 22 decided pairs);
   - **rejected** when the one-sided 95% upper bound on its agreement is under 70%
-    (11 or fewer of 22);
+    (11 or fewer of 22) and at least 2 of the 3 repeats were answered the same way
+    (otherwise a low count may be a listener not hearing the differences, which the
+    hidden references, identical audio, cannot catch);
   - **inconclusive** otherwise, or with fewer than 12 decided pairs.
-- **Power** (22 decided pairs): a judge right 85% of the time validates with
-  probability 0.96, one right 80% of the time 0.87, one right 75% of the time 0.70.
+- **The mix.** 10 of the 24 pairs (42%) are ones where the judge and v3c disagree,
+  against 17% of clear pairs in the pool. The outcome refers to this mix; the
+  agreement reweighted to the pool's split is reported beside it.
+- **Power** (22 decided pairs): P(validated) is 0.96 for a judge right 85% of the
+  time, 0.87 at 80%, 0.70 at 75%, 0.49 at 70%, 0.30 at 65% and 0.16 at 60%. A
+  listener guessing at chance is "rejected" (before the repeat condition) with
+  probability 0.58.
 - **Reported only**: ALM, the union band set and v3c on the same pairs; on the pairs
   where the judge and v3c disagree, which the listener sided with (sign test); the
   can't-tell rate; and the earlier 16 trials beside this, never pooled.
 
 ## Decision
 
-- **Validated**: the judge stays the judge for clear differences. The kill tests'
-  verdict stands as declared (the gate does not open; `docs/kill-test-results.md`);
-  whether to proceed anyway remains the user's call.
-- **Rejected**: model work stops (supervised-model plan, stage 0), and how closeness is
-  measured is revisited before any decision rests on it.
-- **Inconclusive**: the format is revised (more pairs, or longer clips) and the test is
-  run again; nothing stops or opens on it.
+"Validated" covers clear differences only: pairs whose |log(dA/dB)| under the judge
+exceeds 0.213 (about 19%; the median test pair is about 35%). That is above the 15%
+the model POC's development gates use, so POC results at that scale would rest on an
+unvalidated range.
+
+- **Validated**: the judge stays the judge for clear differences. Under
+  `docs/kill-test-k3-plan.md`'s clause for "validates the judge but not ALM" (ALM is
+  not tested here), the kill tests are recomputed with the judge's conditions only,
+  both band sets: K3's union reading still fails, so the verdict stays "not passed"
+  (`docs/kill-test-results.md`). Whether to proceed anyway remains the user's call;
+  condition 1 there is met only for clear differences.
+- **Rejected**: the judge is not validated; the kill-test verdicts are void and model
+  work stops (supervised-model plan, stage 0); how closeness is measured is revisited
+  before any decision rests on it.
+- **Inconclusive** or **void**: the test is run once more, with freshly drawn pairs
+  (and, if void, a check of the playback set-up first), never pooled with this run.
+  That second outcome is final: anything but "validated" counts as not validated, the
+  kill-test verdicts are void, and model work stops.

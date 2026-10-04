@@ -33,8 +33,20 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
 
+PLAN = PLUGIN_ROOT / "docs" / "listening-validation-plan.md"
+
+
+def declared_trials_sha256() -> str:
+    """The trial list's sha256 as the plan records it."""
+    found = re.findall(r"`([0-9a-f]{64})`", PLAN.read_text())
+    if len(found) != 1:
+        die(f"{PLAN} must record exactly one trial-list sha256")
+    return found[0]
+
 REPORTED = ("judge_union", "alm", "v3c")
 MIN_DECIDED, BAR = 12, 0.7
+# Of the pool's 15,525 clear pairs, 2,624 are ones where the judge and v3c disagree.
+POOL_DISAGREE_SHARE = 2624 / 15525
 
 
 def build_parser():
@@ -54,6 +66,8 @@ def parse_answers(text: str, count: int) -> dict:
         if not m:
             continue
         n = int(m.group(1))
+        if not 1 <= n <= count:
+            raise ValueError(f"there is no trial {n}")
         if n in answers:
             raise ValueError(f"trial {n} is answered twice")
         answers[n] = m.group(2).upper()
@@ -83,12 +97,14 @@ def upper_bound(k: int, n: int, alpha: float = 0.05) -> float:
     return hi
 
 
-def outcome(k: int, n: int) -> str:
+def outcome(k: int, n: int, repeats_consistent: bool = True) -> str:
+    """Validated, rejected (only if the listener's repeats were mostly consistent) or
+    inconclusive."""
     if n < MIN_DECIDED:
         return "inconclusive"
     if k / n >= BAR and binomial_p(k, n) < 0.05:
         return "validated"
-    if upper_bound(k, n) < BAR:
+    if upper_bound(k, n) < BAR and repeats_consistent:
         return "rejected"
     return "inconclusive"
 
@@ -126,15 +142,6 @@ def score(plan: dict, order: list, keys: dict, answers: dict) -> dict:
                         "share": k / len(decided) if decided else None,
                         "p_one_sided": binomial_p(k, len(decided))}
     out["agreement"] = agreement
-    k, n = agreement["judge"]["agree"], agreement["judge"]["of"]
-    out["judge"] = outcome(k, n)
-    out["judge_upper_bound"] = upper_bound(k, n) if n else None
-    split = [r for r in decided if by_id[r["id"]]["disagree"]]
-    sided = sum(chosen[r["trial"]] == predicted(r, "judge") for r in split)
-    out["judge_vs_v3c_where_they_disagree"] = {
-        "listener_with_judge": sided, "of": len(split),
-        "p_two_sided": min(1.0, 2 * min(binomial_p(sided, len(split)),
-                                        binomial_p(len(split) - sided, len(split))))}
     repeats = []
     for r in order:
         if r["kind"] == "repeat":
@@ -142,6 +149,23 @@ def score(plan: dict, order: list, keys: dict, answers: dict) -> dict:
             pair = (chosen[original["trial"]], chosen[r["trial"]])
             repeats.append({"of": r["of"], "same": None if None in pair else pair[0] == pair[1]})
     out["repeats"] = repeats
+    consistent = sum(1 for r in repeats if r["same"]) >= 2
+    k, n = agreement["judge"]["agree"], agreement["judge"]["of"]
+    out["judge"] = outcome(k, n, consistent)
+    out["judge_upper_bound"] = upper_bound(k, n) if n else None
+    # Reweighted to the pool's split of pairs where the judge and v3c disagree.
+    share = POOL_DISAGREE_SHARE
+    by = {flag: [r for r in decided if by_id[r["id"]]["disagree"] == flag] for flag in (True, False)}
+    if all(by.values()):
+        rate = {flag: sum(chosen[r["trial"]] == predicted(r, "judge") for r in rows) / len(rows)
+                for flag, rows in by.items()}
+        out["judge_share_reweighted_to_pool"] = share * rate[True] + (1 - share) * rate[False]
+    split = [r for r in decided if by_id[r["id"]]["disagree"]]
+    sided = sum(chosen[r["trial"]] == predicted(r, "judge") for r in split)
+    out["judge_vs_v3c_where_they_disagree"] = {
+        "listener_with_judge": sided, "of": len(split),
+        "p_two_sided": min(1.0, 2 * min(binomial_p(sided, len(split)),
+                                        binomial_p(len(split) - sided, len(split))))}
     return out
 
 
@@ -156,17 +180,21 @@ def main():
     except ValueError as error:
         die(str(error))
     answers_sha = hashlib.sha256(answers_text.encode()).hexdigest()
-    (private / "answers.sha256").write_text(answers_sha + "\n")
+    recorded = private / "answers.sha256"
+    if recorded.exists() and recorded.read_text().strip() != answers_sha:
+        die("these answers differ from the ones already scored")
+    recorded.write_text(answers_sha + "\n")
     trials_text = (private / "trials.json").read_text()
-    if hashlib.sha256(trials_text.encode()).hexdigest() != built["trials_sha256"]:
-        die("the trial list differs from the one the files were built from")
+    trials_sha = hashlib.sha256(trials_text.encode()).hexdigest()
+    if trials_sha != built["trials_sha256"] or trials_sha != declared_trials_sha256():
+        die("the trial list differs from the one the plan declares or the files were built from")
     plan = json.loads(trials_text)
     # Only now, with every answer recorded and its hash written, are the keys read.
     keys = {r["trial"]: json.loads((private / f"trial-{r['trial']:02d}.key.json").read_text())
             for r in order}
     out = score(plan, order, keys, answers)
     out["answers_sha256"] = answers_sha
-    print(json.dumps({k: v for k, v in out.items() if k != "repeats"}, indent=1))
+    print(json.dumps(out, indent=1))
     if args.json:
         args.json.expanduser().write_text(json.dumps(out, indent=1) + "\n")
 

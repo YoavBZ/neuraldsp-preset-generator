@@ -379,7 +379,8 @@ from the target's band.
   accuracy (a render within the repeat floor of the truth counts as right).
 - **Audio regret** (the primary quantity): r(p) = log D(model) − log D(starting
   preset as it is), level left out, rendered through the part's own DI against its
-  amp track on 3 active crops. D is the distance validated in stage 0b; candidates:
+  amp track on 3 active crops. D is the distance validated in stage 0b: the judge
+  (`docs/listening-validation-plan.md`). The original candidates were:
   - **v3c**: `unpaired-v3` with `band_shape` over bands within 30 dB of the peak,
     shared dimensions only, unmeasurable as a loss, and the ambience and decay
     terms dropped;

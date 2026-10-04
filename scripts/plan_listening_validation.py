@@ -8,7 +8,7 @@
 For every development part with a 4-s window where its DI plays in at least 90% of the
 frames, every panel candidate's distance to the part's amp track over exactly that
 window: the judge (`analysis/aligned.py`, both band sets, one lag per part pooled over
-its whole panel), ALM and v3c (`kill_tests.py`). Then, with a fixed seed, 24 test pairs
+its whole panel), ALM and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs
 above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
 most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
 3 hidden repeats. The seed is drawn from the system's randomness and kept with the

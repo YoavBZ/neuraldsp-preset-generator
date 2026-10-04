@@ -140,7 +140,7 @@ after:
   every band costs more still (83% right way, 88% across halves). A listening test
   cannot settle this cheaply: the two band sets order a pair differently almost
   only when it is a near-tie (on the stage-0b pool, 16% of pairs in the lowest
-  quarter of |log(dA/dB)|, 2.7% in the second, 0.5% in the third, none in the
+  quarter of |log(dA/dB)|, 2.5% in the second, 0.7% in the third, one pair in the
   top), and the dry template with +12 dB
   at 8 kHz, set against every factory preset, gives one part where they disagree
   by more than 0.05 in log ratio. So the choice moves magnitudes more than orders.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage 0b: build the listening-validation trials from the committed trial list.
+"""Stage 0b: build the listening-validation trials from the private trial list.
 
     python scripts/build_listening_validation.py \\
         --trials ~/ndsp-presets/runs/listening-validation/draw/trials.json \\
@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import pathlib
 import secrets
 import subprocess
@@ -30,6 +31,16 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
+
+PLAN = PLUGIN_ROOT / "docs" / "listening-validation-plan.md"
+
+
+def declared_trials_sha256() -> str:
+    """The trial list's sha256 as the plan records it."""
+    found = re.findall(r"`([0-9a-f]{64})`", PLAN.read_text())
+    if len(found) != 1:
+        die(f"{PLAN} must record exactly one trial-list sha256")
+    return found[0]
 
 SR, SEGMENT_S, SITTING = 48000, 4.0, 15
 
@@ -82,6 +93,8 @@ def main():
     import hashlib
 
     trials_text = args.trials.expanduser().read_text()
+    if hashlib.sha256(trials_text.encode()).hexdigest() != declared_trials_sha256():
+        die("the trial list is not the one the plan declares")
     plan = json.loads(trials_text)
     panel = args.panel_dir.expanduser()
     crops = args.crops_dir.expanduser()

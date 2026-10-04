@@ -49,6 +49,8 @@ def test_every_trial_must_be_answered_once():
         S.parse_answers("1: A\n3: B\n", 3)
     with pytest.raises(ValueError, match="twice"):
         S.parse_answers("1: A\n1: B\n2: A\n", 2)
+    with pytest.raises(ValueError, match="no trial 3"):
+        S.parse_answers("1: A\n2: B\n3: A\n", 2)
 
 
 def test_validated_rejected_and_inconclusive_are_where_the_plan_puts_them():
@@ -117,7 +119,47 @@ def test_missed_hidden_references_void_the_test_and_cant_tell_is_not_half():
 def test_a_listener_who_always_picks_the_other_one_rejects_the_judge():
     plan = _plan()
     order, keys, answers = _order_and_keys(plan, lambda row: False, seed=3)
-    assert S.score(plan, order, keys, answers)["judge"] == "rejected"
+    out = S.score(plan, order, keys, answers)
+    assert out["judge"] == "rejected"
+    # The same count from a listener whose repeats disagree is not a rejection.
+    flips = iter([True, False, True, False, True, False])
+    order, keys, answers = _order_and_keys(
+        plan, lambda row: next(flips) if row["kind"] == "repeat" or row["id"] in
+        ("t00", "t01", "t02") else False, seed=3)
+    out = S.score(plan, order, keys, answers)
+    assert sum(1 for r in out["repeats"] if r["same"]) < 2 and out["judge"] == "inconclusive"
+
+
+def test_the_scorer_records_the_answers_before_any_key_and_refuses_a_changed_list(
+        tmp_path, monkeypatch):
+    import hashlib
+    import json
+
+    plan = _plan()
+    order, keys, answers = _order_and_keys(plan, lambda row: True)
+    private = tmp_path / "private"
+    private.mkdir()
+    trials_text = json.dumps(plan)
+    (private / "trials.json").write_text(trials_text)
+    sha = hashlib.sha256(trials_text.encode()).hexdigest()
+    (private / "order.json").write_text(json.dumps({"trials_sha256": sha, "order": order}))
+    sheet = tmp_path / "ANSWERS.md"
+    sheet.write_text("\n".join(f"{n:02d}: {a}" for n, a in answers.items()))
+    monkeypatch.setattr(S, "declared_trials_sha256", lambda: sha)
+    monkeypatch.setattr(sys, "argv", ["score", "--private-dir", str(private),
+                                      "--answers", str(sheet)])
+    with pytest.raises(FileNotFoundError):                      # no keys exist yet...
+        S.main()
+    assert (private / "answers.sha256").read_text().strip() == hashlib.sha256(
+        sheet.read_bytes()).hexdigest()                         # ...but the hash is written
+    sheet.write_text(sheet.read_text().replace("01: ", "01: ?  #", 1).replace("#A", "")
+                     .replace("#B", ""))
+    with pytest.raises(SystemExit):
+        S.main()                                                # a changed sheet is refused
+    (private / "answers.sha256").unlink()
+    monkeypatch.setattr(S, "declared_trials_sha256", lambda: "0" * 64)
+    with pytest.raises(SystemExit):
+        S.main()                                                # an undeclared trial list
 
 
 def test_the_seed_makes_the_judges_choice_a_or_b_as_asked():
@@ -179,7 +221,14 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
         pathlib.Path(key).write_text("{}")
         return subprocess.CompletedProcess(cmd, 0, "reproducible blind assignment seed: 1\n", "")
 
+    import hashlib
+
+    import analysis
+
     monkeypatch.setattr(B.subprocess, "run", fake_run)
+    monkeypatch.setattr(analysis, "require", lambda *_: None)       # no audio is touched
+    monkeypatch.setattr(B, "declared_trials_sha256",
+                        lambda: hashlib.sha256(trials.read_text().encode()).hexdigest())
     listener, private = tmp_path / "listen", tmp_path / "private"
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
                                       "--crops-dir", str(tmp_path / "crops"),
@@ -196,5 +245,46 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
             start = float(cmd[cmd.index(side + "-start") + 1])
             expected = ref if path.endswith("reference.wav") else ref - 480 / 48000
             assert start == pytest.approx(expected)
+    import random as r
+
+    judge_a = 0                          # the judge's closer option is A on exactly half
+    order = json.loads((private / "order.json").read_text())["order"]
+    for cmd, row in zip(calls, order):
+        if row["kind"] == "test":
+            first_is_a = not r.Random(int(cmd[cmd.index("--seed") + 1])).getrandbits(1)
+            judge_a += first_is_a        # every fixture pair has the first closer
+    assert judge_a == 12
     with pytest.raises(SystemExit):
         B.main()                         # built once: the folders are no longer empty
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
+                                      "--out-dir", str(tmp_path / "x"),
+                                      "--private-dir", str(tmp_path / "x" / "private")])
+    with pytest.raises(SystemExit):
+        B.main()                         # the private folder inside the listener's
+    monkeypatch.setattr(B, "declared_trials_sha256", lambda: "0" * 64)
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials), "--panel-dir", str(panel),
+                                      "--out-dir", str(tmp_path / "y"),
+                                      "--private-dir", str(tmp_path / "z")])
+    with pytest.raises(SystemExit):
+        B.main()                         # a trial list the plan does not declare
+
+
+def test_the_draw_refuses_to_overwrite_a_trial_list(tmp_path, monkeypatch):
+    out = tmp_path / "trials.json"
+    out.write_text("{}")
+    cache = tmp_path / "pool.json"
+    import json
+
+    cache.write_text(json.dumps({"pool": {}}))
+    panel = tmp_path / "panel"
+    panel.mkdir()
+    (panel / "index.json").write_text(json.dumps({"rows": []}))
+    import analysis
+
+    monkeypatch.setattr(analysis, "require", lambda *_: None)
+    monkeypatch.setattr(sys, "argv", ["plan", "--panel-dir", str(panel), "--cache", str(cache),
+                                      "--out", str(out)])
+    with pytest.raises(SystemExit):
+        P.main()
+    assert out.read_text() == "{}"
+
