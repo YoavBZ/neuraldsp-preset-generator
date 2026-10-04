@@ -3,13 +3,21 @@
 The suite renders audio and runs the real optimiser, so it is CPU-bound: on a
 four-core CI runner it was fourteen minutes even with xdist using every core.
 xdist spreads the work over one machine's cores; this spreads it over machines.
-`--shard 2/4` runs the second of four slices, and every slice is chosen from
-the same `durations.json`, so the four together run each collected test once.
+`--shard 2/4` runs the second of four slices; the four together run each test
+once.
 
-A slice is balanced on recorded time, not on test count: a few dozen tests in
-`test_match_cli.py` and `test_search.py` are most of the cost, and a count-based
-split would hand one machine all of them. Slices are filled longest-first, each
-unit going to whichever slice is lightest so far.
+Which slice a test belongs to is decided by its node id and `durations.json`
+alone — never by what else was collected. Every machine therefore agrees on
+every test it collects, and narrowing a run cannot move one: `--shard 3/4 -k
+name`, `--shard 3/4 tests/test_search.py` or `--shard 3/4 --lf` runs exactly
+the matching part of CI's slice 3. An earlier version cut the collected tests
+instead, and one unrecorded test — even a docs change adding a parametrization —
+moved a third of the suite to other slices.
+
+Recorded tests are balanced on their times, not their count: a few dozen tests
+in `test_match_cli.py` and `test_search.py` are most of the cost, and a
+count-based split would hand one machine all of them. Slices are filled
+longest-first, each unit going to whichever slice is lightest so far.
 
 A module is a single unit unless it is too large to be one. Keeping a module
 together means its module- and session-scoped fixtures are paid once per worker
@@ -17,28 +25,30 @@ on one machine rather than on every machine: `test_match_audition.py` builds its
 match once per worker, and scattered over four machines that saving would be
 gone. Modules too big to balance as one piece are split into their tests.
 
-The cut is made over every recorded test as well as every collected one, and
-before `-k`, `-m`, `--deselect` or `--lf` narrow the run. So `--shard 3/4 -k
-name`, or `--shard 3/4 tests/test_search.py`, runs the part of CI's slice 3 that
-matches — which is what rerunning a failing slice needs. Only tests with no
-recorded time can move between slices when the collection changes.
+A test with no recorded time joins its module's slice if the module was kept
+whole, and otherwise goes by a hash of its name; a new module goes by a hash of
+the module's, so it stays together. The record only decides balance, never
+whether a test runs. To refresh it from the CI runners themselves, start the CI
+workflow by hand with `record_durations` ticked, download one Python version's
+four `durations-*` artifacts, and take their union:
 
-A test with no recorded time is costed at its module's mean, or the suite's,
-so a new test is placed sensibly before anyone records it. A stale record costs
-balance, never correctness. To refresh it from the CI runners themselves, run
-the CI workflow by hand with `record_durations` ticked, download one Python
-version's four `durations-*` artifacts, and take their union:
-
-    jq -s add durations-3.13-*/durations.json > tests/durations.json
+    python - durations-3.13-*/durations.json > tests/durations.json <<'EOF'
+    import json, sys
+    union = {}
+    for path in sys.argv[1:]:
+        union.update(json.load(open(path)))
+    print(json.dumps(union, indent=0, sort_keys=True))
+    EOF
 
 `python -m pytest --record-durations tests/durations.json` does the same from
-one local run, if the machine is otherwise idle.
+one whole local run, if the machine is otherwise idle.
 """
 
 from __future__ import annotations
 
 import json
 import pathlib
+import zlib
 
 import pytest
 
@@ -95,69 +105,73 @@ def _module(nodeid: str) -> str:
     return nodeid.split("::", 1)[0]
 
 
-def _costs(nodeids, recorded: dict) -> dict:
-    """Each test's recorded time in whole centiseconds.
+def _costs(recorded: dict) -> dict:
+    """Each recorded time in whole centiseconds.
 
     Integers, not the floats they came from: Python 3.12 made `sum()` of floats
     compensated, so 3.10 and 3.13 added the same times to different last bits,
     broke near-ties between slices differently, and cut the suite differently.
-    Each version still ran every test, but `--shard 1/4` named different tests
-    on each, so a failing slice could not be rerun on another interpreter.
     """
-    centis = {nodeid: round(seconds * 100) for nodeid, seconds in recorded.items()}
-    by_module: dict = {}
-    for nodeid, cost in centis.items():
-        by_module.setdefault(_module(nodeid), []).append(cost)
-    overall = sum(centis.values()) // len(centis) if centis else 100
-    costs = {}
-    for nodeid in nodeids:
-        if nodeid in centis:
-            costs[nodeid] = centis[nodeid]
-        else:
-            peers = by_module.get(_module(nodeid))
-            costs[nodeid] = sum(peers) // len(peers) if peers else overall
-    return costs
+    return {nodeid: round(seconds * 100) for nodeid, seconds in recorded.items()}
 
 
-def slices(nodeids, count: int, recorded: dict) -> list:
-    """Partition `nodeids` into `count` sets of roughly equal recorded time."""
-    costs = _costs(set(nodeids), recorded)
-    modules: dict = {}
-    for nodeid in costs:
-        modules.setdefault(_module(nodeid), []).append(nodeid)
-    whole = sum(costs.values())
+class Cut:
+    """Which of `count` slices each test belongs to: `cut(nodeid)`, counted from 0.
 
-    units = []
-    for name, members in modules.items():
-        total = sum(costs[member] for member in members)
-        if total * WHOLE_MODULE_PARTS * count <= whole:
-            units.append((total, name, members))
-        else:
-            units.extend((costs[member], member, [member]) for member in members)
+    Built from `recorded` alone, so it is the same wherever the same
+    `durations.json` is checked out, whatever was collected there."""
 
-    loads = [0] * count
-    chosen: list = [set() for _ in range(count)]
-    # Names are unique, so this order — and with it the partition — is the same
-    # on every xdist worker, every machine and every interpreter.
-    for weight, _, members in sorted(units, key=lambda unit: (-unit[0], unit[1])):
-        lightest = min(range(count), key=lambda index: (loads[index], index))
-        loads[lightest] += weight
-        chosen[lightest].update(members)
-    return chosen
+    def __init__(self, count: int, recorded: dict):
+        self.count = count
+        costs = _costs(recorded)
+        modules: dict = {}
+        for nodeid in sorted(costs):
+            modules.setdefault(_module(nodeid), []).append(nodeid)
+        whole = sum(costs.values())
+
+        units = []
+        self.split: set = set()
+        for name, members in modules.items():
+            total = sum(costs[member] for member in members)
+            if total * WHOLE_MODULE_PARTS * count <= whole:
+                units.append((total, name, members, name))
+            else:
+                self.split.add(name)
+                units.extend((costs[member], member, [member], None) for member in members)
+
+        self.loads = [0] * count
+        self.tests: dict = {}
+        self.modules: dict = {}
+        # Names are unique, so this order — and the cut — does not depend on
+        # how the units were gathered.
+        units.sort(key=lambda unit: (-unit[0], unit[1]))
+        for weight, _, members, module in units:
+            lightest = min(range(count), key=lambda index: (self.loads[index], index))
+            self.loads[lightest] += weight
+            self.tests.update(dict.fromkeys(members, lightest))
+            if module is not None:
+                self.modules[module] = lightest
+
+    def __call__(self, nodeid: str) -> int:
+        if nodeid in self.tests:
+            return self.tests[nodeid]
+        module = _module(nodeid)
+        if module in self.modules:
+            return self.modules[module]
+        key = nodeid if module in self.split else module
+        return zlib.crc32(key.encode()) % self.count
 
 
-@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     spec = config.getoption("shard")
     if not spec:
         return
     index, count = _parse(spec)
-    recorded = _recorded()
-    universe = set(recorded) | {item.nodeid for item in items}
-    keep = slices(universe, count, recorded)[index - 1]
+    cut = Cut(count, _recorded())
+    mine = {item.nodeid: cut(item.nodeid) == index - 1 for item in items}
     config.hook.pytest_deselected(
-        items=[item for item in items if item.nodeid not in keep])
-    items[:] = [item for item in items if item.nodeid in keep]
+        items=[item for item in items if not mine[item.nodeid]])
+    items[:] = [item for item in items if mine[item.nodeid]]
 
 
 class _Recorder:
@@ -169,7 +183,9 @@ class _Recorder:
         seconds = self.seconds.get(report.nodeid, 0.0)
         self.seconds[report.nodeid] = seconds + report.duration
 
-    def pytest_sessionfinish(self, session):
-        if self.seconds:
-            recorded = {nodeid: round(seconds, 2) for nodeid, seconds in self.seconds.items()}
-            self.path.write_text(json.dumps(recorded, indent=0, sort_keys=True) + "\n")
+    def pytest_sessionfinish(self, session, exitstatus):
+        # A run stopped partway records only what it reached; keep the old file.
+        if exitstatus == pytest.ExitCode.INTERRUPTED or not self.seconds:
+            return
+        recorded = {nodeid: round(self.seconds[nodeid], 2) for nodeid in self.seconds}
+        self.path.write_text(json.dumps(recorded, indent=0, sort_keys=True) + "\n")
