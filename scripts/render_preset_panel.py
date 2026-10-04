@@ -191,6 +191,15 @@ def main() -> None:
         die(f"crops missing for {', '.join(missing)}; run benchmark_recordings.py once")
     args.out_dir = args.out_dir.expanduser()
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    # Renders already on disk are reused, so a directory rendered under another rule
+    # set or format must not be resumed into.
+    config = {"amp": args.amp, "rule_set": RULE_SET, "spring_off": SPRING.get(args.amp),
+              "format": "FLOAT"}
+    stamp = args.out_dir / "panel-config.json"
+    if stamp.exists() and json.loads(stamp.read_text()) != config:
+        die(f"{args.out_dir} holds renders made with another configuration; use a new "
+            f"directory")
+    stamp.write_text(json.dumps(config, indent=1))
     jobs = [(args, slugs[i::args.workers]) for i in range(args.workers)]
     with ProcessPoolExecutor(args.workers) as pool:
         rows = [row for result in pool.map(work, jobs) for row in result]

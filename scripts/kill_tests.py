@@ -251,12 +251,11 @@ def band_stat(rows, key):
 # --- main --------------------------------------------------------------------
 
 def main():
-    import numpy as np
-
     args = build_parser().parse_args()
     from analysis import require
 
     require("the kill tests")
+    import numpy as np
     from benchmark_recordings import CATALOG
 
     panel = args.panel_dir.expanduser()
@@ -503,7 +502,7 @@ def main():
     out["k2_pass"] = any(r["pass"] for r in k2["rows"].values())
     print(json.dumps({k: v for k, v in out.items() if k != "k1_rows"}, indent=1))
     if args.json:
-        args.json.write_text(json.dumps(out, indent=1) + "\n")
+        args.json.expanduser().write_text(json.dumps(out, indent=1) + "\n")
 
 
 if __name__ == "__main__":

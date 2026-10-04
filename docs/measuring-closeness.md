@@ -113,7 +113,7 @@ after:
     on 25 of 27 parts. The misses are Drag Me Down 4 (0.3 ms, borderline) and
     Strangest Places, whose correlation has two peaks; pooling the whole panel
     there picks the other one. Which renders are pooled matters elsewhere too
-    (Signs 3: 16–20 samples from nine-render pools, -29 from the whole panel), so a
+    (Signs 3: 17–20 samples from nine-render pools, -29 from the whole panel), so a
     study should record one lag per recording and reuse it.
   - One render alone was 6 ms off on one part, and earlier versions that estimated
     per candidate over ±50 ms missed by up to about 2,000 samples on the listening

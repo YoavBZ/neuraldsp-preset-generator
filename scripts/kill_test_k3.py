@@ -65,12 +65,11 @@ def features(x, di, offset):
 
 
 def main():
-    import numpy as np
-
     args = build_parser().parse_args()
     from analysis import require
 
     require("kill test K3")
+    import numpy as np
     from benchmark_recordings import CATALOG
 
     panel = args.panel_dir.expanduser()

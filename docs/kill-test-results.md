@@ -2,17 +2,25 @@
 
 Declared in `docs/supervised-model-plan.md` §0 (K1, K2) and `docs/kill-test-k3-plan.md`
 (K3, its amendment, and "Under the judge"). Computed by `scripts/kill_tests.py` and
-`scripts/kill_test_k3.py` at 1f67812 on the float panel (1,978 renders, 44 factory
-presets plus the template with and without its time effects, through 43 development
-parts' DIs), then by `scripts/kill_tests_judge.py` at 7f98fca. An independent review
-re-scored every number from the renders and reproduced them exactly.
+`scripts/kill_test_k3.py` (as merged in this PR; the run used byte-identical copies)
+on the float panel (1,978 renders, 44 factory presets plus the template with and
+without its time effects, through 43 development parts' DIs), then by
+`scripts/kill_tests_judge.py`. Two independent reviews re-scored every number from the
+renders and reproduced them exactly.
 
 ## Verdict
 
-As coded before the results, all three pass and the gate opens. Read strictly, K3
-passes on its weakest reading only because of a tie. The evidence supports "a
-render-trained preset lookup is not killed"; it does not support "a supervised model
-will work".
+**As declared, the gate does not open.** K1 and K2 pass; K3 passes for 1-NN under ALM
+and the judge's default bands, but under the judge's union bands 1-NN is closer than
+the constant on 15 of 30 parts, with one tie, and the declaration asks for "closer
+than that constant on a majority of parts". 15 of 30 is not a majority, and the
+declaration's outcome table makes any such outcome "not passed".
+
+The code, written before the results, counts that tie as half (15.5 of 30) and
+reports a pass, so `gate_open` is true in the output. That reading is not the
+declared text, and it is not adopted here after the fact. Leaving the tie out gives
+15 of 29, a pass. Whether to proceed to the model POC on this evidence is a decision
+for the user, not something this result settles; the case for and against is below.
 
 | Test | Reading | Result | Detail |
 |---|---|---|---|
@@ -22,15 +30,15 @@ will work".
 | K2 across players | as declared | pass | top-1 58% for LDA (chance 2.3%); closed set only (below) |
 | K3 real amp tracks | ALM | pass (1-NN) | 27% band median; better than template+R on 18 of 30 parts, than the shuffled control on 24, than the constant on 20.5 |
 | | judge, default bands | pass (1-NN) | 28%; 18, 23, 21.5 |
-| | judge, union bands | pass (1-NN), by a tie | 27%; 16, 24, 15.5 — 15 better, 1 tied, 14 worse against the constant |
-| | LDA, LDA+1-NN | fail | 12–20% worse than template+R (LDA) or level with it |
+| | judge, union bands | fail as declared | 27%; 16, 24 — and 15 better, 1 tied, 14 worse against the constant (15.5 if the tie counts half) |
+| | LDA, LDA+1-NN | fail | LDA 12–20% worse than template+R; LDA+1-NN from 2% better to 6% worse |
+| As first declared (ALM and v3c) | | pass | K1 under v3c 36%; K3 1-NN under v3c 13%, 22 of 30 parts, beats the shuffled control on 25 and the constant on 23 |
 
-The tie is Fragments, where the 1-NN pick and the constant are the same preset. The
-declared text says ties count half for the shuffled control and "closer on a majority"
-for the constant; the code, written before the results, counts ties as half for both.
-Counted that way it passes (15.5 of 30); counted as a loss it fails (15 of 30); left out
-it passes (15 of 29). This document records the pass as coded and that it rests on
-this reading.
+Under v3c the constant chosen on the training bands (band median 18%) does better
+than 1-NN (13%); v3c is retired as a judge (`docs/measuring-closeness.md`) and this
+verdict is reported, not deciding.
+
+The tie is Fragments, where the 1-NN pick and the union constant are the same preset.
 
 ## What holds up
 
@@ -42,7 +50,7 @@ this reading.
 - **The picks are part-specific.** 1-NN makes 15 distinct picks, the most common on
   13% of parts. Given each part another band's pick, the gain is about zero; the
   shuffled control is beaten on 23–24 of 30 parts (band p about 0.012). With the picks
-  permuted across parts, 0.2% of 2,000 permutations pass the whole rule.
+  permuted across parts, 0.1–0.2% of 2,000 permutations pass the whole rule.
 - **Lags do not matter here.** At the other cluster's lag, Signs 3 and Strangest
   Places keep the same oracle presets and move by at most 0.007 in log ratio.
 - **Gating the amp-track features by the part's DI** is not a material leak: without
@@ -56,46 +64,61 @@ this reading.
   Gating the features without the DI changes 2 of 30 picks and flips that reading to
   a fail (14.5 of 30).
 - **The headline overstates the typical part.** The 27% is a median over band
-  medians, where five one- or two-part Cambridge bands weigh as much as the eight-part
+  medians, where four one- or two-part Cambridge bands weigh as much as the eight-part
   Dom McLennon band. Per part, the median gain is 17% (ALM), 10% (judge default), 6%
   (judge union). Cambridge (14 parts): 11–12 better than template+R. Telefunken (16
   parts): 5–7 better, median part no gain; under the union bands only 4 of 16 beat the
-  constant. K1 shows the same split: Telefunken bands have 0–22% headroom.
-- **The recogniser that is best on renders is worst on real tracks.** LDA leads K2 on
-  renders (closed and open set) and is 12–20% worse than template+R on real amp
-  tracks under every measure. The plan chooses the POC's models and settings on
+  constant. K1 mostly shows the same split, but not cleanly: under the judge the
+  Telefunken bands have 0–22% headroom, while under ALM Dom McLennon has 28% and the
+  Cambridge band Starnes And Shah only 9–10%.
+- **The recogniser that is among the best on renders is the worst on real tracks.**
+  LDA ties LDA+1-NN for K2's best closed-set top-1 (58%) on renders and is 12–20%
+  worse than template+R on real amp tracks under ALM and the judge (12.6% better
+  under the retired v3c). The plan chooses the POC's models and settings on
   simulation only; this says that choice can pick the wrong model.
-- **Statistics.** Band-level sign-flip p against template+R is 0.07–0.12 (two-sided),
-  short of the plan's P2 bar (one-sided p < 0.05); against the constant 0.09–0.23.
+- **Statistics.** Band-level sign-flip p against template+R is 0.036 (ALM), 0.052
+  (judge default) and 0.059 (judge union) one-sided, so ALM meets the plan's P2 bar
+  (one-sided p < 0.05) and the judge narrowly misses it; against the constant
+  0.046–0.11 one-sided.
 - **The three readings are nearly one.** ALM and the judge's two band sets correlate
   at Spearman 0.95–0.99 over every part × preset log ratio; requiring all three adds
   fragility, not independent confirmation. Both are unvalidated by listening.
 - **The comparator matters.** A training-band constant chosen by median log ratio
   rather than median raw distance is beaten on 21–22 of 30 parts; the best single
   preset chosen in hindsight on the test parts (14–19% band median) is beaten on only
-  12–14.
+  12–14 (14–15 with ties counted half).
 - **K2 is closed-set.** With each preset held out of training (what real tracks
   require), mean regret is 0.80–0.86 of the medoid constant's, short of the 0.75 the
   closed-set rule used; the recognisers recover 23–35% of the gap to the best
-  available preset.
+  available preset. (The medoid's mean leaves out renders whose true preset is the
+  medoid; the recognisers' means keep them, so the ratio is over slightly different
+  sets.)
 - **Narrow conditions.** Isolated amp tracks only, scored through the part's own DI
   and against the same microphone; no mixes, stems, other players' DIs or second
   microphones.
 
 ## What follows
 
-The gate is treated as "not killed", with these conditions on the model POC
+The declared outcome is "not passed". Proceeding anyway would be a judgement call
+resting on: K1's large headroom under every measure; 1-NN's part-specific gain under
+ALM and the judge's default bands, with ALM's band p below 0.05; and the strict union
+reading failing by a single tie on one part. Against it: the gain sits in one source,
+the per-part gain is modest, the judge's union reading fails, the measures are nearly
+one, and the recogniser that wins on renders loses on real tracks.
+
+If the user decides to proceed, these conditions apply to the model POC
 (`docs/supervised-model-plan.md` §0):
 
-1. No POC result is read until stage 0b has validated a measure. If only the judge
-   validates, K3 hangs on its union reading, whose tie rule is fixed here: ties count
-   half, as coded.
+1. No POC result is read until stage 0b has validated a measure.
 2. The K3 1-NN lookup and a constant chosen by median log ratio are required
    comparators in P1 and P2, and the model chosen on simulation is checked on real
    amp tracks before any scale-up.
 3. P1 and P2 report part medians and per-source (Cambridge, Telefunken) gains beside
    band medians; P2 adds another player's DI and the second microphone.
 4. The POC stays at its cut-down size until P2 passes.
+
+Stage 0b (validating the measures by listening) is worth doing either way: every
+conclusion here and in `docs/measuring-closeness.md` waits on it.
 
 Outputs: `~/ndsp-presets/runs/kill/k-sw50r-run2.json`, `k3-sw50r-run2.json`,
 `k-judge-run2.json` (local; not committed).

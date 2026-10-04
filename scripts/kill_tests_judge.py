@@ -161,13 +161,13 @@ def main():
         with ProcessPoolExecutor(args.workers) as ex:
             lags = dict(ex.map(estimate_part_lag,
                                [(p, files[p], meta[p]["lag"], crops) for p in used]))
-        args.freeze_lags.write_text(json.dumps({"panel": str(panel), "lags": lags},
+        args.freeze_lags.expanduser().write_text(json.dumps({"panel": str(panel), "lags": lags},
                                                indent=1) + "\n")
         print(json.dumps(lags, indent=1))
         return
     if not (args.lags and args.k3_json and args.k_json):
         raise SystemExit("--lags, --k-json and --k3-json are needed to score")
-    frozen = json.loads(args.lags.read_text())
+    frozen = json.loads(args.lags.expanduser().read_text())
     lags = frozen["lags"]
     k3 = json.loads(args.k3_json.expanduser().read_text())
     kj = json.loads(args.k_json.expanduser().read_text())
@@ -355,7 +355,7 @@ def main():
                     oracle = min(on_a, key=on_a.get)
                     row["k1_oracle"] = {"preset": oracle,
                                         "log_ratio": math.log(dist_alt(oracle, "B", bands) / base)}
-            if part in k3_parts:
+            if part in k3_parts and all(part in picks[name] for name in picks):
                 base = dist_alt("template+R", "full", bands)
                 row["k3_model_log_ratio"] = {
                     name: math.log(dist_alt(picks[name][part], "full", bands) / base)
