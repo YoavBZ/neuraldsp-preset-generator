@@ -72,13 +72,18 @@ def test_every_job_checks_out_full_history_unless_it_says_why_not() -> None:
 
 def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
     """`--shard I/N` runs one slice and trusts the matrix for the rest. A matrix of
-    `[1, 2, 3]` beside a `/4` would leave a quarter of the suite unrun on every
-    build, and nothing would fail: each shard that did run would pass."""
+    `[1, 2, 3]` beside a `/4`, or an `exclude:` that drops one version's shard,
+    would leave part of the suite unrun on every build, and nothing would fail:
+    each shard that did run would pass."""
     import re
 
     workflow = yaml.load(CI_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
     job = workflow["jobs"]["analysis"]
-    shards = [int(shard) for shard in job["strategy"]["matrix"]["shard"]]
+    matrix = job["strategy"]["matrix"]
+    assert set(matrix) == {"python-version", "shard"}, (
+        "an include or exclude changes which (version, shard) pairs run; if one "
+        "is needed, extend this test to check every version still runs every slice")
+    shards = [int(shard) for shard in matrix["shard"]]
     commands = [step["run"] for step in job["steps"] if "--shard" in step.get("run", "")]
     assert len(commands) == 1, commands
     split = re.search(r"--shard \$\{\{ matrix\.shard \}\}/(\d+)", commands[0])
@@ -88,11 +93,6 @@ def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
     assert f"{{{{ matrix.shard }}}}/{count})" in job["name"]
 
 
-class _Item:
-    def __init__(self, nodeid: str) -> None:
-        self.nodeid = nodeid
-
-
 def test_the_slices_cover_every_test_exactly_once() -> None:
     """Including tests the recorded times have never seen, which is every test
     written since they were last recorded."""
@@ -100,33 +100,67 @@ def test_the_slices_cover_every_test_exactly_once() -> None:
 
     recorded = conftest._recorded()
     assert recorded, "tests/durations.json is missing or empty"
-    items = [_Item(nodeid) for nodeid in sorted(recorded)]
-    items += [_Item("tests/test_new.py::test_unrecorded"),
-              _Item(f"{items[0].nodeid.split('::')[0]}::test_unrecorded_in_a_known_module")]
+    known = sorted(recorded)
+    nodeids = known + ["tests/test_new.py::test_unrecorded",
+                       f"{conftest._module(known[0])}::test_unrecorded_in_a_known_module"]
     for count in range(1, 7):
-        parts = conftest.slices(items, count, recorded)
+        parts = conftest.slices(nodeids, count, recorded)
         assert len(parts) == count
-        ran = [item.nodeid for part in parts for item in part]
-        assert sorted(ran) == sorted(item.nodeid for item in items), count
+        assert sum(len(part) for part in parts) == len(nodeids), count
+        assert set().union(*parts) == set(nodeids), count
 
 
 def test_the_slices_are_the_same_on_every_python(monkeypatch) -> None:
     """3.12 made `sum()` of floats compensated, and summing recorded times as
     floats cut the suite differently on 3.10 and 3.13: each still ran every test,
     but a failing `--shard 1/4` named different tests on another interpreter.
-    Shadowing `sum` with the old left-to-right addition must change nothing."""
+
+    The costs are integers, which every interpreter adds alike. Shadowing `sum`
+    with the old left-to-right addition checks the same thing from the other end,
+    though only where the built-in differs from it — 3.12 and later."""
     import functools
     import operator
 
     from tests import conftest
 
     recorded = conftest._recorded()
-    items = [_Item(nodeid) for nodeid in sorted(recorded)]
+    costs = conftest._costs([*recorded, "tests/test_new.py::test_unrecorded"], recorded)
+    assert all(type(cost) is int for cost in costs.values())
 
-    def ids(parts):
-        return [[item.nodeid for item in part] for part in parts]
-
-    compensated = ids(conftest.slices(items, 4, recorded))
+    compensated = conftest.slices(recorded, 4, recorded)
     monkeypatch.setattr(conftest, "sum", lambda values, start=0: functools.reduce(
         operator.add, values, start), raising=False)
-    assert ids(conftest.slices(items, 4, recorded)) == compensated
+    assert conftest.slices(recorded, 4, recorded) == compensated
+
+
+def test_a_slice_is_cut_before_the_run_is_narrowed() -> None:
+    """Through pytest itself, not only `slices()`: the slices of a collection add up
+    to it, and narrowing with `-k` or a path keeps each test in the slice the full
+    run put it in — so a failing slice can be rerun as `--shard I/N -k name`."""
+    import subprocess
+    import sys
+
+    def collect(*args) -> set:
+        done = subprocess.run(
+            [sys.executable, "-m", "pytest", "--collect-only", "-q", "-n0",
+             "-p", "no:cacheprovider", *args],
+            cwd=ROOT, capture_output=True, text=True)
+        assert done.returncode in (0, 5), done.stdout + done.stderr  # 5: none here
+        return {line for line in done.stdout.splitlines() if "::" in line}
+
+    from tests import conftest
+
+    files = ["tests/test_ci_workflow.py", "tests/test_paths.py"]
+    whole = collect(*files)
+    assert whole
+    recorded = conftest._recorded()
+    cut = conftest.slices(set(recorded) | whole, 2, recorded)
+    parts = [collect("--shard", f"{index}/2", *files) for index in (1, 2)]
+    assert parts == [whole & cut[0], whole & cut[1]]
+
+    name = "test_the_slices_cover_every_test_exactly_once"
+    for index, part in zip((1, 2), parts):
+        expected = {nodeid for nodeid in part if nodeid.endswith(f"::{name}")}
+        assert collect("--shard", f"{index}/2", "-k", name, *files) == expected
+        expected = {nodeid for nodeid in part if nodeid.startswith(files[1])}
+        assert collect("--shard", f"{index}/2", files[1]) == expected
