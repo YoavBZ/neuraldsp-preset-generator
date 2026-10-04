@@ -1,6 +1,7 @@
 # Stage 0b: does the judge order clear differences the way the listener does?
 
-Declared before any trial is built. `docs/measuring-closeness.md` makes
+Declared before any trial was built, and amended once before any answer (below).
+`docs/measuring-closeness.md` makes
 `analysis/aligned.py` the judge of closeness, on evidence that is either indirect
 (known changes) or post hoc (16 trials it was tuned after). This short test asks
 whether the judge picks the listener's answer when two renders differ clearly. It is
@@ -10,11 +11,25 @@ the listener's request (from the ~2.5 h first planned).
 **Amended on 2026-10-04, before any answer was given.** The first build drew its
 options from the SW50R panel, and the listener, a few trials into the first sitting,
 found both options too distorted to compare with the amp track: most of the SW50R's
-factory presets are high-gain. The options now come from the PR12 and AC20 panels
-(clean to crunch). The first draw (its sha256 begins 1b057b79) is withdrawn unscored;
-no answer was recorded, and its trial list and keys stay private. Its pairs cannot
-recur, since every option is now another amp's render. The lag also changed, to each
-part's recorded lag (below). Nothing else changed.
+factory presets are high-gain. The listener returned no answers. What changed:
+
+- The options come from the PR12 panel (clean to crunch). AC20, the other cleaner
+  Morgan amp, is not used: an audition of an AC20 render must come from a fresh plugin
+  process per render, and that many restarts wear out the plugin's licence service.
+- The judge's lag is each part's recorded lag, so the four parts whose lag is
+  ambiguous are left out of the pool.
+- The amp's shipped template (time effects on, against a dry amp track) is never in a
+  test pair.
+- The clear cut is the new pool's median, recorded beside the trial list's sha256.
+- The trial list records the sha256 of every option's audio, and the builder refuses
+  anything else.
+
+The first draw (its sha256 begins 1b057b79) is withdrawn unscored. Its trial list and
+keys stay private. Its pairs cannot recur, since every option is now another amp's
+render. It does not use up the one rerun allowed below. **No further withdrawal**:
+once this draw is built, a trial that cannot be compared is answered "?". Before the
+first sitting, the listener hears a practice file made from a part outside the pool,
+to check that this material can be compared.
 
 ## What it can and cannot show
 
@@ -24,9 +39,9 @@ part's recorded lag (below). Nothing else changed.
   withdrawn first draw; the new draw's count is reported). Nor does it reach near-ties, where the union and default band sets differ,
   or the size of the kill tests' per-part K3 gains (6–17%, below the "clear" cut). So
   it does not settle K3's union reading.
-- The options are clean-to-crunch PR12 and AC20 renders; the kill tests used the
-  SW50R. Whether the listener and the judge agree as often on high-gain options is
-  not tested.
+- The options are clean-to-crunch PR12 renders; the kill tests used the SW50R.
+  Whether the listener and the judge agree as often on high-gain options, or on other
+  amps, is not tested.
 - The pairs are chosen by the judge's own confidence. A pair the judge calls a
   near-tie that sounds clearly different, its documented blind spot (excess treble the
   recording lacks), is never sampled; and cruder measures agree with the judge on many
@@ -46,9 +61,9 @@ Each is computed on exactly the 4 s the listener hears.
 
 ## Material
 
-- **Renders**: the PR12 and AC20 panels (`scripts/render_preset_panel.py`; 34 and 30
-  factory presets, and each amp's template with and without time effects), each
-  through the part's own DI. A pair's two options can come from either amp.
+- **Renders**: the PR12 panel (`scripts/render_preset_panel.py`; 34 factory presets
+  with time effects off, the template with them off, and the template as shipped),
+  each through the part's own DI.
 - **Parts**: development parts with an unambiguous recorded lag (four are left out)
   and a 4-s window where the DI plays in at least 90% of the frames; the window is the first such from 0.5 s, in 0.25-s steps. The two
   live-room parts whose amp track's top octave is mostly cymbals (Lost Alive, Until I
@@ -58,7 +73,8 @@ Each is computed on exactly the 4 s the listener hears.
 ## Trials (30, in two sittings of 15)
 
 - **Test pairs, 24.** Two candidates for one part, among pairs whose |log(dA/dB)|
-  under the judge is above the median of all candidate pairs of all parts. Drawn with
+  under the judge is above the median of all candidate pairs of all parts (the clear
+  cut; the shipped template is in no test pair). Drawn with
   a seed from the system's randomness: first one pair per band, then pairs where the
   judge and v3c pick different candidates until there are 10, then any; at most 2 per
   part, at least 8 bands, no candidate in more than 3 pairs.
@@ -79,7 +95,8 @@ Each is computed on exactly the 4 s the listener hears.
 
 - The trial list (pairs and every distance's prediction) and its seed stay in a
   private folder until every answer is in; a listener who saw the pairs could tell the
-  options apart. This plan records only its sha256:
+  options apart. Nobody opens it, the analyst included, before every answer is in.
+  This plan records only its sha256:
   `PENDING-DRAW`.
 - Trial numbers, sittings and A/B assignments are drawn when the files are built and
   written, with the builder's output (which prints each file's seed), only to the
@@ -106,31 +123,35 @@ Each is computed on exactly the 4 s the listener hears.
     hidden references, identical audio, cannot catch);
   - **inconclusive** otherwise, or with fewer than 12 decided pairs.
 - **The mix.** At least 10 of the 24 pairs (42%) are ones where the judge and v3c
-  disagree, more than among the pool's clear pairs (the trial list records the
-  pool's count). The outcome refers to this mix; the agreement reweighted to the
-  pool's split is reported beside it.
+  disagree. The trial list records the pool's share of such clear pairs, and the
+  agreement reweighted to it is reported beside the outcome, which refers to this
+  mix.
 - **Power** (22 decided pairs): P(validated) is 0.96 for a judge right 85% of the
   time, 0.87 at 80%, 0.70 at 75%, 0.49 at 70%, 0.30 at 65% and 0.16 at 60%. A
   listener guessing at chance is "rejected" with probability 0.58 before the repeat
   condition and 0.29 with it (a guesser answers at least 2 of 3 repeats the same way
   half the time).
 - **Reported only**: ALM, the union band set and v3c on the same pairs; on the pairs
-  where the judge and v3c disagree, which the listener sided with (sign test); the
-  can't-tell rate; and the earlier 16 trials beside this, never pooled.
+  where the judge and v3c disagree, which the listener sided with (sign test); on how
+  many test pairs each of them predicts the judge's option; the can't-tell rate; and
+  the earlier 16 trials beside this, never pooled.
 
 ## Decision
 
-"Validated" covers clear differences only: pairs whose |log(dA/dB)| under the judge
-exceeds 0.213 (about 19%; the median test pair is about 32%). That is above the 15%
-the model POC's development gates use, so POC results at that scale would rest on an
+"Validated" covers clear differences between clean-to-crunch PR12 renders only: pairs
+whose |log(dA/dB)| under the judge exceeds the clear cut. (In the withdrawn SW50R pool
+that was 0.213, about 19%, already above the 15% the model POC's development gates
+use.) POC results below the cut, on high-gain material, or on other amps rest on an
 unvalidated range.
 
-- **Validated**: the judge stays the judge for clear differences. Under
+- **Validated**: the judge stays the judge for clear differences on clean-to-crunch
+  material. Under
   `docs/kill-test-k3-plan.md`'s clause for "validates the judge but not ALM" (ALM is
   not tested here), the kill tests are recomputed with the judge's conditions only,
   both band sets: K3's union reading still fails, so the verdict stays "not passed"
   (`docs/kill-test-results.md`). Whether to proceed anyway remains the user's call;
-  condition 1 there is met only for clear differences.
+  condition 1 there is met only for clear differences on clean-to-crunch material,
+  and the kill tests' SW50R high-gain renders rest on an unvalidated range.
 - **Rejected**: the judge is not validated; the kill-test verdicts are void and model
   work stops (supervised-model plan, stage 0); how closeness is measured is revisited
   before any decision rests on it.
@@ -144,5 +165,5 @@ unvalidated range.
 
 Under the kill tests' condition 1 (no POC result read until a measure is
 validated), a validated judge lets POC results be read, but any POC gain below the
-clear cut (about 19%) is reported as resting on an unvalidated range and cannot by
-itself open a further gate.
+clear cut, or on high-gain material or another amp, is reported as resting on an
+unvalidated range and cannot by itself open a further gate.

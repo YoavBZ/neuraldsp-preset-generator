@@ -3,7 +3,7 @@
 
     python scripts/build_listening_validation.py \\
         --trials ~/ndsp-presets/runs/listening-validation-2/draw/trials.json \\
-        --panel-dir ~/ndsp-presets/runs/kill/pr12 --panel-dir ~/ndsp-presets/runs/kill/ac20 \\
+        --panel-dir ~/ndsp-presets/runs/kill/pr12 \\
         --out-dir ~/ndsp-presets/runs/listening-validation-2/trials \\
         --private-dir ~/ndsp-presets/runs/listening-validation-2/private
 
@@ -96,8 +96,18 @@ def main():
     if hashlib.sha256(trials_text.encode()).hexdigest() != declared_trials_sha256():
         die("the trial list is not the one the plan declares")
     plan = json.loads(trials_text)
-    from plan_listening_validation import panel_files
+    from plan_listening_validation import file_sha256, panel_files
 
+    merged, index_hashes = panel_files(args.panel_dir)
+    if index_hashes != plan["panels"]:
+        die("the panels are not the ones the trials were drawn from")
+    files = {(part, c): f for part, cands in merged.items() for c, f in cands.items()}
+    # Every option is the very audio the judge scored, checked before anything is written.
+    for t in plan["trials"]:
+        for c, f in t.get("files", {}).items():
+            path = files.get((t["part"], c))
+            if path is None or str(path) != f["path"] or file_sha256(path) != f["sha256"]:
+                die(f"{t['part']} {c}: not the render the trials were drawn from")
     crops = args.crops_dir.expanduser()
     out_dir, private = args.out_dir.expanduser(), args.private_dir.expanduser()
     if (out_dir.resolve() == private.resolve() or private.resolve().is_relative_to(out_dir.resolve())
@@ -107,8 +117,6 @@ def main():
         if d.exists() and any(d.iterdir()):
             die(f"{d} is not empty; trials are built once")
         d.mkdir(parents=True, exist_ok=True)
-    files = {(part, c): f for part, cands in panel_files(args.panel_dir).items()
-             for c, f in cands.items()}
     trials = plan["trials"]
     by_id = {t["id"]: t for t in trials if "id" in t}
     rng = secrets.SystemRandom()

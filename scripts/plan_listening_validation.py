@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Stage 0b: choose the listening-validation trials (`docs/listening-validation-plan.md`).
 
-    python scripts/plan_listening_validation.py \\
-        --panel-dir ~/ndsp-presets/runs/kill/pr12 --panel-dir ~/ndsp-presets/runs/kill/ac20 \\
+    python scripts/plan_listening_validation.py --panel-dir ~/ndsp-presets/runs/kill/pr12 \\
         --cache ~/ndsp-presets/runs/listening-validation-2/pool.json \\
         --out ~/ndsp-presets/runs/listening-validation-2/draw/trials.json
 
@@ -10,8 +9,8 @@ For every development part with an unambiguous recorded lag (`docs/validation-la
 and a 4-s window where its DI plays in at least 90% of the frames, every candidate of
 every panel (named `<amp>:<candidate>`), its distance to the part's amp track over exactly
 that window: the judge (`analysis/aligned.py`, both band sets, at the recorded lag), ALM
-and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs
-above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
+and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs (never with an
+amp's shipped template, whose time effects are on) above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
 most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
 3 hidden repeats. The seed is drawn from the system's randomness and kept with the
 output, which names the pairs and every distance's prediction: both stay private until
@@ -106,16 +105,51 @@ def score_part(job):
 
 
 def panel_files(panel_dirs):
-    """{part: {"<amp>:<candidate>": render path}} over every panel; a part must be in
-    every panel."""
-    files = {}
+    """{part: {"<amp>:<candidate>": render path}} over every panel, and {panel: its
+    index's sha256}. Each panel is a different amp, and holds the same parts."""
+    import hashlib
+
+    files, hashes, amps, parts = {}, {}, [], []
     for panel in panel_dirs:
-        index = json.loads((panel.expanduser() / "index.json").read_text())
+        raw = (panel.expanduser() / "index.json").read_bytes()
+        index = json.loads(raw)
+        hashes[str(panel)] = hashlib.sha256(raw).hexdigest()
+        amps.append(index["amp"])
+        mine = set()
         for row in index["rows"]:
             if "file" in row:
+                mine.add(row["part"])
                 files.setdefault(row["part"], {})[f"{index['amp']}:{row['candidate']}"] = \
                     pathlib.Path(row["file"])
-    return files
+        parts.append(mine)
+    if len(set(amps)) != len(amps):
+        die(f"two panels of one amp: {amps}")
+    if any(p != parts[0] for p in parts):
+        die("the panels do not hold the same parts")
+    return files, hashes
+
+
+def file_sha256(path) -> str:
+    import hashlib
+
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def shipped_template(candidate: str) -> bool:
+    """An amp's template as shipped, time effects on: an easy pair against a dry track."""
+    return candidate.split(":", 1)[-1] == "template"
+
+
+def pool_jobs(files, meta, crops, lag_of=None):
+    """score_part's jobs, one per part with an unambiguous recorded lag, and the parts
+    left out for want of one."""
+    if lag_of is None:
+        from benchmark_recordings import lag_samples as lag_of
+    recorded = {p: lag_of(p) for p in files}
+    no_lag = sorted(p for p, lag in recorded.items() if lag is None)
+    jobs = [(p, files[p], meta[p]["lag"], recorded[p], crops)
+            for p in sorted(files) if p not in no_lag]
+    return jobs, no_lag
 
 
 def draw(pool, meta, seed):
@@ -126,7 +160,7 @@ def draw(pool, meta, seed):
     for part, p in sorted(pool.items()):
         ok = {c: v for c, v in p["candidates"].items()
               if all(v.get(d) is not None and v[d] > 0 for d in DISTANCES)}
-        for c1, c2 in itertools.combinations(sorted(ok), 2):
+        for c1, c2 in itertools.combinations(sorted(c for c in ok if not shipped_template(c)), 2):
             lr = {d: math.log(ok[c1][d] / ok[c2][d]) for d in DISTANCES}
             pairs.append({"part": part, "band": meta[part]["band"], "first": c1, "second": c2,
                           "log_ratio": lr, "disagree": (lr["judge"] > 0) != (lr["v3c"] > 0)})
@@ -187,7 +221,7 @@ def main():
     from analysis import require
 
     require("planning the listening validation")
-    from benchmark_recordings import CATALOG, lag_samples
+    from benchmark_recordings import CATALOG, LAGS
 
     crops = args.crops_dir.expanduser()
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
@@ -199,24 +233,25 @@ def main():
             meta[slug] = {"band": s.get("group") or f"{s['source']}/{s['song']}",
                           "lag": int(round((p.get("lag_ms") or 0) * SR / 1000)),
                           "split": p.get("split") or s.get("split")}
-    files = panel_files(args.panel_dir)
+    files, index_hashes = panel_files(args.panel_dir)
     if any(meta[p]["split"] != "development" for p in files):
         die("the panel holds a part that is not development material")
-    recorded = {p: lag_samples(p) for p in files}
-    no_lag = sorted(p for p, lag in recorded.items() if lag is None)
+    jobs, no_lag = pool_jobs(files, meta, crops)
+    provenance = {"panels": index_hashes, "lags_sha256": file_sha256(LAGS)}
     cache = args.cache.expanduser()
     if cache.exists():
-        pool = json.loads(cache.read_text())["pool"]
+        cached = json.loads(cache.read_text())
+        if {k: cached.get(k) for k in provenance} != provenance:
+            die(f"{cache} was scored from other panels or lags; use a new cache")
+        pool = cached["pool"]
     else:
         from concurrent.futures import ProcessPoolExecutor
 
         with ProcessPoolExecutor(args.workers) as ex:
-            scored = dict(ex.map(score_part, [(p, files[p], meta[p]["lag"], recorded[p], crops)
-                                              for p in sorted(files) if p not in no_lag]))
+            scored = dict(ex.map(score_part, jobs))
         pool = {p: s for p, s in scored.items() if s is not None}
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(json.dumps({"panels": [str(p) for p in args.panel_dir],
-                                     "pool": pool}) + "\n")
+        cache.write_text(json.dumps({**provenance, "pool": pool}) + "\n")
     import secrets
 
     out_path = args.out.expanduser()
@@ -231,8 +266,12 @@ def main():
             trial["predictions"] = {
                 c: p["candidates"].get(c) for c in (trial["first"], trial["second"])
                 if c != "reference"}
+            # The audio the judge scored, which the builder checks it is given.
+            trial["files"] = {c: {"path": str(files[trial["part"]][c]),
+                                  "sha256": file_sha256(files[trial["part"]][c])}
+                              for c in (trial["first"], trial["second"]) if c != "reference"}
     used = [p for p in pool if p not in BLEED_HEAVY]
-    out.update(seed=seed, panels=[str(p) for p in args.panel_dir], parts=len(used),
+    out.update(seed=seed, **provenance, parts=len(used),
                bands=len({meta[p]["band"] for p in used}), excluded_no_clear_lag=no_lag)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(out, indent=1) + "\n"
@@ -243,7 +282,9 @@ def main():
     # Counts only: the pairs themselves stay private.
     print(f"{len(used)} parts, {out['clear_pairs']} clear pairs; {len(tests)} test pairs over "
           f"{len({t['band'] for t in tests})} bands, {sum(t['disagree'] for t in tests)} where "
-          f"the judge and v3c disagree; sha256 {hashlib.sha256(text.encode()).hexdigest()}")
+          f"the judge and v3c disagree; the clear cut |log ratio| > "
+          f"{out['median_abs_log_ratio']:.3f}; sha256 "
+          f"{hashlib.sha256(text.encode()).hexdigest()}")
 
 
 if __name__ == "__main__":

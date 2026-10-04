@@ -207,17 +207,26 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
             t.update(window_s=1.0, lag=480)
             for side in ("first", "second"):            # candidates from two panels
                 if t[side] != "reference":
-                    t[side] = f"{'pr12' if t[side].endswith('a') else 'ac20'}:{t[side]}"
-    trials = tmp_path / "trials.json"
-    trials.write_text(json.dumps(plan))
-    panels = {amp: tmp_path / amp for amp in ("pr12", "ac20")}
+                    t[side] = f"{'pr12' if t[side].endswith('a') else 'sw50r'}:{t[side]}"
+    panels = {amp: tmp_path / amp for amp in ("pr12", "sw50r")}
+    parts = sorted({t["part"] for t in plan["trials"] if t["kind"] != "repeat"})
     for amp, panel in panels.items():
         panel.mkdir()
-        rows = [{"part": t["part"], "candidate": c.split(":", 1)[1],
-                 "file": str(panel / f"{t['part']}-{c.split(':', 1)[1]}.wav")}
-                for t in plan["trials"] if t["kind"] != "repeat"
-                for c in (t["first"], t["second"]) if c.startswith(f"{amp}:")]
+        names = {c.split(":", 1)[1] for t in plan["trials"] if t["kind"] != "repeat"
+                 for c in (t["first"], t["second"]) if c.startswith(f"{amp}:")}
+        rows = [{"part": part, "candidate": c, "file": str(panel / f"{part}-{c}.wav")}
+                for part in parts for c in sorted(names)]
+        for row in rows:
+            pathlib.Path(row["file"]).write_bytes(row["file"].encode())
         (panel / "index.json").write_text(json.dumps({"amp": amp, "rows": rows}))
+    files, plan["panels"] = P.panel_files(list(panels.values()))
+    for t in plan["trials"]:
+        if t["kind"] != "repeat":
+            t["files"] = {c: {"path": str(files[t["part"]][c]),
+                              "sha256": P.file_sha256(files[t["part"]][c])}
+                          for c in (t["first"], t["second"]) if c != "reference"}
+    trials = tmp_path / "trials.json"
+    trials.write_text(json.dumps(plan))
     calls = []
 
     def fake_run(cmd, capture_output, text):
@@ -238,7 +247,7 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     listener, private = tmp_path / "listen", tmp_path / "private"
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
-                                      "--panel-dir", str(panels["ac20"]),
+                                      "--panel-dir", str(panels["sw50r"]),
                                       "--crops-dir", str(tmp_path / "crops"),
                                       "--out-dir", str(listener), "--private-dir", str(private)])
     B.main()
@@ -267,8 +276,18 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     assert judge_a == 12
     with pytest.raises(SystemExit):
         B.main()                         # built once: the folders are no longer empty
+    pathlib.Path(files["p0"]["pr12:c0a"]).write_bytes(b"re-rendered")
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
+                                      "--panel-dir", str(panels["sw50r"]),
+                                      "--out-dir", str(tmp_path / "w"),
+                                      "--private-dir", str(tmp_path / "v")])
+    with pytest.raises(SystemExit):
+        B.main()                         # an option that is not the audio the judge scored
+    assert not (tmp_path / "w").exists(), "refused before anything was written"
+    monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
+                                      "--panel-dir", str(panels["pr12"]),
+                                      "--panel-dir", str(panels["sw50r"]),
                                       "--out-dir", str(tmp_path / "x"),
                                       "--private-dir", str(tmp_path / "x" / "private")])
     with pytest.raises(SystemExit):
@@ -276,6 +295,7 @@ def test_the_build_keeps_keys_private_and_starts_each_render_on_the_window(tmp_p
     monkeypatch.setattr(B, "declared_trials_sha256", lambda: "0" * 64)
     monkeypatch.setattr(sys, "argv", ["build", "--trials", str(trials),
                                       "--panel-dir", str(panels["pr12"]),
+                                      "--panel-dir", str(panels["sw50r"]),
                                       "--out-dir", str(tmp_path / "y"),
                                       "--private-dir", str(tmp_path / "z")])
     with pytest.raises(SystemExit):
@@ -288,10 +308,14 @@ def test_the_draw_refuses_to_overwrite_a_trial_list(tmp_path, monkeypatch):
     cache = tmp_path / "pool.json"
     import json
 
-    cache.write_text(json.dumps({"pool": {}}))
     panel = tmp_path / "panel"
     panel.mkdir()
-    (panel / "index.json").write_text(json.dumps({"rows": []}))
+    (panel / "index.json").write_text(json.dumps({"amp": "pr12", "rows": []}))
+    import benchmark_recordings
+
+    cache.write_text(json.dumps({"panels": P.panel_files([panel])[1],
+                                 "lags_sha256": P.file_sha256(benchmark_recordings.LAGS),
+                                 "pool": {}}))
     import analysis
 
     monkeypatch.setattr(analysis, "require", lambda *_: None)
@@ -306,3 +330,46 @@ def test_the_draw_refuses_to_overwrite_a_trial_list(tmp_path, monkeypatch):
 def test_the_plan_declares_exactly_one_trial_list_hash():
     sha = B.declared_trials_sha256()
     assert len(sha) == 64 and S.declared_trials_sha256() == sha
+
+
+def _panel(tmp_path, amp, parts, names):
+    import json
+
+    panel = tmp_path / amp
+    panel.mkdir()
+    rows = [{"part": p, "candidate": c, "file": str(panel / f"{p}-{c}.wav")}
+            for p in parts for c in names]
+    (panel / "index.json").write_text(json.dumps({"amp": amp, "rows": rows}))
+    return panel
+
+
+def test_panels_merge_by_amp_and_must_hold_the_same_parts(tmp_path):
+    a = _panel(tmp_path, "pr12", ["p1", "p2"], ["template", "x"])
+    b = _panel(tmp_path, "sw50r", ["p1", "p2"], ["x"])
+    files, hashes = P.panel_files([a, b])
+    assert sorted(files["p1"]) == ["pr12:template", "pr12:x", "sw50r:x"]
+    assert set(hashes) == {str(a), str(b)}
+    with pytest.raises(SystemExit):
+        P.panel_files([a, a])                                  # one amp twice
+    c = _panel(tmp_path, "ac20", ["p1"], ["x"])
+    with pytest.raises(SystemExit):
+        P.panel_files([a, c])                                  # different parts
+
+
+def test_parts_without_a_clear_recorded_lag_are_left_out_and_the_lag_is_passed(tmp_path):
+    files = {"p1": {"pr12:x": "f1"}, "p2": {"pr12:x": "f2"}}
+    meta = {"p1": {"lag": 480}, "p2": {"lag": 0}}
+    jobs, no_lag = P.pool_jobs(files, meta, tmp_path, lag_of={"p1": 1000, "p2": None}.get)
+    assert no_lag == ["p2"]
+    assert jobs == [("p1", {"pr12:x": "f1"}, 480, 1000, tmp_path)]
+
+
+def test_the_shipped_template_is_never_in_a_test_pair():
+    pool = _pool()
+    for p in pool.values():
+        p["candidates"]["pr12:template"] = {d: 0.01 for d in P.DISTANCES}   # always "clear"
+    for seed in range(5):
+        tests = [t for t in P.draw(pool, {k: {"band": f"b{i % 9}"} for i, k in
+                                          enumerate(pool)}, seed)["trials"]
+                 if t["kind"] == "test"]
+        assert not any(P.shipped_template(t[s]) for t in tests for s in ("first", "second"))
