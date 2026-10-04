@@ -373,6 +373,9 @@ python scripts/match_preset.py \
 Without a DI it refuses and says to keep the template: on 43 recordings per amp,
 no search or calculation without a DI was shown to end closer to the recording
 than the starting preset as it is ([the measurements](docs/tone-matching-plan.md)).
+Those figures used a score since retired; [a re-check under the validated
+measure](docs/no-di-rule-under-the-judge-results.md) was void, so they are not
+confirmed under it, though every no-DI answer there leaned further from the recording.
 
 It writes `match-1.json` — a spec `apply_spec.py` turns into a preset — plus a
 self-contained `report.html` and compact `summary.json`. **Read the caveats before

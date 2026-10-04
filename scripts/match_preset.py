@@ -74,7 +74,11 @@ NO_DI_REFUSAL = (
     "search no closer (further on PR12 and AC20), and a search through real guitar "
     "clips ended level with it "
     "(docs/tone-matching-plan.md, \"The real-guitar probe, from neutral settings and "
-    "from the shipped presets\"). So the template is the answer: use it as it is.\n"
+    "from the shipped presets\"). Those figures used a score since retired; a re-check "
+    "under the validated measure was void, so they are not confirmed under it, though "
+    "every no-DI answer there leaned further from the recording than its start "
+    "(docs/no-di-rule-under-the-judge-results.md). So the template is the answer: use "
+    "it as it is.\n"
     "  Give --probe-di with a DI of this performance to match it, or pass "
     "--search-without-di to search through the noise probe anyway (measured worse "
     "than not searching).")
