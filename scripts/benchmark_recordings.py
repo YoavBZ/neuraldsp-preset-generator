@@ -139,8 +139,11 @@ def _sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
-def crops_for(catalog_path, data_root, crops_dir, source, song, part):
+def crops_for(catalog_path, data_root, crops_dir, source, song, part, rule="loudness"):
     """The part's crop record, building it once and verifying it after.
+
+    `rule` is the crop rule (`build_validation_crops`): a cached record cut by another
+    rule is refused, so a folder never mixes rules.
 
     A cached record must name this part, the catalog must still list its
     session as development, every source file the crop was cut from must have
@@ -158,8 +161,11 @@ def crops_for(catalog_path, data_root, crops_dir, source, song, part):
     out_dir = crops_dir.expanduser() / slug
     record_path = out_dir / "record.json"
     if not record_path.exists():
-        build(catalog_path, data_root, source, song, part, out_dir)
+        build(catalog_path, data_root, source, song, part, out_dir, rule=rule)
     record = json.loads(record_path.read_text(encoding="utf-8"))
+    if record.get("excerpt_rule", "loudness") != rule:
+        die(f"{record_path} was cut by crop rule {record.get('excerpt_rule', 'loudness')!r}, "
+            f"not {rule!r}; use that rule's crops folder")
     catalog = json.loads(pathlib.Path(catalog_path).read_text(encoding="utf-8"))
     sessions = [item for item in catalog["sessions"]
                 if item["source"] == source and item["song"] == song]

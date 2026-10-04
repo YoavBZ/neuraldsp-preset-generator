@@ -14,8 +14,13 @@ second-set session declares its mix (`mix_tracks`) and is mixed from exactly
 those; when it lists `vocal_tracks`, the mix and the backing are also cut
 without them (`mix_instrumental`, `backing_instrumental`).
 
-The excerpt is the earliest maximum-integrated-loudness 10-second window of
-the mono reference on a 0.5-second grid. Every output uses that same span.
+The excerpt is a 10-second window on a 0.5-second grid; every output uses that same
+span. Rule `di-activity` (crop rule 2, docs/validation-datasets.md) takes the window
+where the part's DI plays in the most frames (2048-sample frames, hop 1024, within
+40 dB of the DI's loudest), breaking ties within 0.02 by the reference's ungated
+mean square, then by the earliest. Rule `loudness` (the first rule) takes the earliest
+maximum-integrated-loudness window of the mono reference; integrated loudness is
+gated, so it often picked a window the part barely plays in.
 No normalization, limiter, or gain change is applied. Float32 WAV preserves
 out-of-range raw mix samples without integer clipping. The output is private.
 Held-out parts require --declaration pointing to an unchanged, committed
@@ -165,15 +170,46 @@ def _window(reference, rate: int) -> tuple[int, int, float]:
     return best
 
 
+DI_ACTIVITY_TIE = 0.02
+
+
+def _window_by_di(di, reference, rate: int) -> tuple[int, int, float, float]:
+    """(start, end, reference LUFS, DI activity) of crop rule 2's window."""
+    import numpy as np
+
+    from analysis import io
+
+    frames, step = 10 * rate, rate // 2
+    if len(di) < frames:
+        raise ValueError("the part's DI is shorter than the required 10-second excerpt")
+    db = io.frame_rms_db(di, 2048, 1024)
+    playing = db >= db.max() - 40.0
+    starts = list(range(0, len(di) - frames + 1, step))
+    share = {s: float(np.mean(playing[s // 1024:(s + frames - 2048) // 1024 + 1]))
+             for s in starts}
+    top = max(share.values())
+    if top == 0 or db.max() < -200.0:
+        raise ValueError("the part's DI never plays")
+    tied = [s for s in starts if share[s] >= top - DI_ACTIVITY_TIE]
+    start = max(tied, key=lambda s: (float(np.mean(np.square(reference[s:s + frames],
+                                                             dtype=np.float64))), -s))
+    lufs = io.loudness_lufs(io.from_samples(reference[start:start + frames], rate))
+    if lufs is None:
+        raise ValueError("reference has no measurable 10-second excerpt")
+    return start, start + frames, lufs, share[start]
+
+
 def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
           song: str, part_name: str, out_dir: pathlib.Path,
           declaration_path: pathlib.Path | None = None,
-          *, repo_root: pathlib.Path = ROOT) -> dict:
+          *, repo_root: pathlib.Path = ROOT, rule: str = "loudness") -> dict:
     """Verify a trusted catalog and atomically publish private WAV crops and hashes.
 
     The CLI accepts only the unchanged committed catalog. A different catalog
     argument here permits synthetic unit fixtures, not held-out authorization.
     """
+    if rule not in ("loudness", "di-activity"):
+        raise ValueError(f"unknown excerpt rule {rule!r}")
     import numpy as np
     import soundfile as sf
     from analysis import io
@@ -228,7 +264,11 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     di = load(part["di"])
     length = len(di)
     reference = _fit(load(part["reference"]), length)
-    start, end, lufs = _window(reference, io.SAMPLE_RATE)
+    if rule == "di-activity":
+        start, end, lufs, activity = _window_by_di(di, reference, io.SAMPLE_RATE)
+    else:
+        start, end, lufs = _window(reference, io.SAMPLE_RATE)
+        activity = None
     # A session that declares its mix tracks (the second set) is mixed from exactly
     # those, one amp track per guitar; the first set's sessions sum every stem but
     # the guitar DIs, as validation-datasets.md declared for them.
@@ -264,7 +304,8 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
 
     record = {
-        "schema": "validation-crops-1",
+        "schema": "validation-crops-2" if rule == "di-activity" else "validation-crops-1",
+        "excerpt_rule": rule, "di_activity": activity,
         "catalog": {"path": str(catalog_path), "sha256": _sha256(catalog_path)},
         "source": source, "song": song, "part": part_name, "split": session["split"],
         "sample_rate": io.SAMPLE_RATE, "channels": 1,
@@ -309,11 +350,14 @@ def main() -> None:
     parser.add_argument("--declaration", type=pathlib.Path,
                         help="unchanged committed docs/*.md declaring this held-out test and part")
     parser.add_argument("--out-dir", required=True, type=pathlib.Path)
+    parser.add_argument("--rule", choices=("di-activity", "loudness"), default="di-activity",
+                        help="crop rule 2 (where the DI plays most; the default) or the "
+                             "first rule (loudest by gated loudness)")
     args = parser.parse_args()
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     data_root = args.data_root or pathlib.Path(catalog["root"]).expanduser()
     record = build(CATALOG, data_root, args.source, args.song, args.part, args.out_dir,
-                   args.declaration)
+                   args.declaration, rule=args.rule)
     print(f"wrote private 10-second WAV crops and hashes to {args.out_dir}")
     print(f"reference excerpt: {record['excerpt_start_s']:.1f} s, "
           f"{record['reference_lufs']:.2f} LUFS; no gain or time shift applied")

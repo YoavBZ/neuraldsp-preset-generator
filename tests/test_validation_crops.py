@@ -559,3 +559,35 @@ def test_a_declared_instrumental_manifest_reaches_the_audition_as_the_vocal_free
     binding = evidence["validation_crop_record"]
     assert (binding["reference_output"], binding["backing_output"]) == (
         "mix_instrumental", "backing_instrumental")
+
+
+def test_crop_rule_two_takes_the_window_the_part_plays_in():
+    """The first rule ranked by gated loudness, so a short loud burst in a silent stretch
+    won. Rule 2 takes where the DI plays most, ties broken by the reference's level."""
+    np = pytest.importorskip("numpy", reason="needs the analysis extra")
+    import scripts.build_validation_crops as B
+
+    rate = 48000
+    rng = np.random.default_rng(0)
+    di = np.zeros(40 * rate)
+    di[2 * rate: 2 * rate + 14400] = rng.standard_normal(14400)          # a lone burst
+    di[20 * rate: 38 * rate] = 0.1 * rng.standard_normal(18 * rate)        # the playing
+    reference = di.copy()
+    reference[2 * rate: 2 * rate + 14400] *= 10.0      # loud enough to win by loudness
+    start, end, _, activity = B._window_by_di(di, reference, rate)
+    assert 20 * rate <= start and end <= 38 * rate and activity == 1.0
+    reference[30 * rate: 38 * rate] *= 3.0             # among tied windows, the loudest
+    start, _, _, _ = B._window_by_di(di, reference, rate)
+    assert start == 28 * rate
+
+
+def test_crop_rule_two_end_to_end_records_its_rule_and_activity(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path)
+    out = tmp_path / "private-crops-2"
+    record = build(catalog, data_root, "test", "song", "one", out, rule="di-activity")
+    assert record["schema"] == "validation-crops-2"
+    assert record["excerpt_rule"] == "di-activity" and record["di_activity"] == 1.0
+    assert io.load(out / "di.wav").frames == 10 * RATE
+    with pytest.raises(ValueError, match="unknown excerpt rule"):
+        build(catalog, data_root, "test", "song", "one", tmp_path / "x", rule="median")
+    assert not (tmp_path / "x").exists()
