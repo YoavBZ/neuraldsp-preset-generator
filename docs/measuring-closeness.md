@@ -104,10 +104,11 @@ after:
   every candidate. `estimate_lag` pools several unlike renders: the peak of their
   summed 80 Hz–2 kHz cross-correlation magnitudes, within ±15 ms of the catalogued
   lag less the plugin latency; a higher peak just outside that window is refused.
-  - Catalogued lags are quantised to 10 ms and off by 2.5 ms or more on 9 of 43
-    parts, by 42 ms on Prodigal 4. There the catalogued hint is refused, as it
-    should be, and the lag is found without it (the lowest distance of the lags
-    tried).
+  - Catalogued lags are quantised to 10 ms. One measured lag per development part,
+    with its evidence, is in `docs/validation-lags.json` (`docs/validation-datasets.md`,
+    "Lags"): the catalogue is off by 2.5 ms or more on 6 of the 38 unambiguous parts,
+    and five parts are ambiguous, among them Prodigal 4, whose DI makes a comb of
+    near-equal peaks (an earlier reading of "42 ms off" there was one of its aliases).
     `estimate_lag` only refuses; a caller widens the window itself.
   - Pooled over nine renders, the estimate agrees with another estimate of the
     same family (a full-band correlation against one same-take render) to 0.3 ms
@@ -283,8 +284,8 @@ other players' DIs.
   clear differences, with hidden references and repeats; can't-tell answers never
   counted as half agreement. It cannot separate the band sets, which differ almost
   only on near-ties.
-- Data: one recorded lag per recording in the catalogue (Prodigal 4 first), crops
-  re-cut where the DI plays, and bleed flags.
+- Data: crops re-cut where the DI plays, and bleed flags (one measured lag per part
+  is now in `docs/validation-lags.json`).
 - Listening checks the review asked for: whether hiss matters to this listener
   (a render against itself with -40 dB of pink noise) and whether drive with a
   matched spectrum is heard as ALM or as the spectral measures weight it.

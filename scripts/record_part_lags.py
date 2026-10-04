@@ -5,19 +5,33 @@
         --json docs/validation-lags.json
 
 The catalogue's `lag_ms` (`docs/validation-datasets.json`) comes from 10-ms envelopes,
-so it is quantised to 10 ms and off by 2.5 ms or more on about one part in five. Here
-each part's lag is `analysis.aligned.estimate_lag` pooled over every render of the part
-in the panel, within ±15 ms of the catalogued lag less the plugin's latency (±50 ms
-where that is refused), then expressed DI-to-amp-track by adding the latency back. Its
-stability is measured too: the same estimate pooled over five random sets of nine of
-the part's renders; a spread over 0.5 ms marks the lag ambiguous (the correlation has
-two peaks), and the whole-panel value is still recorded. Held-out parts are never
-opened. `lag_samples(part)` in `benchmark_recordings.py` reads the file.
+so it is quantised to 10 ms. Here, on each part's 10-s validation crop:
+
+1. **Candidates.** The summed, normalised 80 Hz-2 kHz cross-correlation of the amp track
+   with every render of the part in the panel (`analysis.aligned.estimate_lag`'s
+   statistic), within ±15 ms of the catalogued lag less the plugin's latency (±50 ms
+   where that is refused); every peak at least 0.9 of the highest, at least 2 ms from a
+   higher one. A DI with mains buzz or a steady pulse makes a comb of near-equal peaks,
+   so the highest alone can be an alias.
+2. **Choice.** With one candidate, it. With several, the one that lets the judge
+   (`aligned_distance`, all frames scored) put the renders closest to the amp track on
+   average; ambiguous unless it wins on at least two thirds of the renders.
+3. **Cross-check.** An independent estimate from the raw DI: the 1-4 kHz onset
+   envelopes of the DI and the amp track, cross-correlated (`onset_lag_samples`).
+4. **Stability.** The same window pooled over five random sets of nine renders.
+
+A part is **ambiguous** when the judge's choice between candidates is split (under two
+thirds of the renders), the subsets spread over 0.5 ms, or the onset estimate is more
+than 1 ms away; its chosen lag is still recorded, with the evidence.
+
+The lag is expressed DI-to-amp-track by adding the latency back. Held-out parts are
+never opened. `lag_samples(part)` in `benchmark_recordings.py` reads the file.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
 import random
@@ -31,7 +45,9 @@ from _cli import die, guarded
 
 SR = 48000
 LATENCY = 52            # Morgan's latency in samples: a render lags its DI by this
-SUBSETS, SUBSET_SIZE, AMBIGUOUS_MS = 5, 9, 0.5
+NEAR, APART_S = 0.9, 0.002
+SUBSETS, SUBSET_SIZE = 5, 9
+WIN_SHARE, ONSET_TOLERANCE_MS, SPREAD_MS = 2 / 3, 1.0, 0.5
 
 
 def build_parser():
@@ -45,48 +61,137 @@ def build_parser():
     return ap
 
 
-def pooled_lag(ref, renders, hint):
-    """(render lag, search half-width in ms): ±15 ms around the hint, else ±50 ms."""
-    from analysis.aligned import estimate_lag
+def correlation(ref, renders, centre, span):
+    """(lags, the summed normalised |correlation|) over centre ± span samples."""
+    import numpy as np
 
-    for width in (0.015, 0.05):
-        try:
-            return estimate_lag(ref, renders, hint=hint, max_lag_s=width), width * 1000
-        except ValueError:
+    lags = np.arange(centre - span, centre + span + 1)
+    total = np.zeros(len(lags))
+    a = ref - ref.mean()
+    for render in renders:
+        n = min(len(a), len(render))
+        x, y = a[:n], render[:n] - render[:n].mean()
+        norm = np.linalg.norm(x) * np.linalg.norm(y)
+        if not norm:
             continue
-    return None, None
+        size = 1 << int(np.ceil(np.log2(2 * n)))
+        keep = (np.fft.rfftfreq(size, 1 / SR) >= 80) & (np.fft.rfftfreq(size, 1 / SR) <= 2000)
+        c = np.abs(np.fft.irfft(np.fft.rfft(x, size) * keep * np.conj(np.fft.rfft(y, size) * keep),
+                                size))
+        total += c[lags % size] / norm
+    return lags, total
+
+
+def candidates(lags, total, near=NEAR, apart=int(APART_S * SR)):
+    """Peaks at least `near` of the highest, each at least `apart` samples from a higher
+    one, highest first, as (lag, height relative to the highest)."""
+    import numpy as np
+
+    order = np.argsort(-total)
+    top, kept = total[order[0]], []
+    for i in order:
+        if total[i] < near * top:
+            break
+        if all(abs(lags[i] - k) >= apart for k, _ in kept):
+            kept.append((int(lags[i]), float(total[i] / top)))
+    return kept
+
+
+def onset_lag(di, ref, centre, span, hop=4, floor_db=40.0):
+    """Samples the amp track lags the DI, from their 1-4 kHz onset envelopes: each
+    signal's band-passed level in dB (floored 40 dB under its peak), its rises
+    cross-correlated, at a resolution of `hop` samples. Checked on renders, whose lag is
+    the plugin's 52 samples: 52-56."""
+    import numpy as np
+    from scipy import signal
+
+    band = signal.butter(2, [1000, 4000], btype="bandpass", fs=SR, output="sos")
+    smooth = signal.butter(2, 200, fs=SR, output="sos")
+
+    def rises(x):
+        env = np.maximum(signal.sosfilt(smooth, np.abs(signal.sosfilt(band, x))), 0.0)[::hop]
+        level = 20 * np.log10(env + 1e-20)
+        level = np.maximum(level, level.max() - floor_db)
+        d = np.maximum(np.diff(level, prepend=level[0]), 0.0)
+        return d - d.mean()
+
+    a, b = rises(ref), rises(di)
+    n = min(len(a), len(b))
+    size = 1 << int(np.ceil(np.log2(2 * n)))
+    c = np.fft.irfft(np.fft.rfft(a, size) * np.conj(np.fft.rfft(b, size)), size)
+    lags = np.arange((centre - span) // hop, (centre + span) // hop + 1)
+    return int(lags[np.argmax(c[lags % size])] * hop)
 
 
 def measure(job):
     part, files, catalogued, crops = job
+    import numpy as np
     import soundfile as sf
+
+    from analysis.aligned import aligned_distance
 
     def mono(path):
         x, rate = sf.read(str(path), dtype="float64")
-        assert rate == SR
+        if rate != SR:
+            raise ValueError(f"{path} is at {rate} Hz, not {SR}")
         return x.mean(axis=1) if x.ndim == 2 else x
 
-    ref = mono(crops / part / "reference.wav")
+    ref, di = mono(crops / part / "reference.wav"), mono(crops / part / "di.wav")
     names = sorted(files)
-    renders = {n: mono(files[n]) for n in names}
+    renders = [mono(files[n]) for n in names]
     hint = catalogued - LATENCY
-    lag, width = pooled_lag(ref, list(renders.values()), hint)
+    for width_ms in (15, 50):
+        span = int(width_ms * SR / 1000)
+        lags, total = correlation(ref, renders, hint, 2 * span)
+        inside = np.abs(lags - hint) <= span
+        if total[~inside].max() <= total[inside].max():
+            break                                          # its peak is inside the window
+    cands = candidates(lags[inside], total[inside])
+    evidence = []
+    for lag, height in cands:
+        d = [aligned_distance(ref, x, di, lag=lag, render_latency=LATENCY, start_s=1.0,
+                              end_s=10.0, max_pauses=1.0).distance for x in renders]
+        evidence.append({"render_lag": lag, "height": round(height, 4), "distances": d})
+    if len(evidence) > 1:
+        means = [np.mean([v for v in e["distances"] if v is not None]) for e in evidence]
+        chosen = int(np.argmin(means))
+        wins = sum(1 for i in range(len(renders))
+                   if all(e["distances"][i] is not None for e in evidence)
+                   and min(range(len(evidence)), key=lambda j: evidence[j]["distances"][i]) == chosen)
+        for e, m in zip(evidence, means):
+            e["mean_distance"] = round(float(m), 4)
+        win_share = wins / len(renders)
+    else:
+        chosen, win_share = 0, 1.0
+    for e in evidence:
+        del e["distances"]
+    render_lag = evidence[chosen]["render_lag"]
     rng = random.Random(part)                  # the subsets are fixed by the part's name
     subsets = []
     for _ in range(SUBSETS):
-        pick = rng.sample(names, min(SUBSET_SIZE, len(names)))
-        subsets.append(pooled_lag(ref, [renders[n] for n in pick], hint)[0])
-    found = [s for s in subsets if s is not None]
-    spread = (max(found) - min(found)) / SR * 1000 if found else None
-    row = {"lag_samples": None if lag is None else lag + LATENCY,
-           "search_ms": width, "renders": len(names),
+        pick = sorted(rng.sample(names, min(SUBSET_SIZE, len(names))))
+        sl, st = correlation(ref, [renders[names.index(n)] for n in pick], hint, span)
+        near = np.abs(sl - render_lag) <= int(APART_S * SR)
+        subsets.append({"renders": pick, "lag": int(sl[near][np.argmax(st[near])]) + LATENCY})
+    spread = (max(s["lag"] for s in subsets) - min(s["lag"] for s in subsets)) / SR * 1000
+    onset = onset_lag(di, ref, render_lag + LATENCY, span)
+    lag = render_lag + LATENCY
+    row = {"lag_samples": lag, "search_ms": width_ms, "renders": len(names),
            "catalogue_lag_samples": catalogued,
-           "subset_lags": [None if s is None else s + LATENCY for s in subsets],
-           "subset_spread_ms": None if spread is None else round(spread, 3),
-           "ambiguous": spread is None or spread > AMBIGUOUS_MS}
-    print(f"{part}: {row['lag_samples']} (catalogue {catalogued}); spread {row['subset_spread_ms']} ms",
-          flush=True)
+           "candidates": [{**e, "lag_samples": e.pop("render_lag") + LATENCY} for e in evidence],
+           "judge_win_share": round(win_share, 3),
+           "onset_lag_samples": onset,
+           "onset_disagrees": abs(onset - lag) / SR * 1000 > ONSET_TOLERANCE_MS,
+           "subsets": subsets, "subset_spread_ms": round(spread, 3)}
+    row["ambiguous"] = bool((len(evidence) > 1 and win_share < WIN_SHARE)
+                            or spread > SPREAD_MS or row["onset_disagrees"])
+    print(f"{part}: {lag} ({len(evidence)} candidates, judge {win_share:.2f}; onset {onset}; "
+          f"catalogue {catalogued})", flush=True)
     return part, row
+
+
+def _sha(path: pathlib.Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def main():
@@ -111,6 +216,9 @@ def main():
     for row in index["rows"]:
         if "file" in row:
             files.setdefault(row["part"], {})[row["candidate"]] = pathlib.Path(row["file"])
+    unknown = [p for p in files if p not in meta]
+    if unknown:
+        die(f"the panel holds parts the catalogue does not: {unknown}")
     held_out = [p for p in files if meta[p]["split"] != "development"]
     if held_out:
         die(f"the panel holds parts that are not development material: {held_out}")
@@ -119,17 +227,24 @@ def main():
     with ProcessPoolExecutor(args.workers) as ex:
         lags = dict(ex.map(measure, [(p, files[p], meta[p]["lag"], crops)
                                      for p in sorted(files)]))
+    for part, row in lags.items():
+        record = json.loads((crops / part / "record.json").read_text())
+        row["crop"] = {"excerpt_start_frame": record["excerpt_start_frame"],
+                       "excerpt_end_frame": record["excerpt_end_frame"]}
     document = {
-        "schema": "validation-lags-1",
+        "schema": "validation-lags-2",
         "meaning": "lag_samples: samples the part's amp track lags its DI at 48 kHz "
-                   "(recording[t] ~ di[t - lag_samples])",
-        "method": "analysis.aligned.estimate_lag pooled over the part's panel renders, "
-                  "±15 ms around the catalogued lag less 52 samples (±50 ms if refused), "
-                  "plus 52; stability from five random nine-render subsets",
-        "panel": str(args.panel_dir), "latency_samples": LATENCY, "parts": lags}
+                   "(recording[t] ~ di[t - lag_samples]), measured on the part's 10-s "
+                   "validation crop",
+        "method": "scripts/record_part_lags.py: candidates from the pooled correlation "
+                  "with the panel's renders, chosen by the judge when several, checked "
+                  "against the DI's onsets",
+        "panel": str(args.panel_dir), "latency_samples": LATENCY,
+        "catalogue_sha256": _sha(CATALOG), "panel_index_sha256": _sha(panel / "index.json"),
+        "parts": lags}
     args.json.expanduser().write_text(json.dumps(document, indent=1) + "\n")
-    ambiguous = [p for p, r in lags.items() if r["ambiguous"]]
-    print(f"{len(lags)} parts; ambiguous: {ambiguous}")
+    print(f"{len(lags)} parts; ambiguous: {[p for p, r in lags.items() if r['ambiguous']]}; "
+          f"onset disagrees: {[p for p, r in lags.items() if r['onset_disagrees']]}")
 
 
 if __name__ == "__main__":

@@ -78,16 +78,19 @@ otherwise before it runs.
   shifted by `lag_ms`, which is reported, not applied. A session's length is its
   part's DI length; shorter tracks are padded with silence to it and longer ones
   cut to it.
-- **Lags.** `lag_ms` comes from 10-ms envelopes, so it is quantised to 10 ms and,
-  measured against the waveform, off by 2.5 ms or more on 9 of the 43 set-2
-  development parts (by 42 ms on Prodigal ElecGtr4). An analysis that needs a
-  part's lag takes it from `validation-lags.json` (`scripts/record_part_lags.py`,
-  read by `benchmark_recordings.lag_samples`): one lag per set-2 development part,
-  pooled over the SW50R panel's renders, with its stability over five random
-  subsets of nine renders. Three are marked ambiguous (Drag Me Down ElecGtr4,
-  Signs ElecGtr3, Strangest Places), where the correlation has two peaks; their
-  whole-panel value is recorded and a result that depends on them should say so.
-  Analyses declared before this file existed keep the lags they declared.
+- **Lags.** `lag_ms` comes from 10-ms envelopes, so it is quantised to 10 ms. An
+  analysis that needs a part's lag takes it from `validation-lags.json`
+  (`scripts/record_part_lags.py`, read by `benchmark_recordings.lag_samples`): one lag
+  per set-2 development part, measured on its 10-s validation crop. Candidates come
+  from the cross-correlation of the amp track with all the part's SW50R panel renders;
+  where a DI's buzz or pulse makes a comb of near-equal peaks, the judge chooses
+  between them; an onset-based estimate from the raw DI checks the result. Five are
+  ambiguous and `lag_samples` withholds them unless asked: Passing Ships ElecGtr3 and
+  Prodigal ElecGtr4 (combs the judge cannot split, or the onsets disagree), Strangest
+  Places and Signs ElecGtr3 (two close peaks), Nosso Mundo ElecGtr03 (the onsets
+  disagree by 2.6 ms). Of the 38 others, the catalogue is off by 2.5 ms or more on 6,
+  by up to 14 ms (Today's The Day ElecGtr10). Analyses declared before this file
+  existed keep the lags they declared.
 - **The reference** is the part's amp track: for Telefunken the M80 microphone; the
   TF11 is used only by a test that names it. For Cambridge and Guitar-TECHS, the
   one amp track.

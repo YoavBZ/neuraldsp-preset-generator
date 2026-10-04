@@ -1,654 +1,4138 @@
 {
- "schema": "validation-lags-1",
- "meaning": "lag_samples: samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag_samples])",
- "method": "analysis.aligned.estimate_lag pooled over the part's panel renders, \u00b115 ms around the catalogued lag less 52 samples (\u00b150 ms if refused), plus 52; stability from five random nine-render subsets",
+ "schema": "validation-lags-2",
+ "meaning": "lag_samples: samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag_samples]), measured on the part's 10-s validation crop",
+ "method": "scripts/record_part_lags.py: candidates from the pooled correlation with the panel's renders, chosen by the judge when several, checked against the DI's onsets",
  "panel": "/Users/yoavbz/ndsp-presets/runs/kill/sw50r",
  "latency_samples": 52,
+ "catalogue_sha256": "0bb9594417e1d006847f37785f8dac8b3beb3e28cb5cf2ade1bf95c2f0054df1",
+ "panel_index_sha256": "4143710b976dd3d59f7f033a8d36c09ec2efb4bb84b2d373890a84ec703b4686",
  "parts": {
   "cambridge-Drag_Me_Down-ElecGtr3": {
    "lag_samples": 966,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 960,
-   "subset_lags": [
-    966,
-    964,
-    967,
-    966,
-    968
+   "candidates": [
+    {
+     "render_lag": 914,
+     "height": 1.0,
+     "lag_samples": 966
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 964,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 966
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 964
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Doomish Riff",
+      "template+R"
+     ],
+     "lag": 967
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 966
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 968
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 8208000,
+    "excerpt_end_frame": 8688000
+   }
   },
   "cambridge-Drag_Me_Down-ElecGtr4": {
    "lag_samples": 966,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 960,
-   "subset_lags": [
-    967,
-    967,
-    2129,
-    965,
-    2128
+   "candidates": [
+    {
+     "render_lag": 914,
+     "height": 1.0,
+     "mean_distance": 5.1491,
+     "lag_samples": 966
+    },
+    {
+     "render_lag": 606,
+     "height": 0.9002,
+     "mean_distance": 5.2232,
+     "lag_samples": 658
+    }
    ],
-   "subset_spread_ms": 24.25,
-   "ambiguous": true
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 964,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 967
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 967
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 965
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 965
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "template+R"
+     ],
+     "lag": 965
+    }
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 5472000,
+    "excerpt_end_frame": 5952000
+   }
   },
   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
    "lag_samples": 9,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 480,
-   "subset_lags": [
-    10,
-    9,
-    10,
-    11,
-    10
+   "candidates": [
+    {
+     "render_lag": -43,
+     "height": 1.0,
+     "lag_samples": 9
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy",
+      "template+R"
+     ],
+     "lag": 10
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel"
+     ],
+     "lag": 9
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Hair Metal",
+      "template",
+      "template+R"
+     ],
+     "lag": 10
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 11
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 10
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 600000,
+    "excerpt_end_frame": 1080000
+   }
   },
   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
    "lag_samples": 9,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    9,
-    7,
-    9,
-    11,
-    8
+   "candidates": [
+    {
+     "render_lag": -43,
+     "height": 1.0,
+     "lag_samples": 9
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 9
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone"
+     ],
+     "lag": 7
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 9
+    },
+    {
+     "renders": [
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 11
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 8
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7344000,
+    "excerpt_end_frame": 7824000
+   }
   },
   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
    "lag_samples": 124,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    125,
-    125,
-    121,
-    124,
-    123
+   "candidates": [
+    {
+     "render_lag": 72,
+     "height": 1.0,
+     "lag_samples": 124
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 128,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 125
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template+R"
+     ],
+     "lag": 125
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel"
+     ],
+     "lag": 121
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel"
+     ],
+     "lag": 124
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "template"
+     ],
+     "lag": 123
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 936000,
+    "excerpt_end_frame": 1416000
+   }
   },
   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": {
    "lag_samples": 124,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    125,
-    123,
-    123,
-    123,
-    123
+   "candidates": [
+    {
+     "render_lag": 72,
+     "height": 1.0,
+     "mean_distance": 6.1043,
+     "lag_samples": 124
+    },
+    {
+     "render_lag": -274,
+     "height": 0.9627,
+     "mean_distance": 6.2088,
+     "lag_samples": -222
+    },
+    {
+     "render_lag": 418,
+     "height": 0.9575,
+     "mean_distance": 6.2671,
+     "lag_samples": 470
+    },
+    {
+     "render_lag": -620,
+     "height": 0.9458,
+     "mean_distance": 6.449,
+     "lag_samples": -568
+    }
+   ],
+   "judge_win_share": 0.87,
+   "onset_lag_samples": 124,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 125
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 123
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template"
+     ],
+     "lag": 123
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 123
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Broken Radio",
+      "template+R"
+     ],
+     "lag": 123
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 2832000,
+    "excerpt_end_frame": 3312000
+   }
   },
   "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": {
    "lag_samples": 25,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 480,
-   "subset_lags": [
-    25,
-    26,
-    25,
-    25,
-    24
+   "candidates": [
+    {
+     "render_lag": -27,
+     "height": 1.0,
+     "lag_samples": 25
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 152,
+   "onset_disagrees": true,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Hair Metal",
+      "template"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 26
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template+R"
+     ],
+     "lag": 24
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": true,
+   "crop": {
+    "excerpt_start_frame": 1920000,
+    "excerpt_end_frame": 2400000
+   }
   },
   "cambridge-Passing_Ships-ElecGtr2": {
    "lag_samples": 6,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    8,
-    6,
-    7,
-    6,
-    5
+   "candidates": [
+    {
+     "render_lag": -46,
+     "height": 1.0,
+     "lag_samples": 6
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 8,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom"
+     ],
+     "lag": 8
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 6
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 7
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Small Lead"
+     ],
+     "lag": 6
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 5
+    }
    ],
    "subset_spread_ms": 0.062,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 2184000,
+    "excerpt_end_frame": 2664000
+   }
   },
   "cambridge-Passing_Ships-ElecGtr3": {
-   "lag_samples": 477,
-   "search_ms": 15.0,
+   "lag_samples": -14,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    475,
-    473,
-    475,
-    477,
-    478
+   "candidates": [
+    {
+     "render_lag": 425,
+     "height": 1.0,
+     "mean_distance": 4.7272,
+     "lag_samples": 477
+    },
+    {
+     "render_lag": -66,
+     "height": 0.9982,
+     "mean_distance": 4.679,
+     "lag_samples": -14
+    },
+    {
+     "render_lag": -557,
+     "height": 0.9806,
+     "mean_distance": 4.805,
+     "lag_samples": -505
+    }
+   ],
+   "judge_win_share": 0.5,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template"
+     ],
+     "lag": -16
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": -18
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template+R"
+     ],
+     "lag": -16
+    },
+    {
+     "renders": [
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": -14
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": -13
+    }
    ],
    "subset_spread_ms": 0.104,
-   "ambiguous": false
+   "ambiguous": true,
+   "crop": {
+    "excerpt_start_frame": 3648000,
+    "excerpt_end_frame": 4128000
+   }
   },
   "cambridge-Passing_Ships-ElecGtr4": {
    "lag_samples": 18,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    19,
-    17,
-    17,
-    16,
-    17
+   "candidates": [
+    {
+     "render_lag": -34,
+     "height": 1.0,
+     "lag_samples": 18
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template"
+     ],
+     "lag": 17
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 17
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "template+R"
+     ],
+     "lag": 16
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 17
+    }
    ],
    "subset_spread_ms": 0.062,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 11160000,
+    "excerpt_end_frame": 11640000
+   }
   },
   "cambridge-Passing_Ships-ElecGtr6": {
    "lag_samples": 14,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    14,
-    15,
-    14,
-    14,
-    13
+   "candidates": [
+    {
+     "render_lag": -38,
+     "height": 1.0,
+     "lag_samples": 14
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Hair Metal",
+      "template"
+     ],
+     "lag": 14
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template"
+     ],
+     "lag": 15
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "template"
+     ],
+     "lag": 14
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 14
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 13
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9456000,
+    "excerpt_end_frame": 9936000
+   }
   },
   "cambridge-Prodigal-ElecGtr1": {
    "lag_samples": 76,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    75,
-    77,
-    75,
-    76,
-    76
+   "candidates": [
+    {
+     "render_lag": 24,
+     "height": 1.0,
+     "lag_samples": 76
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 36,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone"
+     ],
+     "lag": 75
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template+R"
+     ],
+     "lag": 77
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 75
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Distorted Spy",
+      "template+R"
+     ],
+     "lag": 76
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 76
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 96000,
+    "excerpt_end_frame": 576000
+   }
   },
   "cambridge-Prodigal-ElecGtr2": {
    "lag_samples": 35,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    33,
-    33,
-    37,
-    34,
-    34
+   "candidates": [
+    {
+     "render_lag": -17,
+     "height": 1.0,
+     "mean_distance": 7.5818,
+     "lag_samples": 35
+    },
+    {
+     "render_lag": 595,
+     "height": 0.978,
+     "mean_distance": 7.928,
+     "lag_samples": 647
+    },
+    {
+     "render_lag": -628,
+     "height": 0.9739,
+     "mean_distance": 8.0821,
+     "lag_samples": -576
+    },
+    {
+     "render_lag": -324,
+     "height": 0.9363,
+     "mean_distance": 7.8683,
+     "lag_samples": -272
+    },
+    {
+     "render_lag": 288,
+     "height": 0.9316,
+     "mean_distance": 7.7488,
+     "lag_samples": 340
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 33
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 33
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template+R"
+     ],
+     "lag": 37
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 34
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 34
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 5688000,
+    "excerpt_end_frame": 6168000
+   }
   },
   "cambridge-Prodigal-ElecGtr3": {
    "lag_samples": 6,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    6,
-    7,
-    7,
-    6,
-    6
+   "candidates": [
+    {
+     "render_lag": -46,
+     "height": 1.0,
+     "lag_samples": 6
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 0,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 6
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Hair Metal",
+      "template"
+     ],
+     "lag": 7
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "template"
+     ],
+     "lag": 7
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 6
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 6
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 6144000,
+    "excerpt_end_frame": 6624000
+   }
   },
   "cambridge-Prodigal-ElecGtr4": {
-   "lag_samples": 1054,
-   "search_ms": 50.0,
+   "lag_samples": 83,
+   "search_ms": 50,
    "renders": 46,
    "catalogue_lag_samples": -960,
-   "subset_lags": [
-    1053,
-    1053,
-    1054,
-    1054,
-    1053
+   "candidates": [
+    {
+     "render_lag": 1002,
+     "height": 1.0,
+     "mean_distance": 6.0566,
+     "lag_samples": 1054
+    },
+    {
+     "render_lag": 31,
+     "height": 0.9576,
+     "mean_distance": 5.9993,
+     "lag_samples": 83
+    }
+   ],
+   "judge_win_share": 0.935,
+   "onset_lag_samples": 1028,
+   "onset_disagrees": true,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 82
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 83
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 83
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 83
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel"
+     ],
+     "lag": 82
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": true,
+   "crop": {
+    "excerpt_start_frame": 3840000,
+    "excerpt_end_frame": 4320000
+   }
   },
   "cambridge-Prodigal-ElecGtr5": {
    "lag_samples": 1,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    2,
-    1,
-    0,
-    1,
-    2
+   "candidates": [
+    {
+     "render_lag": -51,
+     "height": 1.0,
+     "lag_samples": 1
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 0,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 2
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template",
+      "template+R"
+     ],
+     "lag": 1
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 0
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 1
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 2
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 6696000,
+    "excerpt_end_frame": 7176000
+   }
   },
   "cambridge-Quicksand-ElecGtr1": {
    "lag_samples": 19,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    20,
-    19,
-    16,
-    19,
-    20
+   "candidates": [
+    {
+     "render_lag": -33,
+     "height": 1.0,
+     "lag_samples": 19
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Jose Deluxe",
+      "template+R"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's"
+     ],
+     "lag": 16
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 20
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 5784000,
+    "excerpt_end_frame": 6264000
+   }
   },
   "cambridge-Quicksand-ElecGtr2": {
    "lag_samples": 19,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    20,
-    19,
-    21,
-    20,
-    17
+   "candidates": [
+    {
+     "render_lag": -33,
+     "height": 1.0,
+     "lag_samples": 19
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 20,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "template+R"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 21
+    },
+    {
+     "renders": [
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Broken Radio",
+      "template"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 17
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 3720000,
+    "excerpt_end_frame": 4200000
+   }
   },
   "cambridge-Signs-ElecGtr2": {
    "lag_samples": 26,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 480,
-   "subset_lags": [
-    31,
-    18,
-    29,
-    29,
-    25
+   "candidates": [
+    {
+     "render_lag": -26,
+     "height": 1.0,
+     "lag_samples": 26
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 31
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Broken Radio"
+     ],
+     "lag": 18
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 25
+    }
    ],
    "subset_spread_ms": 0.271,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 4416000,
+    "excerpt_end_frame": 4896000
+   }
   },
   "cambridge-Signs-ElecGtr3": {
    "lag_samples": 23,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    27,
-    23,
-    25,
-    71,
-    69
+   "candidates": [
+    {
+     "render_lag": -29,
+     "height": 1.0,
+     "lag_samples": 23
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 71
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "template+R"
+     ],
+     "lag": 69
+    }
    ],
    "subset_spread_ms": 1.0,
-   "ambiguous": true
+   "ambiguous": true,
+   "crop": {
+    "excerpt_start_frame": 3576000,
+    "excerpt_end_frame": 4056000
+   }
   },
   "cambridge-Signs-ElecGtr6": {
    "lag_samples": 34,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    33,
-    33,
-    34,
-    33,
-    35
+   "candidates": [
+    {
+     "render_lag": -18,
+     "height": 1.0,
+     "mean_distance": 6.9142,
+     "lag_samples": 34
+    },
+    {
+     "render_lag": -562,
+     "height": 0.9439,
+     "mean_distance": 7.4103,
+     "lag_samples": -510
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template+R"
+     ],
+     "lag": 33
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 33
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Distorted Spy",
+      "template+R"
+     ],
+     "lag": 34
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 33
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 35
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7584000,
+    "excerpt_end_frame": 8064000
+   }
   },
   "cambridge-Today's_The_Day-ElecGtr07": {
    "lag_samples": -77,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 480,
-   "subset_lags": [
-    -79,
-    -77,
-    -78,
-    -75,
-    -76
+   "candidates": [
+    {
+     "render_lag": -129,
+     "height": 1.0,
+     "lag_samples": -77
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": -80,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": -79
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+     ],
+     "lag": -77
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": -78
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": -75
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": -76
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 10776000,
+    "excerpt_end_frame": 11256000
+   }
   },
   "cambridge-Today's_The_Day-ElecGtr10": {
    "lag_samples": 672,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    671,
-    672,
-    671,
-    671,
-    672
+   "candidates": [
+    {
+     "render_lag": 620,
+     "height": 1.0,
+     "lag_samples": 672
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 672,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 671
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 672
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "template+R"
+     ],
+     "lag": 671
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "template+R"
+     ],
+     "lag": 671
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam"
+     ],
+     "lag": 672
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9720000,
+    "excerpt_end_frame": 10200000
+   }
   },
   "telefunken-Blind_Spots-GTR": {
    "lag_samples": 27,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    28,
-    28,
-    27,
-    28,
-    28
+   "candidates": [
+    {
+     "render_lag": -25,
+     "height": 1.0,
+     "lag_samples": 27
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template",
+      "template+R"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 28
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9840000,
+    "excerpt_end_frame": 10320000
+   }
   },
   "telefunken-Bloomlight-GTR": {
    "lag_samples": 19,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    20,
-    19,
-    19,
-    19,
-    20
+   "candidates": [
+    {
+     "render_lag": -33,
+     "height": 1.0,
+     "lag_samples": 19
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template",
+      "template+R"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 20
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 13416000,
+    "excerpt_end_frame": 13896000
+   }
   },
   "telefunken-Farthest_Step-GTR": {
    "lag_samples": 19,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    16,
-    19,
-    17,
-    17,
-    19
+   "candidates": [
+    {
+     "render_lag": -33,
+     "height": 1.0,
+     "lag_samples": 19
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 20,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 16
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 19
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 17
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Big Tail Clean"
+     ],
+     "lag": 17
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 19
+    }
    ],
    "subset_spread_ms": 0.062,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 11856000,
+    "excerpt_end_frame": 12336000
+   }
   },
   "telefunken-First_Offering-GTR_1": {
    "lag_samples": 30,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    29,
-    28,
-    29,
-    30,
-    30
+   "candidates": [
+    {
+     "render_lag": -22,
+     "height": 1.0,
+     "lag_samples": 30
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 32,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template",
+      "template+R"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 30
+    },
+    {
+     "renders": [
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 30
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 6816000,
+    "excerpt_end_frame": 7296000
+   }
   },
   "telefunken-First_Offering-GTR_2": {
    "lag_samples": 22,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    24,
-    23,
-    21,
-    23,
-    21
+   "candidates": [
+    {
+     "render_lag": -30,
+     "height": 1.0,
+     "lag_samples": 22
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 24
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 21
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Doomish Riff",
+      "template"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Jose Deluxe",
+      "template"
+     ],
+     "lag": 21
+    }
    ],
    "subset_spread_ms": 0.062,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7008000,
+    "excerpt_end_frame": 7488000
+   }
   },
   "telefunken-Fragments-GTR": {
    "lag_samples": 19,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    20,
-    21,
-    18,
-    18,
-    17
+   "candidates": [
+    {
+     "render_lag": -33,
+     "height": 1.0,
+     "lag_samples": 19
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 21
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 18
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 18
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 17
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 10392000,
+    "excerpt_end_frame": 10872000
+   }
   },
   "telefunken-Gym_Hours-GTR_1": {
    "lag_samples": 27,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    31,
-    26,
-    30,
-    25,
-    30
+   "candidates": [
+    {
+     "render_lag": -25,
+     "height": 1.0,
+     "lag_samples": 27
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 31
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Jose Deluxe",
+      "template",
+      "template+R"
+     ],
+     "lag": 26
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 30
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 30
+    }
    ],
    "subset_spread_ms": 0.125,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7080000,
+    "excerpt_end_frame": 7560000
+   }
   },
   "telefunken-Gym_Hours-GTR_2": {
    "lag_samples": 24,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    25,
-    25,
-    24,
-    23,
-    25
+   "candidates": [
+    {
+     "render_lag": -28,
+     "height": 1.0,
+     "lag_samples": 24
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils"
+     ],
+     "lag": 24
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 25
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7368000,
+    "excerpt_end_frame": 7848000
+   }
   },
   "telefunken-Hikikomori_-_Love_Does-GTR": {
    "lag_samples": 20,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    22,
-    42,
-    20,
-    20,
-    21
+   "candidates": [
+    {
+     "render_lag": -32,
+     "height": 1.0,
+     "lag_samples": 20
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 16,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 42
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe",
+      "template+R"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template"
+     ],
+     "lag": 20
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 21
+    }
    ],
    "subset_spread_ms": 0.458,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 15768000,
+    "excerpt_end_frame": 16248000
+   }
   },
   "telefunken-Honey-GTR": {
    "lag_samples": 40,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    36,
-    42,
-    37,
-    36,
-    41
+   "candidates": [
+    {
+     "render_lag": -12,
+     "height": 1.0,
+     "lag_samples": 40
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 36,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "template+R"
+     ],
+     "lag": 36
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe",
+      "template+R"
+     ],
+     "lag": 42
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "template",
+      "template+R"
+     ],
+     "lag": 37
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 36
+    },
+    {
+     "renders": [
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe",
+      "template",
+      "template+R"
+     ],
+     "lag": 41
+    }
    ],
    "subset_spread_ms": 0.125,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9600000,
+    "excerpt_end_frame": 10080000
+   }
   },
   "telefunken-Long_Way_Home-GTR": {
    "lag_samples": 27,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    27,
-    27,
-    27,
-    26,
-    26
+   "candidates": [
+    {
+     "render_lag": -25,
+     "height": 1.0,
+     "lag_samples": 27
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 32,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "template"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe",
+      "template"
+     ],
+     "lag": 26
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 26
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 4440000,
+    "excerpt_end_frame": 4920000
+   }
   },
   "telefunken-Lost_Alive-GTR": {
    "lag_samples": 36,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    37,
-    36,
-    35,
-    36,
-    38
+   "candidates": [
+    {
+     "render_lag": -16,
+     "height": 1.0,
+     "lag_samples": 36
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 36,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "template",
+      "template+R"
+     ],
+     "lag": 37
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 36
+    },
+    {
+     "renders": [
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 35
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 36
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": 38
+    }
    ],
    "subset_spread_ms": 0.062,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7080000,
+    "excerpt_end_frame": 7560000
+   }
   },
   "telefunken-Measurements-GTR": {
    "lag_samples": 27,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    27,
-    26,
-    28,
-    26,
-    26
+   "candidates": [
+    {
+     "render_lag": -25,
+     "height": 1.0,
+     "lag_samples": 27
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 26
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 26
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Big Tail Clean"
+     ],
+     "lag": 26
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 8160000,
+    "excerpt_end_frame": 8640000
+   }
   },
   "telefunken-Russian_Cream-GTR_1": {
    "lag_samples": 29,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    25,
-    28,
-    29,
-    27,
-    28
+   "candidates": [
+    {
+     "render_lag": -23,
+     "height": 1.0,
+     "lag_samples": 29
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "template+R"
+     ],
+     "lag": 25
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Jose Deluxe",
+      "template",
+      "template+R"
+     ],
+     "lag": 28
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Doomish Riff"
+     ],
+     "lag": 27
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "template"
+     ],
+     "lag": 28
+    }
    ],
    "subset_spread_ms": 0.083,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 10032000,
+    "excerpt_end_frame": 10512000
+   }
   },
   "telefunken-Russian_Cream-GTR_2": {
    "lag_samples": 22,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    22,
-    24,
-    24,
-    22,
-    23
+   "candidates": [
+    {
+     "render_lag": -30,
+     "height": 1.0,
+     "lag_samples": 22
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 24
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 24
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk"
+     ],
+     "lag": 23
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9912000,
+    "excerpt_end_frame": 10392000
+   }
   },
   "telefunken-Sculptor's_Request-GTR_1": {
    "lag_samples": 29,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    24,
-    29,
-    30,
-    31,
-    27
+   "candidates": [
+    {
+     "render_lag": -23,
+     "height": 1.0,
+     "lag_samples": 29
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 32,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "template"
+     ],
+     "lag": 24
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 29
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 30
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe",
+      "template+R"
+     ],
+     "lag": 31
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 27
+    }
    ],
    "subset_spread_ms": 0.146,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 5688000,
+    "excerpt_end_frame": 6168000
+   }
   },
   "telefunken-Sculptor's_Request-GTR_2": {
    "lag_samples": 23,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    23,
-    23,
-    23,
-    22,
-    21
+   "candidates": [
+    {
+     "render_lag": -29,
+     "height": 1.0,
+     "lag_samples": 23
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 24,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "template",
+      "template+R"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+     ],
+     "lag": 23
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Broken Radio"
+     ],
+     "lag": 21
+    }
    ],
    "subset_spread_ms": 0.042,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 9984000,
+    "excerpt_end_frame": 10464000
+   }
   },
   "telefunken-She's_Gone-GTR": {
    "lag_samples": 22,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    21,
-    22,
-    21,
-    22,
-    21
+   "candidates": [
+    {
+     "render_lag": -30,
+     "height": 1.0,
+     "lag_samples": 22
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 28,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 21
+    },
+    {
+     "renders": [
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Hair Metal",
+      "template+R"
+     ],
+     "lag": 21
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Jose Deluxe"
+     ],
+     "lag": 22
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Blue Hotel"
+     ],
+     "lag": 21
+    }
    ],
    "subset_spread_ms": 0.021,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 12888000,
+    "excerpt_end_frame": 13368000
+   }
   },
   "telefunken-Strangest_Places-GTR": {
    "lag_samples": -37,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    -34,
-    -35,
-    -35,
-    38,
-    36
+   "candidates": [
+    {
+     "render_lag": -89,
+     "height": 1.0,
+     "mean_distance": 4.727,
+     "lag_samples": -37
+    },
+    {
+     "render_lag": 247,
+     "height": 0.9038,
+     "mean_distance": 4.7472,
+     "lag_samples": 299
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 32,
+   "onset_disagrees": true,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": -34
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template"
+     ],
+     "lag": -35
+    },
+    {
+     "renders": [
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": -35
+    },
+    {
+     "renders": [
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 38
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "template+R"
+     ],
+     "lag": 36
+    }
    ],
    "subset_spread_ms": 1.521,
-   "ambiguous": true
+   "ambiguous": true,
+   "crop": {
+    "excerpt_start_frame": 8640000,
+    "excerpt_end_frame": 9120000
+   }
   },
   "telefunken-Until_I_Get_Back-GTR": {
    "lag_samples": 40,
-   "search_ms": 15.0,
+   "search_ms": 15,
    "renders": 46,
    "catalogue_lag_samples": 0,
-   "subset_lags": [
-    43,
-    36,
-    43,
-    37,
-    42
+   "candidates": [
+    {
+     "render_lag": -12,
+     "height": 1.0,
+     "lag_samples": 40
+    }
+   ],
+   "judge_win_share": 1.0,
+   "onset_lag_samples": 40,
+   "onset_disagrees": false,
+   "subsets": [
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes"
+     ],
+     "lag": 43
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "template"
+     ],
+     "lag": 36
+    },
+    {
+     "renders": [
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 43
+    },
+    {
+     "renders": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "template"
+     ],
+     "lag": 37
+    },
+    {
+     "renders": [
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal"
+     ],
+     "lag": 42
+    }
    ],
    "subset_spread_ms": 0.146,
-   "ambiguous": false
+   "ambiguous": false,
+   "crop": {
+    "excerpt_start_frame": 7608000,
+    "excerpt_end_frame": 8088000
+   }
   }
  }
 }

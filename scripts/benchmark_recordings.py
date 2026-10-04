@@ -100,19 +100,21 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def lag_samples(part: str, lags_path: pathlib.Path = LAGS):
+def lag_samples(part: str, allow_ambiguous: bool = False, lags_path=None):
     """Samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag]),
-    as measured once and recorded; None if the part has no recorded lag. Ambiguous
-    lags (two correlation peaks) are returned too; `lag_record` says which."""
+    as measured once and recorded (`docs/validation-lags.json`). None when the part has
+    no recorded lag, or its lag is ambiguous and `allow_ambiguous` is false."""
     record = lag_record(part, lags_path)
-    return None if record is None else record["lag_samples"]
-
-
-def lag_record(part: str, lags_path: pathlib.Path = LAGS):
-    """The part's whole recorded entry (lag, stability, ambiguity), or None."""
-    if not lags_path.exists():
+    if record is None or (record["ambiguous"] and not allow_ambiguous):
         return None
-    return json.loads(lags_path.read_text())["parts"].get(part)
+    return record["lag_samples"]
+
+
+def lag_record(part: str, lags_path=None):
+    """The part's whole recorded entry (lag, candidates, checks), or None. A missing
+    file is an error, not an absent part."""
+    path = LAGS if lags_path is None else lags_path
+    return json.loads(path.read_text())["parts"].get(part)
 
 
 def development_parts(catalog: dict, only=None, sets=None):
