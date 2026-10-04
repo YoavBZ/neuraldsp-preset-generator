@@ -1,7 +1,10 @@
 # "Without a DI, keep the starting preset" under the judge: void
 
 Computed at b383ec3 as declared in `docs/no-di-rule-under-the-judge-plan.md`, by
-`scripts/rescore_no_di.py`, from the renders on disk. The result, with every row, is
+`scripts/rescore_no_di.py`, from the renders on disk. That commit predates this
+branch's rebase onto main. The rebase changed neither the plan nor the script, and
+no recorded lag or ambiguity flag: PR #112's last fix round only added evidence to
+`docs/validation-lags.json`. The result, with every row, is
 `docs/no-di-rule-under-the-judge.json`. A fresh-context reviewer re-derived the
 statistics from the rows and re-computed several rows with `aligned_distance`. It found
 no computation bug.
