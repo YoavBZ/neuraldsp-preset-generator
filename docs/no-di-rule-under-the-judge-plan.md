@@ -27,12 +27,19 @@ library and calculated ones from the `lib-*` runs (the runs PR #107 relied on). 
 library arms' probe is built from the project's own development DIs, so it cannot
 ship: a library arm that beats the start is a research lead, not a product change.
 
-**Controls**, reported, not in the decision family:
+**Controls**, not in the decision families, each with a declared consequence:
 - **Positive**: SW50R's search with the part's own DI (`set2-rehearsal`, `di.wav`). It
-  must beat the start; if it does not, the pipeline is broken and nothing here is read.
-- **Replicate**: SW50R's no-DI search with seed 0 (`set2-rehearsal`, `no_di.wav`).
+  passes if, under both band sets, the median and sum of its band medians are below 0
+  with a raw band sign-flip p below 0.05. If it fails, the pipeline is broken and every
+  verdict here is void.
+- **Replicate**: SW50R's no-DI search with seed 0 (`set2-rehearsal`, `no_di.wav`; its
+  seed is from the run's history, not recorded on disk). If its median of band medians
+  has the other sign from seed 11's under either band set, SW50R's no-DI verdict is
+  fragile.
 - **Null**: Tone King's two start renders (the `lib-tk-default` and `start-tk-default`
-  runs, which differ only by render noise) scored as arm and start.
+  runs, which differ only by render noise, up to 6.7 dB in a band) scored as arm and
+  start. If its raw p is below 0.05 under either band set, Tone King's four verdicts
+  are not read.
 
 ## Measure
 
@@ -40,39 +47,58 @@ ship: a library arm that beats the start is a research lead, not a product chang
 under both band sets (default and union), with the part's recorded lag from
 `docs/validation-lags.json` (ambiguous lags included) less the amp's latency (52
 samples for Morgan, 51 for Tone King). Every render's DI is checked against the crop's
-by hash, and its pack against the amp's. A window the judge refuses for its pauses leaves that part out of every
-comparison (expected: six parts, leaving about 37 in 12 bands); an arm render with no
-measurable loudness against a measurable start counts as a loss.
+by hash, its pack and amp model against the amp's, and both crops against their
+records.
+
+The judge normalises loudness, so this compares tone, not level; each render's level
+offset and loudness over the window are kept. A part the judge refuses on any start
+render, under either band set, is left out of every comparison and reading: from the
+start renders alone, six (five for their pauses, Hikikomori for a DI that plays in too
+few frames), leaving 37 parts in 12 bands. An arm **loses** on a part, a log ratio of
++1.0 (2.7 times the start's distance), when its render has no measurable loudness, is
+more than 20 LU under its start over the window (the product's own guitar check fails
+an answer 20 dB under the template), or is refused where its start is not.
 
 ## Statistic
 
 Per part, log(d_arm / d_start). Per comparison and band set: the band medians over the
 bands, their median and their sum, the exact two-sided band sign-flip p (unrounded),
-the parts closer, the part median, and the same split by source (Cambridge,
-Telefunken). With 12 bands the smallest p is 2/4096.
+the band medians themselves, the parts closer, the losses, the part median, and the
+parts closer and part median by source (Cambridge, Telefunken). With 12 bands the
+smallest p is 2/4096.
 
 ## Decision
 
-Holm over the 16 comparisons, separately in each band set. Under one band set, an arm
-is **better** than the start if the median and the sum of its band medians are both
-below 0 and its Holm-adjusted p is below 0.05; **worse** if both are above 0 and the
-same p is below 0.05; **not shown** otherwise. Its verdict is better or worse only if
-both band sets agree; otherwise not shown.
+Holm within two families of eight, separately in each band set: the **product** arms
+(the no-DI search and the answer calculated from the noise probe, which could ship)
+and the **research** arms (the library search and the answer calculated from the
+library probe, which cannot). Under one band set, an arm is **better** than the start
+if the median and the sum of its band medians are both below 0 and its Holm-adjusted p
+is below 0.05; **worse** if both are above 0 and the same p is below 0.05; **not shown**
+otherwise. Its verdict is better or worse only if both band sets agree; otherwise not
+shown.
 
 The verdict must also hold in three sensitivity readings, or it is reported as fragile:
 the four parts with ambiguous lags dropped; each render scored at its own best lag (the
 peak of its own 80 Hz–2 kHz correlation with the amp track, as `estimate_lag` computes
-it, within ±2 ms of the recorded lag); and the parts with over 20% of their scored
-frames pauses (the judge's own count, at 2048-point frames) dropped.
+it, within ±2 ms of the recorded lag; how many land over 0.5 ms from the recorded lag
+is reported); and the parts with over 20% of their scored frames pauses (the judge's
+own count, at 2048-point frames) dropped. Counted from the start renders alone, these
+keep 33 parts in 12 bands, 37 in 12, and 34 in 10. A reading only counts against a
+verdict if it could reach significance at all (8 × 2/2^bands below 0.05, 9 bands or
+more); all three can. Every reading's full statistics are kept.
 
 What follows:
 
-- **No arm better** (all not shown or worse): the rule stands. Where an arm is worse
-  under the judge, the product's wording "further from the recording" stays for it;
-  where it is only not shown, that wording becomes "no closer" (`scripts/match_preset.py`'s
+- For the product's wording a fragile verdict counts as not shown, and the research
+  arms never change it.
+- **No product arm better** (all not shown or worse): the rule stands. Where a product
+  arm is worse under the judge, the product's wording "further from the recording"
+  stays for it; where it is only not shown, that wording becomes "no closer" (`scripts/match_preset.py`'s
   refusal message, `skills/match/SKILL.md`, `reference/reading-a-reference.md`, the
   README). The wording is changed in a separate PR, after the listening test.
-- **An arm better**: it is reported to the user with its controls and sensitivities,
-  before anything in the product changes; this analysis changes nothing.
+- **An arm better** (product or research): it is reported to the user with its
+  controls and sensitivities, before anything in the product changes; this analysis
+  changes nothing.
 - Either way the result is provisional until stage 0b validates the judge
   (`docs/listening-validation-plan.md`).
