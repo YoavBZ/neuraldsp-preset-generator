@@ -314,8 +314,8 @@ def excerpt_bounds(audio: Audio, seconds: float) -> tuple[int, int]:
     return selection.start, selection.end
 
 
-#: Above this share of tied-for-best windows, the chosen one is the earliest of
-#: many equals rather than a distinguished pick.
+#: Above this share of tied-for-best windows, the chosen one is the middle of many
+#: equals rather than a distinguished pick.
 _TIE_SHARE_WORTH_REPORTING = 0.5
 
 #: …and only worth reporting when the source is enough longer than the window
@@ -415,7 +415,7 @@ def excerpt_selection(audio: Audio, seconds: float,
     # multitrack songs summed into rough mixes, a 20-s window from the middle of the
     # tie held a guitar part (playing in half its frames or more) for 53 of their 83
     # parts and held one in 27 of the 29 songs; the earliest, 43 and 25. Ranking by
-    # 300 Hz-3 kHz over 40-250 Hz did no better (49 and 23;
+    # 300 Hz-3 kHz over 40-250 Hz did no better (47 and 23;
     # `scripts/measure_excerpt_window_rules.py`).
     start = int(best[tied // 2]) * HOP
     start = min(start, audio.frames - wanted)

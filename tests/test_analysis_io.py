@@ -120,8 +120,8 @@ def test_a_compressed_reference_names_the_conversion(tmp_path):
 # --- how honestly the excerpt was chosen ----------------------------------
 #
 # The ranking underneath `excerpt_selection` is a broadband activity gate, so on
-# a source that never stops it ranks nothing and returns the first window while
-# calling itself most-continuously-active. That is how a real run measured a
+# a source that never stops it ranks nothing; it used to return the first window
+# while calling itself most-continuously-active. That is how a real run measured a
 # bass intro and reported it as the guitar tone, so the tie has to be reported.
 #
 # The harder half is not over-reporting it. The policy says only what is true of
@@ -210,6 +210,18 @@ def test_a_short_source_with_no_window_request_is_just_the_full_source():
     assert io.excerpt_selection(audio, 20.0, start_s=0.0).policy == "full_source", (
         "starting at zero is what a full source already is"
     )
+
+
+def test_with_two_tied_plateaus_the_window_still_sits_in_the_music():
+    """The middle of the tied windows is the median tied start, which with two
+    plateaus can end at the gap between them; it must still be a window of music."""
+    gap = np.zeros(SAMPLE_RATE * 5)
+    audio = io.from_samples(np.concatenate([fx.noise(seconds=30.0), gap,
+                                            fx.noise(seconds=30.0)]), SAMPLE_RATE)
+    sel = io.excerpt_selection(audio, 20.0)
+    start, end = sel.start / SAMPLE_RATE, sel.end / SAMPLE_RATE
+    silence = max(0.0, min(end, 35.0) - max(start, 30.0))
+    assert silence < 0.1, (start, end)
 
 
 def test_a_long_plateau_is_not_mistaken_for_a_failed_ranking():

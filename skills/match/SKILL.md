@@ -54,8 +54,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
 **Then check the window actually holds the part, before spending anything on
 it.** `--excerpt` ranks by broadband activity, which on a dense master ranks
 nothing and returns the middle of the file; on full songs that missed a given
-guitar part about a third of the time. For a full song, ask the user for a time
-where the guitar is clearly heard and start there. A budget spent against the wrong
+guitar part a third of the time or more. For a full song, ask the user for a time
+where the guitar is clearly heard, and pass that same `--excerpt-start SECONDS` to
+`fingerprint.py` and to `match_preset.py`, so the fit runs on the window you checked. A budget spent against the wrong
 twenty seconds buys a careful fit to the wrong instrument, and every score in the
 report will look normal. Re-measure with `--excerpt-start SECONDS` when you see
 any of:
@@ -208,6 +209,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
   --pack morgan --amp sw50r --renderer synthetic \
   --budget 300 --shortlist 3 --out-dir RUN_DIR
 ```
+
+When the user named a time, add the `--excerpt-start SECONDS` you fingerprinted with;
+otherwise the match measures its own automatic window, which may be another one.
 
 `--amp` names the signal path being matched: a Morgan amp (`sw50r`) or a Tone
 King channel (`lead`, `rhythm`), with the plugin's own display label accepted

@@ -104,8 +104,10 @@ def main():
                   "song midpoint": (len(density) - 1) // 2,
                   "300 Hz-3 kHz over 40-250 Hz": ranked(mid - low),
                   "...over the louder of 40-250 Hz and 3-8 kHz": ranked(mid - np.maximum(low, high))}
-        parts = {p["part"]: io.active_frames(io.load(root / s["path"] / p["reference"]).mono())
-                 for p in s["parts"]}
+        # An amp track shorter than the mix is silent after its end.
+        parts = {p["part"]: np.pad(a, (0, max(0, len(active) - len(a))))[:len(active)]
+                 for p in s["parts"]
+                 for a in [io.active_frames(io.load(root / s["path"] / p["reference"]).mono())]}
         for rule, start in starts.items():
             rows.append({"song": f"{s['source']}/{s['song']}", "rule": rule,
                          "start_s": round(start * io.HOP / sr, 2),
