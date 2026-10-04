@@ -412,7 +412,7 @@ def _reference_excerpt(target: Any) -> str:
         "most_continuously_active":
             "the most continuously active window requested by --excerpt",
         "activity_tie":
-            "the earliest of several equally-ranked windows of the length "
+            "the middle one of several equally-ranked windows of the length "
             "requested by --excerpt — they scored the same, so this one was not "
             "distinguished. It may not hold the part being matched; "
             "--excerpt-start selects a section deliberately",

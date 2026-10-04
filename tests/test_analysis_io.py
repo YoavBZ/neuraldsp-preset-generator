@@ -120,13 +120,13 @@ def test_a_compressed_reference_names_the_conversion(tmp_path):
 # --- how honestly the excerpt was chosen ----------------------------------
 #
 # The ranking underneath `excerpt_selection` is a broadband activity gate, so on
-# a source that never stops it ranks nothing and returns the first window while
-# calling itself most-continuously-active. That is how a real run measured a
+# a source that never stops it ranks nothing; it used to return the first window
+# while calling itself most-continuously-active. That is how a real run measured a
 # bass intro and reported it as the guitar tone, so the tie has to be reported.
 #
 # The harder half is not over-reporting it. The policy says only what is true of
 # every case that reaches it — these windows scored the same and this is the
-# earliest — because a large plateau does NOT mean the ranking failed.
+# middle one — because a large plateau does NOT mean the ranking failed.
 
 
 def test_a_gapped_source_really_is_ranked_by_activity():
@@ -144,13 +144,14 @@ def test_a_gapped_source_really_is_ranked_by_activity():
 
 
 def test_a_continuously_active_source_reports_the_tie():
-    """Nothing distinguishes any window, so `argmax` is picking the first one."""
+    """Nothing distinguishes any window, so the middle one is taken: not the start
+    of the file, which on a full song is the intro."""
     audio = io.from_samples(fx.noise(seconds=10.0), SAMPLE_RATE)
     sel = io.excerpt_selection(audio, 2.0)
     start, policy, fraction = sel.start, sel.policy, sel.active_fraction
     assert policy == "activity_tie"
     assert fraction > 0.9
-    assert start == 0, "which is the start of the file, not a chosen section"
+    assert abs(start / SAMPLE_RATE - 4.0) < 0.05, "the middle of the 0-8 s starts"
 
 
 def test_an_explicit_window_is_taken_as_given():
@@ -211,13 +212,25 @@ def test_a_short_source_with_no_window_request_is_just_the_full_source():
     )
 
 
+def test_with_two_tied_plateaus_the_window_still_sits_in_the_music():
+    """The middle of the tied windows is the median tied start, which with two
+    plateaus can end at the gap between them; it must still be a window of music."""
+    gap = np.zeros(SAMPLE_RATE * 5)
+    audio = io.from_samples(np.concatenate([fx.noise(seconds=30.0), gap,
+                                            fx.noise(seconds=30.0)]), SAMPLE_RATE)
+    sel = io.excerpt_selection(audio, 20.0)
+    start, end = sel.start / SAMPLE_RATE, sel.end / SAMPLE_RATE
+    silence = max(0.0, min(end, 35.0) - max(start, 30.0))
+    assert silence < 0.1, (start, end)
+
+
 def test_a_long_plateau_is_not_mistaken_for_a_failed_ranking():
     """The ranking found the music; the caveat must not say otherwise.
 
     Ten seconds of silence then fifty of playing. Every window that sits inside
     the music ties — 31 of 41 of them — so a plain tie-share test calls this
-    degenerate. It is not: `argmax` lands on the first note, which is exactly
-    the job. An earlier version reported "the excerpt was NOT chosen by
+    degenerate. It is not: the ranking excluded the silence, which is exactly
+    the job, and the middle of the tie sits inside the music. An earlier version reported "the excerpt was NOT chosen by
     activity ... every candidate window scored the same and the earliest one was
     taken" two lines under a start of 9.96 s, all three claims false.
     """
@@ -226,7 +239,8 @@ def test_a_long_plateau_is_not_mistaken_for_a_failed_ranking():
         np.concatenate([lead_in, fx.band_limited(seconds=50.0)]), SAMPLE_RATE
     )
     sel = io.excerpt_selection(audio, 20.0)
-    assert 9.5 < sel.start / SAMPLE_RATE < 10.5, "the silence was excluded"
+    assert sel.start / SAMPLE_RATE > 9.5, "the silence was excluded"
+    assert abs(sel.start / SAMPLE_RATE - 25.0) < 0.5, "the middle of the music's starts"
     assert sel.tied_windows > 0.5 * sel.candidate_windows, (
         "the plateau really is large — this is the shape that used to be "
         "misreported, not a case that avoids the threshold"

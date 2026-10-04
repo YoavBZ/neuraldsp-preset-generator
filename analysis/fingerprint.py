@@ -162,16 +162,19 @@ class Fingerprint:
             # Says only what is true of every case that reaches here. An earlier
             # version claimed the ranking had chosen nothing, which is false the
             # moment the plateau is merely large: on silence followed by playing,
-            # the ranking lands on the first note and most windows still tie.
+            # the ranking excludes the silence and most windows still tie. It says
+            # "one of them", not which, so a fingerprint stored before the choice
+            # moved from the earliest to the middle is still described truly.
             tied = self.source.get("excerpt_tied_windows")
             total = self.source.get("excerpt_candidate_windows")
             counted = (f"{tied} of {total} candidate windows"
                        if tied and total else "most candidate windows")
             notes.append(
-                f"{counted} scored the same, so this one is simply the earliest "
-                "of them rather than a distinguished choice. It may not contain "
-                "the part you meant — check it, and pass --excerpt-start to "
-                "measure a section you choose"
+                f"{counted} scored the same, so this one is simply one of them "
+                "rather than a distinguished choice. It may not contain the part "
+                "you meant (on full songs it missed a given guitar part a third of "
+                "the time or more) — check it, and pass --excerpt-start to measure "
+                "a section you choose"
             )
         if policy == "explicit_window_clamped":
             asked = self.source.get("excerpt_requested_start_s")

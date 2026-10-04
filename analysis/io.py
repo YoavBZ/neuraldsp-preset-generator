@@ -314,8 +314,8 @@ def excerpt_bounds(audio: Audio, seconds: float) -> tuple[int, int]:
     return selection.start, selection.end
 
 
-#: Above this share of tied-for-best windows, the chosen one is the earliest of
-#: many equals rather than a distinguished pick.
+#: Above this share of tied-for-best windows, the chosen one is the middle of many
+#: equals rather than a distinguished pick.
 _TIE_SHARE_WORTH_REPORTING = 0.5
 
 #: …and only worth reporting when the source is enough longer than the window
@@ -350,9 +350,10 @@ def excerpt_selection(audio: Audio, seconds: float,
     The activity ranking underneath this is a **broadband** RMS gate
     (:func:`active_frames`): it answers "is there sound here", not "is the
     instrument you care about here". On a mastered, continuously-playing mix
-    almost every frame passes, every window scores the same, and ``argmax``
-    returns the first one — so the selection degenerates into "the start of the
-    file" while still calling itself most-continuously-active.
+    almost every frame passes and every window scores the same. Taking the first
+    of them made the selection "the start of the file" while it still called
+    itself most-continuously-active; it now takes the middle one of the tied
+    windows, and says they tied.
 
     That is not hypothetical. On a five-minute mastered ballad, 98% of frames
     were active and 29,642 of ~30,255 candidate windows tied at the maximum, so
@@ -360,7 +361,8 @@ def excerpt_selection(audio: Audio, seconds: float,
     number measured from it described an upright bass, and nothing said so.
 
     The fix is not a cleverer ranking — a broadband gate cannot become
-    instrument-aware — but refusing to overstate what happened. Every policy
+    instrument-aware, and a guitar-band ranking measured no better than the
+    middle of the tie — but refusing to overstate what happened. Every policy
     below reports only what is true of the selection it names, and ``start_s``
     is the way to choose a window deliberately instead.
     """
@@ -405,18 +407,25 @@ def excerpt_selection(audio: Audio, seconds: float,
     # Tolerance rather than equality: the convolution of a 0/1 array with ones
     # is integral in exact arithmetic, and comparing floats for equality to
     # decide a user-visible caveat is not a thing to rely on.
-    tied = int(np.count_nonzero(density >= density.max() - 0.5))
+    best = np.flatnonzero(density >= density.max() - 0.5)
+    tied = len(best)
     candidates = len(density)
-    start = int(np.argmax(density)) * HOP
+    # The middle of the tied windows, not the earliest. Each is as active as any
+    # other, and on a full song the earliest is the intro. Over the 29 development
+    # multitrack songs summed into rough mixes, a 20-s window from the middle of the
+    # tie held a guitar part (playing in half its frames or more) for 53 of their 83
+    # parts and held one in 27 of the 29 songs; the earliest, 43 and 25. Ranking by
+    # 300 Hz-3 kHz over 40-250 Hz did no better (47 and 23;
+    # `scripts/measure_excerpt_window_rules.py`).
+    start = int(best[tied // 2]) * HOP
     start = min(start, audio.frames - wanted)
 
     # Report the tie, and only the tie. Calling this case "uninformative", as if
     # the ranking chose nothing, is false whenever the plateau is merely large:
-    # on ten seconds of silence
-    # followed by fifty of playing, the ranking lands exactly on the first note
-    # and 31 of 41 windows still tie, because they all sit inside the music.
-    # What is true in every case that reaches here is that the window is the
-    # earliest of several that scored the same.
+    # on ten seconds of silence followed by fifty of playing, 31 of 41 windows
+    # tie because they all sit inside the music, and the ranking did exclude the
+    # silence. What is true in every case that reaches here is that the window
+    # is the middle one of several that scored the same.
     tie_share = tied / candidates
     long_enough = audio.frames >= _MIN_SOURCE_MULTIPLE * wanted
     policy = ("activity_tie"

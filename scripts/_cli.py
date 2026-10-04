@@ -254,8 +254,8 @@ def add_excerpt_start_arg(parser) -> None:
     Shared so the two CLIs that fingerprint a user's own recording describe the
     flag the same way. Its reason for existing is in `analysis.io
     .excerpt_selection`: the automatic choice is a broadband activity ranking,
-    and on a dense master every window ties, so it returns the start of the file
-    while reporting that it chose. Naming a start is the way out.
+    and on a dense master every window ties, so it returns the middle of the file,
+    which need not hold the guitar. Naming a start is the way out.
     """
     parser.add_argument(
         "--excerpt-start", type=nonnegative_float, default=None, metavar="SECONDS",

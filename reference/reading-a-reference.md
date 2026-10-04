@@ -12,14 +12,20 @@ well-formed description of the wrong thing.
 `--excerpt` does not find the guitar. It ranks windows by a **broadband**
 activity gate, which answers "is there sound here" and nothing else. On a
 mastered, continuously-playing track almost every frame passes, so almost every
-window scores the same and the earliest of the tied set wins by default.
+window scores the same. The tool takes the middle one of the tied windows; it used
+to take the earliest, which on a full song is the intro.
 
 This is measured, not hypothetical. On a five-minute mastered ballad, 98% of
 frames were active and 29,642 of about 30,255 candidate windows tied at the top,
 so the "chosen" window was the bass intro. The guitar was four minutes later.
 
-The tool now says so — `excerpt_policy: activity_tie`, with a caveat naming how
-many windows tied — but the remedy is yours to apply:
+The middle is better but still a guess. Over 29 multitrack songs summed into rough
+mixes, a 20-s window from the middle of the tie held a given guitar part for 53 of
+83 parts (the earliest: 43), and held some guitar in 27 of the 29 songs (25).
+Ranking by the guitar's bands did no better. So **on a full song, ask the user
+where the guitar is clearly heard** (a time in the song) and measure there. The
+tool reports a tie — `excerpt_policy: activity_tie`, with a caveat naming how many
+windows tied — but the remedy is yours to apply:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
