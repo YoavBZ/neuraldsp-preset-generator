@@ -31,6 +31,9 @@ from build_rab_audition import (_audition_channels, _slice, _static_gain_to_lufs
 from _listening_trials import plan_trials
 
 
+# Crops cut by the first rule or by crop rule 2 (docs/validation-datasets.md).
+CROP_SCHEMAS = ("validation-crops-1", "validation-crops-2")
+
 def _number(value, name: str, minimum: float | None = None) -> float:
     try:
         number = float(value)
@@ -118,7 +121,7 @@ def _validation_crop(manifest: dict, reference: dict, backing: dict,
         raise ValueError(f"missing validation crop record: {path}")
     record = json.loads(path.read_text(encoding="utf-8"))
     outputs = record.get("outputs", {})
-    if record.get("schema") != "validation-crops-1" or not all(
+    if record.get("schema") not in CROP_SCHEMAS or not all(
             isinstance(outputs.get(role), dict) for role in ("di", "mix", "backing")):
         raise ValueError("invalid validation crop record")
 
@@ -194,7 +197,7 @@ def _require_crop_binding(manifest: dict, reference: dict, backing: dict) -> Non
             record = json.loads(candidate.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             continue  # An unrelated generic-audition directory may have a record.json.
-        if not isinstance(record, dict) or record.get("schema") != "validation-crops-1":
+        if not isinstance(record, dict) or record.get("schema") not in CROP_SCHEMAS:
             continue
         outputs = record.get("outputs")
         if (isinstance(outputs, dict)

@@ -94,6 +94,9 @@ RULES = {
 }
 
 
+# Crops cut by the first rule or by crop rule 2 (docs/validation-datasets.md).
+CROP_SCHEMAS = ("validation-crops-1", "validation-crops-2")
+
 def _digest(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -236,7 +239,7 @@ def _read_audition(part_id: str, audition: pathlib.Path, binding: dict,
             or _digest(crop_path) != crop_binding.get("sha256")):
         raise ValueError(f"{part_id}: validation crop binding changed")
     crop = json.loads(crop_path.read_text(encoding="utf-8"))
-    if (crop.get("schema") != "validation-crops-1"
+    if (crop.get("schema") not in CROP_SCHEMAS
             or crop.get("split") != "held_out"
             or crop_binding.get("split") != "held_out"
             or "/".join(str(crop.get(field, "")) for field in ("source", "song", "part"))
@@ -636,7 +639,7 @@ def _identical_unheard(part_dir: pathlib.Path, part_id: str, binding: dict) -> d
     if crop_path.is_symlink() or not crop_path.is_file():
         raise ValueError(f"{part_dir.name}: missing validation crop record")
     crop = json.loads(crop_path.read_text(encoding="utf-8"))
-    if (crop.get("schema") != "validation-crops-1"
+    if (crop.get("schema") not in CROP_SCHEMAS
             or crop.get("split") != "held_out"
             or "/".join(str(crop.get(field, "")) for field in ("source", "song", "part"))
             != part_id or not isinstance(crop.get("declaration"), dict)

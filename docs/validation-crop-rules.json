@@ -1,0 +1,646 @@
+{
+ "schema": "validation-crop-rules-1",
+ "summary": {
+  "first_rule": {
+   "parts": 57,
+   "playing_half_or_more": 43,
+   "playing_90_percent_or_more": 40,
+   "median": 1.0
+  },
+  "rule_2": {
+   "parts": 57,
+   "playing_half_or_more": 56,
+   "playing_90_percent_or_more": 56,
+   "median": 1.0
+  }
+ },
+ "parts": {
+  "telefunken-Bourbon-GTR_1": {
+   "first_rule": {
+    "start_s": 226.0,
+    "di_activity": 0.9423076923076923
+   },
+   "rule_2": {
+    "start_s": 138.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "telefunken-Bourbon-GTR_2": {
+   "first_rule": {
+    "start_s": 185.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 185.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -51.02
+  },
+  "telefunken-Collide_With_Me-GTR_1": {
+   "first_rule": {
+    "start_s": 225.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 224.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "telefunken-Collide_With_Me-GTR_2": {
+   "first_rule": {
+    "start_s": 218.5,
+    "di_activity": 0.3404710920770878
+   },
+   "rule_2": {
+    "start_s": 226.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -37.99
+  },
+  "cambridge-Heather_Jane-ElecGtr1": {
+   "first_rule": {
+    "start_s": 134.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 134.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -59.0
+  },
+  "cambridge-Heather_Jane-ElecGtr1DT": {
+   "first_rule": {
+    "start_s": 134.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 129.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -59.91
+  },
+  "guitar-techs-P3_music_excerpt_01-01": {
+   "first_rule": {
+    "start_s": 16.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 16.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_03-03": {
+   "first_rule": {
+    "start_s": 2.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 2.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_04-04": {
+   "first_rule": {
+    "start_s": 26.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 26.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_05-05": {
+   "first_rule": {
+    "start_s": 0.0,
+    "di_activity": 0.9892933618843683
+   },
+   "rule_2": {
+    "start_s": 0.0,
+    "di_activity": 0.9892933618843683
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_07-07": {
+   "first_rule": {
+    "start_s": 9.5,
+    "di_activity": 0.9700854700854701
+   },
+   "rule_2": {
+    "start_s": 8.0,
+    "di_activity": 0.9892933618843683
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_08-08": {
+   "first_rule": {
+    "start_s": 14.0,
+    "di_activity": 0.9786324786324786
+   },
+   "rule_2": {
+    "start_s": 13.0,
+    "di_activity": 0.9978632478632479
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_09-09": {
+   "first_rule": {
+    "start_s": 27.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 24.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": null
+  },
+  "guitar-techs-P3_music_excerpt_12-12": {
+   "first_rule": {
+    "start_s": 31.0,
+    "di_activity": 0.987152034261242
+   },
+   "rule_2": {
+    "start_s": 30.0,
+    "di_activity": 0.9935897435897436
+   },
+   "bleed_db": null
+  },
+  "cambridge-Drag_Me_Down-ElecGtr3": {
+   "first_rule": {
+    "start_s": 171.0,
+    "di_activity": 0.202991452991453
+   },
+   "rule_2": {
+    "start_s": 183.5,
+    "di_activity": 0.9764957264957265
+   },
+   "bleed_db": -219.53
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "first_rule": {
+    "start_s": 114.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 117.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -220.44
+  },
+  "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": {
+   "first_rule": {
+    "start_s": 40.0,
+    "di_activity": 0.20770877944325483
+   },
+   "rule_2": {
+    "start_s": 127.5,
+    "di_activity": 0.9893162393162394
+   },
+   "bleed_db": -220.47
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "first_rule": {
+    "start_s": 12.5,
+    "di_activity": 0.5598290598290598
+   },
+   "rule_2": {
+    "start_s": 184.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -219.13
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "first_rule": {
+    "start_s": 153.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 199.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -219.33
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+   "first_rule": {
+    "start_s": 19.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 22.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -210.5
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": {
+   "first_rule": {
+    "start_s": 59.0,
+    "di_activity": 0.32051282051282054
+   },
+   "rule_2": {
+    "start_s": 52.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -208.3
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "first_rule": {
+    "start_s": 224.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 224.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -217.26
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "first_rule": {
+    "start_s": 202.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 202.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -218.62
+  },
+  "cambridge-Prodigal-ElecGtr1": {
+   "first_rule": {
+    "start_s": 2.0,
+    "di_activity": 0.07692307692307693
+   },
+   "rule_2": {
+    "start_s": 135.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -204.32
+  },
+  "cambridge-Prodigal-ElecGtr2": {
+   "first_rule": {
+    "start_s": 118.5,
+    "di_activity": 0.09188034188034189
+   },
+   "rule_2": {
+    "start_s": 34.5,
+    "di_activity": 0.9957173447537473
+   },
+   "bleed_db": -208.32
+  },
+  "cambridge-Prodigal-ElecGtr3": {
+   "first_rule": {
+    "start_s": 128.0,
+    "di_activity": 0.3019271948608137
+   },
+   "rule_2": {
+    "start_s": 150.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -207.81
+  },
+  "cambridge-Prodigal-ElecGtr4": {
+   "first_rule": {
+    "start_s": 80.0,
+    "di_activity": 0.23768736616702354
+   },
+   "rule_2": {
+    "start_s": 82.0,
+    "di_activity": 0.38247863247863245
+   },
+   "bleed_db": -220.45
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "first_rule": {
+    "start_s": 139.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 139.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -208.9
+  },
+  "cambridge-Passing_Ships-ElecGtr2": {
+   "first_rule": {
+    "start_s": 45.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 45.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -205.72
+  },
+  "cambridge-Passing_Ships-ElecGtr3": {
+   "first_rule": {
+    "start_s": 76.0,
+    "di_activity": 0.2905982905982906
+   },
+   "rule_2": {
+    "start_s": 93.0,
+    "di_activity": 0.9914529914529915
+   },
+   "bleed_db": -221.97
+  },
+  "cambridge-Passing_Ships-ElecGtr4": {
+   "first_rule": {
+    "start_s": 232.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 219.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -214.87
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "first_rule": {
+    "start_s": 197.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 196.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -223.87
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "first_rule": {
+    "start_s": 120.5,
+    "di_activity": 0.9829059829059829
+   },
+   "rule_2": {
+    "start_s": 78.0,
+    "di_activity": 0.9829059829059829
+   },
+   "bleed_db": -222.9
+  },
+  "cambridge-Quicksand-ElecGtr2": {
+   "first_rule": {
+    "start_s": 77.5,
+    "di_activity": 0.9636752136752137
+   },
+   "rule_2": {
+    "start_s": 82.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -215.59
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "first_rule": {
+    "start_s": 92.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 6.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -229.61
+  },
+  "cambridge-Signs-ElecGtr3": {
+   "first_rule": {
+    "start_s": 74.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 74.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -225.52
+  },
+  "cambridge-Signs-ElecGtr6": {
+   "first_rule": {
+    "start_s": 158.0,
+    "di_activity": 0.14743589743589744
+   },
+   "rule_2": {
+    "start_s": 202.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -221.58
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "first_rule": {
+    "start_s": 142.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 142.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -69.58
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "first_rule": {
+    "start_s": 146.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 124.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -65.03
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "first_rule": {
+    "start_s": 147.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 147.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -35.77
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "first_rule": {
+    "start_s": 153.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 152.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -57.69
+  },
+  "telefunken-Russian_Cream-GTR_1": {
+   "first_rule": {
+    "start_s": 209.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 209.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -39.1
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "first_rule": {
+    "start_s": 206.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 206.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -68.35
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "first_rule": {
+    "start_s": 118.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 118.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -51.74
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "first_rule": {
+    "start_s": 208.0,
+    "di_activity": 0.9828693790149893
+   },
+   "rule_2": {
+    "start_s": 208.0,
+    "di_activity": 0.9828693790149893
+   },
+   "bleed_db": -61.85
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "first_rule": {
+    "start_s": 205.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 205.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -45.82
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "first_rule": {
+    "start_s": 92.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 92.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -50.99
+  },
+  "telefunken-Measurements-GTR": {
+   "first_rule": {
+    "start_s": 170.0,
+    "di_activity": 0.24145299145299146
+   },
+   "rule_2": {
+    "start_s": 156.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -42.5
+  },
+  "telefunken-Strangest_Places-GTR": {
+   "first_rule": {
+    "start_s": 180.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 180.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -42.83
+  },
+  "telefunken-Bloomlight-GTR": {
+   "first_rule": {
+    "start_s": 279.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 279.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -214.39
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "first_rule": {
+    "start_s": 247.0,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 246.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -79.2
+  },
+  "telefunken-Fragments-GTR": {
+   "first_rule": {
+    "start_s": 216.5,
+    "di_activity": 1.0
+   },
+   "rule_2": {
+    "start_s": 323.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -75.32
+  },
+  "telefunken-Hikikomori_-_Love_Does-GTR": {
+   "first_rule": {
+    "start_s": 328.5,
+    "di_activity": 0.06196581196581197
+   },
+   "rule_2": {
+    "start_s": 252.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -32.52
+  },
+  "telefunken-Honey-GTR": {
+   "first_rule": {
+    "start_s": 200.0,
+    "di_activity": 0.5674518201284796
+   },
+   "rule_2": {
+    "start_s": 165.0,
+    "di_activity": 0.9957264957264957
+   },
+   "bleed_db": -30.41
+  },
+  "telefunken-Lost_Alive-GTR": {
+   "first_rule": {
+    "start_s": 147.5,
+    "di_activity": 0.31049250535331907
+   },
+   "rule_2": {
+    "start_s": 103.0,
+    "di_activity": 1.0
+   },
+   "bleed_db": -23.57
+  },
+  "telefunken-She's_Gone-GTR": {
+   "first_rule": {
+    "start_s": 268.5,
+    "di_activity": 0.7243589743589743
+   },
+   "rule_2": {
+    "start_s": 325.5,
+    "di_activity": 1.0
+   },
+   "bleed_db": -25.92
+  },
+  "telefunken-Until_I_Get_Back-GTR": {
+   "first_rule": {
+    "start_s": 158.5,
+    "di_activity": 0.19017094017094016
+   },
+   "rule_2": {
+    "start_s": 251.5,
+    "di_activity": 0.9764453961456103
+   },
+   "bleed_db": -33.64
+  }
+ }
+}
