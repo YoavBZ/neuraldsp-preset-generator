@@ -32,8 +32,9 @@ whether a test runs. To refresh it from the CI runners themselves, start the CI
 workflow by hand with `record_durations` ticked, download one Python version's
 four `durations-*` artifacts, and take their union:
 
-    gh run download <run id> -p 'durations-3.13-*' -D /tmp/durations
-    python - /tmp/durations/*/durations.json > tests/durations.json <<'EOF'
+    dir=$(mktemp -d)
+    gh run download <run id> -p 'durations-3.13-*' -D "$dir"
+    python - "$dir"/*/durations.json > tests/durations.json <<'EOF'
     import json, sys
     union = {}
     for path in sys.argv[1:]:
@@ -43,18 +44,21 @@ four `durations-*` artifacts, and take their union:
 
 `python -m pytest --record-durations tests/durations.json` does the same from
 one local run, if the machine is otherwise idle. It replaces the whole record
-with what that run ran, so give it no paths, `-k` or `-m`.
+with what that run ran, so give it no `--shard`, paths, `-k`, `-m`, `--deselect`
+or `--lf`.
 
 Each machine cuts only what it collected, so a test one machine failed to collect
 would run nowhere, and nothing here can see the other machines. Every shard
-therefore ends by naming its collection — count and sha256 — so the four can be
-compared by eye.
+therefore ends by naming its collection — count and sha256 — and on GitHub
+Actions writes it to the run's summary page too, where all the shards' lines sit
+together and a mismatch shows.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import zlib
 
@@ -66,6 +70,7 @@ DURATIONS = pathlib.Path(__file__).with_name("durations.json")
 # its tests.
 WHOLE_MODULE_PARTS = 4
 
+_COLLECTED = pytest.StashKey[str]()
 _SUMMARY = pytest.StashKey[str]()
 
 
@@ -121,8 +126,8 @@ def _costs(recorded: dict) -> dict:
     Integers, not the floats they came from: Python 3.12 made `sum()` of floats
     compensated, so 3.10 and 3.13 added the same times to different last bits,
     broke near-ties between slices differently, and cut the suite differently.
-    At least one, because hundreds of tests round to nothing; costing nothing,
-    they all went to whichever slice came first.
+    At least one, because hundreds of tests round to nothing; the ones that are
+    units of their own, in a split module, all went to the lightest slice.
     """
     return {nodeid: max(1, round(recorded[nodeid] * 100)) for nodeid in recorded}
 
@@ -187,8 +192,19 @@ def pytest_collection_modifyitems(config, items):
     items[:] = [item for item in items if mine[item.nodeid]]
 
     collection = hashlib.sha256("\n".join(sorted(mine)).encode()).hexdigest()[:16]
-    summary = (f"--shard {spec}: this slice holds {len(items)} of the {len(mine)} "
-               f"tests collected (collection sha256 {collection})")
+    config.stash[_COLLECTED] = (f"of the {len(mine)} tests collected "
+                                f"(collection sha256 {collection})")
+
+
+def pytest_collection_finish(session):
+    """Counted here, after `-k`, `-m` and `--lf` have had their say, so the line
+    says what actually runs."""
+    config = session.config
+    collected = config.stash.get(_COLLECTED, None)
+    if collected is None:
+        return
+    summary = (f"--shard {config.getoption('shard')}: running {len(session.items)} "
+               f"{collected}")
     if hasattr(config, "workeroutput"):
         config.workeroutput["shard"] = summary     # xdist hands it to the controller
     else:
@@ -206,6 +222,10 @@ def pytest_terminal_summary(terminalreporter, config):
     summary = config.stash.get(_SUMMARY, None)
     if summary:
         terminalreporter.write_line(summary)
+        page = os.environ.get("GITHUB_STEP_SUMMARY")
+        if page:
+            with open(page, "a") as out:
+                out.write(f"`{summary}`\n")
 
 
 class _Recorder:

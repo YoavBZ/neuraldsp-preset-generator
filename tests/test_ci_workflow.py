@@ -88,7 +88,9 @@ def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
     job = workflow["jobs"]["analysis"]
     [test] = [step for step in job["steps"] if step.get("name") == "Test"]
     for scope in (workflow, job, test):
-        assert "PYTEST_ADDOPTS" not in (scope.get("env") or {})
+        env = scope.get("env") or {}
+        assert isinstance(env, dict), f"an `env:` this test cannot read: {env!r}"
+        assert "PYTEST_ADDOPTS" not in env, "PYTEST_ADDOPTS can narrow every shard"
     matrix = job["strategy"]["matrix"]
     assert set(matrix) == {"python-version", "shard"}, (
         "an include or exclude changes which (version, shard) pairs run; if one "
@@ -164,25 +166,40 @@ def test_the_slices_are_the_same_on_every_python() -> None:
 def test_narrowing_a_run_keeps_each_test_in_its_slice() -> None:
     """Through pytest itself, not only `Cut`: `--shard I/N` runs the collected tests
     the cut gives slice I, and `-k` or a path narrows within it — so a failing slice
-    can be rerun as `--shard I/N -k name`."""
-    def collect(*args) -> set:
-        done = subprocess.run(
-            [sys.executable, "-m", "pytest", "--collect-only", "-q", "-n0",
-             "-p", "no:cacheprovider", *args],
-            cwd=ROOT, capture_output=True, text=True)
+    can be rerun as `--shard I/N -k name`. And every slice names the same whole
+    collection, which is what lets the shards of one run be compared."""
+    # Neither may leak in from the run around this one: one would narrow these
+    # runs, the other would put their lines on a CI run's summary page.
+    env = {key: value for key, value in os.environ.items()
+           if key not in ("PYTEST_ADDOPTS", "GITHUB_STEP_SUMMARY")}
+
+    def pytest(*args) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", *args],
+            cwd=ROOT, capture_output=True, text=True, env=env)
+
+    def collect(*args) -> tuple:
+        done = pytest("--collect-only", "-n0", *args)
         assert done.returncode in (0, 5), done.stdout + done.stderr  # 5: none here
-        collected = {line for line in done.stdout.splitlines() if "::" in line}
-        if args[0] == "--shard" and "-k" not in args:
-            assert f"{args[1]}: this slice holds {len(collected)} of the " in done.stdout
-        return collected
+        return {line for line in done.stdout.splitlines() if "::" in line}, done.stdout
 
     files = ["tests/test_ci_workflow.py", "tests/test_paths.py"]
     name = "test_the_analysis_shards_are_every_slice_of_the_split_they_run"
-    everything = collect(*files)
+    everything, _ = collect(*files)
+    digest = hashlib.sha256("\n".join(sorted(everything)).encode()).hexdigest()[:16]
+    whole = f"of the {len(everything)} tests collected (collection sha256 {digest})"
     cut = conftest.Cut(4, conftest._recorded())
     assert any(nodeid.endswith(f"::{name}") for nodeid in everything)
     for index in range(1, 5):
         mine = {nodeid for nodeid in everything if cut(nodeid) == index - 1}
-        assert collect("--shard", f"{index}/4", *files) == mine
         named = {nodeid for nodeid in mine if nodeid.endswith(f"::{name}")}
-        assert collect("--shard", f"{index}/4", "-k", name, *files) == named
+        for narrowing, expected in (((), mine), (("-k", name), named)):
+            ran, output = collect("--shard", f"{index}/4", *narrowing, *files)
+            assert ran == expected
+            assert f"--shard {index}/4: running {len(expected)} {whole}" in output
+
+    # Once through xdist as CI runs it, where the line comes back from a worker.
+    index = cut(next(nodeid for nodeid in everything if nodeid.endswith(f"::{name}"))) + 1
+    done = pytest("-n", "2", "--shard", f"{index}/4", "-k", name, *files)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert f"--shard {index}/4: running 1 {whole}" in done.stdout, done.stdout
