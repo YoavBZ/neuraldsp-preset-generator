@@ -2,10 +2,10 @@
 """Stage 0b: build the listening-validation trials from the private trial list.
 
     python scripts/build_listening_validation.py \\
-        --trials ~/ndsp-presets/runs/listening-validation/draw/trials.json \\
-        --panel-dir ~/ndsp-presets/runs/kill/sw50r \\
-        --out-dir ~/ndsp-presets/runs/listening-validation/trials \\
-        --private-dir ~/ndsp-presets/runs/listening-validation/private
+        --trials ~/ndsp-presets/runs/listening-validation-2/draw/trials.json \\
+        --panel-dir ~/ndsp-presets/runs/kill/pr12 \\
+        --out-dir ~/ndsp-presets/runs/listening-validation-2/trials \\
+        --private-dir ~/ndsp-presets/runs/listening-validation-2/private
 
 Trial numbers, the two sittings and every A/B assignment are drawn here from the
 system's randomness and written only to `--private-dir`, with the builder's output and
@@ -49,7 +49,7 @@ def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--trials", type=pathlib.Path, required=True)
-    ap.add_argument("--panel-dir", type=pathlib.Path, required=True)
+    ap.add_argument("--panel-dir", type=pathlib.Path, action="append", required=True)
     ap.add_argument("--crops-dir", type=pathlib.Path,
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"))
     ap.add_argument("--out-dir", type=pathlib.Path, required=True)
@@ -96,8 +96,31 @@ def main():
     if hashlib.sha256(trials_text.encode()).hexdigest() != declared_trials_sha256():
         die("the trial list is not the one the plan declares")
     plan = json.loads(trials_text)
-    panel = args.panel_dir.expanduser()
+    from plan_listening_validation import file_sha256, panel_files
+
+    merged, index_hashes = panel_files(args.panel_dir)
+    if index_hashes != plan["panels"]:
+        die("the panels are not the ones the trials were drawn from")
+    files = {(part, c): f for part, cands in merged.items() for c, f in cands.items()}
     crops = args.crops_dir.expanduser()
+    # Every option and crop is the audio the trial list recorded, checked before anything
+    # is written; a refusal counts the mismatches without naming an option.
+    wrong = 0
+    for t in plan["trials"]:
+        if t["kind"] == "repeat":
+            continue
+        options = {c for c in (t["first"], t["second"]) if c != "reference"}
+        if set(t.get("files", {})) != options or set(t.get("crops", {})) != {"reference", "di"}:
+            wrong += 1
+            continue
+        for c, f in t["files"].items():
+            path = files.get((t["part"], c))
+            wrong += path is None or str(path) != f["path"] or file_sha256(path) != f["sha256"]
+        for n, sha in t["crops"].items():
+            crop = crops / t["part"] / f"{n}.wav"
+            wrong += not crop.exists() or file_sha256(crop) != sha
+    if wrong:
+        die(f"{wrong} of the trials' files are not the audio the trial list recorded")
     out_dir, private = args.out_dir.expanduser(), args.private_dir.expanduser()
     if (out_dir.resolve() == private.resolve() or private.resolve().is_relative_to(out_dir.resolve())
             or out_dir.resolve().is_relative_to(private.resolve())):
@@ -106,8 +129,6 @@ def main():
         if d.exists() and any(d.iterdir()):
             die(f"{d} is not empty; trials are built once")
         d.mkdir(parents=True, exist_ok=True)
-    index = json.loads((panel / "index.json").read_text())
-    files = {(r["part"], r["candidate"]): r["file"] for r in index["rows"] if "file" in r}
     trials = plan["trials"]
     by_id = {t["id"]: t for t in trials if "id" in t}
     rng = secrets.SystemRandom()
@@ -130,7 +151,8 @@ def main():
         def source(name):
             if name == "reference":
                 return reference, w["window_s"], "non-Morgan"
-            return pathlib.Path(files[(pair_part, name)]), w["window_s"] - lag / SR, "SW50R"
+            return (pathlib.Path(files[(pair_part, name)]), w["window_s"] - lag / SR,
+                    name.split(":", 1)[0].upper())
 
         (a, a_start, a_model), (b, b_start, b_model) = source(row["first"]), source(row["second"])
         if row["kind"] == "test":

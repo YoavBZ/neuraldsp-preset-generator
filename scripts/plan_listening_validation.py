@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """Stage 0b: choose the listening-validation trials (`docs/listening-validation-plan.md`).
 
-    python scripts/plan_listening_validation.py --panel-dir ~/ndsp-presets/runs/kill/sw50r \\
-        --cache ~/ndsp-presets/runs/listening-validation/pool.json \\
-        --out ~/ndsp-presets/runs/listening-validation/draw/trials.json
+    python scripts/plan_listening_validation.py --panel-dir ~/ndsp-presets/runs/kill/pr12 \\
+        --cache ~/ndsp-presets/runs/listening-validation-2/pool.json \\
+        --out ~/ndsp-presets/runs/listening-validation-2/draw/trials.json
 
-For every development part with a 4-s window where its DI plays in at least 90% of the
-frames, every panel candidate's distance to the part's amp track over exactly that
-window: the judge (`analysis/aligned.py`, both band sets, one lag per part pooled over
-its whole panel), ALM and v3c (`kill_tests.py`). Then, with a private seed, 24 test pairs
-above the judge's median |log(dA/dB)| (at least 10 where the judge and v3c disagree, at
-most 2 per part, at least 8 bands, no candidate in more than 3), 3 hidden references and
-3 hidden repeats. The seed is drawn from the system's randomness and kept with the
+For every development part with an unambiguous recorded lag (`docs/validation-lags.json`)
+and a 4-s window where its DI plays in at least 90% of the frames, every candidate of
+every panel (named `<amp>:<candidate>`), its distance to the part's amp track over exactly
+that window: the judge (`analysis/aligned.py`, both band sets, at the recorded lag), ALM
+and v3c (`kill_tests.py`). Then, with a private seed, from the offered candidates only
+(not an amp's shipped template, whose time effects are on, nor a high-gain preset), 24
+test pairs above the judge's median |log(dA/dB)| over offered pairs (at least 10 where
+the judge and v3c disagree, at most 2 per part, at least 8 bands, no candidate in more
+than 3), 3 hidden references and 3 hidden repeats. The seed is drawn from the system's randomness and kept with the
 output, which names the pairs and every distance's prediction: both stay private until
 every answer is in (the plan records only the file's sha256), since a listener who saw
 the pairs could tell the options apart. Trial numbers and A/B are drawn when the files
@@ -49,7 +51,8 @@ BLEED_HEAVY = ("telefunken-Lost_Alive-GTR", "telefunken-Until_I_Get_Back-GTR")
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--panel-dir", type=pathlib.Path, required=True)
+    ap.add_argument("--panel-dir", type=pathlib.Path, action="append", required=True,
+                    help="a panel of renders (render_preset_panel.py); repeat for several")
     ap.add_argument("--crops-dir", type=pathlib.Path,
                     default=pathlib.Path("~/ndsp-presets/references/validation-crops"))
     ap.add_argument("--cache", type=pathlib.Path, required=True,
@@ -77,20 +80,15 @@ def window(di):
 
 def score_part(job):
     """Every candidate's distances over the part's window, or None if it has none."""
-    part, files, catalogued, crops = job
-    from analysis.aligned import aligned_distance, estimate_lag
+    part, files, catalogued, recorded, crops = job
+    from analysis.aligned import aligned_distance
 
     di, ref = K.mono(crops / part / "di.wav"), K.mono(crops / part / "reference.wav")
     w = window(di)
     if w is None:
         return part, None
     renders = {c: K.mono(f) for c, f in files.items()}
-    try:
-        lag = estimate_lag(ref, list(renders.values()), hint=catalogued - LATENCY,
-                           max_lag_s=0.015)
-    except ValueError:
-        lag = estimate_lag(ref, list(renders.values()), hint=catalogued - LATENCY,
-                           max_lag_s=0.05)
+    lag = recorded - LATENCY                     # the recording lags every Morgan render
     a, b = int(w * SR), int((w + WINDOW_S) * SR)
     ref_fp = K.fp(ref[a:b], "isolated_stem")
     v3c = K._v3c_compare()
@@ -107,11 +105,95 @@ def score_part(job):
     return part, {"window_s": w, "lag": lag, "candidates": out}
 
 
-def draw(pool, meta, seed):
-    """The trials, by the plan's rules, deterministic in `seed`."""
+def panel_files(panel_dirs):
+    """{part: {"<amp>:<candidate>": render path}} over every panel, and {panel: its
+    index's sha256}. Each panel is a different amp, and holds the same parts."""
+    import hashlib
+
+    files, hashes, amps, parts = {}, {}, [], []
+    for panel in panel_dirs:
+        raw = (panel.expanduser() / "index.json").read_bytes()
+        index = json.loads(raw)
+        hashes[str(panel)] = hashlib.sha256(raw).hexdigest()
+        amps.append(index["amp"])
+        mine = set()
+        for row in index["rows"]:
+            if "file" in row:
+                mine.add(row["part"])
+                files.setdefault(row["part"], {})[f"{index['amp']}:{row['candidate']}"] = \
+                    pathlib.Path(row["file"])
+        parts.append(mine)
+    if len(set(amps)) != len(amps):
+        die(f"two panels of one amp: {amps}")
+    if any(p != parts[0] for p in parts):
+        die("the panels do not hold the same parts")
+    return files, hashes
+
+
+def file_sha256(path) -> str:
+    import hashlib
+
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def shipped_template(candidate: str) -> bool:
+    """An amp's template as shipped, time effects on: an easy pair against a dry track."""
+    return candidate.split(":", 1)[-1] == "template"
+
+
+HIGH_GAIN_VOLUME = 0.75     # PR12's volume is its gain; the factory presets leave a gap
+                            # between 0.69 and 0.80
+
+
+def preset_path(candidate: str) -> pathlib.Path:
+    """The preset file a panel candidate was rendered from."""
+    from render_preset_panel import FACTORY, TEMPLATES
+
+    amp, name = candidate.split(":", 1)
+    if name.startswith("factory:"):
+        return FACTORY / f"{name[len('factory:'):]}.xml"
+    return PLUGIN_ROOT / TEMPLATES[amp]
+
+
+def high_gain(candidate: str) -> bool:
+    """A drive pedal on, or the amp's volume above HIGH_GAIN_VOLUME: read from the
+    preset's settings, never from any distance."""
+    from format.parser import parse
+    from format.structured import build
+
+    amp = candidate.split(":", 1)[0]
+    preset = build(parse(preset_path(candidate).read_bytes()))
+    v = {(p.module_path, p.key): p.value for p in preset.parameters}
+    on = lambda k: str(v.get(k, "false")).lower() == "true"                # noqa: E731
+    volume = float(v.get((f"{amp}Amp", f"{amp}Volume"), 0.0))
+    return on(("drive1", "drive1Active")) or on(("drive2", "drive2Active")) \
+        or volume > HIGH_GAIN_VOLUME
+
+
+def eligible(candidate: str, gain_of=high_gain) -> bool:
+    """A candidate a trial may offer: not the shipped template, not high-gain."""
+    return not shipped_template(candidate) and not gain_of(candidate)
+
+
+def pool_jobs(files, meta, crops, lag_of=None):
+    """score_part's jobs, one per part with an unambiguous recorded lag, and the parts
+    left out for want of one."""
+    if lag_of is None:
+        from benchmark_recordings import lag_samples as lag_of
+    recorded = {p: lag_of(p) for p in files}
+    no_lag = sorted(p for p, lag in recorded.items() if lag is None)
+    jobs = [(p, files[p], meta[p]["lag"], recorded[p], crops)
+            for p in sorted(files) if p not in no_lag]
+    return jobs, no_lag
+
+
+def draw(pool, meta, seed, allowed=lambda c: not shipped_template(c)):
+    """The trials, by the plan's rules, deterministic in `seed`; only candidates
+    `allowed` are offered."""
     rng = random.Random(seed)
     pairs = []
-    pool = {part: p for part, p in pool.items() if part not in BLEED_HEAVY}
+    pool = {part: {**p, "candidates": {c: v for c, v in p["candidates"].items() if allowed(c)}}
+            for part, p in pool.items() if part not in BLEED_HEAVY}
     for part, p in sorted(pool.items()):
         ok = {c: v for c, v in p["candidates"].items()
               if all(v.get(d) is not None and v[d] > 0 for d in DISTANCES)}
@@ -166,7 +248,9 @@ def draw(pool, meta, seed):
     repeats = [{"kind": "repeat", "of": q["id"]} for q in rng.sample(tests, REPEATS)]
     return {"excluded_bleed_heavy": [p for p in BLEED_HEAVY], "median_abs_log_ratio": median,
             "pairs_in_pool": len(pairs),
-            "clear_pairs": len(clear), "trials": tests + hidden + repeats}
+            "clear_pairs": len(clear),
+            "clear_pairs_disagreeing": sum(q["disagree"] for q in clear),
+            "trials": tests + hidden + repeats}
 
 
 def main():
@@ -174,9 +258,8 @@ def main():
     from analysis import require
 
     require("planning the listening validation")
-    from benchmark_recordings import CATALOG
+    from benchmark_recordings import CATALOG, LAGS
 
-    panel = args.panel_dir.expanduser()
     crops = args.crops_dir.expanduser()
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     meta = {}
@@ -187,32 +270,34 @@ def main():
             meta[slug] = {"band": s.get("group") or f"{s['source']}/{s['song']}",
                           "lag": int(round((p.get("lag_ms") or 0) * SR / 1000)),
                           "split": p.get("split") or s.get("split")}
-    index = json.loads((panel / "index.json").read_text())
-    files = {}
-    for row in index["rows"]:
-        if "file" in row:
-            files.setdefault(row["part"], {})[row["candidate"]] = pathlib.Path(row["file"])
+    files, index_hashes = panel_files(args.panel_dir)
     if any(meta[p]["split"] != "development" for p in files):
         die("the panel holds a part that is not development material")
+    jobs, no_lag = pool_jobs(files, meta, crops)
+    provenance = {"panels": index_hashes, "lags_sha256": file_sha256(LAGS)}
     cache = args.cache.expanduser()
     if cache.exists():
-        pool = json.loads(cache.read_text())["pool"]
+        cached = json.loads(cache.read_text())
+        if {k: cached.get(k) for k in provenance} != provenance:
+            die(f"{cache} was scored from other panels or lags; use a new cache")
+        pool = cached["pool"]
     else:
         from concurrent.futures import ProcessPoolExecutor
 
         with ProcessPoolExecutor(args.workers) as ex:
-            scored = dict(ex.map(score_part, [(p, files[p], meta[p]["lag"], crops)
-                                              for p in sorted(files)]))
+            scored = dict(ex.map(score_part, jobs))
         pool = {p: s for p, s in scored.items() if s is not None}
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(json.dumps({"panel": str(args.panel_dir), "pool": pool}) + "\n")
+        cache.write_text(json.dumps({**provenance, "pool": pool}) + "\n")
     import secrets
 
     out_path = args.out.expanduser()
     if out_path.exists():
         die(f"{out_path} exists; the trials are drawn once")
     seed = secrets.randbits(32)
-    out = draw(pool, meta, seed)
+    names = sorted({c for p in pool.values() for c in p["candidates"]})
+    offered = {c for c in names if eligible(c)}
+    out = draw(pool, meta, seed, allowed=offered.__contains__)
     for trial in out["trials"]:
         if trial["kind"] != "repeat":
             p = pool[trial["part"]]
@@ -220,9 +305,18 @@ def main():
             trial["predictions"] = {
                 c: p["candidates"].get(c) for c in (trial["first"], trial["second"])
                 if c != "reference"}
+            # The audio the judge scored, which the builder checks it is given.
+            trial["files"] = {c: {"path": str(files[trial["part"]][c]),
+                                  "sha256": file_sha256(files[trial["part"]][c])}
+                              for c in (trial["first"], trial["second"]) if c != "reference"}
+            trial["crops"] = {n: file_sha256(crops / trial["part"] / f"{n}.wav")
+                              for n in ("reference", "di")}
     used = [p for p in pool if p not in BLEED_HEAVY]
-    out.update(seed=seed, panel=str(args.panel_dir), parts=len(used),
-               bands=len({meta[p]["band"] for p in used}))
+    out.update(seed=seed, **provenance, offered=sorted(offered),
+               left_out_high_gain=sorted(c for c in names
+                                         if not shipped_template(c) and c not in offered),
+               parts=len(used),
+               bands=len({meta[p]["band"] for p in used}), excluded_no_clear_lag=no_lag)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(out, indent=1) + "\n"
     out_path.write_text(text)
@@ -230,9 +324,13 @@ def main():
 
     tests = [t for t in out["trials"] if t["kind"] == "test"]
     # Counts only: the pairs themselves stay private.
-    print(f"{len(used)} parts, {out['clear_pairs']} clear pairs; {len(tests)} test pairs over "
+    print(f"{len(out['offered'])} candidates offered, {len(out['left_out_high_gain'])} left out "
+          f"as high-gain; {len(used)} parts, {out['clear_pairs']} clear pairs; "
+          f"{len(tests)} test pairs over "
           f"{len({t['band'] for t in tests})} bands, {sum(t['disagree'] for t in tests)} where "
-          f"the judge and v3c disagree; sha256 {hashlib.sha256(text.encode()).hexdigest()}")
+          f"the judge and v3c disagree; the clear cut |log ratio| > "
+          f"{out['median_abs_log_ratio']:.3f}; sha256 "
+          f"{hashlib.sha256(text.encode()).hexdigest()}")
 
 
 if __name__ == "__main__":

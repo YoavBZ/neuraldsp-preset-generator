@@ -2,8 +2,8 @@
 """Stage 0b: score the listening validation as declared (`docs/listening-validation-plan.md`).
 
     python scripts/score_listening_validation.py \\
-        --private-dir ~/ndsp-presets/runs/listening-validation/private \\
-        --answers ~/ndsp-presets/runs/listening-validation/trials/ANSWERS.md --json score.json
+        --private-dir ~/ndsp-presets/runs/listening-validation-2/private \\
+        --answers ~/ndsp-presets/runs/listening-validation-2/trials/ANSWERS.md --json score.json
 
 `--answers` is the listener's sheet: one line per trial, "NN: A", "NN: B" or "NN: ?"
 (can't tell). Every trial must be answered, and the sha256 of the sheet's bytes is
@@ -47,8 +47,6 @@ def declared_trials_sha256() -> str:
 
 REPORTED = ("judge_union", "alm", "v3c")
 MIN_DECIDED, BAR = 12, 0.7
-# Of the pool's 15,525 clear pairs, 2,624 are ones where the judge and v3c disagree.
-POOL_DISAGREE_SHARE = 2624 / 15525
 
 
 def build_parser():
@@ -144,6 +142,12 @@ def score(plan: dict, order: list, keys: dict, answers: dict) -> dict:
                         "share": k / len(decided) if decided else None,
                         "p_one_sided": binomial_p(k, len(decided))}
     out["agreement"] = agreement
+    # How often the distances could have told the judge apart at all: the test pairs
+    # where each predicts the judge's option.
+    out["same_prediction_as_judge"] = {
+        d: sum((by_id[r["id"]]["log_ratio"][d] < 0) == (by_id[r["id"]]["log_ratio"]["judge"] < 0)
+               for r in tests)
+        for d in REPORTED}
     repeats = []
     for r in order:
         if r["kind"] == "repeat":
@@ -155,8 +159,8 @@ def score(plan: dict, order: list, keys: dict, answers: dict) -> dict:
     k, n = agreement["judge"]["agree"], agreement["judge"]["of"]
     out["judge"] = outcome(k, n, consistent)
     out["judge_upper_bound"] = upper_bound(k, n) if n else None
-    # Reweighted to the pool's split of pairs where the judge and v3c disagree.
-    share = POOL_DISAGREE_SHARE
+    # Reweighted to the pool's split of clear pairs where the judge and v3c disagree.
+    share = plan["clear_pairs_disagreeing"] / plan["clear_pairs"]
     by = {flag: [r for r in decided if by_id[r["id"]]["disagree"] == flag] for flag in (True, False)}
     if all(by.values()):
         rate = {flag: sum(chosen[r["trial"]] == predicted(r, "judge") for r in rows) / len(rows)
