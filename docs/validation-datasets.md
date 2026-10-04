@@ -104,9 +104,33 @@ otherwise before it runs.
 - **The backing** for a part is the mix without that part's own amp tracks (both
   microphones for Telefunken). A double-tracked part's double stays in it: it is
   another guitar in the arrangement.
-- **An excerpt** is the loudest 10 s of the mono reference by integrated loudness
-  (`analysis.io.loudness_lufs`), searched at 0.5 s steps; the DI, the mix and the
-  backing use the same sample span. Whether a test uses a whole part or its excerpt
+- **An excerpt** is 10 s of the session, searched at 0.5 s steps; the DI, the mix and
+  the backing use the same sample span.
+  - **Crop rule 2**, declared on 2026-10-04 for every crop cut from then on, held-out
+    ones included: the window where the part's DI plays in the most frames
+    (2048-sample frames, hop 1024, within 40 dB of the DI's loudest), ties within 0.02
+    broken by the reference's ungated mean square, then the earliest. Its crops go to
+    `~/ndsp-presets/references/validation-crops-2`, with `"excerpt_rule":
+    "di-activity"` in each record.
+  - **The first rule** was the loudest 10 s of the mono reference by integrated
+    loudness (`analysis.io.loudness_lufs`). Integrated loudness is gated, so a loud
+    burst in a silent stretch won, and many crops barely held the part (audit D-M6).
+    Analyses declared on its crops (`validation-crops`) keep them.
+  - **Measured on the 57 usable development parts** (`scripts/measure_crop_rules.py`,
+    `docs/validation-crop-rules.json`): the part plays in at least half of the window
+    on 43 under the first rule and 56 under rule 2, and in at least 90% on 40 and 56.
+    The exception is Prodigal ElecGtr4, which plays in no more than 38% of any 10 s.
+  - **Lags carry over.** A part's DI and amp track are cut at the same span, so its
+    recorded lag (`docs/validation-lags.json`) holds for either crop.
+- **Bleed** is recorded per development part in `docs/validation-crop-rules.json`
+  (`bleed_db`): the median level of the amp track where the DI is more than 60 dB
+  under its loudest, less its median where the DI plays, over the whole session.
+  - The Cambridge sessions read below −100 dB: digital silence between the takes.
+  - The Telefunken live-room sessions read −79 to −24 dB. The highest are Lost Alive,
+    She's Gone, Honey, Hikikomori and Until I Get Back.
+  - A listener heard the backing in Blind Spots' amp track, at −46.
+  - It is a measurement, not a flag: an analysis that leaves out bleed declares its
+    own threshold. Whether a test uses a whole part or its excerpt
   is part of that test's declaration. The match tool picks an excerpt of its own
   unless told not to, and applies it to the reference only, so every use first
   cuts the reference, the DI and any mix or backing to the declared span — or
