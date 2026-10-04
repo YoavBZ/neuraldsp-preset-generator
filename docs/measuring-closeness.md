@@ -16,7 +16,8 @@ to a recording. This document records what that number is, why it changed on
   than half the scored frames are pauses; it refuses the rest. It does not apply to
   the product's song-only use, which has no DI.
 - **It is not validated yet.** Listening validation is stage 0b of
-  `docs/supervised-model-plan.md` (about 100 trials). Until then it is the best
+  `docs/supervised-model-plan.md` (`docs/listening-validation-plan.md`, 30 trials on
+  clear differences). Until then it is the best
   measure available, not ground truth.
 
 ## Why v3 was retired
@@ -139,7 +140,7 @@ after:
   every band costs more still (83% right way, 88% across halves). A listening test
   cannot settle this cheaply: the two band sets order a pair differently almost
   only when it is a near-tie (on the stage-0b pool, 16% of pairs in the lowest
-  quarter of |log(dA/dB)|, 2.7% in the second, 0.5% in the third, none in the
+  quarter of |log(dA/dB)|, 2.5% in the second, 0.7% in the third, one pair in the
   top), and the dry template with +12 dB
   at 8 kHz, set against every factory preset, gives one part where they disagree
   by more than 0.05 in log ratio. So the choice moves magnitudes more than orders.
@@ -278,10 +279,10 @@ other players' DIs.
 - Re-check the conclusions that rested on v3: the kill tests' v3c arm, the
   library-vs-template result (`docs/library-arm-analysis-*.json`) and every "search
   beats its start" count.
-- Stage 0b listening validation, reporting both band sets: about 100 trials
-  balanced between the two answers, with catches, hidden repeats,
-  second-microphone anchors and trials where the measures disagree; can't-tell
-  answers modelled, never counted as half agreement.
+- Stage 0b listening validation (`docs/listening-validation-plan.md`): 30 trials on
+  clear differences, with hidden references and repeats; can't-tell answers never
+  counted as half agreement. It cannot separate the band sets, which differ almost
+  only on near-ties.
 - Data: one recorded lag per recording in the catalogue (Prodigal 4 first), crops
   re-cut where the DI plays, and bleed flags.
 - Listening checks the review asked for: whether hiss matters to this listener
