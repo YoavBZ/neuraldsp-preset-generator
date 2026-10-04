@@ -20,10 +20,10 @@ count-based split would hand one machine all of them. Slices are filled
 longest-first, each unit going to whichever slice is lightest so far.
 
 A module is a single unit unless it is too large to be one. Keeping a module
-together means its module- and session-scoped fixtures are paid once per worker
-on one machine rather than on every machine: `test_match_audition.py` builds its
-match once per worker, and scattered over four machines that saving would be
-gone. Modules too big to balance as one piece are split into their tests.
+on one machine means its expensive fixtures are built there and nowhere else:
+`test_match_audition.py` builds its match once per xdist worker (a session-scoped
+fixture), and scattered over four machines that saving would be gone. Modules too
+big to balance as one piece are split into their tests.
 
 A test with no recorded time joins its module's slice if the module was kept
 whole, and otherwise goes by a hash of its name; a new module goes by a hash of
@@ -32,7 +32,8 @@ whether a test runs. To refresh it from the CI runners themselves, start the CI
 workflow by hand with `record_durations` ticked, download one Python version's
 four `durations-*` artifacts, and take their union:
 
-    python - durations-3.13-*/durations.json > tests/durations.json <<'EOF'
+    gh run download <run id> -p 'durations-3.13-*' -D /tmp/durations
+    python - /tmp/durations/*/durations.json > tests/durations.json <<'EOF'
     import json, sys
     union = {}
     for path in sys.argv[1:]:
@@ -41,11 +42,18 @@ four `durations-*` artifacts, and take their union:
     EOF
 
 `python -m pytest --record-durations tests/durations.json` does the same from
-one whole local run, if the machine is otherwise idle.
+one local run, if the machine is otherwise idle. It replaces the whole record
+with what that run ran, so give it no paths, `-k` or `-m`.
+
+Each machine cuts only what it collected, so a test one machine failed to collect
+would run nowhere, and nothing here can see the other machines. Every shard
+therefore ends by naming its collection — count and sha256 — so the four can be
+compared by eye.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import pathlib
 import zlib
@@ -57,6 +65,8 @@ DURATIONS = pathlib.Path(__file__).with_name("durations.json")
 # A module costing more than 1/WHOLE_MODULE_PARTS of one slice is split into
 # its tests.
 WHOLE_MODULE_PARTS = 4
+
+_SUMMARY = pytest.StashKey[str]()
 
 
 def pytest_addoption(parser):
@@ -106,13 +116,15 @@ def _module(nodeid: str) -> str:
 
 
 def _costs(recorded: dict) -> dict:
-    """Each recorded time in whole centiseconds.
+    """Each recorded time in whole centiseconds, and never less than one.
 
     Integers, not the floats they came from: Python 3.12 made `sum()` of floats
     compensated, so 3.10 and 3.13 added the same times to different last bits,
     broke near-ties between slices differently, and cut the suite differently.
+    At least one, because hundreds of tests round to nothing; costing nothing,
+    they all went to whichever slice came first.
     """
-    return {nodeid: round(seconds * 100) for nodeid, seconds in recorded.items()}
+    return {nodeid: max(1, round(recorded[nodeid] * 100)) for nodeid in recorded}
 
 
 class Cut:
@@ -137,7 +149,8 @@ class Cut:
                 units.append((total, name, members, name))
             else:
                 self.split.add(name)
-                units.extend((costs[member], member, [member], None) for member in members)
+                units.extend((costs[member], member, [member], None)
+                             for member in members)
 
         self.loads = [0] * count
         self.tests: dict = {}
@@ -172,6 +185,27 @@ def pytest_collection_modifyitems(config, items):
     config.hook.pytest_deselected(
         items=[item for item in items if not mine[item.nodeid]])
     items[:] = [item for item in items if mine[item.nodeid]]
+
+    collection = hashlib.sha256("\n".join(sorted(mine)).encode()).hexdigest()[:16]
+    summary = (f"--shard {spec}: this slice holds {len(items)} of the {len(mine)} "
+               f"tests collected (collection sha256 {collection})")
+    if hasattr(config, "workeroutput"):
+        config.workeroutput["shard"] = summary     # xdist hands it to the controller
+    else:
+        config.stash[_SUMMARY] = summary
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_testnodedown(node, error):
+    summary = getattr(node, "workeroutput", {}).get("shard")
+    if summary:
+        node.config.stash[_SUMMARY] = summary
+
+
+def pytest_terminal_summary(terminalreporter, config):
+    summary = config.stash.get(_SUMMARY, None)
+    if summary:
+        terminalreporter.write_line(summary)
 
 
 class _Recorder:

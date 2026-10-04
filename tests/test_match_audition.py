@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -39,8 +40,6 @@ def _built_run(tmp_path_factory):
     built once in `work` and restored *there*, byte for byte, before each test.
     One worker runs one test at a time, so nothing else is using `work` then.
     """
-    import shutil
-
     from tests import fixtures_audio as fx
 
     work = tmp_path_factory.mktemp("completed-run")
@@ -77,8 +76,6 @@ def _built_run(tmp_path_factory):
 @pytest.fixture()
 def completed_run(_built_run):
     """A freshly completed match, whatever the previous test did to it."""
-    import shutil
-
     work, pristine = _built_run
     shutil.rmtree(work)
     shutil.copytree(pristine, work)

@@ -1,8 +1,6 @@
 """Regression tests for the GitHub Actions trigger contract."""
 
-import functools
 import hashlib
-import operator
 import os
 import re
 import subprocess
@@ -82,17 +80,20 @@ def test_every_job_checks_out_full_history_unless_it_says_why_not() -> None:
 def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
     """`--shard I/N` runs one slice and trusts the job for the rest. A matrix of
     `[1, 2, 3]` beside a `/4`, an `exclude:` dropping one version's shard, an `if:`
-    or `continue-on-error` on the step, or a `-k` added to the command would each
-    leave part of the suite unrun or unheeded on every build — and nothing would
-    fail, because every shard that did run would pass."""
+    or `continue-on-error` on the step, or a `-k` added to the command or slipped
+    in through `PYTEST_ADDOPTS` would each leave part of the suite unrun or
+    unheeded on every build — and nothing would fail, because every shard that
+    did run would pass."""
     workflow = yaml.load(CI_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
     job = workflow["jobs"]["analysis"]
+    [test] = [step for step in job["steps"] if step.get("name") == "Test"]
+    for scope in (workflow, job, test):
+        assert "PYTEST_ADDOPTS" not in (scope.get("env") or {})
     matrix = job["strategy"]["matrix"]
     assert set(matrix) == {"python-version", "shard"}, (
         "an include or exclude changes which (version, shard) pairs run; if one "
         "is needed, extend this test to check every version still runs every slice")
     assert "if" not in job and "continue-on-error" not in job
-    [test] = [step for step in job["steps"] if step.get("name") == "Test"]
     assert "if" not in test and "continue-on-error" not in test
     split = re.fullmatch(
         r"python -m pytest -q --shard \$\{\{ matrix\.shard \}\}/(\d+)"
@@ -139,21 +140,14 @@ def test_the_slices_are_balanced_on_the_recorded_times() -> None:
         assert max(cut.loads) - min(cut.loads) <= max(units), (count, cut.loads)
 
 
-def test_the_slices_are_the_same_on_every_python(monkeypatch) -> None:
+def test_the_slices_are_the_same_on_every_python() -> None:
     """3.12 made `sum()` of floats compensated, and summing recorded times as
     floats cut the suite differently on 3.10 and 3.13: each still ran every test,
     but a failing `--shard 1/4` named different tests on another interpreter.
-
-    The costs are integers, which every interpreter adds alike; shadowing `sum`
-    with the old left-to-right addition checks it from the other end, where the
-    built-in differs (3.12 on). And the cut must not follow string hashing,
+    Integers add alike everywhere. And the cut must not follow string hashing,
     which every process — every machine — seeds differently."""
     recorded = conftest._recorded()
     assert all(type(cost) is int for cost in conftest._costs(recorded).values())
-    reference = conftest.Cut(4, recorded).tests
-    monkeypatch.setattr(conftest, "sum", lambda values, start=0: functools.reduce(
-        operator.add, values, start), raising=False)
-    assert conftest.Cut(4, recorded).tests == reference
 
     script = ("import hashlib, json; from tests import conftest; "
               "cut = conftest.Cut(4, conftest._recorded()); "
@@ -177,7 +171,10 @@ def test_narrowing_a_run_keeps_each_test_in_its_slice() -> None:
              "-p", "no:cacheprovider", *args],
             cwd=ROOT, capture_output=True, text=True)
         assert done.returncode in (0, 5), done.stdout + done.stderr  # 5: none here
-        return {line for line in done.stdout.splitlines() if "::" in line}
+        collected = {line for line in done.stdout.splitlines() if "::" in line}
+        if args[0] == "--shard" and "-k" not in args:
+            assert f"{args[1]}: this slice holds {len(collected)} of the " in done.stdout
+        return collected
 
     files = ["tests/test_ci_workflow.py", "tests/test_paths.py"]
     name = "test_the_analysis_shards_are_every_slice_of_the_split_they_run"
