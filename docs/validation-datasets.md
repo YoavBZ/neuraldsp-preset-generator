@@ -78,6 +78,22 @@ otherwise before it runs.
   shifted by `lag_ms`, which is reported, not applied. A session's length is its
   part's DI length; shorter tracks are padded with silence to it and longer ones
   cut to it.
+- **Lags.** `lag_ms` comes from 10-ms envelopes, so it is quantised to 10 ms. An
+  analysis that needs a part's lag takes it from `validation-lags.json`
+  (`scripts/record_part_lags.py`, read by `benchmark_recordings.lag_samples`): one lag
+  per set-2 development part, measured on its 10-s validation crop. Candidates come
+  from the cross-correlation of the amp track with all the part's SW50R panel renders;
+  where a DI's buzz or pulse makes a comb of near-equal peaks, the judge chooses
+  between them, and the choice stands only if a clear onset peak from the raw DI
+  confirms it (the judge's preference is not independent evidence: every render
+  shares the part's DI and amp track). Four are ambiguous and `lag_samples` withholds
+  them unless asked: Passing Ships ElecGtr3 (a comb the judge cannot split, its
+  onset between two of the peaks), Prodigal ElecGtr4 (a comb with no clear onset),
+  Strangest Places (+37 samples; −37 is nearly as high) and Signs ElecGtr3 (72; 23 is
+  nearly as high), whose pooled subsets land on both peaks. Of the
+  39 others, the catalogue is off by 2.5 ms or more on 7, by up to 14 ms (Today's The
+  Day ElecGtr10). Analyses declared before this file existed keep the lags they
+  declared.
 - **The reference** is the part's amp track: for Telefunken the M80 microphone; the
   TF11 is used only by a test that names it. For Cambridge and Guitar-TECHS, the
   one amp track.

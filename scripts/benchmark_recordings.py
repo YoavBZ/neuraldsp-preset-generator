@@ -55,6 +55,9 @@ from benchmark_match import _backend_caveat, _renderer, _source_commit
 
 SCHEMA = "recordings-benchmark-1"
 CATALOG = PLUGIN_ROOT / "docs" / "validation-datasets.json"
+# One measured DI-to-amp-track lag per development part (scripts/record_part_lags.py);
+# the catalogue's `lag_ms` is quantised to 10 ms and wrong on about one part in five.
+LAGS = PLUGIN_ROOT / "docs" / "validation-lags.json"
 SIGNALS = ("same", "other", "noise", "library")
 # The `library` signal: a fixed probe of real guitar, built per part from
 # development DIs of other bands, so no part is ever heard through its own band's
@@ -95,6 +98,23 @@ def build_parser() -> argparse.ArgumentParser:
                     help="score the neutral start and each signal's inversion only")
     ap.add_argument("--json", type=pathlib.Path)
     return ap
+
+
+def lag_samples(part: str, *, allow_ambiguous: bool = False, lags_path=None):
+    """Samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag]),
+    as measured once and recorded (`docs/validation-lags.json`). None when the part has
+    no recorded lag, or its lag is ambiguous and `allow_ambiguous` is false."""
+    record = lag_record(part, lags_path=lags_path)
+    if record is None or (record["ambiguous"] and not allow_ambiguous):
+        return None
+    return record["lag_samples"]
+
+
+def lag_record(part: str, *, lags_path=None):
+    """The part's whole recorded entry (lag, candidates, checks), or None. A missing
+    file is an error, not an absent part."""
+    path = LAGS if lags_path is None else lags_path
+    return json.loads(path.read_text())["parts"].get(part)
 
 
 def development_parts(catalog: dict, only=None, sets=None):
