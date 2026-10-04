@@ -1,0 +1,822 @@
+{
+ "excluded_bleed_heavy": [
+  "telefunken-Lost_Alive-GTR",
+  "telefunken-Until_I_Get_Back-GTR"
+ ],
+ "median_abs_log_ratio": 0.21306811363690348,
+ "pairs_in_pool": 31050,
+ "clear_pairs": 15525,
+ "trials": [
+  {
+   "kind": "test",
+   "id": "t00",
+   "part": "cambridge-Drag_Me_Down-ElecGtr4",
+   "band": "Adam Buckley",
+   "first": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+   "second": "factory:Neural DSP/Doomish Riff",
+   "log_ratio": {
+    "judge": -0.4811102533431575,
+    "judge_union": -0.44251113894618926,
+    "alm": -0.42395460652338685,
+    "v3c": -0.8666727038801538
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": 914,
+   "predictions": {
+    "factory:Artists/Jack Gardiner/Mid Boost Lead": {
+     "judge": 4.277431022288618,
+     "judge_union": 4.646866310264908,
+     "alm": 5.084180577371845,
+     "v3c": 0.6093550966886189
+    },
+    "factory:Neural DSP/Doomish Riff": {
+     "judge": 6.920325833523852,
+     "judge_union": 7.233364058541087,
+     "alm": 7.768588424903815,
+     "v3c": 1.4496448628654608
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t01",
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "band": "Atlantis Bound",
+   "first": "factory:Artists/Pete Thorn/Stacked Drives",
+   "second": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "log_ratio": {
+    "judge": 0.35164579107842303,
+    "judge_union": 0.3507825879184183,
+    "alm": 0.4123803462503963,
+    "v3c": 0.26909640194832435
+   },
+   "disagree": false,
+   "window_s": 4.0,
+   "lag": -43,
+   "predictions": {
+    "factory:Artists/Pete Thorn/Stacked Drives": {
+     "judge": 5.605906407957363,
+     "judge_union": 5.605906407957363,
+     "alm": 6.544452757094618,
+     "v3c": 1.0958082433516108
+    },
+    "factory:Artists/Royce Whittaker/Wall Of Doom": {
+     "judge": 3.943919266385683,
+     "judge_union": 3.9473251397280644,
+     "alm": 4.332901618170604,
+     "v3c": 0.8372737599284377
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t02",
+   "part": "telefunken-She's_Gone-GTR",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "first": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+   "second": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+   "log_ratio": {
+    "judge": 0.28307615109980444,
+    "judge_union": 0.2935247922592376,
+    "alm": 0.24128611449731993,
+    "v3c": -0.13795849928370973
+   },
+   "disagree": true,
+   "window_s": 3.25,
+   "lag": -30,
+   "predictions": {
+    "factory:Artists/Danny Dela Cruz/Riff Heavy": {
+     "judge": 7.501744054216222,
+     "judge_union": 7.640492216745259,
+     "alm": 9.55904036991945,
+     "v3c": 0.8294402931130025
+    },
+    "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead": {
+     "judge": 5.65228214442002,
+     "judge_union": 5.696985840814612,
+     "alm": 7.509742877292267,
+     "v3c": 0.9521376616910587
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t03",
+   "part": "telefunken-Russian_Cream-GTR_2",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+   "second": "factory:Artists/Royce Whittaker/Big Tail Clean",
+   "log_ratio": {
+    "judge": 0.2958973411877064,
+    "judge_union": 0.42270584311741133,
+    "alm": 0.29165344420944983,
+    "v3c": -0.13315222625194417
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -30,
+   "predictions": {
+    "factory:Artists/Danny Dela Cruz/Riff Heavy": {
+     "judge": 6.581746046308182,
+     "judge_union": 8.82839219056937,
+     "alm": 6.9433440963303,
+     "v3c": 0.7645495120134589
+    },
+    "factory:Artists/Royce Whittaker/Big Tail Clean": {
+     "judge": 4.895922547461583,
+     "judge_union": 5.78499253388453,
+     "alm": 5.186868133324425,
+     "v3c": 0.8734396291427821
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t04",
+   "part": "telefunken-Long_Way_Home-GTR",
+   "band": "Doom Flamingo",
+   "first": "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+   "second": "factory:Artists/Richard Henshall/Tremolo Jam",
+   "log_ratio": {
+    "judge": 0.4206800250839548,
+    "judge_union": 0.4320899234825666,
+    "alm": 0.4340753589297722,
+    "v3c": -0.42400226375950517
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)": {
+     "judge": 5.659331239297306,
+     "judge_union": 5.724273421045349,
+     "alm": 6.092709916153169,
+     "v3c": 0.7513953245091959
+    },
+    "factory:Artists/Richard Henshall/Tremolo Jam": {
+     "judge": 3.7159178163568907,
+     "judge_union": 3.7159178163568907,
+     "alm": 3.947243952504532,
+     "v3c": 1.148180936333977
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t05",
+   "part": "cambridge-Today's_The_Day-ElecGtr10",
+   "band": "Eat The Feeder",
+   "first": "factory:Artists/Richard Henshall/Tele Jam",
+   "second": "factory:Neural DSP/Blue Hotel",
+   "log_ratio": {
+    "judge": 0.7705786791113173,
+    "judge_union": 0.7705786791113173,
+    "alm": 0.7531831419287585,
+    "v3c": 0.8375235132929568
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": 620,
+   "predictions": {
+    "factory:Artists/Richard Henshall/Tele Jam": {
+     "judge": 9.876344178443508,
+     "judge_union": 9.876344178443508,
+     "alm": 13.595956952270262,
+     "v3c": 1.9303074457449467
+    },
+    "factory:Neural DSP/Blue Hotel": {
+     "judge": 4.57023095920574,
+     "judge_union": 4.57023095920574,
+     "alm": 6.401864804932262,
+     "v3c": 0.8354003359726468
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t06",
+   "part": "telefunken-Fragments-GTR",
+   "band": "Eggy",
+   "first": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+   "second": "factory:Artists/John Connearn/Dotted Eighth Tape",
+   "log_ratio": {
+    "judge": 0.3590195593384808,
+    "judge_union": 0.37158996535212263,
+    "alm": 0.3650381061022768,
+    "v3c": 0.31980463207612725
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Danny Dela Cruz/Riff Heavy": {
+     "judge": 7.314943539724336,
+     "judge_union": 7.409386784034752,
+     "alm": 8.742886176237251,
+     "v3c": 1.2334100662899221
+    },
+    "factory:Artists/John Connearn/Dotted Eighth Tape": {
+     "judge": 5.108469030476307,
+     "judge_union": 5.10978697428851,
+     "alm": 6.069051030265581,
+     "v3c": 0.8958145282830985
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t07",
+   "part": "cambridge-Prodigal-ElecGtr5",
+   "band": "Starnes And Shah",
+   "first": "factory:Artists/CARRTOONS/5 String P Bass",
+   "second": "factory:Neural DSP/Jose Deluxe",
+   "log_ratio": {
+    "judge": -0.4914526776422,
+    "judge_union": -0.4283843460581434,
+    "alm": -0.40490601928063036,
+    "v3c": -0.49574340736564526
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -51,
+   "predictions": {
+    "factory:Artists/CARRTOONS/5 String P Bass": {
+     "judge": 5.04936026582514,
+     "judge_union": 4.981528783950011,
+     "alm": 6.866573094078575,
+     "v3c": 0.9961225046226899
+    },
+    "factory:Neural DSP/Jose Deluxe": {
+     "judge": 8.254134554006715,
+     "judge_union": 7.645530086993067,
+     "alm": 10.294102714134082,
+     "v3c": 1.6353524960290815
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t08",
+   "part": "telefunken-Honey-GTR",
+   "band": "Swatkins",
+   "first": "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+   "second": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+   "log_ratio": {
+    "judge": -0.7001760637626898,
+    "judge_union": -0.7349006503238059,
+    "alm": -0.4949541287765314,
+    "v3c": -0.3872990572911393
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -12,
+   "predictions": {
+    "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)": {
+     "judge": 3.9258849250484658,
+     "judge_union": 3.890337042465029,
+     "alm": 6.697117569479434,
+     "v3c": 0.9230865113406478
+    },
+    "factory:Artists/Rabea Massaad/All Out Amp Destruction": {
+     "judge": 7.907153437672727,
+     "judge_union": 8.11242184031552,
+     "alm": 10.986105621824484,
+     "v3c": 1.3597036027608733
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t09",
+   "part": "cambridge-Passing_Ships-ElecGtr2",
+   "band": "The Travelling Band",
+   "first": "factory:Artists/Neil Zaza/Bell Tremolo",
+   "second": "factory:Artists/Pete Thorn/Country Slap and Spring",
+   "log_ratio": {
+    "judge": 0.2302819820392897,
+    "judge_union": 0.2813428547253868,
+    "alm": 0.3027590858347503,
+    "v3c": 0.3215710854568834
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -46,
+   "predictions": {
+    "factory:Artists/Neil Zaza/Bell Tremolo": {
+     "judge": 5.061325234515215,
+     "judge_union": 5.389696701881912,
+     "alm": 7.481484311114325,
+     "v3c": 2.2084912327358612
+    },
+    "factory:Artists/Pete Thorn/Country Slap and Spring": {
+     "judge": 4.0202591712926035,
+     "judge_union": 4.0679787647013335,
+     "alm": 5.527148959792868,
+     "v3c": 1.6011762202287971
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t10",
+   "part": "cambridge-Signs-ElecGtr3",
+   "band": "Zeno",
+   "first": "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+   "second": "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+   "log_ratio": {
+    "judge": 0.9352882420947441,
+    "judge_union": 0.9225849919009321,
+    "alm": 1.0639108462327802,
+    "v3c": 0.8852669229411656
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -29,
+   "predictions": {
+    "factory:Artists/Keyan Houshmand/TriTone Tremolo": {
+     "judge": 8.962211943492184,
+     "judge_union": 8.962211943492184,
+     "alm": 10.917379730263532,
+     "v3c": 1.2843691115512095
+    },
+    "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)": {
+     "judge": 3.517423717198456,
+     "judge_union": 3.5623914441472198,
+     "alm": 3.7676261844718084,
+     "v3c": 0.5299358651391758
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t11",
+   "part": "telefunken-Long_Way_Home-GTR",
+   "band": "Doom Flamingo",
+   "first": "factory:Artists/CARRTOONS/Benny Tele",
+   "second": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+   "log_ratio": {
+    "judge": -0.4903718057428626,
+    "judge_union": -0.49527135160034275,
+    "alm": -0.5098108710324141,
+    "v3c": 0.2993883842234895
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "factory:Artists/CARRTOONS/Benny Tele": {
+     "judge": 3.3544276661893453,
+     "judge_union": 3.3544276661893453,
+     "alm": 3.6279193900746733,
+     "v3c": 1.078767242516097
+    },
+    "factory:Artists/Rabea Massaad/Full Bodied Single Coils": {
+     "judge": 5.477522884094781,
+     "judge_union": 5.504426111630437,
+     "alm": 6.040399693668281,
+     "v3c": 0.7996593638779362
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t12",
+   "part": "telefunken-Gym_Hours-GTR_1",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Richard Henshall/Big Lead",
+   "second": "template+R",
+   "log_ratio": {
+    "judge": 0.332654749443382,
+    "judge_union": 0.33740638826606967,
+    "alm": 0.320298676896792,
+    "v3c": -0.059626259396613396
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "factory:Artists/Richard Henshall/Big Lead": {
+     "judge": 7.069955970416639,
+     "judge_union": 7.018123458104604,
+     "alm": 8.219322704948334,
+     "v3c": 1.0143419271842786
+    },
+    "template+R": {
+     "judge": 5.069283584477642,
+     "judge_union": 5.008264662660203,
+     "alm": 5.966670894685599,
+     "v3c": 1.0766628611455502
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t13",
+   "part": "cambridge-Quicksand-ElecGtr2",
+   "band": "The Travelling Band",
+   "first": "factory:Artists/Keyan Houshmand/RockNRoll",
+   "second": "factory:Artists/Richard Henshall/Small Lead",
+   "log_ratio": {
+    "judge": 0.5045515086441192,
+    "judge_union": 0.5045515086441192,
+    "alm": 0.2059662897195035,
+    "v3c": -0.06509288040805439
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Keyan Houshmand/RockNRoll": {
+     "judge": 6.79878642109925,
+     "judge_union": 6.79878642109925,
+     "alm": 4.874540518242065,
+     "v3c": 1.0976320587255195
+    },
+    "factory:Artists/Richard Henshall/Small Lead": {
+     "judge": 4.104946131345368,
+     "judge_union": 4.104946131345368,
+     "alm": 3.967196038463822,
+     "v3c": 1.171456757251182
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t14",
+   "part": "cambridge-Quicksand-ElecGtr1",
+   "band": "The Travelling Band",
+   "first": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+   "second": "factory:Neural DSP/Distorted Spy",
+   "log_ratio": {
+    "judge": 0.2400357520012071,
+    "judge_union": 0.2459631668244488,
+    "alm": 0.19862142120820167,
+    "v3c": -0.4335455362197195
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Joseph Anidjar/Enormous Cranked Guy": {
+     "judge": 6.4306336677848455,
+     "judge_union": 7.195182885039196,
+     "alm": 6.272270830811926,
+     "v3c": 0.6080683274634724
+    },
+    "factory:Neural DSP/Distorted Spy": {
+     "judge": 5.05833475856893,
+     "judge_union": 5.626280640181591,
+     "alm": 5.142385319906784,
+     "v3c": 0.9380777104799477
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t15",
+   "part": "telefunken-Strangest_Places-GTR",
+   "band": "Doom Flamingo",
+   "first": "factory:Artists/Pete Thorn/Country Slap and Spring",
+   "second": "factory:Artists/Pete Thorn/Stacked Drives",
+   "log_ratio": {
+    "judge": -0.23383673590035087,
+    "judge_union": -0.20932122376483053,
+    "alm": -0.08895415750227006,
+    "v3c": 0.0668326788769343
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -89,
+   "predictions": {
+    "factory:Artists/Pete Thorn/Country Slap and Spring": {
+     "judge": 3.5894536644772863,
+     "judge_union": 3.665588803938673,
+     "alm": 4.319200085485686,
+     "v3c": 1.497390424989643
+    },
+    "factory:Artists/Pete Thorn/Stacked Drives": {
+     "judge": 4.535052881381624,
+     "judge_union": 4.519087993416139,
+     "alm": 4.721017636046405,
+     "v3c": 1.4005866681076398
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t16",
+   "part": "telefunken-Gym_Hours-GTR_2",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Neil Zaza/Bell Tremolo",
+   "second": "factory:Neural DSP/Distorted Spy",
+   "log_ratio": {
+    "judge": -0.28950447970900484,
+    "judge_union": -0.17227772826881263,
+    "alm": -0.15171989403871117,
+    "v3c": 0.018804795285226113
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -28,
+   "predictions": {
+    "factory:Artists/Neil Zaza/Bell Tremolo": {
+     "judge": 6.377371773683926,
+     "judge_union": 7.7832942840813795,
+     "alm": 8.842692413245333,
+     "v3c": 1.4102820904981999
+    },
+    "factory:Neural DSP/Distorted Spy": {
+     "judge": 8.518672718512844,
+     "judge_union": 9.246613780044983,
+     "alm": 10.291427796457107,
+     "v3c": 1.3840098210127811
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t17",
+   "part": "telefunken-Russian_Cream-GTR_2",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+   "second": "factory:Neural DSP/Dotted 8th Dark Echoes",
+   "log_ratio": {
+    "judge": 0.35919665257484457,
+    "judge_union": 0.39637868786040875,
+    "alm": 0.3758907987617737,
+    "v3c": -0.39722327066575247
+   },
+   "disagree": true,
+   "window_s": 0.5,
+   "lag": -30,
+   "predictions": {
+    "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone": {
+     "judge": 6.6461241709001415,
+     "judge_union": 8.578562288943596,
+     "alm": 7.128927983223171,
+     "v3c": 0.7253324859339981
+    },
+    "factory:Neural DSP/Dotted 8th Dark Echoes": {
+     "judge": 4.640569987081206,
+     "judge_union": 5.77124394808899,
+     "alm": 4.895273126071614,
+     "v3c": 1.0790684716551802
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t18",
+   "part": "telefunken-Bloomlight-GTR",
+   "band": "Eggy",
+   "first": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+   "second": "factory:Artists/Royce Whittaker/Big Tail Clean",
+   "log_ratio": {
+    "judge": 0.7281652799164547,
+    "judge_union": 0.7504741635050762,
+    "alm": 0.7217005149763224,
+    "v3c": 0.397163337426646
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe": {
+     "judge": 4.825267810100863,
+     "judge_union": 4.934123861810175,
+     "alm": 5.2928257891893535,
+     "v3c": 0.6172792147621701
+    },
+    "factory:Artists/Royce Whittaker/Big Tail Clean": {
+     "judge": 2.3296102013362012,
+     "judge_union": 2.3296102013362012,
+     "alm": 2.5719175881328993,
+     "v3c": 0.414950036993635
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t19",
+   "part": "telefunken-Farthest_Step-GTR",
+   "band": "Eggy",
+   "first": "factory:Artists/Keyan Houshmand/RockNRoll",
+   "second": "factory:Neural DSP/Strat 4th Position Funk",
+   "log_ratio": {
+    "judge": 0.3204892700767139,
+    "judge_union": 0.32200164855188956,
+    "alm": 0.3281299210145577,
+    "v3c": 0.20010577527402204
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Keyan Houshmand/RockNRoll": {
+     "judge": 3.7065560875140267,
+     "judge_union": 3.921724230875007,
+     "alm": 4.558785992542533,
+     "v3c": 0.521090220120566
+    },
+    "factory:Neural DSP/Strat 4th Position Funk": {
+     "judge": 2.6901955795613155,
+     "judge_union": 2.842061767797888,
+     "alm": 3.2835542133698845,
+     "v3c": 0.4265874635485296
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t20",
+   "part": "telefunken-Gym_Hours-GTR_1",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+   "second": "factory:Neural DSP/Hair Metal",
+   "log_ratio": {
+    "judge": -0.24111131130501987,
+    "judge_union": -0.27577993354299263,
+    "alm": -0.19625367039708763,
+    "v3c": -0.49228294347872925
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)": {
+     "judge": 5.955447032054576,
+     "judge_union": 5.6845815486808675,
+     "alm": 7.2226142590589335,
+     "v3c": 0.8976843643084865
+    },
+    "factory:Neural DSP/Hair Metal": {
+     "judge": 7.579275235018273,
+     "judge_union": 7.489765224346218,
+     "alm": 8.788733731824363,
+     "v3c": 1.4686537775482076
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t21",
+   "part": "telefunken-Strangest_Places-GTR",
+   "band": "Doom Flamingo",
+   "first": "factory:Artists/John Connearn/Low Gain Solo",
+   "second": "factory:Artists/Richard Henshall/Big Lead",
+   "log_ratio": {
+    "judge": 0.213459748343185,
+    "judge_union": 0.2432716022412709,
+    "alm": 0.3672279793118777,
+    "v3c": 0.23642848997444868
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -89,
+   "predictions": {
+    "factory:Artists/John Connearn/Low Gain Solo": {
+     "judge": 4.786184000272924,
+     "judge_union": 5.003539123509191,
+     "alm": 5.882237054069076,
+     "v3c": 1.6910486571058936
+    },
+    "factory:Artists/Richard Henshall/Big Lead": {
+     "judge": 3.8662060831669884,
+     "judge_union": 3.9230675439610754,
+     "alm": 4.074341594014491,
+     "v3c": 1.3349853976317256
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t22",
+   "part": "telefunken-Sculptor's_Request-GTR_2",
+   "band": "Dom McLennon",
+   "first": "factory:Artists/Richard Henshall/Tremolo Jam",
+   "second": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+   "log_ratio": {
+    "judge": -0.5746768188104081,
+    "judge_union": -0.4281158049132189,
+    "alm": -0.6297107430080181,
+    "v3c": -0.9201718182872786
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -29,
+   "predictions": {
+    "factory:Artists/Richard Henshall/Tremolo Jam": {
+     "judge": 4.992240566128053,
+     "judge_union": 5.55171361747406,
+     "alm": 6.461546660166715,
+     "v3c": 0.6935663854590107
+    },
+    "factory:Artists/Royce Whittaker/Warm Timmonsy Lead": {
+     "judge": 8.86899635175748,
+     "judge_union": 8.518348166900475,
+     "alm": 12.128759531587429,
+     "v3c": 1.740658517088318
+    }
+   }
+  },
+  {
+   "kind": "test",
+   "id": "t23",
+   "part": "telefunken-Bloomlight-GTR",
+   "band": "Eggy",
+   "first": "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+   "second": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "log_ratio": {
+    "judge": -0.22933273207541643,
+    "judge_union": -0.24264628100759122,
+    "alm": -0.18433968131518677,
+    "v3c": -0.5474535182855034
+   },
+   "disagree": false,
+   "window_s": 0.5,
+   "lag": -33,
+   "predictions": {
+    "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone": {
+     "judge": 5.035956800935117,
+     "judge_union": 5.113551261589373,
+     "alm": 5.585363569758113,
+     "v3c": 0.55220934634238
+    },
+    "factory:Artists/Royce Whittaker/Wall Of Doom": {
+     "judge": 6.334027375944561,
+     "judge_union": 6.51782288593635,
+     "alm": 6.715976292842601,
+     "v3c": 0.9546843318609436
+    }
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "band": "Atlantis Bound",
+   "first": "reference",
+   "second": "factory:Artists/Richard Henshall/Small Lead",
+   "window_s": 0.5,
+   "lag": -43,
+   "predictions": {
+    "factory:Artists/Richard Henshall/Small Lead": {
+     "judge": 4.913801031269825,
+     "judge_union": 4.913801031269825,
+     "alm": 5.669110554987632,
+     "v3c": 1.0090677116896711
+    }
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "telefunken-Blind_Spots-GTR",
+   "band": "Doom Flamingo",
+   "first": "reference",
+   "second": "factory:Artists/CARRTOONS/Mustang",
+   "window_s": 0.5,
+   "lag": -25,
+   "predictions": {
+    "factory:Artists/CARRTOONS/Mustang": {
+     "judge": 5.732124497627059,
+     "judge_union": 5.732124497627059,
+     "alm": 6.43453055234486,
+     "v3c": 0.9462022845870317
+    }
+   }
+  },
+  {
+   "kind": "hidden_reference",
+   "part": "telefunken-She's_Gone-GTR",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "first": "reference",
+   "second": "factory:Neural DSP/Broken Radio",
+   "window_s": 3.25,
+   "lag": -30,
+   "predictions": {
+    "factory:Neural DSP/Broken Radio": {
+     "judge": 6.584437303190962,
+     "judge_union": 6.584437303190962,
+     "alm": 13.719535445755037,
+     "v3c": 3.321585658726225
+    }
+   }
+  },
+  {
+   "kind": "repeat",
+   "of": "t22"
+  },
+  {
+   "kind": "repeat",
+   "of": "t17"
+  },
+  {
+   "kind": "repeat",
+   "of": "t16"
+  }
+ ],
+ "seed": 20261004,
+ "panel": "/Users/yoavbz/ndsp-presets/runs/kill/sw50r",
+ "parts": 30,
+ "bands": 11
+}
