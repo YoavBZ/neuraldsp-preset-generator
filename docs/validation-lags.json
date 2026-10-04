@@ -1,0 +1,654 @@
+{
+ "schema": "validation-lags-1",
+ "meaning": "lag_samples: samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag_samples])",
+ "method": "analysis.aligned.estimate_lag pooled over the part's panel renders, \u00b115 ms around the catalogued lag less 52 samples (\u00b150 ms if refused), plus 52; stability from five random nine-render subsets",
+ "panel": "/Users/yoavbz/ndsp-presets/runs/kill/sw50r",
+ "latency_samples": 52,
+ "parts": {
+  "cambridge-Drag_Me_Down-ElecGtr3": {
+   "lag_samples": 966,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 960,
+   "subset_lags": [
+    966,
+    964,
+    967,
+    966,
+    968
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "lag_samples": 966,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 960,
+   "subset_lags": [
+    967,
+    967,
+    2129,
+    965,
+    2128
+   ],
+   "subset_spread_ms": 24.25,
+   "ambiguous": true
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "lag_samples": 9,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 480,
+   "subset_lags": [
+    10,
+    9,
+    10,
+    11,
+    10
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "lag_samples": 9,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    9,
+    7,
+    9,
+    11,
+    8
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+   "lag_samples": 124,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    125,
+    125,
+    121,
+    124,
+    123
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": {
+   "lag_samples": 124,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    125,
+    123,
+    123,
+    123,
+    123
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": {
+   "lag_samples": 25,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 480,
+   "subset_lags": [
+    25,
+    26,
+    25,
+    25,
+    24
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Passing_Ships-ElecGtr2": {
+   "lag_samples": 6,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    8,
+    6,
+    7,
+    6,
+    5
+   ],
+   "subset_spread_ms": 0.062,
+   "ambiguous": false
+  },
+  "cambridge-Passing_Ships-ElecGtr3": {
+   "lag_samples": 477,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    475,
+    473,
+    475,
+    477,
+    478
+   ],
+   "subset_spread_ms": 0.104,
+   "ambiguous": false
+  },
+  "cambridge-Passing_Ships-ElecGtr4": {
+   "lag_samples": 18,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    19,
+    17,
+    17,
+    16,
+    17
+   ],
+   "subset_spread_ms": 0.062,
+   "ambiguous": false
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "lag_samples": 14,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    14,
+    15,
+    14,
+    14,
+    13
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Prodigal-ElecGtr1": {
+   "lag_samples": 76,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    75,
+    77,
+    75,
+    76,
+    76
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Prodigal-ElecGtr2": {
+   "lag_samples": 35,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    33,
+    33,
+    37,
+    34,
+    34
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-Prodigal-ElecGtr3": {
+   "lag_samples": 6,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    6,
+    7,
+    7,
+    6,
+    6
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "cambridge-Prodigal-ElecGtr4": {
+   "lag_samples": 1054,
+   "search_ms": 50.0,
+   "renders": 46,
+   "catalogue_lag_samples": -960,
+   "subset_lags": [
+    1053,
+    1053,
+    1054,
+    1054,
+    1053
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "lag_samples": 1,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    2,
+    1,
+    0,
+    1,
+    2
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "lag_samples": 19,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    20,
+    19,
+    16,
+    19,
+    20
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-Quicksand-ElecGtr2": {
+   "lag_samples": 19,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    20,
+    19,
+    21,
+    20,
+    17
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "lag_samples": 26,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 480,
+   "subset_lags": [
+    31,
+    18,
+    29,
+    29,
+    25
+   ],
+   "subset_spread_ms": 0.271,
+   "ambiguous": false
+  },
+  "cambridge-Signs-ElecGtr3": {
+   "lag_samples": 23,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    27,
+    23,
+    25,
+    71,
+    69
+   ],
+   "subset_spread_ms": 1.0,
+   "ambiguous": true
+  },
+  "cambridge-Signs-ElecGtr6": {
+   "lag_samples": 34,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    33,
+    33,
+    34,
+    33,
+    35
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "lag_samples": -77,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 480,
+   "subset_lags": [
+    -79,
+    -77,
+    -78,
+    -75,
+    -76
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "lag_samples": 672,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    671,
+    672,
+    671,
+    671,
+    672
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "lag_samples": 27,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    28,
+    28,
+    27,
+    28,
+    28
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "telefunken-Bloomlight-GTR": {
+   "lag_samples": 19,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    20,
+    19,
+    19,
+    19,
+    20
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "lag_samples": 19,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    16,
+    19,
+    17,
+    17,
+    19
+   ],
+   "subset_spread_ms": 0.062,
+   "ambiguous": false
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "lag_samples": 30,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    29,
+    28,
+    29,
+    30,
+    30
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "lag_samples": 22,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    24,
+    23,
+    21,
+    23,
+    21
+   ],
+   "subset_spread_ms": 0.062,
+   "ambiguous": false
+  },
+  "telefunken-Fragments-GTR": {
+   "lag_samples": 19,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    20,
+    21,
+    18,
+    18,
+    17
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "lag_samples": 27,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    31,
+    26,
+    30,
+    25,
+    30
+   ],
+   "subset_spread_ms": 0.125,
+   "ambiguous": false
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "lag_samples": 24,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    25,
+    25,
+    24,
+    23,
+    25
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "telefunken-Hikikomori_-_Love_Does-GTR": {
+   "lag_samples": 20,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    22,
+    42,
+    20,
+    20,
+    21
+   ],
+   "subset_spread_ms": 0.458,
+   "ambiguous": false
+  },
+  "telefunken-Honey-GTR": {
+   "lag_samples": 40,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    36,
+    42,
+    37,
+    36,
+    41
+   ],
+   "subset_spread_ms": 0.125,
+   "ambiguous": false
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "lag_samples": 27,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    27,
+    27,
+    27,
+    26,
+    26
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "telefunken-Lost_Alive-GTR": {
+   "lag_samples": 36,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    37,
+    36,
+    35,
+    36,
+    38
+   ],
+   "subset_spread_ms": 0.062,
+   "ambiguous": false
+  },
+  "telefunken-Measurements-GTR": {
+   "lag_samples": 27,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    27,
+    26,
+    28,
+    26,
+    26
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "telefunken-Russian_Cream-GTR_1": {
+   "lag_samples": 29,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    25,
+    28,
+    29,
+    27,
+    28
+   ],
+   "subset_spread_ms": 0.083,
+   "ambiguous": false
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "lag_samples": 22,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    22,
+    24,
+    24,
+    22,
+    23
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "lag_samples": 29,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    24,
+    29,
+    30,
+    31,
+    27
+   ],
+   "subset_spread_ms": 0.146,
+   "ambiguous": false
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "lag_samples": 23,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    23,
+    23,
+    23,
+    22,
+    21
+   ],
+   "subset_spread_ms": 0.042,
+   "ambiguous": false
+  },
+  "telefunken-She's_Gone-GTR": {
+   "lag_samples": 22,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    21,
+    22,
+    21,
+    22,
+    21
+   ],
+   "subset_spread_ms": 0.021,
+   "ambiguous": false
+  },
+  "telefunken-Strangest_Places-GTR": {
+   "lag_samples": -37,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    -34,
+    -35,
+    -35,
+    38,
+    36
+   ],
+   "subset_spread_ms": 1.521,
+   "ambiguous": true
+  },
+  "telefunken-Until_I_Get_Back-GTR": {
+   "lag_samples": 40,
+   "search_ms": 15.0,
+   "renders": 46,
+   "catalogue_lag_samples": 0,
+   "subset_lags": [
+    43,
+    36,
+    43,
+    37,
+    42
+   ],
+   "subset_spread_ms": 0.146,
+   "ambiguous": false
+  }
+ }
+}

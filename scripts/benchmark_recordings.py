@@ -55,6 +55,9 @@ from benchmark_match import _backend_caveat, _renderer, _source_commit
 
 SCHEMA = "recordings-benchmark-1"
 CATALOG = PLUGIN_ROOT / "docs" / "validation-datasets.json"
+# One measured DI-to-amp-track lag per development part (scripts/record_part_lags.py);
+# the catalogue's `lag_ms` is quantised to 10 ms and wrong on about one part in five.
+LAGS = PLUGIN_ROOT / "docs" / "validation-lags.json"
 SIGNALS = ("same", "other", "noise", "library")
 # The `library` signal: a fixed probe of real guitar, built per part from
 # development DIs of other bands, so no part is ever heard through its own band's
@@ -95,6 +98,21 @@ def build_parser() -> argparse.ArgumentParser:
                     help="score the neutral start and each signal's inversion only")
     ap.add_argument("--json", type=pathlib.Path)
     return ap
+
+
+def lag_samples(part: str, lags_path: pathlib.Path = LAGS):
+    """Samples the part's amp track lags its DI at 48 kHz (recording[t] ~ di[t - lag]),
+    as measured once and recorded; None if the part has no recorded lag. Ambiguous
+    lags (two correlation peaks) are returned too; `lag_record` says which."""
+    record = lag_record(part, lags_path)
+    return None if record is None else record["lag_samples"]
+
+
+def lag_record(part: str, lags_path: pathlib.Path = LAGS):
+    """The part's whole recorded entry (lag, stability, ambiguity), or None."""
+    if not lags_path.exists():
+        return None
+    return json.loads(lags_path.read_text())["parts"].get(part)
 
 
 def development_parts(catalog: dict, only=None, sets=None):
