@@ -77,8 +77,8 @@ clean description of the wrong instrument. Two things to look at every time:
 - an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`,
   or a "does not look like a guitar" caveat — each means **look at the window
   before trusting it**, and re-measure with `--excerpt-start SECONDS`
-- a centroid below 250 Hz or a −6 dB extent below 500 Hz is not a dark tone, it
-  is a different instrument
+- a centroid below 200 Hz together with a −6 dB extent below 450 Hz is not a dark
+  tone, it is a different instrument
 
 [reading-a-reference.md](../../reference/reading-a-reference.md) covers this,
 what each regime's confidence is worth, and — importantly for a `mix` or a

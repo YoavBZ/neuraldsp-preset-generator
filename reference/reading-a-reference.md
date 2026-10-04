@@ -29,15 +29,15 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
 **Before using any numbers, check the excerpt plausibly contains a guitar.** Two
 cheap tests, both reported in `--text`:
 
-| | implausible | the dark jazz tone this threshold was set against |
-|---|---|---|
-| spectral centroid | below 250 Hz | 372 Hz |
-| −6 dB extent | tops out below 500 Hz | 737 Hz |
+| | implausible when both hold |
+|---|---|
+| spectral centroid | below 200 Hz |
+| −6 dB extent | tops out below 450 Hz |
 
-A fingerprint that fails either is flagged, and the flag means *find a different
-window*, not *this is a dark tone*. Even a neck-pickup jazz sound with the tone
-rolled off carries harmonics well past 500 Hz; a bass, a pad, an intro or a fade
-does not.
+A fingerprint under both is flagged, and the flag means *find a different window*,
+not *this is a dark tone*. A dark amp track can have a low centroid or a short
+extent, but on 57 real guitar amp tracks only one had both, against 50 of 52 bass
+tracks from the same sessions; a bass, a pad, an intro or a fade does.
 
 `--excerpt-start` is reported honestly when it could not be honoured, too. A
 start with no room for the requested length is clamped and says so
