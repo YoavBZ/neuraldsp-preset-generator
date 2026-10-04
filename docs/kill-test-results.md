@@ -123,8 +123,11 @@ If the user decides to proceed, these conditions apply to the model POC
    band medians; P2 adds another player's DI and the second microphone.
 4. The POC stays at its cut-down size until P2 passes.
 
-Stage 0b (validating the measures by listening) is worth doing either way: every
-conclusion here and in `docs/measuring-closeness.md` waits on it.
+Stage 0b has since validated the judge, for clear differences between clean-to-crunch
+PR12 renders only (`docs/listening-validation-results.md`). The judge's readings here
+were already computed with both band sets, so under the plan's "validates the judge"
+clause the verdict stays "not passed". This panel's SW50R presets are mostly high-gain,
+outside the validated range.
 
 Outputs: `~/ndsp-presets/runs/kill/k-sw50r-run2.json`, `k3-sw50r-run2.json`,
 `k-judge-run2.json` (local; not committed).
