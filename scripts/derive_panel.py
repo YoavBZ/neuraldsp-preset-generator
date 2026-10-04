@@ -89,7 +89,7 @@ def main():
     print(f"{len(presets)} factory presets kept, {len(rows)} rows")
     if args.lags_json:
         lags_doc = json.loads(LAGS.read_text())
-        parts = {r["part"] for r in rows}
+        parts = {r["part"] for r in rows if "part" in r}          # not the canary rows
         table = {"panel": str(args.out_dir),
                  "source": "docs/validation-lags.json, recorded lag less the 52-sample "
                            "latency; parts whose lag is ambiguous have none",
