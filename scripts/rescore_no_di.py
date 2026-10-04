@@ -347,8 +347,10 @@ def main():
         elif k.startswith("toneking|") and not controls["null"]["passes"]:
             final[k] = {"verdict": "not read: the null control fails", "fragile": why}
         else:
-            final[k] = {"verdict": v, "fragile": why,
-                        "for the wording": "not shown" if why else v}
+            final[k] = {"verdict": v, "fragile": why}
+            # Only a product arm's verdict reaches the rule's wording.
+            final[k]["for the wording" if k in FAMILIES["product"] else
+                     "for the sentences reporting it"] = "not shown" if why else v
     own_drift = {p: {k: v["own_lag"] - lags[p]["lag_samples"] for k, v in s["renders"].items()
                      if abs(v["own_lag"] - lags[p]["lag_samples"]) > 24}
                  for p, s in scored.items()}

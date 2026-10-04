@@ -54,7 +54,8 @@ The judge normalises loudness, so this compares tone, not level; each render's l
 offset and loudness over the window are kept. A part the judge refuses on any start
 render, under either band set, is left out of every comparison and reading: from the
 start renders alone, six (five for their pauses, Hikikomori for a DI that plays in too
-few frames), leaving 37 parts in 12 bands. An arm **loses** on a part, a log ratio of
+few frames), leaving 37 parts in 12 bands. (The own-lag reading also leaves out a part
+a start render refuses at its own lag: none, from the start renders.) An arm **loses** on a part, a log ratio of
 +1.0 (2.7 times the start's distance), when its render has no measurable loudness, is
 more than 20 LU under its start over the window (the product's own guitar check fails
 an answer 20 dB under the template), or is refused where its start is not.
@@ -76,7 +77,10 @@ library probe, which cannot). Under one band set, an arm is **better** than the 
 if the median and the sum of its band medians are both below 0 and its Holm-adjusted p
 is below 0.05; **worse** if both are above 0 and the same p is below 0.05; **not shown**
 otherwise. Its verdict is better or worse only if both band sets agree; otherwise not
-shown.
+shown. (The two families replaced one Holm family of 16 before any result under the
+judge, prompted by a review's concern that a reading with fewer bands could not reach
+significance over 16; the split follows which arms could ship. The error rate is held
+at 0.05 per family, so a research "better" is significant within its family only.)
 
 The verdict must also hold in three sensitivity readings, or it is reported as fragile:
 the four parts with ambiguous lags dropped; each render scored at its own best lag (the
@@ -86,17 +90,24 @@ is reported); and the parts with over 20% of their scored frames pauses (the jud
 own count, at 2048-point frames) dropped. Counted from the start renders alone, these
 keep 33 parts in 12 bands, 37 in 12, and 34 in 10. A reading only counts against a
 verdict if it could reach significance at all (8 × 2/2^bands below 0.05, 9 bands or
-more); all three can. Every reading's full statistics are kept.
+more); all three can, though at 10 bands the pause-heavy reading has much less power,
+so it can make a verdict fragile by power alone (which only ever moves the wording to
+"no closer"). Every reading's full statistics are kept.
 
 What follows:
 
-- For the product's wording a fragile verdict counts as not shown, and the research
-  arms never change it.
-- **No product arm better** (all not shown or worse): the rule stands. Where a product
-  arm is worse under the judge, the product's wording "further from the recording"
-  stays for it; where it is only not shown, that wording becomes "no closer" (`scripts/match_preset.py`'s
-  refusal message, `skills/match/SKILL.md`, `reference/reading-a-reference.md`, the
-  README). The wording is changed in a separate PR, after the listening test.
+- For the product's wording a fragile verdict counts as not shown. A void result (the
+  positive control fails) or an unread one (Tone King, when the null fails) leaves the
+  current text, marked as not confirmed under the judge.
+- **No product arm better** (all not shown or worse): the rule stands. For every
+  product arm, whatever its text says now, worse under the judge means "further from
+  the recording" and not shown means "no closer" (`scripts/match_preset.py`'s refusal
+  message, `skills/match/SKILL.md`, `reference/reading-a-reference.md`, the README).
+- The research arms never change the rule or the advice; only the sentences that
+  report them (`scripts/match_preset.py`'s note that a search through real guitar
+  clips "ended level with it", and `skills/match/SKILL.md`'s "closer on 23–30 of 43")
+  are updated to their verdicts under the judge.
+- The wording is changed in a separate PR, after the listening test.
 - **An arm better** (product or research): it is reported to the user with its
   controls and sensitivities, before anything in the product changes; this analysis
   changes nothing.
