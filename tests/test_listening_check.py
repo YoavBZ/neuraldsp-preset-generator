@@ -53,12 +53,18 @@ def _blocks(values, picks):
     return [(v, [p] if p is not None else []) for v, p in zip(values, picks)]
 
 
+def _w(blocks, weights=None):
+    """Blocks with each answered trial's null weights: uniform, or its part's."""
+    return [(v, picks, [None if weights is None else weights[k]] * len(picks))
+            for k, (v, picks) in enumerate(blocks)]
+
+
 def test_the_chance_null_is_centred_and_sensitive():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     values = [[-0.3, 0.1, 0.1, 0.1]] * 12
-    assert L.block_p(_blocks(values, [0] * 12), draws=20_000) < 0.01      # always the best
-    assert L.block_p(_blocks(values, [1] * 12), draws=20_000) > 0.9
-    assert L.block_p(_blocks(values, [None] * 12), draws=20_000) == 1.0   # 0 either way
+    assert L.block_p(_w(_blocks(values, [0] * 12)), draws=20_000) < 0.01      # always the best
+    assert L.block_p(_w(_blocks(values, [1] * 12)), draws=20_000) > 0.9
+    assert L.block_p(_w(_blocks(values, [None] * 12)), draws=20_000) == 1.0   # 0 either way
 
 
 def _consistent_random(rng, n_parts=16, sd=0.3):
@@ -75,7 +81,7 @@ def _consistent_random(rng, n_parts=16, sd=0.3):
 def test_the_null_drawn_by_part_holds_its_size_for_a_consistent_picker():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     rng = random.Random(11)
-    ps = [L.block_p(_consistent_random(rng), draws=3000) for _ in range(400)]
+    ps = [L.block_p(_w(_consistent_random(rng)), draws=3000) for _ in range(400)]
     assert sum(p < 0.05 for p in ps) / len(ps) <= 0.08
     assert 0.4 <= sum(ps) / len(ps) <= 0.6
 
@@ -86,8 +92,8 @@ def test_differing_picks_on_a_part_are_redrawn_as_two_distinct_candidates():
     # them is the best, which happens half the time (1/4 + 3/4 * 1/3). Picking the best
     # twice is one draw used twice: a quarter of the time.
     blocks = [([-0.3, 0.1, 0.1, 0.1], [0, 1])]
-    assert L.block_p(blocks, draws=40_000) == pytest.approx(0.5, abs=0.02)
-    assert L.block_p([([-0.3, 0.1, 0.1, 0.1], [0, 0])], draws=40_000) == \
+    assert L.block_p(_w(blocks), draws=40_000) == pytest.approx(0.5, abs=0.02)
+    assert L.block_p(_w([([-0.3, 0.1, 0.1, 0.1], [0, 0])]), draws=40_000) == \
         pytest.approx(0.25, abs=0.02)
 
 
@@ -117,8 +123,8 @@ def test_a_song_blind_taste_does_not_pass_the_taste_null():
         mean = sum(logs) / 4
         blocks.append(([v - mean for v in logs], [0, 0]))
     weights = L.taste_weights([feats[p] for p in parts], [b[1] for b in blocks])
-    assert L.block_p(blocks, draws=4000) < 0.01
-    assert L.block_p(blocks, weights, draws=4000) > 0.05
+    assert L.block_p(_w(blocks), draws=4000) < 0.01
+    assert L.block_p(_w(blocks, weights), draws=4000) > 0.05
 
 
 def test_the_taste_null_holds_its_size_for_a_random_picker():
@@ -130,8 +136,54 @@ def test_the_taste_null_holds_its_size_for_a_random_picker():
     for _ in range(150):
         blocks = _consistent_random(rng)
         weights = L.taste_weights([feats[p] for p in parts], [b[1] for b in blocks])
-        hits += L.block_p(blocks, weights, draws=2000) < 0.05
+        hits += L.block_p(_w(blocks, weights), draws=2000) < 0.05
     assert hits / 150 <= 0.08
+
+
+def test_the_ranks_within_a_part_are_centred_with_ties_averaged():
+    assert L._ranks([0.3, 0.1, 0.2, 0.4]) == [0.5, -1.5, -0.5, 1.5]
+    assert L._ranks([0.0, 0.0, 0.5, 0.9]) == [-1.0, -1.0, 0.5, 1.5]
+
+
+def test_a_taste_for_the_least_gain_of_the_four_does_not_pass():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    rng = random.Random(6)
+    parts = [f"p{k}" for k in range(16)]
+    raw = {p: {g: {"amp": rng.choice(["pr12", "ac20", "sw50r"]), "drive_on": False,
+                   "drive": 0.0, "volume": rng.uniform(0.1, 0.9)} for g in L.G}
+           for p in parts}
+    feats = L.feature_rows(raw, parts)
+    blocks = []
+    for p in parts:
+        quietest = min(range(4), key=lambda j: raw[p][L.G[j]]["volume"])
+        logs = [rng.uniform(0.2, 0.6) for _ in range(4)]
+        logs[quietest] = 0.0                    # the judge's best is the quietest
+        mean = sum(logs) / 4
+        blocks.append(([v - mean for v in logs], [quietest, quietest]))
+    weights = L.taste_weights([feats[p] for p in parts], [b[1] for b in blocks])
+    assert L.block_p(_w(blocks), draws=4000) < 0.01
+    assert L.block_p(_w(blocks, weights), draws=4000) > 0.05
+
+
+def test_a_taste_that_changes_with_the_riff_does_not_pass():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    rng = random.Random(8)
+    parts = [f"p{k}" for k in range(16)]
+    feats = L.feature_rows(_features(16, rng), parts)
+    # The clean PR12 (the judge's best) on chords, the loudest driven one on the line.
+    loudest = [max(range(1, 4), key=lambda j: feats[p][j][3]) for p in parts]
+    blocks, per_riff = [], {}
+    for k, p in enumerate(parts):
+        logs = [0.0] + [rng.uniform(0.2, 0.6) for _ in range(3)]
+        mean = sum(logs) / 4
+        blocks.append([v - mean for v in logs])
+    for riff, chosen in (("chords", [0] * 16), ("line", loudest)):
+        per_riff[riff] = L.taste_weights([feats[p] for p in parts], [[c] for c in chosen])
+    tasted = [(blocks[k], [0, loudest[k]], [per_riff["chords"][k], per_riff["line"][k]])
+              for k in range(16)]
+    assert L.block_p([(v, picks, [None, None]) for v, picks, _ in tasted],
+                     draws=4000) < 0.05
+    assert L.block_p(tasted, draws=4000) > 0.05
 
 
 def test_the_taste_fit_follows_a_feature_preference():

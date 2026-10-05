@@ -315,11 +315,13 @@ def inputs(args):
     if len(controls) < CONTROLS or practice is None:
         die("not enough parts for the controls and the practice trial")
     factory = {c: _sha(preset_path(c)) for x in controls + [practice] for c in x["candidates"]}
-    out = {"schema": "listening-check-inputs-4", "parts": chosen, "cues": cues,
+    audio = {p: {f: _sha(crops / p / f) for f in ("di.wav", "mix_instrumental.wav")}
+             for p in chosen + [c["part"] for c in controls] + [practice["part"]]}
+    out = {"schema": "listening-check-inputs-5", "parts": chosen, "cues": cues,
            "distances": distances, "presets": presets, "preset_sha256": preset_sha,
            "di_lufs": di_lufs, "riff_lufs": RIFF_LUFS, "taste_classes": tastes,
            "taste_features": features,
-           "factory_sha256": factory,
+           "factory_sha256": factory, "audio_sha256": audio,
            "g1_rule_chance_pass": round(g1_chance_pass(distances, chosen), 4),
            "controls": controls, "practice": practice,
            "renders_index_sha256": _sha(SHORTLISTS.expanduser() / "renders" / "index.json"),
@@ -543,6 +545,10 @@ def build(args):
     for candidate, sha in data["factory_sha256"].items():
         if _sha(factory_path(candidate)) != sha:
             die(f"{factory_path(candidate)} is not the factory preset the panel scored")
+    for part, files in data["audio_sha256"].items():
+        for name, sha in files.items():
+            if _sha(CROPS.expanduser() / part / name) != sha:
+                die(f"{part}'s {name} changed since the inputs were fixed")
     out = args.out_dir.expanduser()
     if out.exists() and any(out.iterdir()):
         die(f"{out} is not empty")
@@ -650,42 +656,45 @@ def parse_answers(text: str) -> dict:
     return out
 
 
-def block_p(blocks, weights=None, draws: int | None = None) -> float:
+def block_p(blocks, draws: int | None = None) -> float:
     """One-sided p that a song-blind pick gives a sum at most the observed one.
 
-    `blocks` holds one (values, picks) per part: the four candidates' values in G order,
-    lower meaning closer, and the listener's answered picks on that part's trials (0, 1
-    or 2 indices; "can't tell" is left out, contributing 0 either way). A part's two
-    riff trials offer the same four, so they are not independent: when the two picks
-    agree (or only one was answered) the null draws once and uses it for both, and when
-    they differ it draws two distinct candidates. Each draw follows `weights[k]` for
-    block k, or is uniform when `weights` is None. Monte Carlo over `draws` redraws."""
+    `blocks` holds one (values, picks, weights) per part: the four candidates' values in
+    G order, lower meaning closer; the listener's answered picks on that part's trials
+    (0, 1 or 2 indices; "can't tell" is left out, contributing 0 either way); and, for
+    each answered trial, the four pick probabilities the null draws from (None for
+    uniform). A part's two riff trials offer the same four presets, so they are not
+    independent: the null draws the pair from its distribution given whether the two
+    picks agree. Agreeing, one preset i is drawn in proportion to w1[i] * w2[i] and
+    counted twice; differing, an ordered pair i != j in proportion to w1[i] * w2[j].
+    Monte Carlo over `draws` redraws."""
     import numpy as np
 
     draws = draws or DRAWS
-    observed = sum(values[p] for values, picks in blocks for p in picks)
+    observed = sum(values[p] for values, picks, _ in blocks for p in picks)
     rng = np.random.default_rng(20261005)
+    plans = []
+    for values, picks, weights in blocks:
+        if not picks:
+            continue
+        values = np.asarray(values, dtype=float)
+        w = [np.full(4, 0.25) if x is None else np.asarray(x, dtype=float) for x in weights]
+        if len(picks) == 1:
+            outcomes, prob = [values[i] for i in range(4)], w[0]
+        elif picks[0] == picks[1]:
+            outcomes, prob = [2 * values[i] for i in range(4)], w[0] * w[1]
+        else:
+            pairs = [(i, j) for i in range(4) for j in range(4) if i != j]
+            outcomes = [values[i] + values[j] for i, j in pairs]
+            prob = np.array([w[0][i] * w[1][j] for i, j in pairs])
+        plans.append((np.asarray(outcomes), np.cumsum(prob / prob.sum())))
     hits, done = 0, 0
     while done < draws:
         n = min(50_000, draws - done)
         total = np.zeros(n)
-        for k, (values, picks) in enumerate(blocks):
-            if not picks:
-                continue
-            values = np.asarray(values, dtype=float)
-            w = np.full(4, 0.25) if weights is None else np.asarray(weights[k], dtype=float)
-            w = w / w.sum()
-            first = (rng.random((n, 1)) > w.cumsum()[None]).sum(axis=1).clip(0, 3)
-            total += values[first] * (2 if len(picks) == 2 and picks[0] == picks[1] else 1)
-            if len(picks) == 2 and picks[0] != picks[1]:
-                rest = np.tile(w, (n, 1))
-                rest[np.arange(n), first] = 0.0
-                empty = rest.sum(axis=1) == 0
-                rest[empty] = 1.0
-                rest[empty, first[empty]] = 0.0
-                cum = (rest / rest.sum(axis=1, keepdims=True)).cumsum(axis=1)
-                second = (rng.random((n, 1)) > cum).sum(axis=1).clip(0, 3)
-                total += values[second]
+        for outcomes, cum in plans:
+            index = (rng.random((n, 1)) > cum[None]).sum(axis=1).clip(0, len(outcomes) - 1)
+            total += outcomes[index]
         hits += int((total <= observed + 1e-12).sum())
         done += n
     return hits / draws
@@ -719,21 +728,36 @@ def taste_weights(features, picks, ridge: float = TASTE_RIDGE):
     return prob / prob.sum(axis=1, keepdims=True)
 
 
+def _ranks(values) -> list:
+    """Each value's rank among the four, ties averaged, centred on 0 (-1.5 to 1.5)."""
+    order = sorted(values)
+    return [statistics.mean(i for i, u in enumerate(order) if u == v) - 1.5 for v in values]
+
+
 def feature_rows(features: dict, parts) -> dict:
     """{part: four feature rows in G order}: PR12, SW50R (AC20 is the baseline), a drive
-    pedal on, the amp's volume and the highest drive level, the last two standardised
-    over every main candidate, so the scale never depends on the answers."""
+    pedal on, the amp's volume and the highest drive level (both standardised over every
+    main candidate, so the scale never depends on the answers), and, within the part,
+    the volume's and the drive level's ranks and whether each is the part's lowest: a
+    taste for "the least gain of these four" is a within-part taste."""
     flat = [features[p][g] for p in parts for g in G]
     scale = {}
     for name in ("volume", "drive"):
         values = [f[name] for f in flat]
         mean = statistics.mean(values)
         scale[name] = (mean, statistics.pstdev(values) or 1.0)
-    return {p: [[features[p][g]["amp"] == "pr12", features[p][g]["amp"] == "sw50r",
-                 features[p][g]["drive_on"],
-                 (features[p][g]["volume"] - scale["volume"][0]) / scale["volume"][1],
-                 (features[p][g]["drive"] - scale["drive"][0]) / scale["drive"][1]]
-                for g in G] for p in parts}
+    out = {}
+    for p in parts:
+        four = [features[p][g] for g in G]
+        rank = {name: _ranks([f[name] for f in four]) for name in ("volume", "drive")}
+        low = {name: min(f[name] for f in four) for name in ("volume", "drive")}
+        out[p] = [[f["amp"] == "pr12", f["amp"] == "sw50r", f["drive_on"],
+                   (f["volume"] - scale["volume"][0]) / scale["volume"][1],
+                   (f["drive"] - scale["drive"][0]) / scale["drive"][1],
+                   rank["volume"][i], rank["drive"][i],
+                   f["volume"] == low["volume"], f["drive"] == low["drive"]]
+                  for i, f in enumerate(four)]
+    return out
 
 
 def binomial_p(k: int, n: int, chance: float = 0.25) -> float:
@@ -749,14 +773,14 @@ def _median(values):
 def readings(rows, taste=None, draws: int | None = None) -> dict | None:
     """The declared readings over some main trials. Each row: `part`, `logs` (G label ->
     log d), `pick` (a G label or None), `classes` (G label -> taste class), `g1` and
-    `template` (log d). `taste` is {part: four pick probabilities} from `taste_weights`;
-    without it the taste p is not computed."""
+    `template` (log d). `taste` is {riff: {part: four pick probabilities}} from
+    `taste_weights`, fitted per riff; without it the taste p is not computed."""
     if not rows:
         return None
     by_part = collections.defaultdict(list)
     for r in rows:
         by_part[r["part"]].append(r)
-    centred, pairs, picks, parts = [], [], [], []
+    centred, pairs, picks, riffs = [], [], [], []
     gain = perfect = between = 0.0
     best = closer = clear = 0
     for part, part_rows in by_part.items():
@@ -767,8 +791,9 @@ def readings(rows, taste=None, draws: int | None = None) -> dict | None:
         # beats by more than CLEAR_PAIR, +1 for each that beats it by as much.
         pairs.append([-sum((v > u + CLEAR_PAIR) - (u > v + CLEAR_PAIR) for v in logs)
                       for u in logs])
-        picks.append([G.index(r["pick"]) for r in part_rows if r["pick"] is not None])
-        parts.append(part)
+        answered = [r for r in part_rows if r["pick"] is not None]
+        picks.append([G.index(r["pick"]) for r in answered])
+        riffs.append([(r["riff"], part) for r in answered])
         for r in part_rows:
             perfect += min(logs) - mean
             if r["pick"] is None:
@@ -784,17 +809,19 @@ def readings(rows, taste=None, draws: int | None = None) -> dict | None:
             clear += sum(abs(v - logs[p]) > CLEAR_PAIR for v in logs)
     # "Can't tell" delivers G1, the product's default.
     delivered = [r["g1"] if r["pick"] is None else r["logs"][r["pick"]] for r in rows]
-    blocks = list(zip(centred, picks))
+    uniform = [[None] * len(x) for x in picks]
+    tasted = None if taste is None else [[taste[r][p] for r, p in x] for x in riffs]
     return {
-        "trials": len(rows), "sum_c": gain, "p": block_p(blocks, None, draws),
-        "taste_p": None if taste is None else block_p(blocks, [taste[p] for p in parts],
+        "trials": len(rows), "sum_c": gain,
+        "p": block_p(list(zip(centred, picks, uniform)), draws),
+        "taste_p": None if taste is None else block_p(list(zip(centred, picks, tasted)),
                                                       draws),
         "sum_c_by_class": between, "sum_c_within_class": gain - between,
         "best_of_four": best, "best_of_four_p": binomial_p(best, len(rows)),
         "clear_pairs": clear, "clear_pairs_closer": closer,
         "clear_pairs_share": closer / clear if clear else None,
         # The p is for the net count (pairs the pick wins less pairs it loses).
-        "clear_pairs_net_p": block_p(list(zip(pairs, picks)), None, draws),
+        "clear_pairs_net_p": block_p(list(zip(pairs, picks, uniform)), draws),
         "captured_share": gain / perfect if perfect else None,
         "median_vs_g1": _median(d - r["g1"] for d, r in zip(delivered, rows)),
         "median_vs_template": _median(d - r["template"] for d, r in zip(delivered, rows)),
@@ -854,15 +881,18 @@ def score(args):
                 controls[s].append(pick is not None and t["letters"][pick] == "C0")
             elif t["kind"] in ("main", "repeat"):
                 (mains if t["kind"] == "main" else repeats).append((t, pick))
-    # The song-blind taste, fitted once to all the main answers.
+    # The song-blind taste, fitted to the main answers through each riff apart, so a
+    # taste that changes with the riff is modelled too.
     features = feature_rows(data["taste_features"], data["parts"])
-    answered = collections.defaultdict(list)
-    for t, pick in mains:
-        if pick is not None:
-            answered[t["part"]].append(G.index(t["letters"][pick]))
-    fitted = taste_weights([features[p] for p in data["parts"]],
-                           [answered[p] for p in data["parts"]])
-    taste = {p: list(map(float, w)) for p, w in zip(data["parts"], fitted)}
+    taste = {}
+    for riff in RIFFS:
+        answered = collections.defaultdict(list)
+        for t, pick in mains:
+            if pick is not None and t["riff"] == riff:
+                answered[t["part"]].append(G.index(t["letters"][pick]))
+        fitted = taste_weights([features[p] for p in data["parts"]],
+                               [answered[p] for p in data["parts"]])
+        taste[riff] = {p: list(map(float, w)) for p, w in zip(data["parts"], fitted)}
     result["taste_weights"] = taste
     for bands in BAND_SETS:
         rows = []

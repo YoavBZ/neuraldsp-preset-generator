@@ -1,7 +1,7 @@
 # Does a real ear pick well on the audition page?
 
 Declared on 2026-10-05, before any trial is built. Revised on 2026-10-06 after a
-second, third and fourth independent review, still before any trial existed.
+second to fifth independent reviews, still before any trial existed.
 
 The shortlist measurement (`docs/song-only-shortlist-results.md`) found that a perfect
 ear choosing among four generated presets lands closer than one preset: about 18%
@@ -92,8 +92,8 @@ taste for an amp or for drive.
   - `score` refuses a sheet with any other line, a malformed answer, a trial answered
     twice, or a built trial unanswered or extra.
 - **Before anything is rendered,** `build` checks the inputs, the shortlist renders
-  index, the factory-preset panels, and every generated and factory preset against the
-  hashes they were scored with. Then it checks that the plugin still renders what the
+  index, the factory-preset panels, every generated and factory preset, and every song
+  excerpt and DI, against the hashes fixed in the inputs. Then it checks that the plugin still renders what the
   judge scored. It re-renders the first part's four candidates through its own DI, and every
   judge distance must be within 0.01 (log) of the inputs'. Fresh renders differ from
   the stored ones sample by sample (about 10% RMS on three parts tried), while the
@@ -125,15 +125,21 @@ the controls, the practice part and each part's DI loudness are in
   each at one-sided p < 0.05 on the sum of c over the 32 main trials, by 10^6 Monte
   Carlo draws (4^32 picks cannot be enumerated). A "can't tell" stays 0 in both.
   - **Drawn by part:** a part's two riff trials offer the same four presets, so they are
-    not independent. Each null draws per part: once, used for both trials, when the
-    listener picked the same preset on both (or answered one); two distinct presets
-    when the picks differ.
+    not independent. Each null draws the part's pair of picks from its distribution
+    given whether the two picks agree: one preset counted twice when they agree (in
+    proportion to the product of the two trials' weights), an ordered pair of distinct
+    presets when they differ (in proportion to the first trial's weight for one and the
+    second's for the other). A part with one answer draws once.
   - **It beats chance:** each draw is uniform over the four.
   - **It beats a song-blind taste:** each draw follows a taste fitted to the listener's
-    own 32 answers, without the song or the judge: a conditional logit over each
-    preset's amp (PR12, SW50R, AC20), whether a drive pedal is on, the amp's volume and
-    the highest drive level (the last two standardised over all 64 candidates; ridge
-    0.5).
+    own answers, without the song or the judge, separately for each riff's 16 answers
+    (so a taste that changes with the riff is modelled too): a conditional logit (ridge
+    0.5) over
+    each preset's amp (PR12, SW50R, AC20), whether a drive pedal is on, the amp's volume
+    and the highest drive level (both standardised over all 64 candidates), and, within
+    the part, the volume's and the drive level's ranks and whether each is the part's
+    lowest. The within-part features let it follow a taste for "the least gain of these
+    four", which a straight line over the raw levels could not.
   - Why both: the judge's best is a PR12 on 11 of 16 parts, was validated only on the
     PR12, and is the least-gain candidate on 8. A listener who ignores the song and
     always picks a PR12, a preset without drive, or the least gain passes the chance
@@ -158,16 +164,24 @@ the controls, the practice part and each part's DI loudness are in
   | Listener | Chance test alone | Primary (chance and taste) |
   |---|---|---|
   | Picks at random | 0.04 | 0.01 |
-  | Picks at random, the same preset on both riffs | 0.06 | 0.01 |
-  | Ignores the song, always a PR12 | 0.75 | 0.03 |
-  | Ignores the song, always no drive | 0.40 | 0.01 |
+  | Picks at random, the same preset on both riffs (an exact test: at most 0.05; 0.055 here is simulation noise) | 0.05 | 0.01 |
+  | Ignores the song, always a PR12 | 0.75 | 0.01 |
+  | … a PR12 half the time | 0.26 | 0.01 |
+  | Ignores the song, always no drive | 0.40 | 0.02 |
   | Ignores the song, always the least gain | 1.00 | 0.00 |
-  | Ignores the song, leans to low gain | 0.61 | 0.01 |
-  | Picks the judge's best 20% of the time beyond chance | 0.34 | 0.18 |
-  | … 30% | 0.61 | 0.37 |
-  | … 40% | 0.81 | 0.60 |
-  | … 60% | 0.98 | 0.91 |
+  | … the least gain half the time | 0.36 | 0.03 |
+  | … the least gain 70% of the time | 0.53 | 0.08 |
+  | Ignores the song, leans to low gain | 0.62 | 0.01 |
+  | Ignores the song, the least gain on chords and a PR12 on the line | 1.00 | 0.05 |
+  | … the least gain on chords and random on the line | 0.53 | 0.05 |
+  | Picks the judge's best 20% of the time beyond chance | 0.34 | 0.12 |
+  | … 30% | 0.59 | 0.29 |
+  | … 40% | 0.81 | 0.48 |
+  | … 60% | 0.98 | 0.77 |
 
+  Fitting the taste per riff costs power (0.60 at 40% with one fit over both riffs),
+  but with one fit the riff-changing taste above passed 0.26, and the worst taste here
+  is now 0.08. Riff-interaction terms in one fit gave the same trade (0.46 at 40%).
   The taste test costs power: a fail reads "not shown", never "the ear can't".
 - **Reported, not deciding,** each under both band sets, over all 32 trials, per riff,
   and split at the median gap between the part's DI loudness and the riffs' (-23.7
@@ -216,10 +230,13 @@ it fails too, the ear or the judge is.
 - **Blinding is procedural:** the public inputs name every preset, so a listener who
   rendered them could match the clips. The listener here does not.
 - **The taste null is estimated from the same answers,** and covers only the features
-  it is given. A taste the features miss, such as for brightness, is not controlled;
-  nor is one that changes between riffs. A song-swapped arm would control every
-  taste, but in simulation it had about half the power in the same time (0.33 against
-  0.59 at 40%), so this check models the tastes instead.
+  it is given. A strong partial taste for the least gain still passes 0.08 (above). In
+  review, tastes the features miss, for brightness or for the cleanest-sounding clip,
+  passed at most 0.003, but a taste nobody simulated is not ruled out.
+- **A song-swapped arm** (one of each part's trials played against another song)
+  would control every taste exactly, but in simulation it had less power in the same
+  time, even on generous assumptions (0.33 against 0.48 at 40%), so this check models
+  the tastes instead.
 - **Gain classes for controls** ignore the amps' input gain and the SW50R's input mode.
   The chosen controls' clean answers have the input gain at 0 or cut.
 - **Which guitar is meant:** the cue names a track and how it plays, and every target
@@ -232,9 +249,9 @@ it fails too, the ear or the judge is.
 ## Inputs, fixed before any trial
 
 `research/listening_check.py inputs` wrote `docs/listening-check-inputs.json`: the
-parts, cues, presets and their hashes, each candidate's taste class and features, each part's DI
-loudness, the G1 rule's chance pass rate, the controls, the practice part, the factory
-presets' hashes, and every candidate's judge distance. Its
-SHA-256 is
-`4baee144d0ac5ef1e562c94f6e67c914791d1c169f7fa147efc38967dd44bf2d`. `build` refuses any
+parts, cues, presets and their hashes, each candidate's taste class and features, each
+part's DI loudness, the G1 rule's chance pass rate, the controls, the practice part,
+the factory presets' hashes, the song excerpts' and DIs' hashes, and every candidate's
+judge distance. Its SHA-256 is
+`eaa39c68c509eec6d2ee445329736331d89ca676d75951f1d940c437ca38d766`. `build` refuses any
 other file.
