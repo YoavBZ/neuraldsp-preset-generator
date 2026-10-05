@@ -62,6 +62,9 @@ was declared, what was measured, and the research behind it.
 - [song-only-shortlist-plan.md](song-only-shortlist-plan.md) →
   [results](song-only-shortlist-results.md): research not shown to beat the template or
   a random list; choosing by ear (a perfect one) helps.
+- [listening-check-plan.md](listening-check-plan.md), with its fixed inputs
+  `listening-check-inputs.json`: does a real ear on the audition page follow the song?
+  Declared; not yet run.
 
 **Settings model and amp choice** (parked)
 - [supervised-model-plan.md](supervised-model-plan.md).

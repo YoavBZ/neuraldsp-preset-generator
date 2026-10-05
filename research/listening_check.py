@@ -4,6 +4,8 @@
     python research/listening_check.py inputs --json docs/listening-check-inputs.json
     python research/listening_check.py build --inputs docs/listening-check-inputs.json \\
         --inputs-sha SHA --out-dir ~/ndsp-presets/runs/listening-check
+    python research/listening_check.py check-sheet --out-dir ~/ndsp-presets/runs/listening-check \\
+        --answers ANSWERS.txt
     python research/listening_check.py score --out-dir ~/ndsp-presets/runs/listening-check \\
         --key-sha SHA --answers ANSWERS.txt --answers-sha SHA \\
         --json docs/listening-check-score.json
@@ -52,12 +54,15 @@ EXPOSURE_FLOOR_DB = -10.0
 CONTROL_GAP = 0.5
 CONTROLS = 4                    # two per sitting
 MIN_CONTROLS_HIT = 3            # of 4: a guessing listener reaches it 5.1% of the time
+DRIVE_HIGH = 0.7               # a drive pedal's gain from which a control calls it high-gain
+CLEAN_VOLUME = 0.5             # the amp volume at or under which, with no drive, it is clean
 CLEAR_PAIR = 0.15               # log distance at which the judge "clearly" separates two
 RIFF_LUFS = -23.7
 G = ("G1", "G2", "G3", "G4")
 RIFFS = ("chords", "line")
 LETTERS = "ABCD"
 SILENT_PEAK = 1e-6
+RENDER_DRIFT = 0.01             # log distance; the judge agreed to three decimals in trials
 MAX_CANT_TELL = 8
 DRAWS = 1_000_000
 LEAKS = r"AC20|PR12|SW50R|\bG[1-4]\b|\.xml|factory|template\+R|Example_Clean"
@@ -79,17 +84,21 @@ def exposure(part: str) -> float:
     return loud[0] - loud[1]
 
 
-def choose_controls(rest, exposure_of, reach, gain_of):
-    """Controls and the practice part from the parts not under test.
+def choose_controls(parts, main, exposure_of, reach, gain_of, song_of, clear_song):
+    """Controls and the practice part.
 
-    Controls: the most exposed parts that clear the floor, up to CONTROLS. Each has its
-    closest factory preset not already used, and three of the opposite gain class
-    (high-gain against clean, or the reverse), each more than CONTROL_GAP (log) farther
-    under both band sets, the farthest first; no factory preset serves twice. Practice:
-    the most exposed part left, with each amp's closest unused factory preset and one
-    more unused clean one."""
-    used, controls = set(), []
-    by_exposure = sorted(rest, key=lambda p: (-exposure_of(p), p))
+    Controls, up to CONTROLS, one per song: parts that clear the floor, those not under
+    test first, then the parts under test, each most exposed first. A part's answer is
+    its closest unused factory preset of a clear gain class (`gain_of` is "clean" or
+    "high", not None), and the part qualifies when every other guitar in its song shares
+    that class (`clear_song`), so the cue cannot point the ear at a guitar of the other
+    class. It
+    offers that preset against three of the other class, each more than CONTROL_GAP
+    (log) farther under both band sets, the farthest first; no factory preset serves
+    twice. Practice: the most exposed part not under test and not a control, with each
+    amp's closest unused factory preset and one more unused clean one."""
+    used, controls, songs = set(), [], set()
+    by_exposure = sorted(parts, key=lambda p: (p in main, -exposure_of(p), p))
 
     def full(part):
         d = reach.get(part) or {}
@@ -100,17 +109,21 @@ def choose_controls(rest, exposure_of, reach, gain_of):
         return names, out
 
     for part in by_exposure:
-        if len(controls) == CONTROLS or exposure_of(part) < EXPOSURE_FLOOR_DB:
+        if len(controls) == CONTROLS:
             break
+        if exposure_of(part) < EXPOSURE_FLOOR_DB or song_of(part) in songs:
+            continue
         names, f = full(part)
         if names is None:
             continue
         for correct in sorted(names, key=lambda c: (f["recording"][c], c)):
-            if correct in used:
+            kind = gain_of(correct)
+            if correct in used or kind is None:
                 continue
+            if not clear_song(part, kind):
+                break
             gap = {c: min(math.log(f[b][c] / f[b][correct]) for b in BAND_SETS)
-                   for c in names if c not in used and c != correct
-                   and gain_of(c) != gain_of(correct)}
+                   for c in names if c not in used and gain_of(c) not in (None, kind)}
             wrong = sorted((c for c, g in gap.items() if g > CONTROL_GAP),
                            key=lambda c: (-gap[c], c))[:3]
             if len(wrong) == 3:
@@ -119,10 +132,11 @@ def choose_controls(rest, exposure_of, reach, gain_of):
                                  "distances": {b: {c: f[b][c] for c in picks}
                                                for b in BAND_SETS}})
                 used.update(picks)
-                break
+                songs.add(song_of(part))
+            break
     practice = None
     for part in by_exposure:
-        if any(c["part"] == part for c in controls):
+        if part in main or any(c["part"] == part for c in controls):
             continue
         names, f = full(part)
         if names is None:
@@ -130,14 +144,72 @@ def choose_controls(rest, exposure_of, reach, gain_of):
         ranked = sorted(names, key=lambda c: (f["recording"][c], c))
         by_amp = {}
         for c in ranked:
-            if c not in used:
+            if c not in used and not re.search(r"\bbass\b", c, re.I):
                 by_amp.setdefault(c.split(":")[0], c)
         extra = next((c for c in ranked if c not in used and c not in by_amp.values()
-                      and not gain_of(c)), None)
+                      and gain_of(c) == "clean"), None)
         if len(by_amp) == 3 and extra:
             practice = {"part": part, "candidates": list(by_amp.values()) + [extra]}
             break
     return controls, practice
+
+
+def preset_values(path) -> dict:
+    from format.parser import parse
+    from format.structured import build
+
+    preset = build(parse(pathlib.Path(path).read_bytes()))
+    return {(p.module_path, p.key): p.value for p in preset.parameters}
+
+
+def _drives(v: dict) -> list:
+    """The gain of each active drive pedal."""
+    out = []
+    for slot, knob in ((1, "drive1Drive"), (2, "drive2Gain")):
+        if str(v.get((f"drive{slot}", f"drive{slot}Active"), "false")).lower() == "true":
+            out.append(float(v.get((f"drive{slot}", knob), 0.0)))
+    return out
+
+
+def gain_class(path, amp: str):
+    """ "high" (a drive pedal at DRIVE_HIGH or more, or a PR12, whose volume is its gain,
+    above HIGH_GAIN_VOLUME), "clean" (no drive pedal on and the volume at most
+    CLEAN_VOLUME), or None for anything between, and for presets made for a bass: a
+    control needs a difference any riff makes audible."""
+    from plan_listening_validation import HIGH_GAIN_VOLUME
+
+    if re.search(r"\bbass\b", pathlib.Path(path).stem, re.I):
+        return None
+    v = preset_values(path)
+    drives = _drives(v)
+    volume = float(v.get((f"{amp}Amp", f"{amp}Volume"), 0.0))
+    if any(g >= DRIVE_HIGH for g in drives) or (amp == "pr12" and volume > HIGH_GAIN_VOLUME):
+        return "high"
+    return "clean" if not drives and volume <= CLEAN_VOLUME else None
+
+
+def taste_class(path, amp: str) -> str:
+    """The class a song-blind taste could prefer: the amp, and whether a drive is on."""
+    return f"{amp}|{'drive' if _drives(preset_values(path)) else 'no drive'}"
+
+
+def song_guitars(crops: pathlib.Path) -> dict:
+    """{part: (song key, the song's guitar amp tracks in the instrumental mix, the
+    part's own amp tracks)} for every crop."""
+    out = {}
+    for folder in sorted(crops.iterdir()):
+        record_path = folder / "record.json"
+        if not record_path.exists():
+            continue
+        r = json.loads(record_path.read_text())
+        if r.get("split") != "development":
+            continue
+        vocals = set(r.get("vocal_tracks", []))
+        guitars = {t for t in r.get("included_mix_tracks", []) if t not in vocals
+                   and re.search(r"gtr|guit", t, re.I) and not re.search(r"bass", t, re.I)}
+        out[folder.name] = ((r["source"], r["song"]), guitars | set(r["removed_own_amp_tracks"]),
+                            set(r["removed_own_amp_tracks"]))
+    return out
 
 
 def g1_chance_pass(distances, parts, draws: int = 20_000, seed: int = 20261006) -> float:
@@ -164,7 +236,7 @@ def inputs(args):
     import kill_tests_judge as KJ
     from benchmark_recordings import lag_samples
     from analysis import io
-    from plan_listening_validation import high_gain
+    from plan_listening_validation import preset_path
 
     mapping = json.loads((SHORTLISTS.expanduser() / "parts-map.json").read_text())
     index = json.loads((SHORTLISTS.expanduser() / "renders" / "index.json").read_text())
@@ -202,15 +274,39 @@ def inputs(args):
     presets = {p: {g: renders[p][g]["preset"].replace(home, "~", 1) for g in G} for p in chosen}
     preset_sha = {p: {g: renders[p][g]["preset_sha256"] for g in G} for p in chosen}
     di_lufs = {p: round(io.loudness_lufs(io.load(crops / p / "di.wav")), 2) for p in chosen}
-    # Controls and practice: the shortlist parts not chosen, scored from the panels.
+    tastes = {p: {g: taste_class(renders[p][g]["preset"], renders[p][g]["amp"]) for g in G}
+              for p in chosen}
+    # Controls and practice, scored from the panels.
     reach = json.loads(REACH.expanduser().read_text())["distances"]
-    controls, practice = choose_controls(rest, lambda p: cues[p]["exposure_db"], reach,
-                                         functools.lru_cache(maxsize=None)(high_gain))
+    gain_of = functools.lru_cache(maxsize=None)(
+        lambda c: gain_class(preset_path(c), c.split(":", 1)[0]))
+    guitars = song_guitars(crops)
+
+    def closest(part):
+        """The part's closest factory preset of a clear gain class."""
+        d = reach.get(part) or {}
+        names = {k.split("|")[0] for k in d if ":factory:" in k and gain_of(k.split("|")[0])}
+        return min(names, key=lambda c: (d[f"{c}|full|recording"], c)) if names else None
+
+    def clear_song(part, kind):
+        """Every other guitar in the part's song is a part with a panel whose closest
+        factory preset is of the same gain class."""
+        song, tracks, _ = guitars[part]
+        others = [q for q, (s2, _, _) in guitars.items() if s2 == song and q != part]
+        known = set().union(*(guitars[q][2] for q in others + [part]))
+        return tracks <= known and all(
+            closest(q) is not None and gain_of(closest(q)) == kind for q in others)
+
+    controls, practice = choose_controls(
+        chosen + rest, set(chosen), lambda p: cues[p]["exposure_db"], reach, gain_of,
+        lambda p: guitars[p][0], clear_song)
     if len(controls) < CONTROLS or practice is None:
-        die("not enough remaining parts for the controls and the practice trial")
-    out = {"schema": "listening-check-inputs-2", "parts": chosen, "cues": cues,
+        die("not enough parts for the controls and the practice trial")
+    factory = {c: _sha(preset_path(c)) for x in controls + [practice] for c in x["candidates"]}
+    out = {"schema": "listening-check-inputs-3", "parts": chosen, "cues": cues,
            "distances": distances, "presets": presets, "preset_sha256": preset_sha,
-           "di_lufs": di_lufs, "riff_lufs": RIFF_LUFS,
+           "di_lufs": di_lufs, "riff_lufs": RIFF_LUFS, "taste_classes": tastes,
+           "factory_sha256": factory,
            "g1_rule_chance_pass": round(g1_chance_pass(distances, chosen), 4),
            "controls": controls, "practice": practice,
            "renders_index_sha256": _sha(SHORTLISTS.expanduser() / "renders" / "index.json"),
@@ -221,6 +317,33 @@ def inputs(args):
 
 
 # --- build --------------------------------------------------------------------------
+
+def render_unchanged(data, part: str, out: pathlib.Path) -> float:
+    """The largest change, in log, between the judge's distances for `part`'s four
+    candidates rendered now through its own DI and the distances fixed in the inputs:
+    whether the plugin still renders what the judge scored. (A fresh render differs from
+    the stored one sample by sample, by about 10% RMS on the parts tried, while the
+    judge's distances agree to three decimals.)"""
+    import numpy as np
+    import soundfile as sf
+
+    import kill_tests as K
+    import kill_tests_judge as KJ
+    from benchmark_recordings import lag_samples
+
+    crops = CROPS.expanduser()
+    labelled = {g: pathlib.Path(data["presets"][part][g]).expanduser() for g in G}
+    rendered = render_part((labelled, {"own": str(crops / part / "di.wav")}))
+    files = {}
+    for g in G:
+        files[g] = out / f"render-check-{g}.wav"
+        sf.write(str(files[g]), np.asarray(rendered[(g, "own")], dtype=np.float32), 48000,
+                 subtype="FLOAT")
+    _, scored = KJ.score_part((part, {g: str(f) for g, f in files.items()},
+                               lag_samples(part) - K.LATENCY, crops))
+    return max(abs(math.log(scored["d"][f"{g}|full|{b}"] / data["distances"][part][b][g]))
+               for g in G for b in BAND_SETS)
+
 
 def factory_path(candidate: str) -> pathlib.Path:
     return FACTORY / (candidate.split(":", 2)[2] + ".xml")
@@ -293,7 +416,8 @@ audio {{ width:100%; height:36px; }}
 guitar named in the song? A–D all play the same riff, not the song's part, so listen
 for the tone: gain, brightness, body. Answer every trial with a letter, or "?" if you
 can't tell, on one line that starts with the sitting, exactly like this:</p>
-<p><code>Sitting {sitting}: 1A 2C 3? 4B …</code></p>
+<p><code>Sitting {sitting}: 1A 2C 3? 4B</code> and so on, one answer for every trial.
+Before you send it, it is checked against this page's trial numbers.</p>
 {trials}
 </main></body></html>
 """
@@ -314,8 +438,8 @@ def page(sitting: int, trials) -> str:
 def leak_check(folder: pathlib.Path, names=()) -> list:
     """Files in the listener's folder whose name or text names an amp, a candidate or one
     of `names` (the presets on trial): none may."""
-    pattern = re.compile("|".join([LEAKS] + [rf"\b{re.escape(n)}\b" for n in names if n]),
-                         re.I)
+    pattern = re.compile("|".join([LEAKS] + [rf"(?<!\w){re.escape(n)}(?!\w)"
+                                            for n in names if n]), re.I)
     bad = []
     for path in folder.rglob("*"):
         if pattern.search(path.name):
@@ -327,9 +451,9 @@ def leak_check(folder: pathlib.Path, names=()) -> list:
 
 def plan_trials(parts, controls, practice, rng):
     """Two sittings. Each holds one riff of half the parts and the other riff of the rest,
-    two controls (one in each half), and repeats; the practice trial opens sitting 1.
-    Two of sitting 1's trials are repeated in sitting 2, and one later in sitting 1 with
-    at least two trials between."""
+    and repeats: two of sitting 1's trials again in sitting 2, and one later in sitting 1
+    with at least two trials between. The practice trial opens sitting 1. Last, each
+    sitting gets two controls, one through each riff, one in each half."""
     order = parts[:]
     rng.shuffle(order)
     half = len(order) // 2
@@ -340,22 +464,25 @@ def plan_trials(parts, controls, practice, rng):
         sittings[2].append({"kind": "main", "part": part, "riff": second})
     for s in (1, 2):
         rng.shuffle(sittings[s])
-    for s, pair in ((1, controls[0:2]), (2, controls[2:4])):
-        riffs = list(RIFFS)
-        rng.shuffle(riffs)
-        mid = len(sittings[s]) // 2
-        late = {"kind": "control", "part": pair[1]["part"], "riff": riffs[1]}
-        sittings[s].insert(rng.randrange(mid + 1, len(sittings[s]) + 1), late)
-        early = {"kind": "control", "part": pair[0]["part"], "riff": riffs[0]}
-        sittings[s].insert(rng.randrange(0, mid + 1), early)
-    mains = [i for i, t in enumerate(sittings[1]) if t["kind"] == "main"]
-    within = rng.choice([i for i in mains if i <= len(sittings[1]) - 3])
-    across = rng.sample([sittings[1][i] for i in mains if i != within], 2)
+    within = rng.randrange(0, len(sittings[1]) - 2)
+    across = rng.sample([t for i, t in enumerate(sittings[1]) if i != within], 2)
     sittings[1].insert(rng.randrange(within + 3, len(sittings[1]) + 1),
                        dict(sittings[1][within], kind="repeat"))
     for t in across:
         sittings[2].insert(rng.randrange(0, len(sittings[2]) + 1), dict(t, kind="repeat"))
     sittings[1].insert(0, {"kind": "practice", "part": practice["part"], "riff": "chords"})
+    for s, pair in ((1, controls[0:2]), (2, controls[2:4])):
+        riffs = list(RIFFS)
+        rng.shuffle(riffs)
+        # With n trials and two controls, the sitting has n + 2: the first half is
+        # positions below (n + 2) // 2, and the early control goes after the practice.
+        n = len(sittings[s])
+        half_at = (n + 2) // 2
+        early = rng.randrange(1 if s == 1 else 0, half_at)
+        sittings[s].insert(early, {"kind": "control", "part": pair[0]["part"],
+                                   "riff": riffs[0]})
+        sittings[s].insert(rng.randrange(half_at, n + 2),
+                           {"kind": "control", "part": pair[1]["part"], "riff": riffs[1]})
     return sittings
 
 
@@ -374,12 +501,21 @@ def build(args):
     data = json.loads(args.inputs.read_text())
     if _sha(SHORTLISTS.expanduser() / "renders" / "index.json") != data["renders_index_sha256"]:
         die("the shortlist renders index changed since the inputs were fixed")
+    if _sha(REACH.expanduser()) != data["amp_reach_sha256"]:
+        die("the factory-preset panels changed since the inputs were fixed")
+    for candidate, sha in data["factory_sha256"].items():
+        if _sha(factory_path(candidate)) != sha:
+            die(f"{factory_path(candidate)} is not the factory preset the panel scored")
     out = args.out_dir.expanduser()
     if out.exists() and any(out.iterdir()):
         die(f"{out} is not empty")
     private, listen = out / "private", out / "listen"
     private.mkdir(parents=True)
     listen.mkdir()
+    drift = render_unchanged(data, data["parts"][0], private)
+    if drift > RENDER_DRIFT:
+        die(f"the plugin no longer renders what the judge scored (a change of {drift:.3f} "
+            f"in log distance, more than {RENDER_DRIFT})")
     riffs = shipped_riffs()
     rng = random.SystemRandom()
     candidates = {p: {g: pathlib.Path(data["presets"][p][g]).expanduser() for g in G}
@@ -398,7 +534,8 @@ def build(args):
     with ProcessPoolExecutor(args.workers) as ex:
         rendered = dict(zip(candidates, ex.map(render_part, jobs)))
     sittings = plan_trials(data["parts"], data["controls"], pr, rng)
-    key = {"schema": "listening-check-key-2", "inputs_sha256": args.inputs_sha,
+    key = {"schema": "listening-check-key-3", "inputs_sha256": args.inputs_sha,
+           "render_check_drift": drift,
            "preset_sha256": {p: {label: _sha(path) for label, path in by_label.items()}
                              for p, by_label in candidates.items()},
            "sittings": {}}
@@ -419,14 +556,20 @@ def build(args):
             files = {}
             for name, audio in clips.items():
                 loudness, _ = measure(audio, 48000)
+                gained = np.asarray(audio, dtype=np.float64) * 10 ** ((level - loudness) / 20)
+                # Fresh dither on every clip (TPDF, one 16-bit step), so a repeat's
+                # files never match its original's byte for byte.
+                noise = np.random.default_rng(rng.getrandbits(64))
+                lsb = 1 / 32768
+                gained = gained + (noise.random(gained.shape) - noise.random(gained.shape)) * lsb
                 fname = f"trial-{number:02d}-{name}.wav"
-                sf.write(str(folder / fname), (audio * 10 ** ((level - loudness) / 20)).astype(np.float32),
-                         48000, subtype="PCM_16")
+                sf.write(str(folder / fname), gained.astype(np.float32), 48000, subtype="PCM_16")
                 files[name] = fname
-            cue_info = (data["cues"].get(part) or {})
-            cue = (f"{cue_info.get('song', 'Practice')}: the guitar track {cue_info.get('track', '')}, "
-                   f"which {cue_info.get('how_it_plays', 'plays here')}." if cue_info else
-                   "Practice: the main guitar.")
+            info = data["cues"][part]
+            cue = (f"{info['song']}: the guitar track {info['track']}, which "
+                   f"{info['how_it_plays']}.")
+            if t["kind"] == "practice":
+                cue = f"Practice, not scored. {cue}"
             shown.append({"number": number, "cue": cue, "song": files["song"],
                           "clips": {x: files[x] for x in LETTERS}})
             key["sittings"].setdefault(str(s), []).append(
@@ -493,6 +636,37 @@ def randomization_p(values, picks, draws: int | None = None) -> float:
     return hits / draws
 
 
+def taste_p(values, picks, classes, draws: int | None = None) -> float:
+    """One-sided p against a song-blind taste: each trial's pick redrawn from its four in
+    proportion to how often the listener picked that candidate's class (amp, and drive on
+    or off) when it was offered, over all these trials. A taste for an amp or for drive
+    alone then scores about 0 in expectation, and only picks that follow the song within
+    that taste beat it. `classes` holds each trial's four class names."""
+    import numpy as np
+
+    draws = draws or DRAWS
+    answered = [i for i, p in enumerate(picks) if p is not None]
+    if not answered:
+        return 1.0
+    picked, offered = collections.Counter(), collections.Counter()
+    for i in answered:
+        picked[classes[i][picks[i]]] += 1
+        offered.update(classes[i])
+    weights = np.array([[picked[c] / offered[c] for c in classes[i]] for i in answered])
+    cum = (weights / weights.sum(axis=1, keepdims=True)).cumsum(axis=1)
+    values = np.array([values[i] for i in answered])
+    rows = np.arange(len(answered))
+    observed = sum(values[k][picks[i]] for k, i in enumerate(answered))
+    rng = np.random.default_rng(20261006)
+    hits, done = 0, 0
+    while done < draws:
+        n = min(50_000, draws - done)
+        drawn = (rng.random((n, len(answered), 1)) > cum[None]).sum(axis=2).clip(0, 3)
+        hits += int((values[rows, drawn].sum(axis=1) <= observed + 1e-12).sum())
+        done += n
+    return hits / draws
+
+
 def binomial_p(k: int, n: int, chance: float = 0.25) -> float:
     """Exact one-sided P(X >= k) for X ~ Binomial(n, chance)."""
     return sum(math.comb(n, i) * chance ** i * (1 - chance) ** (n - i) for i in range(k, n + 1))
@@ -505,11 +679,12 @@ def _median(values):
 
 def readings(rows, draws: int | None = None) -> dict | None:
     """The declared readings over some main trials. Each row: `logs` (letter -> log d),
-    `pick` (a letter or None), `g1` and `template` (log d)."""
+    `pick` (a letter or None), `classes` (letter -> taste class), `g1` and `template`
+    (log d)."""
     if not rows:
         return None
     picks = [None if r["pick"] is None else LETTERS.index(r["pick"]) for r in rows]
-    centred, pairs, gain, perfect = [], [], 0.0, 0.0
+    centred, pairs, gain, perfect, between = [], [], 0.0, 0.0, 0.0
     best = closer = clear = 0
     for r, p in zip(rows, picks):
         logs = [r["logs"][x] for x in LETTERS]
@@ -522,6 +697,11 @@ def readings(rows, draws: int | None = None) -> dict | None:
         perfect += min(logs) - mean
         if p is not None:
             gain += logs[p] - mean
+            # The part of c that choosing the class carries: the mean of the pick's
+            # class among the four, less the mean of all four.
+            mine = [v for x, v in zip(LETTERS, logs)
+                    if r["classes"][x] == r["classes"][r["pick"]]]
+            between += statistics.mean(mine) - mean
             best += logs[p] == min(logs)
             closer += sum(v > logs[p] + CLEAR_PAIR for v in logs)
             clear += sum(abs(v - logs[p]) > CLEAR_PAIR for v in logs)
@@ -529,10 +709,14 @@ def readings(rows, draws: int | None = None) -> dict | None:
     delivered = [r["g1"] if r["pick"] is None else r["logs"][r["pick"]] for r in rows]
     return {
         "trials": len(rows), "sum_c": gain, "p": randomization_p(centred, picks, draws),
+        "taste_p": taste_p(centred, picks, [[r["classes"][x] for x in LETTERS] for r in rows],
+                           draws),
+        "sum_c_by_class": between, "sum_c_within_class": gain - between,
         "best_of_four": best, "best_of_four_p": binomial_p(best, len(rows)),
         "clear_pairs": clear, "clear_pairs_closer": closer,
         "clear_pairs_share": closer / clear if clear else None,
-        "clear_pairs_p": randomization_p(pairs, picks, draws),
+        # The p is for the net count (pairs the pick wins less pairs it loses).
+        "clear_pairs_net_p": randomization_p(pairs, picks, draws),
         "captured_share": gain / perfect if perfect else None,
         "median_vs_g1": _median(d - r["g1"] for d, r in zip(delivered, rows)),
         "median_vs_template": _median(d - r["template"] for d, r in zip(delivered, rows)),
@@ -547,7 +731,9 @@ def decide(by_band_set: dict, cant_tell: int, controls_hit: int) -> dict:
     if controls_hit < MIN_CONTROLS_HIT:
         reasons.append(f"{controls_hit} of {CONTROLS} controls hit, fewer than "
                        f"{MIN_CONTROLS_HIT}")
-    primary = not reasons and all(by_band_set[b]["all"]["p"] < 0.05 for b in BAND_SETS)
+    primary = not reasons and all(by_band_set[b]["all"]["p"] < 0.05
+                                  and by_band_set[b]["all"]["taste_p"] < 0.05
+                                  for b in BAND_SETS)
     return {"inconclusive": bool(reasons), "inconclusive_because": reasons,
             "primary_holds": primary, "main_path": primary}
 
@@ -568,6 +754,12 @@ def score(args):
         answers = parse_answers(args.answers.read_text())
     except ValueError as e:
         die(f"the answer sheet cannot be scored: {e}")
+    for s, rows in key["sittings"].items():
+        for t in rows:
+            for name, sha in t["clips_sha256"].items():
+                clip = out / "listen" / f"sitting-{s}" / f"trial-{t['number']:02d}-{name}.wav"
+                if _sha(clip) != sha:
+                    die(f"{clip} is not the clip that was built")
     built = {(int(s), t["number"]) for s, rows in key["sittings"].items() for t in rows}
     if set(answers) != built:
         die(f"the answer sheet does not answer exactly the built trials: missing "
@@ -591,6 +783,8 @@ def score(args):
             rows.append({"part": t["part"], "riff": t["riff"], "pick": pick,
                          "picked": None if pick is None else t["letters"][pick],
                          "logs": {x: math.log(d[t["letters"][x]]) for x in LETTERS},
+                         "classes": {x: data["taste_classes"][t["part"]][t["letters"][x]]
+                                     for x in LETTERS},
                          "g1": math.log(d["G1"]), "template": math.log(d["template+R"]),
                          "hot_di": gaps[t["part"]] > gap_median})
         result["by_band_set"][bands] = {
@@ -616,10 +810,38 @@ def score(args):
     print(json.dumps({k: v for k, v in result.items() if k != "by_band_set"}, indent=1))
 
 
+def listed_trials(listen: pathlib.Path) -> set:
+    """{(sitting, trial number)} as the listener's pages show them: public, so checking
+    a sheet against them reveals nothing about the key."""
+    out = set()
+    for page_path in sorted(listen.glob("sitting-*/index.html")):
+        sitting = int(page_path.parent.name.split("-")[1])
+        out |= {(sitting, int(n)) for n in re.findall(r"<h2>Trial (\d+)</h2>",
+                                                      page_path.read_text())}
+    return out
+
+
+def check_sheet(args):
+    """Whether an answer sheet can be scored, from the public pages alone: run before its
+    hash is committed, so a format slip is mended while it still can be."""
+    try:
+        answers = parse_answers(args.answers.read_text())
+    except ValueError as e:
+        die(f"the sheet cannot be read: {e}")
+    shown = listed_trials(args.out_dir.expanduser() / "listen")
+    if not shown:
+        die("no trial pages found")
+    missing, extra = sorted(shown - set(answers)), sorted(set(answers) - shown)
+    if missing or extra:
+        die(f"the sheet does not answer exactly the trials shown: missing {missing}, "
+            f"extra {extra}")
+    print(f"the sheet answers all {len(shown)} trials; its sha256 is {_sha(args.answers)}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=("inputs", "build", "score"))
+    ap.add_argument("command", choices=("inputs", "build", "check-sheet", "score"))
     ap.add_argument("--json", type=pathlib.Path)
     ap.add_argument("--inputs", type=pathlib.Path)
     ap.add_argument("--inputs-sha")
@@ -629,7 +851,8 @@ def main():
     ap.add_argument("--key-sha")
     ap.add_argument("--workers", type=int, default=3)
     args = ap.parse_args()
-    {"inputs": inputs, "build": build, "score": score}[args.command](args)
+    {"inputs": inputs, "build": build, "check-sheet": check_sheet,
+     "score": score}[args.command](args)
 
 
 if __name__ == "__main__":

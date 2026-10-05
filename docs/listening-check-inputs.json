@@ -1,5 +1,5 @@
 {
- "schema": "listening-check-inputs-2",
+ "schema": "listening-check-inputs-3",
  "parts": [
   "telefunken-Blind_Spots-GTR",
   "telefunken-Bloomlight-GTR",
@@ -668,6 +668,126 @@
   "cambridge-Today's_The_Day-ElecGtr07": -24.55
  },
  "riff_lufs": -23.7,
+ "taste_classes": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": "sw50r|drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|drive"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": "pr12|drive",
+   "G2": "sw50r|drive",
+   "G3": "pr12|no drive",
+   "G4": "sw50r|drive"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": "ac20|drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|drive"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": "pr12|drive",
+   "G2": "pr12|no drive",
+   "G3": "sw50r|drive",
+   "G4": "pr12|drive"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": "pr12|no drive",
+   "G2": "sw50r|no drive",
+   "G3": "pr12|no drive",
+   "G4": "ac20|no drive"
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": "sw50r|drive",
+   "G2": "sw50r|no drive",
+   "G3": "pr12|no drive",
+   "G4": "pr12|drive"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": "sw50r|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|no drive"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": "ac20|drive",
+   "G2": "sw50r|drive",
+   "G3": "pr12|drive",
+   "G4": "ac20|no drive"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "sw50r|drive",
+   "G4": "ac20|no drive"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": "ac20|no drive",
+   "G2": "pr12|no drive",
+   "G3": "sw50r|no drive",
+   "G4": "ac20|drive"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": "pr12|no drive",
+   "G2": "ac20|no drive",
+   "G3": "sw50r|no drive",
+   "G4": "pr12|drive"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": "ac20|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|no drive"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": "pr12|no drive",
+   "G2": "sw50r|no drive",
+   "G3": "ac20|no drive",
+   "G4": "pr12|no drive"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": "sw50r|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|no drive"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "sw50r|drive",
+   "G4": "ac20|drive"
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|drive"
+  }
+ },
+ "factory_sha256": {
+  "sw50r:factory:Neural DSP/Strat 4th Position Funk": "3cbc7696ac593cc91cc23fa97648699a194d8f301423564be953e5cddfc66f36",
+  "pr12:factory:Neural DSP/The Creature of the Cave": "47780fba42adc289fb95ca28153247725574d5e87e88adec05fd1381ecffc495",
+  "pr12:factory:Neural DSP/Izzy Come Back": "a65ed91437cabd1a8677591189aecfd8b1cc783fbf9ddc78bb406aa67256e524",
+  "pr12:factory:Neural DSP/Vintage Metal": "c867a9fa3237fcf89c113ca500a004d289289ba5d61cb8eac4a7497b262d0cab",
+  "sw50r:factory:Artists/CARRTOONS/Mustang": "c07fa211e1123065e93f672d739127795afb9e849620b5a4945b81e540213f71",
+  "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": "04dce366769a7007cd0909bb7780461f5b0c8269cdc14ecf40fde218de965da6",
+  "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": "578e7a2c423537c53d496067befe845b4d3908f82c2e6862a7bffa680c9e4b35",
+  "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": "aeabf0598fae9af1f1442b7c8f2c8872b2a60e063ddf11e758b2b299c8e5f687",
+  "sw50r:factory:Artists/CARRTOONS/Benny Tele": "1c46768545402b77f1160812fd55b838c0c4298dc89ccf67bcbb78d2f69b2c0c",
+  "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": "7f4e879a719c4fa59c4ffd7a4df01ee0a4c258ba4dff06c3aab68faf3a46dc44",
+  "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": "c4cde38b135726cefa23bac40ae24245171bfc36ebeeda15f96cc62743fd3811",
+  "sw50r:factory:Neural DSP/Drop-Tuned Doom": "b75d4198fc4b0e0512b402e82a659ea6761188cb130c2023310afc72751d7a64",
+  "pr12:factory:Artists/Charlie Robbins/Ambient Clean": "574ddfe47dc97517ae87fbcd6ec93923459c6892752329e5c5252074b4d15fe7",
+  "sw50r:factory:Neural DSP/Doomish Riff": "2697c9dc5adebe82d2f3e2528384eaf29b65c64d5237e8281c57eefd13074aa5",
+  "ac20:factory:Artists/Charlie Robbins/Lead": "3e91795e147fdbf58a0be19c24afcf69b042b9d9dc15d560d763a2c2bcd7c11d",
+  "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": "ad13eda2c9b4867cdc1134cea7b3f9047b763a7ab0349e9f793064a5f8ada93c",
+  "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm": "2d1e2961652fa5ba482d1fa45459c62ffd5132149b83650c7878b9954d43cd48",
+  "sw50r:factory:Artists/John Connearn/Low Gain Solo": "ee20441d617f105f83d4da0ed244d894c5250354741a07b7e852ba224aee9129",
+  "ac20:factory:Neural DSP/AC20 Mid-Gain Drive": "f906895e9aca99ea40b0f38acf6f07f733676ecc388f03af9b3f85f6492471c5",
+  "ac20:factory:Artists/Rabea Massaad/Far Away Place": "a08ab09bbef846203f2105fa633c1cd2ff3de9a1b883fffec4e629da00a44d1c"
+ },
  "g1_rule_chance_pass": 0.9931,
  "controls": [
   {
@@ -694,81 +814,81 @@
    }
   },
   {
-   "part": "cambridge-Today's_The_Day-ElecGtr10",
-   "candidates": [
-    "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
-    "sw50r:factory:Artists/CARRTOONS/5 String P Bass",
-    "sw50r:factory:Artists/CARRTOONS/Mustang",
-    "sw50r:factory:Neural DSP/Broken Radio"
-   ],
-   "distances": {
-    "recording": {
-     "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm": 3.849255470338266,
-     "sw50r:factory:Artists/CARRTOONS/5 String P Bass": 13.229102372056103,
-     "sw50r:factory:Artists/CARRTOONS/Mustang": 13.197008210459643,
-     "sw50r:factory:Neural DSP/Broken Radio": 12.499463915148263
-    },
-    "union": {
-     "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm": 3.8359571875668226,
-     "sw50r:factory:Artists/CARRTOONS/5 String P Bass": 13.229102372056103,
-     "sw50r:factory:Artists/CARRTOONS/Mustang": 13.197008210459643,
-     "sw50r:factory:Neural DSP/Broken Radio": 12.499463915148263
-    }
-   }
-  },
-  {
    "part": "telefunken-Gym_Hours-GTR_2",
    "candidates": [
-    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "sw50r:factory:Artists/CARRTOONS/Mustang",
     "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom",
     "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz",
-    "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)"
+    "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm"
    ],
    "distances": {
     "recording": {
-     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 3.0150090371513287,
+     "sw50r:factory:Artists/CARRTOONS/Mustang": 2.7418573807338196,
      "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": 10.079562494006044,
      "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": 9.442558670369012,
-     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 9.506578388403826
+     "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": 9.351891977002701
     },
     "union": {
-     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 3.174506157838086,
+     "sw50r:factory:Artists/CARRTOONS/Mustang": 2.918196821609957,
      "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": 10.27368423566264,
      "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": 10.240616122222159,
-     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 9.934566246812834
+     "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": 10.168645205067156
     }
    }
   },
   {
    "part": "telefunken-Sculptor's_Request-GTR_1",
    "candidates": [
-    "pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
-    "sw50r:factory:Artists/John Connearn/High Gain Solo",
-    "sw50r:factory:Neural DSP/Blue Hotel",
-    "sw50r:factory:Neural DSP/Abrasive Stoner Rock Tone"
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction",
+    "sw50r:factory:Neural DSP/Drop-Tuned Doom"
    ],
    "distances": {
     "recording": {
-     "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": 4.113297115276378,
-     "sw50r:factory:Artists/John Connearn/High Gain Solo": 7.968093804787608,
-     "sw50r:factory:Neural DSP/Blue Hotel": 8.23641469239279,
-     "sw50r:factory:Neural DSP/Abrasive Stoner Rock Tone": 7.614601106378152
+     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 4.099710061503456,
+     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 7.965563214045218,
+     "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": 7.479854890315251,
+     "sw50r:factory:Neural DSP/Drop-Tuned Doom": 6.904237587926126
     },
     "union": {
-     "pr12:factory:Artists/CARRTOONS/BC Guitar Chords": 4.113297115276378,
-     "sw50r:factory:Artists/John Connearn/High Gain Solo": 8.305600660814209,
-     "sw50r:factory:Neural DSP/Blue Hotel": 7.811163189756026,
-     "sw50r:factory:Neural DSP/Abrasive Stoner Rock Tone": 7.899636244196695
+     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 4.099710061503456,
+     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 8.214674182669393,
+     "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": 7.751175979637939,
+     "sw50r:factory:Neural DSP/Drop-Tuned Doom": 7.109232271507536
+    }
+   }
+  },
+  {
+   "part": "telefunken-Farthest_Step-GTR",
+   "candidates": [
+    "pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+    "sw50r:factory:Neural DSP/Doomish Riff",
+    "ac20:factory:Artists/Charlie Robbins/Lead",
+    "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues"
+   ],
+   "distances": {
+    "recording": {
+     "pr12:factory:Artists/Charlie Robbins/Ambient Clean": 1.9926046691747576,
+     "sw50r:factory:Neural DSP/Doomish Riff": 4.9419533591591565,
+     "ac20:factory:Artists/Charlie Robbins/Lead": 4.7081528423185715,
+     "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": 4.016585782929133
+    },
+    "union": {
+     "pr12:factory:Artists/Charlie Robbins/Ambient Clean": 2.0293044706409584,
+     "sw50r:factory:Neural DSP/Doomish Riff": 5.536084381541095,
+     "ac20:factory:Artists/Charlie Robbins/Lead": 5.120392575299292,
+     "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": 4.370708149141772
     }
    }
   }
  ],
  "practice": {
-  "part": "telefunken-Russian_Cream-GTR_1",
+  "part": "cambridge-Today's_The_Day-ElecGtr10",
   "candidates": [
-   "ac20:factory:Default",
-   "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
-   "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+   "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+   "sw50r:factory:Artists/John Connearn/Low Gain Solo",
+   "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
    "ac20:factory:Artists/Rabea Massaad/Far Away Place"
   ]
  },

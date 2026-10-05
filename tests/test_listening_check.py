@@ -42,8 +42,9 @@ def test_an_answer_sheet_that_cannot_be_read_exactly_is_refused(sheet):
 def test_the_page_shows_the_exact_answer_format():
     page = L.page(2, [{"number": 1, "cue": "x", "song": "s.wav",
                        "clips": {x: f"{x}.wav" for x in "ABCD"}}])
-    assert "Sitting 2: 1A 2C 3?" in page
-    L.parse_answers("Sitting 2: 1A 2C 3?")
+    example = page.split("<code>")[1].split("</code>")[0]
+    assert example == "Sitting 2: 1A 2C 3? 4B"
+    L.parse_answers(example)                      # the page's own example reads
 
 
 # --- statistics ---------------------------------------------------------------------
@@ -71,15 +72,56 @@ def test_the_randomization_p_is_uniform_under_a_random_pick():
     assert 0.4 <= sum(ps) / len(ps) <= 0.6
 
 
+def test_a_song_blind_taste_does_not_pass_the_taste_null():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    rng = random.Random(4)
+    # The judge's best is always the one "pr12" candidate: a listener who just likes the
+    # PR12 beats the uniform null but not the taste null.
+    values, picks, classes = [], [], []
+    for _ in range(32):
+        logs = [0.0] + [rng.uniform(0.2, 0.6) for _ in range(3)]
+        mean = sum(logs) / 4
+        values.append([v - mean for v in logs])
+        classes.append(["pr12|no drive", "ac20|drive", "sw50r|no drive", "ac20|no drive"])
+        picks.append(0)
+    assert L.randomization_p(values, picks, draws=4000) < 0.01
+    assert L.taste_p(values, picks, classes, draws=4000) > 0.5
+    # Within a class the song can still show: two PR12s, the closer one always picked.
+    values2, classes2 = [], []
+    for _ in range(32):
+        logs = [0.0, 0.5, 0.3, 0.3]
+        values2.append([v - 0.275 for v in logs])
+        classes2.append(["pr12|no drive", "pr12|no drive", "ac20|drive", "sw50r|drive"])
+    assert L.taste_p(values2, [0] * 32, classes2, draws=4000) < 0.01
+    assert L.taste_p(values2, [None] * 32, classes2, draws=4000) == 1.0
+
+
+def test_the_taste_null_holds_its_size_for_a_random_picker():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    rng = random.Random(9)
+    kinds = ["pr12|no drive", "pr12|drive", "ac20|no drive", "sw50r|drive"]
+    hits = 0
+    for _ in range(200):
+        values, classes = [], []
+        for _ in range(32):
+            logs = [rng.gauss(0, 0.3) for _ in range(4)]
+            mean = sum(logs) / 4
+            values.append([v - mean for v in logs])
+            classes.append(rng.sample(kinds, 4))
+        hits += L.taste_p(values, [rng.randrange(4) for _ in values], classes,
+                          draws=2000) < 0.05
+    assert hits / 200 <= 0.08
+
+
 def test_the_binomial_tail_is_exact():
     assert L.binomial_p(0, 32) == 1.0
     assert L.binomial_p(32, 32) == pytest.approx(0.25 ** 32)
     assert L.binomial_p(1, 1) == 0.25
 
 
-def _row(logs, pick, riff="chords", g1=None):
+def _row(logs, pick, riff="chords", g1=None, classes=("a", "b", "b", "c")):
     logs = dict(zip("ABCD", logs))
-    return {"logs": logs, "pick": pick, "riff": riff,
+    return {"logs": logs, "pick": pick, "riff": riff, "classes": dict(zip("ABCD", classes)),
             "g1": logs["A"] if g1 is None else g1, "template": 0.0}
 
 
@@ -93,12 +135,20 @@ def test_readings_aggregate_the_captured_share_and_deliver_g1_on_cant_tell(monke
     assert got["best_of_four"] == 1 and got["clear_pairs"] == 3
     assert got["clear_pairs_closer"] == 3
     assert got["median_vs_g1"] == 0.0             # "can't tell" delivers G1
+    # A's class holds only A, so all of its gain is the class choice.
+    assert got["sum_c_by_class"] == pytest.approx(-0.3)
+    assert got["sum_c_within_class"] == pytest.approx(0.0)
+    split = L.readings([_row([0.0, 0.4, 0.4, 0.4], "A", classes=("a", "a", "b", "c"))])
+    assert split["sum_c_by_class"] == pytest.approx(-0.1)     # (0 + 0.4) / 2 - 0.3
+    assert split["sum_c_within_class"] == pytest.approx(-0.2)
     assert L.readings([]) is None
 
 
 def test_the_decision_rests_on_the_primary_and_is_gated_by_inconclusive():
-    passing = {b: {"all": {"p": 0.01}} for b in L.BAND_SETS}
-    failing = dict(passing, union={"all": {"p": 0.2}})
+    passing = {b: {"all": {"p": 0.01, "taste_p": 0.01}} for b in L.BAND_SETS}
+    failing = dict(passing, union={"all": {"p": 0.2, "taste_p": 0.01}})
+    taste = dict(passing, union={"all": {"p": 0.01, "taste_p": 0.2}})
+    assert not L.decide(taste, cant_tell=0, controls_hit=4)["primary_holds"]
     assert L.decide(passing, cant_tell=0, controls_hit=4)["main_path"]
     assert not L.decide(failing, cant_tell=0, controls_hit=4)["primary_holds"]
     many = L.decide(passing, cant_tell=L.MAX_CANT_TELL + 1, controls_hit=4)
@@ -130,7 +180,7 @@ def test_the_trial_plan_holds_over_many_shuffles():
         first = {(t["part"], t["riff"]) for t in sittings[1] if t["kind"] == "main"}
         for s, ts in sittings.items():
             at = [i for i, t in enumerate(ts) if t["kind"] == "control"]
-            assert at[0] < len(ts) / 2 + 1 and at[1] > len(ts) / 2 - 1, seed
+            assert at[0] < len(ts) // 2 <= at[1], seed          # one in each half
             assert {ts[i]["riff"] for i in at} == set(L.RIFFS)
             for i, t in enumerate(ts):
                 if t["kind"] != "repeat":
@@ -153,40 +203,52 @@ def _reach(parts, near, gains):
                    for name in gains for b in L.BAND_SETS} for part in parts}
 
 
+def _choose(exposure, near, gains, main=(), song=None, clear=lambda p, k: True):
+    return L.choose_controls(list(exposure), set(main), exposure.get,
+                             _reach(exposure, near, gains), gains.get,
+                             song or (lambda p: p), clear)
+
+
 def test_controls_clear_the_floor_use_opposite_gain_and_never_share_a_preset():
     clean = [f"{a}:factory:clean{i}" for a in ("ac20", "pr12", "sw50r") for i in range(8)]
     loud = [f"{a}:factory:loud{i}" for a in ("ac20", "pr12", "sw50r") for i in range(8)]
-    gains = {c: False for c in clean} | {c: True for c in loud}
+    vague = ["ac20:factory:vague"]
+    gains = {c: "clean" for c in clean} | {c: "high" for c in loud} | {vague[0]: None}
     exposure = {"a": -2.0, "b": -5.0, "c": -6.0, "d": -9.0, "e": -9.5, "low": -12.0}
-    # b's closest is a's, so it takes its next closest; c's closest is high-gain.
+    # b's closest is a's, so it takes its next closest; c's closest is high-gain; d's
+    # closest has no clear class, so its closest clear one answers.
     near = {"a": {clean[0]: 1.0}, "b": {clean[0]: 1.0, clean[8]: 1.2}, "c": {loud[16]: 1.0},
-            "d": {clean[17]: 1.0}, "e": {clean[18]: 1.0}, "low": {clean[19]: 1.0}}
-    controls, practice = L.choose_controls(list(exposure), exposure.get,
-                                           _reach(exposure, near, gains), gains.get)
+            "d": {vague[0]: 0.5, clean[17]: 1.0}, "e": {clean[18]: 1.0},
+            "low": {clean[19]: 1.0}}
+    controls, practice = _choose(exposure, near, gains)
     assert [c["part"] for c in controls] == ["a", "b", "c", "d"]
     used = [x for c in controls for x in c["candidates"]]
     assert len(used) == len(set(used))                       # no preset serves twice
     for c in controls:
         right, *wrong = c["candidates"]
-        assert all(gains[w] != gains[right] for w in wrong)
+        assert gains[right] and all(gains[w] not in (None, gains[right]) for w in wrong)
         for b in L.BAND_SETS:
             assert all(math.log(c["distances"][b][w] / c["distances"][b][right])
                        > L.CONTROL_GAP for w in wrong)
     assert controls[0]["candidates"][0] == clean[0]          # its closest
     assert controls[1]["candidates"][0] == clean[8]          # the closest unused
-    assert gains[controls[2]["candidates"][0]]                # high-gain against clean
+    assert gains[controls[2]["candidates"][0]] == "high"      # high-gain against clean
+    assert controls[3]["candidates"][0] == clean[17]          # the closest clear one
     assert practice["part"] == "e"                           # the most exposed left
     assert not set(practice["candidates"]) & set(used)
     assert len({x.split(":")[0] for x in practice["candidates"][:3]}) == 3
 
 
-def test_a_part_under_the_floor_is_never_a_control():
-    gains = {f"ac20:factory:c{i}": i % 2 == 1 for i in range(12)}
-    exposure = {"a": -2.0, "low": -11.0}
-    near = {"a": {"ac20:factory:c0": 1.0}, "low": {"ac20:factory:c2": 1.0}}
-    controls, _ = L.choose_controls(list(exposure), exposure.get,
-                                    _reach(exposure, near, gains), gains.get)
-    assert [c["part"] for c in controls] == ["a"]
+def test_controls_skip_low_parts_mixed_songs_and_a_second_part_of_a_song():
+    gains = {f"ac20:factory:c{i}": ("high" if i % 2 else "clean") for i in range(12)}
+    exposure = {"a": -2.0, "a2": -3.0, "mixed": -4.0, "low": -11.0, "m": -1.0}
+    near = {p: {"ac20:factory:c0": 1.0} for p in exposure} | {"m": {"ac20:factory:c2": 1.0}}
+    songs = {"a": "s1", "a2": "s1", "mixed": "s2", "low": "s3", "m": "s4"}
+    controls, _ = _choose(exposure, near, gains, main={"m"}, song=songs.get,
+                          clear=lambda p, kind: p != "mixed")
+    # One per song, never under the floor or in a song with a guitar of the other
+    # class; the parts not under test come before the part under test.
+    assert [c["part"] for c in controls] == ["a", "m"]
 
 
 # --- the listener's folder ----------------------------------------------------------
@@ -199,6 +261,10 @@ def test_the_listeners_folder_may_not_name_an_amp_a_candidate_or_a_preset(tmp_pa
     assert L.leak_check(tmp_path)
     (tmp_path / "index.html").write_text("<p>Trial 1: the jazzy box one</p>")
     assert L.leak_check(tmp_path, ["Jazzy Box"])
+    (tmp_path / "index.html").write_text("<p>Modern Metal (Pick Hard) it is</p>")
+    assert L.leak_check(tmp_path, ["Modern Metal (Pick Hard)"])
+    (tmp_path / "index.html").write_text("<p>Trial 1: defaults</p>")
+    assert L.leak_check(tmp_path, ["Default"]) == []
     page = L.page(1, [{"number": 1, "cue": "Bloomlight: the guitar track GTR.",
                        "song": "trial-01-song.wav",
                        "clips": {x: f"trial-01-{x}.wav" for x in "ABCD"}}])
@@ -210,9 +276,15 @@ def test_the_listeners_folder_may_not_name_an_amp_a_candidate_or_a_preset(tmp_pa
 
 def _scoring_setup(tmp_path, picks_best: bool):
     parts = [f"p{i}" for i in range(16)]
-    distances = {p: {b: {"G1": 2.0, "G2": 1.0, "G3": 1.5, "G4": 1.8, "template+R": 2.2}
-                     for b in L.BAND_SETS} for p in parts}
+    # The judge's best rotates over G1-G4, each of its own taste class, so a listener
+    # who always picks it is not just preferring one class.
+    best = {p: L.G[i % 4] for i, p in enumerate(parts)}
+    distances = {p: {b: {**{g: (1.0 if g == best[p] else 2.0) for g in L.G},
+                         "template+R": 2.2} for b in L.BAND_SETS} for p in parts}
+    tastes = {p: {"G1": "pr12|drive", "G2": "pr12|no drive", "G3": "ac20|drive",
+                  "G4": "sw50r|no drive"} for p in parts}
     inputs = {"parts": parts, "distances": distances, "g1_rule_chance_pass": 0.99,
+              "taste_classes": tastes,
               "di_lufs": {p: -30.0 + i for i, p in enumerate(parts)}, "riff_lufs": -23.7}
     inputs_path = tmp_path / "inputs.json"
     inputs_path.write_text(json.dumps(inputs))
@@ -228,9 +300,17 @@ def _scoring_setup(tmp_path, picks_best: bool):
                       else ["C0", "C1", "C2", "C3"])
             rng.shuffle(labels)
             letters = dict(zip("ABCD", labels))
+            folder = tmp_path / "run" / "listen" / f"sitting-{s}"
+            folder.mkdir(parents=True, exist_ok=True)
+            clips = {}
+            for name in ("song", *"ABCD"):
+                clip = folder / f"trial-{n:02d}-{name}.wav"
+                clip.write_bytes(f"{s}{n}{name}".encode())
+                clips[name] = hashlib.sha256(clip.read_bytes()).hexdigest()
             key["sittings"].setdefault(str(s), []).append({"number": n, **t,
-                                                            "letters": letters})
-            want = "G2" if picks_best else "G1"
+                                                            "letters": letters,
+                                                            "clips_sha256": clips})
+            want = best.get(t["part"], "G1") if picks_best else "G1"
             answer = next((x for x, g in letters.items() if g in (want, "C0")), "A")
             lines.setdefault(s, []).append(f"{n}{answer}")
     private = tmp_path / "run" / "private"
@@ -281,3 +361,27 @@ def test_score_refuses_a_sheet_missing_a_trial_or_a_changed_key(tmp_path, monkey
     args.key_sha = "0" * 64
     with pytest.raises(SystemExit):
         L.score(args)
+    args = _scoring_setup(tmp_path, picks_best=True)
+    (tmp_path / "run" / "listen" / "sitting-1" / "trial-03-B.wav").write_bytes(b"changed")
+    with pytest.raises(SystemExit):
+        L.score(args)
+
+
+def test_check_sheet_compares_against_the_public_pages_only(tmp_path, capsys):
+    listen = tmp_path / "run" / "listen"
+    for s, count in ((1, 3), (2, 2)):
+        (listen / f"sitting-{s}").mkdir(parents=True)
+        (listen / f"sitting-{s}" / "index.html").write_text(L.page(s, [
+            {"number": n, "cue": "x", "song": "s.wav",
+             "clips": {x: f"{x}.wav" for x in "ABCD"}} for n in range(1, count + 1)]))
+    sheet = tmp_path / "answers.txt"
+    args = argparse.Namespace(out_dir=tmp_path / "run", answers=sheet)
+    sheet.write_text("Sitting 1: 1A 2B 3?\nSitting 2: 1C 2D\n")
+    L.check_sheet(args)
+    assert "all 5 trials" in capsys.readouterr().out
+    for bad in ("Sitting 1: 1A 2B\nSitting 2: 1C 2D\n",          # one missing
+                "Sitting 1: 1A 2B 3? 4A\nSitting 2: 1C 2D\n",    # one extra
+                "Sitting 1: 1A 2B 3? …\nSitting 2: 1C 2D\n"):    # unreadable
+        sheet.write_text(bad)
+        with pytest.raises(SystemExit):
+            L.check_sheet(args)
