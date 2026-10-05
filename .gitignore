@@ -49,6 +49,12 @@ out/
 # match skill says outright never to commit them.
 /runs/
 
+# The DI library (`build_di_library.py`) and audition pages (`audition.py`) live
+# under the data root, which is the repo itself in a clone with nothing configured.
+# The DIs come from datasets the user downloaded, and the index names their songs.
+/di-library/
+/auditions/
+
 # Run databases and audio provenance/answer keys also stay private when a caller
 # chooses an output directory outside runs/.
 *.sqlite3

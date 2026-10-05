@@ -1,0 +1,1914 @@
+{
+ "inputs": {
+  "renders_index": "7a72a48c44d486c798a6de81c633b748e23e7d2da95818a6a38a551af5494bdb",
+  "reach_json": "2b9739a2d0a4ed338a479c94e6b6e5b56bebf85944ef7efba245730a166d6bba",
+  "reach_sets": "6a244d5301f6a8018d14bd374fe1cb9bceab7ece2b44428b8c79e18ecedc481e"
+ },
+ "commit": "5ca4bc257a7fb7bb64a475a25485997c21f71c62",
+ "canaries": {
+  "max_abs_log_change_vs_panels": 0.0019178430082508534,
+  "readings": 750,
+  "max_template_drift_db": 0.052
+ },
+ "excluded_parts": [],
+ "refused_generated": {
+  "silent": {},
+  "refused by the judge": {}
+ },
+ "house_lists": {
+  "recording": {
+   "Adam Buckley": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Atlantis Bound": [
+    "sw50r:factory:Artists/Richard Henshall/Tele Jam",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean"
+   ],
+   "Dom McLennon": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Doom Flamingo": [
+    "sw50r:factory:Artists/Richard Henshall/Tele Jam",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean"
+   ],
+   "Eat The Feeder": [
+    "sw50r:factory:Artists/Richard Henshall/Tele Jam",
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+   ],
+   "Eggy": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Starnes And Shah": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/John Connearn/Low Gain Solo",
+    "sw50r:factory:Artists/Richard Henshall/Tele Jam"
+   ],
+   "The Travelling Band": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Zeno": [
+    "sw50r:factory:Artists/Richard Henshall/Tele Jam",
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ]
+  },
+  "union": {
+   "Adam Buckley": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Atlantis Bound": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/CARRTOONS/Mustang"
+   ],
+   "Dom McLennon": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+   ],
+   "Doom Flamingo": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/CARRTOONS/Mustang"
+   ],
+   "Eat The Feeder": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/CARRTOONS/Mustang"
+   ],
+   "Eggy": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Starnes And Shah": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/CARRTOONS/Mustang"
+   ],
+   "The Travelling Band": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+    "pr12:factory:Neural DSP/The Creature of the Cave"
+   ],
+   "Zeno": [
+    "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "pr12:factory:Artists/CARRTOONS/Bass Chords",
+    "sw50r:factory:Artists/CARRTOONS/Mustang"
+   ]
+  }
+ },
+ "decisions": {
+  "D1": {
+   "comparison": "G1 vs template+R",
+   "recording": {
+    "median_of_band_medians": -0.058527492902725776,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 13,
+    "rule": "better",
+    "sign_flip_p": 0.5625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.03087892324370312,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 12,
+    "rule": "better",
+    "sign_flip_p": 0.5703125,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "D2 F4 vs G4": {
+   "comparison": "F4 vs G4",
+   "recording": {
+    "median_of_band_medians": -0.04278132610840298,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 11,
+    "rule": "better",
+    "sign_flip_p": 0.318359375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.041607223037880156,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 10,
+    "rule": "better",
+    "sign_flip_p": 0.42578125,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "D2 M4 vs G4": {
+   "comparison": "M4 vs G4",
+   "recording": {
+    "median_of_band_medians": 0.0,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 7,
+    "rule": "better",
+    "sign_flip_p": 0.578125,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.0,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 7,
+    "rule": "better",
+    "sign_flip_p": 0.5625,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "D3 S4 not worse than house-4": {
+   "comparison": "S4 vs house-4",
+   "recording": {
+    "median_of_band_medians": 0.047959045360010305,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 8,
+    "rule": "not worse",
+    "sign_flip_p": 0.83984375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.0781860812631608,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 15,
+    "rule": "not worse",
+    "sign_flip_p": 0.189453125,
+    "passes": true,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "D3 S4 vs random-4": {
+   "comparison": "S4 vs random-4",
+   "recording": {
+    "median_of_band_medians": -0.003925290947450033,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.291015625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.045990420623618376,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.2265625,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  }
+ },
+ "reported": {
+  "G4 vs G1": {
+   "comparison": "G4 vs G1",
+   "recording": {
+    "median_of_band_medians": -0.09885060240103576,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.00390625,
+    "passes": false,
+    "near": true
+   },
+   "union": {
+    "median_of_band_medians": -0.11237280463981006,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 20,
+    "rule": "better",
+    "sign_flip_p": 0.001953125,
+    "passes": true,
+    "near": true
+   },
+   "passes": false,
+   "inconclusive": true,
+   "holds": false
+  },
+  "G4 not worse than house-4": {
+   "comparison": "G4 vs house-4",
+   "recording": {
+    "median_of_band_medians": 0.047959045360010305,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 8,
+    "rule": "not worse",
+    "sign_flip_p": 0.83984375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.0781860812631608,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 15,
+    "rule": "not worse",
+    "sign_flip_p": 0.189453125,
+    "passes": true,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "G4 vs random-4": {
+   "comparison": "G4 vs random-4",
+   "recording": {
+    "median_of_band_medians": -0.003925290947450033,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.291015625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.045990420623618376,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.2265625,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "F4 vs F1": {
+   "comparison": "F4 vs F1",
+   "recording": {
+    "median_of_band_medians": -0.17379879430016582,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 19,
+    "rule": "better",
+    "sign_flip_p": 0.001953125,
+    "passes": true,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.20563224893365709,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 19,
+    "rule": "better",
+    "sign_flip_p": 0.001953125,
+    "passes": true,
+    "near": false
+   },
+   "passes": true,
+   "inconclusive": false,
+   "holds": true
+  },
+  "F4 not worse than house-4": {
+   "comparison": "F4 vs house-4",
+   "recording": {
+    "median_of_band_medians": 0.020884670114821167,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 8,
+    "rule": "not worse",
+    "sign_flip_p": 0.62109375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.017815391176440876,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 11,
+    "rule": "not worse",
+    "sign_flip_p": 0.3203125,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "F4 vs random-4": {
+   "comparison": "F4 vs random-4",
+   "recording": {
+    "median_of_band_medians": -0.052419009164798684,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.134765625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.05821163191974518,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.166015625,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "M4 vs G1": {
+   "comparison": "M4 vs G1",
+   "recording": {
+    "median_of_band_medians": -0.11740491216215401,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.00390625,
+    "passes": true,
+    "near": true
+   },
+   "union": {
+    "median_of_band_medians": -0.07662701136397924,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 20,
+    "rule": "better",
+    "sign_flip_p": 0.00390625,
+    "passes": false,
+    "near": true
+   },
+   "passes": false,
+   "inconclusive": true,
+   "holds": false
+  },
+  "M4 not worse than house-4": {
+   "comparison": "M4 vs house-4",
+   "recording": {
+    "median_of_band_medians": 0.040692521600530204,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 8,
+    "rule": "not worse",
+    "sign_flip_p": 0.833984375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.041991368837392844,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 12,
+    "rule": "not worse",
+    "sign_flip_p": 0.28515625,
+    "passes": false,
+    "near": true
+   },
+   "passes": false,
+   "inconclusive": true,
+   "holds": false
+  },
+  "M4 vs random-4": {
+   "comparison": "M4 vs random-4",
+   "recording": {
+    "median_of_band_medians": -0.003925290947450033,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.259765625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.002914228193212639,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.333984375,
+    "passes": false,
+    "near": false
+   },
+   "passes": false,
+   "inconclusive": false,
+   "holds": false
+  },
+  "G1 vs F1": {
+   "recording": {
+    "median_of_band_medians": -0.0718198052235117,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 14,
+    "rule": "better",
+    "sign_flip_p": 0.15234375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.012636531215230075,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 13,
+    "rule": "better",
+    "sign_flip_p": 0.208984375,
+    "passes": false,
+    "near": false
+   }
+  },
+  "G1 vs random-1": {
+   "recording": {
+    "median_of_band_medians": -0.014781508949839409,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 20,
+    "rule": "better",
+    "sign_flip_p": 0.048828125,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.05675758768715101,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 20,
+    "rule": "better",
+    "sign_flip_p": 0.0234375,
+    "passes": false,
+    "near": false
+   }
+  },
+  "G4 vs template+R": {
+   "recording": {
+    "median_of_band_medians": -0.19759795773624608,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 18,
+    "rule": "better",
+    "sign_flip_p": 0.025390625,
+    "passes": true,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.18301816255411713,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.0234375,
+    "passes": true,
+    "near": false
+   }
+  },
+  "F4 vs template+R": {
+   "recording": {
+    "median_of_band_medians": -0.06531230251987453,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 18,
+    "rule": "better",
+    "sign_flip_p": 0.091796875,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.03213236116000297,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 15,
+    "rule": "better",
+    "sign_flip_p": 0.150390625,
+    "passes": false,
+    "near": false
+   }
+  },
+  "random-4 vs template+R": {
+   "recording": {
+    "median_of_band_medians": -0.05921777169702428,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 17,
+    "rule": "better",
+    "sign_flip_p": 0.064453125,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.04130923318975141,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 16,
+    "rule": "better",
+    "sign_flip_p": 0.080078125,
+    "passes": false,
+    "near": false
+   }
+  },
+  "house-4 vs random-4": {
+   "recording": {
+    "median_of_band_medians": -0.09620032653446323,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 22,
+    "rule": "better",
+    "sign_flip_p": 0.0859375,
+    "passes": false,
+    "near": true
+   },
+   "union": {
+    "median_of_band_medians": -0.09626966955491463,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 20,
+    "rule": "better",
+    "sign_flip_p": 0.63671875,
+    "passes": false,
+    "near": true
+   }
+  },
+  "S4 vs random-4 clean": {
+   "recording": {
+    "median_of_band_medians": -0.029486130753233385,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 14,
+    "rule": "better",
+    "sign_flip_p": 0.3984375,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": -0.0262919840981381,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 14,
+    "rule": "better",
+    "sign_flip_p": 0.3046875,
+    "passes": false,
+    "near": false
+   }
+  },
+  "S4 vs oracle": {
+   "recording": {
+    "median_of_band_medians": 0.19085910719120644,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 2,
+    "rule": "better",
+    "sign_flip_p": 0.994140625,
+    "passes": false,
+    "near": false
+   },
+   "union": {
+    "median_of_band_medians": 0.18831440385013581,
+    "parts": 25,
+    "bands": 9,
+    "closer_on": 1,
+    "rule": "better",
+    "sign_flip_p": 0.99609375,
+    "passes": false,
+    "near": false
+   }
+  }
+ },
+ "within_0.150_of_oracle": {
+  "G1": {
+   "recording": 0.041666666666666664,
+   "union": 0.041666666666666664
+  },
+  "F1": {
+   "recording": 0.08333333333333333,
+   "union": 0.08333333333333333
+  },
+  "template+R": {
+   "recording": 0.28611111111111115,
+   "union": 0.28611111111111115
+  },
+  "random-1": {
+   "recording": 0.027777777777777776,
+   "union": 0.027777777777777776
+  },
+  "G4": {
+   "recording": 0.3925925925925926,
+   "union": 0.3925925925925926
+  },
+  "F4": {
+   "recording": 0.47500000000000003,
+   "union": 0.4388888888888889
+  },
+  "M4": {
+   "recording": 0.2777777777777778,
+   "union": 0.2777777777777778
+  },
+  "house-4": {
+   "recording": 0.6083333333333333,
+   "union": 0.46481481481481485
+  },
+  "random-4": {
+   "recording": 0.4166666666666667,
+   "union": 0.4166666666666667
+  },
+  "random-4 clean": {
+   "recording": 0.5222222222222223,
+   "union": 0.4861111111111111
+  },
+  "S4": {
+   "recording": 0.3925925925925926,
+   "union": 0.3925925925925926
+  }
+ },
+ "amps": {
+  "G": {
+   "counts": {
+    "ac20": 31,
+    "pr12": 37,
+    "sw50r": 32
+   },
+   "first_choice": {
+    "ac20": 9,
+    "pr12": 10,
+    "sw50r": 6
+   },
+   "share_on_acceptable_amps/recording": 0.8548611111111111,
+   "share_on_acceptable_amps/union": 0.7847222222222222
+  },
+  "F": {
+   "counts": {
+    "ac20": 32,
+    "sw50r": 32,
+    "pr12": 36
+   },
+   "first_choice": {
+    "ac20": 9,
+    "pr12": 10,
+    "sw50r": 6
+   },
+   "share_on_acceptable_amps/recording": 0.8375,
+   "share_on_acceptable_amps/union": 0.7652777777777777
+  }
+ },
+ "shortlist_source": "generated",
+ "headroom_closed": {
+  "G1": {
+   "recording": -0.6143747203380361,
+   "union": -0.5918503921000977
+  },
+  "F1": {
+   "recording": -0.9172186499509465,
+   "union": -1.0434710047857183
+  },
+  "template+R": {
+   "recording": -0.27289723214946954,
+   "union": -0.22106410362575357
+  },
+  "G4": {
+   "recording": 0.17401170852156408,
+   "union": 0.13084362432729504
+  },
+  "F4": {
+   "recording": 0.267400686719587,
+   "union": 0.26401134348494587
+  },
+  "M4": {
+   "recording": 0.011800371877996584,
+   "union": -0.008372758305340487
+  },
+  "house-4": {
+   "recording": 0.6063884673826014,
+   "union": 0.4725368739110572
+  },
+  "S4": {
+   "recording": 0.17401170852156408,
+   "union": 0.13084362432729504
+  }
+ },
+ "rows": [
+  {
+   "part": "cambridge-Drag_Me_Down-ElecGtr4",
+   "band": "Adam Buckley",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "ac20",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.992900140076024,
+     "F1": 6.251317069132728,
+     "template+R": 3.307543184818309,
+     "random-1": 5.0044718452600225,
+     "G4": 2.9086553172489147,
+     "F4": 3.0984233056881267,
+     "M4": 2.9086553172489147,
+     "house-4": 3.1312542428700523,
+     "random-4": 3.7477216382680645,
+     "random-4 clean": 3.435253531674129,
+     "oracle": 3.0982734053838437,
+     "S4": 2.9086553172489147
+    },
+    "union": {
+     "G1": 5.252839554601698,
+     "F1": 6.665419030154547,
+     "template+R": 3.5539489044925885,
+     "random-1": 5.3315154477790765,
+     "G4": 2.9595617210900746,
+     "F4": 3.1548362234154723,
+     "M4": 2.9595617210900746,
+     "house-4": 3.3313631712349325,
+     "random-4": 3.949692010876934,
+     "random-4 clean": 3.642392103760882,
+     "oracle": 3.1546683568642355,
+     "S4": 2.9595617210900746
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "band": "Atlantis Bound",
+   "amps": {
+    "G1": "ac20",
+    "G2": "sw50r",
+    "G3": "pr12",
+    "G4": "ac20",
+    "F1": "ac20",
+    "F2": "pr12",
+    "F3": "sw50r",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.328338965051374,
+     "F1": 3.7647498935595394,
+     "template+R": 5.9985355525460236,
+     "random-1": 4.443706950532885,
+     "G4": 3.5518999331950254,
+     "F4": 3.5323874827657407,
+     "M4": 3.7647498935595394,
+     "house-4": 3.504383180170847,
+     "random-4": 3.890456958745709,
+     "random-4 clean": 4.269925783647795,
+     "oracle": 3.431999997753177,
+     "S4": 3.5518999331950254
+    },
+    "union": {
+     "G1": 4.328338965051374,
+     "F1": 3.7647498935595394,
+     "template+R": 5.9985355525460236,
+     "random-1": 4.443706950532885,
+     "G4": 3.5518999331950254,
+     "F4": 3.5127046420802017,
+     "M4": 3.7647498935595394,
+     "house-4": 4.065874361553822,
+     "random-4": 3.9277813380083852,
+     "random-4 clean": 4.269925783647795,
+     "oracle": 3.417042394302608,
+     "S4": 3.5518999331950254
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+   "band": "Atlantis Bound",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "ac20",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.779284019837444,
+     "F1": 5.253909186896648,
+     "template+R": 5.676883601101444,
+     "random-1": 5.798143334749461,
+     "G4": 5.779284019837444,
+     "F4": 5.3346635628672034,
+     "M4": 5.253909186896648,
+     "house-4": 5.321897128548395,
+     "random-4": 5.253905323926942,
+     "random-4 clean": 4.977189681444207,
+     "oracle": 4.083281933094636,
+     "S4": 5.779284019837444
+    },
+    "union": {
+     "G1": 5.927295891655032,
+     "F1": 5.256704501976522,
+     "template+R": 5.703480944526672,
+     "random-1": 6.024983368122081,
+     "G4": 6.09204023073383,
+     "F4": 5.415306499983494,
+     "M4": 5.256704501976522,
+     "house-4": 6.22273200370253,
+     "random-4": 5.443548859321929,
+     "random-4 clean": 5.341215312196886,
+     "oracle": 4.41271133656014,
+     "S4": 6.09204023073383
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Passing_Ships-ElecGtr2",
+   "band": "The Travelling Band",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "ac20",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 3.7312036528815113,
+     "F1": 4.085934565925017,
+     "template+R": 4.9788600459537005,
+     "random-1": 7.062423203223151,
+     "G4": 3.7312036528815113,
+     "F4": 4.085934565925017,
+     "M4": 3.7312036528815113,
+     "house-4": 3.6005450808919655,
+     "random-4": 4.505822069443269,
+     "random-4 clean": 4.140015341989729,
+     "oracle": 3.125370309680223,
+     "S4": 3.7312036528815113
+    },
+    "union": {
+     "G1": 3.964232628233808,
+     "F1": 4.132652790838338,
+     "template+R": 4.961688364020725,
+     "random-1": 6.6855632817977995,
+     "G4": 3.964232628233808,
+     "F4": 4.132652790838338,
+     "M4": 3.964232628233808,
+     "house-4": 4.149769158848404,
+     "random-4": 4.612249149928525,
+     "random-4 clean": 4.2302719061975305,
+     "oracle": 3.1856694452506815,
+     "S4": 3.964232628233808
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Passing_Ships-ElecGtr4",
+   "band": "The Travelling Band",
+   "amps": {
+    "G1": "pr12",
+    "G2": "ac20",
+    "G3": "sw50r",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 3.881105827798898,
+     "F1": 4.901718531221057,
+     "template+R": 4.115036125606594,
+     "random-1": 4.236687445944932,
+     "G4": 3.0140740974509184,
+     "F4": 4.434375238191177,
+     "M4": 3.881105827798898,
+     "house-4": 2.5864233369606096,
+     "random-4": 3.4777879187521297,
+     "random-4 clean": 3.4209503568289974,
+     "oracle": 2.8704923996196987,
+     "S4": 3.0140740974509184
+    },
+    "union": {
+     "G1": 4.810198216912498,
+     "F1": 6.578027457575015,
+     "template+R": 4.961049027477047,
+     "random-1": 5.644997723573246,
+     "G4": 3.039642301285261,
+     "F4": 5.419780868507418,
+     "M4": 4.810198216912498,
+     "house-4": 3.0313421339770423,
+     "random-4": 4.277365236798872,
+     "random-4 clean": 4.153170285371673,
+     "oracle": 2.8316791919597697,
+     "S4": 3.039642301285261
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Passing_Ships-ElecGtr6",
+   "band": "The Travelling Band",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "sw50r",
+    "G4": "ac20",
+    "F1": "ac20",
+    "F2": "ac20",
+    "F3": "pr12",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.769924162348194,
+     "F1": 5.5665706118977205,
+     "template+R": 3.271008372147766,
+     "random-1": 4.495392304728439,
+     "G4": 3.51910033106834,
+     "F4": 3.2896521387796898,
+     "M4": 3.51910033106834,
+     "house-4": 3.2852287643089095,
+     "random-4": 3.734035365273745,
+     "random-4 clean": 3.470685789294934,
+     "oracle": 3.023200170410534,
+     "S4": 3.51910033106834
+    },
+    "union": {
+     "G1": 5.5257989637054346,
+     "F1": 6.368600931421321,
+     "template+R": 3.4863219869069764,
+     "random-1": 5.044322485666315,
+     "G4": 3.7926135116252997,
+     "F4": 3.695140057978681,
+     "M4": 3.7926135116252997,
+     "house-4": 3.4245230055287683,
+     "random-4": 3.9166241256695953,
+     "random-4 clean": 3.695200536158535,
+     "oracle": 3.14162743952856,
+     "S4": 3.7926135116252997
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Prodigal-ElecGtr5",
+   "band": "Starnes And Shah",
+   "amps": {
+    "G1": "pr12",
+    "G2": "ac20",
+    "G3": "sw50r",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 7.002452292575324,
+     "F1": 8.0591519866675,
+     "template+R": 6.298027099169349,
+     "random-1": 7.10297080440188,
+     "G4": 5.16878922044234,
+     "F4": 6.169588755659286,
+     "M4": 6.169588755659286,
+     "house-4": 5.440888288598684,
+     "random-4": 5.935899966948832,
+     "random-4 clean": 5.709650039985747,
+     "oracle": 5.227548635003247,
+     "S4": 5.16878922044234
+    },
+    "union": {
+     "G1": 6.684886711875586,
+     "F1": 7.64927824382174,
+     "template+R": 6.0289591255404815,
+     "random-1": 7.075278816759052,
+     "G4": 5.16878922044234,
+     "F4": 6.191777811146677,
+     "M4": 6.191777811146677,
+     "house-4": 5.298178413892877,
+     "random-4": 5.833590841500444,
+     "random-4 clean": 5.581070670744902,
+     "oracle": 5.136495282797924,
+     "S4": 5.16878922044234
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Quicksand-ElecGtr1",
+   "band": "The Travelling Band",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "pr12",
+    "F2": "ac20",
+    "F3": "ac20",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 3.736583983859097,
+     "F1": 4.709433043274814,
+     "template+R": 3.7904457597065715,
+     "random-1": 4.322752228989045,
+     "G4": 3.7738105503494976,
+     "F4": 3.5945509536417832,
+     "M4": 3.736583983859097,
+     "house-4": 3.520258430507313,
+     "random-4": 3.694901415723762,
+     "random-4 clean": 3.678489192280609,
+     "oracle": 2.911596364839114,
+     "S4": 3.7738105503494976
+    },
+    "union": {
+     "G1": 5.001091784558946,
+     "F1": 6.143548698758522,
+     "template+R": 3.984470545604566,
+     "random-1": 5.159824077045122,
+     "G4": 3.744789048271469,
+     "F4": 4.365396493885836,
+     "M4": 4.365396493885836,
+     "house-4": 3.654326726187824,
+     "random-4": 4.12946255887518,
+     "random-4 clean": 4.091421849762621,
+     "oracle": 3.1882373233229324,
+     "S4": 3.744789048271469
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Quicksand-ElecGtr2",
+   "band": "The Travelling Band",
+   "amps": {
+    "G1": "pr12",
+    "G2": "ac20",
+    "G3": "sw50r",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 3.6936502613710465,
+     "F1": 4.856119174589768,
+     "template+R": 4.68880680952608,
+     "random-1": 5.063795921185502,
+     "G4": 3.6936502613710465,
+     "F4": 3.305195562951229,
+     "M4": 3.6936502613710465,
+     "house-4": 3.8044540262720963,
+     "random-4": 3.9065156417344857,
+     "random-4 clean": 3.8041833035042387,
+     "oracle": 3.0278456094080513,
+     "S4": 3.6936502613710465
+    },
+    "union": {
+     "G1": 3.6936502613710465,
+     "F1": 4.856119174589768,
+     "template+R": 4.68880680952608,
+     "random-1": 5.063447638194988,
+     "G4": 3.6936502613710465,
+     "F4": 3.305195562951229,
+     "M4": 3.6936502613710465,
+     "house-4": 3.8044540262720963,
+     "random-4": 3.895898692252606,
+     "random-4 clean": 3.790259663828209,
+     "oracle": 3.0278456094080513,
+     "S4": 3.6936502613710465
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Signs-ElecGtr2",
+   "band": "Zeno",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "sw50r",
+    "G4": "ac20",
+    "F1": "ac20",
+    "F2": "sw50r",
+    "F3": "pr12",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.015026697097982,
+     "F1": 4.737833565773358,
+     "template+R": 6.556414736903171,
+     "random-1": 4.8916206925340955,
+     "G4": 4.925790325575547,
+     "F4": 3.9819879650191052,
+     "M4": 4.795527306713347,
+     "house-4": 5.8169191563826015,
+     "random-4": 4.342834927509873,
+     "random-4 clean": 4.342834927509873,
+     "oracle": 3.949614524903903,
+     "S4": 4.925790325575547
+    },
+    "union": {
+     "G1": 5.044645839826302,
+     "F1": 4.830623457611495,
+     "template+R": 6.556414736903171,
+     "random-1": 4.958098897847685,
+     "G4": 4.892449132161294,
+     "F4": 3.932767162287227,
+     "M4": 4.842655770025836,
+     "house-4": 6.108777879689683,
+     "random-4": 4.342834927509873,
+     "random-4 clean": 4.352001316122735,
+     "oracle": 3.949614524903903,
+     "S4": 4.892449132161294
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Today's_The_Day-ElecGtr07",
+   "band": "Eat The Feeder",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "sw50r",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 6.235583318669853,
+     "F1": 4.876485790312389,
+     "template+R": 10.382723603729513,
+     "random-1": 7.182796631596402,
+     "G4": 5.784685580908319,
+     "F4": 3.1797653083191744,
+     "M4": 4.876485790312389,
+     "house-4": 4.917686534549283,
+     "random-4": 5.151516364456672,
+     "random-4 clean": 6.99223624158401,
+     "oracle": 3.1797412057401013,
+     "S4": 5.784685580908319
+    },
+    "union": {
+     "G1": 6.235583318669853,
+     "F1": 4.876485790312389,
+     "template+R": 10.382723603729513,
+     "random-1": 7.182796631596402,
+     "G4": 5.784685580908319,
+     "F4": 3.1797653083191744,
+     "M4": 4.876485790312389,
+     "house-4": 11.08108686795277,
+     "random-4": 5.151516364456672,
+     "random-4 clean": 6.99223624158401,
+     "oracle": 3.1797412057401013,
+     "S4": 5.784685580908319
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "cambridge-Today's_The_Day-ElecGtr10",
+   "band": "Eat The Feeder",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "sw50r",
+    "G4": "ac20",
+    "F1": "sw50r",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.7712949915262755,
+     "F1": 4.995062801018902,
+     "template+R": 7.4273099698531375,
+     "random-1": 5.857765570682852,
+     "G4": 5.211421911879956,
+     "F4": 4.405830886851666,
+     "M4": 4.995062801018902,
+     "house-4": 4.566064041526885,
+     "random-4": 4.674673775112488,
+     "random-4 clean": 5.418826940350581,
+     "oracle": 3.5775746825176675,
+     "S4": 5.211421911879956
+    },
+    "union": {
+     "G1": 5.7712949915262755,
+     "F1": 4.995062801018902,
+     "template+R": 7.4273099698531375,
+     "random-1": 5.857765570682852,
+     "G4": 5.211421911879956,
+     "F4": 4.405830886851666,
+     "M4": 4.995062801018902,
+     "house-4": 9.088070270919339,
+     "random-4": 4.674673775112488,
+     "random-4 clean": 5.418826940350581,
+     "oracle": 3.5775746825176675,
+     "S4": 5.211421911879956
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Blind_Spots-GTR",
+   "band": "Doom Flamingo",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "sw50r",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 6.220703968635071,
+     "F1": 5.403093809058927,
+     "template+R": 4.849237012695912,
+     "random-1": 5.845873877255727,
+     "G4": 5.9426481853853,
+     "F4": 5.150932879714119,
+     "M4": 5.150932879714119,
+     "house-4": 4.952073328811407,
+     "random-4": 5.2773706158632825,
+     "random-4 clean": 5.150934602110301,
+     "oracle": 4.565896124090159,
+     "S4": 5.9426481853853
+    },
+    "union": {
+     "G1": 6.220703968635071,
+     "F1": 5.403093809058927,
+     "template+R": 4.849237012695912,
+     "random-1": 5.819685259330416,
+     "G4": 5.9426481853853,
+     "F4": 5.131525737201613,
+     "M4": 5.131525737201613,
+     "house-4": 4.952073328811407,
+     "random-4": 5.286336716176006,
+     "random-4 clean": 5.1315169215243746,
+     "oracle": 4.565896124090159,
+     "S4": 5.9426481853853
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Bloomlight-GTR",
+   "band": "Eggy",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "pr12",
+    "G4": "sw50r",
+    "F1": "pr12",
+    "F2": "sw50r",
+    "F3": "pr12",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 3.736108563122853,
+     "F1": 4.722046687280095,
+     "template+R": 2.939256562602271,
+     "random-1": 4.497626233634923,
+     "G4": 3.1905727627141687,
+     "F4": 3.9736876180091567,
+     "M4": 3.5571626361476145,
+     "house-4": 1.8565041445818653,
+     "random-4": 2.969410693599687,
+     "random-4 clean": 2.6551514688468343,
+     "oracle": 1.8565041445818653,
+     "S4": 3.1905727627141687
+    },
+    "union": {
+     "G1": 3.7765093186055694,
+     "F1": 4.773977779851007,
+     "template+R": 2.944105520914098,
+     "random-1": 4.5807456696684685,
+     "G4": 3.269518195717292,
+     "F4": 3.9821803631780996,
+     "M4": 3.5571626361476145,
+     "house-4": 2.4444071487215546,
+     "random-4": 2.992077661444246,
+     "random-4 clean": 2.6511806807639395,
+     "oracle": 1.8540548360766413,
+     "S4": 3.269518195717292
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Farthest_Step-GTR",
+   "band": "Eggy",
+   "amps": {
+    "G1": "pr12",
+    "G2": "pr12",
+    "G3": "sw50r",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "sw50r",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 2.6074021970881054,
+     "F1": 3.340449808802375,
+     "template+R": 2.4312894253802853,
+     "random-1": 3.5418814618112,
+     "G4": 2.622379317152418,
+     "F4": 2.9416008203334982,
+     "M4": 2.622379317152418,
+     "house-4": 1.8877129952548766,
+     "random-4": 2.6326931480975606,
+     "random-4 clean": 2.3681881599078416,
+     "oracle": 1.8877129952548766,
+     "S4": 2.622379317152418
+    },
+    "union": {
+     "G1": 2.787361689900231,
+     "F1": 3.47397464241778,
+     "template+R": 2.451973527694637,
+     "random-1": 4.028258964065644,
+     "G4": 2.660210048236724,
+     "F4": 3.425620637489569,
+     "M4": 2.660210048236724,
+     "house-4": 2.195171612684254,
+     "random-4": 2.7854111866492577,
+     "random-4 clean": 2.5878834475733177,
+     "oracle": 1.9599207027470062,
+     "S4": 2.660210048236724
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-First_Offering-GTR_1",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "ac20",
+    "F2": "sw50r",
+    "F3": "pr12",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.048404407729282,
+     "F1": 4.038032614379167,
+     "template+R": 3.6017978726189943,
+     "random-1": 4.8813687359508275,
+     "G4": 3.7459694065508087,
+     "F4": 3.486571048883767,
+     "M4": 3.7459694065508087,
+     "house-4": 3.735181183716235,
+     "random-4": 3.8494351609731625,
+     "random-4 clean": 3.678264465741261,
+     "oracle": 3.2035826470384716,
+     "S4": 3.7459694065508087
+    },
+    "union": {
+     "G1": 4.0993286074073545,
+     "F1": 4.078932237023578,
+     "template+R": 3.6301185900145683,
+     "random-1": 5.350242039854814,
+     "G4": 3.918357819978652,
+     "F4": 3.726730811530982,
+     "M4": 3.918357819978652,
+     "house-4": 3.8556305630371335,
+     "random-4": 3.9264980293915537,
+     "random-4 clean": 3.760855874231705,
+     "oracle": 3.2046813828776664,
+     "S4": 3.918357819978652
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-First_Offering-GTR_2",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "pr12",
+    "G4": "ac20",
+    "F1": "ac20",
+    "F2": "pr12",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.353303882864804,
+     "F1": 6.1960919478517935,
+     "template+R": 7.1565338857660485,
+     "random-1": 7.971980815239578,
+     "G4": 5.382818082093738,
+     "F4": 6.1960919478517935,
+     "M4": 5.382818082093738,
+     "house-4": 5.043208103106253,
+     "random-4": 6.381906646221571,
+     "random-4 clean": 5.719286899977597,
+     "oracle": 3.9174789155224383,
+     "S4": 5.382818082093738
+    },
+    "union": {
+     "G1": 6.025138128604202,
+     "F1": 5.904148863867494,
+     "template+R": 7.240292283581365,
+     "random-1": 8.637842389708013,
+     "G4": 5.766865436357175,
+     "F4": 5.904148863867494,
+     "M4": 5.766865436357175,
+     "house-4": 6.374142023167696,
+     "random-4": 6.804058657208443,
+     "random-4 clean": 5.904149869254326,
+     "oracle": 4.0255377361266715,
+     "S4": 5.766865436357175
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Fragments-GTR",
+   "band": "Eggy",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "sw50r",
+    "G3": "pr12",
+    "G4": "pr12",
+    "F1": "sw50r",
+    "F2": "pr12",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.134249065129232,
+     "F1": 4.452129135304732,
+     "template+R": 3.734757393408922,
+     "random-1": 5.767790395284262,
+     "G4": 2.3734755325645835,
+     "F4": 3.983476455913653,
+     "M4": 3.3038174176243817,
+     "house-4": 2.3258920800410543,
+     "random-4": 3.337170561514572,
+     "random-4 clean": 2.882751989831696,
+     "oracle": 2.3258920800410543,
+     "S4": 2.3734755325645835
+    },
+    "union": {
+     "G1": 5.134249065129232,
+     "F1": 4.449135064892712,
+     "template+R": 3.7240149183676814,
+     "random-1": 5.7543739378156005,
+     "G4": 2.3732092235026983,
+     "F4": 3.983476455913653,
+     "M4": 3.3038174176243817,
+     "house-4": 2.7479112124265086,
+     "random-4": 3.294203355350511,
+     "random-4 clean": 2.8798719409654905,
+     "oracle": 2.3258920800410543,
+     "S4": 2.3732092235026983
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Gym_Hours-GTR_1",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "sw50r",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.9784917791260686,
+     "F1": 5.398691776940586,
+     "template+R": 6.0845437597348395,
+     "random-1": 6.619874170532562,
+     "G4": 5.9784917791260686,
+     "F4": 6.013776545536333,
+     "M4": 6.013776545536333,
+     "house-4": 5.855073695877909,
+     "random-4": 6.089446158058353,
+     "random-4 clean": 6.010844666701878,
+     "oracle": 5.933807394605958,
+     "S4": 5.9784917791260686
+    },
+    "union": {
+     "G1": 5.867738391163118,
+     "F1": 5.408174627277972,
+     "template+R": 6.079607390449285,
+     "random-1": 6.464349438932731,
+     "G4": 6.1673872673563155,
+     "F4": 6.023040936121012,
+     "M4": 6.023040936121012,
+     "house-4": 5.792460765734679,
+     "random-4": 6.034094450448485,
+     "random-4 clean": 5.9921775110282205,
+     "oracle": 5.9754883561339085,
+     "S4": 6.1673872673563155
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Gym_Hours-GTR_2",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "ac20",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "pr12",
+    "F3": "ac20",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.95033763779105,
+     "F1": 5.902106824755634,
+     "template+R": 6.2149678815292155,
+     "random-1": 7.477316802628525,
+     "G4": 3.6548647743511244,
+     "F4": 3.6427542443916767,
+     "M4": 3.8477200397191407,
+     "house-4": 3.828501712349155,
+     "random-4": 5.119605473946516,
+     "random-4 clean": 4.242853065920584,
+     "oracle": 2.864192574240385,
+     "S4": 3.6548647743511244
+    },
+    "union": {
+     "G1": 5.349870853811364,
+     "F1": 6.098063425612693,
+     "template+R": 6.254466003028244,
+     "random-1": 7.778364441799344,
+     "G4": 3.7320316671369,
+     "F4": 4.1047792969495545,
+     "M4": 3.7320316671369,
+     "house-4": 4.54649273953175,
+     "random-4": 5.132220645110008,
+     "random-4 clean": 4.54649273953175,
+     "oracle": 2.9789475742906655,
+     "S4": 3.7320316671369
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Long_Way_Home-GTR",
+   "band": "Doom Flamingo",
+   "amps": {
+    "G1": "ac20",
+    "G2": "pr12",
+    "G3": "sw50r",
+    "G4": "ac20",
+    "F1": "ac20",
+    "F2": "pr12",
+    "F3": "sw50r",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.180445862931522,
+     "F1": 5.8958549526432185,
+     "template+R": 3.5528654418148307,
+     "random-1": 4.930924012319207,
+     "G4": 4.3973264284643,
+     "F4": 4.46162940641375,
+     "M4": 4.3973264284643,
+     "house-4": 3.407828305112208,
+     "random-4": 3.8761959201371647,
+     "random-4 clean": 3.7081533124646335,
+     "oracle": 3.407828305112208,
+     "S4": 4.3973264284643
+    },
+    "union": {
+     "G1": 5.215565850783268,
+     "F1": 5.828403786769916,
+     "template+R": 3.534734912467616,
+     "random-1": 5.012956519314189,
+     "G4": 4.360689555796608,
+     "F4": 4.4625164954422925,
+     "M4": 4.360689555796608,
+     "house-4": 3.399774763357599,
+     "random-4": 3.909439681370694,
+     "random-4 clean": 3.6944213808365767,
+     "oracle": 3.400751426910973,
+     "S4": 4.360689555796608
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Russian_Cream-GTR_1",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "pr12",
+    "F2": "ac20",
+    "F3": "sw50r",
+    "F4": "pr12"
+   },
+   "arms": {
+    "recording": {
+     "G1": 6.692071308233901,
+     "F1": 6.237140698157772,
+     "template+R": 6.455887192807985,
+     "random-1": 6.306270113860203,
+     "G4": 6.043005979913431,
+     "F4": 6.237140698157772,
+     "M4": 6.035952997007034,
+     "house-4": 6.654487346213912,
+     "random-4": 5.890632334380028,
+     "random-4 clean": 5.854423505118365,
+     "oracle": 5.629462770936538,
+     "S4": 6.043005979913431
+    },
+    "union": {
+     "G1": 6.692071308233901,
+     "F1": 6.237140698157772,
+     "template+R": 6.455887192807985,
+     "random-1": 6.306270113860203,
+     "G4": 6.043005979913431,
+     "F4": 6.237140698157772,
+     "M4": 6.035952997007034,
+     "house-4": 5.844708006421351,
+     "random-4": 5.889090743068998,
+     "random-4 clean": 5.854423505118365,
+     "oracle": 5.629462770936538,
+     "S4": 6.043005979913431
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Russian_Cream-GTR_2",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "ac20",
+    "G4": "pr12",
+    "F1": "pr12",
+    "F2": "sw50r",
+    "F3": "ac20",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 5.996638306165073,
+     "F1": 4.422719582731258,
+     "template+R": 5.017037456876377,
+     "random-1": 6.6125310077493475,
+     "G4": 4.457326295648855,
+     "F4": 4.54297407504921,
+     "M4": 4.54297407504921,
+     "house-4": 3.7664266576480077,
+     "random-4": 4.898219446220285,
+     "random-4 clean": 4.047854205308836,
+     "oracle": 3.596784731790007,
+     "S4": 4.457326295648855
+    },
+    "union": {
+     "G1": 6.774182702063562,
+     "F1": 4.915260731926622,
+     "template+R": 5.343967062809185,
+     "random-1": 7.6297230484909715,
+     "G4": 4.728333392672392,
+     "F4": 5.225441422656244,
+     "M4": 5.225441422656244,
+     "house-4": 5.053170600874073,
+     "random-4": 5.345327736342381,
+     "random-4 clean": 4.296487833116869,
+     "oracle": 3.8802763841513603,
+     "S4": 4.728333392672392
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Sculptor's_Request-GTR_1",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "pr12",
+    "G2": "sw50r",
+    "G3": "ac20",
+    "G4": "pr12",
+    "F1": "ac20",
+    "F2": "pr12",
+    "F3": "sw50r",
+    "F4": "sw50r"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.086158426696898,
+     "F1": 5.160988052722047,
+     "template+R": 4.737384806143561,
+     "random-1": 5.774042863542883,
+     "G4": 4.086158426696898,
+     "F4": 4.598145547870468,
+     "M4": 4.086158426696898,
+     "house-4": 4.115043233366887,
+     "random-4": 4.638845616373265,
+     "random-4 clean": 4.474892305182186,
+     "oracle": 3.7925419283757797,
+     "S4": 4.086158426696898
+    },
+    "union": {
+     "G1": 4.089150218739759,
+     "F1": 5.133689935972438,
+     "template+R": 4.734810626012328,
+     "random-1": 5.800623294630283,
+     "G4": 4.089150218739759,
+     "F4": 4.595821911624633,
+     "M4": 4.089150218739759,
+     "house-4": 4.586146905423329,
+     "random-4": 4.638845616373265,
+     "random-4 clean": 4.474985714687702,
+     "oracle": 3.7923110146358816,
+     "S4": 4.089150218739759
+    }
+   },
+   "refused": {}
+  },
+  {
+   "part": "telefunken-Sculptor's_Request-GTR_2",
+   "band": "Dom McLennon",
+   "amps": {
+    "G1": "sw50r",
+    "G2": "pr12",
+    "G3": "ac20",
+    "G4": "sw50r",
+    "F1": "sw50r",
+    "F2": "sw50r",
+    "F3": "pr12",
+    "F4": "ac20"
+   },
+   "arms": {
+    "recording": {
+     "G1": 4.387885707937146,
+     "F1": 5.212200963251662,
+     "template+R": 6.072729985174257,
+     "random-1": 7.170329530422398,
+     "G4": 4.020261248395667,
+     "F4": 4.9283825334434255,
+     "M4": 4.020261248395667,
+     "house-4": 4.593731502115192,
+     "random-4": 5.364229686126981,
+     "random-4 clean": 4.593731502115192,
+     "oracle": 3.80843530143951,
+     "S4": 4.020261248395667
+    },
+    "union": {
+     "G1": 4.309765500460584,
+     "F1": 6.155523671227334,
+     "template+R": 6.29840584027427,
+     "random-1": 7.569469253937413,
+     "G4": 4.2332953978278836,
+     "F4": 5.07963207010846,
+     "M4": 4.2332953978278836,
+     "house-4": 4.7936928999655235,
+     "random-4": 5.640853261222189,
+     "random-4 clean": 4.869899885098796,
+     "oracle": 4.012601171472891,
+     "S4": 4.2332953978278836
+    }
+   },
+   "refused": {}
+  }
+ ]
+}
