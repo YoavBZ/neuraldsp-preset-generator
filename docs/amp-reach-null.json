@@ -1,0 +1,47 @@
+{
+ "minority": {
+  "sw50r/all": {
+   "recording": {
+    "minority_parts": 4,
+    "minority_bands": 3,
+    "null_95th": 6,
+    "null_mean": 2.641,
+    "rule": false
+   },
+   "union": {
+    "minority_parts": 4,
+    "minority_bands": 3,
+    "null_95th": 6,
+    "null_mean": 3.159,
+    "rule": false
+   }
+  },
+  "pr12/clean": {
+   "recording": {
+    "minority_parts": 4,
+    "minority_bands": 3,
+    "null_95th": 6,
+    "null_mean": 2.739,
+    "rule": false
+   },
+   "union": {
+    "minority_parts": 6,
+    "minority_bands": 3,
+    "null_95th": 7,
+    "null_mean": 3.735,
+    "rule": false
+   }
+  }
+ },
+ "decision": {
+  "size_matched": {
+   "sw50r/all": false,
+   "pr12/clean": false
+  },
+  "minority_beyond_null": {
+   "sw50r/all": false,
+   "pr12/clean": false
+  },
+  "rerun_kill_tests_jointly": false
+ }
+}

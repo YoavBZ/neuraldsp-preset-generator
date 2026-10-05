@@ -1,0 +1,1583 @@
+{
+"panels": {
+"/Users/yoavbz/ndsp-presets/runs/kill/sw50r": "4143710b976dd3d59f7f033a8d36c09ec2efb4bb84b2d373890a84ec703b4686",
+"/Users/yoavbz/ndsp-presets/runs/kill/pr12": "18e5ffc4f53d04d1b08a0d1e5f60992bd857455b78f7e8dbad4389011b860193",
+"/Users/yoavbz/ndsp-presets/runs/kill/ac20": "2990f9aad523900b26183290bfbdf440f4726ee3f61975f47af587589b28b6d9"
+},
+"menus": {
+"all": {
+"ac20": 30,
+"pr12": 34,
+"sw50r": 44
+},
+"clean": {
+"ac20": 17,
+"pr12": 21,
+"sw50r": 17
+}
+},
+"parts": [
+"cambridge-Drag_Me_Down-ElecGtr4",
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"cambridge-Passing_Ships-ElecGtr2",
+"cambridge-Passing_Ships-ElecGtr4",
+"cambridge-Passing_Ships-ElecGtr6",
+"cambridge-Prodigal-ElecGtr5",
+"cambridge-Quicksand-ElecGtr1",
+"cambridge-Quicksand-ElecGtr2",
+"cambridge-Signs-ElecGtr2",
+"cambridge-Today's_The_Day-ElecGtr07",
+"cambridge-Today's_The_Day-ElecGtr10",
+"telefunken-Blind_Spots-GTR",
+"telefunken-Bloomlight-GTR",
+"telefunken-Farthest_Step-GTR",
+"telefunken-First_Offering-GTR_1",
+"telefunken-First_Offering-GTR_2",
+"telefunken-Fragments-GTR",
+"telefunken-Gym_Hours-GTR_1",
+"telefunken-Gym_Hours-GTR_2",
+"telefunken-Long_Way_Home-GTR",
+"telefunken-Russian_Cream-GTR_1",
+"telefunken-Russian_Cream-GTR_2",
+"telefunken-Sculptor's_Request-GTR_1",
+"telefunken-Sculptor's_Request-GTR_2"
+],
+"parts_without_clear_lag": [
+"cambridge-Signs-ElecGtr3",
+"telefunken-Strangest_Places-GTR"
+],
+"parts_with_a_quiet_half": [
+"cambridge-Drag_Me_Down-ElecGtr3",
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4",
+"cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03",
+"cambridge-Passing_Ships-ElecGtr3",
+"cambridge-Prodigal-ElecGtr1",
+"cambridge-Prodigal-ElecGtr2",
+"cambridge-Prodigal-ElecGtr3",
+"cambridge-Prodigal-ElecGtr4",
+"cambridge-Signs-ElecGtr6",
+"telefunken-Hikikomori_-_Love_Does-GTR",
+"telefunken-Honey-GTR",
+"telefunken-Lost_Alive-GTR",
+"telefunken-Measurements-GTR",
+"telefunken-She's_Gone-GTR",
+"telefunken-Until_I_Get_Back-GTR"
+],
+"canary_misses": {},
+"adds_reach": {
+"sw50r/all": [],
+"pr12/clean": []
+},
+"rerun_kill_tests_jointly": false,
+"joint_pick_amp_shares": {
+"all/recording": {
+"ac20": {
+"share": 0.2,
+"menu_size_share": 0.2777777777777778
+},
+"pr12": {
+"share": 0.36,
+"menu_size_share": 0.3148148148148148
+},
+"sw50r": {
+"share": 0.44,
+"menu_size_share": 0.4074074074074074
+}
+},
+"all/union": {
+"ac20": {
+"share": 0.16,
+"menu_size_share": 0.2777777777777778
+},
+"pr12": {
+"share": 0.36,
+"menu_size_share": 0.3148148148148148
+},
+"sw50r": {
+"share": 0.48,
+"menu_size_share": 0.4074074074074074
+}
+},
+"clean/recording": {
+"ac20": {
+"share": 0.32,
+"menu_size_share": 0.3090909090909091
+},
+"pr12": {
+"share": 0.24,
+"menu_size_share": 0.38181818181818183
+},
+"sw50r": {
+"share": 0.44,
+"menu_size_share": 0.3090909090909091
+}
+},
+"clean/union": {
+"ac20": {
+"share": 0.28,
+"menu_size_share": 0.3090909090909091
+},
+"pr12": {
+"share": 0.24,
+"menu_size_share": 0.38181818181818183
+},
+"sw50r": {
+"share": 0.48,
+"menu_size_share": 0.3090909090909091
+}
+}
+},
+"readings": {
+"sw50r/all": {
+"recording": {
+"menu_size": 44,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": 0.018032657893405787,
+"full_joint_vs_tested": -0.004133097212198758,
+"other_amp_clearly_closer_parts": 4,
+"other_amp_clearly_closer_bands": 3,
+"tested_vs_own_template": -0.38879809070274846,
+"k1_parts": 25,
+"k1_bands": 9
+},
+"union": {
+"menu_size": 44,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": -0.005419531810485975,
+"full_joint_vs_tested": -0.0483693119784432,
+"other_amp_clearly_closer_parts": 4,
+"other_amp_clearly_closer_bands": 3,
+"tested_vs_own_template": -0.3279830447523053,
+"k1_parts": 25,
+"k1_bands": 9
+}
+},
+"pr12/clean": {
+"recording": {
+"menu_size": 21,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": 0.005216633639587841,
+"full_joint_vs_tested": -0.05761884173412837,
+"other_amp_clearly_closer_parts": 4,
+"other_amp_clearly_closer_bands": 3,
+"tested_vs_own_template": -0.26698141515587476,
+"k1_parts": 25,
+"k1_bands": 9
+},
+"union": {
+"menu_size": 21,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": -0.005752969795844543,
+"full_joint_vs_tested": -0.05555191954342941,
+"other_amp_clearly_closer_parts": 6,
+"other_amp_clearly_closer_bands": 3,
+"tested_vs_own_template": -0.20643174628901992,
+"k1_parts": 25,
+"k1_bands": 9
+}
+},
+"ac20/all": {
+"recording": {
+"menu_size": 30,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": -0.09835074621998358,
+"full_joint_vs_tested": -0.14978671540025085,
+"other_amp_clearly_closer_parts": 14,
+"other_amp_clearly_closer_bands": 5,
+"tested_vs_own_template": -0.1784919727915934,
+"k1_parts": 25,
+"k1_bands": 9
+},
+"union": {
+"menu_size": 30,
+"parts": 25,
+"bands": 9,
+"sized_joint_vs_tested": -0.05787427233187138,
+"full_joint_vs_tested": -0.18710465681053132,
+"other_amp_clearly_closer_parts": 15,
+"other_amp_clearly_closer_bands": 6,
+"tested_vs_own_template": -0.2043945887374653,
+"k1_parts": 25,
+"k1_bands": 9
+}
+}
+},
+"rows": {
+"sw50r/all": {
+"recording": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": 0.020702422333731874,
+"full_gain": -0.004133097212198758,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.38879809070274846
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues",
+"sized_gain": -0.034470572022227225,
+"full_gain": -0.04916226200575136,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.6909374377114412
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": -0.16334832641880764,
+"full_gain": -0.2441830448630973,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.3643037561284462
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": 0.065776777603852,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3998166268419202
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "ac20:factory:Artists/Royce Whittaker/Low-Watt Americana",
+"sized_gain": 0.05574224763540874,
+"full_gain": 0.10086641834464422,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.2696463850957654
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": -0.05367990922168643,
+"full_gain": -0.06701546242339257,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.09492005954146451
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "ac20:factory:Artists/CARRTOONS/Gtr Lead FX",
+"sized_gain": 0.018032657893405787,
+"full_gain": 0.0011810230406368632,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1112147852187499
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+"sized_gain": -0.1185208688102224,
+"full_gain": -0.16810495492642383,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.41486689736306404
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": 0.06559597619867548,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.660662125248939
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sized_gain": 0.06786734765065157,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.6233468926625256
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.13024747587354818,
+"full_gain": -0.3249163622628091,
+"other_amp_clearly_closer": true,
+"own_vs_template": -1.3508768336439634
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.10494731856451173,
+"full_gain": -0.1762752953233853,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.8527301883526385
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": -0.02818246303627395,
+"full_gain": -0.06391743227664375,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.0065745120813858905
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.02440675113444683,
+"full_gain": -0.12203443430936292,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.10111206755742115
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.03604547109530239,
+"full_gain": -0.08697016992797257,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.07589425407477345
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": 0.09295802236741428,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.13404489422852178
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": 0.11364368448997035,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5521581754286339
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.0008745366629362565,
+"full_gain": -0.05031599880009145,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.30874098656720844
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.015803220937374754,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.023991689638078996
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/5 String P Bass",
+"sized_gain": 0.11033577676901332,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5961113750621054
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": 0.01946521283000549,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.0068833926617333785
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": -0.022105823513916236,
+"full_gain": -0.03174446218625634,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3103731011042504
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.03511845929207204,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.015408799658081137
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": 0.05087391916746283,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1973239780231564
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.08252318430209415,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.35817483120220994
+}
+],
+"union": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": -0.016578585007708483,
+"full_gain": -0.0483693119784432,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3279830447523053
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues",
+"sized_gain": 0.02431629688102609,
+"full_gain": 0.013362697840997891,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.7534623975581904
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": -0.17411268759702278,
+"full_gain": -0.22989843080357547,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.2683722827530572
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": 0.053309030839333596,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3953327418905585
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "ac20:factory:Artists/CARRTOONS/Gtr Lead FX",
+"sized_gain": 0.030543090215615944,
+"full_gain": -0.057528410901793524,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.38919638486910596
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": -0.05157917975826079,
+"full_gain": -0.07115694179215609,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.07270906425811924
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"sized_gain": 0.02194096664071412,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.10059120756664763
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"sized_gain": -0.060125069927763765,
+"full_gain": -0.16158127458972193,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.3385164842097291
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": 0.06446340231040351,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.660662125248939
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sized_gain": 0.056565208944683934,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.6233468926625256
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.12556614842721828,
+"full_gain": -0.3249163622628091,
+"other_amp_clearly_closer": true,
+"own_vs_template": -1.3508768336439634
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.10466360893158996,
+"full_gain": -0.1762752953233853,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.8527301883526385
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": -0.02754439715148417,
+"full_gain": -0.06391743227664375,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.0065745120813858905
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.025150048856868827,
+"full_gain": -0.12464038033388612,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.10111206755742115
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.013327007697501383,
+"full_gain": -0.048208316950858844,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.05669141158777558
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": 0.14632556106895653,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.13326457435246228
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": 0.1613436255058459,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4697309416463505
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.00046117003279337154,
+"full_gain": -0.05031599880009145,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.30874098656720844
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.014293432802379097,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.039492107107443136
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": 0.1361255275771109,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5989868906658513
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": 0.01670533353051222,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.003233234464023611
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": -0.022105823513916236,
+"full_gain": -0.03174446218625634,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3103731011042504
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": 0.026078909805064193,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.061712704933926735
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": 0.05186608010415187,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.19318124965772127
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.06156619721905018,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.32441756292125434
+}
+]
+},
+"pr12/clean": {
+"recording": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": 0.025867124004665086,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.07418179009166838
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": 0.03414737024695918,
+"full_gain": -0.0012826684289010944,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.541691531530712
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": -0.023714102967783496,
+"full_gain": -0.12065707042229135,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.22756414639285133
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": 0.15460989465926425,
+"full_gain": 0.08962294055146953,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.6004923491173464
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "ac20:factory:Artists/Royce Whittaker/Low-Watt Americana",
+"sized_gain": -0.12360979642615666,
+"full_gain": -0.09901582354065337,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1923557685553201
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": 0.026485204834473183,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.07896413068144456
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"sized_gain": -0.03165848928237112,
+"full_gain": -0.059070694468943356,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.11956983987459814
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+"sized_gain": 0.07905938096093597,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.2606905406579829
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": -0.15600479996277342,
+"full_gain": -0.20662034136251003,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.10557935401355202
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": 0.1548439705516819,
+"full_gain": 0.15444593050628028,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5344551477830303
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": -0.018461798843019,
+"full_gain": -0.15797823709434078,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.6496170167596386
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": -0.008818958009651648,
+"full_gain": -0.06853607144531837,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4092090832809909
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": -0.028358023619943204,
+"full_gain": -0.06692155077806265,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.02842018457859934
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.10593190557192492,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.40249672063219644
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.06057739133112767,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.24911483812463645
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.041940147324488655,
+"full_gain": -0.13164426419748454,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.03903923696197242
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.12375542725293576,
+"full_gain": -0.20172615377008557,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.45998668248486385
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.06839586630072823,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4363468287157748
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.03916270117264149,
+"full_gain": 0.025481563389711574,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.008035606532632208
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/5 String P Bass",
+"sized_gain": -0.20398756082542233,
+"full_gain": -0.2655456414263792,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.4611055328946904
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": -0.03662710669002072,
+"full_gain": -0.0483161326901941,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.002976306554201422
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": -0.004411266248249122,
+"full_gain": -0.017739837830733754,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.14846523880752518
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": 0.23396071552358205,
+"full_gain": 0.2589716518310614,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5315876463745726
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.011404311491760492,
+"full_gain": -0.05890357921982357,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1321094898266701
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": -0.042419003221311084,
+"full_gain": -0.10147428426541244,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.38549759150422436
+}
+],
+"union": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": 0.037275384479944905,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.12869386581323902
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": 0.03255972602199228,
+"full_gain": -0.005112312629741468,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.541691531530712
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": -0.044065665613681367,
+"full_gain": -0.10893904615561423,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1422780345608117
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": 0.14237794182699856,
+"full_gain": 0.09057645688744735,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5803626570999372
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": -0.11691612702179857,
+"full_gain": -0.2527673343698939,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.20643174628901992
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": 0.037857998207778985,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.1002970744649017
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"sized_gain": -0.03164117079818117,
+"full_gain": -0.05894134967623404,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.10010687952009974
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"sized_gain": 0.13076976901293863,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.23840696740572673
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": -0.14696889871864519,
+"full_gain": -0.1972138813066544,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.11498581406940764
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": 0.14754648688389985,
+"full_gain": 0.13400145411920875,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5344551477830303
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": -0.018461798843019,
+"full_gain": -0.15797823709434078,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.6496170167596386
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"sized_gain": -0.008818958009651648,
+"full_gain": -0.06853607144531837,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4092090832809909
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": -0.027197477714049654,
+"full_gain": -0.06692155077806265,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.02842018457859934
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.10779190429167486,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4085482298263702
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.03890715372130556,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.20699830328201535
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.1442779919744864,
+"full_gain": -0.27025080576703797,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.08350934679470862
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.17889476979354071,
+"full_gain": -0.29337849130370597,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.3210316682505768
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": 0.06839586630072823,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4363468287157748
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.04963095507935853,
+"full_gain": 0.03749822488282057,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.0015783691201620225
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.2380642374040145,
+"full_gain": -0.3164372674923093,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.4378970040116631
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": -0.03499194809924842,
+"full_gain": -0.04418228830879617,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.0019282130600671
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": -0.004411266248249122,
+"full_gain": -0.017739837830733754,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.14846523880752518
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.07344964561734306,
+"full_gain": -0.0884308423401837,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.26139507014050173
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.012549600869537051,
+"full_gain": -0.06099164843642039,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.12904029691670607
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": -0.07903676615699491,
+"full_gain": -0.11396247223946868,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3575643082021527
+}
+]
+},
+"ac20/all": {
+"recording": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": -0.11153798454646824,
+"full_gain": -0.14978671540025085,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.15732834177216792
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues",
+"sized_gain": -0.01237344935437249,
+"full_gain": -0.03377276888315495,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4596267458432717
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": 0.11636092796736017,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.2605529470711472
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": -0.4904222856586501,
+"full_gain": -0.6062897196589173,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.0671541074540896
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "ac20:factory:Artists/Royce Whittaker/Low-Watt Americana",
+"sized_gain": -0.045665237986616404,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.2549903038245763
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": -0.15303895669859893,
+"full_gain": -0.18198410667373108,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.13782367382048033
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "ac20:factory:Artists/CARRTOONS/Gtr Lead FX",
+"sized_gain": 0.03016956499851477,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.21355834362279036
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Richard Henshall/Spacey Clean",
+"sized_gain": -0.09835074621998358,
+"full_gain": -0.17018975649266127,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.15407546580303924
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": 0.04723282867003174,
+"full_gain": -0.052072215171230035,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.004605313538251934
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sized_gain": -0.03830156090882496,
+"full_gain": -0.11372524421286526,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.30964605600932854
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.13628916170532082,
+"full_gain": -0.39269271639311765,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.7319487231506521
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.09832116211126637,
+"full_gain": -0.200895089982942,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.3958866285457565
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": 0.0437069544107863,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.11133185300368927
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.30889528956054735,
+"full_gain": -0.460777421884599,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.0038388938406022587
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.27942708848196396,
+"full_gain": -0.36439762200038345,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.0941445834062398
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.0621921664789733,
+"full_gain": -0.18310007563564987,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.00995835761655137
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.333234219998811,
+"full_gain": -0.496994318252554,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.21127902241663543
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.31440079699267715,
+"full_gain": -0.3951671536306349,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.17515451757001066
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": -0.02310804865555402,
+"full_gain": -0.04082383183793382,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.10066012099306867
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/5 String P Bass",
+"sized_gain": -0.337808048913003,
+"full_gain": -0.48330937011390934,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.2917647423226485
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": -0.15727554421647472,
+"full_gain": -0.18302466835727915,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.0070400097222042485
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": 0.015487255716596874,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.15003527573103073
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.034288638739897154,
+"full_gain": -0.01676283840876016,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.2641832247194192
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.16856321973551172,
+"full_gain": -0.23954572431027885,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.03435983612804291
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": -0.213321917553592,
+"full_gain": -0.32265140781469775,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.2069486698521561
+}
+],
+"union": [
+{
+"part": "cambridge-Drag_Me_Down-ElecGtr4",
+"band": "Adam Buckley",
+"joint_pick": "pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"sized_gain": -0.16686192096746313,
+"full_gain": -0.21331186025712798,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.168492889343507
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+"band": "Atlantis Bound",
+"joint_pick": "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues",
+"sized_gain": -0.010913480280572345,
+"full_gain": -0.02994312468231454,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.4634563900441121
+},
+{
+"part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+"band": "Atlantis Bound",
+"joint_pick": "ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"sized_gain": 0.08099799408752857,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.15791017922704936
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sized_gain": -0.5012994575486052,
+"full_gain": -0.6028661778358391,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.03896490967691552
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr4",
+"band": "The Travelling Band",
+"joint_pick": "ac20:factory:Artists/CARRTOONS/Gtr Lead FX",
+"sized_gain": 0.13360909933587678,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.5967209869442374
+},
+{
+"part": "cambridge-Passing_Ships-ElecGtr6",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"sized_gain": -0.18781377674153418,
+"full_gain": -0.23011733258334482,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.12258562644086533
+},
+{
+"part": "cambridge-Prodigal-ElecGtr5",
+"band": "Starnes And Shah",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"sized_gain": 0.021865979685250336,
+"full_gain": -0.012143323732192346,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.228974556958018
+},
+{
+"part": "cambridge-Quicksand-ElecGtr1",
+"band": "The Travelling Band",
+"joint_pick": "pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"sized_gain": -0.05582153203532576,
+"full_gain": -0.18710465681053132,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.07554898417612955
+},
+{
+"part": "cambridge-Quicksand-ElecGtr2",
+"band": "The Travelling Band",
+"joint_pick": "sw50r:factory:Artists/Richard Henshall/Tremolo Jam",
+"sized_gain": 0.04525050001667876,
+"full_gain": -0.052072215171230035,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.004605313538251934
+},
+{
+"part": "cambridge-Signs-ElecGtr2",
+"band": "Zeno",
+"joint_pick": "sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sized_gain": -0.028973066824608158,
+"full_gain": -0.09328076782579371,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.33009053239640007
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr07",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.1345122644372018,
+"full_gain": -0.39269271639311765,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.7319487231506521
+},
+{
+"part": "cambridge-Today's_The_Day-ElecGtr10",
+"band": "Eat The Feeder",
+"joint_pick": "pr12:factory:Neural DSP/The Creature of the Cave",
+"sized_gain": -0.09740484562502241,
+"full_gain": -0.200895089982942,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.3958866285457565
+},
+{
+"part": "telefunken-Blind_Spots-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "ac20:factory:Neural DSP/Play Gently And Slowly",
+"sized_gain": 0.04475931655379886,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.10716988334180595
+},
+{
+"part": "telefunken-Bloomlight-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.30749716936134264,
+"full_gain": -0.46338336790912216,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.01009719027656829
+},
+{
+"part": "telefunken-Farthest_Step-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.33868644182287144,
+"full_gain": -0.4158436091605663,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.04905530876963931
+},
+{
+"part": "telefunken-First_Offering-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.12003845563728616,
+"full_gain": -0.2902384710964609,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.09496051098204739
+},
+{
+"part": "telefunken-First_Offering-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.15854187201504225,
+"full_gain": -0.3750202070560348,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.31107231695409904
+},
+{
+"part": "telefunken-Fragments-GTR",
+"band": "Eggy",
+"joint_pick": "pr12:factory:Artists/CARRTOONS/Bass Chords",
+"sized_gain": -0.3090789201961343,
+"full_gain": -0.38742322511924787,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.18289844608139771
+},
+{
+"part": "telefunken-Gym_Hours-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": 0.028429732974291577,
+"full_gain": 0.013452168209813372,
+"other_amp_clearly_closer": false,
+"own_vs_template": 0.06023859579624268
+},
+{
+"part": "telefunken-Gym_Hours-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.2749931521148795,
+"full_gain": -0.45436914809718326,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.35950062317353587
+},
+{
+"part": "telefunken-Long_Way_Home-GTR",
+"band": "Doom Flamingo",
+"joint_pick": "sw50r:factory:Artists/Royce Whittaker/Big Tail Clean",
+"sized_gain": -0.16050786121754163,
+"full_gain": -0.18302466835727915,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.0008793943557386665
+},
+{
+"part": "telefunken-Russian_Cream-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "ac20:factory:Default",
+"sized_gain": 0.015487255716596874,
+"full_gain": 0.0,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.15003527573103073
+},
+{
+"part": "telefunken-Russian_Cream-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Mustang",
+"sized_gain": -0.0185290436267979,
+"full_gain": -0.06885137745979321,
+"other_amp_clearly_closer": false,
+"own_vs_template": -0.3533145263632628
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_1",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+"sized_gain": -0.1676113815270894,
+"full_gain": -0.23966340827673854,
+"other_amp_clearly_closer": true,
+"own_vs_template": 0.032662381737705706
+},
+{
+"part": "telefunken-Sculptor's_Request-GTR_2",
+"band": "Dom McLennon",
+"joint_pick": "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sized_gain": -0.17225857981397946,
+"full_gain": -0.268398574856079,
+"other_amp_clearly_closer": true,
+"own_vs_template": -0.2587539017438999
+}
+]
+}
+},
+"refused": {}
+}
