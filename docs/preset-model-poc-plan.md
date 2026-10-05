@@ -95,3 +95,16 @@ It found these, fixed before training:
 
 Two corrections to the text above: the DI pool has 3,509 windows (not 3,936), and the
 factory share of the sampler jitters 34 PR12 factory presets (not K3's clean menu of 21).
+
+## Amendment, 2026-10-06: the stem condition (reported, not deciding)
+
+Written after the guitar stems were separated and before any model result on them.
+- **What runs.** The same model reads each part's separated guitar stem, from the full
+  mix and from the instrumental mix, instead of its amp track. Two separators:
+  htdemucs_6s (shifts=0) and BS-RoFormer-SW, each on a 30-s context from which the
+  crop is cut (`~/ndsp-presets/learn/poc/stems/manifest.json`).
+- **Scoring.** Unchanged: through the part's DI, against its amp track, by the judge.
+- **Which parts.** Only the 20 parts the manifest marks usable. Eight parts are
+  excluded because other guitars dominate their stems (best SNR against the amp track
+  under 1 dB).
+- **Status.** Reported beside the amp-track result. It does not decide the POC.
