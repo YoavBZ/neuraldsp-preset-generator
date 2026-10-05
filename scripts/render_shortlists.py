@@ -8,10 +8,12 @@
 `{"parts": {part: {label: preset path}}}`; the presets may be on any Morgan amp.
 Per part, one fresh plugin process, reused within the part as the panels were
 (`render_preset_panel.py`): a discarded warm-up, the shipped template with R, every
-listed preset with R, and the template with R again, whose repeat is the part's
-canary. R is the panels' rule set: time effects, gate, doubler and transpose off,
-and the spring reverb of the preset's own amp off. Float WAV, named by label, with
-an index binding each render to its preset's hash. Held-out parts are refused.
+listed preset with R, and the template with R again; then every listed preset again,
+in reverse order (`<label>.repeat.wav`), so a render that depends on the one before it
+shows. R is the panels' rule set: time effects, gate, doubler and transpose off, and
+the spring reverb of the preset's own amp off. Float WAV, named by label, with an index
+binding each render to its preset's hash and recording its peak. Held-out parts are
+refused.
 """
 
 from __future__ import annotations
@@ -107,13 +109,20 @@ def work(job):
                 sf.write(file, audio, 48000, subtype=SUBTYPE)
                 rows.append({"part": part, "label": label, "amp": amps[label],
                              "preset": str(path), "preset_sha256": _sha(path),
-                             "file": str(file), "sha256": _sha(file)})
+                             "file": str(file), "sha256": _sha(file),
+                             "peak": float(np.abs(audio).max())})
                 if first is None:
                     first = audio
             again = np.asarray(renderer.render(di, {"label": TEMPLATE}).audio)
             drift = float(20 * np.log10((np.std(again) + 1e-12) / (np.std(first) + 1e-12)))
             rows.append({"canary": part, "label": TEMPLATE, "rms_drift_db": round(drift, 3),
                          "identical": bool(np.array_equal(again, first))})
+            for label in reversed([x for x in listed if x != TEMPLATE]):
+                audio = np.asarray(renderer.render(di, {"label": label}).audio)
+                file = out / f"{label}.repeat.wav"
+                sf.write(file, audio, 48000, subtype=SUBTYPE)
+                rows.append({"part": part, "label": label, "repeat": True,
+                             "file": str(file), "sha256": _sha(file)})
         finally:
             renderer.close()
         print(f"{part}: {len(listed)} renders", flush=True)
@@ -153,7 +162,7 @@ def main() -> None:
              "crops_dir": str(crops), "template": TEMPLATE, "rows": rows}
     (out_dir / "index.json").write_text(json.dumps(index, indent=1) + "\n")
     canaries = [r for r in rows if "canary" in r]
-    print(f"{len(rows) - len(canaries)} renders; canaries "
+    print(f"{len(rows) - len(canaries)} renders with repeats; canaries "
           f"{[(r['canary'], r['rms_drift_db'], r['identical']) for r in canaries]}")
 
 

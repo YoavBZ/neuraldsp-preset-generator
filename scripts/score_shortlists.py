@@ -8,10 +8,11 @@ Scores every render `render_shortlists.py` made with the judge (half A, half B a
 1.0-10 s; both band sets; the recorded lag less the 52-sample latency), checks the
 canaries, and compares the arms. One preset's distance is the mean of its half-A and
 half-B distances. A list's, as a perfect ear would pick, is the preset chosen on one
-half scored on the other, both directions averaged; random-4's is the exact
-expectation over every 4-preset subset of the 108 factory presets. A comparison passes
-when, under both band sets, the median of band medians of its log ratio is at most
-log 0.9 and the first arm is closer on more than half the parts.
+half scored on the other, both directions averaged. Random arms are the median of
+their distribution on the part (a list drawn by chance, scored the same way), so a
+single list is not compared with an average. A comparison passes when, under both
+band sets, the median of band medians of its log ratio is at most log 0.9 and the
+first arm is closer on more than half the parts.
 """
 
 from __future__ import annotations
@@ -35,14 +36,25 @@ from _cli import die, guarded
 BAND_SETS = ("recording", "union")
 AMPS = ("ac20", "pr12", "sw50r")
 PASS = math.log(0.9)
+NEAR = 0.03                 # a median this close to the bar reads as inconclusive
 CLEAR = 0.150
+LOSS = 5.0                  # the log ratio a refused render counts as
 REPRO, DRIFT_DB = 0.01, 0.1
+SILENT_PEAK = 1e-6
+DRAWS = 50_000
 G = [f"G{i}" for i in range(1, 5)]
 F = [f"F{i}" for i in range(1, 5)]
-DECIDING = {"D1": ("G1", "template+R"), "D2": ("G4", "random-4"), "D3": ("F4", "random-4")}
-REPORTED = {"G4 vs F4": ("G4", "F4"), "G1 vs F1": ("G1", "F1"),
-            "G1 vs random-1": ("G1", "random-1"), "random-4 vs template+R": ("random-4", "template+R"),
-            "G4 vs oracle": ("G4", "oracle")}
+M = ["G1", "G2", "F1", "F2"]
+FACTORY_ROOT = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/"
+ARMS = ("G1", "F1", "template+R", "random-1", "G4", "F4", "M4", "house-4", "random-4",
+        "random-4 clean", "oracle")
+REPORTED = {"G4 vs G1": ("G4", "G1"), "F4 vs F1": ("F4", "F1"), "G1 vs F1": ("G1", "F1"),
+            "G1 vs random-1": ("G1", "random-1"), "F4 vs G4": ("F4", "G4"),
+            "M4 vs G4": ("M4", "G4"), "G4 vs template+R": ("G4", "template+R"),
+            "F4 vs template+R": ("F4", "template+R"),
+            "random-4 vs template+R": ("random-4", "template+R"),
+            "house-4 vs random-4": ("house-4", "random-4"),
+            "S4 vs random-4 clean": ("S4", "random-4 clean"), "S4 vs oracle": ("S4", "oracle")}
 
 
 def one(d, c, bands):
@@ -51,7 +63,8 @@ def one(d, c, bands):
 
 
 def best(d, menu, bands):
-    """The split-half pick of a perfect ear: chosen on A scored on B, and the reverse."""
+    """The split-half pick of a perfect ear: chosen on A scored on B, and the reverse.
+    A preset not scored on both halves is never picked."""
     menu = [c for c in menu if one(d, c, bands) is not None]
     if not menu:
         return None
@@ -60,21 +73,46 @@ def best(d, menu, bands):
     return (d[f"{on_a}|B|{bands}"] + d[f"{on_b}|A|{bands}"]) / 2
 
 
-def arms(d, factory, bands):
-    """{arm: distance} for one part under one band set; `d` holds the part's own renders
-    (G1-G4, F1-F4, template+R) and the stored factory distances, keyed by name."""
-    from reach_sets import expected_oracle
+def random_median(d, menu, bands, size, seed):
+    """The median split-half distance of a `size`-list drawn at random from `menu`."""
+    import numpy as np
 
-    ab = expected_oracle(d, factory, "A", "B", bands, 4)
-    ba = expected_oracle(d, factory, "B", "A", bands, 4)
-    singles = [one(d, c, bands) for c in factory]
-    singles = [s for s in singles if s is not None]
-    return {"G1": one(d, "G1", bands), "F1": one(d, "F1", bands),
-            "template+R": one(d, "template+R", bands),
-            "random-1": statistics.mean(singles) if singles else None,
-            "G4": best(d, G, bands), "F4": best(d, F, bands),
-            "random-4": None if ab is None or ba is None else (ab + ba) / 2,
-            "oracle": best(d, factory, bands)}
+    menu = [c for c in menu if one(d, c, bands) is not None]
+    a = np.array([d[f"{c}|A|{bands}"] for c in menu])
+    b = np.array([d[f"{c}|B|{bands}"] for c in menu])
+    rng = np.random.default_rng(int(hashlib.sha256(seed.encode()).hexdigest()[:12], 16))
+    draws = np.argsort(rng.random((DRAWS, len(menu))), axis=1)[:, :size]
+    rows = np.arange(DRAWS)
+    on_a = draws[rows, np.argmin(a[draws], axis=1)]
+    on_b = draws[rows, np.argmin(b[draws], axis=1)]
+    return float(np.median((b[on_a] + a[on_b]) / 2))
+
+
+def house_lists(dist, parts, band_of, factory, bands, random1):
+    """{held-out band: the fixed 4-list}, each built greedily on the other bands' parts:
+    at each step the preset that most lowers the median of band medians of
+    log(the list's split-half distance / the part's random-1), ties broken by the
+    mean over the parts and then by name."""
+    out = {}
+    for held in sorted(set(band_of[p] for p in parts)):
+        train = [p for p in parts if band_of[p] != held]
+        chosen = []
+        for _ in range(4):
+            def score(c):
+                by = collections.defaultdict(list)
+                for p in train:
+                    v = best(dist[p], chosen + [c], bands)
+                    if v is not None:
+                        by[band_of[p]].append(math.log(v / random1[p]))
+                return (statistics.median(statistics.median(v) for v in by.values()),
+                        statistics.mean(x for v in by.values() for x in v), c)
+            chosen.append(min((c for c in factory if c not in chosen), key=score))
+        out[held] = chosen
+    return out
+
+
+def capped(x):
+    return max(-LOSS, min(LOSS, x))
 
 
 def sign_flip_p(values):
@@ -88,27 +126,46 @@ def sign_flip_p(values):
 
 
 def compare(rows, first, second, bands):
-    """The log ratio first/second per part, its median of band medians, the parts the
-    first is closer on, and a band sign-flip p."""
-    logs = [(r["band"], math.log(r["arms"][bands][first] / r["arms"][bands][second]))
-            for r in rows if r["arms"][bands][first] and r["arms"][bands][second]]
+    """The log ratio first/second per part (a refused first arm counts as LOSS), its
+    median of band medians, the parts the first is closer on, and a band sign-flip p."""
+    logs = []
+    for r in rows:
+        a, b = r["arms"][bands][first], r["arms"][bands][second]
+        if b is None or not math.isfinite(b):
+            continue
+        logs.append((r["band"], LOSS if a is None or not math.isfinite(a)
+                     else capped(math.log(a / b))))
     by = collections.defaultdict(list)
     for band, x in logs:
         by[band].append(x)
-    medians = {b: statistics.median(v) for b, v in by.items()}
+    medians = {k: statistics.median(v) for k, v in by.items()}
     m = statistics.median(medians.values()) if medians else None
     closer = sum(x < 0 for _, x in logs)
+    half = len(logs) / 2
     return {"median_of_band_medians": m, "parts": len(logs), "bands": len(medians),
-            "closer_on": closer, "sign_flip_p": sign_flip_p(list(medians.values())) if medians else None,
-            "passes": bool(m is not None and m <= PASS + 1e-12 and closer > len(logs) / 2)}
+            "closer_on": closer,
+            "sign_flip_p": sign_flip_p(list(medians.values())) if medians else None,
+            "passes": bool(m is not None and m <= PASS + 1e-12 and closer > half),
+            "near": bool(m is not None and (abs(m - PASS) <= NEAR or abs(closer - half) <= 1))}
+
+
+def decide(rows, first, second):
+    out = {"comparison": f"{first} vs {second}",
+           **{bands: compare(rows, first, second, bands) for bands in BAND_SETS}}
+    out["passes"] = all(out[b]["passes"] for b in BAND_SETS)
+    out["inconclusive"] = any(out[b]["near"] for b in BAND_SETS)
+    out["holds"] = out["passes"] and not out["inconclusive"]
+    return out
 
 
 def within_share(rows, arm, bands):
     """The band-weighted share of parts where `arm` is within CLEAR of the oracle."""
     from reach_sets import band_weighted_share
 
-    flags = {r["part"]: math.log(r["arms"][bands][arm] / r["arms"][bands]["oracle"]) <= CLEAR + 1e-12
-             for r in rows if r["arms"][bands][arm] and r["arms"][bands]["oracle"]}
+    flags = {}
+    for r in rows:
+        a, o = r["arms"][bands][arm], r["arms"][bands]["oracle"]
+        flags[r["part"]] = bool(a is not None and math.isfinite(a) and math.log(a / o) <= CLEAR + 1e-12)
     return band_weighted_share(flags, {r["part"]: r["band"] for r in rows})
 
 
@@ -134,6 +191,7 @@ def main():
     import kill_tests as K
     import kill_tests_judge as KJ
     from benchmark_recordings import lag_samples
+    from plan_listening_validation import high_gain
 
     renders = args.renders.expanduser()
     index = json.loads((renders / "index.json").read_text())
@@ -141,14 +199,17 @@ def main():
     stored, band_of = reach["distances"], {r["part"]: r["band"]
                                           for r in reach["rows"]["sw50r/all"]["recording"]}
     crops = pathlib.Path(index["crops_dir"])
-    files, rows_by = collections.defaultdict(dict), collections.defaultdict(dict)
-    for row in index["rows"]:
-        if "file" in row:
-            if _sha(row["file"]) != row["sha256"]:
-                die(f"{row['file']} changed since it was rendered")
-            files[row["part"]][row["label"]] = row["file"]
-            rows_by[row["part"]][row["label"]] = row
+    files, info = collections.defaultdict(dict), collections.defaultdict(dict)
     problems = []
+    for row in index["rows"]:
+        if "file" not in row:
+            continue
+        if _sha(row["file"]) != row["sha256"]:
+            die(f"{row['file']} changed since it was rendered")
+        label = f"{row['label']}#repeat" if row.get("repeat") else row["label"]
+        files[row["part"]][label] = row["file"]
+        if not row.get("repeat"):
+            info[row["part"]][row["label"]] = row
     drifts = [r for r in index["rows"] if "canary" in r]
     problems += [f"{r['canary']}: the repeated template drifts {r['rms_drift_db']} dB"
                  for r in drifts if abs(r["rms_drift_db"]) >= DRIFT_DB]
@@ -157,22 +218,36 @@ def main():
     with ProcessPoolExecutor(args.workers) as ex:
         scored = dict(ex.map(KJ.score_part, [(p, files[p], lag_samples(p) - K.LATENCY, crops)
                                              for p in sorted(files)]))
-    factory_root = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/"
     names = sorted({k.split("|")[0] for d in stored.values() for k in d})
     factory = [c for c in names if any(c.startswith(f"{a}:factory:") for a in AMPS)]
     if len(factory) != 108:
         die(f"expected the 108 factory presets, found {len(factory)}")
-    repro, rows = [], []
+    clean = [c for c in factory if not high_gain(c)]
+    readings, refused_g, dists = [], collections.Counter(), {}
     for p in sorted(files):
-        new = scored[p]["d"]
-        d = {k: v for k, v in stored[p].items() if k.split("|")[0] in factory}
-        d.update({k: v for k, v in new.items()})
-        # Canaries: the template and every factory pick against their stored distances.
+        new = dict(scored[p]["d"])
+        # A silent render is refused outright, whatever the judge made of it.
+        for label, row in info[p].items():
+            if row["peak"] < SILENT_PEAK:
+                for k in [k for k in new if k.split("|")[0] in (label, f"{label}#repeat")]:
+                    new[k] = None
+        # Every render repeats itself, in reverse order in the same process.
+        for label in info[p]:
+            if label == "template+R":
+                continue
+            for w in ("A", "B", "full"):
+                for bands in BAND_SETS:
+                    a, b = new.get(f"{label}|{w}|{bands}"), new.get(f"{label}#repeat|{w}|{bands}")
+                    if (a is None) != (b is None):
+                        problems.append(f"{p}: {label} {w}/{bands} refused on one pass only")
+                    elif a is not None and abs(math.log(a / b)) > REPRO:
+                        problems.append(f"{p}: {label} {w}/{bands} repeats {math.log(a / b):+.4f} away")
+        # The template and every factory pick against their stored distances.
         checks = {"template+R": "pr12:template+R"}
         for label in F:
-            preset = rows_by[p][label]["preset"]
-            name = preset[len(factory_root):-len(".xml")] if preset.startswith(factory_root) else None
-            match = [c for c in factory if name and c.split(":", 2)[2] == name]
+            preset = info[p][label]["preset"]
+            name = preset[len(FACTORY_ROOT):-len(".xml")] if preset.startswith(FACTORY_ROOT) else None
+            match = [c for c in factory if name is not None and c.split(":", 2)[2] == name]
             if len(match) != 1:
                 problems.append(f"{p}: {label} ({preset}) is not one of the 108 factory presets")
                 continue
@@ -181,49 +256,83 @@ def main():
             for w in ("A", "B", "full"):
                 for bands in BAND_SETS:
                     a, b = new.get(f"{label}|{w}|{bands}"), stored[p].get(f"{key}|{w}|{bands}")
-                    if (a is None) != (b is None):
-                        problems.append(f"{p}: {label} {w}/{bands} scored on one side only")
-                    elif a is not None:
-                        repro.append(abs(math.log(a / b)))
+                    if a is None or b is None:
+                        problems.append(f"{p}: {label} {w}/{bands} refused "
+                                        f"({'here' if a is None else 'in the panel'})")
+                    else:
+                        readings.append(abs(math.log(a / b)))
                         if abs(math.log(a / b)) > REPRO:
                             problems.append(f"{p}: {label} {w}/{bands} moved {math.log(a / b):+.4f}")
-        rows.append({"part": p, "band": band_of[p],
-                     "amps": {label: rows_by[p][label]["amp"] for label in G + F},
-                     "arms": {bands: arms(d, factory, bands) for bands in BAND_SETS}})
+        for label in G:
+            refused_g[label] += any(new.get(f"{label}|{h}|{b}") is None
+                                    for h in ("A", "B") for b in BAND_SETS)
+        d = {k: v for k, v in stored[p].items() if k.split("|")[0] in factory}
+        d.update({k: v for k, v in new.items() if "#repeat" not in k})
+        dists[p] = d
     if problems:
         die("canaries failed; nothing is scored:\n  " + "\n  ".join(problems))
+    parts = sorted(dists)
+    rows = []
+    houses = {}
+    for bands in BAND_SETS:
+        random1 = {p: statistics.median(v for v in (one(dists[p], c, bands) for c in factory)
+                                        if v is not None) for p in parts}
+        houses[bands] = house_lists(dists, parts, band_of, factory, bands, random1)
+    for p in parts:
+        d, arms = dists[p], {}
+        for bands in BAND_SETS:
+            singles = [v for v in (one(d, c, bands) for c in factory) if v is not None]
+            g1 = one(d, "G1", bands)
+            arms[bands] = {
+                "G1": math.inf if g1 is None else g1, "F1": one(d, "F1", bands),
+                "template+R": one(d, "template+R", bands),
+                "random-1": statistics.median(singles),
+                "G4": best(d, G, bands) or math.inf, "F4": best(d, F, bands),
+                "M4": best(d, M, bands) or math.inf,
+                "house-4": best(d, houses[bands][band_of[p]], bands),
+                "random-4": random_median(d, factory, bands, 4, f"{p}|{bands}|all"),
+                "random-4 clean": random_median(d, clean, bands, 4, f"{p}|{bands}|clean"),
+                "oracle": best(d, factory, bands)}
+        rows.append({"part": p, "band": band_of[p],
+                     "amps": {label: info[p][label]["amp"] for label in G + F}, "arms": arms})
     out = {"inputs": {"renders_index": _sha(renders / "index.json"),
                       "reach_json": _sha(args.reach_json.expanduser()),
                       "reach_sets": _sha(args.reach_sets)},
            "commit": subprocess.run(["git", "-C", str(PLUGIN_ROOT), "rev-parse", "HEAD"],
                                     capture_output=True, text=True).stdout.strip(),
-           "canaries": {"max_abs_log_change": max(repro) if repro else None,
-                        "readings": len(repro),
-                        "max_drift_db": max((abs(r["rms_drift_db"]) for r in drifts), default=None)},
-           "decisions": {}, "reported": {}, "within_0.150_of_oracle": {}, "amps": {}}
-    for key, (a, b) in DECIDING.items():
-        out["decisions"][key] = {"comparison": f"{a} vs {b}",
-                                 **{bands: compare(rows, a, b, bands) for bands in BAND_SETS}}
-        out["decisions"][key]["passes"] = all(out["decisions"][key][bands]["passes"]
-                                              for bands in BAND_SETS)
+           "canaries": {"max_abs_log_change_vs_panels": max(readings), "readings": len(readings),
+                        "max_template_drift_db": max(abs(r["rms_drift_db"]) for r in drifts)},
+           "refused_generated": dict(refused_g),
+           "house_lists": houses, "decisions": {}, "reported": {},
+           "within_0.150_of_oracle": {}, "amps": {}}
+    dec = out["decisions"]
+    dec["D1"] = decide(rows, "G1", "template+R")
+    dec["D2 F4 vs G4"] = decide(rows, "F4", "G4")
+    dec["D2 M4 vs G4"] = decide(rows, "M4", "G4")
+    held = [k for k in ("F4", "M4") if dec[f"D2 {k} vs G4"]["holds"]]
+    source = min(held, key=lambda k: max(dec[f"D2 {k} vs G4"][b]["median_of_band_medians"]
+                                         for b in BAND_SETS)) if held else "G4"
+    out["shortlist_source"] = {"G4": "generated", "F4": "factory", "M4": "two generated, two factory"}[source]
+    first = "F1" if source == "F4" else "G1"
+    for r in rows:
+        for bands in BAND_SETS:
+            r["arms"][bands]["S4"] = r["arms"][bands][source]
+    dec["D3"] = decide(rows, "S4", first)
+    dec["D4 vs house-4"] = decide(rows, "S4", "house-4")
+    dec["D4 vs random-4"] = decide(rows, "S4", "random-4")
     for key, (a, b) in REPORTED.items():
         out["reported"][key] = {bands: compare(rows, a, b, bands) for bands in BAND_SETS}
-    for arm in ("G1", "F1", "template+R", "G4", "F4", "random-4"):
+    for arm in ARMS[:-1] + ("S4",):
         out["within_0.150_of_oracle"][arm] = {bands: within_share(rows, arm, bands)
                                               for bands in BAND_SETS}
     sets = json.loads(args.reach_sets.read_text())["acceptable_amps"]
-    for label in ("G1", "F1"):
-        out["amps"][label] = {
-            "counts": dict(collections.Counter(r["amps"][label] for r in rows)),
-            **{f"acceptable_under_clean/{bands}": sum(
-                bool(sets[f"clean/{bands}"]["rows"].get(r["part"], {}).get(r["amps"][label]))
-                for r in rows) for bands in BAND_SETS}}
-    for kind, labels in (("G1-G4", G), ("F1-F4", F)):
-        out["amps"][kind] = dict(collections.Counter(r["amps"][x] for r in rows for x in labels))
-    d2, d3 = out["decisions"]["D2"]["passes"], out["decisions"]["D3"]["passes"]
-    out["shortlist_source"] = ("two generated and two factory" if d2 and d3 else
-                               "generated" if d2 else "factory" if d3 else
-                               "factory, chosen for spread across the acceptable amps")
+    for kind, labels in (("G", G), ("F", F)):
+        out["amps"][kind] = {
+            "counts": dict(collections.Counter(r["amps"][x] for r in rows for x in labels)),
+            "first_choice": dict(collections.Counter(r["amps"][labels[0]] for r in rows)),
+            **{f"share_on_acceptable_amps/{bands}": statistics.mean(
+                bool(sets[f"clean/{bands}"]["rows"].get(r["part"], {}).get(r["amps"][x]))
+                for r in rows for x in labels) for bands in BAND_SETS}}
     out["rows"] = rows
     brief = {k: v for k, v in out.items() if k != "rows"}
     print(json.dumps(brief, indent=1))
