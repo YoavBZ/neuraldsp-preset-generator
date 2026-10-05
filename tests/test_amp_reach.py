@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import itertools
 import math
 import pathlib
 import random
-import statistics
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -24,16 +22,6 @@ def _d(values):
 def test_the_oracle_chooses_on_half_a_and_scores_on_half_b():
     d = _d({"x:factory:a": (1.0, 3.0), "x:factory:b": (2.0, 1.0)})
     assert R.oracle(d, ["x:factory:a", "x:factory:b"], "recording") == ("x:factory:a", 3.0)
-
-
-def test_the_expected_oracle_is_exact():
-    rng = random.Random(1)
-    menu = [f"x:factory:{i}" for i in range(7)]
-    d = _d({c: (rng.random(), rng.random()) for c in menu})
-    for size in (1, 3, 7):
-        brute = statistics.mean(R.oracle(d, list(s), "recording")[1]
-                                for s in itertools.combinations(menu, size))
-        assert math.isclose(R.expected_oracle(d, menu, "recording", size), brute)
 
 
 def _parts(reach):

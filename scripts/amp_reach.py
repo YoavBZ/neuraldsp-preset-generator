@@ -67,18 +67,6 @@ def oracle(d, menu, bands):
     return best, d[f"{best}|B|{bands}"]
 
 
-def expected_oracle(d, menu, bands, size):
-    """The exact expected half-B distance of the half-A oracle over a random `size`-
-    subset of `menu`: rank k (from 1) on half A wins with C(n-k, size-1) / C(n, size)."""
-    menu = sorted(scored(d, menu, bands), key=lambda c: (d[f"{c}|A|{bands}"], c))
-    n = len(menu)
-    if n < size or size < 1:
-        return None
-    total = math.comb(n, size)
-    return sum(math.comb(n - k, size - 1) / total * d[f"{c}|B|{bands}"]
-               for k, c in enumerate(menu, start=1) if n - k >= size - 1)
-
-
 def joint_sized(d, menus, bands, size, rng):
     """The mean half-B distance of the oracle over `size` presets drawn evenly from the
     three amps' menus (the remainder going to the amps in order), over DRAWS draws."""
