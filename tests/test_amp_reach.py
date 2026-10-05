@@ -57,3 +57,18 @@ def test_one_amp_reaching_everything_adds_nothing():
     assert by["recording"]["full_joint_vs_tested"] == 0.0
     assert by["recording"]["other_amp_clearly_closer_parts"] == 0
     assert R.verdict({("sw50r", "all"): by})[("sw50r", "all")] == []
+
+
+def test_the_minority_rule_is_held_against_a_label_permutation_null():
+    import amp_reach_null as N
+
+    # Another amp reaches four of ten recordings that SW50R can't.
+    parts, meta, dist, menus = _parts(["sw50r"] * 6 + ["ac20", "pr12"] * 2)
+    bands_of = {p: meta[p]["band"] for p in parts}
+    labels = {c: a for a in R.AMPS for c in menus[a]}
+    observed = N.minority(dist, parts, bands_of, labels, "sw50r", "recording")
+    assert observed == (4, 4)
+    q95, counts = N.null_quantile(dist, parts, bands_of, labels, "sw50r", "recording", "s")
+    # With labels shuffled the one close preset per part is SW50R's a third of the time,
+    # so the null often counts other amps' wins too; the observed count is not beyond it.
+    assert len(counts) == N.PERMUTATIONS and q95 >= 4
