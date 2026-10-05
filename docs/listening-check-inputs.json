@@ -1,5 +1,5 @@
 {
- "schema": "listening-check-inputs-3",
+ "schema": "listening-check-inputs-4",
  "parts": [
   "telefunken-Blind_Spots-GTR",
   "telefunken-Bloomlight-GTR",
@@ -764,6 +764,424 @@
    "G2": "pr12|drive",
    "G3": "ac20|no drive",
    "G4": "sw50r|drive"
+  }
+ },
+ "taste_features": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.18,
+    "volume": 0.56
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.38,
+    "volume": 0.6
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.32,
+    "volume": 0.64
+   }
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.24,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.55
+   }
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.46,
+    "volume": 0.62
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.62,
+    "volume": 0.6
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.6
+   }
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.26,
+    "volume": 0.4
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.4,
+    "volume": 0.58
+   }
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.55
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   }
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.22,
+    "volume": 0.44
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.56
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.46
+   }
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.6
+   }
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.46,
+    "volume": 0.55
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.56,
+    "volume": 0.5
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.22,
+    "volume": 0.62
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.48
+   }
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.28,
+    "volume": 0.56
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.24,
+    "volume": 0.6
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.58
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   }
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.45
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.56
+   }
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G2": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.25,
+    "volume": 0.55
+   }
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.54
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.64
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.35,
+    "volume": 0.58
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   }
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.38
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.35
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.38
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   }
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.52
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   }
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.55,
+    "volume": 0.62
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.48,
+    "volume": 0.66
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.6,
+    "volume": 0.68
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.18,
+    "volume": 0.6
+   }
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.55,
+    "volume": 0.66
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.58,
+    "volume": 0.68
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.64
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.5,
+    "volume": 0.74
+   }
   }
  },
  "factory_sha256": {

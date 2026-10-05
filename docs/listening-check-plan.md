@@ -1,7 +1,7 @@
 # Does a real ear pick well on the audition page?
 
 Declared on 2026-10-05, before any trial is built. Revised on 2026-10-06 after a
-second and a third independent review, still before any trial existed.
+second, third and fourth independent review, still before any trial existed.
 
 The shortlist measurement (`docs/song-only-shortlist-results.md`) found that a perfect
 ear choosing among four generated presets lands closer than one preset: about 18%
@@ -64,7 +64,7 @@ taste for an amp or for drive.
   - **Candidates:** the part's closest unused classed factory preset, against the three
     farthest of the other class that are each more than 0.5 (log) farther under both
     band sets, through the part's own DI, from the stored panels. The correct answer
-    is 2.0 to 3.7 times closer than its wrong ones.
+    is 1.7 to 3.7 times closer than its wrong ones.
   - No factory preset serves twice across the controls and the practice trial.
 - **Practice:** one trial first, on the most exposed part left that is neither under
   test nor a control (Today's The Day ElecGtr10, -8.8 dB), with each amp's closest
@@ -92,9 +92,9 @@ taste for an amp or for drive.
   - `score` refuses a sheet with any other line, a malformed answer, a trial answered
     twice, or a built trial unanswered or extra.
 - **Before anything is rendered,** `build` checks the inputs, the shortlist renders
-  index, the factory-preset panels, every generated and factory preset against the
-  hashes they were scored with, and that the plugin still renders what the judge
-  scored. It re-renders the first part's four candidates through its own DI, and every
+  index, the factory-preset panels, and every generated and factory preset against the
+  hashes they were scored with. Then it checks that the plugin still renders what the
+  judge scored. It re-renders the first part's four candidates through its own DI, and every
   judge distance must be within 0.01 (log) of the inputs'. Fresh renders differ from
   the stored ones sample by sample (about 10% RMS on three parts tried), while the
   judge's distances agreed to three decimals.
@@ -102,6 +102,11 @@ taste for an amp or for drive.
   - `build` prints the key's SHA-256; it is committed before sitting 1, and `score`
     refuses any other key. `score` also re-checks every clip against the key.
   - The listener is given only the `listen/` folder.
+  - A build that fails leaves its folder, and `build` refuses a non-empty one. The
+    folder may be moved aside and the build rerun only if nothing from it reached the
+    listener.
+  - Every clip, the song and the candidates alike, is mono, so one loudness means one
+    loudness.
   - The person running the session neither reads the key nor gives feedback.
   - A trial that fails technically (no sound, wrong page) is presented once more.
   - No result is looked at between sittings, and there is no early stopping.
@@ -119,15 +124,20 @@ the controls, the practice part and each part's DI loudness are in
 - **Primary: the ear follows the song,** when both of these hold under both band sets,
   each at one-sided p < 0.05 on the sum of c over the 32 main trials, by 10^6 Monte
   Carlo draws (4^32 picks cannot be enumerated). A "can't tell" stays 0 in both.
-  - **It beats chance:** the null redraws each trial's pick uniformly from its four.
-  - **It beats a song-blind taste:** the null redraws each trial's pick from its four in
-    proportion to how often the listener picked that candidate's class when it was
-    offered, over the 32 trials. A class is the amp and whether a drive pedal is on
-    (six classes, 9 to 14 candidates each).
-  - Why both: the judge's best is a PR12 on 11 of 16 parts, and was validated only on
-    the PR12. In simulation, a listener who ignores the song and always picks a PR12
-    passes the chance test 98% of the time, and one who always picks a preset without
-    drive 83%. Neither passes the taste test more than 5% of the time (table below).
+  - **Drawn by part:** a part's two riff trials offer the same four presets, so they are
+    not independent. Each null draws per part: once, used for both trials, when the
+    listener picked the same preset on both (or answered one); two distinct presets
+    when the picks differ.
+  - **It beats chance:** each draw is uniform over the four.
+  - **It beats a song-blind taste:** each draw follows a taste fitted to the listener's
+    own 32 answers, without the song or the judge: a conditional logit over each
+    preset's amp (PR12, SW50R, AC20), whether a drive pedal is on, the amp's volume and
+    the highest drive level (the last two standardised over all 64 candidates; ridge
+    0.5).
+  - Why both: the judge's best is a PR12 on 11 of 16 parts, was validated only on the
+    PR12, and is the least-gain candidate on 8. A listener who ignores the song and
+    always picks a PR12, a preset without drive, or the least gain passes the chance
+    test most of the time, and the taste test rarely (table below).
 - **Inconclusive,** which overrides the primary:
   - more than 8 "can't tell" answers among the 32 main trials (25%), or
   - fewer than 3 of the 4 controls hit. A guessing listener reaches 3 by chance 5.1% of
@@ -141,18 +151,22 @@ the controls, the practice part and each part's DI loudness are in
   of the four's mean log d less G1's is -0.010 (recording) and -0.015 (union). The rule
   cannot tell an ear from chance, so it is reported, not deciding. For the same reason,
   on this material an ear that beats chance also beats what G1 would deliver.
-- **Power and size,** simulated from the stored distances and classes, 1,000 listeners
-  each, how often the primary passes:
+- **Power and size,** simulated with the scoring code's own functions from the stored
+  distances and features, 500 listeners each (2,000 draws per p), how often each test
+  passes under both band sets:
 
   | Listener | Chance test alone | Primary (chance and taste) |
   |---|---|---|
   | Picks at random | 0.04 | 0.01 |
-  | Ignores the song, always a PR12 | 0.98 | 0.03 |
-  | Ignores the song, always no drive | 0.83 | 0.05 |
-  | Picks the judge's best 20% of the time beyond chance | 0.36 | 0.14 |
-  | … 30% | 0.58 | 0.29 |
-  | … 40% | 0.80 | 0.50 |
-  | … 60% | 0.98 | 0.86 |
+  | Picks at random, the same preset on both riffs | 0.06 | 0.01 |
+  | Ignores the song, always a PR12 | 0.75 | 0.03 |
+  | Ignores the song, always no drive | 0.40 | 0.01 |
+  | Ignores the song, always the least gain | 1.00 | 0.00 |
+  | Ignores the song, leans to low gain | 0.61 | 0.01 |
+  | Picks the judge's best 20% of the time beyond chance | 0.34 | 0.18 |
+  | … 30% | 0.61 | 0.37 |
+  | … 40% | 0.81 | 0.60 |
+  | … 60% | 0.98 | 0.91 |
 
   The taste test costs power: a fail reads "not shown", never "the ear can't".
 - **Reported, not deciding,** each under both band sets, over all 32 trials, per riff,
@@ -201,8 +215,13 @@ it fails too, the ear or the judge is.
   full presets.
 - **Blinding is procedural:** the public inputs name every preset, so a listener who
   rendered them could match the clips. The listener here does not.
-- **The taste null is estimated from the same answers:** the class weights are the
-  listener's own pick rates. In simulation this kept a random picker under 5% (above).
+- **The taste null is estimated from the same answers,** and covers only the features
+  it is given. A taste the features miss, such as for brightness, is not controlled;
+  nor is one that changes between riffs. A song-swapped arm would control every
+  taste, but in simulation it had about half the power in the same time (0.33 against
+  0.59 at 40%), so this check models the tastes instead.
+- **Gain classes for controls** ignore the amps' input gain and the SW50R's input mode.
+  The chosen controls' clean answers have the input gain at 0 or cut.
 - **Which guitar is meant:** the cue names a track and how it plays, and every target
   is quieter than the rest of its mix (-1.1 to -8.1 dB). A listener who follows the
   wrong guitar loses power in the main trials; the controls are chosen so it cannot
@@ -213,9 +232,9 @@ it fails too, the ear or the judge is.
 ## Inputs, fixed before any trial
 
 `research/listening_check.py inputs` wrote `docs/listening-check-inputs.json`: the
-parts, cues, presets and their hashes, each candidate's taste class, each part's DI
+parts, cues, presets and their hashes, each candidate's taste class and features, each part's DI
 loudness, the G1 rule's chance pass rate, the controls, the practice part, the factory
 presets' hashes, and every candidate's judge distance. Its
 SHA-256 is
-`3cee9a075fbcfd2d94ce0a2efd2790e5d0c589b47752e641896bbd75a926ae98`. `build` refuses any
+`4baee144d0ac5ef1e562c94f6e67c914791d1c169f7fa147efc38967dd44bf2d`. `build` refuses any
 other file.

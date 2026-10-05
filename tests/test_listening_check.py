@@ -49,68 +49,99 @@ def test_the_page_shows_the_exact_answer_format():
 
 # --- statistics ---------------------------------------------------------------------
 
-def test_the_randomization_null_is_centred_and_sensitive():
+def _blocks(values, picks):
+    return [(v, [p] if p is not None else []) for v, p in zip(values, picks)]
+
+
+def test_the_chance_null_is_centred_and_sensitive():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     values = [[-0.3, 0.1, 0.1, 0.1]] * 12
-    assert L.randomization_p(values, [0] * 12, draws=20_000) < 0.01      # always the best
-    assert L.randomization_p(values, [1] * 12, draws=20_000) > 0.9
-    assert L.randomization_p(values, [None] * 12, draws=20_000) == 1.0   # 0 either way
+    assert L.block_p(_blocks(values, [0] * 12), draws=20_000) < 0.01      # always the best
+    assert L.block_p(_blocks(values, [1] * 12), draws=20_000) > 0.9
+    assert L.block_p(_blocks(values, [None] * 12), draws=20_000) == 1.0   # 0 either way
 
 
-def test_the_randomization_p_is_uniform_under_a_random_pick():
+def _consistent_random(rng, n_parts=16, sd=0.3):
+    """A song-blind picker who picks the same preset on both of a part's trials."""
+    blocks = []
+    for _ in range(n_parts):
+        logs = [rng.gauss(0, sd) for _ in range(4)]
+        mean = sum(logs) / 4
+        pick = rng.randrange(4)
+        blocks.append(([v - mean for v in logs], [pick, pick]))
+    return blocks
+
+
+def test_the_null_drawn_by_part_holds_its_size_for_a_consistent_picker():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     rng = random.Random(11)
-    ps = []
-    for _ in range(300):
-        values = []
-        for _ in range(32):
-            logs = [rng.gauss(0, 0.3) for _ in range(4)]
-            mean = sum(logs) / 4
-            values.append([v - mean for v in logs])
-        ps.append(L.randomization_p(values, [rng.randrange(4) for _ in values], draws=4000))
-    assert 0.01 <= sum(p < 0.05 for p in ps) / len(ps) <= 0.10
+    ps = [L.block_p(_consistent_random(rng), draws=3000) for _ in range(400)]
+    assert sum(p < 0.05 for p in ps) / len(ps) <= 0.08
     assert 0.4 <= sum(ps) / len(ps) <= 0.6
+
+
+def test_differing_picks_on_a_part_are_redrawn_as_two_distinct_candidates():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    # The best and another picked: two distinct draws reach that sum only when one of
+    # them is the best, which happens half the time (1/4 + 3/4 * 1/3). Picking the best
+    # twice is one draw used twice: a quarter of the time.
+    blocks = [([-0.3, 0.1, 0.1, 0.1], [0, 1])]
+    assert L.block_p(blocks, draws=40_000) == pytest.approx(0.5, abs=0.02)
+    assert L.block_p([([-0.3, 0.1, 0.1, 0.1], [0, 0])], draws=40_000) == \
+        pytest.approx(0.25, abs=0.02)
+
+
+def _features(n_parts, rng):
+    """Four candidates per part: one PR12 without drive (the judge's best), the rest
+    other amps with drive, at random volumes and drive levels."""
+    out = {}
+    for k in range(n_parts):
+        out[f"p{k}"] = {"G1": {"amp": "pr12", "drive_on": False, "drive": 0.0,
+                               "volume": rng.uniform(0.2, 0.5)}}
+        for g, amp in zip(("G2", "G3", "G4"), ("ac20", "sw50r", "ac20")):
+            out[f"p{k}"][g] = {"amp": amp, "drive_on": True, "drive": rng.uniform(0.4, 1),
+                               "volume": rng.uniform(0.3, 0.9)}
+    return out
 
 
 def test_a_song_blind_taste_does_not_pass_the_taste_null():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     rng = random.Random(4)
-    # The judge's best is always the one "pr12" candidate: a listener who just likes the
-    # PR12 beats the uniform null but not the taste null.
-    values, picks, classes = [], [], []
-    for _ in range(32):
+    parts = [f"p{k}" for k in range(16)]
+    feats = L.feature_rows(_features(16, rng), parts)
+    # The judge's best is always the clean PR12: a listener who just likes it beats the
+    # chance null but not the taste null.
+    blocks = []
+    for _ in parts:
         logs = [0.0] + [rng.uniform(0.2, 0.6) for _ in range(3)]
         mean = sum(logs) / 4
-        values.append([v - mean for v in logs])
-        classes.append(["pr12|no drive", "ac20|drive", "sw50r|no drive", "ac20|no drive"])
-        picks.append(0)
-    assert L.randomization_p(values, picks, draws=4000) < 0.01
-    assert L.taste_p(values, picks, classes, draws=4000) > 0.5
-    # Within a class the song can still show: two PR12s, the closer one always picked.
-    values2, classes2 = [], []
-    for _ in range(32):
-        logs = [0.0, 0.5, 0.3, 0.3]
-        values2.append([v - 0.275 for v in logs])
-        classes2.append(["pr12|no drive", "pr12|no drive", "ac20|drive", "sw50r|drive"])
-    assert L.taste_p(values2, [0] * 32, classes2, draws=4000) < 0.01
-    assert L.taste_p(values2, [None] * 32, classes2, draws=4000) == 1.0
+        blocks.append(([v - mean for v in logs], [0, 0]))
+    weights = L.taste_weights([feats[p] for p in parts], [b[1] for b in blocks])
+    assert L.block_p(blocks, draws=4000) < 0.01
+    assert L.block_p(blocks, weights, draws=4000) > 0.05
 
 
 def test_the_taste_null_holds_its_size_for_a_random_picker():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     rng = random.Random(9)
-    kinds = ["pr12|no drive", "pr12|drive", "ac20|no drive", "sw50r|drive"]
+    parts = [f"p{k}" for k in range(16)]
+    feats = L.feature_rows(_features(16, rng), parts)
     hits = 0
-    for _ in range(200):
-        values, classes = [], []
-        for _ in range(32):
-            logs = [rng.gauss(0, 0.3) for _ in range(4)]
-            mean = sum(logs) / 4
-            values.append([v - mean for v in logs])
-            classes.append(rng.sample(kinds, 4))
-        hits += L.taste_p(values, [rng.randrange(4) for _ in values], classes,
-                          draws=2000) < 0.05
-    assert hits / 200 <= 0.08
+    for _ in range(150):
+        blocks = _consistent_random(rng)
+        weights = L.taste_weights([feats[p] for p in parts], [b[1] for b in blocks])
+        hits += L.block_p(blocks, weights, draws=2000) < 0.05
+    assert hits / 150 <= 0.08
+
+
+def test_the_taste_fit_follows_a_feature_preference():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    rng = random.Random(2)
+    parts = [f"p{k}" for k in range(16)]
+    feats = L.feature_rows(_features(16, rng), parts)
+    weights = L.taste_weights([feats[p] for p in parts], [[0, 0]] * 16)
+    assert all(w[0] > 0.5 for w in weights)        # it learned the clean PR12 taste
+    assert all(abs(sum(w) - 1) < 1e-9 for w in weights)
 
 
 def test_the_binomial_tail_is_exact():
@@ -119,16 +150,17 @@ def test_the_binomial_tail_is_exact():
     assert L.binomial_p(1, 1) == 0.25
 
 
-def _row(logs, pick, riff="chords", g1=None, classes=("a", "b", "b", "c")):
-    logs = dict(zip("ABCD", logs))
-    return {"logs": logs, "pick": pick, "riff": riff, "classes": dict(zip("ABCD", classes)),
-            "g1": logs["A"] if g1 is None else g1, "template": 0.0}
+def _row(logs, pick, riff="chords", g1=None, classes=("a", "b", "b", "c"), part="p"):
+    logs = dict(zip(L.G, logs))
+    return {"part": part, "logs": logs, "pick": pick, "riff": riff,
+            "classes": dict(zip(L.G, classes)),
+            "g1": logs["G1"] if g1 is None else g1, "template": 0.0}
 
 
 def test_readings_aggregate_the_captured_share_and_deliver_g1_on_cant_tell(monkeypatch):
     pytest.importorskip("numpy", reason="needs the analysis extra")
     monkeypatch.setattr(L, "DRAWS", 2000)
-    rows = [_row([0.0, 0.4, 0.4, 0.4], "A"), _row([0.0, 0.4, 0.4, 0.4], None)]
+    rows = [_row([0.0, 0.4, 0.4, 0.4], "G1"), _row([0.0, 0.4, 0.4, 0.4], None)]
     got = L.readings(rows)
     # best - mean is -0.3 on each; the pick gains -0.3 once, "can't tell" 0.
     assert got["captured_share"] == pytest.approx(0.5)
@@ -138,7 +170,7 @@ def test_readings_aggregate_the_captured_share_and_deliver_g1_on_cant_tell(monke
     # A's class holds only A, so all of its gain is the class choice.
     assert got["sum_c_by_class"] == pytest.approx(-0.3)
     assert got["sum_c_within_class"] == pytest.approx(0.0)
-    split = L.readings([_row([0.0, 0.4, 0.4, 0.4], "A", classes=("a", "a", "b", "c"))])
+    split = L.readings([_row([0.0, 0.4, 0.4, 0.4], "G1", classes=("a", "a", "b", "c"))])
     assert split["sum_c_by_class"] == pytest.approx(-0.1)     # (0 + 0.4) / 2 - 0.3
     assert split["sum_c_within_class"] == pytest.approx(-0.2)
     assert L.readings([]) is None
@@ -192,6 +224,23 @@ def test_the_trial_plan_holds_over_many_shuffles():
                     assert i - orig >= 3, seed                   # two trials between
         assert {c["part"] for c in controls} == {
             t["part"] for s in (1, 2) for t in sittings[s] if t["kind"] == "control"}
+
+
+def test_a_part_under_test_that_is_also_a_control_keeps_its_own_candidates():
+    data = {"parts": ["a", "b"], "presets": {p: {g: f"~/{p}/{g}.xml" for g in L.G}
+                                             for p in ("a", "b")},
+            "controls": [{"part": "a", "candidates": [f"pr12:factory:x{i}" for i in range(4)]}],
+            "practice": {"part": "c", "candidates": [f"ac20:factory:y{i}" for i in range(4)]}}
+    candidates = L.trial_candidates(data)
+    sittings = L.plan_trials(["a", "b"] * 8, [{"part": "a"}] * 4, {"part": "c"},
+                             random.Random(1))
+    for trials in sittings.values():
+        for t in trials:
+            labels = set(candidates[(L.group_of(t), t["part"])])
+            if t["kind"] in ("main", "repeat"):
+                assert labels == set(L.G)
+            elif t["kind"] == "control":
+                assert labels == {"C0", "C1", "C2", "C3"}
 
 
 # --- controls and practice ----------------------------------------------------------
@@ -283,8 +332,11 @@ def _scoring_setup(tmp_path, picks_best: bool):
                          "template+R": 2.2} for b in L.BAND_SETS} for p in parts}
     tastes = {p: {"G1": "pr12|drive", "G2": "pr12|no drive", "G3": "ac20|drive",
                   "G4": "sw50r|no drive"} for p in parts}
+    features = {p: {g: {"amp": c.split("|")[0], "drive_on": c.endswith("|drive"),
+                        "drive": 0.8 if c.endswith("|drive") else 0.0, "volume": 0.4}
+                    for g, c in tastes[p].items()} for p in parts}
     inputs = {"parts": parts, "distances": distances, "g1_rule_chance_pass": 0.99,
-              "taste_classes": tastes,
+              "taste_classes": tastes, "taste_features": features,
               "di_lufs": {p: -30.0 + i for i, p in enumerate(parts)}, "riff_lufs": -23.7}
     inputs_path = tmp_path / "inputs.json"
     inputs_path.write_text(json.dumps(inputs))

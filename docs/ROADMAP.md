@@ -31,8 +31,9 @@ lives in the linked documents. Last updated 2026-10-05.
 1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
    about 25 minutes, declared first). The page is in `generate` (step 5b): four presets
    through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
-   Does a real ear, listening through another performance, pick better than chance? It
-   decides whether the page is the main path or an option.
+   Does a real ear, listening through another performance, follow the song: beat
+   chance, and beat a song-blind taste for an amp, drive or gain? It decides whether
+   the page is the main path or an option.
 2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
    experiment 4: the judge as teacher). Gate, as declared there: median regret at most
    0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the
