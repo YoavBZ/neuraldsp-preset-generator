@@ -28,15 +28,25 @@ lives in the linked documents. Last updated 2026-10-05.
 
 ## Next, in order
 
-1. **Listening check of the page** (about 15 minutes, declared first). The page is in
-   `generate` (step 5b): four presets through two shipped CC-BY riffs beside the song,
-   then a refine loop through `edit`. Does a real ear, listening through another
-   performance, pick closer than the first choice? It decides whether the page is the
-   main path or an option.
+1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
+   about 25 minutes, declared first). The page is in `generate` (step 5b): four presets
+   through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
+   Does a real ear, listening through another performance, pick better than chance? It
+   decides whether the page is the main path or an option.
 2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
    experiment 4: the judge as teacher). Gate, as declared there: median regret at most
    0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the
    judge. If it passes, score against real songs, not amp tracks.
+   - **Neural networks are among the candidates.** Pretrained effect encoders (AFx-Rep,
+     about 1.2 GB to download) and a small CNN's statistics sit beside the hand-made
+     features, with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are
+     floors only: once the notes differ they score near chance, and they discard the
+     input level that carries the drive.
+   - **If no pretrained row passes,** the next candidate is our own contrastive encoder
+     ([round 1](research/round-1-song-only-matching.md), approach 3c). It would be
+     trained on plugin renders of many CC BY DIs, with the same settings through
+     different playing as positives, so it learns the invariance general models lack.
+     Cost: 2–3 weeks and 16k–100k renders per amp.
 3. **The derived-DI route** (experiment 5): does the judge's ranking survive an
    imperfect DI? Only if it does is DI recovery worth tracking.
 4. **The judge's coverage.**
