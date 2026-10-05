@@ -278,13 +278,14 @@ def main():
             folds = recognised[v][1]
             for r in RECOGNISERS:
                 for bands in BAND_SETS:
-                    rows, chosen, beats_shuffled, beats_constant = [], [], [], []
+                    rows, chosen, beats_shuffled, beats_constant, mine = [], [], [], [], {}
                     for p in scored_parts:
                         c = picks[v][p][r]
                         x = lr(p, c, bands)
                         if x is None:
                             continue
                         rows.append((band_of[p], x))
+                        mine[p] = x
                         chosen.append(c)
                         others = [picked[r] for o, picked in folds[fold_of[band_of[p]]].items()
                                   if meta[o]["band"] != band_of[p]]
@@ -292,7 +293,7 @@ def main():
                         beats_shuffled.append(1.0 if x < shuffled else 0.5 if x == shuffled
                                               else 0.0)
                         beats_constant.append(x < lr(p, constant[(p, bands)], bands))
-                    per_part[f"{v}/{r}/{bands}"] = dict(zip(scored_parts, [x for _, x in rows]))
+                    per_part[f"{v}/{r}/{bands}"] = mine
                     top = max(collections.Counter(chosen).values()) / len(chosen)
                     readings[f"{v}/{r}/{bands}"] = {
                         "parts": len(rows), "band_median_vs_templateR": band_median(rows),
@@ -306,7 +307,9 @@ def main():
                 for b in BAND_SETS:
                     diff = band_medians([(band_of[p], per_part[f"{v}/{r}/{b}"][p]
                                           - per_part[f"baseline/{r}/{b}"][p])
-                                         for p in scored_parts])
+                                         for p in scored_parts
+                                         if p in per_part[f"{v}/{r}/{b}"]
+                                         and p in per_part[f"baseline/{r}/{b}"]])
                     ps[b][f"{v}/{r}"] = sign_flip_p(list(diff.values()))
 
                 def holds(b):
