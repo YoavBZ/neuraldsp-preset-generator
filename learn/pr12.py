@@ -191,7 +191,8 @@ def _fmt(v: object) -> str:
         return "true" if v else "false"
     if isinstance(v, int):
         return str(v)
-    return f"{float(v):.6g}"
+    # Fixed point: the plugin's state parser is not known to read exponents.
+    return f"{float(v):.6f}"
 
 
 def render_command(s: Dict[str, object], template: Dict[str, str],
@@ -211,17 +212,34 @@ def render_command(s: Dict[str, object], template: Dict[str, str],
     return {"selectAmp": PR12_INDEX, "edits": edits}
 
 
+# After loudness normalisation the left mic's level is only audible relative to the
+# right mic's, so the label is their difference (masked when the right cab is off), and
+# a prediction renders the left mic at 0 dB.
+MIC_DIFF = (-24.0, 24.0)
+BINARY_GATE = {"compressor/compressorRelease": "compressor/compressorActive"}
+
+
 def encode(s: Dict[str, object], effective_drive: float):
-    """(continuous[0..1], continuous mask, binary, categorical, categorical mask)."""
+    """(continuous[0..1], continuous mask, binary, binary mask, categorical, categorical mask)."""
     cont, mask = [], []
     for name, lo, hi, warp, gate in CONTINUOUS:
-        v = effective_drive if name == "parameters/inputGain" else float(s[name])
+        on = gate is None or bool(s[gate])
+        if name == "parameters/inputGain":
+            v = effective_drive
+        elif name == "cabParameters/leftCabMicLevel":
+            v, on = 0.0, False
+        elif name == "cabParameters/rightCabMicLevel":
+            lo, hi = MIC_DIFF
+            v = float(s[name]) - float(s["cabParameters/leftCabMicLevel"])
+        else:
+            v = float(s[name])
         cont.append(to_unit(min(hi, max(lo, v)), lo, hi, warp))
-        mask.append(1.0 if gate is None or s[gate] else 0.0)
+        mask.append(1.0 if on else 0.0)
     binary = [1.0 if s[name] else 0.0 for name in BINARY]
+    bmask = [1.0 if name not in BINARY_GATE or s[BINARY_GATE[name]] else 0.0 for name in BINARY]
     cat = [int(s[name]) for name, _, _ in CATEGORICAL]
     cmask = [1.0 if gate is None or s[gate] else 0.0 for _, _, gate in CATEGORICAL]
-    return cont, mask, binary, cat, cmask
+    return cont, mask, binary, bmask, cat, cmask
 
 
 def decode(cont, binary_p, cat_p) -> Tuple[Dict[str, object], float]:
@@ -229,6 +247,12 @@ def decode(cont, binary_p, cat_p) -> Tuple[Dict[str, object], float]:
     s: Dict[str, object] = {}
     drive = 0.0
     for (name, lo, hi, warp, _), u in zip(CONTINUOUS, cont):
+        if name == "cabParameters/leftCabMicLevel":
+            s[name] = 0.0
+            continue
+        if name == "cabParameters/rightCabMicLevel":
+            s[name] = min(hi, max(lo, from_unit(float(u), *MIC_DIFF, "lin")))
+            continue
         v = from_unit(float(u), lo, hi, warp)
         if name == "parameters/inputGain":
             drive = v

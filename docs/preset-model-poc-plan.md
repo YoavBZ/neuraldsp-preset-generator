@@ -69,3 +69,29 @@ Also reported, not deciding:
 - The judge is validated for clean-to-crunch PR12 differences, which is this material.
 - Model choices (architecture, augmentation) are fixed here. If the first run fails,
   any change is logged as a second look, and its result is reported as such.
+
+## Amendment, 2026-10-06, before any model was trained
+
+An independent review of the code, run while the renders ran, confirmed:
+- the folds match K3's draw;
+- there is no leak from held-out, set-1 or test-band audio;
+- the labels round-trip;
+- the scoring reproduces K3's recorded rows exactly.
+
+It found these, fixed before training:
+
+- **Noise clips.** About 0.25% of renders were numerical noise: a pedal flipped on with
+  its Level at 0, or the volume near 0. Clips whose peak-normalisation gain exceeds
+  60 dB are dropped. So are DI windows under −40 LUFS, and the few settings written with
+  an exponent, which the plugin may not have parsed. Values are now written in fixed
+  point.
+- **Mic levels.** After loudness normalisation only the left/right mic-level difference
+  is audible. The label is now that difference, and a prediction renders the left mic at
+  0 dB. The compressor's release switch is masked when the compressor is off.
+- **Scoring.**
+  - The shuffled control draws three distinct other bands.
+  - A part the judge refuses for the model counts as a loss.
+  - The band p-value is K3's own `band_stat`: two-sided, over band medians.
+
+Two corrections to the text above: the DI pool has 3,509 windows (not 3,936), and the
+factory share of the sampler jitters 34 PR12 factory presets (not K3's clean menu of 21).
