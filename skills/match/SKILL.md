@@ -48,8 +48,12 @@ format, mp3 included:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
-  --regime separated_stem --text
+  --regime mix --text
 ```
+
+`mix` is a song; use `separated_stem` or `isolated_stem` for a stem (step 1's regimes
+say which). Always pass `--regime`: the default, `probe`, skips the check that the
+window holds a guitar.
 
 **Then check the window actually holds the part, before spending anything on
 it.** `--excerpt` ranks by broadband activity, which on a dense master ranks
@@ -61,7 +65,7 @@ twenty seconds buys a careful fit to the wrong instrument, and every score in th
 report will look normal. Re-measure with `--excerpt-start SECONDS` when you see
 any of:
 
-- `excerpt_policy: activity_tie` — several windows scored the same and this is
+- `excerpt_policy: activity_tie` (`activity tie` in `--text` output) — several windows scored the same and this is
   the middle one of them, so confirm it holds the part
 - a clamped or ignored `--excerpt-start` — the window you named was not the
   window measured
@@ -94,22 +98,26 @@ switched the reverb on as often for targets without one as with one. Only a
 `probe` reference, rendered through the noise-burst probe, sets it. So a
 template with the rack reverb on keeps it even against a dry recording: use a
 template, or an edited copy of one, with `reverb/reverbActive` set the way the
-evidence says, or try both with `--enumerate reverb/reverbActive`, and add
-`--process-policy fresh` whenever it is on (below).
+evidence says, and add `--process-policy fresh` whenever it is on (below). Don't
+try both with `--enumerate`: an enumerated variant's newly enabled controls are
+never searched, they keep the template's values (the ground-truth audit's D-M17).
 
 ### No response atlas
 
 Do not build or start from a response atlas (one amp's stored responses at
-sampled settings). On SW50R a search started from the nearest atlas entry ended
-further from played-guitar targets than one started from neutral settings (0.548
-against 0.447), and an atlas built from the user's own DI ended no closer (0.479
-against 0.480) after costing 128 renders to build. The research tools are
+sampled settings). On SW50R, by the since-superseded `unpaired-v1` objective, a
+search started from the nearest atlas entry ended further from played-guitar targets
+than one started from neutral settings (0.548 against 0.447), and an atlas built from
+the user's own DI ended no closer (0.479 against 0.480) after costing 128 renders to
+build. The research tools are
 described in `docs/tone-matching-plan.md`.
 
 Do not enumerate switches or selectors casually. Enumeration divides the budget
-among complete inner searches, and no accuracy benefit from it has been shown on
-the real backend. If trying a discrete control is material, run
-`--list-enumerable`, explain the budget product, and name the uncertainty.
+among complete inner searches, no accuracy benefit from it has been shown on the
+real backend, and the controls a variant switches on are never searched: they keep
+the template's values (audit D-M17; enumerating `selectedAmp` leaves the other amps'
+amp and EQ unsearched). If trying a discrete control is material, set it in the
+template and run each setting as its own match.
 
 ## 3. Choose the renderer and probe
 
@@ -126,9 +134,15 @@ and Tone King do not need it; Tone King's variation is per-render noise, which
 the replicated shortlist scoring already handles.
 
 **Pass it too when Morgan's tremolo or rack reverb is on** — `tremolo/tremoloActive`
-or `reverb/reverbActive` true in the template, or switched on by `--enumerate`
-or, for a `probe` reference, by the inversion (the report lists what it
-calculated; if it turned one on, rerun with fresh). Not the amp's own spring reverb: its carry-over is a
+or `reverb/reverbActive` true in the template, switched on by `--enumerate`, or
+calculated on by the inversion. The report lists what it calculated; if it turned
+one on, rerun with fresh. The inversion can switch the tremolo on for any
+recording, not only a probe: it read ordinary playing as a tremolo on about half
+the development amp tracks (audit D-M7). Unless research says the part has one,
+treat a calculated tremolo as a mistake: write the preset from a copy of the chosen
+spec with `tremolo/tremoloActive` off, leaving the run's own spec untouched for step 6,
+and tell the user that every candidate was searched, scored and auditioned with the
+tremolo on. Not the amp's own spring reverb: its carry-over is a
 short tail, at most 0.15 in the same measurements. Both carry state from one
 render to the next on a reused instance, likely a modulation oscillator, so the
 same settings come out differently each time and the search ranks noise:
@@ -175,19 +189,13 @@ user to record a DI to make up for it. `--search-without-di` runs the old
 noise-probe search, with its guitar check and level trim, for benchmarks; do not
 offer its answer as better than the starting preset.
 
-When the user does supply a DI, pass it as `--probe-di`. Only the DI of the
-very take recorded has been shown to beat the starting preset; a DI of another
-performance, the user's own included, is unproven against it (other players'
-clips ended level with it above), so present that answer beside the starting
-preset, not as an improvement. Against real amp
-recordings (14 parts on each of SW50R and Tone King's rhythm channel,
-`docs/tone-matching-plan.md`), a search through the DI of the very take the amp
-recorded ended about half as far as one through the DI of another session (13
-and 14 of 14 closer), and the other session's DI still beat no DI on 11 and 13 of
-14. On 43 more parts from 13 other bands the same held on SW50R (43 and 39 of
-43) and on Tone King (43 and 35 of 43, with different pairings). A user's own DI
-of the part is a different performance from the recording, so it lies somewhere
-between the first two; it was not measured.
+When the user does supply a DI, pass it as `--probe-di`, and present the answer
+beside the starting preset, not as an improvement on it. With the DI of the very
+take recorded, the search ended closer than its start on nearly every development
+part, but by the retired score. Under the judge that result is unconfirmed: the
+positive control of the re-check above, exactly this search, was closer in most
+bands but not significantly. A DI of another performance, the user's own included,
+is less proven still.
 
 For `paired_di`, the exact DI is mandatory, and after the search the tool trims
 the output gain to the reamp's loudness when the reference is measured whole
@@ -213,7 +221,7 @@ asks for a quicker exploratory pass:
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
   --template TEMPLATE.xml \
-  --reference REFERENCE.wav --reference-mode separated_stem \
+  --reference REFERENCE.wav --reference-mode mix \
   --probe-di PROBE.wav --loss-profile unpaired-v3 \
   --pack morgan --amp sw50r --renderer synthetic \
   --budget 300 --shortlist 3 --out-dir RUN_DIR
@@ -240,7 +248,11 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
   because a floor measured from repeated seed renders on a non-reproducible
   backend is evidence and a single-render floor is the default;
 - every shortlisted score, worst ±6 dB score, named objective vector, and
-  plain-language differences between candidates — quote
+  plain-language differences between candidates. These scores are the search's own
+  objective (`unpaired-v3`, or `paired-v2` on a paired run). The judge replaced the
+  v3 objective as the measure of closeness
+  ([measuring-closeness.md](../../docs/measuring-closeness.md)), and no search's own
+  objective is evidence of closeness: report them as what the search optimised. Quote
   `reference_level_score`, not `score`, and check `input_level_observations` for
   the level you are quoting, since a score that averages three renders and a score
   from one are different kinds of number. The run says outright when two candidates
@@ -249,8 +261,9 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
 - every caveat, especially low harmonic confidence,
   separation artefacts, absent measured EQ data, and unverified pack paths.
 
-Lower distance is evidence, not a listening verdict. Ask the user to audition the
-shortlist, particularly when candidates trade timbre against dynamics or ambience.
+A lower score says the search's objective preferred a candidate, not that it is
+closer. The blind listen in step 6 is the verdict, so ask the user to audition the
+shortlist.
 
 ## 5. Preview, then write
 

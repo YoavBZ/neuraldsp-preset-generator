@@ -926,7 +926,9 @@ def reverb_settings(fingerprint, pack_id: str = "morgan",
                 f"the decay the fingerprint measures is mostly the notes' own "
                 f"sustain, and it switched the rack reverb on as often without one "
                 f"as with one. Choose it from what the recording is known to use, "
-                f"or try both with --enumerate reverb/reverbActive"
+                f"and set reverb/reverbActive that way in the template "
+                f"(--enumerate would switch it without searching the reverb's "
+                f"own controls)"
             ],
             detail={"rt60_measured_s": None if rt60 is None else round(float(rt60), 3),
                     "rt60_confidence": round(confidence, 3)},
@@ -1120,8 +1122,9 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
                     f"measurement separates the DI's own rhythm, or the template's "
                     f"tremolo, from a tremolo the reference needs at that rate, so "
                     f"the tremolo is left as the template has it — if the reference "
-                    f"really does have one at this rate, enumerate the tremolo switch "
-                    f"(--enumerate tremolo/tremoloActive in match_preset.py)."
+                    f"really does have one at this rate, turn tremolo/tremoloActive on "
+                    f"in the template (--enumerate would switch it without searching "
+                    f"its rate and depth)."
                 ],
                 detail={"am_confidence": round(confidence, 3),
                         "am_indistinguishable_from": "the current render"},

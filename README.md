@@ -357,8 +357,9 @@ clone with no dependencies at all, and a test enforces it.
 
 ## Optional: match a recording
 
-With `[match]` as well, the loop closes: given a recording you like, a DI of
-that performance and a preset to start from, `match_preset.py` measures the
+With `[match]` as well, and a DI (ideally of the very performance a recording
+captured), a search becomes possible: given the recording, the DI and a preset to
+start from, `match_preset.py` measures the
 reference, calculates what can be calculated, searches the rest on a render
 budget you set, and writes a spec plus a report.
 
@@ -366,7 +367,7 @@ budget you set, and writes a spec plus a report.
 pip install -e '.[analysis,match]'
 python scripts/match_preset.py \
   --template samples/Example_Clean_PR12.xml \
-  --reference song-excerpt.wav --reference-mode separated_stem \
+  --reference song-excerpt.wav --reference-mode mix \
   --probe-di performance-di.wav --renderer swift \
   --budget 300 --out-dir runs/hotel-california-001
 ```
@@ -379,8 +380,10 @@ with its replacement](docs/no-di-rule-under-the-judge-results.md) was inconclusi
 so they are unconfirmed.
 
 It writes `match-1.json` — a spec `apply_spec.py` turns into a preset — plus a
-self-contained `report.html` and compact `summary.json`. **Read the caveats before
-trusting the number.** The match skill reads the summary, shows the shortlist and
+self-contained `report.html` and compact `summary.json`. Its scores are the
+search's own objective, retired as a measure of closeness
+([measuring-closeness.md](docs/measuring-closeness.md)); a blind listen decides
+which candidate is closer. The match skill reads the summary, shows the shortlist and
 dry-run change list, and waits for approval before writing.
 
 `--renderer swift` drives the installed Audio Unit on macOS. It reports the exact

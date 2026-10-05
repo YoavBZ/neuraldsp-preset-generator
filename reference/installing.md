@@ -45,6 +45,10 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
   --out /Library/Audio/Presets/Neural\ DSP/Morgan\ Amps\ Suite/User/"Hotel California Lead.xml"
 ```
 
+That is the generate flow, which makes the result portable. An edit or a match
+keeps the template's IRs: leave `--strip-irs` off unless the user asks for
+portability (the edit skill says why).
+
 The file name is what shows up in the plugin's preset browser, so name it the
 way the user would look for it. The preset's internal `name` field (set from
 the spec) and the file name should match.

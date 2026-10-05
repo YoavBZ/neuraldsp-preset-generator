@@ -92,7 +92,9 @@ preset.
 ## When the user says…
 
 The graphic EQ bands are 65, 125, 250, 500 Hz, 1, 2, 4, 8, 16 kHz — `EQBand1`
-through `EQBand9`, in dB. Naming the frequency beats naming the band number.
+through `EQBand9` below, in dB. Each amp has its own EQ, so the real keys carry the
+live amp's prefix: `pr12EQBand2`, `sw50rEQHpf`, `ac20EQLpf`. Naming the frequency
+beats naming the band number.
 
 - **"more reverb"** → `reverb/reverbMix` up 10–15 points. For a spring-tank
   character use the amp's own reverb knob instead. If it gets washy, that's what
@@ -121,8 +123,8 @@ through `EQBand9`, in dB. Naming the frequency beats naming the band number.
 
 ## Adjust for the guitar
 
-The source doc was written around a Les Paul, which is a useful worked example
-but not the universal case.
+The original configuration reference (since retired) was written around a Les Paul,
+which is a useful worked example but not the universal case.
 
 - **Humbuckers** (Les Paul, SG, 335): reduce low end before the post effects.
   `EQHpf` 80–90 Hz. Keep amp bass moderate on PR12 and SW50R or it goes muddy.
@@ -171,8 +173,10 @@ never ambiguous, and the measurement confirms it.)
 
 ## Mapped tones
 
-Add an entry whenever you research a tone — future runs benefit. Record the amp,
-the recipes you stacked, what you changed and why, and the source link.
+Record what you learn in the `learned_notes` file that `show.py` reports, not here:
+it lives under the data root, and this file is replaced on every plugin update.
+Record the amp, the recipes you stacked, what you changed and why, and the source
+link. The entries below are worked examples that ship with the plugin.
 
 ```
 - "Wish You Were Here" intro (Gilmour):

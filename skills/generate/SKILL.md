@@ -31,8 +31,9 @@ The user speaks in plain language, not flags. Extract:
   assuming — more than one pack exists. If there is genuinely nothing to
   detect from, ask rather than picking.
 
-Ask at most **one** clarifying question, and only if the answer would change the
-amp choice. Otherwise pick sensible defaults and say what you assumed.
+Ask at most **one** clarifying question about the tone, and only if the answer
+would change the amp choice. Otherwise pick sensible defaults and say what you
+assumed. (Asking where in a full song the guitar plays, step 2, is separate.)
 
 ### Which pack, when you have to ask
 
@@ -48,8 +49,12 @@ the differences that decide it are:
 
 Two traps worth naming out loud when you present the choice:
 
-- **Headroom is a topology decision, not a knob.** A part that never breaks up
-  wants SW50R or the Tone King Rhythm channel; PR12 is 12 watts and will grit up.
+- **Headroom comes mostly from the amp, not a knob.** A part that never breaks up
+  wants headroom: SW50R, the Tone King Rhythm channel, or PR12 kept well below the
+  point where it breaks up, which comes early on a 12-watt amp. More than one amp
+  usually works: on 25 mostly clean recordings, PR12 and SW50R each suited most, and
+  AC20 fewer though still more than half
+  ([quick checks](../../docs/quick-checks-results.md); provisional).
 - **A pack with no template is not a choice you can make for the user.** If Tone
   King is the better voice but they own no Tone King preset, say that — it is the
   deciding constraint, not a detail.
@@ -64,8 +69,12 @@ When the user supplies audio, measure it to describe the recording:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
-  --regime separated_stem --text
+  --regime mix --text
 ```
+
+`mix` is a song; use `separated_stem` or `isolated_stem` for a stem (classified
+below). Always pass `--regime`: the default, `probe`, skips the check that the
+window holds a guitar.
 
 Any common audio file works — mp3 included, no conversion step needed.
 

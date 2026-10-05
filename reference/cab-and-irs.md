@@ -2,6 +2,10 @@
 
 ## Two cab slots
 
+The keys, ranges and indices on this page are Morgan Amps Suite's. Tone King's cabs
+are `cab1` and `cab2`, with their own keys, pan scale and mic list (its custom IR is
+a different index): read its manifest before writing them.
+
 The cab section has a `left*` and a `right*` slot, each with its own mic,
 placement, level and phase, plus an optional room mic.
 
@@ -53,7 +57,8 @@ A preset that uses a third-party IR stores it as an **absolute path** that only
 exists on the machine it was saved on. Cloning such a preset carries that dead
 path — and the original author's home directory — into your output.
 
-**Pass `--strip-irs` unless you know the template is IR-free.** It clears the
+**When generating, pass `--strip-irs` unless you know the template is IR-free.** An
+edit or a match keeps the template's IRs, since stripping one changes the sound. It clears the
 paths so the cab falls back to the internal mics, making the preset portable
 on any machine. Verified to produce byte-identical encoding to an IR-free
 preset's empty field.
