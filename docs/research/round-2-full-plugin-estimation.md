@@ -11,7 +11,7 @@
 - *one adversarial critic per track, who opened every cited source and checked feasibility and the measured failures;*
 - *a synthesis.*
 
-*Each approach carries the experiment and gate that would decide it.*
+*Nothing here has been run yet. Each approach carries the experiment and gate that would decide it.*
 
 > **Status, 2026-10-05.** Not run, apart from the silent-render guard. Round 3 ([round-3-supervised-preset-model.md](round-3-supervised-preset-model.md)) and the parked [supervised-model-plan.md](../supervised-model-plan.md) took its question further.
 
@@ -100,7 +100,7 @@ Expect roughly 10–15 independent quantities per amp or channel to be measurabl
 - What survives: a coarse class probably. The split between guitar output and amp gain does not.
 - Evidence:
   - PR12's 5% distortion point moves from about 66% to about 28% of the knob when the input is tripled (`packs/morgan/tone.md`).
-  - Whole-excerpt features pick the right one of 7 drive steps 22–27% of the time across performances (chance 14.3%). The single-note harmonic row is at chance (14.9% SW50R, 13.5% Tone King; `docs/harmonic-study-*.json`).
+  - Whole-excerpt features pick the right one of 7 drive steps 22–27% of the time across performances (chance 14.3%). The single-note harmonic row is at chance (14.9% SW50R, 13.5% Tone King; `docs/data/matching/harmonic-study-*.json`).
 - Measured by:
   - S1: whether Volume and input gain move in step with playing level (correlation of 0.9 or more means only the joint number is recoverable);
   - S4;

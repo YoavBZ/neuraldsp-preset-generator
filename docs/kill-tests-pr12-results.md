@@ -81,6 +81,9 @@ of 28 parts in 11 bands.
   - The SW50R verdict stays "not passed".
   - On the validated clean range, 1-NN's picks carry no part-specific information and
     the LDA variants only a small, non-significant edge.
-  - Whether to proceed was the user's decision. The check of whether the judge can tell
-    Morgan's amps apart has since finished ([amp-identifiability-results.md](amp-identifiability-results.md));
-    model work is parked ([ROADMAP.md](ROADMAP.md)).
+  - Whether to proceed is the user's decision. A check of whether the judge can tell
+    Morgan's amps apart is still running.
+
+> **Status, 2026-10-05.** The amp check has finished
+> ([amp-identifiability-results.md](amp-identifiability-results.md)), and model work is
+> parked ([ROADMAP.md](ROADMAP.md)).

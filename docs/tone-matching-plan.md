@@ -2,8 +2,8 @@
 
 > **Status, 2026-10-05.** A historical record of the matching engine (M0–M7) and the
 > song-only benchmarks up to 2026-10-03. It is no longer the plan: the current plan is
-> [ROADMAP.md](ROADMAP.md). Distances here are the v1–v3 search objectives, which were
-> retired as measures of closeness on 2026-10-03
+> [ROADMAP.md](ROADMAP.md). Distances here are the v1–v3 search objectives, superseded
+> as measures of closeness by the judge on 2026-10-03
 > ([measuring-closeness.md](measuring-closeness.md)). Conclusions that rest on them,
 > including the no-DI and real-guitar-probe sections, are unconfirmed.
 

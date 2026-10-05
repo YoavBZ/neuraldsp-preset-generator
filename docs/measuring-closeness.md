@@ -288,7 +288,7 @@ other players' DIs.
 - **Stage 0b listening validation is done.** The judge is validated for clear
   differences between clean-to-crunch PR12 renders
   ([listening-validation-results.md](listening-validation-results.md)).
-- **Data is done:** crop rule 2 and bleed flags
+- **Data is done:** crop rule 2 and bleed measurements
   ([validation-datasets.md](validation-datasets.md)), and one measured lag per part
   (`docs/validation-lags.json`).
 - **Not yet run:** the hiss and matched-drive listening checks, and calibration on high

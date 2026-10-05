@@ -9,21 +9,27 @@ was declared, what was measured, and the research behind it.
 - **Each experiment is a pair, plus its data.** `<topic>-plan.md` is written and
   committed before anything is computed; `<topic>-results.md` records what came out;
   `<topic>.json` is the script's output. Changes to a plan after it is declared are
-  added as dated amendments, never silent edits.
+  added as dated amendments, never silent edits. The only edits made in place are
+  path updates when files move.
 - **Declarations are frozen.**
-  - [heldout-listening-sw50r.md](heldout-listening-sw50r.md) and
-    [listening-validation-plan.md](listening-validation-plan.md) are pinned by hash in
-    code and stay byte-identical.
-  - Other plans keep their text and gain only dated status notes at the top.
-- **Some files are inputs that code reads, so they keep their paths:**
-  - `validation-datasets.json`, `validation-sources-2.json`, `validation-lags.json`,
-    `validation-crop-rules.json`;
+  - [heldout-listening-sw50r.md](heldout-listening-sw50r.md) is pinned by hash in
+    code and stays byte-identical.
+  - [listening-validation-plan.md](listening-validation-plan.md) is read by code,
+    which requires the single trial hash in it, so it isn't edited either.
+  - Other plans keep their text and gain only dated status notes at the top, or a
+    note in this index.
+- **Some files keep their paths because code reads them:**
+  - `validation-datasets.json`, `validation-sources-2.json`, `validation-lags.json`;
   - `amp-reach.json` and `reach-sets.json` (the shortlist measurement);
-  - `toneking-control-grid.json` (the Tone King manifest's evidence);
-  - the listening-validation files;
+  - `kill-tests-judge-lags.json` (the kill tests' `--lags` input);
   - the test fixtures `m6-paired-target.json`, `match-pipeline-set2-sw50r.json`,
     `rt60-synthetic-evidence.json` and `topology-*.json`.
-- **When an experiment closes** and nothing reads its outputs, they move to
+- **Others keep theirs because frozen or shipped files cite them:**
+  - `recordings-benchmark-sw50r.json`, which the frozen held-out declaration cites
+    (its Tone King sibling moved);
+  - `toneking-control-grid.json`, cited by the Tone King manifest;
+  - `validation-crop-rules.json` and the listening-validation results files.
+- **When an experiment closes** and nothing reads or cites its outputs, they move to
   `data/<workstream>/`.
 - **`research/`** holds the literature research rounds, oldest first.
 - **Crop rules:** rule 1 (the loudest 10 s) cut the crops every experiment through the
@@ -38,8 +44,8 @@ was declared, what was measured, and the research behind it.
   does, measured. Current, and the reference the packs cite.
 
 **Measuring closeness: the judge** (current)
-- [measuring-closeness.md](measuring-closeness.md): what the judge is, and why the v1–v3
-  scores were retired.
+- [measuring-closeness.md](measuring-closeness.md): what the judge is, and why it
+  superseded the v1–v3 search objectives as the measure of closeness.
 - [listening-validation-plan.md](listening-validation-plan.md) →
   [results](listening-validation-results.md): validated for clear clean-to-crunch PR12
   differences.
@@ -71,18 +77,18 @@ was declared, what was measured, and the research behind it.
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
   run.
 - [listening-objective-scoring.md](listening-objective-scoring.md): predates the judge.
-- [heldout-listening-sw50r.md](heldout-listening-sw50r.md): done, inconclusive (5 of 6
-  parts ran).
+- [heldout-listening-sw50r.md](heldout-listening-sw50r.md): done, inconclusive. Five
+  parts ran, where six were needed.
 - [prospective-match-validation.md](prospective-match-validation.md): never run. It
   needs a DI the user records, which the product no longer asks for.
 
 **The matching engine and its benchmarks** (historical)
-- [tone-matching-plan.md](tone-matching-plan.md): M0–M7 and the set-2 benchmarks, with
-  retired scores.
+- [tone-matching-plan.md](tone-matching-plan.md): M0–M7 and the set-2 benchmarks, scored
+  with the superseded objectives.
 - [library-arm-analysis-plan.md](library-arm-analysis-plan.md): scored with v3, so
   unconfirmed.
 - [ground-truth-audit-2026-10-03.md](ground-truth-audit-2026-10-03.md): the audit of
-  every result to that date. Its open defects are in the roadmap.
+  every result to that date. The roadmap lists which of its defects are still open.
 - `data/matching/`: M-series, Tone King, atlas, search-signal, RT60 and harmonic
   outputs.
 - `data/set2/`: the second validation set's benchmark, pipeline, neutral-start and

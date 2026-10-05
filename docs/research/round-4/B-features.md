@@ -7,7 +7,7 @@ Research round, 2026-10-05. Web sources were opened and read, and nothing was do
 - **[unverified]**: inference, estimate, or a search-snippet claim.
 - **[project]**: this repo's docs, code or local files.
 
-The aim is to add to `docs/research/round-1-song-only-matching.md` (round 1), `../round-2-full-plugin-estimation.md` and `../round-3-supervised-preset-model.md`, not to repeat them.
+The aim is to add to `../round-1-song-only-matching.md` (round 1), `../round-2-full-plugin-estimation.md` and `../round-3-supervised-preset-model.md`, not to repeat them.
 
 ## 0. Bottom line
 

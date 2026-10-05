@@ -1,6 +1,8 @@
 # Audio machine learning for tone matching and measurement: research round 4
 
-*2026-10-05. Synthesises four reports, kept unchanged in `docs/research/round-4/`: closeness (A), features (B), models and search (C), tools and data (D), adding to rounds 1–3 (`docs/research/round-1-song-only-matching.md`, `round-2-full-plugin-estimation.md`, `round-3-supervised-preset-model.md`). Revised after an independent critique, each cited correction checked at its source; only small calculations were run, and nothing was downloaded. Marks: **[verified]**, the source holds the claim; **[unverified]**, snippets, inference or arithmetic; **[project]**, this repository's results; **[proposed]**, a threshold added here.*
+> **Status, 2026-10-05.** Experiments 1–3 of §5 have run, as the quick checks ([quick-checks-results.md](../quick-checks-results.md)); the rest are open, and [ROADMAP.md](../ROADMAP.md) says which come next.
+
+*2026-10-05. Synthesises four reports, kept unchanged (apart from paths when files moved) in `docs/research/round-4/`: closeness (A), features (B), models and search (C), tools and data (D), adding to rounds 1–3 (`docs/research/round-1-song-only-matching.md`, `round-2-full-plugin-estimation.md`, `round-3-supervised-preset-model.md`). Revised after an independent critique, each cited correction checked at its source; only small calculations were run, and nothing was downloaded. Marks: **[verified]**, the source holds the claim; **[unverified]**, snippets, inference or arithmetic; **[project]**, this repository's results; **[proposed]**, a threshold added here.*
 
 ## 1. Verdict
 
