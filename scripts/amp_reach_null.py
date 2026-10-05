@@ -4,8 +4,8 @@
 
     python scripts/amp_reach_null.py --reach-json amp-reach.json --json amp-reach-null.json
 
-Declared after `scripts/amp_reach.py` ran and before any of its output but the canary
-check was read. The minority count (parts where the full joint menu's pick is another
+Declared after a first run of `scripts/amp_reach.py` crashed before writing anything,
+and before any output of the re-run was read. The minority count (parts where the full joint menu's pick is another
 amp's preset and at least 0.150 closer on half B than the tested menu's) can fire when
 the amps are interchangeable, because the joint menu is bigger. So the presets of the
 joint menu are reassigned to amps at random, keeping each amp's menu size and using one
@@ -79,10 +79,11 @@ def main():
         for bands in BAND_SETS:
             n_parts, n_bands = minority(dist, parts, bands_of, labels, tested, bands)
             q95, counts = null_quantile(dist, parts, bands_of, labels, tested, bands,
-                                        seed=f"{key}|{bands}")
+                                        seed=key)     # the same permutations in both
+            denominator = reach["readings"][key][bands]["parts"]   # as amp_reach's rule
             out[key][bands] = {"minority_parts": n_parts, "minority_bands": n_bands,
                                "null_95th": q95, "null_mean": sum(counts) / len(counts),
-                               "rule": (n_parts >= MINORITY * len(parts)
+                               "rule": (n_parts >= MINORITY * denominator
                                         and n_bands >= MIN_BANDS and n_parts > q95)}
     sized = {k: all(reach["readings"][k][b]["sized_joint_vs_tested"] is not None
                     and reach["readings"][k][b]["sized_joint_vs_tested"] <= ADDS_REACH

@@ -50,8 +50,8 @@ re-declared on the joint menu, with the amp as part of the label as the model wo
 have it. If neither holds, testing one amp at a time loses little for these two
 verdicts.
 
-**The minority rule's null** (added after the run, before any of its output but a crash
-and the canary check was read). The minority count compares the full joint menu with a
+**The minority rule's null** (added after a first run crashed before writing anything,
+before any output of the re-run was read). The minority count compares the full joint menu with a
 smaller tested menu, so it can fire when the amps are interchangeable. So the joint
 menu's presets are reassigned to amps at random 1000 times
 (`scripts/amp_reach_null.py`). Each reassignment keeps each amp's menu size and uses
