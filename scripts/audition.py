@@ -11,10 +11,13 @@ renders on one local page beside the song.
 
 Every preset is rendered as it is, time effects included, each in a fresh plugin
 process. A Tone King one gets a second of silence first, cut from the output, because a
-fresh Tone King process starts muted. The song excerpt and every render are matched to
-the same loudness, so the page compares tone, not level. Nothing is installed and no
-preset is changed. The page, the clips and `audition.json` (which binds every clip to
-the preset, DI and song it came from) are written to DIR.
+fresh Tone King process starts muted. The song excerpt and every render play at one
+loudness, so the page compares tone, not level: -20 LUFS, or lower when a clip could
+not reach it without peaking above -1 dBFS, since every clip moves to the same level.
+The raw renders are kept in `raw/`, so a page re-levels itself when a candidate is
+added. Nothing is installed and no preset is changed. The page, the clips and
+`audition.json` (which binds every clip to the preset, DI and song it came from, and
+is saved after each candidate) are written to DIR.
 
 The renders play another performance than the song's: the DI is not the song's
 guitar. Listen for the tone (gain, brightness, body, space), not the notes.
@@ -90,20 +93,22 @@ def render(preset: pathlib.Path, di):
     return audio, pack.pack_id, amp
 
 
-def matched(audio, rate):
-    """`audio` at TARGET_LUFS, turned down further if a peak would pass CEILING_DB;
-    and the gain applied, in dB."""
+def measure(audio, rate):
+    """(integrated loudness in LUFS, peak in dBFS) of a clip."""
     import numpy as np
     import pyloudnorm
 
     loudness = pyloudnorm.Meter(rate).integrated_loudness(audio)
-    if not np.isfinite(loudness):
+    peak = float(np.abs(audio).max())
+    if not np.isfinite(loudness) or peak <= 0:
         raise ValueError("a clip is too quiet to measure")
-    gain = TARGET_LUFS - loudness
-    peak = float(np.abs(audio).max()) * 10 ** (gain / 20)
-    if peak > 10 ** (CEILING_DB / 20):
-        gain -= 20 * np.log10(peak / 10 ** (CEILING_DB / 20))
-    return (audio * 10 ** (gain / 20)).astype(np.float32), round(float(gain), 2)
+    return float(loudness), 20 * float(np.log10(peak))
+
+
+def page_level(clips) -> float:
+    """The one loudness every clip can reach without a peak above CEILING_DB, at most
+    TARGET_LUFS. `clips` are (loudness, peak) pairs."""
+    return min([TARGET_LUFS] + [loudness + CEILING_DB - peak for loudness, peak in clips])
 
 
 def write_clip(path: pathlib.Path, audio, rate) -> None:
@@ -112,8 +117,37 @@ def write_clip(path: pathlib.Path, audio, rate) -> None:
     sf.write(str(path), audio, rate, subtype="PCM_16")
 
 
+def write_raw(path: pathlib.Path, audio, rate) -> None:
+    import soundfile as sf
+
+    path.parent.mkdir(exist_ok=True)
+    sf.write(str(path), audio, rate, subtype="FLOAT")
+
+
+def level_page(out: pathlib.Path, record: dict) -> None:
+    """Write every clip from its raw render at the page's one loudness."""
+    from analysis import io
+
+    raws = {"song.wav": out / "raw" / "song.wav"}
+    raws.update({name: out / "raw" / name for c in record["candidates"]
+                 for name in c["renders"].values()})
+    loaded = {name: io.load(path) for name, path in raws.items()}
+    level = page_level([measure(a.samples, a.sample_rate) for a in loaded.values()])
+    record["loudness_lufs"], record["gain_db"] = round(level, 2), {}
+    for name, audio in loaded.items():
+        loudness, _ = measure(audio.samples, audio.sample_rate)
+        gain = level - loudness
+        write_clip(out / name, audio.samples * 10 ** (gain / 20), audio.sample_rate)
+        record["gain_db"][name] = round(gain, 2)
+
+
+def save(out: pathlib.Path, record: dict) -> None:
+    (out / "audition.json").write_text(json.dumps(record, indent=1) + "\n")
+
+
 def add_candidates(out: pathlib.Path, record: dict, presets, notes, dis) -> None:
-    """Render each preset through every DI of the audition, and record it."""
+    """Render each preset through every DI of the audition, and record it, saving the
+    record after each one so a failure leaves an audition `--add` can extend."""
     taken = {c["id"] for c in record["candidates"]}
     free = [x for x in LETTERS if x not in taken]
     if len(presets) > len(free):
@@ -124,18 +158,17 @@ def add_candidates(out: pathlib.Path, record: dict, presets, notes, dis) -> None
             die(f"no preset at {preset}")
         before = _sha(preset)
         entry = {"id": letter, "note": note, "preset": {"path": str(preset), "sha256": before},
-                 "renders": {}, "gain_db": {}}
+                 "renders": {}}
         for d in record["dis"]:
             audio, pack_id, amp = render(preset, dis[d["id"]])
-            clip, gain = matched(audio, dis[d["id"]].sample_rate)
             name = f"{letter}-{d['id']}.wav"
-            write_clip(out / name, clip, dis[d["id"]].sample_rate)
+            write_raw(out / "raw" / name, audio, dis[d["id"]].sample_rate)
             entry["renders"][d["id"]] = name
-            entry["gain_db"][d["id"]] = gain
             entry["pack"], entry["amp"] = pack_id, amp
         if _sha(preset) != before:
             die(f"{preset} changed while it was rendered")
         record["candidates"].append(entry)
+        save(out, record)
         print(f"{letter}: {preset.name} ({entry['amp']})", flush=True)
 
 
@@ -178,7 +211,7 @@ kbd {{ border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size
 <h1>Preset audition</h1>
 <p class="sub">{song_line}</p>
 <p class="sub">Every candidate plays the same guitar riff, not the song's own part, and
-every clip is matched in loudness. Listen for the tone (gain, brightness, body, space),
+every clip plays at one loudness. Listen for the tone (gain, brightness, body, space),
 not the notes. Keys: <kbd>0</kbd> the song, <kbd>1</kbd>–<kbd>9</kbd> the candidates
 of the riff you last played, switching at the same moment; <kbd>space</kbd> pause.</p>
 <h2>The song</h2>
@@ -207,6 +240,7 @@ rows.forEach(row => {{
   audio.addEventListener('pause', () => row.classList.remove('playing'));
 }});
 document.addEventListener('keydown', e => {{
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.target.closest('input, textarea')) return;
   const now = rows.find(r => r.classList.contains('playing'));
   if (e.key === ' ') {{ if (now) {{ e.preventDefault(); now.querySelector('audio').pause(); }} return; }}
@@ -299,12 +333,10 @@ def main():
             die(f"the song is {song.duration_s:.1f} s long; "
                 f"{args.start:g}+{args.seconds:g} s does not fit")
         out.mkdir(parents=True, exist_ok=True)
-        clip, gain = matched(song.samples[first:last], song.sample_rate)
-        write_clip(out / "song.wav", clip, song.sample_rate)
-        record = {"schema": SCHEMA, "loudness_lufs": TARGET_LUFS,
+        write_raw(out / "raw" / "song.wav", song.samples[first:last], song.sample_rate)
+        record = {"schema": SCHEMA,
                   "song": {"path": str(song_path), "sha256": _sha(song_path),
-                           "start_s": args.start, "seconds": args.seconds,
-                           "file": "song.wav", "gain_db": gain},
+                           "start_s": args.start, "seconds": args.seconds, "file": "song.wav"},
                   "dis": [], "candidates": []}
         dis = {}
         for i, path in enumerate(args.di, start=1):
@@ -312,8 +344,10 @@ def main():
             dis[f"riff-{i}"] = io.load(path)
             record["dis"].append({"id": f"riff-{i}", "name": path.stem, "path": str(path),
                                   "sha256": _sha(path)})
+        save(out, record)
     add_candidates(out, record, args.preset, notes, dis)
-    (out / "audition.json").write_text(json.dumps(record, indent=1) + "\n")
+    level_page(out, record)
+    save(out, record)
     (out / "index.html").write_text(page(record))
     print(f"page: {out / 'index.html'}")
     if args.open:

@@ -104,21 +104,31 @@ def test_the_render_canary_tolerance_and_drift_are_strict():
     assert S.REPRO == 0.01 and S.DRIFT_DB == 0.1
 
 
-def test_audition_clips_meet_the_loudness_target_without_passing_the_ceiling():
+def test_every_clip_on_a_page_plays_at_one_loudness_under_the_ceiling(tmp_path):
     np = pytest.importorskip("numpy", reason="needs the analysis extra")
     pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
     import pyloudnorm
+    import soundfile as sf
 
     rate = 48000
     t = np.arange(rate * 3) / rate
     quiet = (0.01 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
-    clip, gain = A.matched(quiet, rate)
-    assert gain > 0
-    assert abs(pyloudnorm.Meter(rate).integrated_loudness(clip) - A.TARGET_LUFS) < 0.1
     spiky = quiet.copy()
-    spiky[::rate // 4] = 0.9                       # peaks the loudness match would clip
-    clip, _ = A.matched(spiky, rate)
-    assert 20 * np.log10(np.abs(clip).max()) <= A.CEILING_DB + 1e-3
+    spiky[::rate // 4] = 0.9                       # peaks a -20 LUFS match would clip
+    (tmp_path / "raw").mkdir()
+    for name, audio in (("song.wav", quiet), ("A-riff-1.wav", quiet), ("B-riff-1.wav", spiky)):
+        sf.write(str(tmp_path / "raw" / name), audio, rate, subtype="FLOAT")
+    record = {"candidates": [{"id": c, "renders": {"riff-1": f"{c}-riff-1.wav"}} for c in "AB"]}
+    A.level_page(tmp_path, record)
+    assert record["loudness_lufs"] < A.TARGET_LUFS     # the spiky clip set the level
+    meter = pyloudnorm.Meter(rate)
+    levels = []
+    for name in ("song.wav", "A-riff-1.wav", "B-riff-1.wav"):
+        clip, _ = sf.read(str(tmp_path / name))
+        levels.append(meter.integrated_loudness(clip))
+        assert 20 * np.log10(np.abs(clip).max()) <= A.CEILING_DB + 0.05
+    assert max(levels) - min(levels) < 0.2
+    assert A.page_level([(-30.0, -20.0)]) == A.TARGET_LUFS
 
 
 def test_the_audition_page_lists_every_candidate_for_every_riff_and_escapes_text():
@@ -328,7 +338,7 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
         path.write_text(json.dumps(use("Bash", {"command": command})))
         assert [k for k, _, _ in U.audit(path, sandbox)] == [harmless], command
     for command in (f"cd {sandbox} && ls $HOME", f"cd {sandbox} && for f in a; do cat $g; done",
-                    f"cd {sandbox} && ls ${{HOME}}"):
+                    f"cd {sandbox} && ls ${{HOME}}", f"cd {sandbox} && cat $'\\x2fetc'"):
         path.write_text(json.dumps(use("Bash", {"command": command})))
         assert "bash uses shell expansion" in [k for k, _, _ in U.audit(path, sandbox)], command
     order = ["factory opened before every G was written"]
@@ -354,3 +364,28 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
     path.write_text(json.dumps(no_cd))
     assert "bash path outside the sandbox: docs/amp-reach-results.md" in [
         k for k, _, _ in U.audit(path, sandbox)]
+
+
+def test_the_audit_reads_the_scripts_a_run_writes(tmp_path):
+    import audit_shortlist_runs as U
+
+    sandbox = "/Users/someone/shortlist-sandboxes/song"
+
+    def write(name, code):
+        return {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Write",
+                "input": {"file_path": f"{sandbox}/out/{name}", "content": code}}]}}
+
+    path = tmp_path / "t.jsonl"
+    path.write_text(json.dumps(write("tempo.py", "import numpy\nx = open('excerpts/part-1.wav')")))
+    assert U.audit(path, sandbox) == []
+    for code in ("print(open('/Users/someone/ndsp-presets/runs/x.json').read())",
+                 "import pathlib; print(list(pathlib.Path.home().iterdir()))",
+                 "import urllib.request"):
+        path.write_text(json.dumps(write("x.py", code)))
+        assert U.audit(path, sandbox), code
+    early = [write("scan.py", f"open('{U.FACTORY}/Neural DSP/Blue Hotel.xml')"),
+             {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Bash",
+              "input": {"command": f"cd {sandbox} && python plugin/scripts/apply_spec.py "
+                                   "--spec s.json --out out/part-1/G1.xml"}}]}}]
+    path.write_text("\n".join(json.dumps(e) for e in early))
+    assert ("factory opened before every G was written", "order", "") in U.audit(path, sandbox)

@@ -61,7 +61,6 @@ from _cli import die, guarded
 FACTORY = pathlib.Path("/Library/Audio/Presets/Neural DSP/Morgan Amps Suite")
 SOURCES = {"cambridge": "the Cambridge Music Technology \"Mixing Secrets\" multitrack library",
            "telefunken": "TELEFUNKEN Elektroakustik's \"Live From The Lab\" sessions"}
-PYTHON = pathlib.Path("/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python")
 NOTES = pathlib.Path("~/ndsp-presets/packs/morgan/learned-tones.md")
 LIBRARY_CROPS = pathlib.Path("~/ndsp-presets/references/validation-crops-2")
 TEMPLATE = "samples/Example_Clean_PR12.xml"
@@ -285,7 +284,8 @@ def build_sandbox(sandbox, commit, source, song, band, parts, crops, cuts):
     for sub in ("excerpts", "out", "bin"):
         (sandbox / sub).mkdir()
     wrapper = sandbox / "bin" / "python-audio"
-    wrapper.write_text(f'#!/bin/sh\nexec "{PYTHON}" "$@"\n')
+    # The interpreter with the analysis extra: the main checkout's own environment.
+    wrapper.write_text(f'#!/bin/sh\nexec "{main_checkout() / ".venv" / "bin" / "python"}" "$@"\n')
     wrapper.chmod(0o755)
     (sandbox / "data" / "packs" / "morgan").mkdir(parents=True)
     notes = NOTES.expanduser()

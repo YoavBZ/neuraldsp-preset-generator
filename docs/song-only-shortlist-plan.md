@@ -162,6 +162,11 @@ is removed from results like the cwd note; and a lone `"/"` string in code is no
 path. `listdir`, `glob.glob` and `iterdir` joined the look-around list. Every
 transcript is audited with the amended script.
 
+*Amended after the runs, before any results were written:* the audit also reads the
+scripts a run writes (string literals from a real root, the look-around and network
+checks, a factory path counting toward the order check), and no longer passes a
+`$'…'` as harmless. Re-run on every transcript, it gives the same flags.
+
 Any other flag discards the run, and `prepare_shortlist_runs.py redo SONG` builds that
 song a fresh sandbox (the flagged one moved aside) for one new agent. If the repeat is
 flagged too, the song is excluded (`collect --exclude SONG`). More than 5 parts
