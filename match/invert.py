@@ -416,23 +416,6 @@ def measured_basis(pack_id: str, signal_path: str,
     )
 
 
-def measured_band_noise(pack_id: str, signal_path: str,
-                        analysis_centres: Sequence[float],
-                        expected_plugin_version: Optional[str] = None):
-    """The basis run's repeat difference at each requested frequency.
-
-    This deliberately is not ``RenderMetadata.band_noise_db``. That metadata field
-    records the largest movement anywhere for provenance; an EQ decision needs to
-    know *where* it happened. Tone King's five-sample reused-instance maximum is
-    5.23 dB at 25 Hz while its measured 50 Hz-and-up maximum is about 0.065 dB.
-    """
-    found = measured_basis(
-        pack_id, signal_path, analysis_centres,
-        expected_plugin_version=expected_plugin_version,
-    )
-    return None if found is None else found.band_noise_db
-
-
 def _read_basis_document(path):
     """Read one basis document; separated so stale-topology behavior is testable."""
     import json

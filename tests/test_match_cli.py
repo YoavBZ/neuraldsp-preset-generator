@@ -536,10 +536,7 @@ def test_paired_profile_refuses_an_excerpt_instead_of_mixing_scopes(audio, tmp_p
     (["--budget", "0"], "must be at least 1"),
     (["--excerpt", "-1"], "must be zero or greater"),
     (["--loss-profile", "nope"], "unknown loss profile"),
-    # `swift` used to belong here. It is M5 and it is built, so on a machine with
-    # the plugin it is a working backend rather than a bad flag; `pedalboard` is
-    # the one still unbuilt and is what this now asserts about.
-    (["--renderer", "pedalboard"], "not built yet"),
+    (["--renderer", "pedalboard"], "invalid choice"),
     (["--reference-mode", "reamp"], "invalid choice"),
 ])
 def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):
