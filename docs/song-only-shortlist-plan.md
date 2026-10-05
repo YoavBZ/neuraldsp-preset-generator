@@ -34,10 +34,11 @@ the sandboxes in `~/shortlist-sandboxes`, outside the data root and outside any
 checkout:
 
 - `plugin/`: an export of the plugin at the declared commit. It leaves out `docs/`,
-  `tests/` and every script the skills don't use, so nothing in it names where the
-  validation data or the results live. An installed plugin does carry `docs/`; it is
-  left out here because two documents the skill links discuss development parts. The
-  brief says the gap is deliberate.
+  `tests/`, every script the skills don't use, and the files that link the project's
+  repository (README, `SECURITY.md`, `.claude-plugin/`). So nothing in it names where
+  the validation data or the results live. An installed plugin does carry `docs/`; it
+  is left out here because two documents the skill links discuss development parts.
+  The brief says the gap is deliberate.
 - `excerpts/part-N.wav`: the part's 10-second mix crop (`mix.wav`, a unity sum of the
   session's tracks, vocals included), renamed.
 - `request.json`:
@@ -62,6 +63,9 @@ is called a rough mix of the session, which it is. **The brief allows:**
 - WebSearch and WebFetch, at most 8 searches and 12 fetches per song;
 - **no** github.com, downloads, other files on disk, the Skill tool (it would load the
   installed copy), installing presets or writing learned notes;
+- every Bash command starts with `cd` into the sandbox, since each starts in this
+  repository otherwise; Read, Grep and Glob get absolute paths in the sandbox or the
+  factory folder;
 - **no questions:** where the skill would ask, the run states its assumption.
 
 **What it returns, per part:**
@@ -82,14 +86,19 @@ is called a rough mix of the session, which it is. **The brief allows:**
 
 A failure is fixed by re-running that song's agent once.
 
-**Leak control is by instruction and audit, not enforcement.** After the runs, every
-tool call in every transcript is searched: Read, Grep and Glob paths; Bash commands;
-WebFetch URLs; WebSearch and fetched text. A run is flagged when it:
-- touches `~/ndsp-presets` outside its sandbox, any checkout of this project, or
-  `~/.claude/plugins`;
-- fetches github.com;
-- calls the Skill tool;
-- receives a search result or page that names this project.
+**Leak control is by instruction and audit, not enforcement.** After the runs,
+`scripts/audit_shortlist_runs.py` searches every tool call and result in every
+transcript. A run is flagged when:
+- a Bash command doesn't start with `cd` into its sandbox, or names the data root, a
+  checkout of this project (other than the interpreter the brief names), `~/.claude`,
+  the home folder or a parent folder;
+- a Read, Grep or Glob has no path, or one outside the sandbox and factory folder;
+- it fetches github.com, or calls the Skill tool or a nested agent;
+- a result (a file, a search, a page) names this project, its repository or the
+  validation data.
+
+A flag on a Bash command that only breaks the `cd` rule is judged by reading the
+command (never its result): a command that reads nothing outside the sandbox stands.
 
 A flagged run is discarded and repeated once with a fresh agent. If the repeat is
 flagged too, that song's parts are left out. If more than 5 parts are left out, the

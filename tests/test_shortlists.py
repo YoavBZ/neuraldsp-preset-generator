@@ -205,3 +205,40 @@ def test_collect_remakes_each_generated_preset_and_refuses_what_breaks_the_brief
     for change in (lower_case, one_amp, template_flag, other_spec):
         with pytest.raises(SystemExit):
             run(change)
+
+
+def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_path):
+    import audit_shortlist_runs as U
+
+    sandbox = "/Users/someone/shortlist-sandboxes/song"
+
+    def use(name, args):
+        return {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "name": name, "input": args}]}}
+
+    def result(text):
+        return {"type": "user", "message": {"content": [
+            {"type": "tool_result", "content": [{"type": "text", "text": text}]}]}}
+
+    fine = [use("Bash", {"command": f"cd {sandbox} && python plugin/scripts/show.py x.xml"}),
+            use("Bash", {"command": f"cd '{sandbox}' && {U.PYTHON} plugin/scripts/fingerprint.py "
+                                    "excerpts/part-1.wav --regime mix"}),
+            use("Read", {"file_path": f"{sandbox}/plugin/skills/generate/SKILL.md"}),
+            use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}),
+            use("Glob", {"pattern": "*.xml", "path": U.FACTORY}),
+            use("WebSearch", {"query": "band song guitar amp"}),
+            result("Traceback: /Users/yoavbz/projects/neuraldsp-preset-generator/.venv/lib/x.py")]
+    bad = [use("Bash", {"command": "cat docs/reach-sets.json"}),
+           use("Bash", {"command": f"cd {sandbox} && cat ~/ndsp-presets/runs/kill/amp-reach.json"}),
+           use("Bash", {"command": f"cd {sandbox} && ls ../../"}),
+           use("Grep", {"pattern": "PR12"}),
+           use("Read", {"file_path": "/Users/someone/projects/neuraldsp-preset-generator/docs/x.md"}),
+           use("WebFetch", {"url": "https://github.com/YoavBZ/neuraldsp-preset-generator"}),
+           use("Skill", {"skill": "neuraldsp-preset-generator:generate"}),
+           result("see github.com/YoavBZ/neuraldsp-preset-generator for amp-reach results")]
+    path = tmp_path / "t.jsonl"
+    path.write_text("\n".join(json.dumps(e) for e in fine))
+    assert U.audit(path, sandbox) == []
+    for entry in bad:
+        path.write_text(json.dumps(entry))
+        assert U.audit(path, sandbox), entry

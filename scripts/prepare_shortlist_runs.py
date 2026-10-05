@@ -9,8 +9,10 @@
 `docs/song-only-shortlist-plan.md`. `prepare` writes one sandbox per song of the 25
 development parts amp reach used, outside the data root and outside any checkout:
 
-- `plugin/`: the plugin at HEAD without `docs/`, `tests/` or any script the skills
-  don't use, so nothing in it names where the validation data or results live;
+- `plugin/`: the plugin at HEAD without `docs/`, `tests/`, any script the skills
+  don't use, or the files that link the project's repository (the README,
+  `SECURITY.md`, `.claude-plugin/`), so nothing in it points at the validation data,
+  the results or the documents that discuss them;
 - `excerpts/part-N.wav`: each part's 10-second mix crop, renamed;
 - `request.json`: the ask, with a description of how the part plays, measured from
   its DI (pace and how much of the excerpt it plays in), and the session's guitar
@@ -88,6 +90,9 @@ and the web.
 ## Rules
 
 - Read nothing on disk outside `{sandbox}` and the factory folder.
+- Every Bash command starts with `cd {sandbox} &&` (each command starts somewhere
+  else otherwise). Read, Grep and Glob always get an absolute path inside the sandbox
+  or the factory folder.
 - Web: WebSearch and WebFetch only, at most {searches} searches and {fetches} fetches
   for this song in total. Don't open github.com. Download no files.
 - Do not install presets anywhere, and do not write learned notes. Skip the skill's
@@ -209,8 +214,10 @@ def export_plugin(dest: pathlib.Path):
                              capture_output=True, check=True).stdout
     dest.mkdir(parents=True)
     subprocess.run(["tar", "-x", "-C", str(dest)], input=archive, check=True)
-    for gone in ("docs", "tests", ".github"):
+    for gone in ("docs", "tests", ".github", ".claude-plugin"):
         shutil.rmtree(dest / gone, ignore_errors=True)
+    for gone in ("README.md", "SECURITY.md"):        # both link the project's repository
+        (dest / gone).unlink(missing_ok=True)
     for script in (dest / "scripts").glob("*.py"):
         if script.stem not in EXPORTED_SCRIPTS:
             script.unlink()
