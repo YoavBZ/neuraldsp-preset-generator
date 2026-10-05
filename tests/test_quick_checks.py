@@ -32,7 +32,8 @@ def test_the_expected_oracle_is_exact():
         for subset in itertools.combinations(menu, size):
             best = min(subset, key=lambda c: (d[f"{c}|A|recording"], c))
             brute.append(d[f"{best}|B|recording"])
-        assert math.isclose(S.expected_oracle(d, menu, "recording", size), statistics.mean(brute))
+        assert math.isclose(S.expected_oracle(d, menu, "A", "B", "recording", size),
+                            statistics.mean(brute))
 
 
 def test_amps_within_the_clear_cut_of_the_best_are_acceptable():
@@ -45,11 +46,24 @@ def test_amps_within_the_clear_cut_of_the_best_are_acceptable():
     assert ok == {"ac20": True, "pr12": True, "sw50r": False}   # log 1.1 < 0.150 < log 1.5
 
 
-def test_complete_linkage_never_chains():
-    # a~b and b~c by less than the cut, but a and c differ by more: three presets, two classes.
-    dist = {f"p{i}": _d({"a": (1, 1, 1.0), "b": (1, 1, 1.1), "c": (1, 1, 1.25)}) for i in range(3)}
-    found = S.classes(dist, list(dist), ["a", "b", "c"], "recording")
-    assert len(found) == 2 and sorted(map(len, found)) == [1, 2]
+def test_complete_linkage_never_chains_and_ignores_parts_that_separate_nothing():
+    pytest.importorskip("scipy", reason="needs the analysis extra")
+    # a~b and b~c by less than the cut, but a and c differ by more: three presets, two
+    # classes. A fourth preset far away makes every part span the menu.
+    values = {"a": (1, 1, 1.0), "b": (1, 1, 1.1), "c": (1, 1, 1.25), "z": (1, 1, 3.0)}
+    dist = {f"p{i}": _d(values) for i in range(3)}
+    band_of = {p: f"b{i}" for i, p in enumerate(dist)}
+    found, used = S.classes(dist, list(dist), band_of, ["a", "b", "c", "z"], "recording")
+    assert len(used) == 3 and len(found) == 3 and sorted(map(len, found)) == [1, 1, 2]
+    flat = {f"p{i}": _d({"a": (1, 1, 1.0), "b": (1, 1, 1.05)}) for i in range(3)}
+    found, used = S.classes(flat, list(flat), band_of, ["a", "b"], "recording")
+    assert used == [] and len(found) == 1
+
+
+def test_shares_are_weighted_by_band():
+    flags = {"p1": True, "p2": True, "p3": True, "p4": False}
+    band_of = {"p1": "big", "p2": "big", "p3": "big", "p4": "small"}
+    assert S.band_weighted_share(flags, band_of) == 0.5
 
 
 def test_the_unfixed_recogniser_is_plain_nearest_neighbour_and_csls_penalises_a_hub():
@@ -65,8 +79,15 @@ def test_the_unfixed_recogniser_is_plain_nearest_neighbour_and_csls_penalises_a_
     real = centres[[0, 1, 2, 3]] + 0.05
     real_fold = np.arange(4)
     targets = {"t": (0, centres[2] + 0.01)}
-    base = H.recognise(X, y, fold, real, real_fold, targets, factory, "baseline")
-    assert base["t"]["1nn"] == "c"
+    base, every_fold = H.recognise(X, y, fold, real, real_fold, targets, factory, "baseline")
+    assert base["t"]["1nn"] == "c" and every_fold[0]["t"] == base["t"]
     for v in H.VARIANTS:
-        assert set(H.recognise(X, y, fold, real, real_fold, targets, factory, v)["t"]) \
+        assert set(H.recognise(X, y, fold, real, real_fold, targets, factory, v)[0]["t"]) \
             == set(H.RECOGNISERS)
+
+
+def test_the_sign_flip_and_holm():
+    import k3_hub_fixes as H
+
+    assert H.sign_flip_p([-0.1, -0.2, -0.3]) == 1 / 8
+    assert H.holm({"a": 0.01, "b": 0.04}) == {"a": 0.02, "b": 0.04}

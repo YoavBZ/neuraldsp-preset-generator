@@ -67,12 +67,14 @@ def sqdist(A, b):
 
 
 def recognise(X, y, fold, real, real_fold, targets, factory, variant):
-    """{part: {recogniser: pick}} for the parts in `targets` ({part: (fold, features)}),
+    """({part: {recogniser: pick}} for the parts in `targets` ({part: (fold, features)}),
+    {fold: {part: {recogniser: pick}}} for every target's track under each fold's model),
     trained on the renders of the other folds; `real` are every eligible part's real-track
-    features with their folds, used only from the training folds."""
+    features with their folds, used only from the training folds. The second is for the
+    shuffled control: a part's recogniser given other bands' tracks."""
     import numpy as np
 
-    out = {}
+    out, every_fold = {}, {}
     for f_ in sorted({f for f, _ in targets.values()}):
         tr = fold != f_
         mu, sd = X[tr].mean(0), X[tr].std(0) + 1e-9
@@ -116,18 +118,22 @@ def recognise(X, y, fold, real, real_fold, targets, factory, variant):
 
         ident = lambda r: r                                                # noqa: E731
         proj = lambda r: r @ W                                             # noqa: E731
-        for p, (fp, feat) in targets.items():
-            if fp != f_:
-                continue
+
+        def pick(feat):
             t = norm(feat)
             d1 = corrected(sqdist(Xtr, t), Xtr, ident)
             pt = t @ W
             dl = corrected(sqdist(cm, pt), cm, proj)
             dp = corrected(sqdist(Ptr, pt), Ptr, proj)
-            out[p] = {"1nn": factory[int(ytr[np.argmin(d1)])],
-                      "lda": factory[int(cls[np.argmin(dl)])],
-                      "lda+1nn": factory[int(ytr[np.argmin(dp)])]}
-    return out
+            return {"1nn": factory[int(ytr[np.argmin(d1)])],
+                    "lda": factory[int(cls[np.argmin(dl)])],
+                    "lda+1nn": factory[int(ytr[np.argmin(dp)])]}
+
+        every_fold[f_] = {p: pick(feat) for p, (_, feat) in targets.items()}
+        for p, (fp, _) in targets.items():
+            if fp == f_:
+                out[p] = every_fold[f_][p]
+    return out, every_fold
 
 
 def band_median(rows):
@@ -135,6 +141,32 @@ def band_median(rows):
     for band, x in rows:
         by[band].append(x)
     return statistics.median(statistics.median(v) for v in by.values())
+
+
+def band_medians(rows):
+    by = collections.defaultdict(list)
+    for band, x in rows:
+        by[band].append(x)
+    return {b: statistics.median(v) for b, v in by.items()}
+
+
+def sign_flip_p(values):
+    """Exact one-sided sign-flip p that the mean of `values` is below 0."""
+    import itertools
+
+    obs = sum(values)
+    hits = sum(sum(s * v for s, v in zip(signs, values)) <= obs + 1e-12
+               for signs in itertools.product((1, -1), repeat=len(values)))
+    return hits / 2 ** len(values)
+
+
+def holm(ps):
+    order = sorted(ps, key=ps.get)
+    adjusted, running = {}, 0.0
+    for i, key in enumerate(order):
+        running = max(running, min(1.0, (len(order) - i) * ps[key]))
+        adjusted[key] = running
+    return adjusted
 
 
 def main():
@@ -195,11 +227,16 @@ def main():
         real = np.stack([real_feat[p] for p in real_parts])
         real_fold = np.array([fold_of[meta[p]["band"]] for p in real_parts])
         targets = {p: (fold_of[meta[p]["band"]], real_feat[p]) for p in real_parts}
-        picks = {v: recognise(X, y, fold, real, real_fold, targets, factory, v) for v in VARIANTS}
-        earlier = json.loads((kill / k3_name).read_text())["picks"]
+        recognised = {v: recognise(X, y, fold, real, real_fold, targets, factory, v)
+                      for v in VARIANTS}
+        picks = {v: r[0] for v, r in recognised.items()}
+        earlier_doc = json.loads((kill / k3_name).read_text())
+        if pathlib.Path(earlier_doc["panel"]).expanduser().resolve() != panel.resolve():
+            die(f"{k3_name} was not run on {panel}")
+        earlier = earlier_doc["picks"]
         misses = [(r, p) for r in RECOGNISERS for p, c in earlier[r].items()
                   if picks["baseline"].get(p, {}).get(r) != c]
-        if misses:
+        if misses or any(set(earlier[r]) != set(picks["baseline"]) for r in RECOGNISERS):
             die(f"{menu_name}: the unfixed recognisers do not reproduce K3's picks: {misses[:5]}")
         # Judge distances for every candidate on the K3 parts with a clear lag: from the
         # amp-reach run where it scored the part, else scored here.
@@ -216,36 +253,90 @@ def main():
                                      lag_samples(p) - K.LATENCY, crops) for p in missing]):
                     judged.setdefault(p, {}).update({f"{amp}:{k}": v
                                                      for k, v in s["d"].items()})
-        readings = {}
+        band_of = {p: meta[p]["band"] for p in scored_parts}
+
+        def lr(p, c, bands):
+            d = judged[p].get(f"{amp}:{c}|full|{bands}")
+            base = judged[p].get(f"{amp}:template+R|full|{bands}")
+            return math.log(d / base) if d and base else None
+
+        # The no-information pick: a preset drawn from the menu at random (exact mean).
+        no_info = {b: band_median([(band_of[p], statistics.mean(lr(p, c, b) for c in factory))
+                                   for p in scored_parts]) for b in BAND_SETS}
+        # The constant: the preset with the lowest median distance over the training bands.
+        constant = {}
+        for b in BAND_SETS:
+            for f_ in set(fold_of.values()):
+                train = [p for p in scored_parts if fold_of[band_of[p]] != f_]
+                best = min(factory, key=lambda c: (statistics.median(
+                    judged[p][f"{amp}:{c}|full|{b}"] for p in train), c))
+                for p in scored_parts:
+                    if fold_of[band_of[p]] == f_:
+                        constant[(p, b)] = best
+        readings, per_part = {}, {}
         for v in VARIANTS:
+            folds = recognised[v][1]
             for r in RECOGNISERS:
                 for bands in BAND_SETS:
-                    rows, chosen = [], []
+                    rows, chosen, beats_shuffled, beats_constant = [], [], [], []
                     for p in scored_parts:
                         c = picks[v][p][r]
-                        d = judged[p].get(f"{amp}:{c}|full|{bands}")
-                        base = judged[p].get(f"{amp}:template+R|full|{bands}")
-                        if d and base:
-                            rows.append((meta[p]["band"], math.log(d / base)))
-                            chosen.append(c)
+                        x = lr(p, c, bands)
+                        if x is None:
+                            continue
+                        rows.append((band_of[p], x))
+                        chosen.append(c)
+                        others = [picked[r] for o, picked in folds[fold_of[band_of[p]]].items()
+                                  if meta[o]["band"] != band_of[p]]
+                        shuffled = statistics.mean(lr(p, o, bands) for o in others)
+                        beats_shuffled.append(1.0 if x < shuffled else 0.5 if x == shuffled
+                                              else 0.0)
+                        beats_constant.append(x < lr(p, constant[(p, bands)], bands))
+                    per_part[f"{v}/{r}/{bands}"] = dict(zip(scored_parts, [x for _, x in rows]))
                     top = max(collections.Counter(chosen).values()) / len(chosen)
                     readings[f"{v}/{r}/{bands}"] = {
                         "parts": len(rows), "band_median_vs_templateR": band_median(rows),
                         "closer_than_templateR": sum(x < 0 for _, x in rows),
-                        "most_common_pick_share": top,
-                        "distinct_picks": len(set(chosen))}
-        fixes = {}
+                        "better_than_shuffled": sum(beats_shuffled),
+                        "closer_than_constant": sum(beats_constant),
+                        "most_common_pick_share": top, "distinct_picks": len(set(chosen))}
+        fixes, ps = {}, {b: {} for b in BAND_SETS}
         for v in VARIANTS[1:]:
             for r in RECOGNISERS:
-                ok = all(readings[f"{v}/{r}/{b}"]["most_common_pick_share"] < TOP_SHARE
-                         and readings[f"{v}/{r}/{b}"]["band_median_vs_templateR"]
-                         <= readings[f"baseline/{r}/{b}"]["band_median_vs_templateR"] - GAIN_STEP
-                         for b in BAND_SETS)
-                fixes[f"{v}/{r}"] = ok
-        out["menus"][menu_name] = {"parts": len(scored_parts), "readings": readings,
-                                   "fix_passes": fixes, "picks": picks}
+                for b in BAND_SETS:
+                    diff = band_medians([(band_of[p], per_part[f"{v}/{r}/{b}"][p]
+                                          - per_part[f"baseline/{r}/{b}"][p])
+                                         for p in scored_parts])
+                    ps[b][f"{v}/{r}"] = sign_flip_p(list(diff.values()))
+
+                def holds(b):
+                    x, base = readings[f"{v}/{r}/{b}"], readings[f"baseline/{r}/{b}"]
+                    return (x["most_common_pick_share"] < TOP_SHARE
+                            and x["band_median_vs_templateR"]
+                            <= base["band_median_vs_templateR"] - GAIN_STEP
+                            and x["band_median_vs_templateR"] < no_info[b]
+                            and x["better_than_shuffled"] > x["parts"] / 2)
+                fixes[f"{v}/{r}"] = all(holds(b) for b in BAND_SETS)
+        out["menus"][menu_name] = {
+            "parts": len(scored_parts), "no_information_band_median": no_info,
+            "readings": readings, "fix_passes": fixes,
+            "fix_minus_baseline_holm_p": {b: holm(ps[b]) for b in BAND_SETS},
+            "picks": picks}
     rescued = {k: v for k, v in out["menus"]["pr12-clean"]["fix_passes"].items() if v}
     out["pr12_clean_rescued_by"] = sorted(rescued)
+    sw = out["menus"]["sw50r"]["readings"]
+    out["sw50r_worse_by_more_than_0.05"] = sorted(
+        k for k in rescued if any(
+            sw[f"{k}/{b}"]["band_median_vs_templateR"]
+            > sw[f"baseline/{k.split('/', 1)[1]}/{b}"]["band_median_vs_templateR"] + GAIN_STEP
+            for b in BAND_SETS))
+    import hashlib
+    import subprocess
+
+    out["inputs"] = {str(args.reach_json): hashlib.sha256(
+        args.reach_json.expanduser().read_bytes()).hexdigest()}
+    out["commit"] = subprocess.run(["git", "-C", str(PLUGIN_ROOT), "rev-parse", "HEAD"],
+                                   capture_output=True, text=True).stdout.strip()
     print(json.dumps({"pr12_clean_rescued_by": out["pr12_clean_rescued_by"],
                       "readings": {m: v["readings"] for m, v in out["menus"].items()}},
                      indent=1))
