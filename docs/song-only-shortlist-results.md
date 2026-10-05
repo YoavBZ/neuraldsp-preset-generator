@@ -3,8 +3,8 @@
 Computed as declared in `docs/song-only-shortlist-plan.md` (with its dated amendments),
 on 2026-10-05:
 - **Runs:** 16 agents, one per song, 25 development parts, sandboxes at b5dbcbb.
-- **Rendered** with `scripts/render_shortlists.py`.
-- **Scored** with `scripts/score_shortlists.py`. `docs/song-only-shortlist.json` is the
+- **Rendered** with `research/render_shortlists.py`.
+- **Scored** with `research/score_shortlists.py`. `docs/song-only-shortlist.json` is the
   output. The scorer was re-run once after a fix to a reported figure (below); every
   decision and every other reading came out identical.
 
@@ -13,7 +13,7 @@ the first arm is closer.
 
 ## The runs held up, under an amended audit
 
-- **Audit:** `scripts/audit_shortlist_runs.py` checked every transcript.
+- **Audit:** `research/audit_shortlist_runs.py` checked every transcript.
   - It found 8 flags, all one kind: a `$` used as a `grep` anchor, or as the variable
     of a loop that only echoed labels, in commands whose paths all stayed in the
     sandbox.

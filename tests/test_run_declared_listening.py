@@ -10,11 +10,11 @@ import sys
 
 import pytest
 
-from scripts.build_validation_crops import _declaration
-from scripts.build_declared_listening_manifest import build as build_manifest
-from scripts.copy_declared_template import copy as copy_template
-from scripts.run_declared_listening import run
-from scripts.summarize_declared_listening import _execution_record
+from research.build_validation_crops import _declaration
+from research.build_declared_listening_manifest import build as build_manifest
+from research.copy_declared_template import copy as copy_template
+from research.run_declared_listening import run
+from research.summarize_declared_listening import _execution_record
 
 
 PARTS = ("source/song/part-1", "source/song/part-2")

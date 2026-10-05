@@ -19,7 +19,7 @@ from scripts._listening_trials import consistency, plan_trials
 from tests import fixtures_audio as fx
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-AUDIT = ROOT / "scripts" / "audit_frozen_listening.py"
+AUDIT = ROOT / "research" / "audit_frozen_listening.py"
 
 
 def _scored(tmp_path, *, comparison_id="first", target_id="song", v2=True,

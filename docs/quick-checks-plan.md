@@ -5,7 +5,7 @@ experiments of `docs/research/round-4-audio-ml.md` §5, run on data already on d
 renders and no listening. Each needs a DI. They decide whether the model path is worth
 reopening (`docs/kill-tests-pr12-results.md`, `docs/amp-reach-results.md`).
 
-All three read judge distances that `scripts/amp_reach.py` stored
+All three read judge distances that `research/amp_reach.py` stored
 (`~/ndsp-presets/runs/kill/amp-reach.json`):
 - every factory preset of the three Morgan amps, against each part's amp track;
 - half A, half B and 1.0–10 s; both band sets;
@@ -16,7 +16,7 @@ every share below counts each band once, its parts sharing its weight.
 
 ## 1. How many amps can answer each recording?
 
-`scripts/reach_sets.py`.
+`research/reach_sets.py`.
 
 - **What counts as acceptable.** Per part, each amp's menu gives the expected distance of
   the preset chosen on one half, scored on the other. Both directions (A→B and B→A) are
@@ -34,7 +34,7 @@ every share below counts each band once, its parts sharing its weight.
 
 ## 2. How many distinct answers does each menu hold?
 
-`scripts/reach_sets.py`.
+`research/reach_sets.py`.
 
 - **Which parts vote.** Only parts where the track separates the menu vote: the
   presets' full-window log distances to the amp track must span at least 0.300. A track
@@ -58,9 +58,9 @@ every share below counts each band once, its parts sharing its weight.
 
 ## 3. Does a cheap fix rescue K3's recognisers?
 
-`scripts/k3_hub_fixes.py`.
+`research/k3_hub_fixes.py`.
 
-**The recognisers.** K3's recognisers are re-run as `scripts/kill_test_k3.py` ran them:
+**The recognisers.** K3's recognisers are re-run as `research/kill_test_k3.py` ran them:
 K2's features, the four folds of bands seeded 20261003, 1-NN, LDA and LDA+1-NN, on the
 SW50R panel and the clean PR12 panel. Each fix below is fitted on the training folds'
 real amp tracks only:

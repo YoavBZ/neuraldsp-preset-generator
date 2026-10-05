@@ -28,8 +28,8 @@ informs it.
 
 ## How it is computed
 
-`scripts/kill_tests.py` (K1, K2), `scripts/kill_test_k3.py` (K3) and
-`scripts/kill_tests_judge.py` (the judge's readings), unchanged, run on the derived
+`research/kill_tests.py` (K1, K2), `research/kill_test_k3.py` (K3) and
+`research/kill_tests_judge.py` (the judge's readings), unchanged, run on the derived
 panel.
 
 - **Lags.** The judge uses each part's recorded lag (`docs/validation-lags.json`) less
@@ -67,7 +67,7 @@ near-ties, in the unvalidated range.
 | K2 | as declared (`docs/supervised-model-plan.md` §0): some recogniser reaches 3× chance top-1 (here 3/21) and at most 0.75× the constant guess's median regret (that second condition is vacuous once top-1 is above 50%) |
 | K3 | one recogniser, under both of the judge's band sets: a median of band medians against template+R below −0.150; closer than template+R on more than half its parts; better than the shuffled control on more than half (a tie counts half, as declared); closer than the constant on more than half (a tie counts as not closer, as the declaration's text says); and its most common pick no more than half its picks. Every count is out of all the parts K3 should score (its eligible parts with a lag, 28), ties included; a part the judge drops or the recogniser makes no pick for counts as not closer. |
 
-`scripts/kill_tests_pr12_verdict.py`, committed with this plan, computes exactly this
+`research/kill_tests_pr12_verdict.py`, committed with this plan, computes exactly this
 from the outputs, with unrounded medians. The scripts' own `pass`, `verdict` and
 `gate_open` fields apply the SW50R declaration and are not this verdict. On the SW50R
 outputs it reproduces the known readings: 1-NN passes the default bands' counts (18,

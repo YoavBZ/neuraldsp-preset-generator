@@ -764,13 +764,13 @@ Latin hypercube before hours are spent scaling it.
 The committed measurement is reproduced by this invocation, exactly:
 
 ```bash
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp pr12 \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp pr12 \
   --template samples/Example_Clean_PR12.xml --renderer swift --samples 128 \
   --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
   --out packs/morgan/response_atlas_pr12_pilot.json
 ```
 
-`scripts/query_response_atlas.py` fingerprints a reference and turns the nearest
+`research/query_response_atlas.py` fingerprints a reference and turns the nearest
 stored responses into ordinary specs without opening the plugin. The ranges it
 prints are the finite pilot's observed range on this probe, not mathematical
 limits on the plugin; scaling the atlas is still required before wording such as
@@ -791,7 +791,7 @@ loss profile identical to the pilot. Only the atlas density changes. The
 committed measurement is reproduced by this invocation, exactly:
 
 ```bash
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp pr12 \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp pr12 \
   --template samples/Example_Clean_PR12.xml --renderer swift --samples 1024 \
   --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
   --out packs/morgan/response_atlas_pr12_1024.json
@@ -802,7 +802,7 @@ topology, probe, renderer build and held-out experiment before printing a scale
 result:
 
 ```bash
-.venv/bin/python scripts/compare_response_atlases.py \
+.venv/bin/python research/compare_response_atlases.py \
   --baseline packs/morgan/response_atlas_pr12_pilot.json \
   --candidate packs/morgan/response_atlas_pr12_1024.json
 ```
@@ -848,7 +848,7 @@ parallel.
 .venv/bin/python scripts/apply_spec.py --template samples/Example_Clean_PR12.xml \
   --spec <amp-selector-only.json> --out samples/SW50R_Atlas_Topology.xml
 
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --renderer swift --samples 1024 \
   --held-out 24 --seconds 4 --seed 17 --held-out-seed 29 \
   --out packs/morgan/response_atlas_sw50r_1024.json
@@ -964,7 +964,7 @@ reused builds' differed by 0.042. The pilot scores 0.924 and the scaled atlas
 to 0.601), better on 23 of 24 targets, with one target 48.5% worse.
 
 ```bash
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp ac20 \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp ac20 \
   --template samples/AC20_Atlas_Topology.xml --renderer swift \
   --process-policy fresh --samples 1024 --held-out 24 --seconds 4 --seed 17 \
   --held-out-seed 29 --out packs/morgan/response_atlas_ac20_1024.json
@@ -1037,7 +1037,7 @@ moved +0.17% the other way. The five-render baselines themselves agreed to withi
 0.042 on every target on replay.
 
 ```bash
-.venv/bin/python scripts/build_response_atlas.py --pack toneking --amp rhythm \
+.venv/bin/python research/build_response_atlas.py --pack toneking --amp rhythm \
   --renderer swift --samples 1024 --held-out 24 --seconds 4 --seed 17 \
   --held-out-seed 29 --neutral-replicates 5 \
   --out packs/toneking/response_atlas_rhythm_1024.json
@@ -1280,7 +1280,7 @@ and still not a better start for a search.
 .venv/bin/python scripts/benchmark_match.py --renderer swift \
   --atlas packs/morgan/response_atlas_sw50r_1024.json --probe-di how-long-di-6s.wav \
   --targets 12 --budget 300 --workers 2 --json docs/data/matching/atlas-benchmark-sw50r-guitar.json
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --renderer swift \
   --probe-di how-long-di-6s.wav --samples 128 --held-out 24 --seed 17 \
   --held-out-seed 29 --out atlas_sw50r_howlong_128.json
@@ -1318,7 +1318,7 @@ the same blend position.
 The committed measurement is reproduced by this invocation, exactly:
 
 ```bash
-.venv/bin/python scripts/benchmark_warm_start.py \
+.venv/bin/python research/benchmark_warm_start.py \
   --atlas packs/morgan/response_atlas_pr12_1024.json --renderer swift \
   --tune-samples 12 --tune-seed 31 --test-samples 24 --test-seed 43 \
   --seconds 4 --minimum-cv-r2 0.7 --cv-folds 5 \
@@ -1414,7 +1414,7 @@ git restore --source=55490f9 --worktree -- packs/morgan/response_atlas_sw50r_102
   --atlas packs/morgan/response_atlas_sw50r_1024.json --probe-di how-long-di-6s.wav \
   --targets 12 --budget 300 --workers 2 --loss-profile unpaired-v2 \
   --json docs/data/matching/atlas-benchmark-sw50r-guitar-v2.json
-.venv/bin/python scripts/build_response_atlas.py --pack morgan --amp sw50r \
+.venv/bin/python research/build_response_atlas.py --pack morgan --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --renderer swift \
   --probe-di how-long-di-6s.wav --samples 128 --held-out 24 --seed 17 \
   --held-out-seed 29 --loss-profile unpaired-v2 \
@@ -1439,7 +1439,7 @@ write them where `.gitignore` keeps them out of commits.
 #### Matching without a DI — measured
 
 A match renders every candidate through a DI, and with none it uses the six-second
-noise-burst probe. `scripts/benchmark_search_signal.py` measures what that costs.
+noise-burst probe. `research/benchmark_search_signal.py` measures what that costs.
 Known settings rendered from one played passage stand in for the reference; the
 same pipeline — neutral settings, inversion, a 300-render search, the template's
 switches held — runs once per search signal with the same random numbers; and
@@ -1491,7 +1491,7 @@ So the match skill now tells the user plainly that a match made without a DI is
 close to a starting point, and that a DI of anything they play would change that.
 
 ```bash
-.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+.venv/bin/python research/benchmark_search_signal.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
   --signal same --signal other=hotel-di-6s.wav --signal noise \
   --signal noise-at-di-level --targets 12 --budget 300 --workers 2 \
@@ -1534,12 +1534,12 @@ up to 0.15, but single targets by up to 0.36 (own passage), 0.52 (other song) an
 9 of 12 is fragile.
 
 ```bash
-.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+.venv/bin/python research/benchmark_search_signal.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
   --signal same --signal guitar --signal noise --signal other=hotel-di-6s.wav \
   --targets 12 --budget 300 --workers 2 \
   --json docs/data/matching/search-signal-sw50r-guitar-probe-howlong.json
-.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+.venv/bin/python research/benchmark_search_signal.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --target-di hotel-di-6s.wav \
   --signal same --signal guitar --signal noise --signal other=how-long-di-6s.wav \
   --targets 12 --budget 300 --workers 2 \
@@ -1642,7 +1642,7 @@ The next subsection measures it on both amps and drops it from the -v2
 profiles, which new matches now use.
 
 ```bash
-.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+.venv/bin/python research/benchmark_search_signal.py --pack toneking --amp rhythm \
   --renderer swift --target-di how-long-di-6s.wav --signal same \
   --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
   --workers 2 --json docs/data/matching/search-signal-toneking-rhythm-run2.json
@@ -1673,7 +1673,7 @@ agreement as its confidence. A played passage rarely lets a note ring into
 silence, so much of what it fits is the note's sustain through the amp. It was
 validated on decaying noise bursts, where the decay is the reverb.
 
-`scripts/study_rt60.py` asks two things, on SW50R's atlas topology template and
+`research/study_rt60.py` asks two things, on SW50R's atlas topology template and
 on Tone King's rhythm channel with its neutral seed, through the same two
 passages. First, does the estimate follow a reverb that is really there? The
 neutral start with the amp's spring and then the rack reverb turned up, one
@@ -1785,19 +1785,19 @@ recovery of the settings — with the caveat that only one of the sampled
 controls, the spring, is a reverb control.
 
 ```bash
-.venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
+.venv/bin/python research/study_rt60.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml \
   --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
   --json docs/data/matching/rt60-study-sw50r.json
-.venv/bin/python scripts/study_rt60.py --renderer swift --pack toneking \
+.venv/bin/python research/study_rt60.py --renderer swift --pack toneking \
   --amp rhythm --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
   --json docs/data/matching/rt60-study-toneking.json
-.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+.venv/bin/python research/benchmark_search_signal.py --pack toneking --amp rhythm \
   --renderer swift --target-di how-long-di-6s.wav --signal same \
   --signal other=hotel-di-6s.wav --signal noise --targets 12 --no-search \
   --workers 1 --loss-profile unpaired-v2 \
   --json docs/data/matching/search-signal-toneking-baselines-v2-w1.json
-.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+.venv/bin/python research/benchmark_search_signal.py --pack toneking --amp rhythm \
   --renderer swift --target-di how-long-di-6s.wav --signal same \
   --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
   --workers 2 --loss-profile unpaired-v2 \
@@ -1822,7 +1822,7 @@ carries the term too.
 
 `invert.reverb_settings` reads the same estimate: for a confident decay of a
 second or more it switches Morgan's rack reverb on at that decay, and otherwise
-switches it off. `scripts/study_rt60.py --switches 12` asks whether that tells a
+switches it off. `research/study_rt60.py --switches 12` asks whether that tells a
 reverb from none on played material: twelve SW50R atlas-topology targets, each
 rendered with the rack reverb off and again with it on (mix 26.5 to 74%, decay
 4.4 to 17.95 s), one fresh process per render, through both passages, each
@@ -1858,7 +1858,7 @@ numbers are unaffected. `benchmark_match.py` labels every target it renders
 `--atlas` the held topology puts the reverb back, without it nothing does.
 
 ```bash
-.venv/bin/python scripts/study_rt60.py --renderer swift --amp sw50r \
+.venv/bin/python research/study_rt60.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml \
   --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav --switches 12 \
   --json docs/data/matching/rt60-study-sw50r.json
@@ -1912,7 +1912,7 @@ is that the amp answers broadband noise and a played guitar differently; with
 a DI, and the match skill tells the user to set it by ear.
 
 ```bash
-.venv/bin/python scripts/benchmark_search_signal.py --renderer swift --amp sw50r \
+.venv/bin/python research/benchmark_search_signal.py --renderer swift --amp sw50r \
   --template samples/SW50R_Atlas_Topology.xml --target-di how-long-di-6s.wav \
   --signal same --signal other=hotel-di-6s.wav --signal noise \
   --signal noise-at-di-level --targets 12 --budget 300 --workers 2 \
@@ -1969,7 +1969,7 @@ was measured is Tone King under `unpaired-v2`; a paired match scores with
 `paired-v2`, and Morgan was not measured.
 
 ```bash
-.venv/bin/python scripts/benchmark_search_signal.py --pack toneking --amp rhythm \
+.venv/bin/python research/benchmark_search_signal.py --pack toneking --amp rhythm \
   --renderer swift --target-di how-long-di-6s.wav --signal same \
   --signal other=hotel-di-6s.wav --signal noise --targets 12 --budget 300 \
   --workers 2 --loss-profile unpaired-v2 --level-trim \
@@ -1984,7 +1984,7 @@ which the benchmark added afterwards.
 #### Matching amp recordings — the development parts of `validation-datasets.md`
 
 The first benchmark whose targets are recordings rather than the plugin's renders.
-`scripts/benchmark_recordings.py` takes every usable development part of
+`research/benchmark_recordings.py` takes every usable development part of
 `validation-datasets.md` — Telefunken "Bourbon" and "Collide With Me" (two guitars
 each, the M80 track), Heather Jane ElecGtr1 and its double, and eight Guitar-TECHS
 excerpts: 14 parts — cuts its declared 10 s excerpt with
@@ -2063,10 +2063,10 @@ loudness. The Tone King figures above do not use it: the outlier there is an
 inversion, which the tables do not report. It was measured next, below.
 
 ```bash
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack morgan \
   --amp sw50r --signal same --signal other --signal noise --budget 300 \
   --workers 2 --json docs/recordings-benchmark-sw50r.json
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack toneking \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack toneking \
   --amp rhythm --signal same --signal other --signal noise --budget 300 \
   --workers 2 --json docs/data/matching/recordings-benchmark-toneking-rhythm.json
 ```
@@ -2084,7 +2084,7 @@ all on played material? `analysis.features.harmonic` finds the longest steady
 single note in a signal (an autocorrelation pitch between 60 and 1200 Hz) and
 measures its harmonic-to-noise ratio, its odd- against even-harmonic power and a
 high-frequency fizz index; `compare` makes those the `harmonic` dimension.
-`scripts/study_harmonic.py` asks it four ways, through 16 passages — the How Long
+`research/study_harmonic.py` asks it four ways, through 16 passages — the How Long
 and Hotel California DIs and the 14 development DI crops, each first scaled to
 −18 LUFS so that every one drives the amp equally hard — on SW50R (Morgan 1.1.1)
 and Tone King's rhythm channel (1.0.3), one reused Swift instance each,
@@ -2156,11 +2156,11 @@ pitch estimate that holds the same note on both sides might make the dimension
 usable again, and nothing here tried one.
 
 ```bash
-.venv/bin/python scripts/study_harmonic.py --renderer swift --pack morgan \
+.venv/bin/python research/study_harmonic.py --renderer swift --pack morgan \
   --amp sw50r --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
   --development-dis --recordings docs/recordings-benchmark-sw50r.json \
   --json docs/data/matching/harmonic-study-sw50r.json
-.venv/bin/python scripts/study_harmonic.py --renderer swift --pack toneking \
+.venv/bin/python research/study_harmonic.py --renderer swift --pack toneking \
   --amp rhythm --di howlong=how-long-di-6s.wav --di hotel=hotel-di-6s.wav \
   --development-dis --recordings docs/data/matching/recordings-benchmark-toneking-rhythm.json \
   --json docs/data/matching/harmonic-study-toneking-rhythm.json
@@ -2312,7 +2312,7 @@ recording (mean 0.93 against 1.12), which fits a player's own rig mattering, but
 the parts differ too and this was not designed to show it.
 
 ```bash
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack morgan \
   --amp sw50r --set 2 --signal same --signal other --signal noise --budget 300 \
   --loss-profile unpaired-v3 --workers 3 --json docs/data/set2/recordings-benchmark-set2-sw50r.json
 ```
@@ -2322,7 +2322,7 @@ noise 0.23 dB. It took 435 minutes from 407aee4 in a separate checkout, which
 built the 43 crops into `~/ndsp-presets/references/validation-crops/` for both
 runs; the JSON was written outside the checkout and copied here.
 
-**The shipped match.** `scripts/benchmark_match_pipeline.py` runs
+**The shipped match.** `research/benchmark_match_pipeline.py` runs
 `match_preset.py` as a player runs it, from `samples/SW50R_Atlas_Topology.xml`,
 against each part's amp track (its declared 10 s crop, measured whole): once without a DI — the noise-probe
 search, the guitar check and the level trim — and once with the part's own DI as
@@ -2386,7 +2386,7 @@ loudness within 1.4 LU. A same-take reamp is the best case; a player's own DI of
 another performance lies somewhere between it and no DI.
 
 ```bash
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --parallel 3 \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 --parallel 3 \
   --json docs/match-pipeline-set2-sw50r.json
 ```
 
@@ -2460,11 +2460,11 @@ preset you started from. One case, found in sample.
 ```bash
 .venv/bin/python scripts/apply_spec.py --template samples/SW50R_Atlas_Topology.xml \
   --spec docs/data/set2/neutral-sw50r-spec.json --out runs/neutral-sw50r.xml
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 \
   --template runs/neutral-sw50r.xml --seed 11 --arm no_di --parallel 2 \
   --out-dir runs/match-pipeline-neutral-s11 \
   --json docs/data/set2/match-pipeline-set2-sw50r-neutral-seed11.json
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 --seed 11 \
   --arm no_di --parallel 2 --out-dir runs/match-pipeline-template-s11 \
   --json docs/data/set2/match-pipeline-set2-sw50r-seed11.json
 ```
@@ -2523,7 +2523,7 @@ this one went silent after about 5,000 — so splitting a long Tone King run, as
 here, is a precaution from one occurrence, not a measured limit.
 
 ```bash
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack toneking \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack toneking \
   --amp rhythm --set 2 --signal same --signal other --signal noise --budget 300 \
   --loss-profile unpaired-v3 --workers 3 \
   --json docs/data/set2/recordings-benchmark-set2-toneking-rhythm-run1.json
@@ -2557,7 +2557,7 @@ search without a DI is not shown better than its start once loudness is set
 aside.
 
 ```bash
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack morgan \
   --amp pr12 --set 2 --signal same --signal other --signal noise --budget 300 \
   --loss-profile unpaired-v3 --workers 3 --json docs/data/set2/recordings-benchmark-set2-pr12.json
 ```
@@ -2704,10 +2704,10 @@ numbers; none reverses an established result:
 - About 8 minutes a match (AC20 about 15), one part at a time (AC20 two).
 
 ```bash
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
   --pack morgan --amp pr12 --template samples/Example_Clean_PR12.xml \
   --out-dir runs/start-pr12-shipped --json docs/data/set2/match-pipeline-set2-pr12-shipped.json
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 --seed 11 --arm no_di \
   --pack morgan --amp ac20 --process-policy fresh \
   --template samples/AC20_Atlas_Topology.xml \
   --out-dir runs/start-ac20-shipped --json docs/data/set2/match-pipeline-set2-ac20-shipped.json
@@ -2834,24 +2834,24 @@ All in a separate checkout; JSONs copied here:
   `-e3-toneking-library-batch{0,1}.json`;
 - `docs/data/set2/match-pipeline-set2-{pr12,sw50r,ac20,toneking-default}-library.json`;
 - `docs/data/set2/library-arm-analysis-set2-{pr12,sw50r,ac20,toneking}.json`, from
-  `scripts/analyse_shipped_library.py`.
+  `research/analyse_shipped_library.py`.
 
 ```bash
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack morgan \
   --amp sw50r --set 2 --signal noise --signal library --signal other --signal same \
   --no-search --loss-profile unpaired-v3 --workers 3 \
   --json docs/data/set2/recordings-benchmark-set2-e1-sw50r.json
-.venv/bin/python scripts/benchmark_recordings.py --renderer swift --pack morgan \
+.venv/bin/python research/benchmark_recordings.py --renderer swift --pack morgan \
   --amp sw50r --set 2 --signal library --budget 300 --seed 11 \
   --loss-profile unpaired-v3 --workers 3 \
   --json docs/data/set2/recordings-benchmark-set2-e2-sw50r-library.json
-.venv/bin/python scripts/benchmark_match_pipeline.py --set 2 --seed 11 --arm library \
+.venv/bin/python research/benchmark_match_pipeline.py --set 2 --seed 11 --arm library \
   --parallel 2 --pack morgan --amp pr12 --template samples/Example_Clean_PR12.xml \
   --out-dir runs/lib-pr12-shipped --json docs/data/set2/match-pipeline-set2-pr12-library.json
-.venv/bin/python scripts/analyse_shipped_library.py render-calc \
+.venv/bin/python research/analyse_shipped_library.py render-calc \
   --run runs/lib-pr12-shipped --no-di-run runs/start-pr12-shipped \
   --template samples/Example_Clean_PR12.xml
-.venv/bin/python scripts/analyse_shipped_library.py score \
+.venv/bin/python research/analyse_shipped_library.py score \
   --run runs/lib-pr12-shipped --no-di-run runs/start-pr12-shipped \
   --json docs/data/set2/library-arm-analysis-set2-pr12.json
 ```
@@ -5510,7 +5510,7 @@ Rendering every search point three times was held to the same search-render cost
 evaluating one third as many points. Forcing one finalist from every topology was
 allowed to spend more — `2 × (variants − shortlist)` extra renders, which is 2 for
 four topologies and 10 for eight — and still lost.
-`scripts/simulate_topology_replication.py` fixes seed 20260827,
+`research/simulate_topology_replication.py` fixes seed 20260827,
 50,000 trials per configuration, 2/4/8 topologies and per-render sigma
 0.05/0.15/0.30. Across all nine configurations the current policy's mean true
 regret was no worse than either alternative: replicating one finalist per topology

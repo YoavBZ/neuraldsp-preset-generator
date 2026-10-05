@@ -1,7 +1,7 @@
 # Can the judge tell Morgan's amps apart? Recoverable, provisionally
 
 Computed as declared in `docs/amp-identifiability-plan.md`, by
-`scripts/amp_identifiability.py` at 4f263bf (rebased as ad25e15, unchanged). The rows
+`research/amp_identifiability.py` at 4f263bf (rebased as ad25e15, unchanged). The rows
 are in `docs/amp-identifiability.json`, without the per-pair distances, which stay
 with the run. The `master` column is null on PR12 and AC20 rows: the run stored
 SW50R's level there, fixed in f48b7fb.

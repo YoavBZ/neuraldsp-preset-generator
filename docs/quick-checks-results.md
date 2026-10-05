@@ -1,7 +1,7 @@
 # Three quick checks: a set of amps, not too-alike presets, no cheap fix
 
 Computed as declared in `docs/quick-checks-plan.md` (after two reviews), at a7ada5b:
-`scripts/reach_sets.py` and `scripts/k3_hub_fixes.py`, from the judge distances in
+`research/reach_sets.py` and `research/k3_hub_fixes.py`, from the judge distances in
 `~/ndsp-presets/runs/kill/amp-reach.json`. The `commit` field in both outputs says
 4da5860, which is a7ada5b before the branch was rebased.
 

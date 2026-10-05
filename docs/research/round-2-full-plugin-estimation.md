@@ -236,7 +236,7 @@ One song plays the same preset at many intensities, so these slopes trace the am
 - The committed harmonic row was already a within-note measurement and was at chance. What is new is tracking brightness against level, which is untested anywhere at unknown input level.
 
 **Cost.**
-- 2–3 days of code, extending `scripts/study_harmonic.py`.
+- 2–3 days of code, extending `research/study_harmonic.py`.
 - About 15–20 minutes of renders.
 - Calibration tables only after the gate passes: minutes on reused Morgan, about 40 minutes for AC20 in fresh processes, Tone King reused.
 - 1–2 s per match.

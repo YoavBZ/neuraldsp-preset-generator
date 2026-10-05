@@ -18,10 +18,10 @@ import pytest
 
 sf = pytest.importorskip("soundfile")
 
-from scripts.build_validation_crops import _declaration
+from research.build_validation_crops import _declaration
 from scripts._listening_trials import consistency
 from scripts import apply_spec
-from scripts.summarize_declared_listening import ROOT, RULES, _declared_rules, _slug, summarize
+from research.summarize_declared_listening import ROOT, RULES, _declared_rules, _slug, summarize
 
 
 PARTS = (

@@ -15,6 +15,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 np = pytest.importorskip("numpy", reason="needs the analysis extra")
 pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
@@ -131,7 +132,7 @@ def _fixture(tmp_path, older_outputs):
 
 def _judge(panel, crops, lags, outputs, *extra):
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "kill_tests_judge.py"), "--panel-dir", str(panel),
+        [sys.executable, str(ROOT / "research" / "kill_tests_judge.py"), "--panel-dir", str(panel),
          "--crops-dir", str(crops), "--lags", str(lags), "--k-json", str(outputs["k.json"]),
          "--k3-json", str(outputs["k3.json"]), "--workers", "1", *extra],
         capture_output=True, text=True)

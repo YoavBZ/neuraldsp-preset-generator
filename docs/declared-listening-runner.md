@@ -1,6 +1,6 @@
 # Running a declared listening test
 
-`scripts/run_declared_listening.py` executes a committed test from a clean
+`research/run_declared_listening.py` executes a committed test from a clean
 worktree. It never reads answers or prints a step's output. Its console output
 contains only part/step names and exit codes; the full logs, command arrays,
 output hashes, timestamps and `pip freeze` text stay in a new private run
@@ -28,7 +28,7 @@ For a future SW50R test, this is the command-block shape. It is an example,
   "template": "samples/SW50R_Atlas_Topology.xml",
   "steps": {
     "crops": {
-      "argv": ["{python}", "scripts/build_validation_crops.py", "--source", "{source}", "--song", "{song}", "--part", "{part}", "--declaration", "{declaration}", "--out-dir", "{run}/crops"],
+      "argv": ["{python}", "research/build_validation_crops.py", "--source", "{source}", "--song", "{song}", "--part", "{part}", "--declaration", "{declaration}", "--out-dir", "{run}/crops"],
       "outputs": ["{run}/crops/record.json", "{run}/crops/di.wav", "{run}/crops/reference.wav", "{run}/crops/mix.wav", "{run}/crops/backing.wav"],
       "primary_output": "{run}/crops/record.json"
     },
@@ -44,14 +44,14 @@ For a future SW50R test, this is the command-block shape. It is an example,
     },
     "di_preset": {
       "argv": ["{python}", "scripts/apply_spec.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--spec", "{run}/with-di/match-1.json", "--out", "{run}/with-di.xml"],
-      "fallback_argv": ["{python}", "scripts/copy_declared_template.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--out", "{run}/with-di.xml"],
+      "fallback_argv": ["{python}", "research/copy_declared_template.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--out", "{run}/with-di.xml"],
       "summary": "{run}/with-di/summary.json",
       "outputs": ["{run}/with-di.xml"],
       "primary_output": "{run}/with-di.xml"
     },
     "no_di_preset": {
       "argv": ["{python}", "scripts/apply_spec.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--spec", "{run}/no-di/match-1.json", "--out", "{run}/no-di.xml"],
-      "fallback_argv": ["{python}", "scripts/copy_declared_template.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--out", "{run}/no-di.xml"],
+      "fallback_argv": ["{python}", "research/copy_declared_template.py", "--template", "samples/SW50R_Atlas_Topology.xml", "--out", "{run}/no-di.xml"],
       "summary": "{run}/no-di/summary.json",
       "outputs": ["{run}/no-di.xml"],
       "primary_output": "{run}/no-di.xml"
@@ -69,12 +69,12 @@ For a future SW50R test, this is the command-block shape. It is an example,
       "applied_settings_record": "{run}/second.wav.render.json"
     },
     "manifest": {
-      "argv": ["{python}", "scripts/build_declared_listening_manifest.py", "--crop-record", "{run}/crops/record.json", "--first-render", "{run}/first.wav.render.json", "--second-render", "{run}/second.wav.render.json", "--out", "{run}/audition.json"],
+      "argv": ["{python}", "research/build_declared_listening_manifest.py", "--crop-record", "{run}/crops/record.json", "--first-render", "{run}/first.wav.render.json", "--second-render", "{run}/second.wav.render.json", "--out", "{run}/audition.json"],
       "outputs": ["{run}/audition.json"],
       "primary_output": "{run}/audition.json"
     },
     "audition": {
-      "argv": ["{python}", "scripts/build_backed_audition.py", "--manifest", "{run}/audition.json", "--out-dir", "{run}/audition"],
+      "argv": ["{python}", "research/build_backed_audition.py", "--manifest", "{run}/audition.json", "--out-dir", "{run}/audition"],
       "outputs": ["{run}/audition/audition.flac"],
       "primary_output": "{run}/audition/audition.flac"
     }

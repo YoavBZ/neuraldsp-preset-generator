@@ -1,7 +1,7 @@
 # Stage 0b: the judge is validated for clear, clean-to-crunch differences
 
 Scored as declared in `docs/listening-validation-plan.md` (as amended before any
-answer) by `scripts/score_listening_validation.py`. Its output is
+answer) by `research/score_listening_validation.py`. Its output is
 `docs/listening-validation-score.json`.
 
 - **The answer sheet.** The listener gave the 30 answers in chat on 2026-10-04, in two

@@ -395,13 +395,13 @@ is reading its own noise.
 
 ## Hosting the plugin in-process
 
-`scripts/spike_pedalboard.py` renders through `pedalboard`, which embeds a JUCE
+`research/spike_pedalboard.py` renders through `pedalboard`, which embeds a JUCE
 host. It needs the `host` extra and, like everything else here, an installed and
 licensed plugin:
 
 ```bash
 pip install -e '.[host]'
-python scripts/spike_pedalboard.py --plugin "Morgan Amps Suite" --bench 10
+python research/spike_pedalboard.py --plugin "Morgan Amps Suite" --bench 10
 ```
 
 ```
@@ -426,7 +426,7 @@ that the backend can be driven by a parameter vector. `--state` applies a file
 as raw state, reads it back, and reports which parameters the plugin kept:
 
 ```bash
-python scripts/spike_pedalboard.py --plugin "Tone King Imperial MKII" \
+python research/spike_pedalboard.py --plugin "Tone King Imperial MKII" \
   --state /tmp/generated.xml
 ```
 

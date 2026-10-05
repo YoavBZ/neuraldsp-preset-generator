@@ -3,7 +3,7 @@
 Computed as declared in `docs/kill-tests-pr12-plan.md`.
 - **What ran:** the three kill-test scripts on the 21-preset clean PR12 panel, at the
   parts' recorded lags.
-- **The verdict:** `scripts/kill_tests_pr12_verdict.py`, committed before any output
+- **The verdict:** `research/kill_tests_pr12_verdict.py`, committed before any output
   was read. Its output is `docs/kill-tests-pr12-verdict.json`.
 - **The commits:** the run used 69d34a2 and the verdict d82eddf. Those were local
   commits before this branch was rebased onto main, and the record names them.

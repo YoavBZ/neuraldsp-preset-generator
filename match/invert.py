@@ -66,7 +66,7 @@ SAME_DI_REGIMES = ("probe", "paired_di")
 # probe it was validated on. On played material it largely follows the note's
 # sustain: on SW50R the rule below switched the rack reverb on for 4 and 5 of 12
 # played targets that had one and 5 and 4 of 12 that did not, through two
-# passages (`scripts/study_rt60.py --switches`). A recording, a stem or a reamp of
+# passages (`research/study_rt60.py --switches`). A recording, a stem or a reamp of
 # the user's playing leaves the reverb as the template has it.
 RT60_REGIMES = ("probe",)
 
@@ -924,7 +924,7 @@ def reverb_from_rt60(fingerprint, pack_id: str = "morgan",
     """Decay and pre-delay from the fingerprint's reverb estimates, whatever its regime.
 
     The rule a `probe` target gets from `reverb_settings`. It is separate so
-    `scripts/study_rt60.py` can ask what it would decide on played material, which
+    `research/study_rt60.py` can ask what it would decide on played material, which
     is why played material no longer gets it. Two separate confidences make two
     separate decisions: a render can support a decay slope and not a pre-delay,
     and `predelay_ms` abstains far more often than it answers by design.

@@ -16,6 +16,7 @@ import pytest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 import audition as A  # noqa: E402
 import build_di_library as L  # noqa: E402
