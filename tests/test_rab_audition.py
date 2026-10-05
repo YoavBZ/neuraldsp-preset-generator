@@ -157,7 +157,7 @@ def test_standalone_hidden_trials_can_be_logged_and_audited_once(tmp_path):
 
     audit_dir = tmp_path / "audit"
     audited = subprocess.run([
-        sys.executable, str(ROOT / "scripts" / "audit_frozen_listening.py"),
+        sys.executable, str(ROOT / "research" / "audit_frozen_listening.py"),
         "--record", str(sidecar), "--out-dir", str(audit_dir),
     ], cwd=ROOT, capture_output=True, text=True)
     assert audited.returncode == 0, audited.stderr

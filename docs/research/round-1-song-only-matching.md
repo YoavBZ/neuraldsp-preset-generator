@@ -15,7 +15,7 @@
 
 ## 1. Executive summary
 
-The change most likely to help is a simple one. Stop rendering candidates through the 6-second noise burst and render them through a real guitar DI taken from a public library. The committed runs already show what this is worth. A DI from another band beat neutral settings on 19 of 27 SW50R set-2 parts with level left out. The direct inversion alone through another DI also ended closer than the full 300-render noise search (median 1.11 against 1.25 on SW50R, 1.03 against 1.26 on Tone King). This needs no model and no new dependency, and a match still takes about 8 minutes. It can be tested over one night after a small change to `scripts/benchmark_recordings.py`.
+The change most likely to help is a simple one. Stop rendering candidates through the 6-second noise burst and render them through a real guitar DI taken from a public library. The committed runs already show what this is worth. A DI from another band beat neutral settings on 19 of 27 SW50R set-2 parts with level left out. The direct inversion alone through another DI also ended closer than the full 300-render noise search (median 1.11 against 1.25 on SW50R, 1.03 against 1.26 on Tone King). This needs no model and no new dependency, and a match still takes about 8 minutes. It can be tested over one night after a small change to `research/benchmark_recordings.py`.
 
 It will probably help Morgan more than Tone King. On Tone King, another DI beat neutral settings on only about 20 of 33 parts. So whether a Tone King match without a DI should simply return neutral settings, rather than search, is worth deciding (§5). The noise search ended further than neutral on 29 of 43 parts with level left out, and 38 with level.
 
@@ -201,7 +201,7 @@ The plan has two parts:
 
 ### Phase 0: no renders (about 1.5 days of code)
 
-- **Harness change.** In `scripts/benchmark_recordings.py`:
+- **Harness change.** In `research/benchmark_recordings.py`:
   - add `--signal file=NAME=PATH` (one probe for every part);
   - add `--signal dir=NAME=DIR` (per-part WAVs named by crop slug);
   - add `--no-search`, which exposes `compare_search_signals(run_search=False)`, already in `match/signal_benchmark.py`;
@@ -269,7 +269,7 @@ About 1.5–2 h.
 
 ### Phase 3: the two diagnostics that decide any ML spending
 
-**E6, cross-performance regret harness.** Extend `scripts/study_harmonic.py`:
+**E6, cross-performance regret harness.** Extend `research/study_harmonic.py`:
 - 16 set-2 development DIs from at least 8 bands, at native level and at the probe level E1 settles;
 - 64 settings (48 Latin-hypercube samples plus 16 factory presets) on SW50R and on Tone King rhythm;
 - a mixed-and-separated context for 16 settings.

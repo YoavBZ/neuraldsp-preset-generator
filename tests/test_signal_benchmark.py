@@ -293,7 +293,7 @@ def test_a_run_needs_a_signal_and_an_amp(space, topology, signals):
 
 def _cli(*args):
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "benchmark_search_signal.py"),
+        [sys.executable, str(ROOT / "research" / "benchmark_search_signal.py"),
          *map(str, args)], cwd=ROOT, capture_output=True, text=True)
 
 
@@ -403,7 +403,7 @@ def test_the_cli_takes_a_named_recording_and_hashes_its_file(tmp_path):
 
 
 def test_the_benchmark_offers_the_synthetic_guitar_as_a_signal():
-    from scripts.benchmark_search_signal import _signals
+    from research.benchmark_search_signal import _signals
 
     target = fx.plucks(seconds=1.2, gap=0.7, seed=3) * 0.3
     signals, described = _signals(["same", "guitar"], target, fx.SAMPLE_RATE)

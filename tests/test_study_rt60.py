@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 def _cli(*args):
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "study_rt60.py"), *map(str, args)],
+        [sys.executable, str(ROOT / "research" / "study_rt60.py"), *map(str, args)],
         cwd=ROOT, capture_output=True, text=True)
 
 

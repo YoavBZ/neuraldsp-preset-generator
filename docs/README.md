@@ -31,7 +31,8 @@ was declared, what was measured, and the research behind it.
   - `validation-crop-rules.json` and the listening-validation results files.
 - **When an experiment closes** and nothing reads or cites its outputs, they move to
   `data/<workstream>/`.
-- **`research/`** holds the literature research rounds, oldest first.
+- **`docs/research/`** holds the literature research rounds, oldest first (the
+  research *tooling* is the top-level `research/` folder).
 - **Crop rules:** rule 1 (the loudest 10 s) cut the crops every experiment through the
   shortlist measurement used. Rule 2 (where the DI plays most) is for crops cut from now
   on ([validation-datasets.md](validation-datasets.md)). The product's own excerpt rule
@@ -94,7 +95,7 @@ was declared, what was measured, and the research behind it.
 - `data/set2/`: the second validation set's benchmark, pipeline, neutral-start and
   library-arm outputs.
 
-**Research** (`research/`)
+**Research** (`docs/research/`)
 1. [round-1-song-only-matching.md](research/round-1-song-only-matching.md): partly run
    under v3.
 2. [round-2-full-plugin-estimation.md](research/round-2-full-plugin-estimation.md): not

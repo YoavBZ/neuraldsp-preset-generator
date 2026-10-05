@@ -12,6 +12,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 import benchmark_match_pipeline as P  # noqa: E402
 
@@ -78,7 +79,7 @@ def test_a_part_directory_name_has_no_separator_or_space():
 
 
 def test_the_output_must_be_under_the_checkouts_runs(tmp_path):
-    done = subprocess.run([sys.executable, str(ROOT / "scripts" / "benchmark_match_pipeline.py"),
+    done = subprocess.run([sys.executable, str(ROOT / "research" / "benchmark_match_pipeline.py"),
                            "--out-dir", str(tmp_path / "elsewhere")],
                           capture_output=True, text=True, cwd=ROOT)
     assert done.returncode != 0

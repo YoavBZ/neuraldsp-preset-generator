@@ -19,7 +19,7 @@ import pathlib
 from format.parser import parse
 from format.structured import build, set_parameter
 from format.writer import write
-from scripts.spike_pedalboard import state_encoding, state_round_trip_diff
+from research.spike_pedalboard import state_encoding, state_round_trip_diff
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SAMPLE = ROOT / "samples" / "Example_Clean_PR12.xml"

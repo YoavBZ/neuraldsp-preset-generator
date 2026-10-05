@@ -21,9 +21,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "samples" / "Example_Clean_PR12.xml"
 
 
+def _script(name: str):
+    """A product tool in scripts/, or a research one in research/."""
+    product = ROOT / "scripts" / name
+    return product if product.exists() else ROOT / "research" / name
+
+
 def run(script: str, *args):
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / script), *map(str, args)],
+        [sys.executable, str(_script(script)), *map(str, args)],
         cwd=ROOT, capture_output=True, text=True,
     )
 

@@ -20,9 +20,9 @@ from analysis.listening import sha256
 from tests import fixtures_audio as fx
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "build_backed_audition.py"
-VERDICT_SCRIPT = ROOT / "scripts" / "log_backed_verdict.py"
-AUDIT_SCRIPT = ROOT / "scripts" / "audit_frozen_listening.py"
+SCRIPT = ROOT / "research" / "build_backed_audition.py"
+VERDICT_SCRIPT = ROOT / "research" / "log_backed_verdict.py"
+AUDIT_SCRIPT = ROOT / "research" / "audit_frozen_listening.py"
 
 
 def _fixture(tmp_path):
@@ -333,7 +333,7 @@ def test_unmeasurable_loudness_names_every_failing_input(tmp_path):
 
 
 def test_non_silent_clip_too_short_for_loudness_gate_is_identified():
-    from scripts.build_backed_audition import _unmeasurable_loudness
+    from research.build_backed_audition import _unmeasurable_loudness
 
     clip = io.from_samples(np.ones(round(.2 * fx.SAMPLE_RATE), np.float32))
     assert io.loudness_lufs(clip) is None
@@ -368,7 +368,7 @@ def test_bad_crop_is_refused_before_any_output(tmp_path):
 
 
 def test_failed_key_write_does_not_claim_the_immutable_destination(tmp_path, monkeypatch):
-    from scripts import build_backed_audition
+    from research import build_backed_audition
 
     manifest_path, _ = _fixture(tmp_path)
     out = tmp_path / "audition"
@@ -478,7 +478,7 @@ def test_backed_verdict_distinguishes_missing_v2_from_historical_key(tmp_path, o
 
 
 def test_simultaneous_verdict_publication_cannot_replace_the_first(tmp_path, monkeypatch):
-    from scripts import log_backed_verdict
+    from research import log_backed_verdict
 
     destination = tmp_path / "verdict.json"
     original_write = log_backed_verdict._write_text

@@ -16,7 +16,7 @@ from analysis.fingerprint import Fingerprint
 from match import atlas
 from match import space as space_module
 from match.renderer_synth import SyntheticRenderer
-from scripts import build_response_atlas as atlas_builder
+from research import build_response_atlas as atlas_builder
 from scripts.match_preset import _seed_from_template
 
 
@@ -216,7 +216,7 @@ def test_achievable_ranges_refuse_unknown_or_backwards_bounds():
 
 def test_build_provenance_is_allowed_and_survives_load(tmp_path):
     document = _document()
-    document["build"] = {"command": "python scripts/build_response_atlas.py"}
+    document["build"] = {"command": "python research/build_response_atlas.py"}
     path = tmp_path / "atlas.json"
     path.write_text(json.dumps(document))
 
@@ -255,7 +255,7 @@ def test_no_response_atlas_ships_with_the_plugin():
 
 def test_dry_run_is_plugin_free_and_names_the_render_arithmetic(tmp_path):
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+        [sys.executable, str(ROOT / "research" / "build_response_atlas.py"),
          "--renderer", "swift", "--samples", "16", "--held-out", "4",
          "--template", str(ROOT / "samples" / "Example_Clean_PR12.xml"),
          "--out", str(tmp_path / "atlas.json"), "--dry-run"],
@@ -274,7 +274,7 @@ def test_compare_cli_reports_a_scale_step_between_two_builds(tmp_path):
     for samples in (8, 16):
         built[samples] = tmp_path / f"atlas-{samples}.json"
         done = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+            [sys.executable, str(ROOT / "research" / "build_response_atlas.py"),
              "--pack", "morgan", "--amp", "pr12", "--renderer", "synthetic",
              "--template", str(ROOT / "samples" / "Example_Clean_PR12.xml"),
              "--samples", str(samples), "--held-out", "4", "--seconds", "1",
@@ -283,7 +283,7 @@ def test_compare_cli_reports_a_scale_step_between_two_builds(tmp_path):
         )
         assert done.returncode == 0, done.stderr
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "compare_response_atlases.py"),
+        [sys.executable, str(ROOT / "research" / "compare_response_atlases.py"),
          "--baseline", str(built[8]), "--candidate", str(built[16])],
         cwd=ROOT, capture_output=True, text=True,
     )
@@ -303,7 +303,7 @@ def test_query_cli_writes_ranked_specs_without_a_plugin(tmp_path):
     out = tmp_path / "out"
 
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "query_response_atlas.py"),
+        [sys.executable, str(ROOT / "research" / "query_response_atlas.py"),
          "--atlas", str(atlas_path), "--reference", str(reference),
          "--reference-mode", "probe", "--limit", "2", "--out-dir", str(out)],
         cwd=ROOT, capture_output=True, text=True,
@@ -337,7 +337,7 @@ def test_query_warns_that_a_noise_probe_atlas_does_not_transfer_to_a_guitar(
 
     def query(mode, built=atlas_path):
         return subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "query_response_atlas.py"),
+            [sys.executable, str(ROOT / "research" / "query_response_atlas.py"),
              "--atlas", str(built), "--reference", str(reference),
              "--reference-mode", mode, "--out-dir", str(tmp_path / mode)],
             cwd=ROOT, capture_output=True, text=True,
@@ -369,7 +369,7 @@ def test_query_refuses_a_waveform_residual_the_atlas_does_not_store(tmp_path):
     reference = tmp_path / "reference.wav"
     write_wav(reference, harmonic_note(seconds=1.2))
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "query_response_atlas.py"),
+        [sys.executable, str(ROOT / "research" / "query_response_atlas.py"),
          "--atlas", str(atlas_path), "--reference", str(reference),
          "--loss-profile", "paired-v1", "--out-dir", str(tmp_path / "out")],
         cwd=ROOT, capture_output=True, text=True,
@@ -526,7 +526,7 @@ def test_zero_baseline_replicates_is_refused():
 
 def test_a_tone_king_atlas_needs_no_preset_in_a_dry_run(tmp_path):
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+        [sys.executable, str(ROOT / "research" / "build_response_atlas.py"),
          "--pack", "toneking", "--amp", "lead", "--renderer", "swift",
          "--samples", "16", "--held-out", "4", "--neutral-replicates", "3",
          "--out", str(tmp_path / "atlas.json"), "--dry-run"],
@@ -542,7 +542,7 @@ def test_a_process_policy_without_the_plugin_is_refused_not_ignored(tmp_path):
     there would be accepted and do nothing — a run whose provenance claims a
     render policy it never had."""
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_response_atlas.py"),
+        [sys.executable, str(ROOT / "research" / "build_response_atlas.py"),
          "--renderer", "synthetic", "--process-policy", "fresh",
          "--out", str(tmp_path / "atlas.json"), "--dry-run"],
         capture_output=True, text=True, cwd=ROOT)

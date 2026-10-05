@@ -28,9 +28,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "samples" / "Example_Clean_PR12.xml"
 
 
+def _script(name: str):
+    """A product tool in scripts/, or a research one in research/."""
+    product = ROOT / "scripts" / name
+    return product if product.exists() else ROOT / "research" / name
+
+
 def run(script: str, *args) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / script), *map(str, args)],
+        [sys.executable, str(_script(script)), *map(str, args)],
         capture_output=True, text=True, cwd=ROOT,
     )
 
@@ -1175,7 +1181,9 @@ def test_the_topology_pilot_manifest_pins_every_artifact():
     simulation = manifest["simulation"]
     assert hashlib.sha256((ROOT / simulation["artifact"]).read_bytes()).hexdigest() \
         == simulation["sha256"]
+    # The manifest records where the script was when it ran; it has since moved.
     assert simulation["script"] == "scripts/simulate_topology_replication.py"
+    assert (ROOT / "research" / "simulate_topology_replication.py").exists()
 
 
 def test_the_benchmark_offers_the_flag_its_own_error_names(tmp_path):

@@ -20,7 +20,7 @@ It needs a DI for scoring only. The runs that write the presets get the song alo
 - **Baselines** come from the judge distances amp reach stored
   (`~/ndsp-presets/runs/kill/amp-reach.json`) for the 108 factory presets of the
   three amps (44 SW50R, 34 PR12, 30 AC20) and the template, all with the rule set R.
-- **The renders are comparable.** Fresh renders by `scripts/render_shortlists.py` (six
+- **The renders are comparable.** Fresh renders by `research/render_shortlists.py` (six
   factory presets across the three amps, plus the template, through 4 parts' DIs)
   reproduced the stored distances within 0.0002 (log) on all 168 readings. The
   same check runs on every part (see Canaries).
@@ -30,7 +30,7 @@ It needs a DI for scoring only. The runs that write the presets get the song alo
 **How they run.** One agent per song (16), launched from this session as
 general-purpose subagents. Each is told only to read and follow its sandbox's
 `BRIEF.md`, and follows the `generate` skill as a user's run would.
-`scripts/prepare_shortlist_runs.py prepare` builds the sandboxes in
+`research/prepare_shortlist_runs.py prepare` builds the sandboxes in
 `~/shortlist-sandboxes`, outside the data root and outside any checkout:
 
 - **`plugin/`:** an export of the plugin at the declared commit. It leaves out
@@ -119,7 +119,7 @@ is called a rough mix of the session, which it is. **The brief allows:**
 A run that fails these is redone once (`redo`, below).
 
 **Leak control is by instruction and audit, not enforcement.** After the runs,
-`scripts/audit_shortlist_runs.py` checks every tool call and result in every
+`research/audit_shortlist_runs.py` checks every tool call and result in every
 transcript against what the brief allows, and flags:
 - **Bash:**
   - a command that doesn't open with `cd` into its sandbox. Its relative paths are then
@@ -175,7 +175,7 @@ are reported.
 
 ## Rendering and scoring
 
-- **Render** (`scripts/render_shortlists.py`):
+- **Render** (`research/render_shortlists.py`):
   - every preset is checked against the hash `collect` recorded;
   - one fresh plugin process per part, reused within the part;
   - a discarded warm-up; then the template with R, G1–G4 and F1–F4 with R, and the
@@ -185,7 +185,7 @@ are reported.
   - R switches off time effects, gate, doubler, transpose and the amp's spring reverb,
     because the amp tracks are dry. So the time effects generate chooses are not
     scored.
-- **Score** (`scripts/score_shortlists.py`): the judge, at the recorded lag less the
+- **Score** (`research/score_shortlists.py`): the judge, at the recorded lag less the
   52-sample latency. Half A (1.0–5.5 s), half B (5.5–10 s) and the full window;
   both band sets.
 

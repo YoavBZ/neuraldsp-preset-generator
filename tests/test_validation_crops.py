@@ -16,12 +16,12 @@ sf = pytest.importorskip("soundfile", reason="needs the analysis extra")
 pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
 
 from analysis import io
-from scripts.build_backed_audition import build as build_backed
-from scripts.build_declared_listening_manifest import build as build_manifest
-from scripts.build_validation_crops import build
+from research.build_backed_audition import build as build_backed
+from research.build_declared_listening_manifest import build as build_manifest
+from research.build_validation_crops import build
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "build_validation_crops.py"
+SCRIPT = ROOT / "research" / "build_validation_crops.py"
 RATE = io.SAMPLE_RATE
 
 
@@ -547,7 +547,7 @@ def test_a_declared_instrumental_manifest_reaches_the_audition_as_the_vocal_free
     manifest = build_manifest(crop_dir / "record.json", *proofs, tmp_path / "audition.json",
                               max_ab_lufs_delta=3, instrumental=True)
     cli = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "build_declared_listening_manifest.py"),
+        [sys.executable, str(ROOT / "research" / "build_declared_listening_manifest.py"),
          "--crop-record", str(crop_dir / "record.json"), "--first-render", str(proofs[0]),
          "--second-render", str(proofs[1]), "--out", str(tmp_path / "cli.json"),
          "--max-ab-lufs-delta", "3", "--instrumental"],
@@ -565,7 +565,7 @@ def test_crop_rule_two_takes_the_window_the_part_plays_in():
     """The first rule ranked by gated loudness, so a short loud burst in a silent stretch
     won. Rule 2 takes where the DI plays most, ties broken by the reference's level."""
     np = pytest.importorskip("numpy", reason="needs the analysis extra")
-    import scripts.build_validation_crops as B
+    import research.build_validation_crops as B
 
     rate = 48000
     rng = np.random.default_rng(0)

@@ -103,12 +103,11 @@ def main():
 
     require("building the DI library")
     from analysis import io
-    from benchmark_recordings import CATALOG
     from packs import paths
 
     if args.data_dir:
         paths.set_data_root(args.data_dir)
-    catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+    catalog = json.loads((PLUGIN_ROOT / "docs" / "validation-datasets.json").read_text(encoding="utf-8"))
     split, band = {}, {}
     for s in catalog["sessions"]:
         for p in s["parts"]:

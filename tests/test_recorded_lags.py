@@ -12,6 +12,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 import benchmark_recordings as B  # noqa: E402
 import record_part_lags as R  # noqa: E402
