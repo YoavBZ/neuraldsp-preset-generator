@@ -6,12 +6,12 @@ three add? (`docs/amp-reach-plan.md`)
         --panel-dir ~/ndsp-presets/runs/kill/pr12 --panel-dir ~/ndsp-presets/runs/kill/ac20 \\
         --json amp-reach.json
 
-K1's split-half oracle, per amp and over the three amps together: for every
-development part whose DI plays in at least half of each half (1.0-5.5 s and
-5.5-10 s) and whose recorded lag is clear, the factory preset closest to the amp track
-on half A is scored on half B, under the judge (`aligned_distance`, both band sets, the
-recorded lag less the 52-sample latency). Every factory preset of each amp is on the
-menu; each amp's template with time effects off is a reference point.
+K1's split-half oracle: for every development part whose DI plays in at least half of
+each half (1.0-5.5 s and 5.5-10 s) and whose recorded lag is clear, the preset closest
+to the amp track on half A is scored on half B, under the judge (`aligned_distance`,
+both band sets, the recorded lag less the 52-sample latency). The two menus the kill
+tests were given (all 44 SW50R factory presets; PR12's 21 clean ones) are each compared
+with a joint menu drawn from all three amps: the same size, and in full.
 """
 
 from __future__ import annotations
@@ -33,9 +33,13 @@ from _cli import die, guarded
 
 AMPS = ("ac20", "pr12", "sw50r")
 BAND_SETS = ("recording", "union")
-ADDS_REACH = math.log(0.9)          # the joint menu at least 10% closer than the best amp's
-VARIES = 2 / 3                      # no amp holds the joint pick on more than this share
-SUBSET, SUBSETS = 30, 50            # the size-matched reading: 30 presets per amp, 50 draws
+ADDS_REACH = math.log(0.9)      # a size-matched joint menu at least 10% closer
+CLEAR = 0.150                   # the judge's validated cut, per part
+MINORITY, MIN_BANDS = 1 / 3, 3  # another amp clearly closer on a third of parts, 3 bands
+DRAWS = 200
+# Exact canaries: the earlier kill tests' K1 under the judge, on the same 25 parts.
+CANARIES = {("sw50r", "all"): {"recording": -0.3888, "union": -0.3280},
+            ("pr12", "clean"): {"recording": -0.2670, "union": -0.2064}}
 
 
 def build_parser():
@@ -49,69 +53,100 @@ def build_parser():
     return ap
 
 
+def scored(d, menu, bands):
+    return [c for c in menu if d.get(f"{c}|A|{bands}") is not None
+            and d.get(f"{c}|B|{bands}") is not None]
+
+
 def oracle(d, menu, bands):
     """(the preset closest on half A, its half-B distance), or (None, None)."""
-    scored = [c for c in menu if d.get(f"{c}|A|{bands}") is not None
-              and d.get(f"{c}|B|{bands}") is not None]
-    if not scored:
+    menu = scored(d, menu, bands)
+    if not menu:
         return None, None
-    best = min(scored, key=lambda c: (d[f"{c}|A|{bands}"], c))
+    best = min(menu, key=lambda c: (d[f"{c}|A|{bands}"], c))
     return best, d[f"{best}|B|{bands}"]
 
 
-def part_row(d, menus, bands, rng):
-    """One part's per-amp and joint oracles under one band set."""
-    row = {}
-    for amp in AMPS:
-        pick, score = oracle(d, menus[amp], bands)
-        row[amp] = {"pick": pick, "half_b": score,
-                    "template_r": d.get(f"{amp}:template+R|B|{bands}")}
-        sized = [oracle(d, rng.sample(menus[amp], min(SUBSET, len(menus[amp]))), bands)[1]
-                 for _ in range(SUBSETS)]
-        sized = [s for s in sized if s is not None]
-        row[amp]["half_b_30_presets"] = statistics.mean(sized) if sized else None
-    pick, score = oracle(d, [c for amp in AMPS for c in menus[amp]], bands)
-    row["joint"] = {"pick": pick, "half_b": score,
-                    "amp": None if pick is None else pick.split(":", 1)[0]}
-    return row
+def expected_oracle(d, menu, bands, size):
+    """The exact expected half-B distance of the half-A oracle over a random `size`-
+    subset of `menu`: rank k (from 1) on half A wins with C(n-k, size-1) / C(n, size)."""
+    menu = sorted(scored(d, menu, bands), key=lambda c: (d[f"{c}|A|{bands}"], c))
+    n = len(menu)
+    if n < size or size < 1:
+        return None
+    total = math.comb(n, size)
+    return sum(math.comb(n - k, size - 1) / total * d[f"{c}|B|{bands}"]
+               for k, c in enumerate(menu, start=1) if n - k >= size - 1)
 
 
-def band_median(values_by_band):
-    vals = [statistics.median(v) for v in values_by_band.values() if v]
-    return statistics.median(vals) if vals else None
+def joint_sized(d, menus, bands, size, rng):
+    """The mean half-B distance of the oracle over `size` presets drawn evenly from the
+    three amps' menus (the remainder going to the amps in order), over DRAWS draws."""
+    pools = {a: scored(d, menus[a], bands) for a in AMPS}
+    shares = {a: size // 3 + (i < size % 3) for i, a in enumerate(AMPS)}
+    if any(len(pools[a]) < shares[a] for a in AMPS):
+        return None
+    out = []
+    for _ in range(DRAWS):
+        menu = [c for a in AMPS for c in rng.sample(pools[a], shares[a])]
+        out.append(oracle(d, menu, bands)[1])
+    return statistics.mean(out)
 
 
-def summarise(rows):
-    """The plan's statistics for one band set, from rows of {band, row}."""
-    out = {}
-    gain = {a: collections.defaultdict(list) for a in AMPS}
+def band_median(rows, key):
+    by = collections.defaultdict(list)
     for r in rows:
-        j = r["row"]["joint"]["half_b"]
-        for a in AMPS:
-            s = r["row"][a]["half_b"]
-            if j is not None and s is not None:
-                gain[a][r["band"]].append(math.log(j / s))
-    out["joint_vs_amp_band_median"] = {a: band_median(gain[a]) for a in AMPS}
-    present = {a: v for a, v in out["joint_vs_amp_band_median"].items() if v is not None}
-    best = max(present, key=present.get) if present else None
-    out["best_single_amp"] = best
-    out["joint_vs_best_amp"] = present.get(best)
-    winners = collections.Counter(r["row"]["joint"]["amp"] for r in rows
-                                  if r["row"]["joint"]["amp"])
-    total = sum(winners.values())
-    out["joint_pick_amp_share"] = {a: winners[a] / total for a in AMPS} if total else {}
-    for a in AMPS:
-        own = collections.defaultdict(list)
-        sized = collections.defaultdict(list)
-        for r in rows:
-            x = r["row"][a]
-            if x["half_b"] is not None and x["template_r"]:
-                own[r["band"]].append(math.log(x["half_b"] / x["template_r"]))
-            refs = [r["row"][b]["template_r"] for b in AMPS if r["row"][b]["template_r"]]
-            if x["half_b_30_presets"] is not None and refs:
-                sized[r["band"]].append(math.log(x["half_b_30_presets"] / min(refs)))
-        out.setdefault("amp_vs_own_template", {})[a] = band_median(own)
-        out.setdefault("amp_30_presets_vs_best_template", {})[a] = band_median(sized)
+        if r.get(key) is not None:
+            by[r["band"]].append(r[key])
+    vals = [statistics.median(v) for v in by.values()]
+    return (statistics.median(vals) if vals else None), len(by), sum(map(len, by.values()))
+
+
+def comparison(parts, meta, dist, menus, tested, bands, seeds):
+    """The decision readings for one tested menu (an amp's menu in `menus`) against the
+    joint menus drawn from all three, under one band set."""
+    size = len(menus[tested])
+    rows = []
+    for p in parts:
+        d = dist[p]
+        _, own = oracle(d, menus[tested], bands)
+        pick, full = oracle(d, [c for a in AMPS for c in menus[a]], bands)
+        sized = joint_sized(d, menus, bands, size, random.Random(seeds[p]))
+        template = d.get(f"{tested}:template+R|B|{bands}")
+        rows.append({
+            "part": p, "band": meta[p]["band"], "joint_pick": pick,
+            "sized_gain": (None if own is None or sized is None else math.log(sized / own)),
+            "full_gain": (None if own is None or full is None else math.log(full / own)),
+            "other_amp_clearly_closer": (pick is not None and own is not None
+                                         and not pick.startswith(f"{tested}:")
+                                         and math.log(full / own) <= -CLEAR),
+            "own_vs_template": (None if own is None or not template
+                                else math.log(own / template))})
+    sized, bands_n, parts_n = band_median(rows, "sized_gain")
+    full, _, _ = band_median(rows, "full_gain")
+    own_k1, k1_bands, k1_parts = band_median(rows, "own_vs_template")
+    clearly = [r for r in rows if r["other_amp_clearly_closer"]]
+    return {"menu_size": size, "parts": parts_n, "bands": bands_n,
+            "sized_joint_vs_tested": sized, "full_joint_vs_tested": full,
+            "other_amp_clearly_closer_parts": len(clearly),
+            "other_amp_clearly_closer_bands": len({r["band"] for r in clearly}),
+            "tested_vs_own_template": own_k1, "k1_parts": k1_parts, "k1_bands": k1_bands,
+            "rows": rows}
+
+
+def verdict(readings):
+    """{tested menu: reasons the joint menu adds reach}, from both band sets."""
+    out = {}
+    for key, by_bands in readings.items():
+        reasons = []
+        if all(r["sized_joint_vs_tested"] is not None
+               and r["sized_joint_vs_tested"] <= ADDS_REACH for r in by_bands.values()):
+            reasons.append("a size-matched joint menu is at least 10% closer")
+        if all(r["parts"] and r["other_amp_clearly_closer_parts"] >= MINORITY * r["parts"]
+               and r["other_amp_clearly_closer_bands"] >= MIN_BANDS
+               for r in by_bands.values()):
+            reasons.append("another amp is clearly closer on a third of the parts")
+        out[key] = reasons
     return out
 
 
@@ -123,7 +158,7 @@ def main():
     import kill_tests as K
     import kill_tests_judge as KJ
     from benchmark_recordings import CATALOG, lag_samples
-    from plan_listening_validation import panel_files
+    from plan_listening_validation import high_gain, panel_files
 
     files, index_hashes = panel_files(args.panel_dir)
     names = sorted({c for d in files.values() for c in d})
@@ -140,48 +175,72 @@ def main():
     if any(p not in meta or meta[p]["split"] != "development" for p in files):
         die("a panel holds a part the catalogue does not list as development")
     crops = args.crops_dir.expanduser()
-    menus = {a: [c for c in names if c.startswith(f"{a}:factory:")] for a in AMPS}
-    used = [c for a in AMPS for c in menus[a]] + [f"{a}:template+R" for a in AMPS]
-    parts, no_lag = [], []
+    every = {a: [c for c in names if c.startswith(f"{a}:factory:")] for a in AMPS}
+    clean = {a: [c for c in every[a] if not high_gain(c)] for a in AMPS}
+    used = [c for a in AMPS for c in every[a]] + [f"{a}:template+R" for a in AMPS]
+    parts, no_lag, quiet = [], [], []
     for p in sorted(files):
         di = K.mono(crops / p / "di.wav")
         if not all(K.active_fraction(di, *K.HALVES[h]) >= 0.5 for h in ("A", "B")):
-            continue
-        if lag_samples(p) is None:
+            quiet.append(p)
+        elif lag_samples(p) is None:
             no_lag.append(p)
-            continue
-        parts.append(p)
+        else:
+            parts.append(p)
     from concurrent.futures import ProcessPoolExecutor
 
     with ProcessPoolExecutor(args.workers) as ex:
-        scored = dict(ex.map(KJ.score_part, [(p, {c: files[p][c] for c in used},
-                                              lag_samples(p) - K.LATENCY, crops)
-                                             for p in parts]))
-    readings, rows_out = {}, {}
+        scored_parts = dict(ex.map(KJ.score_part, [(p, {c: files[p][c] for c in used},
+                                                    lag_samples(p) - K.LATENCY, crops)
+                                                   for p in parts]))
+    dist = {p: s["d"] for p, s in scored_parts.items()}
+    seeds = {p: p for p in parts}             # the same draws under both band sets
+    readings = {("sw50r", "all"): {}, ("pr12", "clean"): {}, ("ac20", "all"): {}}
     for bands in BAND_SETS:
-        rows = []
-        for p in parts:
-            rng = random.Random(f"{p}|{bands}")
-            rows.append({"part": p, "band": meta[p]["band"],
-                         "row": part_row(scored[p]["d"], menus, bands, rng)})
-        readings[bands] = summarise(rows)
-        rows_out[bands] = rows
-    default = readings["recording"]
-    adds = all(readings[b]["joint_vs_best_amp"] is not None
-               and readings[b]["joint_vs_best_amp"] <= ADDS_REACH for b in BAND_SETS)
-    varies = bool(default["joint_pick_amp_share"]) and max(
-        default["joint_pick_amp_share"].values()) <= VARIES
-    out = {"panels": index_hashes, "menu_sizes": {a: len(m) for a, m in menus.items()},
+        readings[("sw50r", "all")][bands] = comparison(parts, meta, dist, every, "sw50r",
+                                                       bands, seeds)
+        readings[("pr12", "clean")][bands] = comparison(parts, meta, dist, clean, "pr12",
+                                                        bands, seeds)
+        readings[("ac20", "all")][bands] = comparison(parts, meta, dist, every, "ac20",
+                                                      bands, seeds)
+    misses = {f"{a}/{m}/{b}": (readings[(a, m)][b]["tested_vs_own_template"], want)
+              for (a, m), by in CANARIES.items() for b, want in by.items()
+              if readings[(a, m)][b]["tested_vs_own_template"] is None
+              or round(readings[(a, m)][b]["tested_vs_own_template"], 4) != want}
+    decided = verdict({k: v for k, v in readings.items() if k != ("ac20", "all")})
+    # Reported: the joint pick's amp, against the share menu size alone would give.
+    shares = {}
+    for menu_name, menus in (("all", every), ("clean", clean)):
+        for bands in BAND_SETS:
+            picks = collections.Counter(
+                oracle(dist[p], [c for a in AMPS for c in menus[a]], bands)[0].split(":")[0]
+                for p in parts
+                if oracle(dist[p], [c for a in AMPS for c in menus[a]], bands)[0])
+            n = sum(len(menus[a]) for a in AMPS)
+            shares[f"{menu_name}/{bands}"] = {
+                a: {"share": picks[a] / max(sum(picks.values()), 1),
+                    "menu_size_share": len(menus[a]) / n} for a in AMPS}
+    out = {"panels": index_hashes,
+           "menus": {"all": {a: len(every[a]) for a in AMPS},
+                     "clean": {a: len(clean[a]) for a in AMPS}},
            "parts": parts, "parts_without_clear_lag": no_lag,
-           "joint_menu_adds_reach": adds, "best_amp_varies": varies,
-           "rerun_kill_tests_jointly": adds or varies,
-           "readings": readings, "rows": rows_out,
-           "refused": {p: s["refused"] for p, s in scored.items() if s["refused"]},
-           "distances": {p: s["d"] for p, s in scored.items()}}
-    print(json.dumps({k: v for k, v in out.items() if k not in ("rows", "distances")},
-                     indent=1))
+           "parts_with_a_quiet_half": quiet,
+           "canary_misses": misses, "adds_reach": decided,
+           "rerun_kill_tests_jointly": (not misses) and any(decided.values()),
+           "joint_pick_amp_shares": shares,
+           "readings": {f"{a}/{m}": {b: {k: v for k, v in r.items() if k != "rows"}
+                                     for b, r in by.items()}
+                        for (a, m), by in readings.items()},
+           "rows": {f"{a}/{m}": {b: r["rows"] for b, r in by.items()}
+                    for (a, m), by in readings.items()},
+           "refused": {p: s["refused"] for p, s in scored_parts.items() if s["refused"]},
+           "distances": dist}
+    print(json.dumps({k: v for k, v in out.items()
+                      if k not in ("rows", "distances", "parts")}, indent=1))
     if args.json:
         args.json.expanduser().write_text(json.dumps(out) + "\n")
+    if misses:
+        die(f"the canaries do not reproduce the earlier K1: {misses}")
 
 
 if __name__ == "__main__":

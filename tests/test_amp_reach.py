@@ -1,10 +1,12 @@
-"""The amp-reach measurement's oracles and statistics (`docs/amp-reach-plan.md`)."""
+"""The amp-reach measurement's oracles and decision (`docs/amp-reach-plan.md`)."""
 
 from __future__ import annotations
 
+import itertools
 import math
 import pathlib
 import random
+import statistics
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -13,39 +15,57 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import amp_reach as R  # noqa: E402
 
 
-def _distances(close_amp):
-    """Each amp has two presets; `close_amp`'s second preset is closest on both halves."""
-    d = {}
-    for a in R.AMPS:
-        for i in range(2):
-            c = f"{a}:factory:X/{a}{i}"
-            near = a == close_amp and i == 1
-            for half in ("A", "B"):
-                for bands in R.BAND_SETS:
-                    d[f"{c}|{half}|{bands}"] = 1.0 if near else 2.0 + i * 0.1
-        for half in ("A", "B"):
-            for bands in R.BAND_SETS:
-                d[f"{a}:template+R|{half}|{bands}"] = 2.5
-    menus = {a: [f"{a}:factory:X/{a}{i}" for i in range(2)] for a in R.AMPS}
-    return d, menus
+def _d(values):
+    """{candidate: (half A, half B)} -> the distance table, same under both band sets."""
+    return {f"{c}|{h}|{b}": v[i] for c, v in values.items() for i, h in enumerate("AB")
+            for b in R.BAND_SETS}
 
 
 def test_the_oracle_chooses_on_half_a_and_scores_on_half_b():
-    d, menus = _distances("pr12")
-    d["pr12:factory:X/pr121|B|recording"] = 1.7          # chosen on A, worse on B
-    pick, score = R.oracle(d, menus["pr12"], "recording")
-    assert pick == "pr12:factory:X/pr121" and score == 1.7
+    d = _d({"x:factory:a": (1.0, 3.0), "x:factory:b": (2.0, 1.0)})
+    assert R.oracle(d, ["x:factory:a", "x:factory:b"], "recording") == ("x:factory:a", 3.0)
 
 
-def test_the_joint_menu_is_credited_only_where_another_amp_reaches_further():
-    rows = []
-    for i, amp in enumerate(["pr12", "pr12", "ac20", "sw50r"]):
-        d, menus = _distances(amp)
-        rows.append({"part": f"p{i}", "band": f"b{i}",
-                     "row": R.part_row(d, menus, "recording", random.Random(0))})
-    out = R.summarise(rows)
-    assert out["joint_pick_amp_share"] == {"ac20": 0.25, "pr12": 0.5, "sw50r": 0.25}
-    # Against PR12 the joint menu gains on the two parts PR12 cannot reach.
-    assert out["best_single_amp"] == "pr12"
-    assert out["joint_vs_best_amp"] == 0.5 * (0.0 + math.log(1.0 / 2.0))
-    assert out["amp_vs_own_template"]["pr12"] == 0.5 * (math.log(1 / 2.5) + math.log(2 / 2.5))
+def test_the_expected_oracle_is_exact():
+    rng = random.Random(1)
+    menu = [f"x:factory:{i}" for i in range(7)]
+    d = _d({c: (rng.random(), rng.random()) for c in menu})
+    for size in (1, 3, 7):
+        brute = statistics.mean(R.oracle(d, list(s), "recording")[1]
+                                for s in itertools.combinations(menu, size))
+        assert math.isclose(R.expected_oracle(d, menu, "recording", size), brute)
+
+
+def _parts(reach):
+    """Parts whose recordings `reach` names the amp that gets close (others don't)."""
+    meta, dist = {}, {}
+    menus = {a: [f"{a}:factory:{i}" for i in range(6)] for a in R.AMPS}
+    for n, amp in enumerate(reach):
+        values = {}
+        for a in R.AMPS:
+            for i, c in enumerate(menus[a]):
+                values[c] = (1.0, 1.0) if (a == amp and i == 0) else (2.0 + i * .01, 2.0)
+            values[f"{a}:template+R"] = (2.5, 2.5)
+        p = f"p{n}"
+        meta[p] = {"band": f"b{n % 4}"}
+        dist[p] = _d(values)
+    return list(meta), meta, dist, menus
+
+
+def test_another_amp_on_a_minority_of_recordings_is_counted():
+    parts, meta, dist, menus = _parts(["sw50r"] * 6 + ["ac20", "pr12"] * 2)
+    seeds = {p: p for p in parts}
+    by = {b: R.comparison(parts, meta, dist, menus, "sw50r", b, seeds) for b in R.BAND_SETS}
+    r = by["recording"]
+    assert r["other_amp_clearly_closer_parts"] == 4 and r["other_amp_clearly_closer_bands"] == 4
+    reasons = R.verdict({("sw50r", "all"): by})[("sw50r", "all")]
+    assert "another amp is clearly closer on a third of the parts" in reasons
+
+
+def test_one_amp_reaching_everything_adds_nothing():
+    parts, meta, dist, menus = _parts(["sw50r"] * 10)
+    seeds = {p: p for p in parts}
+    by = {b: R.comparison(parts, meta, dist, menus, "sw50r", b, seeds) for b in R.BAND_SETS}
+    assert by["recording"]["full_joint_vs_tested"] == 0.0
+    assert by["recording"]["other_amp_clearly_closer_parts"] == 0
+    assert R.verdict({("sw50r", "all"): by})[("sw50r", "all")] == []

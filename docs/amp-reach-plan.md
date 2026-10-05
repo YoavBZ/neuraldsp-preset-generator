@@ -24,42 +24,67 @@ variety a recogniser sees. This measures that cap before any kill test is re-run
 ## Procedure
 
 K1's split-half oracle: the preset closest to the amp track on half A (1.0–5.5 s) is
-scored on half B (5.5–10 s). It is computed for each amp's menu alone, and for the three
-menus together (the joint menu). Choosing on one half and scoring on the other keeps the
-bigger joint menu from winning by fitting half A's noise.
+scored on half B (5.5–10 s). Choosing on one half and scoring on the other keeps a
+bigger menu from winning by fitting half A's noise.
 
-## What is reported
+It is run on the two menus the kill tests were given, each against menus drawn from
+all three amps:
+- **SW50R:** all 44 of its factory presets, against the joint menu of all 108.
+- **PR12:** its 21 clean presets, against the joint menu of the 55 clean ones (17 AC20,
+  21 PR12, 17 SW50R). "Clean" is stage 0b's rule: no drive pedal, volume at most 0.75.
 
-For each band set:
-- **The joint menu against each amp alone:** the median over bands of each band's
-  median log(joint oracle / that amp's oracle), on half B. The **best single amp** is
-  the one this gap is smallest for.
-- **Which amp the joint oracle picks**, as a share of parts.
-- **Each amp's oracle against its own template.** That is K1's statistic, so this
-  reading reproduces the earlier per-amp headroom.
-- **Size-matched:** each amp's oracle over 30 of its presets (the mean of 50 random
-  draws), against the closest of the three templates. Menus of different sizes don't
-  then decide which amp reaches furthest.
+AC20, never kill-tested, gets the same reading against all 108, reported only.
 
 ## What decides
 
-The question here is whether to re-run the kill tests with all three amps together.
+The question is whether to re-run the kill tests with all three amps together. For each
+tested menu, under both band sets:
 
 | Reading | Rule |
 |---|---|
-| **The joint menu adds reach** | under both band sets, the joint oracle is at least 10% closer than the best single amp's (band median ≤ log 0.9) |
-| **The best amp varies** | under the default bands, no amp holds the joint oracle's pick on more than 2/3 of parts |
+| **Size-matched** | a joint menu of the same size, drawn evenly from the three amps (200 draws, the same under both band sets), is at least 10% closer: median of band medians of log(joint / tested) ≤ log 0.9 |
+| **A minority the amp can't reach** | on at least a third of the parts, spanning at least 3 bands, the full joint menu's pick is another amp's preset and at least 0.150 (the judge's validated cut) closer on half B than the tested menu's |
 
-If either holds, the kill tests are re-declared on the joint menu, with the amp as part
-of the label as the model would have it. If neither holds, testing one amp at a time
-loses little, and the per-amp verdicts stand as the model's gate.
+If either holds for either tested menu under both band sets, the kill tests are
+re-declared on the joint menu, with the amp as part of the label as the model would
+have it. If neither holds, testing one amp at a time loses little for these two
+verdicts.
+
+**Canaries.** Each tested menu against its own template reproduces the earlier K1 under
+the judge, on the same 25 parts in 9 bands. The recorded lags equal the frozen ones on
+every part used. The expected values, to 4 decimals:
+- SW50R: −0.3888 (default bands) and −0.3280 (union);
+- PR12 clean: −0.2670 and −0.2064.
+
+If either misses, the run stops and nothing is read.
+
+**Reported, not deciding:**
+- the full joint menu against each tested menu;
+- AC20's reading;
+- each amp's share of the full joint menu's picks, against the share its menu size
+  alone would give;
+- the parts and bands of every reading;
+- the parts left out (a quiet half, or no clear lag).
 
 ## Limits, stated now
 
 - **The validated range.** The judge is validated only for clear differences between
   clean-to-crunch PR12 renders. Cross-amp and high-gain distances are outside that
   range, so this is provisional.
-- **A bigger menu.** The joint menu is larger as well as more varied. The size-matched
-  reading separates "a better amp" from "more presets".
+- **A bigger menu.** The full joint menu is larger as well as more varied; the
+  size-matched reading is the one that separates "a better amp" from "more presets".
+  Matching size does not match variety: three of Neil Zaza's SW50R presets render
+  identically.
+- **What a joint gain is.** Another amp's preset also brings its own mics, EQ and
+  compressor, so a joint gain is an upper bound on what the amp itself adds.
+- **Headroom only.** This is K1-style reach. Whether a recogniser can pick the amp from
+  a real track (K3) is not measured here; the amp identifiability check used renders
+  through the same DI.
+- **Not independent.** These are the same 25 development parts and 9 bands as the
+  earlier K1.
+- **Below the validated cut.** A 10% band-median gain is under the 0.150 per-pair cut
+  that listening validated.
+- **High gain.** 53 of the 108 presets are high-gain, outside the validated range. The
+  PR12 reading uses clean presets only.
 - **Factory presets only.** An oracle over factory presets measures what a whole-preset
   menu reaches, not what a search over each amp's knobs could reach.
