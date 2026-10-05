@@ -53,6 +53,11 @@ general-purpose subagents. Each is told only to read and follow its sandbox's
 - **`data/`:** a data root holding a copy of the user's learned notes.
 - **`bin/python-audio`:** the interpreter with the analysis extra.
 
+**A pilot first.** One single-part song (Eggy, "Bloomlight") runs alone, and its
+transcript is audited and its result collected before the other 15 launch. If the
+brief, the audit or `collect` changes after the pilot, the pilot song is run again
+with everything else.
+
 `parts-map.json` stays in `~/ndsp-presets/runs/shortlists`. It records which part each
 `part-N` is, and a hash of each sandbox's plugin.
 
