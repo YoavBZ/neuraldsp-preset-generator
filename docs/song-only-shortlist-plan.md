@@ -58,6 +58,12 @@ transcript is audited and its result collected before the other 15 launch. If th
 brief, the audit or `collect` changes after the pilot, the pilot song is run again
 with everything else.
 
+*Pilot outcome (2026-10-05, before any render or score):* the audit found no flags.
+`collect` refused two factory picks named without their `Artists/` folder. So the
+brief now spells the folders out, and `collect` resolves a name that fits exactly one
+factory preset. All 16 songs, the pilot song included, then run from fresh sandboxes.
+The pilot's run is kept in `~/ndsp-presets/runs/shortlists-pilot/` and not scored.
+
 `parts-map.json` stays in `~/ndsp-presets/runs/shortlists`. It records which part each
 `part-N` is, and a hash of each sandbox's plugin.
 

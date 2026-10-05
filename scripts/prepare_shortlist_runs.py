@@ -168,7 +168,8 @@ and the web.
 `apply_spec_args` is exactly what you passed to `apply_spec.py` for the written file,
 less `--template`, `--out` and `--force`; it may hold only `--recipe`, `--spec`,
 `--bpm`, `--name`, `--pack`, `--strip-irs` and `--allow-out-of-range`. `preset` is the
-path inside the factory folder, without `.xml`, spelled as on disk. List all four of
+path inside the factory folder, without `.xml`, spelled as on disk and with every
+folder in it: `Neural DSP/<preset>` or `Artists/<artist>/<preset>`. List all four of
 each, in order.
 
 Your final reply: one line per part with G1's amp and F1, then any rule you could not
@@ -492,10 +493,15 @@ def collect(args):
                             problems.append(f"{where}: sounds as a factory preset does")
                             continue
                     else:
-                        if r.get("preset") not in factory:
-                            problems.append(f"{where}: {r.get('preset')!r} is not a factory preset")
-                            continue
-                        path = factory[r["preset"]]
+                        name = r.get("preset")
+                        if name not in factory:
+                            # A name missing its folder resolves only when one preset fits.
+                            fits = [n for n in factory if n.endswith(f"/{name}")]
+                            if len(fits) != 1:
+                                problems.append(f"{where}: {name!r} is not a factory preset")
+                                continue
+                            name = fits[0]
+                        path = factory[name]
                     scored.append(sound(path, scored=True))
                     presets[r["label"]] = str(path)
                 if len(scored) == 4 and len(set(scored)) < 4:
