@@ -654,7 +654,7 @@ def test_a_modulation_the_render_already_carries_is_not_a_missing_tremolo():
 
     result = invert.tremolo_settings(target, rendered=rendered)
     assert result.values == {}, "left exactly as the template has it"
-    assert any("--enumerate tremolo/tremoloActive" in caveat
+    assert any("tremolo/tremoloActive on in the template" in caveat
                for caveat in result.caveats), result.caveats
 
     # And through the whole inversion, which is how the benchmark and
@@ -1642,7 +1642,8 @@ def test_played_material_leaves_the_reverb_as_the_template_has_it(regime):
                           time_fx={"rt60_s": 4.5, "rt60_confidence": 0.8})
     result = invert.reverb_settings(confident)
     assert result.values == {}
-    assert any("--enumerate reverb/reverbActive" in caveat for caveat in result.caveats)
+    assert any("set reverb/reverbActive that way in the template" in caveat
+               for caveat in result.caveats)
     assert result.detail["rt60_measured_s"] == 4.5
 
     probe = synthetic(source={"regime": "probe"}, time_fx={"rt60_s": 4.5, "rt60_confidence": 0.8})

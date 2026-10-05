@@ -105,16 +105,19 @@ never searched, they keep the template's values (the ground-truth audit's D-M17)
 ### No response atlas
 
 Do not build or start from a response atlas (one amp's stored responses at
-sampled settings). On SW50R a search started from the nearest atlas entry ended
-further from played-guitar targets than one started from neutral settings (0.548
-against 0.447), and an atlas built from the user's own DI ended no closer (0.479
-against 0.480) after costing 128 renders to build. The research tools are
+sampled settings). On SW50R, by the since-superseded `unpaired-v1` objective, a
+search started from the nearest atlas entry ended further from played-guitar targets
+than one started from neutral settings (0.548 against 0.447), and an atlas built from
+the user's own DI ended no closer (0.479 against 0.480) after costing 128 renders to
+build. The research tools are
 described in `docs/tone-matching-plan.md`.
 
 Do not enumerate switches or selectors casually. Enumeration divides the budget
-among complete inner searches, and no accuracy benefit from it has been shown on
-the real backend. If trying a discrete control is material, run
-`--list-enumerable`, explain the budget product, and name the uncertainty.
+among complete inner searches, no accuracy benefit from it has been shown on the
+real backend, and the controls a variant switches on are never searched: they keep
+the template's values (audit D-M17; enumerating `selectedAmp` leaves the other amps'
+amp and EQ unsearched). If trying a discrete control is material, set it in the
+template and run each setting as its own match.
 
 ## 3. Choose the renderer and probe
 
@@ -136,8 +139,10 @@ calculated on by the inversion. The report lists what it calculated; if it turne
 one on, rerun with fresh. The inversion can switch the tremolo on for any
 recording, not only a probe: it read ordinary playing as a tremolo on about half
 the development amp tracks (audit D-M7). Unless research says the part has one,
-treat a calculated tremolo as a mistake and switch it off in the chosen spec before
-writing. Not the amp's own spring reverb: its carry-over is a
+treat a calculated tremolo as a mistake: write the preset from a copy of the chosen
+spec with `tremolo/tremoloActive` off, leaving the run's own spec untouched for step 6,
+and tell the user that every candidate was searched, scored and auditioned with the
+tremolo on. Not the amp's own spring reverb: its carry-over is a
 short tail, at most 0.15 in the same measurements. Both carry state from one
 render to the next on a reused instance, likely a modulation oscillator, so the
 same settings come out differently each time and the search ranks noise:
@@ -244,9 +249,10 @@ give the user `RUN_DIR/report.html` for the full plots. Surface all of the follo
   backend is evidence and a single-render floor is the default;
 - every shortlisted score, worst ±6 dB score, named objective vector, and
   plain-language differences between candidates. These scores are the search's own
-  objective (`unpaired-v3`), retired as a measure of closeness
-  ([measuring-closeness.md](../../docs/measuring-closeness.md)): report them as what
-  the search optimised, never as evidence that a candidate is closer. Quote
+  objective (`unpaired-v3`, or `paired-v2` on a paired run). The judge replaced the
+  v3 objective as the measure of closeness
+  ([measuring-closeness.md](../../docs/measuring-closeness.md)), and no search's own
+  objective is evidence of closeness: report them as what the search optimised. Quote
   `reference_level_score`, not `score`, and check `input_level_observations` for
   the level you are quoting, since a score that averages three renders and a score
   from one are different kinds of number. The run says outright when two candidates

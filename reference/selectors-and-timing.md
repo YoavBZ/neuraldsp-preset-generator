@@ -1,8 +1,9 @@
 # Selectors and musical timing
 
-This page covers Morgan Amps Suite. Tone King's delay recipes use its verified
-sync-note selectors, and its delay also takes milliseconds (`delayTimeMSL`,
-`delayTimeMSR`); see `packs/toneking/tone.md`.
+This page covers Morgan Amps Suite. Tone King's delay recipes mostly use its
+verified sync-note selectors. Its free-time delay keys (`delayTimeMSL`,
+`delayTimeMSR`) run from 100 to 1100, in milliseconds by their name, though the
+manifest marks the unit unknown; the `delay/short-slap` recipe shows them in use.
 
 ## Musically-timed delay: use milliseconds
 

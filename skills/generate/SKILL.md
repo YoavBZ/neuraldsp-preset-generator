@@ -49,11 +49,12 @@ the differences that decide it are:
 
 Two traps worth naming out loud when you present the choice:
 
-- **Headroom is a topology decision, not a knob.** A part that never breaks up
+- **Headroom comes mostly from the amp, not a knob.** A part that never breaks up
   wants headroom: SW50R, the Tone King Rhythm channel, or PR12 kept well below the
   point where it breaks up, which comes early on a 12-watt amp. More than one amp
-  usually works: on 25 mostly clean recordings, PR12 and SW50R each suited most and
-  AC20 fewer ([quick checks](../../docs/quick-checks-results.md); provisional).
+  usually works: on 25 mostly clean recordings, PR12 and SW50R each suited most, and
+  AC20 fewer though still more than half
+  ([quick checks](../../docs/quick-checks-results.md); provisional).
 - **A pack with no template is not a choice you can make for the user.** If Tone
   King is the better voice but they own no Tone King preset, say that — it is the
   deciding constraint, not a detail.

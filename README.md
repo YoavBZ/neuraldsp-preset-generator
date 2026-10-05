@@ -357,8 +357,9 @@ clone with no dependencies at all, and a test enforces it.
 
 ## Optional: match a recording
 
-With `[match]` as well, and a DI of the very performance a recording captured, a
-search becomes possible: given the recording, that DI and a preset to start from, `match_preset.py` measures the
+With `[match]` as well, and a DI (ideally of the very performance a recording
+captured), a search becomes possible: given the recording, the DI and a preset to
+start from, `match_preset.py` measures the
 reference, calculates what can be calculated, searches the rest on a render
 budget you set, and writes a spec plus a report.
 
