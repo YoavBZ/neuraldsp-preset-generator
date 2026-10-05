@@ -62,30 +62,38 @@ def test_the_house_list_is_chosen_without_the_held_out_band():
     assert all(len(set(v)) == 4 for v in lists.values())
 
 
-def test_a_refused_generated_preset_counts_as_a_loss():
+def test_a_refused_generated_preset_loses_on_either_side_of_a_comparison():
     rows = [{"part": f"p{i}", "band": f"b{i}",
-             "arms": {b: {"G1": math.inf if i < 2 else 0.5, "template+R": 1.0}
-                      for b in S.BAND_SETS}} for i in range(3)]
-    c = S.compare(rows, "G1", "template+R", "recording")
+             "arms": {b: {"G4": math.inf if i < 2 else 0.5, "F4": 1.0} for b in S.BAND_SETS}}
+            for i in range(3)]
+    c = S.compare(rows, "G4", "F4", "recording")
     assert c["parts"] == 3 and c["closer_on"] == 1 and c["median_of_band_medians"] == S.LOSS
-    assert not c["passes"]
+    c = S.compare(rows, "F4", "G4", "recording")
+    assert c["parts"] == 3 and c["closer_on"] == 2 and c["median_of_band_medians"] == -S.LOSS
+    both = [{"part": "p", "band": "b", "arms": {"recording": {"G1": math.inf, "G4": math.inf}}}]
+    assert S.compare(both, "G4", "G1", "recording")["median_of_band_medians"] == 0.0
 
 
 def test_a_comparison_passes_only_when_ten_percent_closer_on_most_parts():
-    def rows(ratios):
+    def rows(ratios, second="template+R"):
         return [{"part": f"p{i}", "band": f"b{i}",
-                 "arms": {b: {"G1": r, "template+R": 1.0} for b in S.BAND_SETS}}
+                 "arms": {b: {"G1": r, second: 1.0} for b in S.BAND_SETS}}
                 for i, r in enumerate(ratios)]
 
     good = S.compare(rows([0.85, 0.88, 0.89, 1.2]), "G1", "template+R", "recording")
     assert good["passes"] and good["closer_on"] == 3
-    assert good["near"]                            # 3 of 4 is one part from the line
+    assert good["near"]                            # one part fewer would fail it
     clear = S.compare(rows([0.7] * 7 + [1.2]), "G1", "template+R", "recording")
     assert clear["passes"] and not clear["near"]
     near = S.compare(rows([0.95, 0.95, 0.95, 0.95]), "G1", "template+R", "recording")
     assert not near["passes"]                      # closer everywhere, but under 10%
     few = S.compare(rows([0.5, 0.5, 1.1, 1.1]), "G1", "template+R", "recording")
     assert not few["passes"]                       # not more than half the parts
+    far = S.compare(rows([1.3] * 6 + [0.9] * 5), "G1", "template+R", "recording")
+    assert not far["passes"] and not far["near"]   # a clear failure is not inconclusive
+    level = S.compare(rows([1.0, 0.99, 0.98, 1.01], "house-4"), "G1", "house-4", "recording",
+                      "not worse")
+    assert level["passes"]                         # "not worse": median <= 0, half closer
 
 
 def test_the_render_canary_tolerance_and_drift_are_strict():
@@ -153,41 +161,45 @@ def test_collect_remakes_each_generated_preset_and_refuses_what_breaks_the_brief
 
     import prepare_shortlist_runs as P
 
+    if not P.FACTORY.exists() or len(P.factory_names()) < 108:
+        pytest.skip("needs the plugin's factory presets")
     sandboxes, out = tmp_path / "sandboxes", tmp_path / "run"
     sandbox = sandboxes / "song"
     (sandbox / "out" / "part-1").mkdir(parents=True)
-    (sandbox / "plugin").symlink_to(ROOT)
+    P.export_plugin(sandbox / "plugin", "HEAD")
     out.mkdir()
-    (out / "parts-map.json").write_text(json.dumps(
-        {"songs": {"song": {"part-1": {"part": "x-y-z"}}}}))
+    commit = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True,
+                            text=True, check=True).stdout.strip()
+    (out / "parts-map.json").write_text(json.dumps({"commit": commit, "songs": {"song": {
+        "parts": {"part-1": {"part": "x-y-z"}},
+        "plugin_sha256": P.tree_sha(sandbox / "plugin")}}}))
     generated = []
     for i, (amp, volume) in enumerate((("pr12", 30), ("pr12", 50), ("sw50r", 40), ("sw50r", 60)), 1):
-        spec = sandbox / "out" / "part-1" / f"G{i}.spec.json"
-        _spec(spec, amp, volume)
+        _spec(sandbox / "out" / "part-1" / f"G{i}.spec.json", amp, volume)
         args = ["--spec", f"out/part-1/G{i}.spec.json"]
         subprocess.run([sys.executable, str(ROOT / "scripts" / "apply_spec.py"), "--template",
                         str(ROOT / P.TEMPLATE), "--out", str(sandbox / "out" / "part-1" / f"G{i}.xml"),
                         *args], check=True, capture_output=True, cwd=sandbox)
         generated.append({"label": f"G{i}", "file": f"out/part-1/G{i}.xml", "apply_spec_args": args})
-    factory = sorted(P.factory_names()) if P.FACTORY.exists() else []
-    if len(factory) < 108:
-        pytest.skip("needs the plugin's factory presets")
     by_amp = {}
-    for name in factory:
-        by_amp.setdefault(P._amp_name(P.factory_names()[name]), []).append(name)
+    for name, path in sorted(P.factory_names().items()):
+        by_amp.setdefault(P._amp_name(path), []).append(name)
     picks = by_amp["PR12"][:2] + by_amp["SW50R"][:2]
     result = {"generated": generated,
               "factory": [{"label": f"F{i}", "preset": n} for i, n in enumerate(picks, 1)]}
 
-    def run(change=None):
+    def run(change=None, exclude=()):
         got = json.loads(json.dumps(result))
         if change:
             change(got)
         (sandbox / "out" / "result.json").write_text(json.dumps({"parts": {"part-1": got}}))
-        P.collect(type("Args", (), {"sandbox_dir": sandboxes, "out_dir": out})())
+        P.collect(type("Args", (), {"sandbox_dir": sandboxes, "out_dir": out,
+                                    "exclude": list(exclude)})())
         return json.loads((out / "render-manifest.json").read_text())
 
-    assert sorted(run()["parts"]["x-y-z"]) == sorted(S.F + S.G)
+    manifest = run()
+    assert sorted(manifest["parts"]["x-y-z"]) == sorted(S.F + S.G)
+    assert set(manifest["sha256"]["x-y-z"]) == set(S.F + S.G)
 
     def other_spec(got):            # the recorded arguments no longer make G1
         _spec(sandbox / "out" / "part-1" / "G1.spec.json", "pr12", 31)
@@ -202,9 +214,29 @@ def test_collect_remakes_each_generated_preset_and_refuses_what_breaks_the_brief
     def template_flag(got):
         got["generated"][0]["apply_spec_args"] = ["--template", "x.xml"]
 
-    for change in (lower_case, one_amp, template_flag, other_spec):
+    def only_reverb_differs(got):   # G2 re-made as G1 with its reverb on: alike under R
+        spec = json.loads((sandbox / "out" / "part-1" / "G1.spec.json").read_text())
+        spec["parameters"].append({"module": "reverb", "key": "reverbActive", "value": True})
+        (sandbox / "out" / "part-1" / "G2.spec.json").write_text(json.dumps(spec))
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "apply_spec.py"), "--template",
+                        str(ROOT / P.TEMPLATE), "--out", str(sandbox / "out" / "part-1" / "G2.xml"),
+                        "--force", "--spec", "out/part-1/G2.spec.json"],
+                       check=True, capture_output=True, cwd=sandbox)
+
+    for change in (lower_case, one_amp, template_flag, only_reverb_differs, other_spec):
         with pytest.raises(SystemExit):
             run(change)
+    assert run(exclude=["song"])["excluded"] == {"song": ["x-y-z"]}
+    for i, (amp, volume) in ((1, ("pr12", 30)), (2, ("pr12", 50))):       # restore G1, G2
+        _spec(sandbox / "out" / "part-1" / f"G{i}.spec.json", amp, volume)
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "apply_spec.py"), "--template",
+                        str(ROOT / P.TEMPLATE), "--out", str(sandbox / "out" / "part-1" / f"G{i}.xml"),
+                        "--force", "--spec", f"out/part-1/G{i}.spec.json"],
+                       check=True, capture_output=True, cwd=sandbox)
+    assert run()["parts"]["x-y-z"]
+    (sandbox / "plugin" / "samples" / "extra.xml").write_text("x")     # the plugin edited
+    with pytest.raises(SystemExit):
+        run()
 
 
 def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_path):
@@ -220,25 +252,51 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
         return {"type": "user", "message": {"content": [
             {"type": "tool_result", "content": [{"type": "text", "text": text}]}]}}
 
-    fine = [use("Bash", {"command": f"cd {sandbox} && python plugin/scripts/show.py x.xml"}),
-            use("Bash", {"command": f"cd '{sandbox}' && {U.PYTHON} plugin/scripts/fingerprint.py "
-                                    "excerpts/part-1.wav --regime mix"}),
+    blocked = ["github.com", "githubusercontent.com"]
+    writes = [use("Bash", {"command": f"cd {sandbox} && python plugin/scripts/apply_spec.py "
+                                      f"--template plugin/samples/Example_Clean_PR12.xml "
+                                      f"--spec out/part-1/G{i}.spec.json --out out/part-1/G{i}.xml"})
+              for i in range(1, 5)]
+    fine = [use("Bash", {"command": f"cd {sandbox} && python plugin/scripts/show.py x.xml "
+                                    "--data-dir data 2>/dev/null"}),
+            use("Bash", {"command": f"cd '{sandbox}' && bin/python-audio plugin/scripts/"
+                                    "fingerprint.py excerpts/part-1.wav --regime mix --text"}),
+            use("Bash", {"command": f"cd {sandbox} && {U.PYTHON} -c \"import json; "
+                                    "print(json.load(open('out/result.json')))\""}),
             use("Read", {"file_path": f"{sandbox}/plugin/skills/generate/SKILL.md"}),
+            use("Read", {"file_path": f"{sandbox}/plugin/skills/generate/../../reference/x.md"}),
+            use("Write", {"file_path": f"{sandbox}/out/part-1/G1.spec.json", "content": "{}"}),
+            use("WebSearch", {"query": "band song guitar amp", "blocked_domains": blocked}),
+            use("WebSearch", {"query": "Morgan Amps Suite PR12", "blocked_domains": blocked}),
+            result("Traceback: /Users/yoavbz/projects/neuraldsp-preset-generator/.venv/lib/x.py"),
+            *writes,
             use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}),
-            use("Glob", {"pattern": "*.xml", "path": U.FACTORY}),
-            use("WebSearch", {"query": "band song guitar amp"}),
-            result("Traceback: /Users/yoavbz/projects/neuraldsp-preset-generator/.venv/lib/x.py")]
-    bad = [use("Bash", {"command": "cat docs/reach-sets.json"}),
-           use("Bash", {"command": f"cd {sandbox} && cat ~/ndsp-presets/runs/kill/amp-reach.json"}),
-           use("Bash", {"command": f"cd {sandbox} && ls ../../"}),
-           use("Grep", {"pattern": "PR12"}),
-           use("Read", {"file_path": "/Users/someone/projects/neuraldsp-preset-generator/docs/x.md"}),
-           use("WebFetch", {"url": "https://github.com/YoavBZ/neuraldsp-preset-generator"}),
-           use("Skill", {"skill": "neuraldsp-preset-generator:generate"}),
-           result("see github.com/YoavBZ/neuraldsp-preset-generator for amp-reach results")]
+            use("Glob", {"pattern": "**/*.xml", "path": U.FACTORY})]
     path = tmp_path / "t.jsonl"
     path.write_text("\n".join(json.dumps(e) for e in fine))
     assert U.audit(path, sandbox) == []
+    bad = [use("Bash", {"command": "cat docs/reach-sets.json"}),
+           use("Bash", {"command": f"cd {sandbox} && cat ~/ndsp-presets/runs/kill/amp-reach.json"}),
+           use("Bash", {"command": f"cd {sandbox} && ls .."}),
+           use("Bash", {"command": f"cd {sandbox} && ls ../../"}),
+           use("Bash", {"command": f"cd {sandbox} && cd - && cat docs/x.md"}),
+           use("Bash", {"command": f"cd {sandbox} && find / -name '*.wav'"}),
+           use("Bash", {"command": f"cd {sandbox} && ls $HOME"}),
+           use("Bash", {"command": f"cd {sandbox} && curl -O https://example.com/stems.zip"}),
+           use("Bash", {"command": f"cd {sandbox} && python -c \"open('/Users/x/data.json')\""}),
+           use("Bash", {"command": f"cd {sandbox} && python -c \"open('../../x/data.json')\""}),
+           use("Grep", {"pattern": "PR12"}),
+           use("Glob", {"pattern": "../../**/*.json", "path": sandbox}),
+           use("Read", {"file_path": f"{sandbox}/../../ndsp-presets/runs/x.json"}),
+           use("Read", {"file_path": f"{U.FACTORY}/User/mine.xml"}),
+           use("Write", {"file_path": "/tmp/spec.json", "content": "{}"}),
+           use("WebSearch", {"query": "band song amp"}),
+           use("WebFetch", {"url": "https://github.com/YoavBZ/neuraldsp-preset-generator"}),
+           use("Skill", {"skill": "neuraldsp-preset-generator:generate"}),
+           result("see github.com/YoavBZ/neuraldsp-preset-generator for amp-reach results")]
     for entry in bad:
         path.write_text(json.dumps(entry))
         assert U.audit(path, sandbox), entry
+    early = [use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}), *writes]
+    path.write_text("\n".join(json.dumps(e) for e in early))
+    assert [k for k, _, _ in U.audit(path, sandbox)] == ["factory opened before every G was written"]

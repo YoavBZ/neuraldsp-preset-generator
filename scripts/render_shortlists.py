@@ -107,6 +107,8 @@ def work(job):
                 audio = np.asarray(renderer.render(di, {"label": label}).audio)
                 file = out / f"{label}.wav"
                 sf.write(file, audio, 48000, subtype=SUBTYPE)
+                if not np.isfinite(audio).all():
+                    raise ValueError(f"{part}: {label} rendered non-finite samples")
                 rows.append({"part": part, "label": label, "amp": amps[label],
                              "preset": str(path), "preset_sha256": _sha(path),
                              "file": str(file), "sha256": _sha(file),
@@ -121,8 +123,11 @@ def work(job):
                 audio = np.asarray(renderer.render(di, {"label": label}).audio)
                 file = out / f"{label}.repeat.wav"
                 sf.write(file, audio, 48000, subtype=SUBTYPE)
+                if not np.isfinite(audio).all():
+                    raise ValueError(f"{part}: {label}'s repeat rendered non-finite samples")
                 rows.append({"part": part, "label": label, "repeat": True,
-                             "file": str(file), "sha256": _sha(file)})
+                             "file": str(file), "sha256": _sha(file),
+                             "peak": float(np.abs(audio).max())})
         finally:
             renderer.close()
         print(f"{part}: {len(listed)} renders", flush=True)
@@ -136,7 +141,13 @@ def main() -> None:
     require("rendering shortlists")
     from benchmark_recordings import CATALOG, development_parts
 
-    manifest = json.loads(args.manifest.expanduser().read_text())["parts"]
+    full = json.loads(args.manifest.expanduser().read_text())
+    manifest = full["parts"]
+    # The hashes `prepare_shortlist_runs.py collect` recorded, when it wrote the manifest.
+    changed = [f"{p}/{label}" for p, by in full.get("sha256", {}).items()
+               for label, sha in by.items() if _sha(manifest[p][label]) != sha]
+    if changed:
+        die(f"presets changed since they were collected: {', '.join(changed)}")
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     development = {"-".join(x.replace("/", "_").replace(" ", "_") for x in p)
                    for p in development_parts(catalog)}
