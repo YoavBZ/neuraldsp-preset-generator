@@ -195,6 +195,14 @@ def within_share(rows, arm, bands):
     return band_weighted_share(flags, {r["part"]: r["band"] for r in rows})
 
 
+def band_weighted_mean(values, band_of):
+    """The mean of `values[part]`, each band weighing one."""
+    by = collections.defaultdict(list)
+    for p, v in values.items():
+        by[band_of[p]].append(v)
+    return statistics.mean(statistics.mean(v) for v in by.values()) if by else None
+
+
 def _sha(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
@@ -379,16 +387,16 @@ def main():
     for arm in ARMS[:-1] + ("S4",):
         out["within_0.150_of_oracle"][arm] = {bands: within_share(rows, arm, bands)
                                               for bands in BAND_SETS}
-    from reach_sets import band_weighted_share
-
     sets = json.loads(args.reach_sets.read_text())["acceptable_amps"]
     weights = {r["part"]: r["band"] for r in rows}
     for kind, labels in (("G", G), ("F", F)):
         out["amps"][kind] = {
             "counts": dict(collections.Counter(r["amps"][x] for r in rows for x in labels)),
             "first_choice": dict(collections.Counter(r["amps"][labels[0]] for r in rows)),
-            # Band-weighted, under the clean menus' acceptable amps (docs/reach-sets.json).
-            **{f"share_on_acceptable_amps/{bands}": band_weighted_share(
+            # Band-weighted, under the clean menus' acceptable amps (docs/reach-sets.json):
+            # each part's share of entries on one, averaged within its band, then over
+            # bands. (band_weighted_share takes flags, so it can't average fractions.)
+            **{f"share_on_acceptable_amps/{bands}": band_weighted_mean(
                 {r["part"]: statistics.mean(
                     bool(sets[f"clean/{bands}"]["rows"].get(r["part"], {}).get(r["amps"][x]))
                     for x in labels) for r in rows}, weights)

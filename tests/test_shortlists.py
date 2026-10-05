@@ -96,6 +96,10 @@ def test_a_comparison_passes_only_when_ten_percent_closer_on_most_parts():
     assert level["passes"]                         # "not worse": median <= 0, half closer
 
 
+def test_a_band_weighted_mean_keeps_fractions():
+    assert S.band_weighted_mean({"a": 0.5, "b": 1.0, "c": 0.0}, {"a": "x", "b": "x", "c": "y"}) == 0.375
+
+
 def test_the_render_canary_tolerance_and_drift_are_strict():
     assert S.REPRO == 0.01 and S.DRIFT_DB == 0.1
 
