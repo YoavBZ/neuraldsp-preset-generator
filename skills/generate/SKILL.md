@@ -184,7 +184,11 @@ see [installing.md](../../reference/installing.md).
 
 Then report:
 - which **template** you cloned and which **amp or channel** you selected
-- what **research** the tone is based on, with links
+- what **research** the tone is based on, with links, and that it is a starting
+  point: on 25 recordings measured against their own amp tracks, a researched preset
+  landed no closer than the shipped template, and four researched presets did no
+  better than four factory presets picked at random. What helped was choosing among
+  several by ear ([the measurement](../../docs/song-only-shortlist-results.md))
 - anything you set **outside a declared range**, and why
 - any **unconfirmed selector** the tool warned about
 - any **guessed kind** the tool warned about (draft packs): the value was written
