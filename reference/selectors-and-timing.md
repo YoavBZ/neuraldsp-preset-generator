@@ -1,5 +1,9 @@
 # Selectors and musical timing
 
+This page covers Morgan Amps Suite. Tone King's delay recipes use its verified
+sync-note selectors, and its delay also takes milliseconds (`delayTimeMSL`,
+`delayTimeMSR`); see `packs/toneking/tone.md`.
+
 ## Musically-timed delay: use milliseconds
 
 When someone asks for a "dotted eighth delay" or "quarter-note slapback", **do
@@ -29,8 +33,8 @@ the selector does nothing and `delayTime` is what matters.
 Same pattern for tremolo: prefer `tremoloRate` in Hz with `tremoloSync` off.
 Its real range is 0.15–15 Hz, so fast tremolo is available.
 
-Note that `delayTime` maxes out at 1500 ms, so a whole note below 40 BPM won't
-fit. The tool will tell you.
+Note that `delayTime` maxes out at 1500 ms, so a whole note fits only at 160 BPM or
+faster, a half note at 80 and a quarter note at 40. The tool will tell you.
 
 ## The sync-note tables
 

@@ -102,10 +102,14 @@ Measured on one track, stem against mix, as deviation from each source's own pea
 Practical consequences:
 
 - **Never take amp bass or a high-pass from a mix.** Below roughly 250 Hz you are
-  looking at the bass guitar and the kick.
+  looking at the bass guitar and the kick. The match's calculation doesn't know
+  this: given a DI and a mix, it raised the amp's bass on most development mixes
+  (the ground-truth audit's D-M8). Check its calculated bass and put it back if it
+  moved.
 - **A mix's high end is inflated** by cymbals and air. So if the *mix* is still
-  20+ dB down at 4–6 kHz, the guitar alone is at least that dark — a conclusion
-  that is safe in a way it is not on a stem.
+  20+ dB down at 4–6 kHz, the guitar alone is at least that dark. That is a sound
+  check on the research, firmer than the same reading on a stem, but not a value to
+  set.
 - **On a stem, distrust the low end and the time effects.** A search fitting a
   stem will spend its budget on frequencies the separator removed, and will
   switch delay and reverb off because the tail was stripped.
@@ -122,7 +126,10 @@ ended further from it than the starting preset as it is on all four amps, 43
 recordings each (`docs/tone-matching-plan.md`, "The real-guitar probe, from
 neutral settings and from the shipped presets"; measured with a score since retired,
 and unconfirmed by the re-check with the judge,
-`docs/no-di-rule-under-the-judge-results.md`). Use it to describe the tone and
+`docs/no-di-rule-under-the-judge-results.md`). The judge is the project's measure of
+closeness: it compares a render with a recording of the same take, through that
+take's DI, and listening has validated it only for clear differences between
+clean-to-crunch PR12 renders (`docs/measuring-closeness.md`). Use it to describe the tone and
 to sanity-check the research.
 
 Corollary: a measured number that disagrees with a documented rig is usually the

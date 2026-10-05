@@ -2,6 +2,9 @@
 
 ## Two cab slots
 
+This section describes Morgan Amps Suite. Tone King's cabs are `cab1` and `cab2`,
+with their own keys and pan scale: read its manifest before writing them.
+
 The cab section has a `left*` and a `right*` slot, each with its own mic,
 placement, level and phase, plus an optional room mic.
 

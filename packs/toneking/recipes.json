@@ -57,7 +57,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "rhythm-edge": {
@@ -113,7 +113,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "lead-crunch": {
@@ -169,7 +169,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "lead-saturated": {
@@ -225,7 +225,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "attenuated-lead": {
@@ -282,7 +282,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "tremolo-clean": {
@@ -333,7 +333,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -376,7 +376,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "fast-snap": {
@@ -417,7 +417,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "sustain": {
@@ -458,7 +458,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -474,7 +474,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -517,7 +517,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "vintage-crunch": {
@@ -558,7 +558,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -574,7 +574,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -617,7 +617,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "saturated-lead": {
@@ -658,7 +658,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -674,7 +674,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -742,12 +742,12 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "tight-low-end": {
         "title": "Tighter low end",
-        "use_when": "the guitar masks bass or kick and needs less rumble The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
+        "use_when": "the guitar masks bass or kick and needs less rumble",
         "parameters": [
           {
             "module": "",
@@ -808,12 +808,12 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "lead-focus": {
         "title": "Lead focus",
-        "use_when": "a lead needs more mid presence and less extreme low end The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
+        "use_when": "a lead needs more mid presence and less extreme low end",
         "parameters": [
           {
             "module": "",
@@ -874,12 +874,12 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "soft-top": {
         "title": "Softer top end",
-        "use_when": "a bright pickup or close dynamic mic sounds sharp The band-to-frequency ordering assumed here (low bands = low frequencies) is a CONVENTION, not a measurement: this plugin publishes no centre frequency for any band and the offline render harness does not yet work against it. Audition the result rather than trusting the direction.",
+        "use_when": "a bright pickup or close dynamic mic sounds sharp",
         "parameters": [
           {
             "module": "",
@@ -940,7 +940,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -1018,7 +1018,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "bright-dynamics": {
@@ -1094,7 +1094,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "warm-ribbons": {
@@ -1170,7 +1170,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "single-57": {
@@ -1221,7 +1221,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -1259,7 +1259,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "deep-vintage": {
@@ -1295,7 +1295,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -1311,7 +1311,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -1379,7 +1379,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "stereo-dotted-eighth": {
@@ -1445,7 +1445,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "short-slap": {
@@ -1511,7 +1511,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -1527,7 +1527,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -1575,7 +1575,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "lead-space": {
@@ -1621,7 +1621,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "ambient": {
@@ -1667,7 +1667,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "off": {
@@ -1683,7 +1683,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     },
@@ -1711,7 +1711,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "hot-pickup-pad": {
@@ -1737,7 +1737,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "low-output-lift": {
@@ -1763,7 +1763,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       },
       "headroom": {
@@ -1784,7 +1784,7 @@
         "evidence": {
           "class": "factory-corpus",
           "source": "packs/toneking/tone.md#anchors",
-          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. Not an acoustic measurement \u2014 no control of this plugin has been characterised by rendering audio through it."
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
     }
