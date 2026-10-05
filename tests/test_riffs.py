@@ -59,3 +59,40 @@ def test_the_shipped_riffs_match_their_record():
         path = ROOT / "samples" / "riffs" / entry["file"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"], name
     assert sorted(A.shipped_riffs()) == sorted(record["riffs"])
+
+
+def test_a_cut_starts_before_the_pick_attack_and_fades_at_both_ends():
+    import numpy as np
+
+    rate = 48000
+    audio = np.zeros(rate)
+    audio[int(0.53 * rate):] = 0.5                    # the attack lags the MIDI onset
+    at = B.attack(audio, rate, near_s=0.5)
+    assert abs(at - int(0.53 * rate)) <= 1
+    piece = B.faded(np.ones(rate // 2), rate)
+    assert piece[0] == 0.0 and piece[-1] == 0.0 and piece[rate // 4] == 1.0
+
+
+def test_an_audition_with_no_riff_to_play_stops_before_making_a_folder(tmp_path, monkeypatch):
+    import pytest
+
+    monkeypatch.setattr(A, "RIFFS", tmp_path / "none")
+    monkeypatch.setattr(sys, "argv", ["audition.py", "--song", str(tmp_path / "s.wav"),
+                                      "--start", "0", "--out-dir", str(tmp_path / "page"),
+                                      "--preset", str(ROOT / "samples" / "Example_Clean_PR12.xml")])
+    with pytest.raises(SystemExit):
+        A.main()
+    assert not (tmp_path / "page").exists()
+
+
+def test_a_changed_shipped_riff_is_refused_not_skipped(tmp_path, monkeypatch):
+    import pytest
+
+    riffs = tmp_path / "riffs"
+    riffs.mkdir()
+    (riffs / "chords.flac").write_bytes(b"not the riff")
+    (riffs / "riffs.json").write_text(json.dumps(
+        {"riffs": {"chords": {"file": "chords.flac", "sha256": "0" * 64}}}))
+    monkeypatch.setattr(A, "RIFFS", riffs)
+    with pytest.raises(SystemExit):
+        A.shipped_riffs()

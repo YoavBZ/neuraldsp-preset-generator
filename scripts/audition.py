@@ -286,6 +286,12 @@ def page(record: dict) -> str:
 RIFFS = PLUGIN_ROOT / "samples" / "riffs"
 
 
+def _riff_names() -> list:
+    """The shipped riffs' names, for --help, without checking the files."""
+    index = RIFFS / "riffs.json"
+    return sorted(json.loads(index.read_text())["riffs"]) if index.exists() else []
+
+
 def shipped_riffs() -> dict:
     """{name: path} of the riffs in samples/riffs/, each checked against riffs.json."""
     index = RIFFS / "riffs.json"
@@ -294,8 +300,9 @@ def shipped_riffs() -> dict:
     out = {}
     for name, entry in json.loads(index.read_text())["riffs"].items():
         path = RIFFS / entry["file"]
-        if path.exists() and _sha(path) == entry["sha256"]:
-            out[name] = path
+        if not path.exists() or _sha(path) != entry["sha256"]:
+            die(f"the shipped riff {path} is missing or changed; reinstall the plugin")
+        out[name] = path
     return out
 
 
@@ -305,7 +312,7 @@ def build_parser():
     ap.add_argument("--song", type=pathlib.Path, help="the song, any common audio format")
     ap.add_argument("--start", type=float, help="where in the song the part plays, in seconds")
     ap.add_argument("--seconds", type=float, default=12.0, help="how much of the song (default 12)")
-    ap.add_argument("--riff", action="append", choices=sorted(shipped_riffs()),
+    ap.add_argument("--riff", action="append", choices=_riff_names(),
                     help="a shipped riff to play the presets through; repeat for more "
                          "(default: every shipped riff, unless --di is given)")
     ap.add_argument("--di", type=pathlib.Path, action="append",
@@ -338,19 +345,25 @@ def main():
         if record.get("schema") != SCHEMA:
             die(f"{out} is not an audition")
         dis = {}
+        riffs = shipped_riffs()
         for d in record["dis"]:
-            if _sha(d["path"]) != d["sha256"]:
-                die(f"the DI {d['path']} changed since the audition was made")
-            dis[d["id"]] = io.load(d["path"])
+            # A shipped riff is found by name, so an audition outlives a plugin update.
+            path = riffs.get(d["riff"]) if d.get("riff") else pathlib.Path(d["path"])
+            if path is None or _sha(path) != d["sha256"]:
+                die(f"the DI {d.get('riff') or d['path']} changed since the audition was made")
+            dis[d["id"]] = io.load(path)
     else:
         if args.song is None or args.start is None or args.out_dir is None:
             die("a new audition needs --song, --start and --out-dir")
         riffs = shipped_riffs()
         chosen = args.riff or ([] if args.di else sorted(riffs))
-        sources = [(name, riffs[name]) for name in chosen]
+        sources = [(name, riffs[name], name) for name in chosen]
         for path in args.di or []:
             path = path.expanduser().resolve()
-            sources.append((path.stem, path))
+            sources.append((path.stem, path, None))
+        if not sources:
+            die("no riff to play the presets through: this install ships none, so pass "
+                "--di with a guitar DI recording")
         out = args.out_dir.expanduser().resolve()
         if out.exists() and any(out.iterdir()):
             die(f"{out} is not empty; use --add to extend an audition")
@@ -368,10 +381,10 @@ def main():
                            "start_s": args.start, "seconds": args.seconds, "file": "song.wav"},
                   "dis": [], "candidates": []}
         dis = {}
-        for i, (name, path) in enumerate(sources, start=1):
+        for i, (name, path, riff) in enumerate(sources, start=1):
             dis[f"riff-{i}"] = io.load(path)
-            record["dis"].append({"id": f"riff-{i}", "name": name, "path": str(path),
-                                  "sha256": _sha(path)})
+            record["dis"].append({"id": f"riff-{i}", "name": name, "riff": riff,
+                                  "path": str(path), "sha256": _sha(path)})
         save(out, record)
     add_candidates(out, record, args.preset, notes, dis)
     level_page(out, record)

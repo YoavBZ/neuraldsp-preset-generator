@@ -7,12 +7,13 @@ The riffs are cut from the direct-input recordings of Guitar-TECHS, part P1 (Zen
 record 14963133, CC BY 4.0): one player's dry guitar, so any preset can play them.
 Part P3 is validation material and is never used here.
 
-- **chords** (10 s): a strummed G–D–Em–C progression, 2.5 s of each chord. The chords
-  come from the P1 chord recordings (`Set1_maj`, `Set1_min`), found by their triad in
-  the recordings' own MIDI transcription, cut from 20 ms before each strum with a
-  40 ms fade at the end.
-- **line** (10 s): the first ten seconds of the A scale run (`P1_scales`, `A`), a
-  single-note line.
+- **chords** (10 s): a G–D–Em–C progression, 2.5 s of each chord, in the `Set4`
+  voicings, low on the neck, so the riff has body (fundamentals near 100 Hz). Each chord is found by its triad in
+  the recordings' own MIDI transcription (an exact match preferred), then its pick
+  attack is found in the audio, since the transcription lags it, and the piece is cut
+  20 ms before the attack, with a 3 ms fade in and a 40 ms fade out.
+- **line** (about 10 s): the A scale run (`P1_scales`, `A`) from its start to the
+  quietest moment between 9.8 and 10 s, with the same fades: a single-note line.
 
 Both are set to -23.7 LUFS, the median loudness of the development sets' DIs, so they
 drive an amp as a typical recorded DI does (the P1 recordings sit 7-9 dB lower).
@@ -38,12 +39,17 @@ from _cli import die, guarded
 RATE = 48000
 TARGET_LUFS = -23.7
 CHORD_S, LEAD_IN_S, FADE_S = 2.5, 0.02, 0.04
+VOICING = "Set4"
 PROGRESSION = (("maj", 7, "G"), ("maj", 2, "D"), ("min", 4, "Em"), ("maj", 0, "C"))
-LINE = ("P1_scales", "A", 0.0, 10.0)
+LINE = ("P1_scales", "A", 0.0, 9.8, 10.0)
+FADE_IN_S, ATTACK_SEARCH_S = 0.003, 0.08
 ATTRIBUTION = ("Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical "
-               "Excerpts, Chords and Scales Using a Diverse Array of Hardware "
-               "(Zenodo record 14963133, https://zenodo.org/records/14963133), "
-               "licensed CC BY 4.0. Excerpts cut, joined and level-adjusted.")
+               "Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel "
+               "Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and "
+               "Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; "
+               "ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, "
+               "https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the "
+               "part-P1 direct-input recordings cut, joined, faded and level-adjusted.")
 
 
 def _varlen(data: bytes, i: int):
@@ -121,12 +127,34 @@ def strums(notes, gap_s: float = 0.25):
 
 
 def find_chord(groups, quality: str, root: int) -> float:
-    """The onset of the first strum holding the triad (extra transcribed notes allowed)."""
+    """The onset of the first strum that is exactly the triad, or else the first that
+    holds it among stray transcribed notes."""
     triad = {root % 12, (root + (4 if quality == "maj" else 3)) % 12, (root + 7) % 12}
-    for onset, classes in groups:
-        if triad <= classes:
-            return onset
+    for exact in (True, False):
+        for onset, classes in groups:
+            if classes == triad if exact else triad <= classes:
+                return onset
     raise ValueError(f"no {quality} triad on pitch class {root} in the transcription")
+
+
+def attack(audio, rate: int, near_s: float) -> int:
+    """The first sample, within ATTACK_SEARCH_S of `near_s`, where the signal rises past
+    a tenth of that window's peak: the pick attack the transcription lags."""
+    import numpy as np
+
+    lo = max(0, round((near_s - ATTACK_SEARCH_S) * rate))
+    window = np.abs(audio[lo:round((near_s + ATTACK_SEARCH_S) * rate)])
+    return lo + int(np.argmax(window > 0.1 * window.max()))
+
+
+def faded(piece, rate: int):
+    import numpy as np
+
+    piece = piece.copy()
+    fade_in, fade_out = round(FADE_IN_S * rate), round(FADE_S * rate)
+    piece[:fade_in] *= np.linspace(0.0, 1.0, fade_in)
+    piece[-fade_out:] *= np.linspace(1.0, 0.0, fade_out)
+    return piece
 
 
 def _sha(path) -> str:
@@ -156,30 +184,38 @@ def main():
 
     pieces, sources = [], {}
     for quality, root, name in PROGRESSION:
-        audio_path = source / "P1_chords" / "audio" / "directinput" / f"directinput_Set1_{quality}.wav"
-        midi_path = source / "P1_chords" / "midi" / f"midi_Set1_{quality}.mid"
+        audio_path = source / "P1_chords" / "audio" / "directinput" / f"directinput_{VOICING}_{quality}.wav"
+        midi_path = source / "P1_chords" / "midi" / f"midi_{VOICING}_{quality}.mid"
         onset = find_chord(strums(midi_notes(midi_path.read_bytes())), quality, root)
         audio, rate = sf.read(str(audio_path))
         if rate != RATE or audio.ndim != 1:
             die(f"{audio_path} is not 48 kHz mono")
-        first = round((onset - LEAD_IN_S) * RATE)
-        piece = audio[first:first + round(CHORD_S * RATE)].copy()
-        fade = round(FADE_S * RATE)
-        piece[-fade:] *= np.linspace(1.0, 0.0, fade)
-        pieces.append(piece)
+        first = attack(audio, RATE, onset) - round(LEAD_IN_S * RATE)
+        if first < 0:
+            die(f"{name}'s strum starts too close to the start of {audio_path.name}")
+        pieces.append(faded(audio[first:first + round(CHORD_S * RATE)], RATE))
         sources[audio_path.name] = _sha(audio_path)
         sources[midi_path.name] = _sha(midi_path)
         record.setdefault("cuts", []).append({"chord": name, "file": audio_path.name,
                                               "start_s": round(first / RATE, 4),
                                               "seconds": CHORD_S})
-    folder, key, start, seconds = LINE
+    folder, key, start, quiet_from, quiet_to = LINE
     line_path = source / folder / "audio" / "directinput" / f"directinput_{key}.wav"
-    line, _ = sf.read(str(line_path))
-    line = line[round(start * RATE):round((start + seconds) * RATE)]
+    line, rate = sf.read(str(line_path))
+    if rate != RATE or line.ndim != 1:
+        die(f"{line_path} is not 48 kHz mono")
+    # End where the run is quietest near ten seconds, so the cut is not mid-note.
+    hop = round(0.005 * RATE)
+    tail = np.abs(line[round(quiet_from * RATE):round(quiet_to * RATE)])
+    envelope = [tail[i:i + hop].max() for i in range(0, len(tail) - hop, hop)]
+    end_at = round(quiet_from * RATE) + int(np.argmin(envelope)) * hop + hop
+    line = faded(line[round(start * RATE):end_at], RATE)
     sources[line_path.name] = _sha(line_path)
+    record["cuts"].append({"line": key, "file": line_path.name, "start_s": start,
+                           "seconds": round(len(line) / RATE, 4)})
 
     for name, audio, describe in (
-            ("chords", np.concatenate(pieces), "a strummed G-D-Em-C progression"),
+            ("chords", np.concatenate(pieces), "a G-D-Em-C chord progression"),
             ("line", line, "a single-note scale line in A")):
         gain = TARGET_LUFS - meter.integrated_loudness(audio)
         audio = audio * 10 ** (gain / 20)

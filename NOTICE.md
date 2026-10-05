@@ -16,10 +16,15 @@ for their own copy.
   routinely embed absolute IR paths from their creator's machine and reference
   commercial IR packs.
 - **Two guitar riffs are included** in `samples/riffs/`, for hearing presets on the
-  audition page. They are cut from Guitar-TECHS (Zenodo record 14963133,
-  https://zenodo.org/records/14963133), licensed CC BY 4.0: excerpts of its part-P1
-  direct-input recordings, cut, joined and level-adjusted by
-  `research/build_riffs.py`. `samples/riffs/riffs.json` records the sources.
+  audition page. They are not MIT-licensed. They come from *Guitar-TECHS: An Electric
+  Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a
+  Diverse Array of Hardware*, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri,
+  Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133,
+  https://zenodo.org/records/14963133; ICASSP 2025,
+  doi:10.1109/ICASSP49660.2025.10887996), licensed CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). Changes: excerpts of its part-P1
+  direct-input recordings were cut, joined, faded and level-adjusted by
+  `research/build_riffs.py`; `samples/riffs/riffs.json` records the sources.
 - **One example preset is included**: `samples/Example_Clean_PR12.xml`, generated
   by this project. Because the writer is template-based (it clones a preset and
   mutates values rather than synthesizing bytes from scratch), that file

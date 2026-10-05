@@ -10,8 +10,9 @@ at a preset and describe a change in plain English.
 > **You need your own copy of the plugin.** No Neural DSP code, audio, impulse
 > responses, or factory presets are included here — see [NOTICE.md](NOTICE.md).
 > The repo ships one example preset that this project generated
-> (`samples/Example_Clean_PR12.xml`); everything else you'd want as a template
-> comes from your own library.
+> (`samples/Example_Clean_PR12.xml`) and two CC BY 4.0 guitar riffs for the
+> audition page (`samples/riffs/`); everything else you'd want as a template comes
+> from your own library.
 
 Production packs target **Morgan Amps Suite** and **Tone King Imperial MKII**.
 Both packs have verified writable Audio Unit mappings, ranges, selector tables,
@@ -444,7 +445,7 @@ licensed plugin and is never run by CI.
 Passes on a bare clone against the bundled example preset: the IR-stripping
 check synthesises the preset it needs rather than requiring one of yours. The
 audio tests skip without the `analysis` extra and synthesise every signal they
-measure, so no audio is committed either. CI runs both installs, and one test
+measure; the only committed audio is the two audition riffs in `samples/riffs/`. CI runs both installs, and one test
 asserts that the preset tools still import and run with numpy made unavailable.
 
 ```bash
@@ -457,7 +458,8 @@ Point it at `plugin.json` explicitly: with a `marketplace.json` present, a bare
 
 ## License and scope
 
-MIT — see [LICENSE](LICENSE). Read [NOTICE.md](NOTICE.md) for scope, what is
+MIT — see [LICENSE](LICENSE) — except `samples/riffs/`, which is CC BY 4.0 (its
+attribution is in [NOTICE.md](NOTICE.md)). Read NOTICE.md for scope, what is
 deliberately excluded, and format credits.
 
 Not affiliated with, endorsed by, or supported by Neural DSP.

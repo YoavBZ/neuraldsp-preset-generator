@@ -1,54 +1,60 @@
 {
  "schema": "riffs-1",
- "attribution": "Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of Hardware (Zenodo record 14963133, https://zenodo.org/records/14963133), licensed CC BY 4.0. Excerpts cut, joined and level-adjusted.",
+ "attribution": "Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the part-P1 direct-input recordings cut, joined, faded and level-adjusted.",
  "loudness_lufs": -23.7,
  "riffs": {
   "chords": {
    "file": "chords.flac",
-   "sha256": "274086a4c6bbcdea467a89e34838f226c63f0f56289e13ecb2c51810536f04b2",
-   "what": "a strummed G-D-Em-C progression",
+   "sha256": "a4a2f36d0762f015cd0b22e719295b62a3a76a3dfbf51a07d2688e3981e696a0",
+   "what": "a G-D-Em-C chord progression",
    "seconds": 10.0,
-   "gain_db": 7.04
+   "gain_db": 9.25
   },
   "line": {
    "file": "line.flac",
-   "sha256": "cdc78b149d6f5676fc4c8d5115f5aa1d75dfed486adde4c10ffae5ba0e6ae41b",
+   "sha256": "f010268002249e198e2eedc6d74b67b64ddc01548ccfecbcc6f2f88c63cf0e8a",
    "what": "a single-note scale line in A",
-   "seconds": 10.0,
-   "gain_db": 9.02
+   "seconds": 9.945,
+   "gain_db": 9.04
   }
  },
  "cuts": [
   {
    "chord": "G",
-   "file": "directinput_Set1_maj.wav",
-   "start_s": 35.9956,
+   "file": "directinput_Set4_maj.wav",
+   "start_s": 67.9473,
    "seconds": 2.5
   },
   {
    "chord": "D",
-   "file": "directinput_Set1_maj.wav",
-   "start_s": 15.9852,
+   "file": "directinput_Set4_maj.wav",
+   "start_s": 115.9662,
    "seconds": 2.5
   },
   {
    "chord": "Em",
-   "file": "directinput_Set1_min.wav",
-   "start_s": 23.929,
+   "file": "directinput_Set4_min.wav",
+   "start_s": 56.0099,
    "seconds": 2.5
   },
   {
    "chord": "C",
-   "file": "directinput_Set1_maj.wav",
-   "start_s": 96.0144,
+   "file": "directinput_Set4_maj.wav",
+   "start_s": 87.913,
    "seconds": 2.5
+  },
+  {
+   "line": "A",
+   "file": "directinput_A.wav",
+   "start_s": 0.0,
+   "seconds": 9.945
   }
  ],
  "sources": {
-  "directinput_Set1_maj.wav": "620e76125b9623d8256e504962f36e534a0e483ae0f602c63ec0d9e66a98ab9b",
-  "midi_Set1_maj.mid": "d1e93e069570124d09f59c5d2c3474a8d8f7bcd7b83e43cb28ddd66bcf4bdc5b",
-  "directinput_Set1_min.wav": "464077182dd6020b098a6d751448498ffce1219263022d03f5ca1e21178bd7df",
-  "midi_Set1_min.mid": "28579f1420151f5147955266afbdd53c89c83171d2710c3a3cb54c6e38ef618e",
+  "directinput_Set4_maj.wav": "0d7390deaa5cc1f5c549228076637d38adb982fea94be42ae2846632d7771f39",
+  "midi_Set4_maj.mid": "ed8742b1a5a1bd69bdbb02f8c4a938813a0f151ed6fbe56a9ef884e205f368f9",
+  "directinput_Set4_min.wav": "6000b89dfbf280468f2f0e6f331bc9d3bd4b900d762e026f201d7284123bc63b",
+  "midi_Set4_min.mid": "5f5409fa465feb5aa32a8d26212e2e74cf6871f8c70026e97919d48483eacef0",
   "directinput_A.wav": "1d33f99eae917f16fb4146dd16f578a74c79201e636f0a9f3e673b9caa984b2d"
  }
 }
