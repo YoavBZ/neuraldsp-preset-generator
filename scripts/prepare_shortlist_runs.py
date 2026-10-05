@@ -225,9 +225,10 @@ def parts_by_song():
 
 
 def guitar_tracks(record) -> list:
-    """The guitar tracks in a crop's mix, by file name."""
+    """The guitar tracks in a crop's mix, by file name (a guitarist's vocal mic is not one)."""
     names = [pathlib.Path(t).stem for t in record.get("included_mix_tracks", [])]
-    return [n for n in names if any(w in n.lower() for w in ("gtr", "guitar"))]
+    return [n for n in names if any(w in n.lower() for w in ("gtr", "guitar"))
+            and not any(w in n.lower() for w in ("vox", "vocal"))]
 
 
 def pace_cuts():
