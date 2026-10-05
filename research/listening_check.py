@@ -56,8 +56,8 @@ CONTROLS = 4                    # two per sitting
 MIN_CONTROLS_HIT = 3            # of 4: a guessing listener reaches it 5.1% of the time
 DRIVE_HIGH = 0.7               # a drive pedal's gain from which a control calls it high-gain
 CLEAN_VOLUME = 0.5             # the amp volume at or under which, with no drive, it is clean
-CLEAR_PAIR = 0.15
-TASTE_RIDGE = 0.5              # the taste fit's penalty, so 32 answers cannot fit anything               # log distance at which the judge "clearly" separates two
+CLEAR_PAIR = 0.15               # log distance at which the judge "clearly" separates two
+TASTE_RIDGE = 0.5               # the taste fit's penalty: 16 answers per riff, 9 features
 RIFF_LUFS = -23.7
 G = ("G1", "G2", "G3", "G4")
 RIFFS = ("chords", "line")
@@ -525,6 +525,28 @@ def trial_candidates(data) -> dict:
     return out
 
 
+def unchanged(data) -> None:
+    """Stop unless everything the inputs fixed is as it was: the shortlist renders index,
+    the factory-preset panels, every factory and generated preset, and every song
+    excerpt and DI the trials play."""
+    if _sha(SHORTLISTS.expanduser() / "renders" / "index.json") != data["renders_index_sha256"]:
+        die("the shortlist renders index changed since the inputs were fixed")
+    if _sha(REACH.expanduser()) != data["amp_reach_sha256"]:
+        die("the factory-preset panels changed since the inputs were fixed")
+    for candidate, sha in data["factory_sha256"].items():
+        if _sha(factory_path(candidate)) != sha:
+            die(f"{factory_path(candidate)} is not the factory preset the panel scored")
+    for p in data["parts"]:
+        for g in G:
+            path = pathlib.Path(data["presets"][p][g]).expanduser()
+            if _sha(path) != data["preset_sha256"][p][g]:
+                die(f"{path} is not the preset the judge scored for {p}")
+    for part, files in data["audio_sha256"].items():
+        for name, sha in files.items():
+            if _sha(CROPS.expanduser() / part / name) != sha:
+                die(f"{part}'s {name} changed since the inputs were fixed")
+
+
 def build(args):
     from analysis import require
 
@@ -538,27 +560,12 @@ def build(args):
     if _sha(args.inputs) != args.inputs_sha:
         die("the inputs file is not the one whose hash was committed")
     data = json.loads(args.inputs.read_text())
-    if _sha(SHORTLISTS.expanduser() / "renders" / "index.json") != data["renders_index_sha256"]:
-        die("the shortlist renders index changed since the inputs were fixed")
-    if _sha(REACH.expanduser()) != data["amp_reach_sha256"]:
-        die("the factory-preset panels changed since the inputs were fixed")
-    for candidate, sha in data["factory_sha256"].items():
-        if _sha(factory_path(candidate)) != sha:
-            die(f"{factory_path(candidate)} is not the factory preset the panel scored")
-    for part, files in data["audio_sha256"].items():
-        for name, sha in files.items():
-            if _sha(CROPS.expanduser() / part / name) != sha:
-                die(f"{part}'s {name} changed since the inputs were fixed")
+    unchanged(data)
     out = args.out_dir.expanduser()
     if out.exists() and any(out.iterdir()):
         die(f"{out} is not empty")
     private, listen = out / "private", out / "listen"
     candidates = trial_candidates(data)
-    for (group, p), by_label in candidates.items():
-        if group == "main":
-            for g, path in by_label.items():
-                if _sha(path) != data["preset_sha256"][p][g]:
-                    die(f"{path} is not the preset the judge scored for {p}")
     private.mkdir(parents=True)
     listen.mkdir()
     drift = render_unchanged(data, data["parts"][0], private)

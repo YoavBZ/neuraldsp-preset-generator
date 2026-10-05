@@ -228,6 +228,55 @@ def test_readings_aggregate_the_captured_share_and_deliver_g1_on_cant_tell(monke
     assert L.readings([]) is None
 
 
+def test_each_answered_trial_draws_with_its_own_riffs_taste(monkeypatch):
+    seen = []
+    monkeypatch.setattr(L, "block_p", lambda blocks, draws=None: seen.append(blocks) or 0.5)
+    taste = {riff: {p: [k + 1.0, 1.0, 1.0, 1.0 + (riff == "line")] for k, p in
+                    enumerate(("a", "b"))} for riff in L.RIFFS}
+    rows = [_row([0.0, 0.4, 0.4, 0.4], "G1", riff="chords", part="a"),
+            _row([0.0, 0.4, 0.4, 0.4], None, riff="line", part="a"),       # can't tell
+            _row([0.0, 0.4, 0.4, 0.4], "G2", riff="line", part="b"),
+            _row([0.0, 0.4, 0.4, 0.4], "G3", riff="chords", part="b")]
+    L.readings(rows, taste)
+    tasted = seen[1]                         # the calls: chance, taste, clear pairs
+    assert [picks for _, picks, _ in tasted] == [[0], [1, 2]]
+    assert tasted[0][2] == [taste["chords"]["a"]]
+    assert tasted[1][2] == [taste["line"]["b"], taste["chords"]["b"]]
+    assert seen[0][1][2] == [None, None]     # the chance null stays uniform
+
+
+def test_build_stops_when_a_song_excerpt_or_di_changed(tmp_path, monkeypatch):
+    for name, folder in (("SHORTLISTS", "shortlists"), ("REACH", "reach.json"),
+                         ("CROPS", "crops"), ("FACTORY", "factory")):
+        monkeypatch.setattr(L, name, tmp_path / folder)
+    (tmp_path / "shortlists" / "renders").mkdir(parents=True)
+    (tmp_path / "shortlists" / "renders" / "index.json").write_text("{}")
+    (tmp_path / "reach.json").write_text("{}")
+    (tmp_path / "crops" / "p").mkdir(parents=True)
+    sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()  # noqa: E731
+    audio = {}
+    for name in ("di.wav", "mix_instrumental.wav"):
+        (tmp_path / "crops" / "p" / name).write_bytes(name.encode())
+        audio[name] = sha(tmp_path / "crops" / "p" / name)
+    presets = {}
+    for g in L.G:
+        (tmp_path / f"{g}.xml").write_text(g)
+        presets[g] = str(tmp_path / f"{g}.xml")
+    data = {"renders_index_sha256": sha(tmp_path / "shortlists" / "renders" / "index.json"),
+            "amp_reach_sha256": sha(tmp_path / "reach.json"), "factory_sha256": {},
+            "parts": ["p"], "presets": {"p": presets},
+            "preset_sha256": {"p": {g: sha(pathlib.Path(presets[g])) for g in L.G}},
+            "audio_sha256": {"p": audio}}
+    L.unchanged(data)
+    (tmp_path / "crops" / "p" / "di.wav").write_bytes(b"another take")
+    with pytest.raises(SystemExit):
+        L.unchanged(data)
+    (tmp_path / "crops" / "p" / "di.wav").write_bytes(b"di.wav")
+    (tmp_path / "G3.xml").write_text("edited")
+    with pytest.raises(SystemExit):
+        L.unchanged(data)
+
+
 def test_the_decision_rests_on_the_primary_and_is_gated_by_inconclusive():
     passing = {b: {"all": {"p": 0.01, "taste_p": 0.01}} for b in L.BAND_SETS}
     failing = dict(passing, union={"all": {"p": 0.2, "taste_p": 0.01}})
