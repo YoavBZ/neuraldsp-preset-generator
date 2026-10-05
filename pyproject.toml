@@ -41,7 +41,8 @@ host = ["pedalboard>=0.9"]
 [tool.setuptools]
 packages = ["format", "packs", "analysis", "match", "scripts"]
 
-# Every non-Python file the package reads at run time. Without this an installed
+# Every non-Python file the package reads at run time, and the Swift sources the docs
+# build. Without this an installed
 # (rather than editable) copy dies on `analysis/loss_profiles.json` with a
 # FileNotFoundError and lacks `packs/*/manifest.json`, the project's contract.
 [tool.setuptools.package-data]

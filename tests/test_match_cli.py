@@ -548,6 +548,14 @@ def test_a_bad_flag_is_a_sentence_not_a_stack(audio, tmp_path, extra, expected):
     assert "Traceback" not in done.stderr
 
 
+def test_an_unknown_renderer_name_is_refused_in_a_sentence():
+    """Every CLI limits --renderer to its choices; a direct caller still gets a sentence."""
+    from scripts import match_preset as cli
+
+    with pytest.raises(SystemExit):
+        cli._renderer("bogus")
+
+
 @pytest.mark.parametrize("regime", ["mix", "separated_stem", "isolated_stem"])
 def test_without_a_di_a_recording_is_not_searched_and_the_template_kept(
         audio, tmp_path, regime):
