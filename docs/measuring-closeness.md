@@ -277,15 +277,19 @@ other players' DIs.
 
 ## What follows
 
-- Re-check the conclusions that rested on v3: the kill tests' v3c arm, the
-  library-vs-template result (`docs/library-arm-analysis-*.json`) and every "search
-  beats its start" count.
-- Stage 0b listening validation (`docs/listening-validation-plan.md`): 30 trials on
-  clear differences, with hidden references and repeats; can't-tell answers never
-  counted as half agreement. It cannot separate the band sets, which differ almost
-  only on near-ties.
-- Data: crops re-cut where the DI plays, and bleed flags (one measured lag per part
-  is now in `docs/validation-lags.json`).
-- Listening checks the review asked for: whether hiss matters to this listener
-  (a render against itself with -40 dB of pink noise) and whether drive with a
-  matched spectrum is heard as ALM or as the spectral measures weight it.
+*Updated 2026-10-05.*
+
+- **Re-checking what rested on v3:**
+  - The no-DI rule was re-checked and came out void
+    ([no-di-rule-under-the-judge-results.md](no-di-rule-under-the-judge-results.md)).
+  - The kill tests were re-scored under the judge ([kill-test-results.md](kill-test-results.md)).
+  - The library-vs-template result (`docs/data/set2/library-arm-analysis-set2-*.json`)
+    and the "search beats its start" counts remain unconfirmed.
+- **Stage 0b listening validation is done.** The judge is validated for clear
+  differences between clean-to-crunch PR12 renders
+  ([listening-validation-results.md](listening-validation-results.md)).
+- **Data is done:** crop rule 2 and bleed measurements
+  ([validation-datasets.md](validation-datasets.md)), and one measured lag per part
+  (`docs/validation-lags.json`).
+- **Not yet run:** the hiss and matched-drive listening checks, and calibration on high
+  gain. They are in [ROADMAP.md](ROADMAP.md) under the judge's coverage.

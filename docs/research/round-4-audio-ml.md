@@ -1,6 +1,8 @@
 # Audio machine learning for tone matching and measurement: research round 4
 
-*2026-10-05. Synthesises four reports, kept unchanged in `docs/research-round-4/`: closeness (A), features (B), models and search (C), tools and data (D), adding to rounds 1–3 (`docs/research-song-only-matching.md`, `research-full-plugin-estimation.md`, `research-supervised-preset-model.md`). Revised after an independent critique, each cited correction checked at its source; only small calculations were run, and nothing was downloaded. Marks: **[verified]**, the source holds the claim; **[unverified]**, snippets, inference or arithmetic; **[project]**, this repository's results; **[proposed]**, a threshold added here.*
+> **Status, 2026-10-05.** Experiments 1–3 of §5 have run, as the quick checks ([quick-checks-results.md](../quick-checks-results.md)); the rest are open, and [ROADMAP.md](../ROADMAP.md) says which come next.
+
+*2026-10-05. Synthesises four reports, kept unchanged (apart from paths when files moved) in `docs/research/round-4/`: closeness (A), features (B), models and search (C), tools and data (D), adding to rounds 1–3 (`docs/research/round-1-song-only-matching.md`, `round-2-full-plugin-estimation.md`, `round-3-supervised-preset-model.md`). Revised after an independent critique, each cited correction checked at its source; only small calculations were run, and nothing was downloaded. Marks: **[verified]**, the source holds the claim; **[unverified]**, snippets, inference or arithmetic; **[project]**, this repository's results; **[proposed]**, a threshold added here.*
 
 ## 1. Verdict
 
@@ -116,7 +118,7 @@ Gates are declared before results are read, and each decision gets an independen
 11. **Separation survival** (B's F4). *Which features survive Demucs?* Minutes on MPS, about 3 s per 30 s [project]; **no renders**. Gate: the stem moves a surviving feature less than half the median distance between presets.
 12. **Feature swap in K2/K3** (B's F1; after 4, and only if experiment 2 finds separable presets). **No renders**. Gate: PR12 open-set regret below the medoid's, and K3 capture at least doubled for 2 of 3 recognisers.
 13. **Song-only search drift** (C, after 4). *Does a no-DI search drift from the amp track as it runs?* Judge-scored checkpoints (0 to 300 iterations) on 20 parts, searching on experiment 4's winning distance; the void runs optimised `unpaired-v3`, so their drift would not transfer. About 120 renders per amp. Gate [proposed]: if distance rises from iteration 0, adopt "stay near the start, stop early".
-14. **Successive halving across amps, with a DI** (C). *Does a joint-amp search beat a single-amp one at equal renders?* Its condition is met: AC20 falls short on 14–15 of 25 parts. First, as the no-DI result asks, a positive control (§4): a judge-optimised own-DI search must beat its start. About 6,600 renders plus the control. Gate [proposed]: one-sided band sign-flip, p < 0.05. Round 2 found that splitting a fixed render budget across topologies made targets worse (`docs/research-full-plugin-estimation.md`), so successive halving has to beat a single-amp search at equal renders, not merely match it.
+14. **Successive halving across amps, with a DI** (C). *Does a joint-amp search beat a single-amp one at equal renders?* Its condition is met: AC20 falls short on 14–15 of 25 parts. First, as the no-DI result asks, a positive control (§4): a judge-optimised own-DI search must beat its start. About 6,600 renders plus the control. Gate [proposed]: one-sided band sign-flip, p < 0.05. Round 2 found that splitting a fixed render budget across topologies made targets worse (`docs/research/round-2-full-plugin-estimation.md`), so successive halving has to beat a single-amp search at equal renders, not merely match it.
 15. **Outside data** (D; downloads). timbremetrics as an embedding floor (gate [proposed]: drop embeddings below MFCC there); GUITAR-FX-DIST for drive settings; ToneTwist for real amps; MoisesDB for "driven or clean" in mixes.
 
 ## 6. Tools and downloads
@@ -145,7 +147,7 @@ Gates are declared before results are read, and each decision gets an independen
 
 ## 8. Sources
 
-Full source lists: `docs/research-round-4/A-closeness.md`, `docs/research-round-4/B-features.md`, `docs/research-round-4/C-models.md` and `docs/research-round-4/D-tools-data.md`. Key sources:
+Full source lists: `docs/research/round-4/A-closeness.md`, `docs/research/round-4/B-features.md`, `docs/research/round-4/C-models.md` and `docs/research/round-4/D-tools-data.md`. Key sources:
 - **Metrics:** Wright et al. https://arxiv.org/pdf/2211.00943; Comunità et al. (Table 8) https://arxiv.org/html/2502.14405; Tian et al. https://arxiv.org/html/2507.07764; HAAQI https://pmc.ncbi.nlm.nih.gov/articles/PMC4849486/; MAD https://www.cns.nyu.edu/pub/lcv/wang08-preprint.pdf.
 - **Features:** ST-ITO https://arxiv.org/html/2410.21233 and AFx-Rep's weights https://huggingface.co/csteinmetz1/afx-rep; RLAT https://arxiv.org/html/2608.28127; Fx-Encoder++ https://arxiv.org/html/2507.02273; Chen et al. https://arxiv.org/html/2407.10646.
 - **Models:** DeepAFx-ST https://arxiv.org/html/2207.08759; CSLS https://ar5iv.labs.arxiv.org/html/1710.04087; Hyperband https://arxiv.org/abs/1603.06560; EG-VAE https://arxiv.org/html/2608.05513.

@@ -11,6 +11,8 @@
 
 *The question it answers: what should replace or supplement the 300-render noise-probe search when the user supplies only the song file and never a DI. Nothing here has been run yet. Each approach carries the experiment and gate that would decide it.*
 
+> **Status, 2026-10-05.** E1, E1x, E2 and E3 ran, scored with the v3 objective since retired as a judge ([tone-matching-plan.md](../tone-matching-plan.md), "The real-guitar probe"); their conclusions are unconfirmed. The rest was not run; E6 and E7 continue as round 4's experiments 4 and 5 ([round-4-audio-ml.md](round-4-audio-ml.md)).
+
 ## 1. Executive summary
 
 The change most likely to help is a simple one. Stop rendering candidates through the 6-second noise burst and render them through a real guitar DI taken from a public library. The committed runs already show what this is worth. A DI from another band beat neutral settings on 19 of 27 SW50R set-2 parts with level left out. The direct inversion alone through another DI also ended closer than the full 300-render noise search (median 1.11 against 1.25 on SW50R, 1.03 against 1.26 on Tone King). This needs no model and no new dependency, and a match still takes about 8 minutes. It can be tested over one night after a small change to `scripts/benchmark_recordings.py`.
@@ -209,7 +211,7 @@ The plan has two parts:
   Add a numpy probe builder: 4 × 1.5 s guitar-active clips, 50 ms fades, −22.9 LUFS (provisional: E1 checks it). It builds two libraries:
   - **L1:** for each part, the loudest 1.5 s of DIs from four *other* set-2 bands, alternating the part's own source and the other, chosen per part by a seed and never the band of its `other` DI (`benchmark_recordings.py --signal library`). Local only. Telefunken clips share one room, so L1 is not a stand-in for a public library (L2).
   - **L2:** Guitar-TECHS P1/P2 clips (CC BY 4.0), pinned by SHA-256.
-- **R1, prior check.** Fit the factory-preset prior and compute the Mahalanobis distance of every stored no-DI answer (the `runs/start-*` folders and the `match-pipeline-set2-sw50r*.json` answers). Correlate it with each answer's change in score against its own start.
+- **R1, prior check.** Fit the factory-preset prior and compute the Mahalanobis distance of every stored no-DI answer (the `runs/start-*` folders and the `match-pipeline-set2-sw50r*.json` answers, in `docs/` and `docs/data/set2/`). Correlate it with each answer's change in score against its own start.
   - **Pass:** Spearman ≥0.3, or answers outside the 90% region at least 1.5× as likely to have got worse.
   - **Fail:** shelve the prior.
 - **B0, your call.** For Tone King without a DI, return neutral settings and skip the noise search. The measurement behind it is the objective proxy only, with no listening: further than neutral on 29 of 43 with level left out, 38 with level. See §5.

@@ -1,7 +1,7 @@
 # Three quick checks before any model work
 
 Declared on 2026-10-05, before any of them is computed. These are the first three
-experiments of `docs/research-audio-ml.md` §5, run on data already on disk: no new
+experiments of `docs/research/round-4-audio-ml.md` §5, run on data already on disk: no new
 renders and no listening. Each needs a DI. They decide whether the model path is worth
 reopening (`docs/kill-tests-pr12-results.md`, `docs/amp-reach-results.md`).
 

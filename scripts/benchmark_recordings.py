@@ -61,7 +61,7 @@ LAGS = PLUGIN_ROOT / "docs" / "validation-lags.json"
 SIGNALS = ("same", "other", "noise", "library")
 # The `library` signal: a fixed probe of real guitar, built per part from
 # development DIs of other bands, so no part is ever heard through its own band's
-# playing (docs/research-song-only-matching.md, approach 1).
+# playing (docs/research/round-1-song-only-matching.md, approach 1).
 LIBRARY_CLIPS = 4
 LIBRARY_CLIP_SECONDS = 1.5
 LIBRARY_FADE_SECONDS = 0.05

@@ -96,7 +96,7 @@ far below 0.150: at a cut of 0.05 the one-amp share reaches 0.62 / 0.60.
 **Check 2 does not explain the failure, and check 3 found no rescue.** So the failure is
 transfer: recognition trained on renders does not reach real amp tracks with these
 features. Model work stays parked until the "judge as teacher" step
-(`docs/research-audio-ml.md` §5, experiment 4) finds features that do. If the model is
+(`docs/research/round-4-audio-ml.md` §5, experiment 4) finds features that do. If the model is
 ever built, its amp output is a set of acceptable amps, mostly PR12 and SW50R.
 
 **Limits:**

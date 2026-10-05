@@ -1,10 +1,10 @@
-> Input report for `docs/research-audio-ml.md` (round 4), kept as written. Where the synthesis corrects a claim here after a source check (its §8), the synthesis holds.
+> Input report for `docs/research/round-4-audio-ml.md` (round 4), kept as written. Where the synthesis corrects a claim here after a source check (its §8), the synthesis holds.
 
 # C. Models, training and search for amp settings from audio
 
 Research round C, 2026-10-05. It adds to the three earlier research docs
-(`research-song-only-matching.md`, `research-full-plugin-estimation.md`,
-`research-supervised-preset-model.md`) and does not repeat their sources unless something new
+(`../round-1-song-only-matching.md`, `../round-2-full-plugin-estimation.md`,
+`../round-3-supervised-preset-model.md`) and does not repeat their sources unless something new
 was read in them. Tags: **[V]** = I opened the source and the claim is in it; **[U]** = search
 snippet or background knowledge, not checked; **[repo]** = this repository's docs;
 **[calc]** = my arithmetic.

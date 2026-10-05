@@ -216,7 +216,7 @@ Three root causes explain most per-part anomalies:
 
 **D-H2. E1–E3 are reported with level, cross-run and post hoc; result 5 is stated more strongly than the evidence** (stats-1, -2, -3, -7, harness-4, numbers-2, e1-1, e1-2)
 - **Wrong:**
-  - In search mode the harness prints and stores only the with-level `against_neutral` count (`match/signal_benchmark.py:402-405`, `scripts/benchmark_recordings.py:439`). The plan's ground rule (`docs/research-song-only-matching.md:194`) says level left out.
+  - In search mode the harness prints and stores only the with-level `against_neutral` count (`match/signal_benchmark.py:402-405`, `scripts/benchmark_recordings.py:439`). The plan's ground rule (`docs/research/round-1-song-only-matching.md:196`) says level left out.
   - The headline cross-run comparisons break the plan's own "every comparison stays within one run".
   - No 20-part draw was committed.
   - The design departed from the pre-registered one: L1 instead of L2; library only; 43 parts instead of 20; E3 batches split by source.
@@ -586,7 +586,7 @@ Three root causes explain most per-part anomalies:
 
 **Harness**
 - Every answer, inversion and neutral is scored through the part's own DI (traced: 0 exceptions).
-- Arms get the same RNG state, budget and settings. The neutral start is identical across arms and equals `docs/neutral-*-spec.json`.
+- Arms get the same RNG state, budget and settings. The neutral start is identical across arms and equals `docs/data/set2/neutral-*-spec.json`.
 - `library_probe` behaves as documented. `other_di_index` and `pool_others` reproduce E1.
 - Summary and inversion-pair arithmetic recompute exactly for 6 recordings JSONs, both E1 JSONs and 10 pipeline JSONs.
 - Committed JSONs have 0 failed or unmeasurable outcomes; failures drop symmetrically.
