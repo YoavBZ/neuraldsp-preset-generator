@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuraldsp-preset-generator"
-version = "0.7.79"
+version = "0.7.80"
 description = "Generate, match, and edit Neural DSP amp-sim preset files."
 requires-python = ">=3.10"
 license = "MIT"
@@ -41,18 +41,19 @@ host = ["pedalboard>=0.9"]
 [tool.setuptools]
 packages = ["format", "packs", "analysis", "match", "scripts"]
 
-# Every non-Python file the package reads at run time. Without this an installed
+# Every non-Python file the package reads at run time, and the Swift sources the docs
+# build. Without this an installed
 # (rather than editable) copy dies on `analysis/loss_profiles.json` with a
 # FileNotFoundError and lacks `packs/*/manifest.json`, the project's contract.
 [tool.setuptools.package-data]
 analysis = ["loss_profiles.json", "loss_profiles-v2.json", "loss_profiles-v3.json"]
 packs = ["*/manifest.json", "*/recipes.json", "*/tone.md", "*/eq_basis.json", "*/drive_curve.json", "*/warm_start_benchmark_*.json"]
-scripts = ["au_probe.swift", "au_render.swift", "au_render_server.swift"]
+scripts = ["au_probe.swift", "au_render.swift", "au_render_server.swift", "au_silence_check.swift"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# Parallel by default. Measured on an 8-core machine, 999 tests: 7m26s
+# Parallel by default. Measured on an 8-core machine, with 999 tests (more now): 7m26s
 # sequential, 2m52s with `--dist loadfile`, 2m10s with `--dist load`, and
 # **1m46s with `--dist worksteal`**, which is what this uses. The spread between
 # the three is entirely balance — a handful of tests dominate (the longest is 45s)

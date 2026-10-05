@@ -34,7 +34,6 @@ THIRD_OCTAVE_CENTRES: List[float] = [
 ]
 
 SPECTRUM_FFT = 8192      # 5.9 Hz bins: enough to resolve the lowest bands
-SPECTRUM_HOP = 2048
 FRAME_FFT = 2048         # 43 ms: enough time resolution for per-frame statistics
 FRAME_HOP = 512
 # Hz, for everything that works on the amplitude envelope. 1 ms resolution is
@@ -624,7 +623,6 @@ DELAY_MAX_REPEAT_RATIO = 0.80
 # weaker than its T peak, so this walks a harmonic back down to its fundamental
 # before the decay test runs -- see `fundamental()` for what went wrong without it.
 DELAY_SUBMULTIPLE_SHARE = 0.7
-DELAY_HARMONICS = 6          # how many descent steps before giving up
 
 # When the envelope is not entitled to veto: the band where it is *saturated* by
 # overlapping notes rather than merely quiet. Measured p90/p10 envelope range is

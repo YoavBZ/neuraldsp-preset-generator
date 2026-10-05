@@ -51,7 +51,7 @@ DEFAULT_EXCERPT_S = 20.0
 # unflagged guitar sits at 200.7 Hz, the nearest flagged basses at 195-196 Hz; any
 # extent threshold from 340 to 548 Hz gives the same counts, so 450 Hz is set by
 # one track. The bass intro that first prompted the check (183 Hz reaching 401 Hz)
-# is still flagged.
+# is still flagged. Measured by `scripts/calibrate_bass_window_check.py`.
 BASS_CENTROID_UNDER_HZ = 200.0
 BASS_HF_CORNER_UNDER_HZ = 450.0
 

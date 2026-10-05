@@ -53,7 +53,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded, positive_float
-from _calibration import (
+from packs.calibration import (
     CalibrationError,
     eq_basis_settings,
     eq_basis_topology_sha256,

@@ -1,8 +1,8 @@
 """The interface every backend renders through, and what a render is worth.
 
-One protocol, several implementations: `SyntheticRenderer` (no plugin, exact),
-and later the `pedalboard` host and the batched Swift server. Backend choice is
-configuration, so the optimiser never learns which one it is talking to.
+One protocol, two implementations: `SyntheticRenderer` (no plugin, exact) and
+`AudioUnitRenderer` (the installed plugin, through the batched Swift server). Backend
+choice is configuration, so the optimiser never learns which one it is talking to.
 
 Two findings from M0 are encoded here rather than left as prose, because both
 change what callers may assume:

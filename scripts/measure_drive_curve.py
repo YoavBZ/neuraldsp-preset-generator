@@ -39,7 +39,7 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(SCRIPT_ROOT))
 
 from _cli import die, guarded, positive_float
-from _calibration import CalibrationError, signal_paths, spec_for
+from packs.calibration import CalibrationError, signal_paths, spec_for
 from spectrum_diff import harmonics, nearest_bin, samples
 
 

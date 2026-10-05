@@ -266,8 +266,10 @@ def test_the_swift_host_sources_ship_with_the_renderer():
     package_data = project.split("[tool.setuptools.package-data]", 1)[1]
     package_data = package_data.split("\n[", 1)[0]
     assert '"scripts"' in packages
-    for source in ("au_probe.swift", "au_render.swift", "au_render_server.swift"):
-        assert f'"{source}"' in package_data
+    sources = sorted(p.name for p in (root / "scripts").glob("*.swift"))
+    assert "au_render_server.swift" in sources and "au_probe.swift" in sources
+    for source in sources:                 # every one ships, not a hand-kept list
+        assert f'"{source}"' in package_data, source
 
 
 def test_a_pack_with_no_audio_unit_is_refused_with_a_reason():

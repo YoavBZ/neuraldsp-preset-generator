@@ -283,12 +283,6 @@ def reject_excerpt_start_without_window(start, excerpt) -> None:
             "  Drop --excerpt-start, or give --excerpt a length.")
 
 
-def add_pack_arg(parser) -> None:
-    parser.add_argument(
-        "--pack", help="plugin pack id (default: detect from the preset)"
-    )
-
-
 def resolve_pack(pack_id: Optional[str], file_header: str, source: pathlib.Path):
     """Load the pack for a preset: the one named, or the one it identifies as."""
     from packs.loader import detect_pack, load_pack
