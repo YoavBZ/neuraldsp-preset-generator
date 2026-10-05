@@ -98,7 +98,8 @@ def classes(dist, parts, band_of, menu, bands):
         for j in range(i + 1, n):
             D[i, j] = D[j, i] = band_weighted_share(
                 {p: abs(logs[p][menu[i]] - logs[p][menu[j]]) >= CLEAR for p in used}, band_of)
-    labels = fcluster(linkage(squareform(D, checks=False), "complete"), APART,
+    # A hair over the cut, so a share of exactly 1/3 computed as a float sum still joins.
+    labels = fcluster(linkage(squareform(D, checks=False), "complete"), APART + 1e-9,
                       criterion="distance")
     found = collections.defaultdict(list)
     for c, label in zip(menu, labels):
@@ -147,7 +148,8 @@ def main():
                     a: band_weighted_share({p: r[a] for p, r in rows.items()}, band_of)
                     for a in AMPS},
                 "rows": rows}
-    single = all(out["acceptable_amps"][f"clean/{b}"]["one_amp_share_band_weighted"] >= ONE_AMP
+    single = all(out["acceptable_amps"][f"clean/{b}"]["one_amp_share_band_weighted"]
+                 >= ONE_AMP - 1e-9
                  and out["acceptable_amps"][f"clean/{b}"]["one_amp_bands"] >= MIN_BANDS
                  for b in BAND_SETS)
     out["amp_label"] = "single amp" if single else "set of acceptable amps"
@@ -171,7 +173,10 @@ def main():
     pr12 = all(out["classes"]["pr12/clean"][b]["classes"] <= FEW_CLASSES for b in BAND_SETS)
     sw50r = all(sized[b] <= FEW_CLASSES for b in BAND_SETS)
     out["pr12_clean_collapses"], out["sw50r_collapses_at_21"] = pr12, sw50r
-    out["identifiability_explains_pr12"] = pr12 and not sw50r
+    # The plan's rule, per band set: PR12 collapses there and SW50R does not.
+    out["identifiability_explains_pr12"] = all(
+        out["classes"]["pr12/clean"][b]["classes"] <= FEW_CLASSES and sized[b] > FEW_CLASSES
+        for b in BAND_SETS)
     brief = {k: v for k, v in out.items() if k not in ("acceptable_amps", "classes")}
     brief["acceptable_amps"] = {k: {kk: vv for kk, vv in v.items() if kk != "rows"}
                                 for k, v in out["acceptable_amps"].items()}

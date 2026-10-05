@@ -336,8 +336,10 @@ def main():
     import hashlib
     import subprocess
 
-    out["inputs"] = {str(args.reach_json): hashlib.sha256(
-        args.reach_json.expanduser().read_bytes()).hexdigest()}
+    inputs = [args.reach_json.expanduser()] + [args.kill_dir.expanduser() / k3 for _, _, k3 in
+                                               MENUS.values()]
+    inputs += [pathlib.Path(d).expanduser() / "index.json" for d, _, _ in MENUS.values()]
+    out["inputs"] = {str(f): hashlib.sha256(f.read_bytes()).hexdigest() for f in inputs}
     out["commit"] = subprocess.run(["git", "-C", str(PLUGIN_ROOT), "rev-parse", "HEAD"],
                                    capture_output=True, text=True).stdout.strip()
     print(json.dumps({"pr12_clean_rescued_by": out["pr12_clean_rescued_by"],
