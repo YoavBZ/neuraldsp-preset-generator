@@ -141,7 +141,8 @@ match/           — turn a measured sound into preset parameters: the Renderer
                    Building the space, writing a spec and reading the store need
                    no dependencies; rendering, fitting and searching need the
                    analysis extra
-samples/         — the bundled example preset
+samples/         — the bundled example preset, and riffs/ (two CC BY 4.0 guitar DI
+                   riffs the audition page plays presets through; see NOTICE.md)
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,

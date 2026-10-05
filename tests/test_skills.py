@@ -224,13 +224,14 @@ def test_parameter_names_a_skill_mentions_are_real(doc):
 
 # --- commands a skill shows -----------------------------------------------
 
-NEEDS_THE_PLUGIN = ("au_probe", "au_render", "swiftc", "audit_manifest.py")
+NEEDS_THE_PLUGIN = ("au_probe", "au_render", "swiftc", "audit_manifest.py", "audition.py")
 NEEDS_A_PRESET_FOLDER = (
     "Audio/Presets",
     "Documents/Neural",
     "<user preset folder>",
 )
 AUDIO_PLACEHOLDERS = (
+    "SONG.mp3",
     "REFERENCE.wav",
     "PROBE.wav",
     "PROBE_DI.wav",
@@ -379,6 +380,15 @@ class Sandbox:
             }))
             self._audio = reference, probe
         return self._audio
+
+    def song(self) -> pathlib.Path:
+        """A song long enough for the audition page's 12-second excerpt."""
+        song = self.path / "song.wav"
+        if not song.exists():
+            from tests import fixtures_audio as fx
+
+            fx.write_wav(song, fx.plucks(seconds=14.0, gap=0.5, seed=7))
+        return song
 
     def run_dir(self) -> pathlib.Path:
         return self.path / "match-run"
@@ -638,6 +648,12 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         text = text.replace("CANDIDATE_RENDER.wav", str(reference))
         text = text.replace("START_SECONDS", "0")
         text = text.replace("DURATION_SECONDS", "1")
+    if "audition.py" in text:
+        text = text.replace("SONG.mp3", str(sandbox.song()))
+        text = text.replace("START_SECONDS", "0")
+        text = text.replace("AUDITION_DIR", str(sandbox.path / "audition"))
+        for placeholder in ("A.xml", "B.xml"):
+            text = text.replace(placeholder, str(sandbox.template))
     # Each documented command is tested independently, so the apply preview uses
     # the known-valid spec instead of depending on the match command running first.
     text = text.replace("RUN_DIR/match-1.json", str(sandbox.spec))

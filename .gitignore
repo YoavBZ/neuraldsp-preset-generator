@@ -97,6 +97,8 @@ dist/
 *.aiff
 *.flac
 *.mp3
+# The audition riffs are the exception: shipped, CC BY 4.0, built by research/build_riffs.py.
+!samples/riffs/*.flac
 
 # A retired schema package's directory, if one is still lying around.
 schema/

@@ -15,6 +15,11 @@ for their own copy.
 - **No third-party presets.** Presets from other authors are git-ignored — they
   routinely embed absolute IR paths from their creator's machine and reference
   commercial IR packs.
+- **Two guitar riffs are included** in `samples/riffs/`, for hearing presets on the
+  audition page. They are cut from Guitar-TECHS (Zenodo record 14963133,
+  https://zenodo.org/records/14963133), licensed CC BY 4.0: excerpts of its part-P1
+  direct-input recordings, cut, joined and level-adjusted by
+  `research/build_riffs.py`. `samples/riffs/riffs.json` records the sources.
 - **One example preset is included**: `samples/Example_Clean_PR12.xml`, generated
   by this project. Because the writer is template-based (it clones a preset and
   mutates values rather than synthesizing bytes from scratch), that file
