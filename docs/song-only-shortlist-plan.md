@@ -150,7 +150,17 @@ reading the flagged call (and, for a search, the listing):
 - a write outside the sandbox that reads nothing;
 - a Bash command that breaks only the `cd` rule and touches nothing outside;
 - at most 2 searches or fetches over the limit;
-- a search listing naming the project that was not opened.
+- a search listing naming the project that was not opened;
+- a `$` that is a regex anchor or the variable of a loop the same command sets, in a
+  command whose paths are all inside (the audit names this kind itself).
+
+*Amended 2026-10-05, after the first runs and before any render or score:* the brief
+forbids `$`, but agents used it harmlessly, in `grep` anchors and in a loop that only
+echoed labels. So those two forms became the last item above. Two audit false positives
+were also fixed: Claude Code's "output saved to" note, which names the session folder,
+is removed from results like the cwd note; and a lone `"/"` string in code is not a
+path. `listdir`, `glob.glob` and `iterdir` joined the look-around list. Every
+transcript is audited with the amended script.
 
 Any other flag discards the run, and `prepare_shortlist_runs.py redo SONG` builds that
 song a fresh sandbox (the flagged one moved aside) for one new agent. If the repeat is

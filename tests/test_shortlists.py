@@ -271,6 +271,10 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
             result("Traceback: /Users/yoavbz/projects/neuraldsp-preset-generator/.venv/lib/x.py"),
             result("ok\nShell cwd was reset to /Users/yoavbz/projects/neuraldsp-preset-generator"
                    "/.claude/worktrees/plugin-local-install-a397e5"),
+            result("<persisted-output>\nOutput too large (73.9KB). Full output saved to: /Users/"
+                   "yoavbz/.claude/projects/-Users-yoavbz-projects-neuraldsp-preset-generator--x/"
+                   "tool-results/b.txt"),
+            use("Bash", {"command": f"cd {sandbox} && python -c \"print(m.get('a','')+'/'+k)\""}),
             use("Grep", {"pattern": "/selectedAmp", "path": f"{sandbox}/plugin/packs/morgan"}),
             use("Grep", {"pattern": "range.*0..100", "path": f"{sandbox}/plugin/reference"}),
             *writes,
@@ -302,6 +306,7 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
            use("Write", {"file_path": "/tmp/spec.json", "content": "{}"}),
            use("WebSearch", {"query": "band song amp"}),
            use("Bash", {"command": "ls"}),
+           use("Bash", {"command": f"cd {sandbox} && python -c \"import os; print(os.listdir('/'))\""}),
            use("Bash", {"command": f"cd {sandbox} && python -c \"import pathlib; "
                                    "print(list(pathlib.Path.home().iterdir()))\""}),
            use("Bash", {"command": f"cd {sandbox} && cat out/x >/Users/x/y"}),
@@ -313,6 +318,15 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
     for entry in bad:
         path.write_text(json.dumps(entry))
         assert U.audit(path, sandbox), entry
+    harmless = "bash uses a harmless $ (a regex anchor or a loop's own variable)"
+    for command in (f'cd {sandbox} && for f in G1 G2; do echo "== $f"; done',
+                    f'cd {sandbox} && python plugin/scripts/show.py out/x.xml | grep -E "Amp$|Gain"'):
+        path.write_text(json.dumps(use("Bash", {"command": command})))
+        assert [k for k, _, _ in U.audit(path, sandbox)] == [harmless], command
+    for command in (f"cd {sandbox} && ls $HOME", f"cd {sandbox} && for f in a; do cat $g; done",
+                    f"cd {sandbox} && ls ${{HOME}}"):
+        path.write_text(json.dumps(use("Bash", {"command": command})))
+        assert "bash uses shell expansion" in [k for k, _, _ in U.audit(path, sandbox)], command
     order = ["factory opened before every G was written"]
     early = [use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}), *writes]
     path.write_text("\n".join(json.dumps(e) for e in early))

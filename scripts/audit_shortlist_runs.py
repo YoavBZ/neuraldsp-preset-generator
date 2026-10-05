@@ -67,8 +67,11 @@ def _text(content) -> str:
 
 
 FACTORY_PREFIX = "/library/audio/presets/neural"   # a quoted factory path cut at a space
-INTROSPECTION = re.compile(r"Path\.home|expanduser|environ|getenv|chr\(|os\.walk|scandir")
-CWD_NOTE = re.compile(r"^Shell cwd was reset to .*$", re.M)
+INTROSPECTION = re.compile(r"Path\.home|expanduser|environ|getenv|chr\(|os\.walk|scandir|"
+                           r"listdir|glob\.glob|iterdir")
+# Claude Code's own notes in a result, which name the session's folders: the cwd reset
+# after a command that left the project, and where an oversized output was saved.
+HARNESS_NOTES = re.compile(r"^Shell cwd was reset to .*$|Full output saved to: \S+", re.M)
 SEGMENTS = re.compile(r"&&|\|\||;|\||\n")
 CODE = re.compile(r"[()'\";,{}<>]")             # a word that is code or text, not a path
 
@@ -98,8 +101,10 @@ def bash_flags(command: str, sandbox: str, cwd: str):
     rest = command[opening.end():] if opening else command
     if re.search(r"(^|[\s;&|(])cd(\s|$)", rest):
         flags.append("bash changes directory again")
-    if "`" in rest or "$" in rest:
+    if "`" in rest or ("$" in rest and not harmless_dollars(rest)):
         flags.append("bash uses shell expansion")
+    elif "$" in rest:
+        flags.append("bash uses a harmless $ (a regex anchor or a loop's own variable)")
     if NETWORK.search(rest):
         flags.append("bash reaches for the network or a search tool")
     if INTROSPECTION.search(rest):
@@ -115,7 +120,8 @@ def bash_flags(command: str, sandbox: str, cwd: str):
     for w in words:
         value = w.split("=", 1)[1] if w.startswith("-") and "=" in w else w
         if CODE.search(value):
-            candidates += EMBEDDED.findall(value)  # code: check every path inside it
+            # Code: check every path inside it. A lone "/" there is a string, not a path.
+            candidates += [c for c in EMBEDDED.findall(value) if c != "/"]
         elif value.startswith(("/", "~", ".")) or "/" in value:
             candidates.append(value)               # a path, spaces and all
         saw_path = saw_path or bool(candidates)
@@ -125,6 +131,21 @@ def bash_flags(command: str, sandbox: str, cwd: str):
         if not inside(c, base, sandbox):
             flags.append(f"bash path outside the sandbox: {c[:80]}")
     return flags
+
+
+def harmless_dollars(text: str) -> bool:
+    """Whether every `$` in `text` is a regex anchor (followed by a quote, `|`, `)` or
+    the end) or the variable of a `for` loop the same command sets."""
+    loops = set(re.findall(r"\bfor\s+(\w+)\s+in\b", text))
+    for m in re.finditer(r"\$", text):
+        after = text[m.end():]
+        if after[:1] in ("", "|", '"', "'", ")"):
+            continue
+        name = re.match(r"\{?(\w+)\}?", after)
+        if name and name.group(1) in loops:
+            continue
+        return False
+    return True
 
 
 def writes_and_factory(command: str):
@@ -154,7 +175,7 @@ def audit(path: pathlib.Path, sandbox: str):
     for block, cwd in calls:
         if block["type"] == "tool_result":
             # Claude Code's own note after a command that left the project names it.
-            text = CWD_NOTE.sub("", _text(block.get("content")))
+            text = HARNESS_NOTES.sub("", _text(block.get("content")))
             for bad in BAD_IN_RESULTS:
                 if re.search(bad, text):
                     flags.append((f"result names {bad}", "result", ""))
