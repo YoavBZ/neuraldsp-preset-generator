@@ -1,0 +1,2180 @@
+{
+"menus": {
+"sw50r": {
+"parts": 28,
+"no_information_band_median": {
+"recording": 0.1641176656129632,
+"union": 0.18861452167880496
+},
+"readings": {
+"baseline/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.32587116215065487,
+"closer_than_templateR": 17,
+"better_than_shuffled": 22.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 13
+},
+"baseline/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.3172855706729432,
+"closer_than_templateR": 15,
+"better_than_shuffled": 23.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 13
+},
+"baseline/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.1106054286406541,
+"closer_than_templateR": 13,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 15
+},
+"baseline/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.1800669272720277,
+"closer_than_templateR": 11,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 10,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 15
+},
+"baseline/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.0027574576213817426,
+"closer_than_templateR": 12,
+"better_than_shuffled": 15.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 13
+},
+"baseline/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.06091993300567778,
+"closer_than_templateR": 10,
+"better_than_shuffled": 16.0,
+"closer_than_constant": 8,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 13
+},
+"realnorm/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.07572091182739978,
+"closer_than_templateR": 13,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 21
+},
+"realnorm/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.1058921238975202,
+"closer_than_templateR": 12,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 21
+},
+"realnorm/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.07979104932833186,
+"closer_than_templateR": 15,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 14
+},
+"realnorm/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.04960439100932435,
+"closer_than_templateR": 14,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 12,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 14
+},
+"realnorm/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.11817218786905623,
+"closer_than_templateR": 14,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.17857142857142858,
+"distinct_picks": 14
+},
+"realnorm/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.07591914387582963,
+"closer_than_templateR": 14,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 12,
+"most_common_pick_share": 0.17857142857142858,
+"distinct_picks": 14
+},
+"csls/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.007738016565079591,
+"closer_than_templateR": 15,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.10714285714285714,
+"distinct_picks": 23
+},
+"csls/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.001111844651896574,
+"closer_than_templateR": 15,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.10714285714285714,
+"distinct_picks": 23
+},
+"csls/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.03422759522276229,
+"closer_than_templateR": 14,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 12,
+"most_common_pick_share": 0.25,
+"distinct_picks": 12
+},
+"csls/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.005189865702283671,
+"closer_than_templateR": 13,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.25,
+"distinct_picks": 12
+},
+"csls/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.035481148227538666,
+"closer_than_templateR": 12,
+"better_than_shuffled": 14.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 16
+},
+"csls/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.17146588935070842,
+"closer_than_templateR": 11,
+"better_than_shuffled": 15.0,
+"closer_than_constant": 9,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 16
+},
+"bias/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.09875242640722603,
+"closer_than_templateR": 13,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.25,
+"distinct_picks": 9
+},
+"bias/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.09296314875646286,
+"closer_than_templateR": 14,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.25,
+"distinct_picks": 9
+},
+"bias/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.4159340551451766,
+"closer_than_templateR": 4,
+"better_than_shuffled": 13.0,
+"closer_than_constant": 5,
+"most_common_pick_share": 0.4642857142857143,
+"distinct_picks": 7
+},
+"bias/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.4255109048181774,
+"closer_than_templateR": 5,
+"better_than_shuffled": 12.0,
+"closer_than_constant": 5,
+"most_common_pick_share": 0.4642857142857143,
+"distinct_picks": 7
+},
+"bias/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.4159340551451766,
+"closer_than_templateR": 6,
+"better_than_shuffled": 13.0,
+"closer_than_constant": 6,
+"most_common_pick_share": 0.4642857142857143,
+"distinct_picks": 9
+},
+"bias/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.4159340551451766,
+"closer_than_templateR": 7,
+"better_than_shuffled": 13.0,
+"closer_than_constant": 7,
+"most_common_pick_share": 0.4642857142857143,
+"distinct_picks": 9
+},
+"realnorm+csls/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.06068999732414454,
+"closer_than_templateR": 16,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 21
+},
+"realnorm+csls/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.03215744303003388,
+"closer_than_templateR": 16,
+"better_than_shuffled": 20.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 21
+},
+"realnorm+csls/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.11889181554688248,
+"closer_than_templateR": 15,
+"better_than_shuffled": 16.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 14
+},
+"realnorm+csls/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.07591914387582963,
+"closer_than_templateR": 16,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 14
+},
+"realnorm+csls/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.11817218786905623,
+"closer_than_templateR": 14,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.25,
+"distinct_picks": 15
+},
+"realnorm+csls/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.08301593786154798,
+"closer_than_templateR": 15,
+"better_than_shuffled": 16.0,
+"closer_than_constant": 12,
+"most_common_pick_share": 0.25,
+"distinct_picks": 15
+}
+},
+"fix_passes": {
+"realnorm/1nn": false,
+"realnorm/lda": false,
+"realnorm/lda+1nn": true,
+"csls/1nn": false,
+"csls/lda": false,
+"csls/lda+1nn": false,
+"bias/1nn": false,
+"bias/lda": false,
+"bias/lda+1nn": false,
+"realnorm+csls/1nn": false,
+"realnorm+csls/lda": false,
+"realnorm+csls/lda+1nn": false
+},
+"fix_minus_baseline_holm_p": {
+"recording": {
+"realnorm/lda+1nn": 0.46875,
+"realnorm+csls/lda": 0.6123046875,
+"realnorm/lda": 1.0,
+"csls/lda+1nn": 1.0,
+"realnorm+csls/lda+1nn": 1.0,
+"csls/lda": 1.0,
+"csls/1nn": 1.0,
+"realnorm+csls/1nn": 1.0,
+"bias/lda+1nn": 1.0,
+"realnorm/1nn": 1.0,
+"bias/1nn": 1.0,
+"bias/lda": 1.0
+},
+"union": {
+"realnorm/lda+1nn": 0.1875,
+"realnorm+csls/lda": 0.64453125,
+"realnorm/lda": 1.0,
+"csls/lda+1nn": 1.0,
+"realnorm+csls/lda+1nn": 1.0,
+"csls/lda": 1.0,
+"csls/1nn": 1.0,
+"bias/lda+1nn": 1.0,
+"realnorm+csls/1nn": 1.0,
+"realnorm/1nn": 1.0,
+"bias/1nn": 1.0,
+"bias/lda": 1.0
+}
+},
+"picks": {
+"baseline": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/John Connearn/Low Gain Solo",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/John Connearn/Low Gain Solo",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Strat 4th Position Funk",
+"lda+1nn": "factory:Neural DSP/Strat 4th Position Funk"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Neil Zaza/Clean Chime",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Artists/Richard Henshall/Tele Jam"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/John Connearn/Dotted Eighth Tape",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Neil Zaza/Clean Chime",
+"lda": "factory:Artists/Neil Zaza/Clean Chime",
+"lda+1nn": "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Neil Zaza/Bell Tremolo"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Big Lead",
+"lda": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/Richard Henshall/Big Lead",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda+1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Dotted Eighth Tape",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Tele Jam",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda+1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda+1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Keyan Houshmand/RockNRoll",
+"lda": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"lda+1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Distorted Spy",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Neil Zaza/Bell Tremolo",
+"lda+1nn": "factory:Artists/Neil Zaza/Bell Tremolo"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Richard Henshall/Tele Jam"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+"lda+1nn": "factory:Artists/Royce Whittaker/Rhythm of The Young's"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Royce Whittaker/Rhythm of The Young's"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Richard Henshall/Tele Jam",
+"lda": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+}
+},
+"realnorm": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Neural DSP/Distorted Spy",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Neural DSP/Strat 4th Position Funk",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Artists/Neil Zaza/Bell Tremolo",
+"lda+1nn": "factory:Artists/Neil Zaza/Clean Chime"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"lda+1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Neil Zaza/Clean Chime",
+"lda": "factory:Neural DSP/Distorted Spy",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Richard Henshall/Tremolo Jam"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Big Lead",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"lda": "factory:Artists/Neil Zaza/Clean Chime",
+"lda+1nn": "factory:Artists/Neil Zaza/Clean Chime"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Neural DSP/Drop-Tuned Doom",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda+1nn": "factory:Artists/Royce Whittaker/Big Tail Clean"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Richard Henshall/Small Lead",
+"lda": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"lda+1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Artists/Neil Zaza/Clean Chime",
+"lda+1nn": "factory:Artists/Neil Zaza/Clean Chime"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda+1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Neural DSP/Abrasive Stoner Rock Tone",
+"lda": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+"lda+1nn": "factory:Artists/Danny Dela Cruz/Riff Heavy"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Richard Henshall/Tele Jam",
+"lda+1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"lda": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda+1nn": "factory:Artists/Richard Henshall/Small Lead"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda+1nn": "factory:Neural DSP/Dotted 8th Dark Echoes"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+"lda": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+}
+},
+"csls": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Neural DSP/Dotted 8th Dark Echoes"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"lda": "factory:Neural DSP/Distorted Spy",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+"lda": "factory:Neural DSP/Distorted Spy",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Artists/Pete Thorn/Country Slap and Spring"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/CARRTOONS/Benny Tele",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Neil Zaza/Clean Chime",
+"lda": "factory:Artists/Neil Zaza/Clean Chime",
+"lda+1nn": "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Neil Zaza/Bell Tremolo"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Big Lead",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Neural DSP/Drop-Tuned Doom"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Tele Jam",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda+1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Benny Tele",
+"lda": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda+1nn": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda+1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Neil Zaza/Bell Tremolo",
+"lda+1nn": "factory:Artists/Neil Zaza/Bell Tremolo"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Richard Henshall/Tremolo Jam"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Artists/CARRTOONS/Benny Tele",
+"lda+1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Neural DSP/Blue Hotel",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Royce Whittaker/Rhythm of The Young's"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Neural DSP/Strat 4th Position Funk",
+"lda": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+}
+},
+"bias": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda+1nn": "factory:Artists/CARRTOONS/5 String P Bass"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Drop-Tuned Doom",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/CARRTOONS/Mustang"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Neural DSP/Blue Hotel",
+"lda+1nn": "factory:Neural DSP/Blue Hotel"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Artists/Pete Thorn/Stacked Drives"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Blue Hotel",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Neural DSP/Broken Radio",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+}
+},
+"realnorm+csls": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Neural DSP/Blue Hotel",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Neural DSP/Abrasive Stoner Rock Tone",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Pete Thorn/Stacked Drives",
+"lda": "factory:Artists/Neil Zaza/Bell Tremolo",
+"lda+1nn": "factory:Artists/Neil Zaza/Clean Chime"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+"lda+1nn": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Blue Hotel",
+"lda+1nn": "factory:Neural DSP/Blue Hotel"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Artists/Jack Gardiner/Mid Boost Lead",
+"lda+1nn": "factory:Artists/John Connearn/Dotted Eighth Tape"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Neil Zaza/Clean Chime",
+"lda": "factory:Neural DSP/Distorted Spy",
+"lda+1nn": "factory:Neural DSP/Distorted Spy"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/CARRTOONS/5 String P Bass",
+"lda": "factory:Artists/Richard Henshall/Tremolo Jam",
+"lda+1nn": "factory:Artists/Richard Henshall/Tremolo Jam"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Big Lead",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Mustang",
+"lda": "factory:Artists/Neil Zaza/Clean Chime",
+"lda+1nn": "factory:Artists/Neil Zaza/Clean Chime"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Keyan Houshmand/RockNRoll",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Neural DSP/Broken Radio",
+"lda": "factory:Artists/CARRTOONS/Benny Tele",
+"lda+1nn": "factory:Artists/Royce Whittaker/Big Tail Clean"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Neural DSP/Doomish Riff",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+"lda": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"lda+1nn": "factory:Artists/Joseph Anidjar/Enormous Cranked Guy"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Richard Henshall/Tele Jam",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Benny Tele",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda": "factory:Neural DSP/Doomish Riff",
+"lda+1nn": "factory:Neural DSP/Doomish Riff"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+"lda": "factory:Neural DSP/Blue Hotel",
+"lda+1nn": "factory:Neural DSP/Blue Hotel"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Royce Whittaker/Wall Of Doom",
+"lda": "factory:Artists/Danny Dela Cruz/Riff Heavy",
+"lda+1nn": "factory:Artists/Danny Dela Cruz/Riff Heavy"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Broken Radio"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+"lda": "factory:Artists/Richard Henshall/Tele Jam",
+"lda+1nn": "factory:Artists/Keyan Houshmand/TriTone Tremolo"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Neural DSP/Blue Hotel",
+"lda": "factory:Artists/CARRTOONS/Benny Tele",
+"lda+1nn": "factory:Artists/Richard Henshall/Small Lead"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Neural DSP/Jose Deluxe",
+"lda": "factory:Neural DSP/Jose Deluxe",
+"lda+1nn": "factory:Neural DSP/Jose Deluxe"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Big Tail Clean",
+"lda": "factory:Neural DSP/Dotted 8th Dark Echoes",
+"lda+1nn": "factory:Neural DSP/Dotted 8th Dark Echoes"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"lda": "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"lda+1nn": "factory:Artists/Royce Whittaker/Wall Of Doom"
+}
+}
+}
+},
+"pr12-clean": {
+"parts": 28,
+"no_information_band_median": {
+"recording": 0.03861094549758483,
+"union": 0.04257277050210886
+},
+"readings": {
+"baseline/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.01217247319276679,
+"closer_than_templateR": 15,
+"better_than_shuffled": 16.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 13
+},
+"baseline/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.012709449264709894,
+"closer_than_templateR": 17,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 13
+},
+"baseline/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.023401003739302106,
+"closer_than_templateR": 16,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 9
+},
+"baseline/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.00895652456044075,
+"closer_than_templateR": 17,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 9
+},
+"baseline/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.06368937395202354,
+"closer_than_templateR": 18,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.5714285714285714,
+"distinct_picks": 9
+},
+"baseline/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.029540774400232398,
+"closer_than_templateR": 18,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.5714285714285714,
+"distinct_picks": 9
+},
+"realnorm/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.031196539592801494,
+"closer_than_templateR": 17,
+"better_than_shuffled": 20.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 16
+},
+"realnorm/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.024889842895283867,
+"closer_than_templateR": 18,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.14285714285714285,
+"distinct_picks": 16
+},
+"realnorm/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.018808739433694925,
+"closer_than_templateR": 15,
+"better_than_shuffled": 15.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.17857142857142858,
+"distinct_picks": 14
+},
+"realnorm/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.02215049670787458,
+"closer_than_templateR": 14,
+"better_than_shuffled": 15.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.17857142857142858,
+"distinct_picks": 14
+},
+"realnorm/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.026093345495124508,
+"closer_than_templateR": 12,
+"better_than_shuffled": 11.0,
+"closer_than_constant": 12,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 15
+},
+"realnorm/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.029192179439263933,
+"closer_than_templateR": 12,
+"better_than_shuffled": 11.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 15
+},
+"csls/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.037786451281320285,
+"closer_than_templateR": 17,
+"better_than_shuffled": 22.0,
+"closer_than_constant": 17,
+"most_common_pick_share": 0.32142857142857145,
+"distinct_picks": 13
+},
+"csls/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.042844990087647444,
+"closer_than_templateR": 19,
+"better_than_shuffled": 24.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.32142857142857145,
+"distinct_picks": 13
+},
+"csls/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.06368937395202354,
+"closer_than_templateR": 19,
+"better_than_shuffled": 20.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.5,
+"distinct_picks": 9
+},
+"csls/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.029540774400232398,
+"closer_than_templateR": 19,
+"better_than_shuffled": 20.0,
+"closer_than_constant": 17,
+"most_common_pick_share": 0.5,
+"distinct_picks": 9
+},
+"csls/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.023401003739302106,
+"closer_than_templateR": 16,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 10,
+"most_common_pick_share": 0.5714285714285714,
+"distinct_picks": 10
+},
+"csls/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.00895652456044075,
+"closer_than_templateR": 16,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.5714285714285714,
+"distinct_picks": 10
+},
+"bias/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.02886989376278139,
+"closer_than_templateR": 16,
+"better_than_shuffled": 21.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.32142857142857145,
+"distinct_picks": 9
+},
+"bias/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.09289443939234929,
+"closer_than_templateR": 18,
+"better_than_shuffled": 21.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.32142857142857145,
+"distinct_picks": 9
+},
+"bias/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.023401003739302106,
+"closer_than_templateR": 17,
+"better_than_shuffled": 22.0,
+"closer_than_constant": 13,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 6
+},
+"bias/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.029540774400232398,
+"closer_than_templateR": 18,
+"better_than_shuffled": 23.0,
+"closer_than_constant": 17,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 6
+},
+"bias/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.004727947828303483,
+"closer_than_templateR": 16,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 11,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 5
+},
+"bias/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.00895652456044075,
+"closer_than_templateR": 17,
+"better_than_shuffled": 20.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.5357142857142857,
+"distinct_picks": 5
+},
+"realnorm+csls/1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": -0.037786451281320285,
+"closer_than_templateR": 17,
+"better_than_shuffled": 19.0,
+"closer_than_constant": 17,
+"most_common_pick_share": 0.25,
+"distinct_picks": 13
+},
+"realnorm+csls/1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.042844990087647444,
+"closer_than_templateR": 18,
+"better_than_shuffled": 22.0,
+"closer_than_constant": 17,
+"most_common_pick_share": 0.25,
+"distinct_picks": 13
+},
+"realnorm+csls/lda/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.018973970533514753,
+"closer_than_templateR": 15,
+"better_than_shuffled": 16.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 12
+},
+"realnorm+csls/lda/union": {
+"parts": 28,
+"band_median_vs_templateR": -0.01904430149683797,
+"closer_than_templateR": 15,
+"better_than_shuffled": 17.0,
+"closer_than_constant": 16,
+"most_common_pick_share": 0.21428571428571427,
+"distinct_picks": 12
+},
+"realnorm+csls/lda+1nn/recording": {
+"parts": 28,
+"band_median_vs_templateR": 0.03463934534633395,
+"closer_than_templateR": 14,
+"better_than_shuffled": 15.0,
+"closer_than_constant": 14,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 9
+},
+"realnorm+csls/lda+1nn/union": {
+"parts": 28,
+"band_median_vs_templateR": 0.03463934534633395,
+"closer_than_templateR": 15,
+"better_than_shuffled": 18.0,
+"closer_than_constant": 15,
+"most_common_pick_share": 0.2857142857142857,
+"distinct_picks": 9
+}
+},
+"fix_passes": {
+"realnorm/1nn": false,
+"realnorm/lda": false,
+"realnorm/lda+1nn": false,
+"csls/1nn": false,
+"csls/lda": false,
+"csls/lda+1nn": false,
+"bias/1nn": false,
+"bias/lda": false,
+"bias/lda+1nn": false,
+"realnorm+csls/1nn": false,
+"realnorm+csls/lda": false,
+"realnorm+csls/lda+1nn": false
+},
+"fix_minus_baseline_holm_p": {
+"recording": {
+"csls/1nn": 0.1875,
+"realnorm+csls/1nn": 0.1875,
+"bias/1nn": 0.5859375,
+"realnorm/1nn": 1.0,
+"bias/lda": 1.0,
+"realnorm+csls/lda": 1.0,
+"realnorm/lda": 1.0,
+"realnorm+csls/lda+1nn": 1.0,
+"csls/lda": 1.0,
+"realnorm/lda+1nn": 1.0,
+"bias/lda+1nn": 1.0,
+"csls/lda+1nn": 1.0
+},
+"union": {
+"realnorm+csls/1nn": 0.1875,
+"csls/1nn": 0.6015625,
+"realnorm/1nn": 0.625,
+"bias/1nn": 0.94921875,
+"bias/lda": 1.0,
+"realnorm+csls/lda": 1.0,
+"realnorm+csls/lda+1nn": 1.0,
+"realnorm/lda": 1.0,
+"realnorm/lda+1nn": 1.0,
+"csls/lda": 1.0,
+"bias/lda+1nn": 1.0,
+"csls/lda+1nn": 1.0
+}
+},
+"picks": {
+"baseline": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Jack Gardiner/Double Stop Funk"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Richard Henshall/Crystal Clean",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/Richard Henshall/Crystal Clean",
+"lda+1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+}
+},
+"realnorm": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/Jack Gardiner/Double Stop Funk"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Artists/Pete Thorn/Wide And Lucious",
+"lda+1nn": "factory:Artists/Rabea Massaad/Time To Chime"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/John Connearn/Wet Room",
+"lda+1nn": "factory:Artists/CARRTOONS/BC Guitar Chords"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Jack Gardiner/Huge Ambient Wash",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/Richard Henshall/Spacey Clean"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda+1nn": "factory:Artists/Jack Gardiner/Huge Ambient Wash"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/Richard Henshall/Spacey Clean"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Artists/CARRTOONS/BC Guitar Chords"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda+1nn": "factory:Artists/Charlie Robbins/Thump Tone"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Richard Henshall/Crystal Clean",
+"lda": "factory:Artists/Richard Henshall/Crystal Clean",
+"lda+1nn": "factory:Artists/Richard Henshall/Crystal Clean"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/CARRTOONS/BC Guitar Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda": "factory:Artists/John Connearn/Wet Room",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+}
+},
+"csls": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/CARRTOONS/BC Guitar Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/Richard Henshall/Spacey Clean"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+}
+},
+"bias": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda+1nn": "factory:Artists/Charlie Robbins/Thump Tone"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/CARRTOONS/BC Guitar Chords",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+}
+},
+"realnorm+csls": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/Mark Johnston/Royally Ambient"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"1nn": "factory:Neural DSP/Overdriven Tremolo",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Jack Gardiner/Double Stop Funk",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"lda": "factory:Artists/Charlie Robbins/Ambient Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Ambient Clean"
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"1nn": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"cambridge-Quicksand-ElecGtr1": {
+"1nn": "factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/John Connearn/Pedal Steel"
+},
+"cambridge-Quicksand-ElecGtr2": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Neural DSP/Clean-ish Ambient Solo"
+},
+"telefunken-Honey-GTR": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/John Connearn/Wet Room",
+"lda+1nn": "factory:Artists/CARRTOONS/BC Guitar Chords"
+},
+"telefunken-Blind_Spots-GTR": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"telefunken-First_Offering-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-First_Offering-GTR_2": {
+"1nn": "factory:Artists/John Connearn/Wet Room",
+"lda": "factory:Artists/John Connearn/Pedal Steel",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Gym_Hours-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Gym_Hours-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Long_Way_Home-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Russian_Cream-GTR_2": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"1nn": "factory:Artists/CARRTOONS/Bass Chords",
+"lda": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda+1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow"
+},
+"telefunken-Strangest_Places-GTR": {
+"1nn": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda": "factory:Artists/Charlie Robbins/Out of this World Clean",
+"lda+1nn": "factory:Artists/Charlie Robbins/Out of this World Clean"
+},
+"cambridge-Signs-ElecGtr2": {
+"1nn": "factory:Artists/John Connearn/Pedal Steel",
+"lda": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda+1nn": "factory:Artists/CARRTOONS/BC Guitar Chords"
+},
+"cambridge-Signs-ElecGtr3": {
+"1nn": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"lda": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda+1nn": "factory:Artists/Charlie Robbins/Thump Tone"
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"1nn": "factory:Neural DSP/Clean-ish Ambient Solo",
+"lda": "factory:Artists/Mark Johnston/Royally Ambient",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"1nn": "factory:Artists/Charlie Robbins/Thump Tone",
+"lda": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"cambridge-Prodigal-ElecGtr5": {
+"1nn": "factory:Artists/John Connearn/Cleanish Rhythm",
+"lda": "factory:Artists/Richard Henshall/Spacey Clean",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Bloomlight-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Farthest_Step-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-Fragments-GTR": {
+"1nn": "factory:Artists/CARRTOONS/BC Guitar Chords",
+"lda": "factory:Artists/CARRTOONS/Bass Chords",
+"lda+1nn": "factory:Artists/CARRTOONS/Bass Chords"
+},
+"telefunken-She's_Gone-GTR": {
+"1nn": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+"lda": "factory:Artists/John Connearn/Wet Room",
+"lda+1nn": "factory:Artists/John Connearn/Wet Room"
+}
+}
+}
+}
+},
+"pr12_clean_rescued_by": [],
+"sw50r_worse_by_more_than_0.05": [],
+"inputs": {
+"/Users/yoavbz/ndsp-presets/runs/kill/amp-reach.json": "2b9739a2d0a4ed338a479c94e6b6e5b56bebf85944ef7efba245730a166d6bba"
+},
+"commit": "4da5860031626f6bc2c04ac62bfa86eb5f669775"
+}

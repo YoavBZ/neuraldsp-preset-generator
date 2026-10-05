@@ -1,0 +1,978 @@
+{
+"inputs": {
+"/Users/yoavbz/ndsp-presets/runs/kill/amp-reach.json": "2b9739a2d0a4ed338a479c94e6b6e5b56bebf85944ef7efba245730a166d6bba"
+},
+"commit": "4da5860031626f6bc2c04ac62bfa86eb5f669775",
+"acceptable_amps": {
+"clean/recording": {
+"size_matched_to": 17,
+"parts": 25,
+"amps_acceptable_count": {
+"1": 3,
+"2": 13,
+"3": 9
+},
+"one_amp_share_band_weighted": 0.08333333333333333,
+"one_amp_bands": 2,
+"amp_acceptable_share_band_weighted": {
+"ac20": 0.7194444444444444,
+"pr12": 0.8722222222222222,
+"sw50r": 0.8666666666666667
+},
+"rows": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Prodigal-ElecGtr5": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Quicksand-ElecGtr1": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Quicksand-ElecGtr2": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Signs-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"ac20": true,
+"pr12": false,
+"sw50r": false
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Blind_Spots-GTR": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Bloomlight-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Farthest_Step-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Fragments-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Long_Way_Home-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+}
+}
+},
+"clean/union": {
+"size_matched_to": 17,
+"parts": 25,
+"amps_acceptable_count": {
+"1": 5,
+"2": 12,
+"3": 8
+},
+"one_amp_share_band_weighted": 0.11944444444444444,
+"one_amp_bands": 3,
+"amp_acceptable_share_band_weighted": {
+"ac20": 0.5638888888888889,
+"pr12": 0.8583333333333333,
+"sw50r": 0.8888888888888888
+},
+"rows": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Prodigal-ElecGtr5": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Quicksand-ElecGtr1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Quicksand-ElecGtr2": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Signs-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"ac20": true,
+"pr12": false,
+"sw50r": false
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Blind_Spots-GTR": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Bloomlight-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Farthest_Step-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_1": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Fragments-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Long_Way_Home-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+}
+}
+},
+"all/recording": {
+"size_matched_to": 30,
+"parts": 25,
+"amps_acceptable_count": {
+"1": 4,
+"2": 13,
+"3": 8
+},
+"one_amp_share_band_weighted": 0.1388888888888889,
+"one_amp_bands": 2,
+"amp_acceptable_share_band_weighted": {
+"ac20": 0.6083333333333333,
+"pr12": 0.9277777777777777,
+"sw50r": 0.8111111111111111
+},
+"rows": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Prodigal-ElecGtr5": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Quicksand-ElecGtr1": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Quicksand-ElecGtr2": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Signs-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"ac20": false,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"ac20": false,
+"pr12": true,
+"sw50r": false
+},
+"telefunken-Blind_Spots-GTR": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Bloomlight-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Farthest_Step-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Fragments-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Long_Way_Home-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+}
+}
+},
+"all/union": {
+"size_matched_to": 30,
+"parts": 25,
+"amps_acceptable_count": {
+"1": 4,
+"2": 14,
+"3": 7
+},
+"one_amp_share_band_weighted": 0.1388888888888889,
+"one_amp_bands": 2,
+"amp_acceptable_share_band_weighted": {
+"ac20": 0.4972222222222222,
+"pr12": 0.9277777777777777,
+"sw50r": 0.8111111111111111
+},
+"rows": {
+"cambridge-Drag_Me_Down-ElecGtr4": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Passing_Ships-ElecGtr2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr4": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Passing_Ships-ElecGtr6": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Prodigal-ElecGtr5": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Quicksand-ElecGtr1": {
+"ac20": true,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Quicksand-ElecGtr2": {
+"ac20": true,
+"pr12": false,
+"sw50r": true
+},
+"cambridge-Signs-ElecGtr2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"cambridge-Today's_The_Day-ElecGtr07": {
+"ac20": false,
+"pr12": true,
+"sw50r": false
+},
+"cambridge-Today's_The_Day-ElecGtr10": {
+"ac20": false,
+"pr12": true,
+"sw50r": false
+},
+"telefunken-Blind_Spots-GTR": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Bloomlight-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Farthest_Step-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-First_Offering-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Fragments-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Gym_Hours-GTR_2": {
+"ac20": false,
+"pr12": false,
+"sw50r": true
+},
+"telefunken-Long_Way_Home-GTR": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_1": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Russian_Cream-GTR_2": {
+"ac20": true,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_1": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+},
+"telefunken-Sculptor's_Request-GTR_2": {
+"ac20": false,
+"pr12": true,
+"sw50r": true
+}
+}
+}
+},
+"classes": {
+"pr12/clean": {
+"recording": {
+"menu": 21,
+"classes": 9,
+"largest": 3,
+"separating_parts": 24,
+"members": [
+[
+"pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+"pr12:factory:Artists/John Connearn/Pedal Steel",
+"pr12:factory:Artists/John Connearn/Wet Room"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+"pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+"pr12:factory:Artists/Jack Gardiner/Double Stop Funk"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Thump Tone",
+"pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash",
+"pr12:factory:Artists/Pete Thorn/Wide And Lucious"
+],
+[
+"pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"pr12:factory:Artists/Rabea Massaad/Time To Chime",
+"pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm"
+],
+[
+"pr12:factory:Artists/Richard Henshall/Spacey Clean",
+"pr12:factory:Neural DSP/Clean-ish Ambient Solo",
+"pr12:factory:Neural DSP/Overdriven Tremolo"
+],
+[
+"pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"pr12:factory:Artists/Mark Johnston/Royally Ambient"
+],
+[
+"pr12:factory:Artists/Richard Henshall/Crystal Clean",
+"pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean"
+],
+[
+"pr12:factory:Artists/CARRTOONS/Bass Chords"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Out of this World Clean"
+]
+]
+},
+"union": {
+"menu": 21,
+"classes": 10,
+"largest": 3,
+"separating_parts": 23,
+"members": [
+[
+"pr12:factory:Artists/CARRTOONS/BC Guitar Chords",
+"pr12:factory:Artists/John Connearn/Pedal Steel",
+"pr12:factory:Artists/John Connearn/Wet Room"
+],
+[
+"pr12:factory:Artists/Jack Gardiner/Double Stop Funk",
+"pr12:factory:Artists/Jack Gardiner/Huge Ambient Wash",
+"pr12:factory:Artists/Pete Thorn/Wide And Lucious"
+],
+[
+"pr12:factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+"pr12:factory:Artists/Rabea Massaad/Time To Chime",
+"pr12:factory:Artists/Royce Whittaker/Heartbreaker Rhythm"
+],
+[
+"pr12:factory:Artists/Richard Henshall/Spacey Clean",
+"pr12:factory:Neural DSP/Clean-ish Ambient Solo",
+"pr12:factory:Neural DSP/Overdriven Tremolo"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+"pr12:factory:Artists/Danny Dela Cruz/Lush Clean Wet"
+],
+[
+"pr12:factory:Artists/John Connearn/Cleanish Rhythm",
+"pr12:factory:Artists/Mark Johnston/Royally Ambient"
+],
+[
+"pr12:factory:Artists/Richard Henshall/Crystal Clean",
+"pr12:factory:Artists/Royce Whittaker/Jangly Combo Clean"
+],
+[
+"pr12:factory:Artists/CARRTOONS/Bass Chords"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Out of this World Clean"
+],
+[
+"pr12:factory:Artists/Charlie Robbins/Thump Tone"
+]
+]
+}
+},
+"sw50r/all": {
+"recording": {
+"menu": 44,
+"classes": 15,
+"largest": 11,
+"separating_parts": 25,
+"members": [
+[
+"sw50r:factory:Artists/Danny Dela Cruz/Riff Heavy",
+"sw50r:factory:Artists/John Connearn/High Gain Solo",
+"sw50r:factory:Artists/John Connearn/Low Gain Solo",
+"sw50r:factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"sw50r:factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+"sw50r:factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+"sw50r:factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"sw50r:factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+"sw50r:factory:Neural DSP/Abrasive Stoner Rock Tone",
+"sw50r:factory:Neural DSP/Drop-Tuned Doom",
+"sw50r:factory:Neural DSP/Hair Metal"
+],
+[
+"sw50r:factory:Artists/John Connearn/Dotted Eighth Tape",
+"sw50r:factory:Artists/Neil Zaza/Bell Tremolo",
+"sw50r:factory:Artists/Neil Zaza/Clean Chime",
+"sw50r:factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+"sw50r:factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+"sw50r:factory:Artists/Richard Henshall/Small Lead",
+"sw50r:factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+],
+[
+"sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz",
+"sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"sw50r:factory:Artists/Royce Whittaker/Wall Of Doom"
+],
+[
+"sw50r:factory:Artists/Keyan Houshmand/RockNRoll",
+"sw50r:factory:Artists/Pete Thorn/Stacked Drives",
+"sw50r:factory:Artists/Richard Henshall/Big Lead"
+],
+[
+"sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sw50r:factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+"sw50r:factory:Artists/Royce Whittaker/Rhythm of The Young's"
+],
+[
+"sw50r:factory:Artists/CARRTOONS/5 String P Bass",
+"sw50r:factory:Artists/CARRTOONS/Mustang"
+],
+[
+"sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo"
+],
+[
+"sw50r:factory:Artists/Jack Gardiner/Mid Boost Lead",
+"sw50r:factory:Neural DSP/Jose Deluxe"
+],
+[
+"sw50r:factory:Artists/Pete Thorn/Country Slap and Spring",
+"sw50r:factory:Artists/Royce Whittaker/Big Tail Clean"
+],
+[
+"sw50r:factory:Artists/Richard Henshall/Tele Jam",
+"sw50r:factory:Artists/Richard Henshall/Tremolo Jam"
+],
+[
+"sw50r:factory:Neural DSP/Blue Hotel",
+"sw50r:factory:Neural DSP/Distorted Spy"
+],
+[
+"sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sw50r:factory:Neural DSP/Strat 4th Position Funk"
+],
+[
+"sw50r:factory:Artists/Mark Johnston/Pedal Platform Clean"
+],
+[
+"sw50r:factory:Neural DSP/Broken Radio"
+],
+[
+"sw50r:factory:Neural DSP/Doomish Riff"
+]
+]
+},
+"union": {
+"menu": 44,
+"classes": 15,
+"largest": 6,
+"separating_parts": 25,
+"members": [
+[
+"sw50r:factory:Artists/Danny Dela Cruz/Riff Heavy",
+"sw50r:factory:Artists/John Connearn/High Gain Solo",
+"sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz",
+"sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction",
+"sw50r:factory:Artists/Royce Whittaker/Wall Of Doom",
+"sw50r:factory:Neural DSP/Abrasive Stoner Rock Tone"
+],
+[
+"sw50r:factory:Artists/Jack Gardiner/Mid Boost Lead",
+"sw50r:factory:Artists/Neil Zaza/Bell Tremolo",
+"sw50r:factory:Artists/Neil Zaza/Clean Chime",
+"sw50r:factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+"sw50r:factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+"sw50r:factory:Neural DSP/Jose Deluxe"
+],
+[
+"sw50r:factory:Artists/John Connearn/Dotted Eighth Tape",
+"sw50r:factory:Artists/Keyan Houshmand/RockNRoll",
+"sw50r:factory:Artists/Pete Thorn/Stacked Drives",
+"sw50r:factory:Artists/Richard Henshall/Big Lead",
+"sw50r:factory:Artists/Royce Whittaker/Warm Timmonsy Lead"
+],
+[
+"sw50r:factory:Artists/John Connearn/Low Gain Solo",
+"sw50r:factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+"sw50r:factory:Neural DSP/Blue Hotel",
+"sw50r:factory:Neural DSP/Distorted Spy",
+"sw50r:factory:Neural DSP/Hair Metal"
+],
+[
+"sw50r:factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+"sw50r:factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+"sw50r:factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+"sw50r:factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+"sw50r:factory:Neural DSP/Drop-Tuned Doom"
+],
+[
+"sw50r:factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+"sw50r:factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+"sw50r:factory:Artists/Royce Whittaker/Rhythm of The Young's"
+],
+[
+"sw50r:factory:Artists/CARRTOONS/5 String P Bass",
+"sw50r:factory:Artists/CARRTOONS/Mustang"
+],
+[
+"sw50r:factory:Artists/CARRTOONS/Benny Tele",
+"sw50r:factory:Artists/Keyan Houshmand/TriTone Tremolo"
+],
+[
+"sw50r:factory:Artists/Pete Thorn/Country Slap and Spring",
+"sw50r:factory:Artists/Royce Whittaker/Big Tail Clean"
+],
+[
+"sw50r:factory:Artists/Richard Henshall/Tele Jam",
+"sw50r:factory:Artists/Richard Henshall/Tremolo Jam"
+],
+[
+"sw50r:factory:Neural DSP/Dotted 8th Dark Echoes",
+"sw50r:factory:Neural DSP/Strat 4th Position Funk"
+],
+[
+"sw50r:factory:Artists/Mark Johnston/Pedal Platform Clean"
+],
+[
+"sw50r:factory:Artists/Richard Henshall/Small Lead"
+],
+[
+"sw50r:factory:Neural DSP/Broken Radio"
+],
+[
+"sw50r:factory:Neural DSP/Doomish Riff"
+]
+]
+}
+},
+"ac20/all": {
+"recording": {
+"menu": 30,
+"classes": 12,
+"largest": 7,
+"separating_parts": 25,
+"members": [
+[
+"ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm",
+"ac20:factory:Artists/Charlie Robbins/Lead",
+"ac20:factory:Artists/Danny Dela Cruz/Raw N Crunchy",
+"ac20:factory:Artists/John Connearn/Country Lead",
+"ac20:factory:Artists/Joseph Anidjar/Dimmed Combo Riffs",
+"ac20:factory:Neural DSP/Angry AC20 Rhythm",
+"ac20:factory:Neural DSP/Red Special Rhythm"
+],
+[
+"ac20:factory:Artists/Charlie Robbins/Vintage Split Coil",
+"ac20:factory:Artists/Danny Dela Cruz/Country Lead",
+"ac20:factory:Artists/Mark Johnston/It's Boosted but It Chimes",
+"ac20:factory:Artists/Neil Zaza/Neck Love (Single Coil Neck PU)"
+],
+[
+"ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"ac20:factory:Artists/Rabea Massaad/Far Away Place",
+"ac20:factory:Artists/Rabea Massaad/Roomy Brit Spank"
+],
+[
+"ac20:factory:Artists/Jack Gardiner/Favourite Breakup Lead",
+"ac20:factory:Artists/Jack Gardiner/Shred Clarity Lead",
+"ac20:factory:Neural DSP/AC20 Mid-Gain Drive"
+],
+[
+"ac20:factory:Artists/Josh De La Victoria/Nice Chords",
+"ac20:factory:Artists/Keyan Houshmand/Thump Comped Clean",
+"ac20:factory:Artists/Pete Thorn/AC20 Chime And Trem"
+],
+[
+"ac20:factory:Default",
+"ac20:factory:Neural DSP/Clean Canyon Chords",
+"ac20:factory:Neural DSP/Spacey Grits"
+],
+[
+"ac20:factory:Artists/John Connearn/Country Slapback",
+"ac20:factory:Artists/Pete Thorn/AC20 Edge Of Breakup"
+],
+[
+"ac20:factory:Artists/CARRTOONS/Gtr Lead FX"
+],
+[
+"ac20:factory:Artists/Royce Whittaker/Low-Watt Americana"
+],
+[
+"ac20:factory:Neural DSP/Jazzy Box"
+],
+[
+"ac20:factory:Neural DSP/Melodic Alien Lead"
+],
+[
+"ac20:factory:Neural DSP/Play Gently And Slowly"
+]
+]
+},
+"union": {
+"menu": 30,
+"classes": 11,
+"largest": 7,
+"separating_parts": 24,
+"members": [
+[
+"ac20:factory:Artists/Jack Gardiner/Favourite Breakup Lead",
+"ac20:factory:Artists/Jack Gardiner/Shred Clarity Lead",
+"ac20:factory:Artists/Mark Johnston/It's Boosted but It Chimes",
+"ac20:factory:Artists/Neil Zaza/Neck Love (Single Coil Neck PU)",
+"ac20:factory:Artists/Rabea Massaad/Far Away Place",
+"ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+"ac20:factory:Neural DSP/Red Special Rhythm"
+],
+[
+"ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm",
+"ac20:factory:Artists/Charlie Robbins/Lead",
+"ac20:factory:Artists/Danny Dela Cruz/Raw N Crunchy",
+"ac20:factory:Artists/John Connearn/Country Lead",
+"ac20:factory:Artists/Joseph Anidjar/Dimmed Combo Riffs",
+"ac20:factory:Neural DSP/Angry AC20 Rhythm"
+],
+[
+"ac20:factory:Artists/Charlie Robbins/Selective Picking",
+"ac20:factory:Artists/Charlie Robbins/Vintage Split Coil",
+"ac20:factory:Artists/Danny Dela Cruz/Country Lead",
+"ac20:factory:Artists/Rabea Massaad/Roomy Brit Spank"
+],
+[
+"ac20:factory:Artists/John Connearn/Country Slapback",
+"ac20:factory:Artists/Pete Thorn/AC20 Chime And Trem",
+"ac20:factory:Artists/Pete Thorn/AC20 Edge Of Breakup"
+],
+[
+"ac20:factory:Default",
+"ac20:factory:Neural DSP/Clean Canyon Chords",
+"ac20:factory:Neural DSP/Spacey Grits"
+],
+[
+"ac20:factory:Artists/Josh De La Victoria/Nice Chords",
+"ac20:factory:Artists/Keyan Houshmand/Thump Comped Clean"
+],
+[
+"ac20:factory:Artists/CARRTOONS/Gtr Lead FX"
+],
+[
+"ac20:factory:Artists/Royce Whittaker/Low-Watt Americana"
+],
+[
+"ac20:factory:Neural DSP/Jazzy Box"
+],
+[
+"ac20:factory:Neural DSP/Melodic Alien Lead"
+],
+[
+"ac20:factory:Neural DSP/Play Gently And Slowly"
+]
+]
+}
+}
+},
+"amp_label": "set of acceptable amps",
+"sw50r_21_preset_mean_classes": {
+"recording": 9.425,
+"union": 9.22
+},
+"pr12_clean_collapses": false,
+"sw50r_collapses_at_21": false,
+"identifiability_explains_pr12": false
+}
