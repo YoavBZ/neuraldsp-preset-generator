@@ -8,6 +8,8 @@ import pathlib
 import struct
 import sys
 
+import pytest
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "research"))
@@ -62,7 +64,7 @@ def test_the_shipped_riffs_match_their_record():
 
 
 def test_a_cut_starts_before_the_pick_attack_and_fades_at_both_ends():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     rate = 48000
     audio = np.zeros(rate)
