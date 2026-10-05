@@ -143,9 +143,10 @@ tests/           — round-trip, mutation, translation, cab, pack-contract,
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,
                    renderer, search-space, inversion, search, store, report,
                    benchmark and bare-clone tests
-docs/            — maintainer procedures for measuring ranges, selectors,
-                   mappings and audible behavior against a plugin, and the
-                   design plan for reference-guided tone matching
+docs/            — the project's record: ROADMAP.md (the living plan), each
+                   experiment's declared plan and results, research reports in
+                   research/, and closed experiments' outputs in data/.
+                   docs/README.md is the index
 ```
 
 ## Packs

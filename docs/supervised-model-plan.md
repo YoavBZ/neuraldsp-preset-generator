@@ -1,9 +1,16 @@
 # Supervised settings model: the plan
 
+> **Status, 2026-10-05: parked.** The kill tests did not pass, on SW50R
+> ([kill-test-results.md](kill-test-results.md)) or on clean PR12
+> ([kill-tests-pr12-results.md](kill-tests-pr12-results.md)). No cheap fix rescued
+> recognition on real tracks, and the amp label is a set
+> ([quick-checks-results.md](quick-checks-results.md)). What would reopen it is in
+> [ROADMAP.md](ROADMAP.md).
+
 A model that reads a song's guitar part and proposes a Neural DSP preset — amp or
 channel, pedals on/off, mic family, drive, tone and EQ — trained on (settings,
 plugin render) pairs we generate by hosting the plugin. This plan turns
-`docs/research-supervised-preset-model.md` into stages with gates, and corrects it
+`docs/research/round-3-supervised-preset-model.md` into stages with gates, and corrects it
 where four research passes (data and simulation; features and architecture;
 training, validation and statistics; deployment and sharing — 2026-10-03) found it
 wrong. It is committed before any of its renders or training runs, and each
@@ -127,7 +134,7 @@ passing POC is local-only until Neural DSP's EULA is known (§7).
 
 ## 2. What the model predicts
 
-Identifiable quantities, not 128 raw knobs (round 2, `docs/research-full-plugin-estimation.md`):
+Identifiable quantities, not 128 raw knobs (round 2, `docs/research/round-2-full-plugin-estimation.md`):
 
 - **Topology** (one joint softmax): amp or channel × drive pedals on/off × compressor
   on/off; voicing switches as binary heads; mic family as a sorted pair of

@@ -1,6 +1,6 @@
 # Estimating every control from the song: research plan, round 2
 
-*Produced on 2026-10-03 by a research workflow, building on round 1 (`docs/research-song-only-matching.md`). The question: can every control of a Morgan or Tone King preset — amp or channel, mics, pedals and effects, every knob — be estimated from the song alone, deterministically and fast?*
+*Produced on 2026-10-03 by a research workflow, building on round 1 (`docs/research/round-1-song-only-matching.md`). The question: can every control of a Morgan or Tone King preset — amp or channel, mics, pedals and effects, every knob — be estimated from the song alone, deterministically and fast?*
 
 *Structure:*
 - *four parallel tracks:*
@@ -11,7 +11,9 @@
 - *one adversarial critic per track, who opened every cited source and checked feasibility and the measured failures;*
 - *a synthesis.*
 
-*Nothing here has been run yet. Each approach carries the experiment and gate that would decide it.*
+*Each approach carries the experiment and gate that would decide it.*
+
+> **Status, 2026-10-05.** Not run, apart from the silent-render guard. Round 3 ([round-3-supervised-preset-model.md](round-3-supervised-preset-model.md)) and the parked [supervised-model-plan.md](../supervised-model-plan.md) took its question further.
 
 ## 1. Executive summary
 

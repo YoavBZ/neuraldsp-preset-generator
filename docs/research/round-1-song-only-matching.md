@@ -9,7 +9,9 @@
 - *one adversarial critic per track, who opened every cited source, checked feasibility on this machine and tested each idea against the measured failures in `tone-matching-plan.md`;*
 - *a synthesis.*
 
-*The question it answers: what should replace or supplement the 300-render noise-probe search when the user supplies only the song file and never a DI. Nothing here has been run yet. Each approach carries the experiment and gate that would decide it.*
+*The question it answers: what should replace or supplement the 300-render noise-probe search when the user supplies only the song file and never a DI. Each approach carries the experiment and gate that would decide it.*
+
+> **Status, 2026-10-05.** E1, E1x, E2 and E3 ran, scored with the v3 objective since retired as a judge ([tone-matching-plan.md](../tone-matching-plan.md), "The real-guitar probe"); their conclusions are unconfirmed. The rest was not run; E6 and E7 continue as round 4's experiments 4 and 5 ([round-4-audio-ml.md](round-4-audio-ml.md)).
 
 ## 1. Executive summary
 

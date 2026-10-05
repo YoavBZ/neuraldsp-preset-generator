@@ -6,7 +6,7 @@ does not choose among Morgan's amps (SW50R, PR12, AC20) as one more setting.
 **Why ask this first.** Choosing the amp by measurement means searching each amp and
 letting the judge pick the closest result. A precondition is that the judge can tell
 the amps apart across presets: preset retrieval, with no refit. It is not the S3
-imitation test of `docs/research-full-plugin-estimation.md`. S3 refits each target on
+imitation test of `docs/research/round-2-full-plugin-estimation.md`. S3 refits each target on
 every amp from distortion-matched starts and decides with another DI; this check does
 none of that.
 

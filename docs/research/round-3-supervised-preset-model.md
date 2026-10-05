@@ -1,8 +1,10 @@
 # Supervised settings model: deep-dive report
 
+> **Status, 2026-10-05.** Superseded by [supervised-model-plan.md](../supervised-model-plan.md), which turned it into staged gates, now parked.
+
 The third research report on song-only matching, after round 1
-(`docs/research-song-only-matching.md`) and round 2
-(`docs/research-full-plugin-estimation.md`). It asks whether a network trained
+(`docs/research/round-1-song-only-matching.md`) and round 2
+(`docs/research/round-2-full-plugin-estimation.md`). It asks whether a network trained
 on (settings, plugin render) pairs can map a song's separated guitar stem to the
 plugin's full settings, and what a fair pilot would look like. None of its pilot
 steps has been run. Some figures are the research agents' own measurements on

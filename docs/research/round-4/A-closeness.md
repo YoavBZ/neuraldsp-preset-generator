@@ -1,4 +1,4 @@
-> Input report for `docs/research-audio-ml.md` (round 4), kept as written. Where the synthesis corrects a claim here after a source check (its §8), the synthesis holds.
+> Input report for `docs/research/round-4-audio-ml.md` (round 4), kept as written. Where the synthesis corrects a claim here after a source check (its §8), the synthesis holds.
 
 # A. Measuring tone closeness: what the literature offers the judge
 

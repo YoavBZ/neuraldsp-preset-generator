@@ -1,5 +1,7 @@
 # Objective predictions for listening comparisons
 
+> **Status, 2026-10-05.** Written before the judge ([measuring-closeness.md](measuring-closeness.md)); the frozen predictions here use the `unpaired-v1` and `-v2` objectives, since retired as measures of closeness. The blind-comparison procedure itself still applies.
+
 Every comparison needs an explicit reference crop, the two **bare-guitar**
 alternatives, their blind labels, and a private target-group identifier. Repeated
 passages and backed revisits of a target keep the same identifier. Do not infer
