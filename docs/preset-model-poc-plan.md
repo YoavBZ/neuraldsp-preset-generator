@@ -108,3 +108,24 @@ Written after the guitar stems were separated and before any model result on the
   excluded because other guitars dominate their stems (best SNR against the amp track
   under 1 dB).
 - **Status.** Reported beside the amp-track result. It does not decide the POC.
+
+## Amendment, 2026-10-06: training length, and what an early diagnostic showed
+
+Recorded before the declared models were trained, with no real-track result read.
+- **Training length.** The code's default of 30 epochs would take about 10 hours on
+  this machine (1.3 s per batch, the network being the cost). The declared models are
+  trained for 15 epochs.
+- **The diagnostic.** One fold trained on the first 7,007 renders, scored on
+  held-out-band renders only, barely beat predicting the median on most single
+  controls.
+  - Ratios to the median baseline: EQ bands 0.96–1.04, effective drive 0.97, high-pass
+    0.72, volume 0.79, the pedal knobs 0.76–0.85, mic type 0.58 against 0.40 for the
+    majority class.
+- **Two measurements on the existing clean PR12 panel** (no model involved).
+  - In the judge's bands, one preset's transfer curve (render minus DI) differs by
+    1.9 dB per band from one player's DI to another. The 21 clean presets' curves
+    differ from each other by 1.45 dB.
+  - DI long-term spectra differ by 5.6 dB per band across players, and 4.2 dB within
+    one.
+  - So, on this material, the player moves the sound about as much as the preset does.
+    That sets a floor for any method that reads only the recording.
