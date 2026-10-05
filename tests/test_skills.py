@@ -224,13 +224,19 @@ def test_parameter_names_a_skill_mentions_are_real(doc):
 
 # --- commands a skill shows -----------------------------------------------
 
-NEEDS_THE_PLUGIN = ("au_probe", "au_render", "swiftc", "audit_manifest.py")
+NEEDS_THE_PLUGIN = ("au_probe", "au_render", "swiftc", "audit_manifest.py", "scripts/audition.py")
+# The skill commands that render through the plugin by design: a machine without it
+# skips them, and the guards below accept that skip for these alone.
+RENDERS_THROUGH_THE_PLUGIN = ("scripts/audition.py",)
+NO_PLUGIN = "needs the licensed Audio Unit installed on macOS"
+NO_EXTRAS = "needs the optional analysis and match extras"
 NEEDS_A_PRESET_FOLDER = (
     "Audio/Presets",
     "Documents/Neural",
     "<user preset folder>",
 )
 AUDIO_PLACEHOLDERS = (
+    "SONG.mp3",
     "REFERENCE.wav",
     "PROBE.wav",
     "PROBE_DI.wav",
@@ -303,6 +309,10 @@ def plugin_is_available() -> bool:
 
 def skip_reason(command: str):
     """Why this command cannot run in CI, or None if it can."""
+    # Before the plugin: fixture creation needs the audio stack, so the bare job
+    # must skip on this whatever else the command needs.
+    if needs_audio_fixture(command) and not analysis_is_available():
+        return NO_EXTRAS
     if any(marker in command for marker in NEEDS_THE_PLUGIN):
         # By capability, not by spelling. These commands used to skip on the one
         # machine that could run them — a substring match on `swiftc` or
@@ -312,8 +322,6 @@ def skip_reason(command: str):
             return "needs the licensed Audio Unit installed on macOS"
     if any(marker in command for marker in NEEDS_A_PRESET_FOLDER):
         return "reads or writes the user's own Neural DSP preset folder"
-    if needs_audio_fixture(command) and not analysis_is_available():
-        return "needs the optional analysis and match extras"
     if re.match(r"python3? +\"?\$\{CLAUDE_PLUGIN_ROOT\}", command):
         return None
     # A Swift build, or one of the helpers it produces, is runnable wherever the
@@ -379,6 +387,15 @@ class Sandbox:
             }))
             self._audio = reference, probe
         return self._audio
+
+    def song(self) -> pathlib.Path:
+        """A song long enough for the audition page's 12-second excerpt."""
+        song = self.path / "song.wav"
+        if not song.exists():
+            from tests import fixtures_audio as fx
+
+            fx.write_wav(song, fx.plucks(seconds=14.0, gap=0.5, seed=7))
+        return song
 
     def run_dir(self) -> pathlib.Path:
         return self.path / "match-run"
@@ -638,6 +655,12 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         text = text.replace("CANDIDATE_RENDER.wav", str(reference))
         text = text.replace("START_SECONDS", "0")
         text = text.replace("DURATION_SECONDS", "1")
+    if "scripts/audition.py" in text:
+        text = text.replace("SONG.mp3", str(sandbox.song()))
+        text = text.replace("START_SECONDS", "0")
+        text = text.replace("AUDITION_DIR", str(sandbox.path / "audition"))
+        for placeholder in ("A.xml", "B.xml"):
+            text = text.replace(placeholder, str(sandbox.template))
     # Each documented command is tested independently, so the apply preview uses
     # the known-valid spec instead of depending on the match command running first.
     text = text.replace("RUN_DIR/match-1.json", str(sandbox.spec))
@@ -701,7 +724,9 @@ def test_the_skills_own_commands_are_all_exercised():
         (DOC_IDS[doc], command, skip_reason(command))
         for doc, command in from_skills
         if skip_reason(command)
-        and skip_reason(command) != "needs the optional analysis and match extras"
+        and skip_reason(command) != NO_EXTRAS
+        and not (skip_reason(command) == NO_PLUGIN
+                 and any(m in command for m in RENDERS_THROUGH_THE_PLUGIN))
     ]
     assert not unrun, f"skill commands are not being run: {unrun}"
 
@@ -728,6 +753,8 @@ def test_audio_skill_commands_are_exercised_when_the_extra_is_installed():
         if doc in SKILLS
         and needs_audio_fixture(command)
         and skip_reason(command)
+        and not (skip_reason(command) == NO_PLUGIN
+                 and any(m in command for m in RENDERS_THROUGH_THE_PLUGIN))
     ]
     assert not unrun, f"audio skill commands are not being run: {unrun}"
 
