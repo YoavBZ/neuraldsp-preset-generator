@@ -182,7 +182,7 @@ the controls, the practice part and each part's DI loudness are in
 
   Fitting the taste per riff costs no measurable power and stops a taste that changes
   with the riff (0.06 against 0.31). The within-part features and the exact pair draw,
-  added in the same review round, are what lowered power from earlier drafts.
+  added in the same review round, contributed to the lower power than in earlier drafts.
   The taste test costs power: a fail reads "not shown", never "the ear can't".
 - **Reported, not deciding,** each under both band sets, over all 32 trials, per riff,
   and split at the median gap between the part's DI loudness and the riffs' (-23.7
@@ -237,7 +237,8 @@ it fails too, the ear or the judge is.
   ruled out.
 - **A song-swapped arm** (one of each part's trials played against another song)
   would control every taste exactly, but in simulation it had less power in the same
-  time, even on generous assumptions (0.33 against 0.46 at 40%), so this check models
+  time, even on generous assumptions (0.33 at 40%, in an earlier draft's simulation,
+  against 0.46 here), so this check models
   the tastes instead.
 - **Gain classes for controls** ignore the amps' input gain and the SW50R's input mode.
   The chosen controls' clean answers have the input gain at 0 or cut.

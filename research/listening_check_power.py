@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Size and power of the listening check's primary (`docs/listening-check-plan.md`).
 
-    python research/listening_check_power.py --listeners 600 --draws 2000
+    python research/listening_check_power.py --listeners 800 --draws 2000
+
+Use at least 2,000 draws: `block_p` seeds its null the same way on every call, as
+`score` does, so its Monte Carlo error is shared by every simulated listener and does
+not average out over them.
 
 Simulated listeners answer the 32 main trials (16 parts, chords then line), and each
 listener's answers go through the scoring code's own nulls: the chance test alone, and
@@ -48,7 +52,7 @@ INPUTS = PLUGIN_ROOT / "docs" / "listening-check-inputs.json"
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--listeners", type=int, default=600)
+    ap.add_argument("--listeners", type=int, default=800)
     ap.add_argument("--draws", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=20261006)
     args = ap.parse_args()

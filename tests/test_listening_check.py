@@ -245,7 +245,7 @@ def test_each_answered_trial_draws_with_its_own_riffs_taste(monkeypatch):
     assert seen[0][1][2] == [None, None]     # the chance null stays uniform
 
 
-def test_build_stops_when_a_song_excerpt_or_di_changed(tmp_path, monkeypatch):
+def test_the_inputs_check_stops_on_a_changed_di_song_excerpt_or_preset(tmp_path, monkeypatch):
     for name, folder in (("SHORTLISTS", "shortlists"), ("REACH", "reach.json"),
                          ("CROPS", "crops"), ("FACTORY", "factory")):
         monkeypatch.setattr(L, name, tmp_path / folder)
@@ -272,6 +272,11 @@ def test_build_stops_when_a_song_excerpt_or_di_changed(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         L.unchanged(data)
     (tmp_path / "crops" / "p" / "di.wav").write_bytes(b"di.wav")
+    (tmp_path / "crops" / "p" / "mix_instrumental.wav").write_bytes(b"another mix")
+    with pytest.raises(SystemExit):
+        L.unchanged(data)
+    (tmp_path / "crops" / "p" / "mix_instrumental.wav").write_bytes(b"mix_instrumental.wav")
+    L.unchanged(data)
     (tmp_path / "G3.xml").write_text("edited")
     with pytest.raises(SystemExit):
         L.unchanged(data)
