@@ -1,5 +1,6 @@
 """Regression tests for the GitHub Actions trigger contract."""
 
+import re
 from pathlib import Path
 
 import yaml
@@ -68,3 +69,46 @@ def test_every_job_checks_out_full_history_unless_it_says_why_not() -> None:
         f"Confirm it uses full history and add the job to SHALLOW_BY_DESIGN, or "
         f"inline it: {sorted(set(unreviewable))}"
     )
+
+
+def test_the_analysis_shards_are_every_slice_of_the_split_they_run() -> None:
+    """`--shard I/N` runs one slice and trusts the job for the rest. A matrix of
+    `[1, 2, 3]` beside a `/4`, an `exclude:` dropping one version's shard, an `if:`
+    or `continue-on-error` on the step, or a `-k` added to the command or slipped
+    in through `PYTEST_ADDOPTS` — set in an `env:`, written to `$GITHUB_ENV` by an
+    earlier step, or exported by a `defaults:` shell — would each leave part of the
+    suite unrun or unheeded on every build, and nothing would fail, because every
+    shard that did run would pass. The sharding itself is tests/test_shard.py's."""
+    workflow = yaml.load(CI_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
+    job = workflow["jobs"]["analysis"]
+    [test] = [step for step in job["steps"] if step.get("name") == "Test"]
+    for scope in (workflow, job, test):
+        env = scope.get("env") or {}
+        assert isinstance(env, dict), f"an `env:` this test cannot read: {env!r}"
+        assert "PYTEST_ADDOPTS" not in env, "PYTEST_ADDOPTS can narrow every shard"
+        assert "defaults" not in scope, "a `defaults:` shell can wrap the Test step"
+    for step in job["steps"]:
+        for name in ("PYTEST_ADDOPTS", "GITHUB_ENV"):
+            assert name not in step.get("run", ""), f"{step.get('name')!r} touches {name}"
+    matrix = job["strategy"]["matrix"]
+    assert set(matrix) == {"python-version", "shard"}, (
+        "an include or exclude changes which (version, shard) pairs run; if one "
+        "is needed, extend this test to check every version still runs every slice")
+    assert "if" not in job and "continue-on-error" not in job
+    assert "if" not in test and "continue-on-error" not in test
+    split = re.fullmatch(
+        r"python -m pytest -q --shard \$\{\{ matrix\.shard \}\}/(\d+)"
+        r"( \$\{\{ inputs\.record_durations && '--record-durations=\S+' \|\| '' \}\})?",
+        test["run"].strip())
+    assert split, test["run"]
+    count = int(split.group(1))
+    shards = [int(shard) for shard in matrix["shard"]]
+    assert shards == list(range(1, count + 1))
+    assert f"{{{{ matrix.shard }}}}/{count})" in job["name"]
+
+    # The smoke steps run on one shard; a condition naming no shard runs them never.
+    for step in job["steps"]:
+        condition = step.get("if", "")
+        if "matrix.shard" in condition:
+            only = re.fullmatch(r"matrix\.shard == (\d+)", condition.strip())
+            assert only and int(only.group(1)) in shards, (step.get("name"), condition)

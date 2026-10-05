@@ -7,6 +7,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      record_durations:
+        description: Upload each analysis shard's per-test times (see tests/conftest.py)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -56,11 +61,20 @@ jobs:
     # The audio analysis has dependencies, so it gets its own job. The bare
     # clone job below stays exactly as it was: what it proves is that adding
     # this did not put numpy on the path of anyone reading a preset.
+    #
+    # Split four ways per Python version. The suite renders audio and runs the
+    # real optimiser, and on one four-core runner it took 9 to 14 minutes — the
+    # whole CI wait, since every other job finishes in under thirty seconds.
+    # `--shard I/N` (tests/conftest.py) balances the slices on the recorded
+    # times in tests/durations.json; the four together run every test once.
+    name: analysis (${{ matrix.python-version }}, ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.13"]
+        # Change the `/4` in the job name and the Test step with this list.
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -83,9 +97,24 @@ jobs:
         run: pip install -e ".[dev,analysis,match]"
 
       - name: Test
-        run: python -m pytest -q
+        run: >-
+          python -m pytest -q --shard ${{ matrix.shard }}/4
+          ${{ inputs.record_durations && '--record-durations=/tmp/durations.json' || '' }}
 
+      # Only on a hand-started run that asks for it; how to fold the four
+      # artifacts back into tests/durations.json is in tests/conftest.py. Not
+      # skipped when a test failed: the union would silently lose this slice.
+      - name: Upload this shard's per-test times
+        if: ${{ !cancelled() && inputs.record_durations }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: durations-${{ matrix.python-version }}-${{ matrix.shard }}
+          path: /tmp/durations.json
+          if-no-files-found: error
+
+      # The two smoke checks below need no test split, so one shard runs them.
       - name: Fingerprint a signal with no plugin and no audio in the repository
+        if: matrix.shard == 1
         run: |
           python - <<'EOF'
           import numpy as np, soundfile as sf
@@ -96,6 +125,7 @@ jobs:
           python scripts/compare_audio.py /tmp/probe.wav /tmp/probe.wav
 
       - name: Render through the synthetic chain with no plugin installed
+        if: matrix.shard == 1
         run: |
           python - <<'EOF'
           from analysis import io, refchain
