@@ -195,7 +195,8 @@ def main():
               for (a, m), by in CANARIES.items() for b, want in by.items()
               if readings[(a, m)][b]["tested_vs_own_template"] is None
               or round(readings[(a, m)][b]["tested_vs_own_template"], 4) != want}
-    decided = verdict({k: v for k, v in readings.items() if k != ("ac20", "all")})
+    decided = {f"{a}/{m}": reasons for (a, m), reasons in
+               verdict({k: v for k, v in readings.items() if k != ("ac20", "all")}).items()}
     # Reported: the joint pick's amp, against the share menu size alone would give.
     shares = {}
     for menu_name, menus in (("all", every), ("clean", clean)):
