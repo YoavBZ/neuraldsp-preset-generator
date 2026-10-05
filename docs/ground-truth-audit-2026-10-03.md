@@ -216,7 +216,7 @@ Three root causes explain most per-part anomalies:
 
 **D-H2. E1–E3 are reported with level, cross-run and post hoc; result 5 is stated more strongly than the evidence** (stats-1, -2, -3, -7, harness-4, numbers-2, e1-1, e1-2)
 - **Wrong:**
-  - In search mode the harness prints and stores only the with-level `against_neutral` count (`match/signal_benchmark.py:402-405`, `research/benchmark_recordings.py:439`). The plan's ground rule (`docs/research/round-1-song-only-matching.md:196`) says level left out.
+  - In search mode the harness prints and stores only the with-level `against_neutral` count (`match/signal_benchmark.py:402-405`, `scripts/benchmark_recordings.py:439`). The plan's ground rule (`docs/research/round-1-song-only-matching.md:196`) says level left out.
   - The headline cross-run comparisons break the plan's own "every comparison stays within one run".
   - No 20-part draw was committed.
   - The design departed from the pre-registered one: L1 instead of L2; library only; 43 parts instead of 20; E3 batches split by source.
@@ -255,7 +255,7 @@ Three root causes explain most per-part anomalies:
   - Controlled launches: the first render after process start is exact zeros to 0.32–0.39 s, then 4–45 dB low until about 1 s, then identical to later renders.
   - In all 258 committed TK pipeline renders the output starts late. First non-zero sample: median 0.41 s, range 0.08–0.65 s.
   - Reset and neutral renders have a second zero run that ends near 0.87 s. Morgan renders start within 13 ms.
-  - `research/benchmark_match_pipeline.py:147-150` passes `--preroll-s 0`, and origin/main still does.
+  - `scripts/benchmark_match_pipeline.py:147-150` passes `--preroll-s 0`, and origin/main still does.
 - **Changes:**
   - Per part, held-content tests give median shifts of about 0.01 (template) and 0.05–0.07 (answer), with up to 1–2 on single parts.
   - 2–9 of 43 verdicts flip per run, net toward the no-DI answer.

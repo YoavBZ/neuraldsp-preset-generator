@@ -1,10 +1,10 @@
 # Kill tests K1–K3: results (SW50R, float panel, 2026-10-04)
 
 Declared in `docs/supervised-model-plan.md` §0 (K1, K2) and `docs/kill-test-k3-plan.md`
-(K3, its amendment, and "Under the judge"). Computed by `research/kill_tests.py` and
-`research/kill_test_k3.py` at 026ceed (identical to 1f67812, where they ran) on the
+(K3, its amendment, and "Under the judge"). Computed by `scripts/kill_tests.py` and
+`scripts/kill_test_k3.py` at 026ceed (identical to 1f67812, where they ran) on the
 float panel (1,978 renders, 44 factory presets plus the template with and without its
-time effects, through 43 development parts' DIs), then by `research/kill_tests_judge.py`
+time effects, through 43 development parts' DIs), then by `scripts/kill_tests_judge.py`
 at 7f98fca; later commits change only import order, path expansion and guards that do
 not fire on this run. Two independent reviews re-scored the numbers from the renders;
 the second corrected several labels and figures, which this version carries.

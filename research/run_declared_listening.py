@@ -19,7 +19,7 @@ must copy the declared template. Render steps contain
 
 Allowed placeholders are {python}, {repo}, {declaration}, {run}, {source},
 {song}, {part}, {slug}, and {test_id}. All commands must invoke a tracked,
-unchanged ``scripts/*.py`` through {python}. The block may change the arms'
+unchanged ``scripts/*.py`` or ``research/*.py`` through {python}. The block may change the arms'
 commands, but cannot change the step names or skip a provenance check.
 
 The new run directory must be under this worktree's ignored ``runs/`` tree,
@@ -172,17 +172,21 @@ def _output(value: str, fields: dict[str, str], part_dir: pathlib.Path) -> pathl
     return path
 
 
+# The plugin's tools and the research tooling: the two folders a declared command may run.
+TOOL_FOLDERS = ("scripts", "research")
+
 def _argv(values: list[str], fields: dict[str, str], repo: pathlib.Path) -> list[str]:
     argv = [_expanded(value, fields) for value in values]
     if argv[0] != fields["python"]:
         raise ValueError("declared commands must use the chosen Python interpreter")
     script = pathlib.Path(argv[1])
-    if script.is_absolute() or ".." in script.parts or script.parts[0] != "scripts" \
-            or script.suffix != ".py":
-        raise ValueError("declared commands must run a repository scripts/*.py file")
+    if script.is_absolute() or ".." in script.parts \
+            or script.parts[0] not in TOOL_FOLDERS or script.suffix != ".py":
+        raise ValueError("declared commands must run a repository scripts/*.py or "
+                         "research/*.py file")
     target = repo / script
     if (target.is_symlink() or not target.is_file()
-            or not target.resolve().is_relative_to(repo / "scripts")
+            or not target.resolve().is_relative_to(repo / script.parts[0])
             or not _git(repo, "ls-tree", "HEAD", "--", script.as_posix()).startswith(
                 ("100644 blob ", "100755 blob "))):
         raise ValueError("declared script must be a tracked regular file at HEAD")

@@ -9,7 +9,7 @@ on (settings, plugin render) pairs can map a song's separated guitar stem to the
 plugin's full settings, and what a fair pilot would look like. None of its pilot
 steps has been run. Some figures are the research agents' own measurements on
 local data and are not committed, and the E1 figures come from an uncommitted
-run of `research/benchmark_recordings.py --no-search` on 2026-10-03.
+run of `scripts/benchmark_recordings.py --no-search` on 2026-10-03.
 
 ## 1. Verdict
 

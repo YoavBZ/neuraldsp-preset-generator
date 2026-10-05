@@ -60,7 +60,7 @@ every share below counts each band once, its parts sharing its weight.
 
 `research/k3_hub_fixes.py`.
 
-**The recognisers.** K3's recognisers are re-run as `research/kill_test_k3.py` ran them:
+**The recognisers.** K3's recognisers are re-run as `scripts/kill_test_k3.py` ran them:
 K2's features, the four folds of bands seeded 20261003, 1-NN, LDA and LDA+1-NN, on the
 SW50R panel and the clean PR12 panel. Each fix below is fitted on the training folds'
 real amp tracks only:

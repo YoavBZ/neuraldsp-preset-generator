@@ -3,7 +3,7 @@
 Computed as declared in `docs/song-only-shortlist-plan.md` (with its dated amendments),
 on 2026-10-05:
 - **Runs:** 16 agents, one per song, 25 development parts, sandboxes at b5dbcbb.
-- **Rendered** with `research/render_shortlists.py`.
+- **Rendered** with `scripts/render_shortlists.py`.
 - **Scored** with `research/score_shortlists.py`. `docs/song-only-shortlist.json` is the
   output. The scorer was re-run once after a fix to a reported figure (below); every
   decision and every other reading came out identical.

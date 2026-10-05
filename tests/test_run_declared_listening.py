@@ -359,3 +359,25 @@ def test_template_copy_is_byte_identical_and_never_overwrites(tmp_path):
     with pytest.raises(ValueError, match="new private path"):
         copy_template(source, out)
     assert out.read_bytes() == source.read_bytes()
+
+
+def test_the_documented_example_runs_only_tools_the_runner_accepts():
+    """The example block in docs/declared-listening-runner.md is what a new declaration
+    copies; every command and fallback in it must pass the runner's own check against
+    this repository (tools in scripts/ or research/, tracked at HEAD)."""
+    import re
+
+    from research.run_declared_listening import _argv
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    doc = (root / "docs" / "declared-listening-runner.md").read_text()
+    block = json.loads(re.search(r"```json\n(\{.*?\})\n```", doc, re.S).group(1))
+    fields = {"python": "python", "repo": str(root), "declaration": "d.md", "run": "/r",
+              "source": "s", "song": "g", "part": "p", "slug": "x", "test_id": "t"}
+    checked = 0
+    for step in block["steps"].values():
+        for key in ("argv", "fallback_argv"):
+            if key in step:
+                assert _argv(step[key], fields, root)[1] == step[key][1]
+                checked += 1
+    assert checked == 11

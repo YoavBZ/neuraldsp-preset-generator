@@ -14,8 +14,8 @@ All nine named steps are required. Each step declares an argv array, a list of
 output files to hash, and the primary output whose absence permits one
 byte-identical rerun. Match primary outputs must be `match-1.json`; the rerun
 uses the same output directory and preserves any earlier trial store.
-Commands invoke tracked `scripts/*.py` files through `{python}` without a
-shell. The runner expands `{repo}`, `{declaration}`, `{run}`, `{source}`,
+Commands invoke tracked `scripts/*.py` or `research/*.py` files through `{python}`
+without a shell. The runner expands `{repo}`, `{declaration}`, `{run}`, `{source}`,
 `{song}`, `{part}`, `{slug}` and `{test_id}` as well.
 
 For a future SW50R test, this is the command-block shape. It is an example,

@@ -1,9 +1,9 @@
 # Each Morgan amp's reach, and what a joint menu adds
 
 Computed as declared in `docs/amp-reach-plan.md`.
-- **Which code ran:** `research/amp_reach.py` at 5129499 (b8d3b9d after the rebase,
+- **Which code ran:** `scripts/amp_reach.py` at 5129499 (b8d3b9d after the rebase,
   identical), a re-run after a first run crashed before writing anything. The decision
-  comes from `research/amp_reach_null.py` at a7b8082 (11395a3).
+  comes from `scripts/amp_reach_null.py` at a7b8082 (11395a3).
 - **One edit after the output existed:** a7b8082 was committed 85 s after the re-run's
   output was written and before the null ran.
   - It changed the one-third rule's denominator to the one `amp_reach.py` uses (25

@@ -157,7 +157,7 @@ throughout, so its twelve excerpts are twelve performances of one tone.
 
 ## The split
 
-`research/validation_datasets.py` draws it with `random.Random(20260927)`, in this
+`scripts/validation_datasets.py` draws it with `random.Random(20260927)`, in this
 order, and the drawn items are held out:
 
 ```python
@@ -257,7 +257,7 @@ Everything in the sections above applies to the second set, except these rules:
 
 The split holds out whole bands, so that all of a band's songs are on one side.
 Players a band shares with another band, if any, are not tracked.
-`research/validation_datasets.py` draws it with `random.Random(20261001)`, from
+`scripts/validation_datasets.py` draws it with `random.Random(20261001)`, from
 each source's band names sorted:
 
 ```python
