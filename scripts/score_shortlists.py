@@ -175,9 +175,12 @@ def headroom(rows, arm, bands):
     by = collections.defaultdict(list)
     for r in rows:
         a, r4, o = (r["arms"][bands][k] for k in (arm, "random-4", "oracle"))
-        if a is None or not math.isfinite(a) or r4 <= o:
+        if r4 <= o:
             continue
-        by[r["band"]].append((math.log(r4) - math.log(a)) / (math.log(r4) - math.log(o)))
+        span = math.log(r4) - math.log(o)
+        # A refused arm counts as LOSS past random-4, as in compare().
+        by[r["band"]].append(-LOSS / span if a is None or not math.isfinite(a)
+                             else (math.log(r4) - math.log(a)) / span)
     return statistics.median(statistics.median(v) for v in by.values()) if by else None
 
 

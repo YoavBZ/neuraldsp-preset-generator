@@ -1,7 +1,7 @@
 # How close do generate's presets land? And does a shortlist help?
 
 Declared on 2026-10-05, before any shortlist is generated, rendered or scored. It was
-revised twice the same day after independent reviews, still before any run.
+revised three times the same day after independent reviews, still before any run.
 
 The product's main promise, "give it a song, get a preset that sounds like it", has
 never been measured. The `generate` skill researches a song and writes one preset;
@@ -73,9 +73,12 @@ is called a rough mix of the session, which it is. **The brief allows:**
 
 **How commands are written:**
 - Every Bash command starts with `cd` into the sandbox, since each starts in this
-  repository otherwise. It has no other `cd`, no `..` out of the sandbox, no `~`,
-  `$HOME` or command substitution.
-- Read, Grep and Glob get absolute paths in the sandbox or the factory folder.
+  repository otherwise. It has no other `cd`, no `..` out of the sandbox, no `~`, and
+  no `$` at all (no variables, loops or `awk` fields): each command is written out in
+  full.
+- An `apply_spec.py` dry run and its write are separate commands.
+- Read, Grep and Glob get an absolute folder or file in the sandbox or the factory
+  folder, with Glob patterns relative to it.
 - JSON files are written with the Write tool.
 - **No questions:** where the skill would ask, the run states its assumption.
 
@@ -107,19 +110,29 @@ A run that fails these is redone once (`redo`, below).
 **Leak control is by instruction and audit, not enforcement.** After the runs,
 `scripts/audit_shortlist_runs.py` checks every tool call and result in every
 transcript against what the brief allows, and flags:
-- **Bash:** a command that doesn't open with `cd` into its sandbox, changes directory
-  again, uses shell expansion, reaches the network or a search tool (`curl`, `wget`,
-  `mdfind`, `git`, a URL, …), or holds any path that resolves outside the sandbox,
-  the factory folder, the interpreter or the system's folders. That includes `..`,
-  `~` and paths inside quoted code.
+- **Bash:**
+  - a command that doesn't open with `cd` into its sandbox. Its relative paths are then
+    resolved in the repository, where it really ran, and one with no path at all
+    (`ls`) is flagged as running there;
+  - a second `cd`, any `$` or backtick;
+  - reaching the network or a search tool (`curl`, `wget`, `mdfind`, `git`, a URL, …),
+    or code that looks around the file system (`Path.home`, `expanduser`, `os.walk`, …);
+  - any path that resolves outside the sandbox, the factory folder (never `User/`, in
+    any case), the interpreter or the system's folders. That includes `..`, `~`,
+    redirections, and paths inside quoted code.
 - **Files:** a Read, Write, Edit, Grep or Glob with no path, a path that resolves
   outside the sandbox (writes) or the sandbox and factory folder (reads), a factory
   `User/` path, or a pattern that climbs out.
 - **Web:** a WebSearch without the github block, a github fetch, or more searches or
   fetches than allowed.
-- **Order:** the factory folder opened before every G1–G4 was written.
+- **Order:** the factory folder opened (by Read, Glob, Grep or a Bash command naming
+  it) before every G1–G4 was written, or a G written again after it was opened. A
+  write is an `apply_spec.py` command segment that isn't a dry run, counted by its
+  `--out`.
 - **Never:** the Skill tool or a nested agent.
-- **Results:** text naming this project, its repository or the validation data.
+- **Results:** text naming this project, its repository or the validation data. Claude
+  Code's own "Shell cwd was reset to …" note, which names the repository after every
+  command that leaves it, is removed first.
 
 **What a flag means.** A run stands only if every flag is one of these, judged by
 reading the flagged call (and, for a search, the listing):
@@ -285,14 +298,17 @@ is the main path or an option.
     would say ("the crunchy rhythm guitar on the left"). So the runs may describe the
     song more than the part.
 - **One run per song:** agents vary between runs, and that spread isn't measured.
-- **What the agents can see:** they run as subagents of this session. Besides the
-  brief, they see:
+- **What the agents can see:** they run as subagents of this session, launched from
+  this branch before it merges. Besides the brief, they see:
   - the repository's five latest commit titles, which name amp-level findings ("a set
-    of amps") but never a part;
+    of amps") but never a part. After a merge to main, "AC20 falls short" would be
+    among them, which is why they launch from the branch;
+  - the repository's path, in their environment and in Claude Code's cwd notes;
   - the user's memory index, which names the data root;
   - the installed plugin's skills, which the brief forbids invoking.
 
   The amps the runs choose are reported.
-- **Leak control** is by instruction and audit, as above.
+- **Leak control** is by instruction and audit, as above. Deliberate evasion (building
+  a path from character codes, say) could pass the audit.
 - **Cross-amp distances** lie outside the range listening validated.
 - **Morgan only:** Tone King has no factory panel here.

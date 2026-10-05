@@ -54,7 +54,7 @@ BAD_IN_COMMANDS = re.compile(r"ndsp-presets|/\.claude|github")
 BAD_IN_RESULTS = [r"YoavBZ", r"neuraldsp-preset-generator(?!/\.venv)", r"validation-crops",
                   r"amp-reach", r"reach-sets", r"runs/kill", r"ndsp-presets/references",
                   r"ndsp-presets/runs", r"references/datasets"]
-EMBEDDED = re.compile(r"(?:^|[\s'\"=(,:])((?:/|~|\.\./)[^\s'\"),;:]*)")
+EMBEDDED = re.compile(r"(?:^|[\s'\"=(,:<>|&;])((?:/|~|\.\./)[^\s'\"),;:]*)")
 
 
 def _text(content) -> str:
@@ -66,19 +66,33 @@ def _text(content) -> str:
     return json.dumps(content)
 
 
-def inside(path: str, sandbox: str, *, read_factory: bool = True) -> bool:
-    """Whether `path`, taken relative to the sandbox, resolves to an allowed place."""
-    p = os.path.normpath(os.path.join(sandbox, os.path.expanduser(path)))
+FACTORY_PREFIX = "/library/audio/presets/neural"   # a quoted factory path cut at a space
+INTROSPECTION = re.compile(r"Path\.home|expanduser|environ|getenv|chr\(|os\.walk|scandir")
+CWD_NOTE = re.compile(r"^Shell cwd was reset to .*$", re.M)
+SEGMENTS = re.compile(r"&&|\|\||;|\||\n")
+CODE = re.compile(r"[()'\";,{}<>]")             # a word that is code or text, not a path
+
+
+def inside(path: str, base: str, sandbox: str, *, read_factory: bool = True) -> bool:
+    """Whether `path`, taken relative to `base`, resolves to an allowed place: the
+    sandbox; the factory folder for reading, never `User/` in any case; the interpreter;
+    the system's folders."""
+    p = os.path.normpath(os.path.join(base, os.path.expanduser(path)))
     if p == sandbox or p.startswith(sandbox + "/"):
         return True
-    if read_factory and (p == FACTORY or p.startswith(FACTORY + "/")):
-        return not (p + "/").startswith(FACTORY + "/User/")
+    low = p.lower()
+    if read_factory and (low == FACTORY.lower() or low.startswith(FACTORY.lower() + "/")
+                         or low.startswith(FACTORY_PREFIX)):
+        return "/user/" not in (low + "/")[len(FACTORY):]
     return p == PYTHON or p.startswith(SYSTEM) or p in {s.rstrip("/") for s in SYSTEM}
 
 
-def bash_flags(command: str, sandbox: str):
+def bash_flags(command: str, sandbox: str, cwd: str):
+    """Flags for one Bash command. Without the opening `cd` it runs in `cwd` (the
+    repository), and its relative paths are resolved there."""
     flags = []
     opening = re.match(rf"\s*cd\s+(['\"]?){re.escape(sandbox)}/?\1\s*(&&|;|\n|$)", command)
+    base = sandbox if opening else cwd
     if not opening:
         flags.append("bash does not open with cd into the sandbox")
     rest = command[opening.end():] if opening else command
@@ -88,6 +102,8 @@ def bash_flags(command: str, sandbox: str):
         flags.append("bash uses shell expansion")
     if NETWORK.search(rest):
         flags.append("bash reaches for the network or a search tool")
+    if INTROSPECTION.search(rest):
+        flags.append("bash code looks around the file system")
     if BAD_IN_COMMANDS.search(command):
         flags.append("bash names the data root, ~/.claude or github")
     try:
@@ -95,46 +111,65 @@ def bash_flags(command: str, sandbox: str):
     except ValueError:
         words = rest.split()
         flags.append("bash command does not parse")
-    candidates = []
+    candidates, saw_path = [], False
     for w in words:
-        if w.startswith(("/", "~", ".")) or "/" in w:
-            candidates.append(w.split("=", 1)[1] if w.startswith("-") and "=" in w else w)
-        candidates += EMBEDDED.findall(w)
+        value = w.split("=", 1)[1] if w.startswith("-") and "=" in w else w
+        if CODE.search(value):
+            candidates += EMBEDDED.findall(value)  # code: check every path inside it
+        elif value.startswith(("/", "~", ".")) or "/" in value:
+            candidates.append(value)               # a path, spaces and all
+        saw_path = saw_path or bool(candidates)
+    if not opening and not saw_path:
+        flags.append("bash runs in the repository")
     for c in candidates:
-        if not inside(c, sandbox):
+        if not inside(c, base, sandbox):
             flags.append(f"bash path outside the sandbox: {c[:80]}")
     return flags
+
+
+def writes_and_factory(command: str):
+    """(the G files a Bash command writes, whether it opens the factory folder), by
+    segment: an `apply_spec` segment writes its `--out` unless it is a dry run."""
+    written, factory = set(), False
+    for segment in SEGMENTS.split(command):
+        if "apply_spec" in segment and "--dry-run" not in segment:
+            written |= set(re.findall(r"--out[=\s]+['\"]?\S*?(part-\d+)/(G[1-4])\.xml", segment))
+        if FACTORY.lower() in segment.lower() or FACTORY_PREFIX in segment.lower():
+            factory = True
+    return written, factory
 
 
 def audit(path: pathlib.Path, sandbox: str):
     """[(kind, tool, text)] for one transcript."""
     sandbox = os.path.normpath(sandbox)
     flags, searches, fetches = [], 0, 0
-    calls = []
+    calls, cwd = [], str(PLUGIN_ROOT)
     for line in path.read_text().splitlines():
         entry = json.loads(line)
+        cwd = entry.get("cwd") or cwd
         for block in (entry.get("message") or {}).get("content") or []:
             if isinstance(block, dict) and block.get("type") in ("tool_use", "tool_result"):
-                calls.append(block)
-    g_written, factory_seen = set(), None
-    for i, block in enumerate(calls):
+                calls.append((block, cwd))
+    g_written, before, after, factory_seen = set(), set(), set(), False
+    for block, cwd in calls:
         if block["type"] == "tool_result":
-            text = _text(block.get("content"))
+            # Claude Code's own note after a command that left the project names it.
+            text = CWD_NOTE.sub("", _text(block.get("content")))
             for bad in BAD_IN_RESULTS:
                 if re.search(bad, text):
                     flags.append((f"result names {bad}", "result", ""))
             continue
         name, args = block.get("name"), block.get("input") or {}
         shown = json.dumps(args)[:200]
-        if name not in ("WebSearch", "WebFetch") and FACTORY in json.dumps(args):
-            factory_seen = i if factory_seen is None else factory_seen
         if name in FORBIDDEN_TOOLS:
             flags.append(("forbidden tool", name, shown))
         elif name == "Bash":
             command = args.get("command", "")
-            flags += [(k, name, command[:200]) for k in bash_flags(command, sandbox)]
-            if "apply_spec" in command and "--dry-run" not in command:
-                g_written |= set(re.findall(r"\b(part-\d+)/(G[1-4])\.xml", command))
+            flags += [(k, name, command[:200]) for k in bash_flags(command, sandbox, cwd)]
+            written, factory = writes_and_factory(command)
+            g_written |= written
+            (after if factory_seen else before).update(written)
+            factory_seen = factory_seen or factory
         elif name == "WebSearch":
             searches += 1
             blocked = set(args.get("blocked_domains") or [])
@@ -145,31 +180,32 @@ def audit(path: pathlib.Path, sandbox: str):
             if re.search(r"github\.com|githubusercontent", args.get("url", "")):
                 flags.append(("github fetch", name, shown))
         elif name not in ("StructuredOutput", "SubagentHandback", "TodoWrite", "ToolSearch"):
+            writes = name in ("Write", "Edit", "NotebookEdit")
             paths = [str(args[k]) for k in PATH_KEYS if args.get(k)]
+            pattern = str(args.get("pattern") or "") if name == "Glob" else ""
+            if name == "Glob" and not paths and pattern.startswith("/"):
+                fixed = re.split(r"[*?\[{]", pattern, maxsplit=1)[0]
+                paths = [fixed.rstrip("/") or "/"]
             if not paths:
                 flags.append(("no explicit path", name, shown))
-            writes = name in ("Write", "Edit", "NotebookEdit")
             for p in paths:
-                if not os.path.isabs(p) or not inside(p, sandbox, read_factory=not writes):
+                if not os.path.isabs(p) or not inside(p, sandbox, sandbox, read_factory=not writes):
                     flags.append(("path outside the sandbox", name, p[:200]))
-            for key in ("pattern", "glob"):
-                pattern = str(args.get(key) or "")
-                if name in ("Glob", "Grep") and (pattern.startswith(("/", "~")) or ".." in pattern):
-                    flags.append(("pattern climbs out", name, shown))
-            if writes:
-                g_written |= set(re.findall(r"\b(part-\d+)/(G[1-4])\.xml", paths[0] if paths else ""))
+            climbing = pattern if name == "Glob" else str(args.get("glob") or "")
+            if ".." in climbing or (climbing.startswith(("/", "~")) and
+                                    not inside(climbing.split("*")[0] or "/", sandbox, sandbox)):
+                flags.append(("pattern climbs out", name, shown))
+            if name in ("Read", "Glob", "Grep") and any(
+                    p.lower().startswith(FACTORY.lower()) for p in paths):
+                factory_seen = True
+            if writes and paths:
+                for found in re.findall(r"(part-\d+)/(G[1-4])\.xml", paths[0]):
+                    g_written.add(found)
+                    (after if factory_seen else before).add(found)
     if searches > SEARCHES or fetches > FETCHES:
         flags.append(("over the web limit", "web", f"{searches} searches, {fetches} fetches"))
-    if factory_seen is not None:
-        # Every G written before the factory folder is first touched.
-        before = set()
-        for block in calls[:factory_seen]:
-            if block["type"] == "tool_use" and block.get("name") == "Bash":
-                command = (block.get("input") or {}).get("command", "")
-                if "apply_spec" in command and "--dry-run" not in command:
-                    before |= set(re.findall(r"\b(part-\d+)/(G[1-4])\.xml", command))
-        if not g_written <= before or not before:
-            flags.append(("factory opened before every G was written", "order", ""))
+    if factory_seen and (not before or after):
+        flags.append(("factory opened before every G was written", "order", ""))
     return flags
 
 

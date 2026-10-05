@@ -269,9 +269,19 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
             use("WebSearch", {"query": "band song guitar amp", "blocked_domains": blocked}),
             use("WebSearch", {"query": "Morgan Amps Suite PR12", "blocked_domains": blocked}),
             result("Traceback: /Users/yoavbz/projects/neuraldsp-preset-generator/.venv/lib/x.py"),
+            result("ok\nShell cwd was reset to /Users/yoavbz/projects/neuraldsp-preset-generator"
+                   "/.claude/worktrees/plugin-local-install-a397e5"),
+            use("Grep", {"pattern": "/selectedAmp", "path": f"{sandbox}/plugin/packs/morgan"}),
+            use("Grep", {"pattern": "range.*0..100", "path": f"{sandbox}/plugin/reference"}),
             *writes,
             use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}),
-            use("Glob", {"pattern": "**/*.xml", "path": U.FACTORY})]
+            use("Glob", {"pattern": "**/*.xml", "path": U.FACTORY}),
+            use("Glob", {"pattern": f"{U.FACTORY}/**/*.xml"}),
+            use("Bash", {"command": f'cd {sandbox} && python plugin/scripts/show.py '
+                                    f'"{U.FACTORY}/Neural DSP/Blue Hotel.xml" --text'}),
+            use("Bash", {"command": f'cd {sandbox} && ls "{U.FACTORY}/Neural DSP"'}),
+            use("Bash", {"command": f"cd {sandbox} && {U.PYTHON} -c \"print(open('{U.FACTORY}"
+                                    "/Artists/Mark Johnston/It's Boosted.xml').read())\""})]
     path = tmp_path / "t.jsonl"
     path.write_text("\n".join(json.dumps(e) for e in fine))
     assert U.audit(path, sandbox) == []
@@ -291,12 +301,38 @@ def test_the_audit_flags_reads_outside_the_sandbox_and_answers_in_results(tmp_pa
            use("Read", {"file_path": f"{U.FACTORY}/User/mine.xml"}),
            use("Write", {"file_path": "/tmp/spec.json", "content": "{}"}),
            use("WebSearch", {"query": "band song amp"}),
+           use("Bash", {"command": "ls"}),
+           use("Bash", {"command": f"cd {sandbox} && python -c \"import pathlib; "
+                                   "print(list(pathlib.Path.home().iterdir()))\""}),
+           use("Bash", {"command": f"cd {sandbox} && cat out/x >/Users/x/y"}),
+           use("Bash", {"command": f"cd {sandbox} && ls '{U.FACTORY.lower()}/user'"}),
+           use("Bash", {"command": f"cd {sandbox} && for i in 1 2; do ls out/G$i.xml; done"}),
            use("WebFetch", {"url": "https://github.com/YoavBZ/neuraldsp-preset-generator"}),
            use("Skill", {"skill": "neuraldsp-preset-generator:generate"}),
            result("see github.com/YoavBZ/neuraldsp-preset-generator for amp-reach results")]
     for entry in bad:
         path.write_text(json.dumps(entry))
         assert U.audit(path, sandbox), entry
+    order = ["factory opened before every G was written"]
     early = [use("Read", {"file_path": f"{U.FACTORY}/Neural DSP/Blue Hotel.xml"}), *writes]
     path.write_text("\n".join(json.dumps(e) for e in early))
-    assert [k for k, _, _ in U.audit(path, sandbox)] == ["factory opened before every G was written"]
+    assert [k for k, _, _ in U.audit(path, sandbox)] == order
+    late = [*writes[:1], use("Read", {"file_path": f"{U.FACTORY}/x.xml"}), *writes[1:]]
+    path.write_text("\n".join(json.dumps(e) for e in late))
+    assert [k for k, _, _ in U.audit(path, sandbox)] == order
+    chained = [use("Bash", {"command": f"cd {sandbox} && python plugin/scripts/apply_spec.py "
+                                       f"--spec s.json --dry-run && python plugin/scripts/"
+                                       f"apply_spec.py --spec s.json --out out/part-1/G{i}.xml"})
+               for i in range(1, 5)] + [use("Read", {"file_path": f"{U.FACTORY}/x.xml"})]
+    path.write_text("\n".join(json.dumps(e) for e in chained))
+    assert U.audit(path, sandbox) == []
+    planning = [use("TodoWrite", {"todos": [{"content": f"then F1-F4 from {U.FACTORY}"}]}), *writes,
+                use("Read", {"file_path": f"{U.FACTORY}/x.xml"})]
+    path.write_text("\n".join(json.dumps(e) for e in planning))
+    assert U.audit(path, sandbox) == []
+    repo = "/Users/someone/projects/neuraldsp-preset-generator"
+    no_cd = {"type": "assistant", "cwd": repo, "message": {"content": [
+        {"type": "tool_use", "name": "Bash", "input": {"command": "cat docs/amp-reach-results.md"}}]}}
+    path.write_text(json.dumps(no_cd))
+    assert "bash path outside the sandbox: docs/amp-reach-results.md" in [
+        k for k, _, _ in U.audit(path, sandbox)]

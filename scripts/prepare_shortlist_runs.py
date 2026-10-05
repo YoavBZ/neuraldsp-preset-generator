@@ -115,9 +115,11 @@ and the web.
 
 - Read nothing on disk outside `{sandbox}` and the factory folder.
 - Every Bash command starts with `cd {sandbox} &&` and uses paths inside the sandbox
-  (or the factory folder); no other `cd`, no `..` out of the sandbox, no `~`, `$HOME`
-  or command substitution. Read, Grep and Glob always get an absolute path inside the
-  sandbox or the factory folder.
+  (or the factory folder); no other `cd`, no `..` out of the sandbox, no `~`. No `$`
+  anywhere: no shell variables, loops, `awk` fields or regex anchors. Write each
+  command out in full.
+- Read, Grep and Glob always get an absolute folder or file inside the sandbox or the
+  factory folder as `path` (`file_path` for Read); keep Glob patterns relative to it.
 - Web: WebSearch and WebFetch only, at most {searches} searches and {fetches} fetches
   for this song in total. Pass `blocked_domains: ["github.com",
   "githubusercontent.com"]` on every WebSearch, and don't open github.com. Download
@@ -134,8 +136,9 @@ and the web.
 ## What to produce, per part, in this order
 
 1. **G1:** the one preset you would deliver to the user today, written as the skill
-   says, with `apply_spec.py` from the template above (dry-run first, then write) to
+   says, with `apply_spec.py` from the template above to
    `{sandbox}/out/<part>/G1.xml`, its spec kept as `{sandbox}/out/<part>/G1.spec.json`.
+   Run the dry run and the write as two separate commands.
 2. **G2–G4:** three alternatives you would want the user to hear next to G1, written
    the same way (`G2.xml` … `G4.xml`). Across G1–G4 use at least two of the three amps
    (AC20, PR12, SW50R), and make them differ in amp, gain, drive, EQ or cab, not only
@@ -401,6 +404,9 @@ def sound(path: pathlib.Path, scored: bool = False) -> frozenset:
 def remade(sandbox: pathlib.Path, clean: pathlib.Path, args) -> pathlib.Path | str:
     """The preset `apply_spec.py` writes from a clean export's template and recipes with
     `args` (spec paths relative to the sandbox), or why the arguments are refused."""
+    # `--flag=value` is the same as `--flag value`; `--force` changes nothing here.
+    args = [x for a in args for x in (a.split("=", 1) if a.startswith("--") and "=" in a
+                                      else [a]) if x != "--force"]
     i = 0
     while i < len(args):
         flag = args[i]
