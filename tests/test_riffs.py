@@ -76,8 +76,7 @@ def test_a_cut_starts_before_the_pick_attack_and_fades_at_both_ends():
 
 
 def test_an_audition_with_no_riff_to_play_stops_before_making_a_folder(tmp_path, monkeypatch):
-    import pytest
-
+    pytest.importorskip("numpy", reason="needs the analysis extra")
     monkeypatch.setattr(A, "RIFFS", tmp_path / "none")
     monkeypatch.setattr(sys, "argv", ["audition.py", "--song", str(tmp_path / "s.wav"),
                                       "--start", "0", "--out-dir", str(tmp_path / "page"),
@@ -88,8 +87,6 @@ def test_an_audition_with_no_riff_to_play_stops_before_making_a_folder(tmp_path,
 
 
 def test_a_changed_shipped_riff_is_refused_not_skipped(tmp_path, monkeypatch):
-    import pytest
-
     riffs = tmp_path / "riffs"
     riffs.mkdir()
     (riffs / "chords.flac").write_bytes(b"not the riff")
