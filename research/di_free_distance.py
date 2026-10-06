@@ -420,7 +420,7 @@ def score_row(table, judged, clean, targets, bands, kind: str, menu: list) -> di
     """A row's regret, agreement and readings on one menu, against one kind of reference.
     A part's figure over its donors is the median over donor bands of each band's
     median, so every donor band counts once."""
-    regrets, agreements, own_share = {}, {}, {}
+    regrets, agreements, own_share, own_regret, own_raw = {}, {}, {}, {}, []
     per_amp = collections.defaultdict(dict)
     for p in targets:
         if (kind, p) not in table:
@@ -451,7 +451,15 @@ def score_row(table, judged, clean, targets, bands, kind: str, menu: list) -> di
                 mixed.update({("own", c): by_donor[p][c] for c in dist
                               if finite(by_donor[p].get(c))})
                 own_q[q] = float(min(mixed, key=mixed.get)[0] == "own")
+                own_raw.append(own_q[q])
         regrets[p] = band_stat(regret_q, bands)
+        if p in by_donor:
+            # Added after the run: the row's pick among the part's own-DI renders (the
+            # same notes as the reference), against the judge's best.
+            own = {c: v for c, v in by_donor[p].items() if c in menu and finite(v)}
+            if own:
+                own_regret[p] = regret_of({c: judged[p][c] for c in menu},
+                                          min(own, key=own.get))
         agreements[p] = band_stat(rho_q, bands)
         if own_q:
             own_share[p] = band_stat(own_q, bands)
@@ -463,6 +471,8 @@ def score_row(table, judged, clean, targets, bands, kind: str, menu: list) -> di
         "per_band_regret": band_medians(regrets, bands),
         "per_amp_regret": {a: band_stat(v, bands) for a, v in per_amp.items()},
         "own_di_share": band_stat(own_share, bands) if own_share else None,
+        "own_di_share_raw": statistics.mean(own_raw) if own_raw else None,
+        "own_di_regret": band_stat(own_regret, bands) if own_regret else None,
     }
 
 
@@ -491,6 +501,7 @@ def gate(result, bands) -> dict:
                 row_bands = blocks[b][m][name]["reference"]["per_band_regret"]
                 ps[name] = sign_flip_p([row_bands[x] - const_bands[x] for x in sorted(row_bands)])
             tests[(b, m)] = holm(ps)
+            out.setdefault("raw_p", {})[f"{b}/{m}"] = ps
     for name in TESTED:
         verdicts = {}
         for b in BAND_SETS:

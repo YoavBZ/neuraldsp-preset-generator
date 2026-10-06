@@ -46,11 +46,13 @@ lives in the linked documents. Last updated 2026-10-07.
      chords or single notes), and may need more styles (arpeggios, power chords).
 2. **A distance without a DI: hand-made features fail**
    ([plan](di-free-distance-plan.md), [results](di-free-distance-results.md)). None of
-   eight DI-free distances (v3, v3c, log-mel and MFCC statistics, the lean fingerprint,
-   masked spectra, an LDA) picks presets better than a song-blind constant: regret 0.30
-   to 0.48 against 0.36 to 0.42, agreement with the judge at most 0.38. Every one of
-   them prefers a render of the part's own take over every other player's render: the
-   performance swamps the tone. Next, the candidates that need downloads or training:
+   the eight DI-free distances tested beside the v3 baseline (v3c, log-mel and MFCC
+   statistics, the lean fingerprint, masked spectra, an LDA) picks presets clearly
+   better than a song-blind constant: regret 0.30 to 0.48 against 0.36 to 0.42,
+   agreement with the judge at most 0.38. With the part's own notes, the masked spectra
+   pick within the judge's near-tie range (0.04); through another player's notes they
+   fall to the constant (0.36): the performance moves them more than the preset. Next,
+   the candidates that need downloads or training:
    - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
      with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors
      only: once the notes differ they score near chance, and they discard the input

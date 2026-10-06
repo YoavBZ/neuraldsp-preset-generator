@@ -70,7 +70,8 @@ was declared, what was measured, and the research behind it.
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
   [results](di-free-distance-results.md): no hand-made distance without a DI picks
-  presets better than a song-blind constant; every one prefers the take over the tone.
+  presets clearly better than a song-blind constant; they track the tone only when the
+  notes match.
 
 **Settings model and amp choice** (parked)
 - [supervised-model-plan.md](supervised-model-plan.md).
