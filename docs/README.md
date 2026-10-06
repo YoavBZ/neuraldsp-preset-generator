@@ -76,6 +76,9 @@ was declared, what was measured, and the research behind it.
   [results](amp-identifiability-results.md).
 - [amp-reach-plan.md](amp-reach-plan.md) → [results](amp-reach-results.md).
 - [quick-checks-plan.md](quick-checks-plan.md) → [results](quick-checks-results.md).
+- [preset-model-poc-plan.md](preset-model-poc-plan.md) →
+  [results](preset-model-poc-results.md): a trained network on PR12. Not passed, but it
+  reads part-specific information.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
