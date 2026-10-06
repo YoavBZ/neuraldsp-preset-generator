@@ -70,6 +70,7 @@ def main():
     ap.add_argument("--fold", type=int, required=True)
     ap.add_argument("--out", type=pathlib.Path, required=True)
     ap.add_argument("--clips", type=int, default=16)
+    ap.add_argument("--level-diagnostic", action="store_true")
     args = ap.parse_args()
     out = args.out.expanduser()
     out.mkdir(parents=True, exist_ok=True)
@@ -120,6 +121,12 @@ def main():
             flatref = to_lufs(eq_to(rec, avg - (fr - fr.mean())))
             # how close is each DI to the measure's DI (log-mel, level removed)
             dis = {"rebuilt": rebuilt, "flatref": flatref, "measure": measure_di}
+            if args.level_diagnostic:
+                # Is the gap to the oracle the DI's shape or its level? (the level a song
+                # cannot reveal): the measure's DI at the assumed level, and the rebuilt DI
+                # at the true DI's level.
+                dis["measure_assumed"] = to_lufs(measure_di)
+                dis["rebuilt_true"] = rebuilt * np.sqrt(np.mean(measure_di ** 2) / np.mean(rebuilt ** 2))
             renders = {}
             for k, d in dis.items():
                 renderer.render(d.astype(np.float32), {"panel": "template+R"})   # warm-up
@@ -147,8 +154,10 @@ def main():
     finally:
         renderer.close()
     summ = {}
-    for k in ("rebuilt", "flatref", "measure", "best_B"):
+    for k in ("rebuilt", "flatref", "measure", "best_B", "measure_assumed", "rebuilt_true"):
         v = [r[k] for r in rows if r.get(k) is not None]
+        if not v:
+            continue
         summ[k] = {"median": round(statistics.median(v), 4), "mean": round(statistics.mean(v), 4), "n": len(v)}
     paired = [r["rebuilt"] - r["flatref"] for r in rows if r.get("rebuilt") is not None and r.get("flatref") is not None]
     summ["rebuilt_minus_flatref"] = {"median": round(statistics.median(paired), 4),

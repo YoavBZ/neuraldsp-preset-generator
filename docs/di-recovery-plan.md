@@ -162,3 +162,19 @@ with the same choosing procedure. The overnight run starts only if it already be
 - **The lag convention** is −52, measured.
 - **The 0.5-s receptive field** and the MPS cautions are stated.
 - **New cheap checks:** dose-response, the stem path, and a one-hour run.
+
+## Phase 0 T, result (2026-10-07): inconclusive, so no overnight run
+
+- **Run.** One hour of training on K3 fold 0 (4,600 steps). Validation loss fell from
+  105 (the input used as the DI) to 57.
+- **On 16 held-out-band renders**, band median against template+R under the
+  average-guitar measure:
+  - choosing through the rebuilt DI: −0.184 (mean −0.224);
+  - through `flatref`: −0.125 (mean −0.135);
+  - through the measure's own DI (the oracle): −0.355.
+- **Paired, rebuilt against `flatref`:** 6 better, 5 worse, 5 ties, median 0.
+- **Verdict.** The plan required the rebuilt DI to "already beat `flatref`'s choices
+  there" before an overnight run. It doesn't clearly, so none is started.
+- **Diagnostic** (reported, not a gate). How much of the gap to the oracle is the DI's
+  *level* (unknowable from a song) rather than its shape? The check is re-run with the
+  measure's DI at the assumed level, and with the rebuilt DI at the true level.
