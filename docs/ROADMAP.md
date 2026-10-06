@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-06.
+lives in the linked documents. Last updated 2026-10-07.
 
 ## Where the product is
 
@@ -44,20 +44,24 @@ lives in the linked documents. Last updated 2026-10-06.
      through the riff in its own style, measured from its clean recording. The page
      should do the same from the song alone (classifying a separated guitar stem as
      chords or single notes), and may need more styles (arpeggios, power chords).
-2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
-   experiment 4: the judge as teacher). Gate, as declared there: median regret at most
-   0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the
-   judge. If it passes, score against real songs, not amp tracks.
-   - **Neural networks are among the candidates.** Pretrained effect encoders (AFx-Rep,
-     about 1.2 GB to download) and a small CNN's statistics sit beside the hand-made
-     features, with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are
-     floors only: once the notes differ they score near chance, and they discard the
-     input level that carries the drive.
-   - **If no pretrained row passes,** the next candidate is our own contrastive encoder
-     ([round 1](research/round-1-song-only-matching.md), approach 3c). It would be
-     trained on plugin renders of many CC BY DIs, with the same settings through
-     different playing as positives, so it learns the invariance general models lack.
-     Cost: 2–3 weeks and 16k–100k renders per amp.
+2. **A distance without a DI: hand-made features fail**
+   ([plan](di-free-distance-plan.md), [results](di-free-distance-results.md)). None of
+   the eight DI-free distances tested beside the v3 baseline (v3c, log-mel and MFCC
+   statistics, the lean fingerprint, masked spectra, an LDA) picks presets clearly
+   better than a song-blind constant: regret 0.30 to 0.48 against 0.36 to 0.42,
+   agreement with the judge at most 0.38. With the part's own notes, the masked spectra
+   pick within the judge's near-tie range (0.04); through another player's notes they
+   fall to the constant (0.36): the performance moves them more than the preset. Next,
+   the candidates that need downloads or training:
+   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
+     with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors
+     only: once the notes differ they score near chance, and they discard the input
+     level that carries the drive.
+   - **Then our own contrastive encoder**
+     ([round 1](research/round-1-song-only-matching.md), approach 3c), trained with the
+     same settings through different playing as positives, so it learns the invariance
+     the hand-made features lack. The panels already hold every preset through 43
+     players' DIs; a full run is 2–3 weeks and 16k–100k renders per amp.
 3. **The derived-DI route** (experiment 5): does the judge's ranking survive an
    imperfect DI? Only if it does is DI recovery worth tracking.
 4. **The judge's coverage.**
@@ -109,4 +113,5 @@ lives in the linked documents. Last updated 2026-10-06.
 | 2026-10-05 | Research not shown to beat the template or chance at picking presets; choosing among four helps with a perfect ear | [song-only shortlist](song-only-shortlist-results.md) |
 | 2026-10-05 | `generate` offers four presets on a listening page; riffs from Guitar-TECHS P1 (CC BY 4.0) ship in `samples/riffs/` | `skills/generate/SKILL.md` step 5b |
 | 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
+| 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

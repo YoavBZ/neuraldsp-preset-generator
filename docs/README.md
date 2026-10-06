@@ -67,6 +67,12 @@ was declared, what was measured, and the research behind it.
   (a void sitting); for some songs the listener could not find the guitar or compare
   tone across different notes.
 
+**Song-only distance** (current)
+- [di-free-distance-plan.md](di-free-distance-plan.md) →
+  [results](di-free-distance-results.md): no hand-made distance without a DI picks
+  presets clearly better than a song-blind constant; they track the tone only when the
+  notes match.
+
 **Settings model and amp choice** (parked)
 - [supervised-model-plan.md](supervised-model-plan.md).
 - Kill tests: [kill-test-k3-plan.md](kill-test-k3-plan.md),
