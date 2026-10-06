@@ -213,7 +213,7 @@ def score(out: pathlib.Path, tag: str):
 def summarise(results):
     """K3's rule and statistics. A part the judge refuses for the model, but not for
     template+R, counts as a loss rather than leaving the count."""
-    sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
+    sys.path.insert(0, str(PLUGIN_ROOT / "research"))
     import kill_tests as K
 
     out = {}

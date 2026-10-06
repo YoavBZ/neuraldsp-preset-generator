@@ -86,3 +86,29 @@ part-specific information on clean PR12, but it is not useful yet. The next iter
 
 Outputs (local): `~/ndsp-presets/learn/poc/eval/results-run1.json`, renders in
 `renders-run1/`, the models in `models/`, and the verifier's scripts in `/tmp/verify/`.
+
+## Follow-up, 2026-10-06: a perfectly known tone curve is worth little
+
+Run by `learn/oracle.py` before the next model was planned. Model choices were not
+tuned on it.
+- **What ran.** For K1's 25 parts, the real long-term transfer curve was measured on
+  half A with the part's own DI. Settings were then chosen to reproduce it, in two ways:
+  - through a learned stand-in for PR12, settings to curve (`learn/forward.py`);
+  - as the nearest curve among the 18,843 rendered settings.
+- **Scoring.** The picks were scored on half B by the judge, as K1 scores its oracle.
+
+| choose by | band median vs template+R (recording / union) | parts closer | band p (two-sided) |
+|---|---|---|---|
+| the stand-in, fitted to the true curve | +0.049 / +0.235 | 8 / 7 of 23 | 0.53 / 0.32 |
+| the nearest library curve | −0.051 / −0.047 | 15 / 14 of 23 | 0.027 / 0.035 |
+| the judge on half A, 21 clean presets (K1 oracle) | −0.192 / −0.206 | 22 / 20 of 23 | 0.008 / 0.008 |
+
+What this means:
+- **The stand-in can't be trusted.** It is too inaccurate to invert. Held-out, it
+  errs by 3.5–4.5 dB per band, against 4.1–5.3 dB for a constant curve.
+- **A known long-term curve buys about 5%; choosing by the judge buys about 20%.**
+  "Learn the tone curve, then fit settings" is therefore capped well below the bar,
+  even with a perfect curve.
+- **What carries the value is the judge's aligned, moment-by-moment comparison**,
+  which needs the take's DI. That points to DI recovery, which
+  `di-robustness-plan.md` tests first.
