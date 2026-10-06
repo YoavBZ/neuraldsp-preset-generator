@@ -1,0 +1,3579 @@
+{
+ "schema": "validation-set3-1",
+ "declared": "2026-10-07",
+ "catalog": {
+  "path": "~/ndsp-presets/references/datasets-set3/catalog.json",
+  "sha256": "46e4ac3da2fdbe13f6898b55284b2d633f36d7784a2e3b534c8de1b8888e842f",
+  "schema": "validation-datasets-set3-1"
+ },
+ "crops_root": "~/ndsp-presets/references/validation-crops-set3",
+ "seed": 20261007,
+ "rules": {
+  "same_take": "waveform test (catalog rules.supplementary_pairing), adopted for set 3 as a stated departure from the envelope test",
+  "min_passing_waveform_windows": 3,
+  "clipped_di_runs": 10,
+  "two_lag_clusters": "catalogue flag 'lag ambiguous'",
+  "development_only_bands": {
+   "Eat The Feeder": "its 'Today's The Day' is a set-2 development session"
+  },
+  "band_stratum": "most common session-level gain class over the band's tones; ties to the cleaner class",
+  "held_out_draw": "rng = random.Random(20261007); for each stratum in ['clean', 'crunch', 'high-gain']: sorted(rng.sample(sorted(eligible bands), 2))",
+  "pinned_folds": {
+   "Eat The Feeder": 2
+  },
+  "fold_draw": "then dev = sorted(development bands not pinned); rng.shuffle(dev); order = [unpinned folds ascending] + [pinned folds]; fold = order[index % 4]; pinned bands keep their K3 fold",
+  "judge_lag": "lag_samples - 52 (48 kHz)",
+  "lag_sign": "positive when the amp track is later than the DI"
+ },
+ "band_strata": {
+  "Crazy Swedes": "crunch",
+  "Death Of A Romantic": "high-gain",
+  "Diesel13": "clean",
+  "Dunning Kruger": "clean",
+  "Eat The Feeder": "crunch",
+  "Hollow Ground": "high-gain",
+  "Magician's Nephew": "crunch",
+  "Rebuild The Evil": "high-gain",
+  "Renesans": "high-gain",
+  "Scott Elliott": "high-gain",
+  "Silence Is Near": "crunch",
+  "Silona": "clean",
+  "Szymon Skiba": "crunch",
+  "Timo And The Timezone": "clean",
+  "Turbosauro": "clean",
+  "V.M.GY": "high-gain",
+  "Wall Of Death": "crunch"
+ },
+ "held_out_draw": {
+  "clean": [
+   "Dunning Kruger",
+   "Silona"
+  ],
+  "crunch": [
+   "Crazy Swedes",
+   "Silence Is Near"
+  ],
+  "high-gain": [
+   "Scott Elliott",
+   "V.M.GY"
+  ]
+ },
+ "held_out_bands": [
+  "Crazy Swedes",
+  "Dunning Kruger",
+  "Scott Elliott",
+  "Silence Is Near",
+  "Silona",
+  "V.M.GY"
+ ],
+ "folds": {
+  "0": [
+   "Diesel13",
+   "Hollow Ground",
+   "Timo And The Timezone"
+  ],
+  "1": [
+   "Renesans",
+   "Turbosauro",
+   "Wall Of Death"
+  ],
+  "2": [
+   "Death Of A Romantic",
+   "Eat The Feeder",
+   "Rebuild The Evil"
+  ],
+  "3": [
+   "Magician's Nephew",
+   "Szymon Skiba"
+  ]
+ },
+ "licences": {
+  "cambridge": "Cambridge-MT 'Mixing Secrets' multitrack library: provided for educational purposes only; not to be used for any commercial purpose without the express permission of the copyright holders (each session's Readme.txt). https://cambridge-mt.com/ms/mtk/",
+  "telefunken": "TELEFUNKEN Live From The Lab: for home-studio and educational use only, no commercial use; non-commercial reuse must carry: 'All audio files have been engineered and recorded by TELEFUNKEN Elektroakustik and are presented for educational and demonstrational purposes only.' https://www.telefunken-elektroakustik.com/livefromthelab/",
+  "tonetwist": "ToneTwist AFx dataset (Zenodo), CC BY-NC 4.0; calibration only, not validation parts."
+ },
+ "telefunken_attribution": "All audio files have been engineered and recorded by TELEFUNKEN Elektroakustik and are presented for educational and demonstrational purposes only.",
+ "not_obtained": {
+  "reason": "Sessions linked from cambridge-mt.com/ms/mtk/ on multitracks.cambridge-mt.com sit behind a Cloudflare browser challenge and were not downloaded; heavy-genre ones are listed (genre, artist, song).",
+  "count": 52,
+  "sessions": [
+   [
+    "Aggressive Heavy Rock",
+    "Mykey Massacre",
+    "'Don't Please Stay'"
+   ],
+   [
+    "Aggressive Heavy Rock",
+    "Mykey Massacre",
+    "'Open Fire'"
+   ],
+   [
+    "Aggressive Heavy Rock",
+    "Mykey Massacre",
+    "'Struggle City'"
+   ],
+   [
+    "Alternative/Progressive Metal",
+    "The Black Crown",
+    "'Flames'"
+   ],
+   [
+    "Atmospheric Black Metal",
+    "Harvst",
+    "'Wahnmal'"
+   ],
+   [
+    "Celtic Folk Punk",
+    "Rovers Ahead",
+    "'It's In These Times'"
+   ],
+   [
+    "Death Metal",
+    "Inhumanity Vortex",
+    "'Cybermod'"
+   ],
+   [
+    "Death Metal",
+    "Sepulchral Infestation",
+    "'Goregasmic Grotesqueries'"
+   ],
+   [
+    "Grunge/Punk",
+    "Mistrusted",
+    "'Trapped'"
+   ],
+   [
+    "Hard Stoner Punk",
+    "Eat The Feeder",
+    "'Today's The Day'"
+   ],
+   [
+    "Hard Stoner Punk",
+    "Eat The Feeder",
+    "'Wickerman'"
+   ],
+   [
+    "Heavy Electro/Industrial Rock",
+    "In This Place",
+    "'1125'"
+   ],
+   [
+    "Heavy Metal",
+    "Dark Ride",
+    "'Deny Control'"
+   ],
+   [
+    "Industrial Metal",
+    "Tholas P.",
+    "'Such Fine People'"
+   ],
+   [
+    "Industrial Rock",
+    "Boss Fight",
+    "'Droid'"
+   ],
+   [
+    "Italian Grunge Rock",
+    "Cunegonda",
+    "'Guerra Alla Frontiera'"
+   ],
+   [
+    "Melodic Death Metal",
+    "Decypher",
+    "'Unseen'"
+   ],
+   [
+    "Melodic Death Metal",
+    "Umbriferous",
+    "'Sandcastles (Illusion)'"
+   ],
+   [
+    "Melodic Metal",
+    "?",
+    "'Eventide'"
+   ],
+   [
+    "Melodic Metal",
+    "Peppermark",
+    "'Another Feeling'"
+   ],
+   [
+    "Melodic Metal",
+    "Peppermark",
+    "'Interlude'"
+   ],
+   [
+    "Metalcore",
+    "Last Legacy",
+    "'Who's Who In Hell'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Another Life'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Broken Again'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Cold'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Collide'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Crying Rivers'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Pain Remains'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Prisoner'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Toxic'"
+   ],
+   [
+    "Nu Metal",
+    "Daimon B",
+    "'Truth (Found Me)'"
+   ],
+   [
+    "Pop-Punk",
+    "Nova-One Studio",
+    "'Four Graham'"
+   ],
+   [
+    "Progressive Death Metal",
+    "Serapis",
+    "'Morbus Animi'"
+   ],
+   [
+    "Progressive Death Metal",
+    "Serapis",
+    "'The Dark Abyss'"
+   ],
+   [
+    "Progressive Death Metal",
+    "V.M.GY",
+    "'Equilibrium'"
+   ],
+   [
+    "Progressive Death Metal",
+    "V.M.GY",
+    "'Fountain Of Eternal Life'"
+   ],
+   [
+    "Progressive Death Metal",
+    "V.M.GY",
+    "'Purgatory'"
+   ],
+   [
+    "Progressive Death Metal",
+    "V.M.GY",
+    "'The Crown'"
+   ],
+   [
+    "Progressive Heavy Rock",
+    "Perpetual Escape",
+    "'Duty & Memories'"
+   ],
+   [
+    "Progressive Heavy Rock",
+    "Perpetual Escape",
+    "'Into My Dreams'"
+   ],
+   [
+    "Progressive Heavy Rock",
+    "Perpetual Escape",
+    "'Sin Six'"
+   ],
+   [
+    "Progressive Metal",
+    "Violent Bliss",
+    "'Voiceless Siren'"
+   ],
+   [
+    "Progressive Stoner Rock",
+    "Lead Inc",
+    "'The Dice'"
+   ],
+   [
+    "Progressive Stoner Rock",
+    "Lead Inc",
+    "'The Inner Circle'"
+   ],
+   [
+    "Progressive Stoner Rock",
+    "Lead Inc",
+    "'Way Of Life'"
+   ],
+   [
+    "Progressive/Symphonic Metal",
+    "Jack Hutcheson",
+    "'The Machiavellian'"
+   ],
+   [
+    "Progressive/Symphonic Metal",
+    "Jack Hutcheson",
+    "'The Narcissist'"
+   ],
+   [
+    "Progressive/Symphonic Metal",
+    "Jack Hutcheson",
+    "'The Psychopath'"
+   ],
+   [
+    "Screamo Rock",
+    "The Bright Star Alliance",
+    "'Error 404'"
+   ],
+   [
+    "Spanish-language Hard Electro-Rock",
+    "Alas Vector",
+    "'Virus En Mi'"
+   ],
+   [
+    "Symphonic Metal",
+    "Arcadian Alone",
+    "'The Deathless One'"
+   ],
+   [
+    "Upbeat Grunge-Rock",
+    "The Left Backs",
+    "'The Feeling'"
+   ]
+  ]
+ },
+ "counts": {
+  "catalogue_usable": 77,
+  "excluded": 17,
+  "kept": 60,
+  "by_split": {
+   "development": 33,
+   "held_out": 27
+  },
+  "by_split_tones": {
+   "development": 31,
+   "held_out": 22
+  },
+  "by_fold": {
+   "0": 7,
+   "1": 9,
+   "2": 12,
+   "3": 5
+  },
+  "by_split_gain_class": {
+   "development/clean": 5,
+   "development/crunch": 11,
+   "development/high-gain": 17,
+   "held_out/clean": 4,
+   "held_out/crunch": 8,
+   "held_out/high-gain": 15
+  },
+  "by_fold_gain_class": {
+   "0/clean": 3,
+   "0/crunch": 1,
+   "0/high-gain": 3,
+   "1/clean": 2,
+   "1/crunch": 2,
+   "1/high-gain": 5,
+   "2/crunch": 4,
+   "2/high-gain": 8,
+   "3/crunch": 4,
+   "3/high-gain": 1
+  },
+  "onset_check": {
+   "agrees": 41,
+   "disagrees": 7,
+   "unclear": 12
+  }
+ },
+ "sessions": [
+  {
+   "key": "cambridge/CnocAnTursa_Bannockburn_Full",
+   "band": "Cnoc An Tursa",
+   "song": "Bannockburn",
+   "source": "cambridge",
+   "path": "cambridge/CnocAnTursa_Bannockburn_Full",
+   "archive_sha256": "eca694d126359a92241f033feab962c3767dbcee257f600964aa5d0283f1261f",
+   "split": "development",
+   "fold": null,
+   "kept_parts": 0
+  },
+  {
+   "key": "cambridge/DeathOfARomantic_TheWell_Full",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "source": "cambridge",
+   "path": "cambridge/DeathOfARomantic_TheWell_Full",
+   "archive_sha256": "5ebea78d8787a7957ffecb6d77996fe1c8297d940c69a5b3b8ec6b86dbff8560",
+   "split": "development",
+   "fold": 2,
+   "kept_parts": 4
+  },
+  {
+   "key": "cambridge/Diesel13_ColourMeRed_Full",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "source": "cambridge",
+   "path": "cambridge/Diesel13_ColourMeRed_Full",
+   "archive_sha256": "34b3ea8e81202e5728fe4ec76040914ce4abf20c478045eddfd7c21065d4ce95",
+   "split": "development",
+   "fold": 0,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/DunningKruger_EnDance_Full",
+   "band": "Dunning Kruger",
+   "song": "EnDance",
+   "source": "cambridge",
+   "path": "cambridge/DunningKruger_EnDance_Full",
+   "archive_sha256": "2092a55aee698e6998a47d5b2688d9dcdb895c8bd74b117d481fd9654e3b7b66",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1
+  },
+  {
+   "key": "cambridge/DunningKruger_JapanSong_Full",
+   "band": "Dunning Kruger",
+   "song": "Japan Song",
+   "source": "cambridge",
+   "path": "cambridge/DunningKruger_JapanSong_Full",
+   "archive_sha256": "7711613e63137907647c5a8f5d7c72e171bf86ba9805ae2ec7b49c7de7d7bf4c",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0
+  },
+  {
+   "key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "source": "cambridge",
+   "path": "cambridge/EatTheFeeder_Wickerman_Full",
+   "archive_sha256": "78a94f96a0267823a2bb4960c1aa589a54571c78e68d20c33981391dfd93405c",
+   "split": "development",
+   "fold": 2,
+   "kept_parts": 6
+  },
+  {
+   "key": "cambridge/HollowGround_IllFate_Full",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "source": "cambridge",
+   "path": "cambridge/HollowGround_IllFate_Full",
+   "archive_sha256": "ffeb5df5cda366cf9c3f1aebad71eabfee81af33ec65d8fa63c14f84e62356f8",
+   "split": "development",
+   "fold": 0,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "source": "cambridge",
+   "path": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "archive_sha256": "cea61a5b50109710c7ce2d14bda3d42275fd8508397fcd55b40a07fd0dc22190",
+   "split": "development",
+   "fold": 3,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/RebuildTheEvil_BurialOfSilence_Full",
+   "band": "Rebuild The Evil",
+   "song": "Burial Of Silence",
+   "source": "cambridge",
+   "path": "cambridge/RebuildTheEvil_BurialOfSilence_Full",
+   "archive_sha256": "95336294f943f6ad102c6dd659adce6d708f98b40be6d84ae9230a43e823b527",
+   "split": "development",
+   "fold": 2,
+   "kept_parts": 2
+  },
+  {
+   "key": "cambridge/ScottElliott_AeternumVale_Full",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "source": "cambridge",
+   "path": "cambridge/ScottElliott_AeternumVale_Full",
+   "archive_sha256": "50e98a481f7e2fe86e97d425d0fd297b33097db9cfea1583c11ba674ad6b38f5",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 6
+  },
+  {
+   "key": "cambridge/SilenceIsNear_TheForthcomingTurn_Full",
+   "band": "Silence Is Near",
+   "song": "The Forthcoming Turn",
+   "source": "cambridge",
+   "path": "cambridge/SilenceIsNear_TheForthcomingTurn_Full",
+   "archive_sha256": "7fb2444dde1347dd3fc81476702f7ecc41781a15ff62708a9940958f4d17e246",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/Silona_LearningHowToFly_Full",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "source": "cambridge",
+   "path": "cambridge/Silona_LearningHowToFly_Full",
+   "archive_sha256": "acd28b21244ab73194a2c441e816af5dce2baab09abacdbc56a1722311a1a68e",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/StormOfParticles_OfIceAndHopelessFate_Full",
+   "band": "Storm Of Particles",
+   "song": "Of Ice And Hopeless Fate",
+   "source": "cambridge",
+   "path": "cambridge/StormOfParticles_OfIceAndHopelessFate_Full",
+   "archive_sha256": "5fb4f2d61ab073af23fb6e6cb5cc92a7fbaa95dcc7754f12336f492582e9e6e1",
+   "split": "development",
+   "fold": null,
+   "kept_parts": 0
+  },
+  {
+   "key": "cambridge/SzymonSkiba_LetsDance_Full",
+   "band": "Szymon Skiba",
+   "song": "Let's Dance",
+   "source": "cambridge",
+   "path": "cambridge/SzymonSkiba_LetsDance_Full",
+   "archive_sha256": "7047617b9f638766b776dc5d96086df180bdf5fb55629a91d65a3ce2e127109a",
+   "split": "development",
+   "fold": 3,
+   "kept_parts": 2
+  },
+  {
+   "key": "cambridge/TheLongWait_Drag_Full",
+   "band": "The Long Wait",
+   "song": "Drag",
+   "source": "cambridge",
+   "path": "cambridge/TheLongWait_Drag_Full",
+   "archive_sha256": "503f2c1e7dd1c07037aae4e9c0e5aff363cb3119690d81ddf2082eb39e00ddde",
+   "split": "development",
+   "fold": null,
+   "kept_parts": 0
+  },
+  {
+   "key": "cambridge/TimoAndTheTimezone_JustDontTalk_Full",
+   "band": "Timo And The Timezone",
+   "song": "Just Don't Talk",
+   "source": "cambridge",
+   "path": "cambridge/TimoAndTheTimezone_JustDontTalk_Full",
+   "archive_sha256": "6439a8a4051f69daed9a7f4de878cd8edff4659cfc238614fe7d01c61ce6f87e",
+   "split": "development",
+   "fold": 0,
+   "kept_parts": 1
+  },
+  {
+   "key": "cambridge/Turbosauro_Magilla_Full",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "source": "cambridge",
+   "path": "cambridge/Turbosauro_Magilla_Full",
+   "archive_sha256": "5d52d8c9510161e1dc41f58eb9fffb80e935521bda25e576b64766ac80d02eee",
+   "split": "development",
+   "fold": 1,
+   "kept_parts": 4
+  },
+  {
+   "key": "cambridge/VMGY_AureusNecrosis_Full",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "source": "cambridge",
+   "path": "cambridge/VMGY_AureusNecrosis_Full",
+   "archive_sha256": "45fdc5e0aa780a93df0fabfbd6f20747175be22aad35fd3b0bfc17ac630e7cbf",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 4
+  },
+  {
+   "key": "cambridge/VMGY_Bloodshed_Full",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "source": "cambridge",
+   "path": "cambridge/VMGY_Bloodshed_Full",
+   "archive_sha256": "b0acc9a0ccd5cc7509b70acf6349d9f838666e0b5a23e51acc739c2c57a0c284",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3
+  },
+  {
+   "key": "cambridge/VMGY_Omen_Full",
+   "band": "V.M.GY",
+   "song": "Omen",
+   "source": "cambridge",
+   "path": "cambridge/VMGY_Omen_Full",
+   "archive_sha256": "507870179935e0546bf3093412ca234295eeb02ffc5312cb13a346c218110e07",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 4
+  },
+  {
+   "key": "cambridge/WallOfDeath_Femme_Full",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "source": "cambridge",
+   "path": "cambridge/WallOfDeath_Femme_Full",
+   "archive_sha256": "32abcb3b08c1f703d35d8c2ddfceb4bd9c7709bf2cc9d0585c6be358b1bdfceb",
+   "split": "development",
+   "fold": 1,
+   "kept_parts": 3
+  },
+  {
+   "key": "telefunken/Crazy Swedes - Big Trouble",
+   "band": "Crazy Swedes",
+   "song": "Big Trouble",
+   "source": "telefunken",
+   "path": "telefunken/Crazy Swedes - Big Trouble",
+   "archive_sha256": "fc6f52d0b42e9bc300546d28eee75062e51f4fcc416343b62364ccfb582e18b3",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1
+  },
+  {
+   "key": "telefunken/Crazy Swedes - Flight 4",
+   "band": "Crazy Swedes",
+   "song": "Flight #4",
+   "source": "telefunken",
+   "path": "telefunken/Crazy Swedes - Flight 4",
+   "archive_sha256": "25b660d732fd8c294374f3d9e31cb4fc270bcff45bff7ce9cb6f99d560c2db69",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1
+  },
+  {
+   "key": "telefunken/Crazy Swedes - Southern Fried",
+   "band": "Crazy Swedes",
+   "song": "Southern Fried",
+   "source": "telefunken",
+   "path": "telefunken/Crazy Swedes - Southern Fried",
+   "archive_sha256": "8449b901a8c65ee48591c6ca8d4e4b14bffb726468b3766e91f75ca95e5df3eb",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1
+  },
+  {
+   "key": "telefunken/Renesans - Labor Of Hate",
+   "band": "Renesans",
+   "song": "Labor Of Hate",
+   "source": "telefunken",
+   "path": "telefunken/Renesans - Labor Of Hate",
+   "archive_sha256": "152a449f4e3d8e369fa3379214374546fa0dd99621bab42cf5881045d0cdd648",
+   "split": "development",
+   "fold": 1,
+   "kept_parts": 0
+  },
+  {
+   "key": "telefunken/Renesans - Less Than Nothing",
+   "band": "Renesans",
+   "song": "Less Than Nothing",
+   "source": "telefunken",
+   "path": "telefunken/Renesans - Less Than Nothing",
+   "archive_sha256": "6dfd299693b26e6fd85917b6e6998f7a03e760f84c32474e21649863fbbfc25f",
+   "split": "development",
+   "fold": 1,
+   "kept_parts": 1
+  },
+  {
+   "key": "telefunken/Renesans - Split Brow",
+   "band": "Renesans",
+   "song": "Split Brow",
+   "source": "telefunken",
+   "path": "telefunken/Renesans - Split Brow",
+   "archive_sha256": "3e13d727bb702ad9966f4743fcf0d4fa4103cc65116b11ef147819a5b962dd6a",
+   "split": "development",
+   "fold": 1,
+   "kept_parts": 1
+  }
+ ],
+ "parts": [
+  {
+   "slug": "cambridge-the-well-elecgtr01",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/DeathOfARomantic_TheWell_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 53,
+   "judge_lag_samples": 1,
+   "lag_samples_native": 49,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 27,
+    "passing_windows": 27,
+    "median_peak_to_sidelobe": 4.35,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": -628,
+    "runner_up": 0.977
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 24.0,
+    "di_sha256": "032c3e02fb0ce0a1a9542dfb51cb12b35163850925dfed4ce11cb6b199cf3885",
+    "reference_sha256": "512e1239bbc7ce5b2db907faac12277c29c588be8e896b61565154796f7f2986"
+   }
+  },
+  {
+   "slug": "cambridge-the-well-elecgtr02",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/DeathOfARomantic_TheWell_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 53,
+   "judge_lag_samples": 1,
+   "lag_samples_native": 49,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 27,
+    "passing_windows": 27,
+    "median_peak_to_sidelobe": 4.282,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 64,
+    "runner_up": 0.198
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 56.5,
+    "di_sha256": "e5b532c918bbe76799651ee4c6f34147cb342be361cc05a8e5ecf449f87be18c",
+    "reference_sha256": "0a26a9559c898b8b59b22b51d3dcde75b90919d7111246e138af0f4718fa214b"
+   }
+  },
+  {
+   "slug": "cambridge-the-well-elecgtr03",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "part": "ElecGtr03",
+   "tone": "ElecGtr03",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/DeathOfARomantic_TheWell_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 49,
+   "judge_lag_samples": -3,
+   "lag_samples_native": 45,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 4.847,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.646
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 151.0,
+    "di_sha256": "9d3019f6dc2523968b7cb80c2c8dc56e232bdf8f61ad9d200c5a6aa0dce59293",
+    "reference_sha256": "2494ce081396bd56e2624ad3bdb87fc3d9f1bcf493ecb06dc2afcd64a812d194"
+   }
+  },
+  {
+   "slug": "cambridge-the-well-elecgtr04",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "part": "ElecGtr04",
+   "tone": "ElecGtr04",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/DeathOfARomantic_TheWell_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 48,
+   "judge_lag_samples": -4,
+   "lag_samples_native": 44,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 4.944,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 300,
+    "runner_up": 0.998
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 148.0,
+    "di_sha256": "c40dfa901f4e6cfede37e01e2b50ceefc73dacb695e7f78e562a7b965208e840",
+    "reference_sha256": "8d27a294e725a61d7eb758fd9e470a247be4d7a90c293a29beb4e61df4801c84"
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr01",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Diesel13_ColourMeRed_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 40,
+   "judge_lag_samples": -12,
+   "lag_samples_native": 37,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 7.502,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 36,
+    "runner_up": 0.604
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 38.5,
+    "di_sha256": "0a9a4765be6e2e8ebd6dff1aeb2ead908c35687aaf19e185bc52ee9c8bf234e0",
+    "reference_sha256": "a5a2627654d875570ca9a299d319a42aa76d581919fc7fbf2a1807c16d023f7d"
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr02",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Diesel13_ColourMeRed_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 8,
+    "passing_windows": 8,
+    "median_peak_to_sidelobe": 6.118,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 36,
+    "runner_up": 0.39
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 81.5,
+    "di_sha256": "bb6e9fa66e4c50200c74a5c2f6c12691de66d64757ae870c81917fe4e5510f25",
+    "reference_sha256": "a5402cd70aca4499da76dd6ff980007e8b200301d294be060f2c58117f528877"
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr03",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "part": "ElecGtr03",
+   "tone": "ElecGtr03",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Diesel13_ColourMeRed_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary",
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 7,
+    "passing_windows": 7,
+    "median_peak_to_sidelobe": 7.546,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.484
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 67.0,
+    "di_sha256": "dc06e01f03352a1c90f94bfe0c865a35201a83e20c91e67d2a250e7c59644683",
+    "reference_sha256": "859fa751776669e1c1cb3302a3fc07fa0b18c4b937e252324368f2e59f8c35e2"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr1",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 35,
+   "judge_lag_samples": -17,
+   "lag_samples_native": 32,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 7.87,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.838
+   },
+   "marks": [],
+   "catalog_flags": [
+    "other amp tracks of this part sit [7.256] ms from the reference (consistent with a further or room microphone; if not, check for bleed)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 179.0,
+    "di_sha256": "6142626022c3b88eaf53730520daec149448110825b58b4b31c63a59967c23e6",
+    "reference_sha256": "a2eb110d3e2b39ca3c041ab846c9a0858c326c00868574933c3d84e7032ff238"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr2",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 35,
+   "judge_lag_samples": -17,
+   "lag_samples_native": 32,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 7.722,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 144,
+    "runner_up": 0.973
+   },
+   "marks": [],
+   "catalog_flags": [
+    "other amp tracks of this part sit [7.188] ms from the reference (consistent with a further or room microphone; if not, check for bleed)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 170.5,
+    "di_sha256": "51a25592e3812757bebc1bf9e2d6e77626c56f2f7611c40760fc601be0d405e2",
+    "reference_sha256": "aa843b50cb74c63df6c99cda33294a120978d779168bff54663d5da9d6792b22"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr3",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 35,
+   "judge_lag_samples": -17,
+   "lag_samples_native": 32,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 7.904,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": 148,
+    "runner_up": 0.403
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 170.5,
+    "di_sha256": "e3da1a695a5e4a4496069ffbe22a0c0c0b0e76f589660bbd932bc37ef86e117e",
+    "reference_sha256": "580931e7b195e90619213c5419ef93e32f0b84b9089223c322d902caac285421"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr4",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "lag_samples": 384,
+   "judge_lag_samples": 332,
+   "lag_samples_native": 353,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 4.198,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 400,
+    "runner_up": -0.0
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 8.0 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 122.0,
+    "di_sha256": "33c734fe7140af139cfd9a14bce456a4f5275de79bee629054a56478dd4c5b1a",
+    "reference_sha256": "ec2570e27e708d241b788c502f9fb6f770f1cd052baedb1bb185ec4a3e1c5446"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr7",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr7",
+   "tone": "ElecGtr7",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 381,
+   "judge_lag_samples": 329,
+   "lag_samples_native": 350,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 6.401,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 384,
+    "runner_up": 0.121
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 7.9 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 90.0,
+    "di_sha256": "15d72aca1231e7adb035ca204c10675e53c5b0931b95132d8b4e6293a393dfe5",
+    "reference_sha256": "999289d481e2c70f5b88eabcb31e042e8cb19ff485d948f9a11984b9c56d240d"
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr9",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr9",
+   "tone": "ElecGtr9",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 383,
+   "judge_lag_samples": 331,
+   "lag_samples_native": 352,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 8,
+    "passing_windows": 8,
+    "median_peak_to_sidelobe": 6.376,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 372,
+    "runner_up": 0.547
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 8.0 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 180.5,
+    "di_sha256": "95fed5171918d5478e46149521a6e690ab8e43784b8aa8fb93a61db4b88f11da",
+    "reference_sha256": "733c8bd0bec3b65c7ac241a9ebba10d051c7fcf1480b20f1da6ede7f05d325c2"
+   }
+  },
+  {
+   "slug": "cambridge-ill-fate-elecgtr1",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/HollowGround_IllFate_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 50,
+   "judge_lag_samples": -2,
+   "lag_samples_native": 46,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 7.63,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 80,
+    "runner_up": 0.385
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 126.0,
+    "di_sha256": "e8b5c750d8024a4aaa3b22e71831554814b2611d9f87cdfea9044c43c7e2217e",
+    "reference_sha256": "9fb2fe9230d35c30b543a5a8ef3cb256c1b5a6f64e3d1b66de0baa86e068064a"
+   }
+  },
+  {
+   "slug": "cambridge-ill-fate-elecgtr2",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/HollowGround_IllFate_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 50,
+   "judge_lag_samples": -2,
+   "lag_samples_native": 46,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 7.376,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 52,
+    "runner_up": 0.438
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 120.0,
+    "di_sha256": "6c4e97f071c85c7301db6f9ac1c4e5020b4d280e534d65583c1460f0dc6d17a3",
+    "reference_sha256": "df05fb850e678dbc7d2918727b75b3911e29a5be4d53ed10e2f52b729189127d"
+   }
+  },
+  {
+   "slug": "cambridge-ill-fate-elecgtr3",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/HollowGround_IllFate_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 56,
+   "judge_lag_samples": 4,
+   "lag_samples_native": 51,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 7.203,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 12,
+    "runner_up": 1.0
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 123.0,
+    "di_sha256": "c3132d894d61d7049b33eb4aeb46f31bfd5e49e4add8a8687ffdb589d3165d53",
+    "reference_sha256": "935ec8499a0885d8c0777ba7c958b3861fbf1791737216468b0abea6cb8788ea"
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr1",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "development",
+   "fold": 3,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 47,
+   "judge_lag_samples": -5,
+   "lag_samples_native": 43,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 6.058,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": 0.347
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 130.5,
+    "di_sha256": "94b91f75b0169012693b7b9b5ef26d729172adbf700ebf137b04b56163a4cfdd",
+    "reference_sha256": "bcdbbb84720cdfe3c26d401a22bd6685ebbfa17e09fc3b498bee39d217b45f1a"
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr2",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "development",
+   "fold": 3,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 47,
+   "judge_lag_samples": -5,
+   "lag_samples_native": 43,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 6.461,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": 0.563
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 135.0,
+    "di_sha256": "e89a90b2e157e06a61b0b116e8547c35c5145b7ba5ba066d981452b862ab26cd",
+    "reference_sha256": "8634908a3ee486d65251148c42077f88382e3fbbb8205460155b8cabbd2991d3"
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr7",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "part": "ElecGtr7",
+   "tone": "ElecGtr7",
+   "split": "development",
+   "fold": 3,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "lag_samples": 34,
+   "judge_lag_samples": -18,
+   "lag_samples_native": 31,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 5.683,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 36,
+    "runner_up": 0.367
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 151.5,
+    "di_sha256": "f7e4c0cfc506d35a743395a5727a9e235ae3336f84333fbf443132b65d0e436b",
+    "reference_sha256": "02ac2b00a09d21c8692503744e618dd33941f9680a19ddea71103df9ce986ca1"
+   }
+  },
+  {
+   "slug": "cambridge-burial-of-silence-elecgtr3",
+   "band": "Rebuild The Evil",
+   "song": "Burial Of Silence",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/RebuildTheEvil_BurialOfSilence_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 15,
+   "judge_lag_samples": -37,
+   "lag_samples_native": 14,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 6.063,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 0,
+    "runner_up": 0.902
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 124.0,
+    "di_sha256": "2c7e416e2a5175f0ff18f09d2608ad80f32995c7764947d5d8840a08fe57643d",
+    "reference_sha256": "5e8f70a152ef5dde11100679bd89d3c5908d4d8c46fa9bc2b11ff9cb0d148412"
+   }
+  },
+  {
+   "slug": "cambridge-burial-of-silence-elecgtr4",
+   "band": "Rebuild The Evil",
+   "song": "Burial Of Silence",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "development",
+   "fold": 2,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/RebuildTheEvil_BurialOfSilence_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 15,
+   "judge_lag_samples": -37,
+   "lag_samples_native": 14,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 5.364,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": 268,
+    "runner_up": 0.698
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 109.0,
+    "di_sha256": "01ef333e27a473a132e1978418c2608a1cb833fb2b3ce76d1c1f00ad5f243b72",
+    "reference_sha256": "7c22ddf25600520d91fa84bcb966835d6a2c8f06ed02f110e39cbb56da9bedae"
+   }
+  },
+  {
+   "slug": "telefunken-less-than-nothing-gtr-1",
+   "band": "Renesans",
+   "song": "Less Than Nothing",
+   "part": "GTR 1",
+   "tone": "GTR 1",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "high-gain",
+   "session_key": "telefunken/Renesans - Less Than Nothing",
+   "source": "telefunken",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 300,
+   "judge_lag_samples": 248,
+   "lag_samples_native": 601,
+   "native_rate": 96000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 21,
+    "passing_windows": 21,
+    "median_peak_to_sidelobe": 4.93,
+    "precise_fraction": 0.905
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 260,
+    "runner_up": 1.0
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 6.3 ms after the DI: far microphone, reamp or latent processing",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "telefunken",
+   "crop": {
+    "excerpt_start_s": 100.0,
+    "di_sha256": "ff786b225cb0042a42c28985eebd9535f44edd91bce286a2f129be564809c661",
+    "reference_sha256": "e20ff201227e7ff801dcb1124257a997e1a0f6036b1fb360ab0652799e4c61f2"
+   }
+  },
+  {
+   "slug": "telefunken-split-brow-gtr-1",
+   "band": "Renesans",
+   "song": "Split Brow",
+   "part": "GTR 1",
+   "tone": "GTR 1",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "high-gain",
+   "session_key": "telefunken/Renesans - Split Brow",
+   "source": "telefunken",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 300,
+   "judge_lag_samples": 248,
+   "lag_samples_native": 601,
+   "native_rate": 96000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 4.637,
+    "precise_fraction": 0.958
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 0,
+    "runner_up": 1.0
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 6.3 ms after the DI: far microphone, reamp or latent processing",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "telefunken",
+   "crop": {
+    "excerpt_start_s": 209.5,
+    "di_sha256": "7a11983a256371b62742561b995d4cd675db1d313901303e513a04d7ee326fba",
+    "reference_sha256": "5a02a0ad11529160fdd9e14476f6fc8c7cb6a016807d24fc64d42a9fd8776890"
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr3",
+   "band": "Szymon Skiba",
+   "song": "Let's Dance",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 3,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/SzymonSkiba_LetsDance_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 9,
+   "judge_lag_samples": -43,
+   "lag_samples_native": 8,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 13,
+    "passing_windows": 13,
+    "median_peak_to_sidelobe": 6.982,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.837
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 49.5,
+    "di_sha256": "6cda90276f564e7737284893c0f02dcf3c310131793681d4e740f97c481a0a9f",
+    "reference_sha256": "8ae6d4ba4cf2a7576f3c210abbcde2c04e63e2725e5ec556137d8bd9ef7b4273"
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr4",
+   "band": "Szymon Skiba",
+   "song": "Let's Dance",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "development",
+   "fold": 3,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/SzymonSkiba_LetsDance_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "lag_samples": 9,
+   "judge_lag_samples": -43,
+   "lag_samples_native": 8,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 13,
+    "passing_windows": 13,
+    "median_peak_to_sidelobe": 6.716,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.321
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 55.5,
+    "di_sha256": "1e9877ea947ef111df8f36c838fc528c16b199204fc9060f98196adf28bb677c",
+    "reference_sha256": "facfe6a6da0a2a22190fff5028a514746cd260871849e7a891e5e301187c0a2d"
+   }
+  },
+  {
+   "slug": "cambridge-just-don-t-talk-elecgtr3",
+   "band": "Timo And The Timezone",
+   "song": "Just Don't Talk",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 0,
+   "band_stratum": "clean",
+   "session_key": "cambridge/TimoAndTheTimezone_JustDontTalk_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 16,
+   "judge_lag_samples": -36,
+   "lag_samples_native": 15,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 8,
+    "passing_windows": 8,
+    "median_peak_to_sidelobe": 6.599,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 12,
+    "runner_up": 0.351
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 51.5,
+    "di_sha256": "b201de97480c16889f1b27f0e011b120f3dd562fbc7cd75c3b4df0f8498978a6",
+    "reference_sha256": "1c1c1bffdff9c277f981dc4f602a53ae0f7c723108732d5ad182ed783f7b4937"
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Turbosauro_Magilla_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "lag_samples": 8,
+   "judge_lag_samples": -44,
+   "lag_samples_native": 7,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 15,
+    "median_peak_to_sidelobe": 14.067,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 12,
+    "runner_up": 0.422
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 47.5,
+    "di_sha256": "6ed77f6d8606f4b5b2d43b21598ea58f9afc3b4d3e9b25b4def571681c485e4e",
+    "reference_sha256": "9d4a8c98eb3a3bbc523d858c8e5fdca8a60da35179abaf29bc4ce769a96c5088"
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1dt",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "part": "ElecGtr1DT",
+   "tone": "ElecGtr1",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Turbosauro_Magilla_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 8,
+   "judge_lag_samples": -44,
+   "lag_samples_native": 7,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 15,
+    "median_peak_to_sidelobe": 17.799,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 8,
+    "runner_up": 0.463
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr1: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 46.5,
+    "di_sha256": "44c7b3c773d6d243ee2743759726ecfc4b78cfc3e51e7fc9b1311d8350a8738c",
+    "reference_sha256": "54f91232c6582536aabe2d90a8ed22ad0cf4d23d797eb7b890c02db842189982"
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr2",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Turbosauro_Magilla_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 7,
+   "judge_lag_samples": -45,
+   "lag_samples_native": 6,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 6.963,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -8,
+    "runner_up": -25.073
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 219.5,
+    "di_sha256": "7d89d9f1f22e0dd86e73e6bd1617f450bc49d30219fc6b3065d56cef783b88a2",
+    "reference_sha256": "48c83f1b0cc13485194906d900122642f154a925474faa8e40077e1a2aee1641"
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr2dt",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "part": "ElecGtr2DT",
+   "tone": "ElecGtr2",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Turbosauro_Magilla_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 7,
+   "judge_lag_samples": -45,
+   "lag_samples_native": 6,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 8.233,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": -12,
+    "runner_up": 1.0
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr2: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 219.5,
+    "di_sha256": "f21b5e4a8ce578b680479e8173ad9c74107e96f9d9bbde78b167006cbb281c72",
+    "reference_sha256": "46420e0487d96c2e1da691edd9f99ed508441a55d3925f783fbccf96cd0018fc"
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr3",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/WallOfDeath_Femme_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 573,
+   "judge_lag_samples": 521,
+   "lag_samples_native": 526,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 5,
+    "passing_windows": 5,
+    "median_peak_to_sidelobe": 3.536,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": 524,
+    "runner_up": 0.879
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 11.9 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 67.0,
+    "di_sha256": "c38224f864eee88f7bb23ae41d2331d135a9791514ee4272d5f5297369ead53c",
+    "reference_sha256": "abfa2fcb5d98cc2e1d66b6d9775d7cde688fd5af2061ba9886961295f70e68eb"
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr4",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/WallOfDeath_Femme_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 581,
+   "judge_lag_samples": 529,
+   "lag_samples_native": 534,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 4.436,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 520,
+    "runner_up": 0.961
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 12.1 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 142.0,
+    "di_sha256": "1332c02c3aa8113f3f9d79efd8eb543931f731e3e34162abf6d074e0de9f089b",
+    "reference_sha256": "b8a0b8bc8e6e95f291a36454a5589dc74c976b62bcf03ab01d7ebb9eabe18115"
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr5",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "part": "ElecGtr5",
+   "tone": "ElecGtr5",
+   "split": "development",
+   "fold": 1,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/WallOfDeath_Femme_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 86,
+   "judge_lag_samples": 34,
+   "lag_samples_native": 79,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 7.275,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 84,
+    "runner_up": 0.532
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 154.5,
+    "di_sha256": "cba14693c2886dd2503c3de26a9297adfaf6fac42725e783b2331f8b5c848c05",
+    "reference_sha256": "47e7a2f17588677f1e13a63e577a23aad0da0dbc1bd9c7d13f38a6b06f7e4fd1"
+   }
+  },
+  {
+   "slug": "telefunken-big-trouble-gtr",
+   "band": "Crazy Swedes",
+   "song": "Big Trouble",
+   "part": "GTR",
+   "tone": "GTR",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "telefunken/Crazy Swedes - Big Trouble",
+   "source": "telefunken",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "high non-linear share with little compression: effects, bleed or noise rather than gain"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 35,
+   "judge_lag_samples": -17,
+   "lag_samples_native": 35,
+   "native_rate": 48000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 37,
+    "passing_windows": 37,
+    "median_peak_to_sidelobe": 11.26,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.302
+   },
+   "marks": [
+    "effects_or_bleed"
+   ],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "telefunken",
+   "crop": {
+    "excerpt_start_s": 369.0,
+    "di_sha256": "09803f52fbc00ab583c387fa10cdc191147bfa2d316b826131c0bd7491530d34",
+    "reference_sha256": "9be7ad56fa5e97f2ec91aebe2fbfd63b93964f67b5027daf9576012d3d0b6e13"
+   }
+  },
+  {
+   "slug": "telefunken-flight-4-gtr",
+   "band": "Crazy Swedes",
+   "song": "Flight #4",
+   "part": "GTR",
+   "tone": "GTR",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "telefunken/Crazy Swedes - Flight 4",
+   "source": "telefunken",
+   "gain_class": "crunch",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 37,
+   "judge_lag_samples": -15,
+   "lag_samples_native": 37,
+   "native_rate": 48000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 29,
+    "passing_windows": 29,
+    "median_peak_to_sidelobe": 9.961,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.505
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "telefunken",
+   "crop": {
+    "excerpt_start_s": 115.5,
+    "di_sha256": "57d33944c9535d9d4c46302aff368752ab231828e7cb974d9fccc5e5e7859c9d",
+    "reference_sha256": "474a3467970bb05380709804eb8b093dbb0d17fc20d96d2a0c13c0d04c6cb35e"
+   }
+  },
+  {
+   "slug": "telefunken-southern-fried-gtr",
+   "band": "Crazy Swedes",
+   "song": "Southern Fried",
+   "part": "GTR",
+   "tone": "GTR",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "telefunken/Crazy Swedes - Southern Fried",
+   "source": "telefunken",
+   "gain_class": "crunch",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "high non-linear share with little compression: effects, bleed or noise rather than gain"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 36,
+   "judge_lag_samples": -16,
+   "lag_samples_native": 36,
+   "native_rate": 48000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 11.449,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.547
+   },
+   "marks": [
+    "effects_or_bleed"
+   ],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "telefunken",
+   "crop": {
+    "excerpt_start_s": 63.0,
+    "di_sha256": "bb0aa027a3da98ce73bb42e7dacca89ef0b111f6bab7a14f5492a7cd9b87ceec",
+    "reference_sha256": "1ad2978026f22403c3a365b42b3d10665f3a0992eb37aa85615a40c9c2417ac7"
+   }
+  },
+  {
+   "slug": "cambridge-endance-gtr4",
+   "band": "Dunning Kruger",
+   "song": "EnDance",
+   "part": "Gtr4",
+   "tone": "Gtr4",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "clean",
+   "session_key": "cambridge/DunningKruger_EnDance_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 98,
+   "judge_lag_samples": 46,
+   "lag_samples_native": 90,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 6.913,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 96,
+    "runner_up": 0.215
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 140.0,
+    "di_sha256": "bd6b4c239199c1681eefa17c310f888a6097c4aabbf2441635fc51a04c5b73ab",
+    "reference_sha256": "dbe9191a428ad42dedc483ba50423f187b4fd0da809e8d692de730dcc877a699"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr01",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 33,
+    "passing_windows": 33,
+    "median_peak_to_sidelobe": 4.347,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": -0.549
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 327.5,
+    "di_sha256": "26089e347988a4d64e3c1010557a6347c14586cff5d69a5e8d65c45c5b0a020a",
+    "reference_sha256": "17ebb163cd109f0e15c307901e7e1ea1ee0b4175e0a965ef2447079cff8fb31d"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr02",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 33,
+    "passing_windows": 33,
+    "median_peak_to_sidelobe": 4.808,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": -0.457
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 326.0,
+    "di_sha256": "41a25ec898caf2026b5d0129936d973a6ec6cd1c906d2e8b8c25960d2651502e",
+    "reference_sha256": "3f0a7257aad1a08382a54dc6f4a1cac648e9b5da9859b0938e5fabab1ed38c9e"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr03",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr03",
+   "tone": "ElecGtr03",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 30,
+    "passing_windows": 30,
+    "median_peak_to_sidelobe": 4.367,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": -0.316
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 326.0,
+    "di_sha256": "7801c8fe16d3243a0fd0275717b01121381a19b58e6f7f03c8fe2b1471513610",
+    "reference_sha256": "3bc4da1ce0f94972b86eeddc9b3b0f95be8103508bdb247c7840918bddef352b"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr03dt",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr03DT",
+   "tone": "ElecGtr03",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 44,
+   "judge_lag_samples": -8,
+   "lag_samples_native": 40,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 30,
+    "passing_windows": 30,
+    "median_peak_to_sidelobe": 4.638,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": -0.74
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr03: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 326.5,
+    "di_sha256": "ffd221ce3d40bdf06db6ec3bc34fbe5a40b7ce2aa1f5d936257ef9e022e66244",
+    "reference_sha256": "15ff6ea640eecfdc8f60131992ee1a7f27fed4490d33a986bf8c4b4fd8aeca87"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr04",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr04",
+   "tone": "ElecGtr04",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 45,
+   "judge_lag_samples": -7,
+   "lag_samples_native": 41,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 32,
+    "passing_windows": 32,
+    "median_peak_to_sidelobe": 4.791,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": 0.805
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 109.5,
+    "di_sha256": "ed04c1d99493fd3560888daf2b37c29c7ff41011e61eeb1562201796dff177ed",
+    "reference_sha256": "2adb0a686c1b102e4afdc85c7e712277ea99d0127a8425b85aeb59fbb4a39827"
+   }
+  },
+  {
+   "slug": "cambridge-aeternum-vale-elecgtr04dt",
+   "band": "Scott Elliott",
+   "song": "Aeternum Vale",
+   "part": "ElecGtr04DT",
+   "tone": "ElecGtr04",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/ScottElliott_AeternumVale_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 46,
+   "judge_lag_samples": -6,
+   "lag_samples_native": 42,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 32,
+    "passing_windows": 32,
+    "median_peak_to_sidelobe": 4.847,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": 0.756
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr04: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 110.0,
+    "di_sha256": "8ba7664378f724689cea07265b0cc7dac81383258ca02f38cbf609dee8c40117",
+    "reference_sha256": "8a1ebd4f8c167e90b50fa81dde1c4a2208d5495d0a5f606424b623ec924086b1"
+   }
+  },
+  {
+   "slug": "cambridge-the-forthcoming-turn-elecgtr2",
+   "band": "Silence Is Near",
+   "song": "The Forthcoming Turn",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/SilenceIsNear_TheForthcomingTurn_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 74,
+   "judge_lag_samples": 22,
+   "lag_samples_native": 68,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 36,
+    "passing_windows": 36,
+    "median_peak_to_sidelobe": 3.952,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": -16,
+    "runner_up": 0.881
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 359.0,
+    "di_sha256": "12fa8fb74edb0b486e0ec1d1e8f0a62706d28a23cd427649f3afffc72ba708c6",
+    "reference_sha256": "444c51652d93919a2a526fa71d163a534d0b082f8ebb29e1ab4881126eef73ae"
+   }
+  },
+  {
+   "slug": "cambridge-the-forthcoming-turn-elecgtr3",
+   "band": "Silence Is Near",
+   "song": "The Forthcoming Turn",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/SilenceIsNear_TheForthcomingTurn_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 50,
+   "judge_lag_samples": -2,
+   "lag_samples_native": 46,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 36,
+    "passing_windows": 36,
+    "median_peak_to_sidelobe": 2.54,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": -12,
+    "runner_up": 0.64
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 250.0,
+    "di_sha256": "99fdceb443daec19134865e580743649582b8377ee99860c5176671f1b406260",
+    "reference_sha256": "c323c90134cdc9ea28caa73405ae40480cc5d36761355cbd3d9633af6594651d"
+   }
+  },
+  {
+   "slug": "cambridge-the-forthcoming-turn-elecgtr4",
+   "band": "Silence Is Near",
+   "song": "The Forthcoming Turn",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "crunch",
+   "session_key": "cambridge/SilenceIsNear_TheForthcomingTurn_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "lag_samples": 65,
+   "judge_lag_samples": 13,
+   "lag_samples_native": 60,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 37,
+    "passing_windows": 37,
+    "median_peak_to_sidelobe": 4.335,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": -72,
+    "runner_up": 0.679
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 253.5,
+    "di_sha256": "0e92f0028d6a81e3567c00eae6bd60543211f42116deafe1605833eaf87528e2",
+    "reference_sha256": "21c231b7d43334bcbbc0899c517658df205e3ff0aa1cc846d01dceff0469d7ee"
+   }
+  },
+  {
+   "slug": "cambridge-learning-how-to-fly-elecgtr4",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "lag_samples": 88,
+   "judge_lag_samples": 36,
+   "lag_samples_native": 81,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 7.855,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 84,
+    "runner_up": 0.572
+   },
+   "marks": [],
+   "catalog_flags": [
+    "other amp tracks of this part sit [3.923, 13.061] ms from the reference (consistent with a further or room microphone; if not, check for bleed)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 204.0,
+    "di_sha256": "245ee71f8aa27c1f80faaa2f79add789b0e00ed6eb084415bec3fd8ecfe9bafd",
+    "reference_sha256": "bd7a79b4caad86276275e5102cde37eac69544c03efd2040ce9023d13e07480f"
+   }
+  },
+  {
+   "slug": "cambridge-learning-how-to-fly-elecgtr5",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr5",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 88,
+   "judge_lag_samples": 36,
+   "lag_samples_native": 81,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 4.589,
+    "precise_fraction": 0.933
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 72,
+    "runner_up": 0.967
+   },
+   "marks": [],
+   "catalog_flags": [
+    "other amp tracks of this part sit [3.923] ms from the reference (consistent with a further or room microphone; if not, check for bleed)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 205.5,
+    "di_sha256": "c41ed38645590c3e0d236af8aab2c1fa0d080149526f221dd99cb5cb55244342",
+    "reference_sha256": "018201149757e56965ddb8f916874d2bc36e149415f2d918d38c0e7a6e757d1b"
+   }
+  },
+  {
+   "slug": "cambridge-learning-how-to-fly-elecgtr6",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr6",
+   "tone": "ElecGtr6",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "clean",
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "lag_samples": 88,
+   "judge_lag_samples": 36,
+   "lag_samples_native": 81,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 13,
+    "median_peak_to_sidelobe": 5.934,
+    "precise_fraction": 0.867
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 676,
+    "runner_up": 0.981
+   },
+   "marks": [],
+   "catalog_flags": [
+    "other amp tracks of this part sit [3.946, 13.039] ms from the reference (consistent with a further or room microphone; if not, check for bleed)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 127.5,
+    "di_sha256": "9577b534c8ae4b282e215d51c931f76c5b5ba754cbd2cb00cae9170185b19e7c",
+    "reference_sha256": "a399d1056e2070a9205d1b32d2e8a836aee19f8896a7299d967f41f58eacf809"
+   }
+  },
+  {
+   "slug": "cambridge-aureus-necrosis-elecgtr1",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 6.146,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.234
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 65.0,
+    "di_sha256": "cf063ff6c78408f4724161ac32760205e2dd2d9aa7b06d5cc8485477f8246726",
+    "reference_sha256": "dd09f7d862d3093c6decdf984a785bbac3a78f1c860b9cc6a69ea63952d51083"
+   }
+  },
+  {
+   "slug": "cambridge-aureus-necrosis-elecgtr1dt",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr1DT",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 6.033,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -16,
+    "runner_up": 0.271
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr1: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 53.0,
+    "di_sha256": "432c111c6f9eeaac913511f962bce033401913274f588e6b0b1d41911b79cad3",
+    "reference_sha256": "af5406cf0dffd57a9ae095fa279e7bce8cbeafa2bedb669b2bcc8a333bc92fb3"
+   }
+  },
+  {
+   "slug": "cambridge-aureus-necrosis-elecgtr3",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 9,
+    "passing_windows": 9,
+    "median_peak_to_sidelobe": 3.329,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": -28,
+    "runner_up": 0.822
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 155.5,
+    "di_sha256": "361b1da237fe4e6c718f0d0adf86df392a6fb9d549e58cbb8dbed19cd08e99a4",
+    "reference_sha256": "3b517c8e244daa620f129dbc930eddb0576aacae2e8f77bdfc5832da290f308e"
+   }
+  },
+  {
+   "slug": "cambridge-aureus-necrosis-elecgtr5",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr5",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 28,
+   "judge_lag_samples": -24,
+   "lag_samples_native": 26,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 3.73,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.552
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 171.5,
+    "di_sha256": "ee53a8995dc7d65e8e4772d4dfc70c12d4b11bf248bd7d972a64b20f5e43461f",
+    "reference_sha256": "11a56344b0d92321dce5f25cc2b60951d46e3e3c9d15fdcc67a36079ccfd1a16"
+   }
+  },
+  {
+   "slug": "cambridge-bloodshed-elecgtr1",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 13,
+   "judge_lag_samples": -39,
+   "lag_samples_native": 12,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 5.09,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -16,
+    "runner_up": 0.462
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 36.5,
+    "di_sha256": "e4009c2ecead74c1382f1fd5ba6f846bc8a580e5a32c2dc91c2009caa4e1539d",
+    "reference_sha256": "62003fb2912b462610dd5acbd9dad6c8c31a16e4cba0bed2ad4b435fa7e014a5"
+   }
+  },
+  {
+   "slug": "cambridge-bloodshed-elecgtr1dt",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr1DT",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 13,
+   "judge_lag_samples": -39,
+   "lag_samples_native": 12,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 5.106,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -20,
+    "runner_up": 0.445
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr1: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 36.0,
+    "di_sha256": "951ea3f99e6f89ab2bfd6cb7db34986e288b356a290acbcabe16b4c828730174",
+    "reference_sha256": "68691385e792698facaa231db14f4cdcfb121dc014b36fd38e33aeab095bae71"
+   }
+  },
+  {
+   "slug": "cambridge-bloodshed-elecgtr2",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 12,
+   "judge_lag_samples": -40,
+   "lag_samples_native": 11,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 5.342,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 8,
+    "runner_up": 0.563
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 209.0,
+    "di_sha256": "f24244e877af695a155c467aa0bc7271cbf19fca42e0f429140687a94f407221",
+    "reference_sha256": "3e8bc443d7e41eb3d54cd6ea22228c2b24c427640029bc5ab3c3c54d24dd31dd"
+   }
+  },
+  {
+   "slug": "cambridge-omen-elecgtr2",
+   "band": "V.M.GY",
+   "song": "Omen",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Omen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 14,
+   "judge_lag_samples": -38,
+   "lag_samples_native": 13,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 4.903,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 8,
+    "runner_up": -0.009
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (3 flat-topped runs)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 149.0,
+    "di_sha256": "5fde5adfa500f7a705ca295026bb8a5b43d5b21a42404721ddc718080cebc284",
+    "reference_sha256": "5846d8fd37f62fc3ec6054559e756975f2dc3077e90bb9bd8a14ee16efaca894"
+   }
+  },
+  {
+   "slug": "cambridge-omen-elecgtr2dt",
+   "band": "V.M.GY",
+   "song": "Omen",
+   "part": "ElecGtr2DT",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Omen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 15,
+   "judge_lag_samples": -37,
+   "lag_samples_native": 14,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 4.742,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 12,
+    "runner_up": -0.613
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (1 flat-topped runs)",
+    "double of ElecGtr2: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 151.5,
+    "di_sha256": "16d9b066966ce3d2d487154e5c730a9a2355d4fda2af207983e7b197f5a935ac",
+    "reference_sha256": "55e7e514f1da4929415a38fbe88455d8149cafe18f44604f480b2c153fa3c9b3"
+   }
+  },
+  {
+   "slug": "cambridge-omen-elecgtr3",
+   "band": "V.M.GY",
+   "song": "Omen",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Omen_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "lag_samples": 15,
+   "judge_lag_samples": -37,
+   "lag_samples_native": 14,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 7,
+    "passing_windows": 7,
+    "median_peak_to_sidelobe": 5.375,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 16,
+    "runner_up": 0.725
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 223.5,
+    "di_sha256": "a2438b144849349a8cb0e264bc4d44aa2d27760d064261495ed4a4edbdca65ee",
+    "reference_sha256": "6d04e98c6492dc948cd02912c7b1ccba05a48613e0beb68a3a77f2789416fa37"
+   }
+  },
+  {
+   "slug": "cambridge-omen-elecgtr4",
+   "band": "V.M.GY",
+   "song": "Omen",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "band_stratum": "high-gain",
+   "session_key": "cambridge/VMGY_Omen_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "lag_samples": 15,
+   "judge_lag_samples": -37,
+   "lag_samples_native": 14,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "waveform": {
+    "windows": 7,
+    "passing_windows": 7,
+    "median_peak_to_sidelobe": 4.792,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": -284,
+    "runner_up": 0.918
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 216.5,
+    "di_sha256": "e1a23ed0d7d22094ec4f86505f11480488f8c50fa3e7500488db4880806b76b4",
+    "reference_sha256": "aa28d7b55491eaf51d49804769e953a0b07bc6923c6a1b87a0b3f6e00b990f41"
+   }
+  }
+ ],
+ "excluded": [
+  {
+   "session_key": "cambridge/Diesel13_ColourMeRed_Full",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "part": "ElecGtr04",
+   "source": "cambridge",
+   "slug": "cambridge-colour-me-red-elecgtr04",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/DunningKruger_EnDance_Full",
+   "band": "Dunning Kruger",
+   "song": "EnDance",
+   "part": "Gtr6",
+   "source": "cambridge",
+   "slug": null,
+   "reasons": [
+    "no crop"
+   ]
+  },
+  {
+   "session_key": "cambridge/DunningKruger_JapanSong_Full",
+   "band": "Dunning Kruger",
+   "song": "Japan Song",
+   "part": "Gtr5",
+   "source": "cambridge",
+   "slug": "cambridge-japan-song-gtr5",
+   "reasons": [
+    "DI clips (239 flat-topped runs at full scale)"
+   ]
+  },
+  {
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr5",
+   "source": "cambridge",
+   "slug": "cambridge-wickerman-elecgtr5",
+   "reasons": [
+    "DI clips (60 flat-topped runs at full scale)"
+   ]
+  },
+  {
+   "session_key": "cambridge/EatTheFeeder_Wickerman_Full",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "part": "ElecGtr6",
+   "source": "cambridge",
+   "slug": "cambridge-wickerman-elecgtr6",
+   "reasons": [
+    "DI clips (31 flat-topped runs at full scale)"
+   ]
+  },
+  {
+   "session_key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "part": "ElecGtr5",
+   "source": "cambridge",
+   "slug": "cambridge-get-out-of-bed-elecgtr5",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/MagiciansNephew_GetOutOfBed_Full",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "part": "ElecGtr6",
+   "source": "cambridge",
+   "slug": "cambridge-get-out-of-bed-elecgtr6",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr1",
+   "source": "cambridge",
+   "slug": "cambridge-learning-how-to-fly-elecgtr1",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr2",
+   "source": "cambridge",
+   "slug": "cambridge-learning-how-to-fly-elecgtr2",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/Silona_LearningHowToFly_Full",
+   "band": "Silona",
+   "song": "Learning How To Fly",
+   "part": "ElecGtr3",
+   "source": "cambridge",
+   "slug": "cambridge-learning-how-to-fly-elecgtr3",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr2",
+   "source": "cambridge",
+   "slug": "cambridge-aureus-necrosis-elecgtr2",
+   "reasons": [
+    "DI clips (503 flat-topped runs at full scale)"
+   ]
+  },
+  {
+   "session_key": "cambridge/VMGY_AureusNecrosis_Full",
+   "band": "V.M.GY",
+   "song": "Aureus Necrosis",
+   "part": "ElecGtr4",
+   "source": "cambridge",
+   "slug": "cambridge-aureus-necrosis-elecgtr4",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr3",
+   "source": "cambridge",
+   "slug": "cambridge-bloodshed-elecgtr3",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr4",
+   "source": "cambridge",
+   "slug": "cambridge-bloodshed-elecgtr4",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/VMGY_Bloodshed_Full",
+   "band": "V.M.GY",
+   "song": "Bloodshed",
+   "part": "ElecGtr4DT",
+   "source": "cambridge",
+   "slug": "cambridge-bloodshed-elecgtr4dt",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/WallOfDeath_Femme_Full",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "part": "ElecGtr1",
+   "source": "cambridge",
+   "slug": "cambridge-femme-elecgtr1",
+   "reasons": [
+    "two lag clusters (only 67% of windows within 0.25 ms of the median)"
+   ]
+  },
+  {
+   "session_key": "cambridge/WallOfDeath_Femme_Full",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "part": "ElecGtr2",
+   "source": "cambridge",
+   "slug": "cambridge-femme-elecgtr2",
+   "reasons": [
+    "two lag clusters (only 62% of windows within 0.25 ms of the median)"
+   ]
+  }
+ ],
+ "held_out_uses": []
+}
