@@ -25,6 +25,12 @@ CROPS = pathlib.Path(os.path.expanduser("~/ndsp-presets/references/validation-cr
 SR, LATENCY = 48000, 52
 BAND_SETS = ("recording", "union")
 VARIANTS = ("swap", "mild", "swap+mild")
+# Training-free rebuilt DIs (plan amendment): the recording itself, equalised to a
+# typical DI's spectrum at the assumed level; judged with lag 0.
+REBUILT = ("flatref", "flatstem")
+REPORTED = ("avg",)
+STEMS = pathlib.Path(os.path.expanduser("~/ndsp-presets/learn/poc/stems"))
+ASSUMED_LUFS = -22.9
 HALF_A, HALF_B = (1.0, 5.5), (5.5, 10.0)
 SEED = 20261006
 
@@ -112,6 +118,41 @@ def degrade(variant, part, di, others, rng):
     return y * (rms(di) / rms(y))
 
 
+def average_balance(di, others):
+    """The true DI, equalised to the average spectrum of the other folds' DIs."""
+    import numpy as np
+
+    target = np.mean([smoothed_spectrum(o) for b in others for o in others[b]], axis=0)
+    own = smoothed_spectrum(di)
+    y = apply_gain_db(di, (target - target.mean()) - (own - own.mean()))
+    return y * (rms(di) / rms(y))
+
+
+def stem_usable():
+    m = json.loads((STEMS / "manifest.json").read_text())
+    return {p for p, v in m["parts"].items() if v.get("usable")}
+
+
+def recording_for(part, variant):
+    """What the judge compares against on half A: the stem for flatstem, else the amp track."""
+    if variant == "flatstem":
+        return mono(STEMS / "htdemucs_6s" / part / "instrumental_guitar.wav")
+    return mono(CROPS / part / "reference.wav")
+
+
+def rebuilt(variant, part, others):
+    """The recording, equalised to the average DI spectrum of `others`, at −22.9 LUFS."""
+    import numpy as np
+    import pyloudnorm
+
+    x = recording_for(part, variant)
+    target = np.mean([smoothed_spectrum(o) for b in others for o in others[b]], axis=0)
+    own = smoothed_spectrum(x)
+    y = apply_gain_db(x, (target - target.mean()) - (own - own.mean()))
+    lufs = pyloudnorm.Meter(SR).integrated_loudness(y)
+    return y * 10 ** ((ASSUMED_LUFS - lufs) / 20)
+
+
 # --- renders ----------------------------------------------------------------------
 
 def work(job):
@@ -169,7 +210,7 @@ def render(out):
     fold_of, band_of = TR.k3_folds()
     dis = {p: mono(CROPS / p / "di.wav") for p in band_of}
     (out / "di").mkdir(parents=True, exist_ok=True)
-    rng = random.Random(SEED)
+    usable = stem_usable()
     jobs = []
     for p in parts:
         others = {}
@@ -180,6 +221,18 @@ def render(out):
             path = out / "di" / f"{p}--{v}.npy"
             if not path.exists():
                 np.save(path, degrade(v, p, dis[p], others, random.Random(f"{SEED}-{p}-{v}")))
+            jobs.append((p, v))
+        for v in REPORTED:
+            path = out / "di" / f"{p}--{v}.npy"
+            if not path.exists():
+                np.save(path, average_balance(dis[p], others))
+            jobs.append((p, v))
+        for v in REBUILT:
+            if v == "flatstem" and p not in usable:
+                continue
+            path = out / "di" / f"{p}--{v}.npy"
+            if not path.exists():
+                np.save(path, rebuilt(v, p, others))
             jobs.append((p, v))
     workers = 3
     chunks = [(out, jobs[i::workers]) for i in range(workers)]
@@ -208,12 +261,17 @@ def score_part(job):
                                                  render_latency=LATENCY, start_s=HALF_A[0],
                                                  end_s=HALF_A[1], bands=bs).distance
                              for n in names}
-        for v in VARIANTS:
-            ddi = np.load(out / "di" / f"{p}--{v}.npy")
+        for v in VARIANTS + REBUILT + REPORTED:
+            path = out / "di" / f"{p}--{v}.npy"
+            if not path.exists():
+                continue
+            ddi = np.load(path)
+            rec = recording_for(p, v) if v in REBUILT else ref
+            vlag = 0 if v in REBUILT else lag
             dA = {}
             for n in names:
                 x = mono(out / "renders" / v / p / f"{RP._slug(n)}.wav")
-                dA[n] = aligned_distance(ref, x, ddi, lag=lag, render_latency=LATENCY,
+                dA[n] = aligned_distance(rec, x, ddi, lag=vlag, render_latency=LATENCY,
                                          start_s=HALF_A[0], end_s=HALF_A[1], bands=bs).distance
             ok = {n: d for n, d in dA.items() if d is not None}
             res["pick"][f"{v}|{bs}"] = min(ok, key=ok.get) if ok else None
@@ -236,7 +294,7 @@ def score(out):
         res = dict(pool.map(score_part, jobs))
     summary, rows_out = {}, {}
     for bs in BAND_SETS:
-        for v in ["true"] + list(VARIANTS):
+        for v in ["true"] + list(VARIANTS) + list(REBUILT) + list(REPORTED):
             rows = []
             for p in parts:
                 B, A = res[p]["true_B"][bs], res[p]["true_A"][bs]
@@ -244,7 +302,7 @@ def score(out):
                     continue
                 okA = {n: d for n, d in A.items() if d is not None}
                 oracle = min(okA, key=okA.get)
-                pick = oracle if v == "true" else res[p]["pick"][f"{v}|{bs}"]
+                pick = oracle if v == "true" else res[p]["pick"].get(f"{v}|{bs}")
                 if pick is None or B.get(pick) is None or B.get(oracle) is None:
                     continue
                 lt = math.log(B["template+R"])
@@ -263,7 +321,7 @@ def score(out):
                 "bands_mostly_within": bands_near,
                 "same_pick_as_oracle": sum(r["pick"] == r["oracle"] for r in rows),
                 "vs_templateR": stat,
-                "pass": bool(v != "true" and near > n / 2 and bands_near > len(by_band) / 2
+                "pass": bool(v in VARIANTS and near > n / 2 and bands_near > len(by_band) / 2
                              and stat and stat["band_median_log_ratio"] <= math.log(0.9)),
             }
             rows_out[f"{v}|{bs}"] = rows

@@ -75,3 +75,18 @@ Added while the main renders ran, with no result read.
   recording the judge compares against on half A. The half-B score is still against
   the amp track through the true DI.
 - **Status.** Both are reported. They do not change the decision rule above.
+
+## Amendment, 2026-10-06, after the declared verdict: one more reported variant
+
+The declared verdict is in: not passed. **swap** kept a 12–15% gain but agreed with
+the true-DI picks in only 4 of 9 bands, and **swap+mild** fell to 5–10%.
+
+Neither variant's tonal error matches what a rebuilt DI would have. **swap** imposes
+one other band's balance, so its error is the difference between two players. A
+rebuilt DI would carry an average guitar's balance, so its error is one player's
+distance from the average, smaller by about √2 on average.
+
+So one more variant is reported. It does not change the verdict.
+- **`avg`:** the true DI, equalised so that its long-term spectrum takes the average
+  over the other folds' DIs (the same target as `flatref`).
+- It is written before any `avg` result exists.
