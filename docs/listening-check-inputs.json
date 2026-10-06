@@ -1,0 +1,1397 @@
+{
+ "schema": "listening-check-inputs-5",
+ "parts": [
+  "telefunken-Blind_Spots-GTR",
+  "telefunken-Bloomlight-GTR",
+  "cambridge-Drag_Me_Down-ElecGtr4",
+  "telefunken-Farthest_Step-GTR",
+  "telefunken-First_Offering-GTR_2",
+  "telefunken-Fragments-GTR",
+  "telefunken-Gym_Hours-GTR_1",
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+  "telefunken-Long_Way_Home-GTR",
+  "cambridge-Passing_Ships-ElecGtr6",
+  "cambridge-Prodigal-ElecGtr5",
+  "cambridge-Quicksand-ElecGtr1",
+  "telefunken-Russian_Cream-GTR_2",
+  "telefunken-Sculptor's_Request-GTR_2",
+  "cambridge-Signs-ElecGtr2",
+  "cambridge-Today's_The_Day-ElecGtr07"
+ ],
+ "cues": {
+  "telefunken-Blind_Spots-GTR": {
+   "song": "Blind Spots",
+   "band": "Doom Flamingo",
+   "track": "GTR",
+   "how_it_plays": "plays through the whole excerpt, about 5.0 notes a second: busier than most guitar parts",
+   "exposure_db": -3.86
+  },
+  "telefunken-Bloomlight-GTR": {
+   "song": "Bloomlight",
+   "band": "Eggy",
+   "track": "GTR",
+   "how_it_plays": "plays through the whole excerpt, about 2.6 notes a second: sparser than most guitar parts",
+   "exposure_db": -7.37
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "song": "Drag Me Down",
+   "band": "Adam Buckley",
+   "track": "ElecGtr4",
+   "how_it_plays": "plays through the whole excerpt, about 3.4 notes a second: of a middling pace",
+   "exposure_db": -5.48
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "song": "Farthest Step",
+   "band": "Eggy",
+   "track": "GTR",
+   "how_it_plays": "plays through the whole excerpt, about 2.4 notes a second: sparser than most guitar parts",
+   "exposure_db": -1.85
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "song": "First Offering",
+   "band": "Dom McLennon",
+   "track": "GTR 2",
+   "how_it_plays": "plays through the whole excerpt, about 2.0 notes a second: sparser than most guitar parts",
+   "exposure_db": -1.87
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "song": "First Offering",
+   "band": "Dom McLennon",
+   "track": "GTR 1",
+   "how_it_plays": "plays through the whole excerpt, about 3.9 notes a second: of a middling pace",
+   "exposure_db": -7.82
+  },
+  "telefunken-Fragments-GTR": {
+   "song": "Fragments",
+   "band": "Eggy",
+   "track": "GTR",
+   "how_it_plays": "plays through the whole excerpt, about 2.5 notes a second: sparser than most guitar parts",
+   "exposure_db": -3.73
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "song": "Gym Hours",
+   "band": "Dom McLennon",
+   "track": "GTR 1",
+   "how_it_plays": "plays through the whole excerpt, about 4.5 notes a second: busier than most guitar parts",
+   "exposure_db": -5.14
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "song": "Gym Hours",
+   "band": "Dom McLennon",
+   "track": "GTR 2",
+   "how_it_plays": "plays through the whole excerpt, about 4.1 notes a second: of a middling pace",
+   "exposure_db": -8.85
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "song": "It Was My Fault For Waiting",
+   "band": "Atlantis Bound",
+   "track": "ElecGtr2",
+   "how_it_plays": "plays through the whole excerpt, about 5.4 notes a second: busier than most guitar parts",
+   "exposure_db": -3.18
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+   "song": "It Was My Fault For Waiting",
+   "band": "Atlantis Bound",
+   "track": "ElecGtr3",
+   "how_it_plays": "plays through the whole excerpt, about 5.7 notes a second: busier than most guitar parts",
+   "exposure_db": -12.53
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "song": "Long Way Home",
+   "band": "Doom Flamingo",
+   "track": "GTR",
+   "how_it_plays": "plays through the whole excerpt, about 3.3 notes a second: of a middling pace",
+   "exposure_db": -2.07
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "song": "Passing Ships",
+   "band": "The Travelling Band",
+   "track": "ElecGtr6",
+   "how_it_plays": "plays through the whole excerpt, about 9.0 notes a second: busier than most guitar parts",
+   "exposure_db": -1.14
+  },
+  "cambridge-Passing_Ships-ElecGtr2": {
+   "song": "Passing Ships",
+   "band": "The Travelling Band",
+   "track": "ElecGtr2",
+   "how_it_plays": "plays through the whole excerpt, about 2.9 notes a second: sparser than most guitar parts",
+   "exposure_db": -13.28
+  },
+  "cambridge-Passing_Ships-ElecGtr4": {
+   "song": "Passing Ships",
+   "band": "The Travelling Band",
+   "track": "ElecGtr4",
+   "how_it_plays": "plays through the whole excerpt, about 4.0 notes a second: of a middling pace",
+   "exposure_db": -15.09
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "song": "Prodigal",
+   "band": "Starnes And Shah",
+   "track": "ElecGtr5",
+   "how_it_plays": "plays through the whole excerpt, about 2.9 notes a second: sparser than most guitar parts",
+   "exposure_db": -5.69
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "song": "Quicksand",
+   "band": "The Travelling Band",
+   "track": "ElecGtr1",
+   "how_it_plays": "plays through the whole excerpt, about 5.5 notes a second: busier than most guitar parts",
+   "exposure_db": -7.91
+  },
+  "cambridge-Quicksand-ElecGtr2": {
+   "song": "Quicksand",
+   "band": "The Travelling Band",
+   "track": "ElecGtr2",
+   "how_it_plays": "plays through the whole excerpt, about 2.7 notes a second: sparser than most guitar parts",
+   "exposure_db": -12.47
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "song": "Russian Cream",
+   "band": "Dom McLennon",
+   "track": "GTR 2",
+   "how_it_plays": "plays through the whole excerpt, about 3.4 notes a second: of a middling pace",
+   "exposure_db": -5.27
+  },
+  "telefunken-Russian_Cream-GTR_1": {
+   "song": "Russian Cream",
+   "band": "Dom McLennon",
+   "track": "GTR 1",
+   "how_it_plays": "plays through the whole excerpt, about 2.4 notes a second: sparser than most guitar parts",
+   "exposure_db": -10.34
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "song": "Sculptor's Request",
+   "band": "Dom McLennon",
+   "track": "GTR 2",
+   "how_it_plays": "plays through the whole excerpt, about 5.5 notes a second: busier than most guitar parts",
+   "exposure_db": -6.5
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "song": "Sculptor's Request",
+   "band": "Dom McLennon",
+   "track": "GTR 1",
+   "how_it_plays": "plays through the whole excerpt, about 4.0 notes a second: of a middling pace",
+   "exposure_db": -8.88
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "song": "Signs",
+   "band": "Zeno",
+   "track": "ElecGtr2",
+   "how_it_plays": "plays through the whole excerpt, about 4.0 notes a second: of a middling pace",
+   "exposure_db": -1.35
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "song": "Today's The Day",
+   "band": "Eat The Feeder",
+   "track": "ElecGtr07",
+   "how_it_plays": "plays through the whole excerpt, about 4.1 notes a second: of a middling pace",
+   "exposure_db": -8.08
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "song": "Today's The Day",
+   "band": "Eat The Feeder",
+   "track": "ElecGtr10",
+   "how_it_plays": "plays through the whole excerpt, about 3.7 notes a second: of a middling pace",
+   "exposure_db": -8.8
+  }
+ },
+ "distances": {
+  "telefunken-Blind_Spots-GTR": {
+   "recording": {
+    "G1": 6.215339984037262,
+    "G2": 6.812772542808143,
+    "G3": 5.919151147614023,
+    "G4": 6.4424854878448885,
+    "template+R": 4.855782312243314
+   },
+   "union": {
+    "G1": 6.215339984037262,
+    "G2": 6.758227940598331,
+    "G3": 5.919151147614023,
+    "G4": 6.4424854878448885,
+    "template+R": 4.842626078866776
+   }
+  },
+  "telefunken-Bloomlight-GTR": {
+   "recording": {
+    "G1": 3.7603116556056917,
+    "G2": 3.5646150670992776,
+    "G3": 3.2155712458940706,
+    "G4": 4.315758420660075,
+    "template+R": 2.9604775157239698
+   },
+   "union": {
+    "G1": 3.792100931732199,
+    "G2": 3.5646150670992776,
+    "G3": 3.274066651334532,
+    "G4": 4.327014281512052,
+    "template+R": 2.9604775157239698
+   }
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "recording": {
+    "G1": 4.991384820455643,
+    "G2": 2.906938056991081,
+    "G3": 5.759440288060322,
+    "G4": 6.0965137066700885,
+    "template+R": 3.305850490977987
+   },
+   "union": {
+    "G1": 5.251165102637118,
+    "G2": 2.96719651713979,
+    "G3": 6.146512841853126,
+    "G4": 6.561312015128361,
+    "template+R": 3.55241962799991
+   }
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "recording": {
+    "G1": 2.6447604334167933,
+    "G2": 2.56383019643951,
+    "G3": 3.595181969406559,
+    "G4": 3.919109035168676,
+    "template+R": 2.4334999139265636
+   },
+   "union": {
+    "G1": 2.7974813086820443,
+    "G2": 2.661991413288961,
+    "G3": 3.595181969406559,
+    "G4": 4.149607913354196,
+    "template+R": 2.456101259094431
+   }
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "recording": {
+    "G1": 5.3386454660166764,
+    "G2": 5.241199466970723,
+    "G3": 6.256247401841411,
+    "G4": 5.843814174324302,
+    "template+R": 7.221950170935348
+   },
+   "union": {
+    "G1": 6.067204213471951,
+    "G2": 5.770278353217061,
+    "G3": 6.666186078802705,
+    "G4": 6.155606655229803,
+    "template+R": 7.336032667543994
+   }
+  },
+  "telefunken-Fragments-GTR": {
+   "recording": {
+    "G1": 5.122573338104257,
+    "G2": 3.2944566343192814,
+    "G3": 2.371750145650705,
+    "G4": 4.15742756041767,
+    "template+R": 3.7733220459451395
+   },
+   "union": {
+    "G1": 5.122573338104257,
+    "G2": 3.2944566343192814,
+    "G3": 2.371750145650705,
+    "G4": 4.15742756041767,
+    "template+R": 3.7733220459451395
+   }
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "recording": {
+    "G1": 6.062150865543329,
+    "G2": 6.486166419733128,
+    "G3": 6.373301217230016,
+    "G4": 6.740830165425449,
+    "template+R": 6.209155882317137
+   },
+   "union": {
+    "G1": 6.027170510272672,
+    "G2": 6.5434836037645345,
+    "G3": 6.213942007854114,
+    "G4": 6.706286955646405,
+    "template+R": 6.150061843907412
+   }
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "recording": {
+    "G1": 4.321387453247182,
+    "G2": 4.949602978174274,
+    "G3": 3.5514244199373173,
+    "G4": 5.365851484338464,
+    "template+R": 5.997478647175311
+   },
+   "union": {
+    "G1": 4.321387453247182,
+    "G2": 4.949602978174274,
+    "G3": 3.5514244199373173,
+    "G4": 5.365851484338464,
+    "template+R": 5.997478647175311
+   }
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "recording": {
+    "G1": 5.212252911924118,
+    "G2": 4.401238548659077,
+    "G3": 4.797783164697355,
+    "G4": 4.720444025052799,
+    "template+R": 3.555260918201012
+   },
+   "union": {
+    "G1": 5.217981135807318,
+    "G2": 4.359408359290672,
+    "G3": 4.797783164697355,
+    "G4": 4.736252477791565,
+    "template+R": 3.5430024066192516
+   }
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "recording": {
+    "G1": 4.818844429631871,
+    "G2": 3.54377855054009,
+    "G3": 4.29228280688363,
+    "G4": 4.6940664023074925,
+    "template+R": 3.2903794567742364
+   },
+   "union": {
+    "G1": 5.508922641113226,
+    "G2": 3.800224945426553,
+    "G3": 4.557722142002973,
+    "G4": 5.037359615668168,
+    "template+R": 3.491518844627022
+   }
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "recording": {
+    "G1": 7.0114429190520875,
+    "G2": 6.537770713642812,
+    "G3": 5.159903678384551,
+    "G4": 6.591585780305095,
+    "template+R": 6.3021048806920446
+   },
+   "union": {
+    "G1": 6.714903633717799,
+    "G2": 6.472890987746042,
+    "G3": 5.159903678384551,
+    "G4": 6.2972605825635535,
+    "template+R": 5.986488242987341
+   }
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "recording": {
+    "G1": 3.742908516362386,
+    "G2": 4.004100546857497,
+    "G3": 4.505799334670045,
+    "G4": 3.7161467602445133,
+    "template+R": 3.7888119102065274
+   },
+   "union": {
+    "G1": 5.003024939560365,
+    "G2": 5.433846332108299,
+    "G3": 5.876804122207953,
+    "G4": 3.740961723023449,
+    "template+R": 3.982587917441469
+   }
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "recording": {
+    "G1": 5.738252397558331,
+    "G2": 5.624457540879926,
+    "G3": 5.42147443231103,
+    "G4": 4.343718487626391,
+    "template+R": 4.817508297417397
+   },
+   "union": {
+    "G1": 6.784639441902157,
+    "G2": 6.633231141679489,
+    "G3": 7.1348897322782205,
+    "G4": 4.734659619765721,
+    "template+R": 5.329908277855409
+   }
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "recording": {
+    "G1": 4.400407393551973,
+    "G2": 4.017190265724537,
+    "G3": 5.470865953522821,
+    "G4": 4.5599470121839785,
+    "template+R": 6.122230156488636
+   },
+   "union": {
+    "G1": 4.280884016655279,
+    "G2": 4.219594239985087,
+    "G3": 5.4819181064774485,
+    "G4": 4.428378471579389,
+    "template+R": 6.328615087567769
+   }
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "recording": {
+    "G1": 5.050745239217708,
+    "G2": 4.698470327115064,
+    "G3": 4.9421952793164365,
+    "G4": 4.930296717238298,
+    "template+R": 6.567374542644273
+   },
+   "union": {
+    "G1": 5.061482816044386,
+    "G2": 4.602041691130346,
+    "G3": 4.911521004194927,
+    "G4": 4.9254090683823994,
+    "template+R": 6.567374542644273
+   }
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "recording": {
+    "G1": 6.237376446974129,
+    "G2": 5.78806880931534,
+    "G3": 6.10991445041392,
+    "G4": 6.796070179936515,
+    "template+R": 10.397555301908652
+   },
+   "union": {
+    "G1": 6.237376446974129,
+    "G2": 5.78806880931534,
+    "G3": 6.10991445041392,
+    "G4": 6.796070179936515,
+    "template+R": 10.397555301908652
+   }
+  }
+ },
+ "presets": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": "~/shortlist-sandboxes/blind_spots/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/blind_spots/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/blind_spots/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/blind_spots/out/part-1/G4.xml"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": "~/shortlist-sandboxes/bloomlight/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/bloomlight/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/bloomlight/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/bloomlight/out/part-1/G4.xml"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": "~/shortlist-sandboxes/drag_me_down/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/drag_me_down/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/drag_me_down/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/drag_me_down/out/part-1/G4.xml"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": "~/shortlist-sandboxes/farthest_step/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/farthest_step/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/farthest_step/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/farthest_step/out/part-1/G4.xml"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": "~/shortlist-sandboxes/first_offering/out/part-2/G1.xml",
+   "G2": "~/shortlist-sandboxes/first_offering/out/part-2/G2.xml",
+   "G3": "~/shortlist-sandboxes/first_offering/out/part-2/G3.xml",
+   "G4": "~/shortlist-sandboxes/first_offering/out/part-2/G4.xml"
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": "~/shortlist-sandboxes/fragments/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/fragments/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/fragments/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/fragments/out/part-1/G4.xml"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": "~/shortlist-sandboxes/gym_hours/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/gym_hours/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/gym_hours/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/gym_hours/out/part-1/G4.xml"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": "~/shortlist-sandboxes/it_was_my_fault_for_waiting/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/it_was_my_fault_for_waiting/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/it_was_my_fault_for_waiting/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/it_was_my_fault_for_waiting/out/part-1/G4.xml"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": "~/shortlist-sandboxes/long_way_home/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/long_way_home/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/long_way_home/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/long_way_home/out/part-1/G4.xml"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": "~/shortlist-sandboxes/passing_ships/out/part-3/G1.xml",
+   "G2": "~/shortlist-sandboxes/passing_ships/out/part-3/G2.xml",
+   "G3": "~/shortlist-sandboxes/passing_ships/out/part-3/G3.xml",
+   "G4": "~/shortlist-sandboxes/passing_ships/out/part-3/G4.xml"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": "~/shortlist-sandboxes/prodigal/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/prodigal/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/prodigal/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/prodigal/out/part-1/G4.xml"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": "~/shortlist-sandboxes/quicksand/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/quicksand/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/quicksand/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/quicksand/out/part-1/G4.xml"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": "~/shortlist-sandboxes/russian_cream/out/part-2/G1.xml",
+   "G2": "~/shortlist-sandboxes/russian_cream/out/part-2/G2.xml",
+   "G3": "~/shortlist-sandboxes/russian_cream/out/part-2/G3.xml",
+   "G4": "~/shortlist-sandboxes/russian_cream/out/part-2/G4.xml"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": "~/shortlist-sandboxes/sculptor_s_request/out/part-2/G1.xml",
+   "G2": "~/shortlist-sandboxes/sculptor_s_request/out/part-2/G2.xml",
+   "G3": "~/shortlist-sandboxes/sculptor_s_request/out/part-2/G3.xml",
+   "G4": "~/shortlist-sandboxes/sculptor_s_request/out/part-2/G4.xml"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": "~/shortlist-sandboxes/signs/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/signs/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/signs/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/signs/out/part-1/G4.xml"
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": "~/shortlist-sandboxes/today_s_the_day/out/part-1/G1.xml",
+   "G2": "~/shortlist-sandboxes/today_s_the_day/out/part-1/G2.xml",
+   "G3": "~/shortlist-sandboxes/today_s_the_day/out/part-1/G3.xml",
+   "G4": "~/shortlist-sandboxes/today_s_the_day/out/part-1/G4.xml"
+  }
+ },
+ "preset_sha256": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": "e60686774abe5468e980f24952569faf432bf51fb789c42bd14246938fc1ac81",
+   "G2": "8293be8c01887259738fb710ec6db5ad71e6ede33ccefb916ee90965dfbc164b",
+   "G3": "d395eaeede1d536e8144ae1ad83d1ca1e93287e7d2c26dfc5fa79b24f7df570a",
+   "G4": "82be529ab9c970b99239e491211b43661211cc690d956acc5efc812a222ea3c4"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": "f46fcdab2f578d184cde8b146815586d7014b60131753ab951e163cb231c191c",
+   "G2": "2a4b9c68eb885beaae7ea59727a6ec763c2fc7b13780574cf77f01357fd7bdb8",
+   "G3": "d1703b19a7e170144ca510cbaeea3799e14e5d852198309346cb266c9ab1f83d",
+   "G4": "afdee45183a793dce68c7fb485157a5dc4f27ce961030a6e982bc5f5e458b3a9"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": "074f09ef563cf625e40ef495cca29b3da9ed84dc8bea59f54d624fa5e786fa28",
+   "G2": "d28051048e4f813c6500a9121e0dbbe27462fd521bdd2bd4244e071aafae2d6d",
+   "G3": "7b5154f2e6ce6009f91f0055055d6b235e0e2a28006fce943f04a7b9bd062a4d",
+   "G4": "b211197635aba4d4a99fc85b562a9ea547f8df5dbc65e43a171739bbab64bc87"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": "7193f2068617fa68eccc5d88e2db0599ff4504706aada3b09049e5c6441d0c81",
+   "G2": "26ef87d85d1812fe0e5153bfca708d664739014fe5222dff76487d97a0d9a90b",
+   "G3": "6a4a80a150aac0dd01104d73704c0f0737985a008e33e9ffb0e28622ae81c243",
+   "G4": "232ea08cb90fd1c0eb6e181a712635ac351cf63b3ef11c03852764aa92e4bb09"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": "1561e5d72ea6cd8d2ac62c717d2107355127d40dba1c6d3cae56257d2e5323a5",
+   "G2": "7c501ab6bc32d45bba1604f444b8494a7ef87ac7280aa16cc9b5cca675954c40",
+   "G3": "221431f78ebc137e78ba8d01d0adb9d83645b070aa480c51ac10a0f0e9ca9423",
+   "G4": "57ddae7b93df50aaacee92250f7c8cf49c76f6515676743271b9d3fd96cf5a7f"
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": "d462d667a23df2434b698018b3ae380668247836d55289e1bf9579c21b0039cf",
+   "G2": "0f9666c7c29a6e0d72538c70c8cb65f811b97f8db0f7a0ca8ec447648e99c6a1",
+   "G3": "2d3ac35ad207f05622bf146a0cbc886be376d2370615d2776030232383804f02",
+   "G4": "dd44bbfd90805be3458d42e4677787fac6ca6272f3110dc89f2ac0519c1ea69d"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": "ee4eee13cb7290d315ad6fac1221f9d3fec0be134599a48fb06b7eb6ae004f8a",
+   "G2": "8c055c31e9d74c890944bbcafd77a08ebfcca1d879f58f17cd6a267cea732c5a",
+   "G3": "60c48758851b4edfa02c56a6a1b06fb2af64f260f67a328ee768a09de32fafbd",
+   "G4": "1f9bd5daf6b13a237d9f2dfb456af3362934e05483488678b148fc2bc29da576"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": "2f733408845117a7e99fd9b31aa8c0476183dfded36ecfefabd50ddd155851af",
+   "G2": "c9f1251f071f2a939dc155e10256687e60457b8e0ef2874594814b8a5f468635",
+   "G3": "1f2057b038f9f2ca4c538ae4d66739c0ff8353e61898180d83fa09aa88b466eb",
+   "G4": "5a38c0e62d392ba75bf954000489f3659c10dcabe325451380f96855c344d677"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": "0687a9179c41cdd5488fcf493fdea50f3a59a273151671dfe94911546b277290",
+   "G2": "57e263636482cbd2c97c001ed07b263ebf5770f31368c8e4613e0f128f8e8355",
+   "G3": "58c17b3b700b70122aca323672bdf07f860fbd6b590cc4d6126bc7e585daa7ff",
+   "G4": "e7edc5810dc4ddb32bfd4c9896d6d90dc0a4858205efc48b8ac830c900d3040b"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": "5e72d68aa3e15bc4b0202b6e464e90cde1e25bf66c7b5bbc8464a8157e968b17",
+   "G2": "4724899970ebb55097c9f326175f529a300bb1ec64e60811e51d1c2f902eb41c",
+   "G3": "9a3b72e0be06fd05be2735ac7265b0d4628e1e03e38cf3293754a99911e42a3f",
+   "G4": "e5c62109345c5fbc05ed839d3f14255f2ff486e6a931dc0d66b2af7095d3e00d"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": "7153f76c64b0c6b18a69e08c6b499e8f7963c1ba1dcf1a2bd0697b0b52311e56",
+   "G2": "24dbd1f36b96da5a1b83695d7b8ff97083714bed7db0c4bcad3f725335cc7860",
+   "G3": "a5668f295966894dc713e717d628d6314fe2990572db0638bb89eec711f06e55",
+   "G4": "8e2f21543284800f192045444096c23fec31607cfb5283e5cca67b64f7c58528"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": "36141a5e4fd0d5dca76f3d486224aabefd382319a7c4d1802f4161bfe43fa512",
+   "G2": "f3fe723d56f0a2abf5f7e91887ca9615fa72f21f7b82a7e654a1b158997e5e57",
+   "G3": "7a61991ab9043183d116d0ad32ffe2c3e244c13f3e0f01ffd7a023926d11e127",
+   "G4": "c67d88b6306cb9730d2c3d467ca67da1c344a3fb479e2f670fafc3a2eab32b2c"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": "ec20de36a353fbdca67d51f072d332d90e0f8e89834f5f6378c140a99193cca0",
+   "G2": "25ee5148729a8693478804a8c118cc43e914f4d3f02c7af542007fd3a309cf34",
+   "G3": "6b7a9cf4a46f3f6f3d9431ac8e500df11588f365c9099fbe1453629f05d77479",
+   "G4": "133710f2a60953bc54dfc56ba7b939ea067f89357e236135e6410a31d288e6c5"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": "d7730c07cc5677af2af6f011ddf474c85ddaa7e74e23892f8bc0a074a8b8388c",
+   "G2": "0859860e37dd86aa5926603b8e4facfb5b27610b02880ea344c7e95bcb666572",
+   "G3": "3caa822d7f8a9b953ae0323e0f1cb0870e9bccfa9093f00470c4743c954df278",
+   "G4": "38ea38da8efcb2dd71f901c3f1aa2250e1807448b178320367d1067ac8752851"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": "101b9dc6974acfd3e8f782c4c4ebdea5625de68be0717fc26bd7b6bd17e3dc9a",
+   "G2": "8f1d945cb0a569f86ff778752a39ca295be43609bb78c6ae46ffb87c9481c537",
+   "G3": "338c1dba579a492f5a2ef15f50a7beb4f642483d60f6f5fc027632728aad2d03",
+   "G4": "8f375c67ddda1a2deb957cfb8eeb30439e926939fc1fb647f73116e1822209a2"
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": "262dc06150db5b1ed7b5f4916f7830d6673e4d3057de4979f04b051ae8b7b20b",
+   "G2": "1cddc7b92f6403ed6783e685c778f403672c0e57e9b078b9eb6c4cb52ddaa862",
+   "G3": "c85842852a8e380ab61987a1270f94113ddb7294325c6077937ed4b794c4a855",
+   "G4": "6b69a598662a7cdc5ede65ca28e8cd52bd7329c6c13407544ac6be24b6ffd3fc"
+  }
+ },
+ "di_lufs": {
+  "telefunken-Blind_Spots-GTR": -26.14,
+  "telefunken-Bloomlight-GTR": -21.24,
+  "cambridge-Drag_Me_Down-ElecGtr4": -25.46,
+  "telefunken-Farthest_Step-GTR": -21.1,
+  "telefunken-First_Offering-GTR_2": -12.41,
+  "telefunken-Fragments-GTR": -23.08,
+  "telefunken-Gym_Hours-GTR_1": -15.01,
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": -19.62,
+  "telefunken-Long_Way_Home-GTR": -23.67,
+  "cambridge-Passing_Ships-ElecGtr6": -11.11,
+  "cambridge-Prodigal-ElecGtr5": -32.0,
+  "cambridge-Quicksand-ElecGtr1": -19.84,
+  "telefunken-Russian_Cream-GTR_2": -10.67,
+  "telefunken-Sculptor's_Request-GTR_2": -22.52,
+  "cambridge-Signs-ElecGtr2": -17.7,
+  "cambridge-Today's_The_Day-ElecGtr07": -24.55
+ },
+ "riff_lufs": -23.7,
+ "taste_classes": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": "sw50r|drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|drive"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": "pr12|drive",
+   "G2": "sw50r|drive",
+   "G3": "pr12|no drive",
+   "G4": "sw50r|drive"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": "ac20|drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|drive"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": "pr12|drive",
+   "G2": "pr12|no drive",
+   "G3": "sw50r|drive",
+   "G4": "pr12|drive"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": "pr12|no drive",
+   "G2": "sw50r|no drive",
+   "G3": "pr12|no drive",
+   "G4": "ac20|no drive"
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": "sw50r|drive",
+   "G2": "sw50r|no drive",
+   "G3": "pr12|no drive",
+   "G4": "pr12|drive"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": "sw50r|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|no drive"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": "ac20|drive",
+   "G2": "sw50r|drive",
+   "G3": "pr12|drive",
+   "G4": "ac20|no drive"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "sw50r|drive",
+   "G4": "ac20|no drive"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": "ac20|no drive",
+   "G2": "pr12|no drive",
+   "G3": "sw50r|no drive",
+   "G4": "ac20|drive"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": "pr12|no drive",
+   "G2": "ac20|no drive",
+   "G3": "sw50r|no drive",
+   "G4": "pr12|drive"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": "ac20|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|drive",
+   "G4": "sw50r|no drive"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": "pr12|no drive",
+   "G2": "sw50r|no drive",
+   "G3": "ac20|no drive",
+   "G4": "pr12|no drive"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": "sw50r|no drive",
+   "G2": "pr12|no drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|no drive"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "sw50r|drive",
+   "G4": "ac20|drive"
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": "ac20|drive",
+   "G2": "pr12|drive",
+   "G3": "ac20|no drive",
+   "G4": "sw50r|drive"
+  }
+ },
+ "taste_features": {
+  "telefunken-Blind_Spots-GTR": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.18,
+    "volume": 0.56
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.38,
+    "volume": 0.6
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.32,
+    "volume": 0.64
+   }
+  },
+  "telefunken-Bloomlight-GTR": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.24,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.55
+   }
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.46,
+    "volume": 0.62
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.62,
+    "volume": 0.6
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.6
+   }
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.26,
+    "volume": 0.4
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.4,
+    "volume": 0.58
+   }
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.55
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   }
+  },
+  "telefunken-Fragments-GTR": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.22,
+    "volume": 0.44
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.56
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.46
+   }
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.6
+   }
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.46,
+    "volume": 0.55
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.56,
+    "volume": 0.5
+   },
+   "G3": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.22,
+    "volume": 0.62
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.48
+   }
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.28,
+    "volume": 0.56
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.24,
+    "volume": 0.6
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.34,
+    "volume": 0.58
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   }
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.45
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.3,
+    "volume": 0.56
+   }
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.4
+   },
+   "G2": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.25,
+    "volume": 0.55
+   }
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.54
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.64
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.35,
+    "volume": 0.58
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   }
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "G1": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.38
+   },
+   "G2": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.35
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.38
+   },
+   "G4": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.34
+   }
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "G1": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.36
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.42
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.52
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.5
+   }
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.55,
+    "volume": 0.62
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.48,
+    "volume": 0.66
+   },
+   "G3": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.6,
+    "volume": 0.68
+   },
+   "G4": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.18,
+    "volume": 0.6
+   }
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "G1": {
+    "amp": "ac20",
+    "drive_on": true,
+    "drive": 0.55,
+    "volume": 0.66
+   },
+   "G2": {
+    "amp": "pr12",
+    "drive_on": true,
+    "drive": 0.58,
+    "volume": 0.68
+   },
+   "G3": {
+    "amp": "ac20",
+    "drive_on": false,
+    "drive": 0.0,
+    "volume": 0.64
+   },
+   "G4": {
+    "amp": "sw50r",
+    "drive_on": true,
+    "drive": 0.5,
+    "volume": 0.74
+   }
+  }
+ },
+ "factory_sha256": {
+  "sw50r:factory:Neural DSP/Strat 4th Position Funk": "3cbc7696ac593cc91cc23fa97648699a194d8f301423564be953e5cddfc66f36",
+  "pr12:factory:Neural DSP/The Creature of the Cave": "47780fba42adc289fb95ca28153247725574d5e87e88adec05fd1381ecffc495",
+  "pr12:factory:Neural DSP/Izzy Come Back": "a65ed91437cabd1a8677591189aecfd8b1cc783fbf9ddc78bb406aa67256e524",
+  "pr12:factory:Neural DSP/Vintage Metal": "c867a9fa3237fcf89c113ca500a004d289289ba5d61cb8eac4a7497b262d0cab",
+  "sw50r:factory:Artists/CARRTOONS/Mustang": "c07fa211e1123065e93f672d739127795afb9e849620b5a4945b81e540213f71",
+  "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": "04dce366769a7007cd0909bb7780461f5b0c8269cdc14ecf40fde218de965da6",
+  "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": "578e7a2c423537c53d496067befe845b4d3908f82c2e6862a7bffa680c9e4b35",
+  "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": "aeabf0598fae9af1f1442b7c8f2c8872b2a60e063ddf11e758b2b299c8e5f687",
+  "sw50r:factory:Artists/CARRTOONS/Benny Tele": "1c46768545402b77f1160812fd55b838c0c4298dc89ccf67bcbb78d2f69b2c0c",
+  "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": "7f4e879a719c4fa59c4ffd7a4df01ee0a4c258ba4dff06c3aab68faf3a46dc44",
+  "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": "c4cde38b135726cefa23bac40ae24245171bfc36ebeeda15f96cc62743fd3811",
+  "sw50r:factory:Neural DSP/Drop-Tuned Doom": "b75d4198fc4b0e0512b402e82a659ea6761188cb130c2023310afc72751d7a64",
+  "pr12:factory:Artists/Charlie Robbins/Ambient Clean": "574ddfe47dc97517ae87fbcd6ec93923459c6892752329e5c5252074b4d15fe7",
+  "sw50r:factory:Neural DSP/Doomish Riff": "2697c9dc5adebe82d2f3e2528384eaf29b65c64d5237e8281c57eefd13074aa5",
+  "ac20:factory:Artists/Charlie Robbins/Lead": "3e91795e147fdbf58a0be19c24afcf69b042b9d9dc15d560d763a2c2bcd7c11d",
+  "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": "ad13eda2c9b4867cdc1134cea7b3f9047b763a7ab0349e9f793064a5f8ada93c",
+  "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm": "2d1e2961652fa5ba482d1fa45459c62ffd5132149b83650c7878b9954d43cd48",
+  "sw50r:factory:Artists/John Connearn/Low Gain Solo": "ee20441d617f105f83d4da0ed244d894c5250354741a07b7e852ba224aee9129",
+  "ac20:factory:Neural DSP/AC20 Mid-Gain Drive": "f906895e9aca99ea40b0f38acf6f07f733676ecc388f03af9b3f85f6492471c5",
+  "ac20:factory:Artists/Rabea Massaad/Far Away Place": "a08ab09bbef846203f2105fa633c1cd2ff3de9a1b883fffec4e629da00a44d1c"
+ },
+ "audio_sha256": {
+  "telefunken-Blind_Spots-GTR": {
+   "di.wav": "0d82e2c7f0beedd64e41673656ff3d01692f6fced86770172e8854aa7d939021",
+   "mix_instrumental.wav": "94ed120abe3d5eab62c9bc9efe547c1d5ef2864973cf5fdf87490b2346d4f569"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "di.wav": "eddb3a475225a372bc3c4310302ce03b1ff8dc256f0afab0e15b9ad56260e168",
+   "mix_instrumental.wav": "0c54e6ee257aa844884d0787c8b65a6d3a1bb96f2ef76a069df0b51e24004048"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "di.wav": "f8a50f02fcbf59c347d4dfc42f48b9abce98211842adba318ae9f10951f37400",
+   "mix_instrumental.wav": "b231671954ffae4b19bef0927b475d5b60a62c8038a1588539f4b6dc0c9c23f8"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "di.wav": "83371d4c076eb0f282b302207bcffc7b1b8d76d782de34530dda416216f6bac4",
+   "mix_instrumental.wav": "ec8e620911bc246f00f4ada603807fcd972c5b00addbba671c98461be267a859"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "di.wav": "f8bd2c62a8b27efd9a14ceabf838e701073a7d379a4094c9b9f5aeeb874bb019",
+   "mix_instrumental.wav": "41231dcea77f45367060d8278ec686aab34b6aa7ecd8b424a164ade8b94629a1"
+  },
+  "telefunken-Fragments-GTR": {
+   "di.wav": "c48d223c2ead47194d8b7003492d5e79342efbee204bb51aa15ef779a41539d0",
+   "mix_instrumental.wav": "a8d8e7fec5468ad316387aafee45d03e8e8ddcc1e17902c7bb39b5da311bbf9e"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "di.wav": "12ebe02f987fa851291ece87653dd424e6335d3034e5778ce41cd05d0fb9fd53",
+   "mix_instrumental.wav": "b3060315571706184aff72cb3e932a745c22fa44e9f377c378586de271672af4"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "di.wav": "5de10fe27c6f417265098aa67c22ee8460354fe708265928f9d4f7cb0b829d66",
+   "mix_instrumental.wav": "52090a2392ab3c93dfb49f6e0dd1a2493edcf7c730b52facf5912535520ce20d"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "di.wav": "32827faee831bf62afe6c4a443826e8b0cc8d1e110d804a7be549fe219684b0f",
+   "mix_instrumental.wav": "ac7f16e56008bdd3c0b0ecd7bb1f62b11f43c49a9e54b54c2d965df1f206db72"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "di.wav": "efbed271815e03281848c4e5c35352f7979470a516317070853d20ad1a48f61c",
+   "mix_instrumental.wav": "cd45b7a0cc5f06a6251cc817dc75805e1c2c0197f7b80c1f2fbec2844d48936c"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "di.wav": "18838d06aade5f686c72da4f4ea1735d83a3143e05a18f8839fcfec1e84b85af",
+   "mix_instrumental.wav": "df56e953a8214bfcc12b8caf217442c765bccf2143fa090eb10228ed553f17a7"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "di.wav": "3d364680c87983ece9519c3fa4ff4fe25b4c2a6b9405065403331f8099153893",
+   "mix_instrumental.wav": "338a70ac44ae63426ca78da62991b10c99ceb71d8911063f07425256b9db6c35"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "di.wav": "98b19a38e6613077c0d8516251fc56615985a5f2069b95e1740cc4da6f4a40a5",
+   "mix_instrumental.wav": "db0947742c727fb847534c7205b10ff9766afb133389176348b06b26f890aa7b"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "di.wav": "0e9fedd7a6bb94fac1a4bf041c76b386cc47fdc7da62a8026a3d922448a71a77",
+   "mix_instrumental.wav": "d131ec1fcdb9c0dfd817b080183def0f5587a19733ea4fbe82dd0daaeda2fa4f"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "di.wav": "64477523aaa2b3d63498b835f6189187d08987c6b8757a855d97f6fbce5383aa",
+   "mix_instrumental.wav": "cd8158aea60f9619448c9cd3dd7092346de4109dbb70d34cb07e2282c07275c8"
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "di.wav": "a2968021387040d5d55ba33b09166b6984a6df1cf6be35545bc2569aabb6553c",
+   "mix_instrumental.wav": "06596477be398b4679fbdd7e8d54210edc774776b93d2dba5d6888ce6d2d804e"
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "di.wav": "5f70954c5a278613bdddd65aec232f8448ecfe102a24050d6079c1d9551c031d",
+   "mix_instrumental.wav": "f8ad48ac97ca576f0727be60532035f074d870de321d9057ff90746ed2a5ff01"
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "di.wav": "4983760b0de0465e65bfe6e6132be90e3981d57e355a2508653917292ac3aa75",
+   "mix_instrumental.wav": "27a35bcbc7f37ca05049e793834ab33c234cc59395558da4a2685f74bf34376c"
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "di.wav": "4da302485038bb03f8362ea2e0fc842ff1d319e41a3df8a8ff13ca71998bb23d",
+   "mix_instrumental.wav": "2f399eafad892160fc0f82bd73094eaa6cd126d921ea4280e81375310d6e9954"
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "di.wav": "146bae7fb6d8427ef292ab131e36c77338608809cdefeef14a4981ca61afdf1b",
+   "mix_instrumental.wav": "e633c00238414c84090f27dbc99dcedc82c0e10a09140da6d22280ed6acc914c"
+  }
+ },
+ "g1_rule_chance_pass": 0.9931,
+ "controls": [
+  {
+   "part": "telefunken-First_Offering-GTR_1",
+   "candidates": [
+    "sw50r:factory:Neural DSP/Strat 4th Position Funk",
+    "pr12:factory:Neural DSP/The Creature of the Cave",
+    "pr12:factory:Neural DSP/Izzy Come Back",
+    "pr12:factory:Neural DSP/Vintage Metal"
+   ],
+   "distances": {
+    "recording": {
+     "sw50r:factory:Neural DSP/Strat 4th Position Funk": 3.184028485801729,
+     "pr12:factory:Neural DSP/The Creature of the Cave": 8.850948160158486,
+     "pr12:factory:Neural DSP/Izzy Come Back": 8.013030246425442,
+     "pr12:factory:Neural DSP/Vintage Metal": 7.775166310464271
+    },
+    "union": {
+     "sw50r:factory:Neural DSP/Strat 4th Position Funk": 3.184028485801729,
+     "pr12:factory:Neural DSP/The Creature of the Cave": 8.626995204172223,
+     "pr12:factory:Neural DSP/Izzy Come Back": 8.139871689121842,
+     "pr12:factory:Neural DSP/Vintage Metal": 7.959484093222482
+    }
+   }
+  },
+  {
+   "part": "telefunken-Gym_Hours-GTR_2",
+   "candidates": [
+    "sw50r:factory:Artists/CARRTOONS/Mustang",
+    "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom",
+    "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz",
+    "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm"
+   ],
+   "distances": {
+    "recording": {
+     "sw50r:factory:Artists/CARRTOONS/Mustang": 2.7418573807338196,
+     "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": 10.079562494006044,
+     "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": 9.442558670369012,
+     "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": 9.351891977002701
+    },
+    "union": {
+     "sw50r:factory:Artists/CARRTOONS/Mustang": 2.918196821609957,
+     "sw50r:factory:Artists/Royce Whittaker/Wall Of Doom": 10.27368423566264,
+     "sw50r:factory:Artists/Josh De La Victoria/Octave Fuzz": 10.240616122222159,
+     "ac20:factory:Artists/Charlie Robbins/Dirty Coil Rhythm": 10.168645205067156
+    }
+   }
+  },
+  {
+   "part": "telefunken-Sculptor's_Request-GTR_1",
+   "candidates": [
+    "sw50r:factory:Artists/CARRTOONS/Benny Tele",
+    "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction",
+    "sw50r:factory:Neural DSP/Drop-Tuned Doom"
+   ],
+   "distances": {
+    "recording": {
+     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 4.099710061503456,
+     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 7.965563214045218,
+     "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": 7.479854890315251,
+     "sw50r:factory:Neural DSP/Drop-Tuned Doom": 6.904237587926126
+    },
+    "union": {
+     "sw50r:factory:Artists/CARRTOONS/Benny Tele": 4.099710061503456,
+     "pr12:factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)": 8.214674182669393,
+     "sw50r:factory:Artists/Rabea Massaad/All Out Amp Destruction": 7.751175979637939,
+     "sw50r:factory:Neural DSP/Drop-Tuned Doom": 7.109232271507536
+    }
+   }
+  },
+  {
+   "part": "telefunken-Farthest_Step-GTR",
+   "candidates": [
+    "pr12:factory:Artists/Charlie Robbins/Ambient Clean",
+    "sw50r:factory:Neural DSP/Doomish Riff",
+    "ac20:factory:Artists/Charlie Robbins/Lead",
+    "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues"
+   ],
+   "distances": {
+    "recording": {
+     "pr12:factory:Artists/Charlie Robbins/Ambient Clean": 1.9926046691747576,
+     "sw50r:factory:Neural DSP/Doomish Riff": 4.9419533591591565,
+     "ac20:factory:Artists/Charlie Robbins/Lead": 4.7081528423185715,
+     "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": 4.016585782929133
+    },
+    "union": {
+     "pr12:factory:Artists/Charlie Robbins/Ambient Clean": 2.0293044706409584,
+     "sw50r:factory:Neural DSP/Doomish Riff": 5.536084381541095,
+     "ac20:factory:Artists/Charlie Robbins/Lead": 5.120392575299292,
+     "pr12:factory:Artists/Josh De La Victoria/Tube-y Blues": 4.370708149141772
+    }
+   }
+  }
+ ],
+ "practice": {
+  "part": "cambridge-Today's_The_Day-ElecGtr10",
+  "candidates": [
+   "pr12:factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+   "sw50r:factory:Artists/John Connearn/Low Gain Solo",
+   "ac20:factory:Neural DSP/AC20 Mid-Gain Drive",
+   "ac20:factory:Artists/Rabea Massaad/Far Away Place"
+  ]
+ },
+ "renders_index_sha256": "7a72a48c44d486c798a6de81c633b748e23e7d2da95818a6a38a551af5494bdb",
+ "amp_reach_sha256": "2b9739a2d0a4ed338a479c94e6b6e5b56bebf85944ef7efba245730a166d6bba"
+}
