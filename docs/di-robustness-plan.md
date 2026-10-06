@@ -59,3 +59,19 @@ tonal balance, which is the confound measured on 2026-10-06: DI spectra differ b
 
 - 25 development parts, clean PR12 only, and a menu of 21 presets.
 - A real recovered DI may err in ways these degradations don't cover.
+
+## Amendment, 2026-10-06, before any result: a training-free rebuilt DI (reported)
+
+Added while the main renders ran, with no result read.
+- **The variant, `flatref`.** The part's own amp track stands in for its DI, equalised
+  so that its long-term spectrum takes the average spectrum of the other folds' DIs (a
+  typical guitar). It is set to the assumed −22.9 LUFS, since a song does not reveal the
+  player's level.
+- **Choosing and scoring.** Candidates are rendered through it and chosen on half A by
+  the judge with lag 0, since the stand-in is time-aligned with the recording by
+  construction. They are scored on half B through the true DI, like the others.
+- **`flatstem`** does the same from the part's separated guitar stem (htdemucs_6s,
+  instrumental mix) on the 20 parts whose stems are usable. The stem is also the
+  recording the judge compares against on half A. The half-B score is still against
+  the amp track through the true DI.
+- **Status.** Both are reported. They do not change the decision rule above.
