@@ -117,8 +117,11 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256):
                 self.enc.append(nn.Sequential(nn.Conv1d(cin, c, 8, 4, padding=2), nn.GELU(),
                                               nn.Conv1d(c, 2 * c, 1), nn.GLU(dim=1)))
                 cin = c
-            self.lstm = nn.LSTM(cin, lstm, num_layers=2, bidirectional=True, batch_first=True)
-            self.proj = nn.Linear(2 * lstm, cin)
+            # A dilated-conv bottleneck (about ±0.3 s at this depth). An LSTM here trained
+            # stably on CPU but diverged on MPS (measured 2026-10-06).
+            self.mid = nn.ModuleList([nn.Sequential(nn.Conv1d(cin, cin, 3, padding=d, dilation=d),
+                                                    nn.GELU(), nn.Conv1d(cin, cin, 1))
+                                      for d in (1, 3, 9, 27)])
             outs = list(channels[:-1])[::-1] + [1]
             for c, o in zip(channels[::-1], outs):
                 last = o == 1
@@ -136,8 +139,8 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256):
             for e in self.enc:
                 h = e(h)
                 skips.append(h)
-            z = self.lstm(h.transpose(1, 2))[0]
-            h = h + self.proj(z).transpose(1, 2)
+            for block in self.mid:
+                h = h + block(h)
             for d in self.dec:
                 s = skips.pop()
                 h = d(h + s[..., :h.shape[-1]])
@@ -160,7 +163,7 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 
 # --- training -----------------------------------------------------------------------
 
-def fit(cache, fold, out, minutes, seed, batch=12):
+def fit(cache, fold, out, minutes, seed, batch=12, log_every=200):
     import numpy as np
     import torch
 
@@ -227,7 +230,7 @@ def fit(cache, fold, out, minutes, seed, batch=12):
     print(f"parameters {sum(p.numel() for p in net.parameters()) / 1e6:.1f}M", flush=True)
     opt = torch.optim.AdamW(net.parameters(), lr=3e-4, weight_decay=1e-5)
     out.mkdir(parents=True, exist_ok=True)
-    t0, step = time.time(), 0
+    t0, step, skipped = time.time(), 0, 0
     vidx = rng.choice(va, min(96, len(va)), replace=False)
     while time.time() - t0 < minutes * 60:
         idx = rng.choice(tr, batch, replace=False)
@@ -236,10 +239,19 @@ def fit(cache, fold, out, minutes, seed, batch=12):
         loss = 100 * (p - y).abs().mean() + mrstft(p.squeeze(1), y.squeeze(1))
         opt.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(net.parameters(), 5.0)
+        # torch's clip_grad_norm_ produces NaN on MPS (2.8 and 2.14, measured); clip by hand
+        # and skip a step whose gradient is not finite.
+        grads = [q.grad for q in net.parameters() if q.grad is not None]
+        total = torch.sqrt(sum((g.detach() ** 2).sum() for g in grads))
+        if not torch.isfinite(total):
+            skipped += 1
+            continue
+        if total > 5.0:
+            for g in grads:
+                g.mul_(5.0 / total)
         opt.step()
         step += 1
-        if step % 200 == 0:
+        if step % log_every == 0:
             net.eval()
             with torch.no_grad():
                 vl, base = 0.0, 0.0
@@ -250,8 +262,8 @@ def fit(cache, fold, out, minutes, seed, batch=12):
                     base += float(100 * (vx - vy).abs().mean() + mrstft(vx.squeeze(1), vy.squeeze(1)))
             net.train()
             el = time.time() - t0
-            print(f"fold {fold} step {step} {el / 60:.1f} min ({step / el:.2f} it/s) train {float(loss):.3f} "
-                  f"val {vl:.3f} (input-as-DI {base:.3f})", flush=True)
+            print(f"fold {fold} step {step} {el / 60:.1f} min ({step / el:.2f} it/s) train {float(loss.detach()):.3f} "
+                  f"val {vl:.3f} (input-as-DI {base:.3f}) skipped {skipped}", flush=True)
             torch.save(net.state_dict(), out / f"fold{fold}.pt")
     torch.save(net.state_dict(), out / f"fold{fold}.pt")
 
@@ -301,11 +313,13 @@ def main():
     f.add_argument("--out", type=pathlib.Path, required=True)
     f.add_argument("--minutes", type=float, default=60)
     f.add_argument("--seed", type=int, default=0)
+    f.add_argument("--log-every", type=int, default=200)
     args = ap.parse_args()
     if args.cmd == "cache":
         build_cache(args.renders.expanduser(), args.cache.expanduser())
     else:
-        fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed)
+        fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
+            log_every=args.log_every)
 
 
 if __name__ == "__main__":
