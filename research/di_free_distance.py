@@ -158,10 +158,14 @@ def floor_stats(job) -> tuple:
 # --- distances ----------------------------------------------------------------------
 
 def euclid(a, b, scale=None) -> float:
+    """Euclidean, over the values both sides have (a loudness range can be empty)."""
     import numpy as np
 
-    diff = np.asarray(a) - np.asarray(b)
-    return float(np.linalg.norm(diff if scale is None else diff / scale))
+    diff = np.asarray(a, dtype=float) - np.asarray(b, dtype=float)
+    if scale is not None:
+        diff = diff / scale
+    diff = diff[np.isfinite(diff)]
+    return float(np.linalg.norm(diff)) if len(diff) else float("nan")
 
 
 def masked(ref_mean, ref_spread, cand_mean, cand_spread=None) -> float:
@@ -200,7 +204,7 @@ def make_rows(scales):
             np.concatenate([r["mel_mean"], r["mel_std"]]),
             np.concatenate([c["mel_mean"], c["mel_std"]])),
         "mfcc_statistics": lambda r, c: euclid(r["mfcc"], c["mfcc"], scales["mfcc"]),
-        "lean_fingerprint": lambda r, c: euclid(r["lean"], c["lean"], scales["lean"]),
+        "lean_fingerprint": lambda r, c: euclid(lean_of(r), lean_of(c), scales["lean"]),
         "masked_long_term_spectrum": lambda r, c: masked(r["floor_mean"], None,
                                                          c["floor_mean"]),
         "masked_log_mel_mean_spread": lambda r, c: masked(r["floor_mean"], r["floor_std"],
@@ -208,10 +212,21 @@ def make_rows(scales):
     }
 
 
-def lda_vector(feats, scales):
+def lean_of(feats):
+    """The lean vector as floats, an empty field (a loudness range too short to measure)
+    as NaN."""
     import numpy as np
 
-    return np.concatenate([feats["mfcc"] / scales["mfcc"], feats["lean"] / scales["lean"]])
+    return np.array([np.nan if v is None else v for v in feats["lean"]], dtype=float)
+
+
+def lda_vector(feats, scales):
+    """MFCC statistics and the lean fingerprint, scaled; an empty field takes its median
+    over the panel renders, so the projection has every value."""
+    import numpy as np
+
+    lean = np.where(np.isfinite(lean_of(feats)), lean_of(feats), scales["lean_median"])
+    return np.concatenate([feats["mfcc"] / scales["mfcc"], lean / scales["lean"]])
 
 
 def fit_lda(X, y, dims: int = LDA_DIMS):
@@ -579,8 +594,10 @@ def run(args):
     for feats in cache.values():
         feats["fpo"] = Fingerprint.from_dict(feats["fp"])
     renders = [cache[(q, c)] for q in files for c in menu if (q, c) in cache]
-    scales = {name: np.std(np.array([f[name] for f in renders]), axis=0) + 1e-9
-              for name in ("mfcc", "lean")}
+    lean_all = np.array([lean_of(f) for f in renders])
+    scales = {"mfcc": np.std(np.array([f["mfcc"] for f in renders]), axis=0) + 1e-9,
+              "lean": np.nanstd(lean_all, axis=0) + 1e-9,
+              "lean_median": np.nanmedian(lean_all, axis=0)}
     rows = make_rows(scales)
     lda = {}
     for band in sorted({bands[p] for p in targets}):

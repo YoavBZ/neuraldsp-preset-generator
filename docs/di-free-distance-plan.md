@@ -70,7 +70,10 @@ All are computed from the clip alone, with frames gated by the clip's own level
   donors only (so never on the target's band), keeping the leading 40 dimensions;
   Euclidean there.
 
-Each row's scaling uses only panel renders, never a judge distance or a pick. A small
+Each row's scaling uses only panel renders, never a judge distance or a pick. Before
+the run, 325 of the 4,773 renders (and most half-B clips) turned out to have no loudness
+range, too short or quiet to measure: the lean row then compares the fields both clips
+have, and the LDA row fills an empty field with its median over the panel renders. A small
 CNN's statistics, AFx-Rep and CLAP (round 4's other rows) need training or downloads
 and are not in this check.
 
