@@ -117,10 +117,23 @@ def test_the_gate_needs_every_criterion_on_every_menu_and_band_set():
     assert D.gate(result, bands)["answer"] is None
 
 
+def test_regret_counts_the_judges_best_even_when_its_distance_is_empty():
+    judged = {"p": {"best": 1.0, "other": 2.0, "third": 3.0}}
+    table = {("reference", "p"): {"q": {"best": None, "other": 5.0, "third": 6.0}}}
+    got = D.score_row(table, judged, ["best", "other", "third"], ["p"], {"p": "A", "q": "B"},
+                      "reference", ["best", "other", "third"])
+    assert got["regret"] == pytest.approx(math.log(2))
+    table[("reference", "p")]["q"]["other"] = float("nan")       # non-finite is empty too
+    got = D.score_row(table, judged, ["best", "other", "third"], ["p"], {"p": "A", "q": "B"},
+                      "reference", ["best", "other", "third"])
+    assert got["regret"] == pytest.approx(math.log(3))
+
+
 def test_the_stop_clause_reads_v3_on_every_menu_and_band_set():
     good = dict(row_bands=[0.1] * 9, const_bands=[0.5] * 9, regret=0.1, stems=0.2, rho=0.7)
     bands, result = _result(**good, v3=0.05)
     assert D.gate(result, bands)["stop_v3_is_enough"]
+    assert D.gate(result, bands)["answer"] == "v3"
     bands, result = _result(**good, v3=0.2)
     assert not D.gate(result, bands)["stop_v3_is_enough"]
 

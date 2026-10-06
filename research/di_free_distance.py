@@ -292,6 +292,10 @@ def holm(ps: dict) -> dict:
     return out
 
 
+def finite(v) -> bool:
+    return v is not None and math.isfinite(v)
+
+
 def regret_of(judged: dict, pick: str) -> float:
     return math.log(judged[pick]) - math.log(min(judged.values()))
 
@@ -411,23 +415,26 @@ def score_row(table, judged, clean, targets, bands, kind: str, menu: list) -> di
         regret_q, rho_q, own_q = {}, {}, {}
         amp_q = collections.defaultdict(dict)
         for q in donors:
-            dist = {c: v for c, v in by_donor[q].items() if c in menu and v is not None}
+            dist = {c: v for c, v in by_donor[q].items() if c in menu and finite(v)}
             if not dist:
                 continue
             pick = min(dist, key=dist.get)
-            regret_q[q] = regret_of({c: judged[p][c] for c in dist}, pick)
-            on_clean = [c for c in clean if by_donor[q].get(c) is not None]
+            # The judge's best is over the whole menu: an empty distance only drops a
+            # candidate from the pick.
+            regret_q[q] = regret_of({c: judged[p][c] for c in menu}, pick)
+            on_clean = [c for c in clean if finite(by_donor[q].get(c))]
             rho_q[q] = spearman([by_donor[q][c] for c in on_clean],
                                 [judged[p][c] for c in on_clean])
             for amp in AMPS:
                 sub = {c: v for c, v in dist.items() if c.startswith(amp + ":")}
                 if sub:
-                    amp_q[amp][q] = regret_of({c: judged[p][c] for c in sub},
+                    amp_q[amp][q] = regret_of({c: judged[p][c] for c in menu
+                                               if c.startswith(amp + ":")},
                                               min(sub, key=sub.get))
             if p in by_donor:
                 mixed = {("donor", c): v for c, v in dist.items()}
                 mixed.update({("own", c): by_donor[p][c] for c in dist
-                              if by_donor[p].get(c) is not None})
+                              if finite(by_donor[p].get(c))})
                 own_q[q] = float(min(mixed, key=mixed.get)[0] == "own")
         regrets[p] = band_stat(regret_q, bands)
         agreements[p] = band_stat(rho_q, bands)
@@ -450,7 +457,7 @@ def constant_regrets(judged, targets, bands, menu) -> dict:
     out = {}
     for p in targets:
         others = [q for q in targets if bands[q] != bands[p]]
-        pick = min(menu, key=lambda c: statistics.median(math.log(judged[q][c]) for q in others))
+        pick = min(menu, key=lambda c: statistics.median(judged[q][c] for q in others))
         out[p] = regret_of({c: judged[p][c] for c in menu}, pick)
     return out
 
@@ -491,9 +498,12 @@ def gate(result, bands) -> dict:
             v["regret"] and v["beats_constant"] and v["agreement"] and v["stems"]
             for v in verdicts.values())}
     passing = [n for n in TESTED if out[n]["passes"]]
-    out["answer"] = (min(passing, key=lambda n: max(
-        blocks[b][m][n]["stem"]["regret"] for b in BAND_SETS for m in MENUS))
-        if passing else None)
+    if out["stop_v3_is_enough"]:
+        out["answer"] = "v3"                # the gate results are then for information
+    else:
+        out["answer"] = (min(passing, key=lambda n: max(
+            blocks[b][m][n]["stem"]["regret"] for b in BAND_SETS for m in MENUS))
+            if passing else None)
     return out
 
 
@@ -524,7 +534,7 @@ def another_teacher(rows, lda, cache, targets, donors, avg_menu, bands, reach, a
                     for q, dist in table[("reference", p)].items():
                         if q == p:
                             continue
-                        sub = {c: dist[c] for c in have if dist.get(c) is not None}
+                        sub = {c: dist[c] for c in have if finite(dist.get(c))}
                         if not sub:
                             continue
                         per[q] = regret_of({c: scores[p][c] for c in have}, min(sub, key=sub.get))
@@ -581,7 +591,7 @@ def run(args):
     clean = clean_menu(menu)
     menus = {"all": menu, "clean": clean}
     dists = distance_tables(rows, lda, cache, targets, donors, menu, bands)
-    empty = {n: sum(v is None for t in dists[n].values() for d in t.values() for v in d.values())
+    empty = {n: sum(not finite(v) for t in dists[n].values() for d in t.values() for v in d.values())
              for n in dists}
     result = {"schema": "di-free-distance-2", "parts": targets,
               "menu_sizes": {m: len(v) for m, v in menus.items()},

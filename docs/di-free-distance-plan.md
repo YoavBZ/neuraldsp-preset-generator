@@ -107,8 +107,9 @@ menus and band sets, v3 is enough and no row is needed.
 3. its agreement is at least 0.6;
 4. on stems, its regret on the 12 parts is no worse than the constant's there.
 
-A row that passes all four everywhere passes. If several pass, the one with the lowest
-regret on stems is the step's answer, marked to be confirmed on new parts before any
+A row that passes all four everywhere passes. If the stop holds, v3 is the answer and
+the gate is reported for information. Otherwise, if several pass, the one whose highest
+regret on stems over the four menu and band-set blocks is lowest is the step's answer, marked to be confirmed on new parts before any
 later step (round 4's experiment 13) leans on it. If none passes, no DI-free distance
 here reproduces the judge's choices, and the next candidates are those that need
 downloads or training (round 4's rows, round 1's approach 3c).
