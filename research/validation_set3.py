@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Declare set 3 (heavier-tone validation recordings): exclusions, split and folds.
 
-    python research/validation_set3.py \\
+    .venv/bin/python research/validation_set3.py \\
       --catalog ~/ndsp-presets/references/datasets-set3/catalog.json \\
       --crops ~/ndsp-presets/references/validation-crops-set3 \\
       --json docs/validation-set3.json
@@ -48,10 +48,11 @@ def _tone(part: str) -> str:
 
 
 def crop_records(crops: pathlib.Path):
+    """{(session key, part): (slug, record, record.json's SHA-256)}."""
     out = {}
     for rec_path in sorted(crops.glob("*/record.json")):
         rec = json.loads(rec_path.read_text())
-        out[(rec["session_key"], rec["part"])] = (rec_path.parent.name, rec)
+        out[(rec["session_key"], rec["part"])] = (rec_path.parent.name, rec, _sha(rec_path))
     return out
 
 
@@ -128,9 +129,11 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
             base = {"session_key": s["key"], "band": s["group"], "song": s["song"],
                     "part": p["part"], "source": s["source"]}
             if why:
-                excluded.append({**base, "slug": crop[0] if crop else None, "reasons": why})
+                excluded.append({**base, "slug": crop[0] if crop else None,
+                                 "crop_record_sha256": crop[2] if crop else None,
+                                 "reasons": why})
                 continue
-            slug, rec = crop
+            slug, rec, rec_sha = crop
             wf = p["waveform"]
             lag = rec["lag"]
             onset_clear = lag["onset_runner_up"] is not None and lag["onset_runner_up"] < ONSET_CLEAR
@@ -143,6 +146,8 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
                 "gain_confidence": p["gain_confidence"],
                 "gain_confidence_reasons": p["gain_confidence_reasons"],
                 "clean_vs_driven": p["clean_vs_driven"],
+                "level_slope": p["gain_measures"]["level_slope"],
+                "nonlinear_to_linear_db": p["gain_measures"]["nonlinear_to_linear_db"],
                 "lag_samples": lag["lag_samples"],
                 "judge_lag_samples": lag["lag_samples"] - JUDGE_LATENCY,
                 "lag_samples_native": lag["lag_samples_native"], "native_rate": lag["native_rate"],
@@ -159,7 +164,8 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
                 "licence": s["source"],
                 "crop": {"excerpt_start_s": rec["excerpt_start_s"],
                          "di_sha256": rec["outputs"]["di"]["sha256"],
-                         "reference_sha256": rec["outputs"]["reference"]["sha256"]},
+                         "reference_sha256": rec["outputs"]["reference"]["sha256"],
+                         "record_sha256": rec_sha},
             })
 
     by_band = collections.defaultdict(list)
@@ -180,7 +186,13 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
         sessions.append({"key": s["key"], "band": band, "song": s["song"], "source": s["source"],
                          "path": s["path"], "archive_sha256": s["archive_sha256"],
                          "split": split, "fold": fold_of.get(band),
-                         "kept_parts": sum(1 for p in kept if p["session_key"] == s["key"])})
+                         "kept_parts": sum(1 for p in kept if p["session_key"] == s["key"]),
+                         # every DI in the session, kept or not, relative to the catalogue
+                         # root, with its whole-session clipping count (training filters)
+                         "dis": [{"part": p["part"], "di": f"{s['path']}/{p['di']}",
+                                  "di_clip_runs": p["di_clip"]["runs_ge3"],
+                                  "clipped": p["di_clip"]["runs_ge3"] >= CLIP_RUNS}
+                                 for p in s["parts"] if p.get("di")]})
 
     def count(rows, key):
         return dict(sorted(collections.Counter(key(r) for r in rows).items(), key=str))
@@ -189,7 +201,7 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
     kept = [{**{k: p[k] for k in order}, **{k: v for k, v in p.items() if k not in order}}
             for p in sorted(kept, key=lambda p: (p["split"], p["band"], p["slug"]))]
     return {
-        "schema": "validation-set3-1",
+        "schema": "validation-set3-2",
         "declared": DECLARED,
         "catalog": {"path": "~/ndsp-presets/references/datasets-set3/catalog.json",
                     "sha256": _sha(catalog_path), "schema": cat["schema"]},

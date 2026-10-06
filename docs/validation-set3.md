@@ -264,3 +264,155 @@ Two entries on that list are in hand by other routes, so 50 are absent:
 
 The heavy end of what exists is therefore under-sampled, and set 3 is what could be
 fetched without a browser.
+
+## Amendments
+
+The declaration above stands as committed in c088b30. The held-out draw, the folds and the
+exclusions are unchanged. What follows adds to it or tightens it, after an independent
+review, before any match, model, judge or listening score on set 3.
+
+### 2026-10-07 (1): leakage guards that fail closed
+
+`learn/set3.py` gains three guards. Training code goes through them, and each raises
+rather than guessing:
+
+- **`fold_for_band(band)`** merges K3's folds (`learn.train.k3_folds`, sets 1–2) with set
+  3's development folds.
+  - It raises on a held-out band of any set, on an unknown band, and on a band whose two
+    folds clash.
+  - Guitar-TECHS P1 and set 3's three unfolded development bands (no kept part) are −1:
+    every fold may train on them.
+  - Eat The Feeder is 2 in both.
+- **`is_held_out(x)`** takes a band, a set-3 session key or crop slug, or a path.
+  - A path is matched by prefix on the dataset paths: absolute, with `~`, or relative to
+    the dataset root. Anything under a held-out session's directory or a held-out part's
+    crop directory is held out.
+  - It knows sets 1–2 too (`validation-datasets.json`), so every training DI can be
+    checked. Set 1 shares one directory between both sides (Guitar-TECHS P3_music); under
+    it only the listed files are known.
+  - It raises on any name or path it does not know.
+- **`training_dis(test_fold)`** returns the DI files a network tested on `test_fold` may
+  train on. These are set 2's development DIs and Guitar-TECHS P1's (as `learn.di_pool`
+  takes them) plus every DI of set 3's development sessions, kept part or not. It drops:
+  - bands in `test_fold`;
+  - set-3 DIs with 10 or more flat-topped full-scale runs, by the catalogue's
+    whole-session count. Of the development DIs, that drops Wickerman ElecGtr5 and 6.
+  - Set 2's catalogue has no clipping count, so set 2's DIs are taken as `learn.di_pool`
+    already takes them.
+
+  It checks every file again with `is_held_out`.
+
+The JSON gains fields that `research/validation_set3.py` now writes (schema
+`validation-set3-2`). Rebuilt from the same catalogue and crop records, the earlier
+content is identical, and these fields are added:
+
+- `sessions[].dis`: every DI path with its clipping count;
+- `parts[].level_slope` and `parts[].nonlinear_to_linear_db`: the catalogue's session-level
+  gain measures;
+- `parts[].crop.record_sha256` and `excluded[].crop_record_sha256`: the SHA-256 of each
+  crop's `record.json`. The 60 kept parts' hashes equal those logged when the crops were
+  built.
+
+`tests/test_set3.py` rebuilds the JSON from the catalogue and compares it, everything but
+`held_out_uses`. It is skipped on a machine without the catalogue.
+
+### 2026-10-07 (2): lags and polarity
+
+- **Held-out lags are never re-measured** for the confirmatory result. It uses
+  `judge_lag_samples` as declared.
+- **The waveform lag is primary for every part,** development and held out.
+- **The onset lag is a declared sensitivity analysis for the 7 parts where it disagrees.**
+  The same result is computed once more with those parts' judge lag set to
+  `onset_check.onset_lag_samples − 52`:
+
+  | part | side | waveform lag | onset lag |
+  |---|---|---|---|
+  | Wickerman ElecGtr3 | fold 2 | 35 | 148 |
+  | Burial Of Silence ElecGtr4 | fold 2 | 15 | 268 |
+  | Femme ElecGtr3 | fold 1 | 573 | 524 |
+  | The Forthcoming Turn ElecGtr2 | held out | 74 | −16 |
+  | The Forthcoming Turn ElecGtr3 | held out | 50 | −12 |
+  | The Forthcoming Turn ElecGtr4 | held out | 65 | −72 |
+  | Aureus Necrosis ElecGtr3 | held out | 27 | −28 |
+
+  If pass or fail differs between the two, the result is reported as **not robust**.
+  The onset lags are already recorded, so this needs no new measurement.
+- **Development lags may be checked against renders later,** as set 2's were
+  (`record_part_lags.py`), but only before any held-out result. A correction is recorded
+  here as an amendment. No held-out part is checked.
+- **Polarity is taken as the catalogue records it** (`polarity`, −1 on 34 of 60). It is
+  not chosen per part by results.
+  - **The judge ignores polarity.** `analysis/aligned.py` compares magnitude spectra: it
+    computes `|rfft|²` mel spectra, frame energies for the DI mask and loudness
+    normalisation. `estimate_lag` peaks on the cross-correlation's magnitude.
+  - **Verified.** Flipping the recording, the render or the DI leaves `aligned_distance`
+    unchanged, and `estimate_lag` gives the same lag
+    (`tests/test_set3.py::test_judge_ignores_polarity`, synthetic signals).
+  - **Where polarity can still matter:** a DI fed to the plugin. An amp's asymmetric
+    clipping makes a render of the inverted DI differ from the inverted render. A method
+    that rebuilds a DI from the amp track (the network, `flatref`) therefore uses the
+    catalogue's polarity.
+
+### 2026-10-07 (3): disclosure
+
+**The dry run.** The declaring agent ran `research/validation_set3.py` once under an
+earlier fold rule, then changed the rule and ran it again. The held-out draw was the same
+in both runs.
+
+- **The earlier rule:** `dev = sorted(all 11 development bands); rng.shuffle(dev);
+  fold = index % 4`, with Eat The Feeder not pinned.
+- **The dry run's folds:**
+
+  | fold | bands | parts | clean | crunch | high-gain |
+  |---|---|---|---|---|---|
+  | 0 | Death Of A Romantic, Magician's Nephew, Szymon Skiba | 9 | 0 | 4 | 5 |
+  | 1 | Diesel13, Hollow Ground, Renesans | 8 | 2 | 1 | 5 |
+  | 2 | Timo And The Timezone, Turbosauro, Wall Of Death | 8 | 3 | 2 | 3 |
+  | 3 | Eat The Feeder, Rebuild The Evil | 8 | 0 | 4 | 4 |
+
+- **Why it changed.** The dry run put Eat The Feeder in fold 3, but K3 has it in fold 2.
+  The fold-3 network, which processes its set-3 parts, would have trained on its set-2
+  DIs; the fold-2 network, which processes its set-2 parts, on its set-3 DIs. The agent then printed `k3_folds()` and pinned the band. The new rule is less
+  balanced (7/9/12/5 parts against 9/8/8/8); balance was not the reason.
+- **What it saw in between:** these counts by fold and gain class, and a per-part listing
+  of catalogue fields (gain classes, lags, onset checks, marks). No match, model, judge or
+  listening score existed.
+- **Where this comes from.** The earlier rule and its folds are recovered from the
+  declaring agent's session transcript (the script's printed output). Running the earlier
+  rule on the declared strata reproduces them exactly. They are not kept in `_tools/` or
+  in git history, since the script was committed only in its final form.
+
+**EnDance Gtr6's missing crop.**
+
+- **The step:** the crop-building step (`_tools/build_crops.py`, calling
+  `research/build_validation_crops.build` with rule `di-activity`) failed on it with:
+
+  > `cambridge-endance-gtr6 CROP FAILED reference has no measurable 10-second excerpt`
+
+  The error is logged in `/tmp/set3/crops.log` and `crops2.log`, two runs with the same
+  error, and in `/tmp/set3/crops_made.json`.
+- **What the error means:** it comes from `_window_by_di`. The 10-s window where the DI
+  plays most (ties within 0.02 broken by the amp track's power) had an amp track with no
+  measurable loudness: `loudness_lufs` returns None when the meter reads no finite
+  loudness, as for digital silence or a signal wholly under its gate.
+- **Not re-run:** Dunning Kruger is held out, and rebuilding a crop, even in a dry mode,
+  reads its audio, which this declaration forbids.
+- **Its DI:** it also touches full scale (9 runs, under the 10-run line).
+
+### 2026-10-07 (4): gain classes and gates
+
+- **Per-class results are descriptive only.** This covers the part's `gain_class` and the
+  band stratum. No gate or claim is made per class.
+- **Also reported, also descriptive:**
+  - **the continuous level slope:** each part's result against `level_slope` (−0.24 to
+    0.92), shown with Spearman's ρ over parts and over band medians;
+  - **clean against driven:** the catalogue's `clean_vs_driven`, firm driven against the
+    rest, with the three labels shown. Firm clean parts are too few to summarise alone:
+    2 in development and 1 held out, against 21 and 20 driven and 10 and 6 uncertain.
+- **Gates count parts weighted by band.** Each band's parts weigh 1/n, n being that
+  band's parts in the material scored, so every band counts once.
+  - So "closer than template+R and the constant on more than half the parts" means more
+    than half the band-weighted total.
+  - The band-median and sign-flip gates are per band already.
+  - Without the weights, V.M.GY's 11 held-out parts would be 41% of the held-out count.
+  - This applies to Phase 2 on development parts and to the held-out confirmation.
