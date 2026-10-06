@@ -22,7 +22,7 @@ if __name__=='__main__':
     with ProcessPoolExecutor(4) as ex: S=dict(ex.map(job,parts))
     json.dump(S,open(out/'avg-yardstick-distances.json','w'))
     for bs in D.BAND_SETS:
-        for v in ('true','swap','mild','avg','avg+mild','flatstem'):
+        for v in ('true','swap','mild','avg','avg+mild','flatref','flatstem'):
             rows=[]
             for r in res['rows'].get(f'{v}|{bs}',[]):
                 B=S[r['part']][f'{bs}|B']

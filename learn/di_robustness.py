@@ -270,7 +270,7 @@ def score_part(job):
                 continue
             ddi = np.load(path)
             rec = recording_for(p, v) if v in REBUILT else ref
-            vlag = 0 if v in REBUILT else lag
+            vlag = -LATENCY if v in REBUILT else lag  # a rebuilt DI is aligned with the recording (measured: lag -52)
             dA = {}
             for n in names:
                 x = mono(out / "renders" / v / p / f"{RP._slug(n)}.wav")
