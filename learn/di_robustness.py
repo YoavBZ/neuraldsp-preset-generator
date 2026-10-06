@@ -28,7 +28,7 @@ VARIANTS = ("swap", "mild", "swap+mild")
 # Training-free rebuilt DIs (plan amendment): the recording itself, equalised to a
 # typical DI's spectrum at the assumed level; judged with lag 0.
 REBUILT = ("flatref", "flatstem")
-REPORTED = ("avg",)
+REPORTED = ("avg", "avg+mild")
 STEMS = pathlib.Path(os.path.expanduser("~/ndsp-presets/learn/poc/stems"))
 ASSUMED_LUFS = -22.9
 HALF_A, HALF_B = (1.0, 5.5), (5.5, 10.0)
@@ -225,7 +225,10 @@ def render(out):
         for v in REPORTED:
             path = out / "di" / f"{p}--{v}.npy"
             if not path.exists():
-                np.save(path, average_balance(dis[p], others))
+                y = average_balance(dis[p], others)
+                if v == "avg+mild":
+                    y = degrade("mild", p, y, others, random.Random(f"{SEED}-{p}-mild"))
+                np.save(path, y)
             jobs.append((p, v))
         for v in REBUILT:
             if v == "flatstem" and p not in usable:
@@ -321,7 +324,7 @@ def score(out):
                 "bands_mostly_within": bands_near,
                 "same_pick_as_oracle": sum(r["pick"] == r["oracle"] for r in rows),
                 "vs_templateR": stat,
-                "pass": bool(v in VARIANTS and near > n / 2 and bands_near > len(by_band) / 2
+                "pass": bool(v != "true" and near > n / 2 and bands_near > len(by_band) / 2
                              and stat and stat["band_median_log_ratio"] <= math.log(0.9)),
             }
             rows_out[f"{v}|{bs}"] = rows

@@ -90,3 +90,21 @@ So one more variant is reported. It does not change the verdict.
 - **`avg`:** the true DI, equalised so that its long-term spectrum takes the average
   over the other folds' DIs (the same target as `flatref`).
 - It is written before any `avg` result exists.
+
+## Amendment, 2026-10-06: avg+mild, declared before it runs
+
+**The `avg` result.** Choosing through the true DI equalised to an average balance,
+scored through the true DI on half B:
+- band median −0.168 / −0.115 against template+R, p 0.008 / 0.016;
+- within 0.150 of the true-DI pick on 19 / 17 of 25 parts, and in 7 / 5 of 9 bands.
+
+That meets the decision rule's numbers, but `avg` was added after the verdict, so the
+verdict stays "not passed".
+
+**The next variant, `avg+mild`.** A rebuilt DI would carry an average balance *and*
+artefacts, so this combines `avg` with the `mild` degradations (the same recipe and
+seeds as `mild`).
+- **Rule:** it is held to the same decision rule. Building DI recovery goes ahead only
+  if `avg+mild` meets it under both band sets.
+- **What a pass means:** a pass reopens the build, recorded as a decision taken on a
+  variant added after the first verdict. It is not a pass of the original test.
