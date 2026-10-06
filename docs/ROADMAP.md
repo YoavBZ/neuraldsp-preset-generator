@@ -29,7 +29,7 @@ lives in the linked documents. Last updated 2026-10-06.
 ## Next, in order
 
 1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
-   about 25 minutes, declared first). The page is in `generate` (step 5b): four presets
+   about 23 minutes, declared first). The page is in `generate` (step 5b): four presets
    through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
    Does a real ear, listening through another performance, follow the song: beat
    chance, and beat a song-blind taste for an amp, drive or gain? It decides whether

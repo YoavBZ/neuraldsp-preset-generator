@@ -153,6 +153,30 @@ def test_the_chord_share_tells_a_strum_from_a_single_note():
     assert L.chord_share(_tone([98.0, 123.5, 146.8]), 48000) > 0.9   # a G major triad
 
 
+def test_two_note_shapes_read_low_on_three_notes_and_high_on_two():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    fourths = _tone([110.0, 146.8])                                  # A and D together
+    assert L.chord_share(fourths, 48000) < 0.47
+    assert L.chord_share(fourths, 48000, notes=2) > 0.9
+
+
+def test_a_part_of_two_note_shapes_is_never_called_a_clear_style():
+    data = {"chord_share": {"line": 0.0, "fourths": 0.24, "chords": 0.9, "middle": 0.45},
+            "two_note_share": {"line": 0.1, "fourths": 1.0, "chords": 1.0, "middle": 0.7}}
+    assert L.clear_style(data, "line", 0.47)
+    assert L.clear_style(data, "chords", 0.47)
+    assert not L.clear_style(data, "fourths", 0.47)
+    assert not L.clear_style(data, "middle", 0.47)
+
+
+def test_the_leak_check_reads_the_page_but_not_its_embedded_audio(tmp_path):
+    page = tmp_path / "page.html"
+    page.write_text('<audio src="data:audio/mp4;base64,AAAA/g3+PR12AAAA="></audio>')
+    assert L.leak_check(tmp_path) == []                     # base64 that spells "G3"
+    page.write_text('<p>PR12</p><audio src="data:audio/mp4;base64,AAAA="></audio>')
+    assert L.leak_check(tmp_path)
+
+
 def test_the_ranks_within_a_part_are_centred_with_ties_averaged():
     assert L._ranks([0.3, 0.1, 0.2, 0.4]) == [0.5, -1.5, -0.5, 1.5]
     assert L._ranks([0.0, 0.0, 0.5, 0.9]) == [-1.0, -1.0, 0.5, 1.5]
@@ -450,7 +474,8 @@ def _scoring_setup(tmp_path, picks_best: bool):
               "taste_classes": tastes, "taste_features": features,
               "di_lufs": {p: -30.0 + i for i, p in enumerate(parts)}, "riff_lufs": -23.7,
               "riff_chord_share": {"chords": 0.9, "line": 0.0},
-              "chord_share": {p: (0.95 if i % 2 else 0.4) for i, p in enumerate(parts)}}
+              "chord_share": {p: (0.95 if i % 2 else 0.4) for i, p in enumerate(parts)},
+              "two_note_share": {p: 0.5 for p in parts}}
     inputs_path = tmp_path / "inputs.json"
     inputs_path.write_text(json.dumps(inputs))
     rng = random.Random(5)

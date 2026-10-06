@@ -8,8 +8,10 @@
 > sounds different on several notes at once. No answers were recorded, and that build
 > is never scored. In its place, each part is classified as strummed chords or single
 > notes from its own clean recording, before any trial is built, and heard twice
-> through the riff in its own style (below). The listener has heard part of the set-aside
-> sitting 1: the same parts and candidates, with other letters.
+> through the riff in its own style (below). The style rule was set after seeing the
+> parts' measured shares, but without looking at any judge distance or answer. The
+> listener has heard part of the set-aside sitting 1: the same parts and candidates,
+> with other letters.
 >
 > **Played on a phone,** at the listener's request: `listening_check.py phone-page`
 > builds one self-contained page per sitting from the listener's folder alone (never
@@ -17,7 +19,8 @@
 > attachment), with tap-to-answer buttons that assemble the answer line.
 
 Declared on 2026-10-05, before any trial is built. Revised on 2026-10-06 after a
-second to seventh independent reviews, still before any trial existed.
+second to eighth independent reviews: before the first build, and then, as amended
+above, after it was set aside and before any answer.
 
 The shortlist measurement (`docs/song-only-shortlist-results.md`) found that a perfect
 ear choosing among four generated presets lands closer than one preset: about 18%
@@ -60,9 +63,13 @@ taste for an amp or for drive.
   its harmonics removed, repeated while one keeps a quarter of the first's strength);
   the part's chord share is the share of frames with three or more. The riffs measure
   0.913 (chords) and 0.026 (line), and a part plays through the riff whose share is
-  nearer: chords at 0.47 or more. 9 parts play chords, 7 the line. 5 parts sit within
-  0.15 of the split (0.37 to 0.59: arpeggios or ringing notes, most likely) and are
-  also reported apart.
+  nearer: chords at 0.47 or more. 9 parts play chords, 7 the line.
+  - **Reported apart, 6 parts:** the 5 within 0.15 of the split (0.37 to 0.59: mixed
+    or two-note parts), and any part of two-note shapes, whose frames hold two notes
+    or more 90% of the time or more while its chord share falls on the line side:
+    Sculptor's Request GTR 2, played in fourths (0.24, and two notes or more in every
+    frame). The measure reads a fifth or an octave as part of the lower note, so
+    double stops and power chords read low.
 - **Main trials:** 32: each part twice, once in each sitting, through its style's
   riff, with four candidates labelled A–D.
   - The letters are a shuffle drawn per trial from system randomness, so a part's two
@@ -251,8 +258,11 @@ it fails too, the ear or the judge is.
   beating chance is enough to beat it. That may not hold where the agent's first choice is better.
 - **The song:** an instrumental unmixed sum, not a mastered song.
 - **Two styles only:** the riffs are strummed chords and a single-note line. Parts in
-  between (arpeggios, ringing notes) get the nearer one, and are reported apart. The
-  style measure was checked on the two riffs only, not against a listener's labels.
+  between (mixed, or double stops and power chords) get the nearer one, and are
+  reported apart. The style measure was checked on the two riffs and on synthetic
+  tones, not against a listener's labels. It reads two-note shapes as fewer notes, and
+  a low note with a strong second harmonic as more; the parts it might misread are
+  the ones reported apart.
 - **Renders with R:** this tests the ear on what was scored, not the product page's
   full presets.
 - **Blinding is procedural:** the public inputs name every preset, so a listener who
@@ -281,5 +291,5 @@ parts, cues, presets and their hashes, each candidate's taste class and features
 part's DI loudness, the G1 rule's chance pass rate, the controls, the practice part,
 the factory presets' hashes, the song excerpts' and DIs' hashes, and every candidate's
 judge distance. Its SHA-256 is
-`a8e244170719506b029e5fb03ca967a0d9d3a054d2bc05e35ef49db1fd063d82`. `build` refuses any
+`a20d0baf5341cd5f99d30f92b00f1f223422e16d035dcddf9c3a717a5cd7f0bb`. `build` refuses any
 other file.

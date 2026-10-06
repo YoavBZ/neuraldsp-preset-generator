@@ -1,5 +1,5 @@
 {
- "schema": "listening-check-inputs-6",
+ "schema": "listening-check-inputs-7",
  "parts": [
   "telefunken-Blind_Spots-GTR",
   "telefunken-Bloomlight-GTR",
@@ -1313,6 +1313,28 @@
   "telefunken-Gym_Hours-GTR_2": 0.701,
   "telefunken-Sculptor's_Request-GTR_1": 0.701,
   "cambridge-Today's_The_Day-ElecGtr10": 0.121
+ },
+ "two_note_share": {
+  "telefunken-Blind_Spots-GTR": 0.991,
+  "telefunken-Bloomlight-GTR": 1.0,
+  "cambridge-Drag_Me_Down-ElecGtr4": 0.974,
+  "telefunken-Farthest_Step-GTR": 0.874,
+  "telefunken-First_Offering-GTR_2": 0.121,
+  "telefunken-Fragments-GTR": 0.541,
+  "telefunken-Gym_Hours-GTR_1": 0.468,
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": 1.0,
+  "telefunken-Long_Way_Home-GTR": 0.974,
+  "cambridge-Passing_Ships-ElecGtr6": 0.801,
+  "cambridge-Prodigal-ElecGtr5": 0.922,
+  "cambridge-Quicksand-ElecGtr1": 0.957,
+  "telefunken-Russian_Cream-GTR_2": 0.874,
+  "telefunken-Sculptor's_Request-GTR_2": 1.0,
+  "cambridge-Signs-ElecGtr2": 0.039,
+  "cambridge-Today's_The_Day-ElecGtr07": 0.818,
+  "telefunken-First_Offering-GTR_1": 0.931,
+  "telefunken-Gym_Hours-GTR_2": 0.961,
+  "telefunken-Sculptor's_Request-GTR_1": 0.9,
+  "cambridge-Today's_The_Day-ElecGtr10": 0.342
  },
  "styles": {
   "telefunken-Blind_Spots-GTR": "chords",

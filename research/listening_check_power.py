@@ -16,7 +16,7 @@ are drawn from one seeded generator, so both fits see identical listeners.
 
 The listeners, in the plan's table:
 - **random:** each trial's pick uniform over the four.
-- **random, same on both riffs:** one uniform pick per part, given on both trials.
+- **random, same preset both times:** one uniform pick per part, given on both trials.
 - **always a PR12 / a PR12 half the time:** one pick per part, on both trials: a PR12
   candidate (uniform among the part's PR12s), always or with probability one half,
   otherwise uniform over the four.
@@ -88,7 +88,7 @@ def main():
     pr12 = lambda rng, k: among(rng, k, lambda f: f["amp"] == "pr12")  # noqa: E731
     listeners = {
         "random": lambda rng, k: [rng.randrange(4), rng.randrange(4)],
-        "random, same on both riffs": both(lambda rng, k: rng.randrange(4)),
+        "random, same preset both times": both(lambda rng, k: rng.randrange(4)),
         "always a PR12": both(pr12),
         "a PR12 half the time": sometimes(0.5, pr12),
         "always no drive": both(lambda rng, k: among(rng, k, lambda f: not f["drive_on"])),

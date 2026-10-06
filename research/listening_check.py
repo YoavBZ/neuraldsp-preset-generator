@@ -4,6 +4,8 @@
     python research/listening_check.py inputs --json docs/listening-check-inputs.json
     python research/listening_check.py build --inputs docs/listening-check-inputs.json \\
         --inputs-sha SHA --out-dir ~/ndsp-presets/runs/listening-check
+    python research/listening_check.py phone-page --out-dir ~/ndsp-presets/runs/listening-check \\
+        --inputs docs/listening-check-inputs.json --sitting 1
     python research/listening_check.py check-sheet --out-dir ~/ndsp-presets/runs/listening-check \\
         --answers ANSWERS.txt
     python research/listening_check.py score --out-dir ~/ndsp-presets/runs/listening-check \\
@@ -60,6 +62,7 @@ CLEAR_PAIR = 0.15               # log distance at which the judge "clearly" sepa
 TASTE_RIDGE = 0.5               # the taste fit's penalty: 14 to 18 answers per riff, 9 features
 RIFF_LUFS = -23.7
 STYLE_MARGIN = 0.15             # a part's chord share this near the split is reported apart
+DYAD_SHARE = 0.9                # two notes or more in this share of frames: two-note shapes
 G = ("G1", "G2", "G3", "G4")
 RIFFS = ("chords", "line")
 LETTERS = "ABCD"
@@ -197,11 +200,14 @@ def notes_per_frame(x, rate: int, n: int = 8192, hop: int = 2048, harmonics: int
     return np.array(counts)
 
 
-def chord_share(x, rate: int) -> float:
-    """The share of a clean recording's active frames in which three or more notes
-    sound: near 1 for strummed chords, near 0 for a single-note line."""
+def chord_share(x, rate: int, notes: int = 3) -> float:
+    """The share of a clean recording's active frames in which `notes` or more notes
+    sound. With three: near 1 for strummed chords, near 0 for a single-note line. Two
+    notes (double stops, power chords) read as fewer, since a fifth or an octave
+    lies on the lower note's harmonics, so a part of mostly two-note shapes reads low
+    on three and high on two."""
     counts = notes_per_frame(x, rate)
-    return float((counts >= 3).mean()) if len(counts) else 0.0
+    return float((counts >= notes).mean()) if len(counts) else 0.0
 
 
 def preset_values(path) -> dict:
@@ -372,19 +378,21 @@ def inputs(args):
         die("not enough parts for the controls and the practice trial")
     factory = {c: _sha(preset_path(c)) for x in controls + [practice] for c in x["candidates"]}
     # Each part plays through the riff in its own style: strummed chords or single notes.
-    shares = {}
+    shares, pairs = {}, {}
     for p in chosen + [c["part"] for c in controls] + [practice["part"]]:
         audio = io.load(crops / p / "di.wav")
         shares[p] = round(chord_share(audio.mono(), audio.sample_rate), 3)
+        pairs[p] = round(chord_share(audio.mono(), audio.sample_rate, notes=2), 3)
     styles = {p: "chords" if share >= split else "line" for p, share in shares.items()}
     audio = {p: {f: _sha(crops / p / f) for f in ("di.wav", "mix_instrumental.wav")}
              for p in chosen + [c["part"] for c in controls] + [practice["part"]]}
-    out = {"schema": "listening-check-inputs-6", "parts": chosen, "cues": cues,
+    out = {"schema": "listening-check-inputs-7", "parts": chosen, "cues": cues,
            "distances": distances, "presets": presets, "preset_sha256": preset_sha,
            "di_lufs": di_lufs, "riff_lufs": RIFF_LUFS, "taste_classes": tastes,
            "taste_features": features,
            "factory_sha256": factory, "audio_sha256": audio,
-           "riff_chord_share": riff_share, "chord_share": shares, "styles": styles,
+           "riff_chord_share": riff_share, "chord_share": shares,
+           "two_note_share": pairs, "styles": styles,
            "g1_rule_chance_pass": round(g1_chance_pass(distances, chosen), 4),
            "controls": controls, "practice": practice,
            "renders_index_sha256": _sha(SHORTLISTS.expanduser() / "renders" / "index.json"),
@@ -561,6 +569,15 @@ def plan_trials(parts, styles, controls, practice, rng):
     return sittings
 
 
+def preset_names(data) -> list:
+    """Every preset on trial by name: none may appear in the listener's folder."""
+    names = {x.rsplit("/", 1)[-1] for c in data["controls"] + [data["practice"]]
+             for x in c["candidates"]}
+    names |= {path.stem for by_label in trial_candidates(data).values()
+              for path in by_label.values()}
+    return sorted(names)
+
+
 def group_of(trial: dict) -> str:
     """Which candidate set a trial plays."""
     return "main" if trial["kind"] == "main" else trial["kind"]
@@ -681,9 +698,7 @@ def build(args):
                  "level_lufs": round(level, 2),
                  "clips_sha256": {n: _sha(folder / f) for n, f in files.items()}})
         (folder / "index.html").write_text(page(s, shown))
-    names = {x.rsplit("/", 1)[-1] for c in data["controls"] + [pr] for x in c["candidates"]}
-    names |= {path.stem for by_label in candidates.values() for path in by_label.values()}
-    leaks = leak_check(listen, sorted(names))
+    leaks = leak_check(listen, preset_names(data))
     if leaks:
         die(f"the listener's folder names what it must not: {leaks}")
     (private / "private-key.json").write_text(json.dumps(key, indent=1) + "\n")
@@ -725,7 +740,7 @@ def block_p(blocks, draws: int | None = None) -> float:
     G order, lower meaning closer; the listener's answered picks on that part's trials
     (0, 1 or 2 indices; "can't tell" is left out, contributing 0 either way); and, for
     each answered trial, the four pick probabilities the null draws from (None for
-    uniform). A part's two riff trials offer the same four presets, so they are not
+    uniform). A part's two trials offer the same four presets, so they are not
     independent: the null draws the pair from its distribution given whether the two
     picks agree. Agreeing, one preset i is drawn in proportion to w1[i] * w2[i] and
     counted twice; differing, an ordered pair i != j in proportion to w1[i] * w2[j].
@@ -905,6 +920,16 @@ def decide(by_band_set: dict, cant_tell: int, controls_hit: int) -> dict:
             "primary_holds": primary, "main_path": primary}
 
 
+def clear_style(data, part: str, split: float) -> bool:
+    """Whether a part's style is clear: its chord share is more than STYLE_MARGIN from
+    the split, and it is not a part of two-note shapes (most frames holding two notes
+    or more while its chord share falls on the line side), which the measure reads as
+    single notes."""
+    share = data["chord_share"][part]
+    two_note = data["two_note_share"][part] >= DYAD_SHARE and share < split
+    return abs(share - split) > STYLE_MARGIN and not two_note
+
+
 def score(args):
     if _sha(args.answers) != args.answers_sha:
         die("the answers file is not the one whose hash was committed")
@@ -967,8 +992,7 @@ def score(args):
                          "classes": data["taste_classes"][t["part"]],
                          "g1": math.log(d["G1"]), "template": math.log(d["template+R"]),
                          "hot_di": gaps[t["part"]] > gap_median,
-                         "clear_style": abs(data["chord_share"][t["part"]] - split)
-                         > STYLE_MARGIN})
+                         "clear_style": clear_style(data, t["part"], split)})
         result["by_band_set"][bands] = {
             "all": readings(rows, taste),
             "per_style": {riff: readings([r for r in rows if r["riff"] == riff], taste)
@@ -1034,8 +1058,9 @@ audio {{ width:100%; height:40px; }}
           padding:12px 16px; }}
 #line {{ width:100%; box-sizing:border-box; font:15px ui-monospace, monospace; padding:8px;
          border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }}
-#copy {{ margin-top:8px; padding:10px 16px; font:inherit; border-radius:8px;
-         border:1px solid var(--line); background:var(--on); color:var(--on-fg); }}
+#copy, #clear {{ margin-top:8px; padding:10px 16px; font:inherit; border-radius:8px;
+                border:1px solid var(--line); background:var(--on); color:var(--on-fg); }}
+#clear {{ background:var(--bg); color:var(--fg); }}
 </style></head><body><main>
 <h1>Listening check, sitting {sitting}</h1>
 <p>For each trial: play the song, then A to D. Which of A to D sounds most like the
@@ -1046,9 +1071,10 @@ copy it and send it.</p>
 {trials}
 </main>
 <div id="sheet"><input id="line" readonly aria-label="Your answer line">
-<button id="copy" type="button">Copy answer line</button></div>
+<button id="copy" type="button">Copy answer line</button>
+<button id="clear" type="button">Clear answers</button></div>
 <script>
-const SITTING = {sitting}, COUNT = {count}, KEY = "lc-sitting-" + SITTING;
+const SITTING = {sitting}, COUNT = {count}, KEY = "lc-{build}-sitting-" + SITTING;
 let answers = {{}};
 try {{ answers = JSON.parse(localStorage.getItem(KEY) || "{{}}"); }} catch (e) {{}}
 function render() {{
@@ -1070,6 +1096,12 @@ document.querySelectorAll(".pick button").forEach(b => b.addEventListener("click
 }}));
 document.querySelectorAll("audio").forEach(a => a.addEventListener("play", () =>
   document.querySelectorAll("audio").forEach(o => {{ if (o !== a) o.pause(); }})));
+document.getElementById("clear").addEventListener("click", () => {{
+  if (!confirm("Clear every answer on this page?")) return;
+  answers = {{}};
+  try {{ localStorage.removeItem(KEY); }} catch (e) {{}}
+  render();
+}});
 document.getElementById("copy").addEventListener("click", async () => {{
   const line = document.getElementById("line");
   try {{ await navigator.clipboard.writeText(line.value); }}
@@ -1113,13 +1145,18 @@ def mobile_page(args):
                             f'{"".join(rows)}<div class="pick" data-trial="{number}">'
                             f'{buttons}</div></section>')
     out = listen / f"sitting-{args.sitting}-phone.html"
-    out.write_text(MOBILE.format(sitting=args.sitting, count=len(found),
+    # Answers are saved in the browser per build and sitting, so a page from another
+    # build never shows this one's trials pre-answered.
+    build_id = hashlib.sha256(text.encode()).hexdigest()[:12]
+    out.write_text(MOBILE.format(sitting=args.sitting, count=len(found), build=build_id,
                                  trials="\n".join(sections)))
-    leaks = leak_check(listen)
+    data = json.loads(args.inputs.read_text()) if args.inputs else None
+    leaks = leak_check(listen, preset_names(data) if data else ())
     if leaks:
         out.unlink()
         die(f"the phone page names what it must not: {leaks}")
-    print(f"{out} ({out.stat().st_size / 1e6:.1f} MB, {len(found)} trials)")
+    print(f"{out} ({out.stat().st_size / 1e6:.1f} MB, {len(found)} trials); "
+          f"sha256 {_sha(out)}")
 
 
 def check_sheet(args):
