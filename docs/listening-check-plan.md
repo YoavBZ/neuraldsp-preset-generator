@@ -20,6 +20,14 @@
 > (sitting 1) and `ebaedefc7d4811ee8e948f717b4f109584947983859d92e4fe665149776b37a1`
 > (sitting 2).
 >
+> **Guidance given before the first answer,** when the listener asked which guitar to
+> compare with in songs holding both lead and backing guitars: the one the cue names;
+> the riff A–D play matches its style (chords, or single notes and two-note shapes);
+> each song's part under test is its most exposed guitar (controls excepted, whose
+> songs' guitars share one gain class); the cue's pace helps tell lead from rhythm;
+> answer "?" when unsure which guitar is meant. None of it bears on which letter is
+> closest.
+>
 > **Played on a phone,** at the listener's request: `listening_check.py phone-page`
 > builds one self-contained page per sitting from the listener's folder alone (never
 > the key), each clip encoded as mono AAC at 160 kbps (to stay under a 30 MiB
