@@ -78,6 +78,36 @@ def build_cache(renders: pathlib.Path, cache: pathlib.Path):
     print(f"cached {len(meta)} pairs")
 
 
+def build_pair_cache(pairs: pathlib.Path, cache: pathlib.Path):
+    """The same cache layout from a `learn/render_pairs.py` folder (FLAC out + DI)."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn.di_robustness import smoothed_spectrum
+
+    rows = []
+    for f in sorted(pairs.glob("index-w*.jsonl")):
+        rows += [json.loads(line) for line in f.read_text().splitlines() if line]
+    rows.sort(key=lambda r: r["id"])
+    rows = [r for r in rows if r["lufs"] >= -40]
+    cache.mkdir(parents=True, exist_ok=True)
+    X = np.lib.format.open_memmap(cache / "input.npy", mode="w+", dtype=np.int16, shape=(len(rows), CLIP))
+    Y = np.lib.format.open_memmap(cache / "di.npy", mode="w+", dtype=np.int16, shape=(len(rows), CLIP))
+    S = np.zeros((len(rows), SPEC_N // 2 + 1), np.float32)
+    for i, r in enumerate(rows):
+        x, _ = sf.read(str(pairs / f"{r['id']}-out.flac"), dtype="float32")
+        y, _ = sf.read(str(pairs / f"{r['id']}-di.flac"), dtype="float32")
+        X[i, :len(x)] = np.clip(x * 32767, -32767, 32767)
+        Y[i, :len(y)] = np.clip(y * 32767, -32767, 32767)
+        S[i] = smoothed_spectrum(y.astype(np.float64))
+        if i % 2000 == 0:
+            print(f"cached {i}/{len(rows)}", flush=True)
+    X.flush(); Y.flush()
+    np.save(cache / "di_spectrum.npy", S)
+    (cache / "meta.json").write_text(json.dumps(rows))
+    print(f"cached {len(rows)} pairs from {pairs}")
+
+
 def fold_average(cache: pathlib.Path, fold: int):
     """The average guitar balance (dB, mean-removed, SPEC_N bins) over DIs from bands
     outside `fold`; frozen to a file the measure and the target share."""
@@ -163,7 +193,8 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 
 # --- training -----------------------------------------------------------------------
 
-def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None):
+def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
+        extra=None):
     import numpy as np
     import torch
 
@@ -171,11 +202,24 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
 
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    dev = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    X = np.load(cache / "input.npy", mmap_mode="r")
-    Y = np.load(cache / "di.npy", mmap_mode="r")
-    S = np.load(cache / "di_spectrum.npy")
-    meta = json.loads((cache / "meta.json").read_text())
+    dev = torch.device(os.environ.get("DIREC_DEVICE") or ("mps" if torch.backends.mps.is_available() else "cpu"))
+    # The first cache holds the fold's frozen average; extra caches add pairs.
+    caches = [cache] + list(extra or [])
+    Xs = [np.load(c / "input.npy", mmap_mode="r") for c in caches]
+    Ys = [np.load(c / "di.npy", mmap_mode="r") for c in caches]
+    S = np.concatenate([np.load(c / "di_spectrum.npy") for c in caches])
+    meta = [m for c in caches for m in json.loads((c / "meta.json").read_text())]
+    where = [(k, j) for k, c in enumerate(Xs) for j in range(len(c))]
+
+    class _Rows:
+        def __init__(self, arrays):
+            self.arrays = arrays
+
+        def __getitem__(self, i):
+            k, j = where[i]
+            return self.arrays[k][j]
+
+    X, Y = _Rows(Xs), _Rows(Ys)
     fold_of, band_of = TR.k3_folds()
     f = np.array([fold_of.get(m["band"], -1) for m in meta])
     tr, va = np.where(f != fold)[0], np.where(f == fold)[0]
@@ -311,6 +355,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
+    cp = sub.add_parser("cache-pairs")
+    cp.add_argument("--pairs", type=pathlib.Path, required=True)
+    cp.add_argument("--cache", type=pathlib.Path, required=True)
     c = sub.add_parser("cache")
     c.add_argument("--renders", type=pathlib.Path, required=True)
     c.add_argument("--cache", type=pathlib.Path, required=True)
@@ -322,14 +369,18 @@ def main():
     f.add_argument("--seed", type=int, default=0)
     f.add_argument("--log-every", type=int, default=200)
     f.add_argument("--resume", type=pathlib.Path)
+    f.add_argument("--extra-cache", type=pathlib.Path, nargs="*", default=[])
     f.add_argument("--lr", type=float, default=3e-4)
     f.add_argument("--lr-end", type=float)
     args = ap.parse_args()
-    if args.cmd == "cache":
+    if args.cmd == "cache-pairs":
+        build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
+    elif args.cmd == "cache":
         build_cache(args.renders.expanduser(), args.cache.expanduser())
     else:
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
-            log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end)
+            log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end,
+            extra=[c.expanduser() for c in args.extra_cache])
 
 
 if __name__ == "__main__":
