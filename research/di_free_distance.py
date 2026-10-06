@@ -578,14 +578,14 @@ def run(args):
              if v is not None and not (k[0] == "stem" and k[1] not in stems)}
     for feats in cache.values():
         feats["fpo"] = Fingerprint.from_dict(feats["fp"])
-    renders = [cache[(q, c)] for q in files for c in menu]
+    renders = [cache[(q, c)] for q in files for c in menu if (q, c) in cache]
     scales = {name: np.std(np.array([f[name] for f in renders]), axis=0) + 1e-9
               for name in ("mfcc", "lean")}
     rows = make_rows(scales)
     lda = {}
     for band in sorted({bands[p] for p in targets}):
         train = [(q, c) for q in files if q not in quiet and bands.get(q) not in (None, band)
-                 for c in menu]
+                 for c in menu if (q, c) in cache]
         W = fit_lda([lda_vector(cache[k], scales) for k in train], [c for _, c in train])
         lda[band] = lambda feats, W=W: lda_vector(feats, scales) @ W
     clean = clean_menu(menu)
