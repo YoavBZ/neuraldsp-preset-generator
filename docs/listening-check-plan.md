@@ -38,6 +38,12 @@
 > so I chose '?'". This is recorded as a finding about the material and the riffs,
 > whatever the score.
 >
+> **Sitting 2 answered on 2026-10-06:** its sheet's SHA-256
+> `c31aa092ab8c01414dcb56c6acf938a4714259670b443efcb58ad8bb533514d7`; the joined sheet
+> scored (`answers.txt`, 37 trials, passing `check-sheet`):
+> `b481636030665e5a5907a585e1f7771ff7ae52495dce8a35f4df6ad7bf5b0d2e`. Committed before
+> the key was read.
+>
 > **Played on a phone,** at the listener's request: `listening_check.py phone-page`
 > builds one self-contained page per sitting from the listener's folder alone (never
 > the key), each clip encoded as mono AAC at 160 kbps (to stay under a 30 MiB
