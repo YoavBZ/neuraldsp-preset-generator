@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-05.
+lives in the linked documents. Last updated 2026-10-06.
 
 ## Where the product is
 
@@ -67,6 +67,16 @@ lives in the linked documents. Last updated 2026-10-05.
   - No cheap fix rescued recognition on real tracks ([quick checks](quick-checks-results.md)).
   - Reopen only if step 3 finds features that carry over from renders to real
     recordings. If it is ever built, its amp output is a set of acceptable amps.
+  - **Reopened as a proof of concept, 2026-10-06**
+    ([plan](preset-model-poc-plan.md) → [results](preset-model-poc-results.md)).
+    - **What ran:** a network trained on 18,843 PR12 renders of sampled settings.
+    - **Result:** not passed. It was 3.6% closer than template+R by band median, against
+      the 10% bar.
+    - **What it shows:** it is the first song-only method here to read part-specific
+      information on clean PR12 (closer than its shuffled control on 21–22 of 28 parts).
+    - **The catch:** its gain over the template rests on two parts.
+    - **Next:** learn the sound rather than the knobs, train on separated stems, and
+      move to heavier tones.
 
 ## Decisions
 
