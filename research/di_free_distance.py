@@ -128,7 +128,10 @@ def features(job) -> tuple:
     from analysis.fingerprint import fingerprint
 
     key, path, regime, window = job
-    x = clip(path, window)
+    try:
+        x = clip(path, window)
+    except ValueError:
+        return key, None                    # silent in this window: recorded, then skipped
     stats = mel_stats(x)
     mfcc = dct(stats.pop("mel"), type=2, norm="ortho", axis=1)[:, 1:MFCCS + 1]
     fp = fingerprint(io.from_samples(x, RATE), regime=regime, excerpt_s=None)
@@ -348,13 +351,17 @@ def cache_features(args, jobs) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     stages = (("features", features, [j for j in jobs if j[0] not in cache]),
               ("floored statistics", floor_stats,
-               [j for j in jobs if j[0] in cache and "floor_mean" not in cache[j[0]]]))
+               [j for j in jobs if cache.get(j[0]) is not None
+                and "floor_mean" not in cache[j[0]]]))
     for kind, work, todo in stages:
         if not todo:
             continue
         with ProcessPoolExecutor(args.workers) as ex:
             for n, (key, feats) in enumerate(ex.map(work, todo, chunksize=8), 1):
-                cache.setdefault(key, {}).update(feats)
+                if feats is None:
+                    cache[key] = None
+                else:
+                    cache.setdefault(key, {}).update(feats)
                 if n % 500 == 0:
                     path.write_bytes(pickle.dumps(cache))
                     print(f"{kind}: {n} of {len(todo)} clips", flush=True)
@@ -405,6 +412,8 @@ def score_row(table, judged, clean, targets, bands, kind: str, menu: list) -> di
         amp_q = collections.defaultdict(dict)
         for q in donors:
             dist = {c: v for c, v in by_donor[q].items() if c in menu and v is not None}
+            if not dist:
+                continue
             pick = min(dist, key=dist.get)
             regret_q[q] = regret_of({c: judged[p][c] for c in dist}, pick)
             on_clean = [c for c in clean if by_donor[q].get(c) is not None]
@@ -516,6 +525,8 @@ def another_teacher(rows, lda, cache, targets, donors, avg_menu, bands, reach, a
                         if q == p:
                             continue
                         sub = {c: dist[c] for c in have if dist.get(c) is not None}
+                        if not sub:
+                            continue
                         per[q] = regret_of({c: scores[p][c] for c in have}, min(sub, key=sub.get))
                     regrets[p] = band_stat(per, bands)
                 out[band_set][teacher][name] = band_stat(regrets, bands)
@@ -552,7 +563,9 @@ def run(args):
         print(f"{len(cache)} clips' features cached at {args.cache.expanduser()}")
         return
     # Only the qualified stems are used, whatever an earlier run cached.
-    cache = {k: v for k, v in cache.items() if not (k[0] == "stem" and k[1] not in stems)}
+    silent = sorted(str(k) for k, v in cache.items() if v is None)
+    cache = {k: v for k, v in cache.items()
+             if v is not None and not (k[0] == "stem" and k[1] not in stems)}
     for feats in cache.values():
         feats["fpo"] = Fingerprint.from_dict(feats["fp"])
     renders = [cache[(q, c)] for q in files for c in menu]
@@ -574,7 +587,7 @@ def run(args):
               "menu_sizes": {m: len(v) for m, v in menus.items()},
               "donors_per_part": {p: len(donors[p]) for p in targets},
               "stem_parts": sorted(p for p in targets if p in stems),
-              "empty_distances": empty, "by_band_set": {}}
+              "empty_distances": empty, "silent_clips": silent, "by_band_set": {}}
     for band_set in BAND_SETS:
         judged = {p: judge(reach, p, band_set) for p in targets}
         result["by_band_set"][band_set] = {}
