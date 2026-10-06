@@ -1170,6 +1170,9 @@ def check_sheet(args):
     shown = listed_trials(args.out_dir.expanduser() / "listen")
     if not shown:
         die("no trial pages found")
+    # A sheet may hold one sitting, checked as soon as that sitting ends.
+    sittings = {s for s, _ in answers}
+    shown = {t for t in shown if t[0] in sittings}
     missing, extra = sorted(shown - set(answers)), sorted(set(answers) - shown)
     if missing or extra:
         die(f"the sheet does not answer exactly the trials shown: missing {missing}, "

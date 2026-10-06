@@ -578,6 +578,9 @@ def test_check_sheet_compares_against_the_public_pages_only(tmp_path, capsys):
     sheet.write_text("Sitting 1: 1A 2B 3?\nSitting 2: 1C 2D\n")
     L.check_sheet(args)
     assert "all 5 trials" in capsys.readouterr().out
+    sheet.write_text("Sitting 1: 1A 2B 3?\n")                       # one sitting alone
+    L.check_sheet(args)
+    assert "all 3 trials" in capsys.readouterr().out
     for bad in ("Sitting 1: 1A 2B\nSitting 2: 1C 2D\n",          # one missing
                 "Sitting 1: 1A 2B 3? 4A\nSitting 2: 1C 2D\n",    # one extra
                 "Sitting 1: 1A 2B 3? …\nSitting 2: 1C 2D\n"):    # unreadable

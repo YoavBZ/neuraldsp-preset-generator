@@ -28,6 +28,16 @@
 > answer "?" when unsure which guitar is meant. None of it bears on which letter is
 > closest.
 >
+> **Sitting 1 answered on 2026-10-06:** the sheet
+> (`~/ndsp-presets/runs/listening-check/answers/sitting-1.txt`) passed `check-sheet`;
+> its SHA-256, committed before sitting 2:
+> `c8a2543aa2a8cfc43185a4ccb7e5b1b3050f2b897d59c0592cf9a9f28719053f`. The sheet scored
+> at the end is the two sittings' sheets joined, sitting 1 first. The listener
+> reported, unprompted and before any result was seen: "Some songs didn't include a
+> guitar or the song and the A-D had different notes/chords and couldn't be compared,
+> so I chose '?'". This is recorded as a finding about the material and the riffs,
+> whatever the score.
+>
 > **Played on a phone,** at the listener's request: `listening_check.py phone-page`
 > builds one self-contained page per sitting from the listener's folder alone (never
 > the key), each clip encoded as mono AAC at 160 kbps (to stay under a 30 MiB
