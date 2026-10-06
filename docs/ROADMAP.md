@@ -34,6 +34,12 @@ lives in the linked documents. Last updated 2026-10-06.
    Does a real ear, listening through another performance, follow the song: beat
    chance, and beat a song-blind taste for an amp, drive or gain? It decides whether
    the page is the main path or an option.
+   - **Learned while setting it up:** a riff must match the song guitar's style. The
+     listener found single-note parts can't be judged against strummed chords (drive
+     sounds different on several notes at once), so the check now plays each part
+     through the riff in its own style, measured from its clean recording. The page
+     should do the same from the song alone (classifying a separated guitar stem as
+     chords or single notes), and may need more styles (arpeggios, power chords).
 2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
    experiment 4: the judge as teacher). Gate, as declared there: median regret at most
    0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the

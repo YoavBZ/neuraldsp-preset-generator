@@ -140,6 +140,19 @@ def test_the_taste_null_holds_its_size_for_a_random_picker():
     assert hits / 150 <= 0.08
 
 
+def _tone(freqs, seconds=2.0, rate=48000):
+    import numpy as np
+
+    t = np.arange(int(seconds * rate)) / rate
+    return sum(np.sin(2 * np.pi * f * h * t) / h for f in freqs for h in range(1, 6))
+
+
+def test_the_chord_share_tells_a_strum_from_a_single_note():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    assert L.chord_share(_tone([110.0]), 48000) < 0.1               # one note
+    assert L.chord_share(_tone([98.0, 123.5, 146.8]), 48000) > 0.9   # a G major triad
+
+
 def test_the_ranks_within_a_part_are_centred_with_ties_averaged():
     assert L._ranks([0.3, 0.1, 0.2, 0.4]) == [0.5, -1.5, -0.5, 1.5]
     assert L._ranks([0.0, 0.0, 0.5, 0.9]) == [-1.0, -1.0, 0.5, 1.5]
@@ -306,28 +319,20 @@ def test_a_guessing_listener_rarely_hits_enough_controls():
 def test_the_trial_plan_holds_over_many_shuffles():
     parts = [f"p{i}" for i in range(16)]
     controls = [{"part": f"c{i}"} for i in range(4)]
+    styles = {p: ("chords" if i % 3 else "line") for i, p in
+              enumerate(parts + [c["part"] for c in controls] + ["x"])}
     for seed in range(2000):
-        sittings = L.plan_trials(parts, controls, {"part": "x"}, random.Random(seed))
+        sittings = L.plan_trials(parts, styles, controls, {"part": "x"}, random.Random(seed))
         kinds = {s: collections.Counter(t["kind"] for t in ts) for s, ts in sittings.items()}
-        assert kinds[1] == {"main": 16, "repeat": 1, "control": 2, "practice": 1}
-        assert kinds[2] == {"main": 16, "repeat": 2, "control": 2}
+        assert kinds[1] == {"main": 16, "control": 2, "practice": 1}
+        assert kinds[2] == {"main": 16, "control": 2}
         assert sittings[1][0]["kind"] == "practice"
-        mains = [(t["part"], t["riff"]) for s in (1, 2) for t in sittings[s]
-                 if t["kind"] == "main"]
-        assert len(set(mains)) == 32               # every part through both riffs, once
-        first = {(t["part"], t["riff"]) for t in sittings[1] if t["kind"] == "main"}
         for s, ts in sittings.items():
+            mains = [t["part"] for t in ts if t["kind"] == "main"]
+            assert sorted(mains) == sorted(parts)            # every part once a sitting
+            assert all(t["riff"] == styles[t["part"]] for t in ts)   # its own style
             at = [i for i, t in enumerate(ts) if t["kind"] == "control"]
             assert at[0] < len(ts) // 2 <= at[1], seed          # one in each half
-            assert {ts[i]["riff"] for i in at} == set(L.RIFFS)
-            for i, t in enumerate(ts):
-                if t["kind"] != "repeat":
-                    continue
-                assert (t["part"], t["riff"]) in first           # from sitting 1
-                if s == 1:
-                    orig = next(j for j, u in enumerate(ts) if u["kind"] == "main"
-                                and (u["part"], u["riff"]) == (t["part"], t["riff"]))
-                    assert i - orig >= 3, seed                   # two trials between
         assert {c["part"] for c in controls} == {
             t["part"] for s in (1, 2) for t in sittings[s] if t["kind"] == "control"}
 
@@ -338,12 +343,12 @@ def test_a_part_under_test_that_is_also_a_control_keeps_its_own_candidates():
             "controls": [{"part": "a", "candidates": [f"pr12:factory:x{i}" for i in range(4)]}],
             "practice": {"part": "c", "candidates": [f"ac20:factory:y{i}" for i in range(4)]}}
     candidates = L.trial_candidates(data)
-    sittings = L.plan_trials(["a", "b"] * 8, [{"part": "a"}] * 4, {"part": "c"},
-                             random.Random(1))
+    sittings = L.plan_trials(["a", "b"], {"a": "chords", "b": "line", "c": "line"},
+                             [{"part": "a"}] * 4, {"part": "c"}, random.Random(1))
     for trials in sittings.values():
         for t in trials:
             labels = set(candidates[(L.group_of(t), t["part"])])
-            if t["kind"] in ("main", "repeat"):
+            if t["kind"] == "main":
                 assert labels == set(L.G)
             elif t["kind"] == "control":
                 assert labels == {"C0", "C1", "C2", "C3"}
@@ -443,18 +448,22 @@ def _scoring_setup(tmp_path, picks_best: bool):
                     for g, c in tastes[p].items()} for p in parts}
     inputs = {"parts": parts, "distances": distances, "g1_rule_chance_pass": 0.99,
               "taste_classes": tastes, "taste_features": features,
-              "di_lufs": {p: -30.0 + i for i, p in enumerate(parts)}, "riff_lufs": -23.7}
+              "di_lufs": {p: -30.0 + i for i, p in enumerate(parts)}, "riff_lufs": -23.7,
+              "riff_chord_share": {"chords": 0.9, "line": 0.0},
+              "chord_share": {p: (0.95 if i % 2 else 0.4) for i, p in enumerate(parts)}}
     inputs_path = tmp_path / "inputs.json"
     inputs_path.write_text(json.dumps(inputs))
     rng = random.Random(5)
     controls = [{"part": f"c{i}"} for i in range(4)]
-    sittings = L.plan_trials(parts, controls, {"part": "x"}, rng)
+    styles = {p: ("chords" if i % 2 else "line") for i, p in enumerate(parts)}
+    styles.update({c["part"]: "chords" for c in controls} | {"x": "line"})
+    sittings = L.plan_trials(parts, styles, controls, {"part": "x"}, rng)
     key = {"inputs_sha256": hashlib.sha256(inputs_path.read_bytes()).hexdigest(),
            "sittings": {}}
     lines = {}
     for s, trials in sittings.items():
         for n, t in enumerate(trials, 1):
-            labels = (["G1", "G2", "G3", "G4"] if t["kind"] in ("main", "repeat")
+            labels = (["G1", "G2", "G3", "G4"] if t["kind"] == "main"
                       else ["C0", "C1", "C2", "C3"])
             rng.shuffle(labels)
             letters = dict(zip("ABCD", labels))
@@ -490,12 +499,13 @@ def test_score_end_to_end_on_a_listener_who_always_picks_the_best(tmp_path, monk
     got = json.loads((tmp_path / "score.json").read_text())
     assert got["primary_holds"] and got["main_path"] and not got["inconclusive"]
     assert got["controls_hit"] == {"1": [True, True], "2": [True, True]}
-    assert got["repeats_consistent"] == [True, True, True]
+    assert set(got["same_preset_both_times"].values()) == {True}
     for b in L.BAND_SETS:
         r = got["by_band_set"][b]
         assert r["all"]["trials"] == 32 and r["all"]["best_of_four"] == 32
         assert r["all"]["captured_share"] == pytest.approx(1.0)
-        assert r["per_riff"]["chords"]["trials"] == 16
+        assert r["per_style"]["chords"]["trials"] == 16
+        assert r["clear_style"]["trials"] == 16 and r["near_the_style_split"]["trials"] == 16
         assert r["di_hotter_than_median_gap"]["trials"] == 16
 
 

@@ -57,8 +57,9 @@ MIN_CONTROLS_HIT = 3            # of 4: a guessing listener reaches it 5.1% of t
 DRIVE_HIGH = 0.7               # a drive pedal's gain from which a control calls it high-gain
 CLEAN_VOLUME = 0.5             # the amp volume at or under which, with no drive, it is clean
 CLEAR_PAIR = 0.15               # log distance at which the judge "clearly" separates two
-TASTE_RIDGE = 0.5               # the taste fit's penalty: 16 answers per riff, 9 features
+TASTE_RIDGE = 0.5               # the taste fit's penalty: 14 to 18 answers per riff, 9 features
 RIFF_LUFS = -23.7
+STYLE_MARGIN = 0.15             # a part's chord share this near the split is reported apart
 G = ("G1", "G2", "G3", "G4")
 RIFFS = ("chords", "line")
 LETTERS = "ABCD"
@@ -153,6 +154,54 @@ def choose_controls(parts, main, exposure_of, reach, gain_of, song_of, clear_son
             practice = {"part": part, "candidates": list(by_amp.values()) + [extra]}
             break
     return controls, practice
+
+
+def notes_per_frame(x, rate: int, n: int = 8192, hop: int = 2048, harmonics: int = 8,
+                    floor_db: float = -40.0, rel: float = 0.25):
+    """How many notes sound in each active frame of a clean guitar recording.
+
+    In each frame (those within `floor_db` of the loudest), the strongest fundamental
+    from E2 to C#6 is found by its harmonic sum, its harmonics are removed, and that
+    repeats while a fundamental keeps at least `rel` of the first one's strength."""
+    import numpy as np
+
+    x = np.asarray(x, dtype=float)
+    if x.ndim > 1:
+        x = x.mean(axis=1)
+    window = np.hanning(n)
+    f0s = 440 * 2 ** ((np.arange(40, 85) - 69) / 12)
+    starts = range(0, len(x) - n, hop)
+    rms = np.array([np.sqrt(np.mean(x[i:i + n] ** 2)) for i in starts])
+    active = rms > rms.max() * 10 ** (floor_db / 20)
+    counts = []
+    for k, i in enumerate(starts):
+        if not active[k]:
+            continue
+        mag = np.abs(np.fft.rfft(x[i:i + n] * window))
+        found, first = 0, None
+        for _ in range(8):
+            salience = []
+            for f0 in f0s:
+                bins = [round(h * f0 * n / rate) for h in range(1, harmonics + 1)]
+                salience.append(sum(mag[b - 1:b + 2].max() / h
+                                    for h, b in enumerate(bins, 1) if b + 2 < len(mag)))
+            j = int(np.argmax(salience))
+            first = salience[j] if first is None else first
+            if salience[j] < rel * first or salience[j] <= 0:
+                break
+            found += 1
+            for h in range(1, harmonics + 1):
+                b = round(h * f0s[j] * n / rate)
+                mag[max(0, b - 3):b + 4] = 0
+        counts.append(found)
+    return np.array(counts)
+
+
+def chord_share(x, rate: int) -> float:
+    """The share of a clean recording's active frames in which three or more notes
+    sound: near 1 for strummed chords, near 0 for a single-note line."""
+    counts = notes_per_frame(x, rate)
+    return float((counts >= 3).mean()) if len(counts) else 0.0
 
 
 def preset_values(path) -> dict:
@@ -284,6 +333,13 @@ def inputs(args):
     presets = {p: {g: renders[p][g]["preset"].replace(home, "~", 1) for g in G} for p in chosen}
     preset_sha = {p: {g: renders[p][g]["preset_sha256"] for g in G} for p in chosen}
     di_lufs = {p: round(io.loudness_lufs(io.load(crops / p / "di.wav")), 2) for p in chosen}
+    from audition import shipped_riffs
+
+    riff_share = {}
+    for name, path in shipped_riffs().items():
+        audio = io.load(path)
+        riff_share[name] = round(chord_share(audio.mono(), audio.sample_rate), 3)
+    split = (riff_share["chords"] + riff_share["line"]) / 2
     tastes = {p: {g: taste_class(renders[p][g]["preset"], renders[p][g]["amp"]) for g in G}
               for p in chosen}
     features = {p: {g: taste_features(renders[p][g]["preset"], renders[p][g]["amp"])
@@ -315,13 +371,20 @@ def inputs(args):
     if len(controls) < CONTROLS or practice is None:
         die("not enough parts for the controls and the practice trial")
     factory = {c: _sha(preset_path(c)) for x in controls + [practice] for c in x["candidates"]}
+    # Each part plays through the riff in its own style: strummed chords or single notes.
+    shares = {}
+    for p in chosen + [c["part"] for c in controls] + [practice["part"]]:
+        audio = io.load(crops / p / "di.wav")
+        shares[p] = round(chord_share(audio.mono(), audio.sample_rate), 3)
+    styles = {p: "chords" if share >= split else "line" for p, share in shares.items()}
     audio = {p: {f: _sha(crops / p / f) for f in ("di.wav", "mix_instrumental.wav")}
              for p in chosen + [c["part"] for c in controls] + [practice["part"]]}
-    out = {"schema": "listening-check-inputs-5", "parts": chosen, "cues": cues,
+    out = {"schema": "listening-check-inputs-6", "parts": chosen, "cues": cues,
            "distances": distances, "presets": presets, "preset_sha256": preset_sha,
            "di_lufs": di_lufs, "riff_lufs": RIFF_LUFS, "taste_classes": tastes,
            "taste_features": features,
            "factory_sha256": factory, "audio_sha256": audio,
+           "riff_chord_share": riff_share, "chord_share": shares, "styles": styles,
            "g1_rule_chance_pass": round(g1_chance_pass(distances, chosen), 4),
            "controls": controls, "practice": practice,
            "renders_index_sha256": _sha(SHORTLISTS.expanduser() / "renders" / "index.json"),
@@ -472,46 +535,35 @@ def leak_check(folder: pathlib.Path, names=()) -> list:
     return bad
 
 
-def plan_trials(parts, controls, practice, rng):
-    """Two sittings. Each holds one riff of half the parts and the other riff of the rest,
-    and repeats: two of sitting 1's trials again in sitting 2, and one later in sitting 1
-    with at least two trials between. The practice trial opens sitting 1. Last, each
-    sitting gets two controls, one through each riff, one in each half."""
-    order = parts[:]
-    rng.shuffle(order)
-    half = len(order) // 2
-    sittings = {1: [], 2: []}
-    for i, part in enumerate(order):
-        first, second = (RIFFS if i < half else RIFFS[::-1])
-        sittings[1].append({"kind": "main", "part": part, "riff": first})
-        sittings[2].append({"kind": "main", "part": part, "riff": second})
+def plan_trials(parts, styles, controls, practice, rng):
+    """Two sittings, each playing every part once through the riff in its own style
+    (`styles[part]`), in its own shuffled order, so each part is heard twice, a sitting
+    apart, with fresh letters. The practice trial opens sitting 1. Last, each sitting
+    gets two controls, one in each half, each through its own style's riff."""
+    sittings = {}
     for s in (1, 2):
-        rng.shuffle(sittings[s])
-    within = rng.randrange(0, len(sittings[1]) - 2)
-    across = rng.sample([t for i, t in enumerate(sittings[1]) if i != within], 2)
-    sittings[1].insert(rng.randrange(within + 3, len(sittings[1]) + 1),
-                       dict(sittings[1][within], kind="repeat"))
-    for t in across:
-        sittings[2].insert(rng.randrange(0, len(sittings[2]) + 1), dict(t, kind="repeat"))
-    sittings[1].insert(0, {"kind": "practice", "part": practice["part"], "riff": "chords"})
+        order = parts[:]
+        rng.shuffle(order)
+        sittings[s] = [{"kind": "main", "part": p, "riff": styles[p]} for p in order]
+    sittings[1].insert(0, {"kind": "practice", "part": practice["part"],
+                           "riff": styles[practice["part"]]})
     for s, pair in ((1, controls[0:2]), (2, controls[2:4])):
-        riffs = list(RIFFS)
-        rng.shuffle(riffs)
         # With n trials and two controls, the sitting has n + 2: the first half is
         # positions below (n + 2) // 2, and the early control goes after the practice.
         n = len(sittings[s])
         half_at = (n + 2) // 2
-        early = rng.randrange(1 if s == 1 else 0, half_at)
-        sittings[s].insert(early, {"kind": "control", "part": pair[0]["part"],
-                                   "riff": riffs[0]})
+        sittings[s].insert(rng.randrange(1 if s == 1 else 0, half_at),
+                           {"kind": "control", "part": pair[0]["part"],
+                            "riff": styles[pair[0]["part"]]})
         sittings[s].insert(rng.randrange(half_at, n + 2),
-                           {"kind": "control", "part": pair[1]["part"], "riff": riffs[1]})
+                           {"kind": "control", "part": pair[1]["part"],
+                            "riff": styles[pair[1]["part"]]})
     return sittings
 
 
 def group_of(trial: dict) -> str:
-    """Which candidate set a trial plays: a repeat plays its main trial's."""
-    return "main" if trial["kind"] in ("main", "repeat") else trial["kind"]
+    """Which candidate set a trial plays."""
+    return "main" if trial["kind"] == "main" else trial["kind"]
 
 
 def trial_candidates(data) -> dict:
@@ -583,7 +635,7 @@ def build(args):
     jobs = [(candidates[k], {r: riffs[r] for r in RIFFS}) for k in candidates]
     with ProcessPoolExecutor(args.workers) as ex:
         rendered = dict(zip(candidates, ex.map(render_part, jobs)))
-    sittings = plan_trials(data["parts"], data["controls"], pr, rng)
+    sittings = plan_trials(data["parts"], data["styles"], data["controls"], pr, rng)
     key = {"schema": "listening-check-key-3", "inputs_sha256": args.inputs_sha,
            "render_check_drift": drift,
            "preset_sha256": {f"{group}:{p}": {label: _sha(path)
@@ -609,8 +661,8 @@ def build(args):
             for name, audio in clips.items():
                 loudness, _ = measure(audio, 48000)
                 gained = np.asarray(audio, dtype=np.float64) * 10 ** ((level - loudness) / 20)
-                # Fresh dither on every clip (TPDF, one 16-bit step), so a repeat's
-                # files never match its original's byte for byte.
+                # Fresh dither on every clip (TPDF, one 16-bit step), so a part's two
+                # showings never match byte for byte.
                 noise = np.random.default_rng(rng.getrandbits(64))
                 lsb = 1 / 32768
                 gained = gained + (noise.random(gained.shape) - noise.random(gained.shape)) * lsb
@@ -883,14 +935,15 @@ def score(args):
               "g1_rule_chance_pass": data["g1_rule_chance_pass"], "by_band_set": {}}
     gaps = {p: data["di_lufs"][p] - data["riff_lufs"] for p in data["parts"]}
     gap_median = statistics.median(gaps.values())
-    controls, mains, repeats = collections.defaultdict(list), [], []
+    split = (data["riff_chord_share"]["chords"] + data["riff_chord_share"]["line"]) / 2
+    controls, mains = collections.defaultdict(list), []
     for s, rows in key["sittings"].items():
         for t in rows:
             pick = answers[(int(s), t["number"])]
             if t["kind"] == "control":
                 controls[s].append(pick is not None and t["letters"][pick] == "C0")
-            elif t["kind"] in ("main", "repeat"):
-                (mains if t["kind"] == "main" else repeats).append((t, pick))
+            elif t["kind"] == "main":
+                mains.append((t, pick))
     # The song-blind taste, fitted to the main answers through each riff apart, so a
     # taste that changes with the riff is modelled too.
     features = feature_rows(data["taste_features"], data["parts"])
@@ -913,20 +966,24 @@ def score(args):
                          "logs": {g: math.log(d[g]) for g in G},
                          "classes": data["taste_classes"][t["part"]],
                          "g1": math.log(d["G1"]), "template": math.log(d["template+R"]),
-                         "hot_di": gaps[t["part"]] > gap_median})
+                         "hot_di": gaps[t["part"]] > gap_median,
+                         "clear_style": abs(data["chord_share"][t["part"]] - split)
+                         > STYLE_MARGIN})
         result["by_band_set"][bands] = {
             "all": readings(rows, taste),
-            "per_riff": {riff: readings([r for r in rows if r["riff"] == riff], taste)
+            "per_style": {riff: readings([r for r in rows if r["riff"] == riff], taste)
                          for riff in RIFFS},
+            "clear_style": readings([r for r in rows if r["clear_style"]], taste),
+            "near_the_style_split": readings([r for r in rows if not r["clear_style"]], taste),
             "di_hotter_than_median_gap": readings([r for r in rows if r["hot_di"]], taste),
             "di_nearer_the_riff": readings([r for r in rows if not r["hot_di"]], taste),
             "rows": rows}
-    # Letters are drawn afresh for a repeat, so compare the presets they stand for.
-    chosen = lambda t, pick: None if pick is None else t["letters"][pick]  # noqa: E731
-    first = {(t["part"], t["riff"]): chosen(t, pick) for t, pick in mains}
-    result["repeats_consistent"] = [first[(t["part"], t["riff"])] is not None
-                                    and first[(t["part"], t["riff"])] == chosen(t, pick)
-                                    for t, pick in repeats]
+    # Each part is heard twice with fresh letters: compare the presets picked.
+    picked = collections.defaultdict(list)
+    for t, pick in mains:
+        picked[t["part"]].append(None if pick is None else t["letters"][pick])
+    result["same_preset_both_times"] = {
+        p: (None if None in v else v[0] == v[1]) for p, v in sorted(picked.items())}
     result["di_to_riff_gap_median_db"] = round(gap_median, 2)
     result["cant_tell"] = sum(pick is None for _, pick in mains)
     result["controls_hit"] = {s: hits for s, hits in sorted(controls.items())}
