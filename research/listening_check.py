@@ -961,12 +961,16 @@ def score(args):
     gaps = {p: data["di_lufs"][p] - data["riff_lufs"] for p in data["parts"]}
     gap_median = statistics.median(gaps.values())
     split = (data["riff_chord_share"]["chords"] + data["riff_chord_share"]["line"]) / 2
-    controls, mains = collections.defaultdict(list), []
+    controls, mains, control_rows = collections.defaultdict(list), [], []
     for s, rows in key["sittings"].items():
         for t in rows:
             pick = answers[(int(s), t["number"])]
             if t["kind"] == "control":
                 controls[s].append(pick is not None and t["letters"][pick] == "C0")
+                control_rows.append({"sitting": int(s), "trial": t["number"],
+                                     "part": t["part"], "riff": t["riff"],
+                                     "answered": pick is not None,
+                                     "hit": controls[s][-1]})
             elif t["kind"] == "main":
                 mains.append((t, pick))
     # The song-blind taste, fitted to the main answers through each riff apart, so a
@@ -1011,6 +1015,7 @@ def score(args):
     result["di_to_riff_gap_median_db"] = round(gap_median, 2)
     result["cant_tell"] = sum(pick is None for _, pick in mains)
     result["controls_hit"] = {s: hits for s, hits in sorted(controls.items())}
+    result["controls"] = control_rows
     result["void_sittings"] = [s for s, hits in sorted(controls.items()) if not any(hits)]
     result.update(decide(result["by_band_set"], result["cant_tell"],
                          sum(sum(h) for h in controls.values())))

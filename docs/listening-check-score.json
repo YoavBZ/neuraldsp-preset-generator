@@ -1,0 +1,1936 @@
+{
+ "answers_sha256": "b481636030665e5a5907a585e1f7771ff7ae52495dce8a35f4df6ad7bf5b0d2e",
+ "key_sha256": "f185d8d441ce3890f8fb678d95eac2c8272f56d4609d443960a01eaa4f052a4b",
+ "g1_rule_chance_pass": 0.9931,
+ "by_band_set": {
+  "recording": {
+   "all": {
+    "trials": 32,
+    "sum_c": -1.3544063180139545,
+    "p": 0.074556,
+    "taste_p": 0.32212,
+    "sum_c_by_class": -1.0884009733118811,
+    "sum_c_within_class": -0.2660053447020734,
+    "best_of_four": 10,
+    "best_of_four_p": 0.2633409625016541,
+    "clear_pairs": 39,
+    "clear_pairs_closer": 27,
+    "clear_pairs_share": 0.6923076923076923,
+    "clear_pairs_net_p": 0.049837,
+    "captured_share": 0.2548488903503747,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.021662733995835737
+   },
+   "per_style": {
+    "chords": {
+     "trials": 18,
+     "sum_c": -0.9091190681664929,
+     "p": 0.137401,
+     "taste_p": 0.795321,
+     "sum_c_by_class": -0.8135105679711105,
+     "sum_c_within_class": -0.09560850019538236,
+     "best_of_four": 6,
+     "best_of_four_p": 0.28254918701713905,
+     "clear_pairs": 19,
+     "clear_pairs_closer": 14,
+     "clear_pairs_share": 0.7368421052631579,
+     "clear_pairs_net_p": 0.104502,
+     "captured_share": 0.2947003966980327,
+     "median_vs_g1": -0.0035878365230209708,
+     "median_vs_template": 0.0316446348431032
+    },
+    "line": {
+     "trials": 14,
+     "sum_c": -0.4452872498474615,
+     "p": 0.186253,
+     "taste_p": 0.322063,
+     "sum_c_by_class": -0.2748904053407707,
+     "sum_c_within_class": -0.1703968445066908,
+     "best_of_four": 4,
+     "best_of_four_p": 0.4786600396037102,
+     "clear_pairs": 20,
+     "clear_pairs_closer": 13,
+     "clear_pairs_share": 0.65,
+     "clear_pairs_net_p": 0.161553,
+     "captured_share": 0.19971136121610014,
+     "median_vs_g1": 0.0,
+     "median_vs_template": -0.0837523834676338
+    }
+   },
+   "clear_style": {
+    "trials": 20,
+    "sum_c": -0.7438783193187279,
+    "p": 0.179866,
+    "taste_p": 0.774487,
+    "sum_c_by_class": -0.6745149012122345,
+    "sum_c_within_class": -0.06936341810649349,
+    "best_of_four": 6,
+    "best_of_four_p": 0.38282734561289544,
+    "clear_pairs": 17,
+    "clear_pairs_closer": 11,
+    "clear_pairs_share": 0.6470588235294118,
+    "clear_pairs_net_p": 0.245698,
+    "captured_share": 0.27953540894248885,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.06762218674878917
+   },
+   "style_unclear": {
+    "trials": 12,
+    "sum_c": -0.6105279986952264,
+    "p": 0.116967,
+    "taste_p": 0.280709,
+    "sum_c_by_class": -0.4138860720996468,
+    "sum_c_within_class": -0.19664192659557966,
+    "best_of_four": 4,
+    "best_of_four_p": 0.35122138261795044,
+    "clear_pairs": 22,
+    "clear_pairs_closer": 16,
+    "clear_pairs_share": 0.7272727272727273,
+    "clear_pairs_net_p": 0.074625,
+    "captured_share": 0.23009072555889995,
+    "median_vs_g1": 0.0,
+    "median_vs_template": 0.07872031171443977
+   },
+   "di_hotter_than_median_gap": {
+    "trials": 16,
+    "sum_c": -0.12213152788501125,
+    "p": 0.393431,
+    "taste_p": 0.400681,
+    "sum_c_by_class": 0.048265316621679766,
+    "sum_c_within_class": -0.17039684450669101,
+    "best_of_four": 5,
+    "best_of_four_p": 0.36981382477097213,
+    "clear_pairs": 18,
+    "clear_pairs_closer": 10,
+    "clear_pairs_share": 0.5555555555555556,
+    "clear_pairs_net_p": 0.379982,
+    "captured_share": 0.05752057412749808,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.021662733995835737
+   },
+   "di_nearer_the_riff": {
+    "trials": 16,
+    "sum_c": -1.2322747901289433,
+    "p": 0.072235,
+    "taste_p": 0.424998,
+    "sum_c_by_class": -1.136666289933561,
+    "sum_c_within_class": -0.09560850019538236,
+    "best_of_four": 5,
+    "best_of_four_p": 0.36981382477097213,
+    "clear_pairs": 21,
+    "clear_pairs_closer": 17,
+    "clear_pairs_share": 0.8095238095238095,
+    "clear_pairs_net_p": 0.017906,
+    "captured_share": 0.38613812095618,
+    "median_vs_g1": -0.01032344063227475,
+    "median_vs_template": -0.02296950827493638
+   },
+   "rows": [
+    {
+     "part": "cambridge-Quicksand-ElecGtr1",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.3198629873632164,
+      "G2": 1.3873189727404547,
+      "G3": 1.5053653081001117,
+      "G4": 1.3126873143171744
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.3198629873632164,
+     "template": 1.3320524897925707,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Gym_Hours-GTR_1",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.8020646654165513,
+      "G2": 1.869671665855854,
+      "G3": 1.8521175798048992,
+      "G4": 1.9081830872838494
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.8020646654165513,
+     "template": 1.8260249579328265,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-First_Offering-GTR_2",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.6749719627461477,
+      "G2": 1.6565503780484336,
+      "G3": 1.8335805487912233,
+      "G4": 1.7653836956971158
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6749719627461477,
+     "template": 1.9771250232102158,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Sculptor's_Request-GTR_2",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4816971260817078,
+      "G2": 1.3905827193847873,
+      "G3": 1.6994369135062253,
+      "G4": 1.517311003323688
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.4816971260817078,
+     "template": 1.8119264347999897,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Bloomlight-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.324501841096028,
+      "G2": 1.271056072468253,
+      "G3": 1.1680050233661547,
+      "G4": 1.4622730728590176
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.324501841096028,
+     "template": 1.085350578204552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Fragments-GTR",
+     "riff": "line",
+     "letter": "B",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.633656917886267,
+      "G2": 1.1922412482313116,
+      "G3": 0.8636281407014955,
+      "G4": 1.4248965081009588
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.633656917886267,
+     "template": 1.327955792745158,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Russian_Cream-GTR_2",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.74715470361832,
+      "G2": 1.7271245062632183,
+      "G3": 1.6903678139383522,
+      "G4": 1.4687307756574883
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "ac20|no drive",
+      "G4": "pr12|no drive"
+     },
+     "g1": 1.74715470361832,
+     "template": 1.5722568436541273,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Signs-ElecGtr2",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6195358045218924,
+      "G2": 1.547236993425715,
+      "G3": 1.5978096210140877,
+      "G4": 1.595399172295884
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.6195358045218924,
+     "template": 1.8821141396382304,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Prodigal-ElecGtr5",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.947543517104876,
+      "G2": 1.8775962378863267,
+      "G3": 1.640917912339503,
+      "G4": 1.8857939539072988
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "ac20|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.947543517104876,
+     "template": 1.8408836856421789,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Farthest_Step-GTR",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 0.9725804878308528,
+      "G2": 0.94150231082775,
+      "G3": 1.27959460725126,
+      "G4": 1.3658643410220124
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 0.9725804878308528,
+     "template": 0.8893305149211489,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Passing_Ships-ElecGtr6",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.5725341544294553,
+      "G2": 1.2651935450512672,
+      "G3": 1.4568187142294808,
+      "G4": 1.5462992435382963
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.5725341544294553,
+     "template": 1.1910028945320916,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4635765204252043,
+      "G2": 1.5993073669344515,
+      "G3": 1.2673487680628204,
+      "G4": 1.6800550744565035
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.4635765204252043,
+     "template": 1.7913391554378066,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Blind_Spots-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.8270204272536468,
+      "G2": 1.9187991654728966,
+      "G3": 1.778193051387622,
+      "G4": 1.8629144109760545
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.8270204272536468,
+     "template": 1.5801702241369022,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Drag_Me_Down-ElecGtr4",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.6077133903915042,
+      "G2": 1.067100313125113,
+      "G3": 1.750840297774525,
+      "G4": 1.807717084300751
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.6077133903915042,
+     "template": 1.1956937748365886,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Today's_The_Day-ElecGtr07",
+     "riff": "chords",
+     "letter": "B",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.830559652781114,
+      "G2": 1.755798696970055,
+      "G3": 1.8099127715165646,
+      "G4": 1.9163445304097673
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.830559652781114,
+     "template": 2.341570711390552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Long_Way_Home-GTR",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6510121830131839,
+      "G2": 1.4818859896454164,
+      "G3": 1.568153970544536,
+      "G4": 1.5519028682772735
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6510121830131839,
+     "template": 1.2684284552739025,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Long_Way_Home-GTR",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.6510121830131839,
+      "G2": 1.4818859896454164,
+      "G3": 1.568153970544536,
+      "G4": 1.5519028682772735
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6510121830131839,
+     "template": 1.2684284552739025,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Today's_The_Day-ElecGtr07",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.830559652781114,
+      "G2": 1.755798696970055,
+      "G3": 1.8099127715165646,
+      "G4": 1.9163445304097673
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.830559652781114,
+     "template": 2.341570711390552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Bloomlight-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.324501841096028,
+      "G2": 1.271056072468253,
+      "G3": 1.1680050233661547,
+      "G4": 1.4622730728590176
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.324501841096028,
+     "template": 1.085350578204552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-First_Offering-GTR_2",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.6749719627461477,
+      "G2": 1.6565503780484336,
+      "G3": 1.8335805487912233,
+      "G4": 1.7653836956971158
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6749719627461477,
+     "template": 1.9771250232102158,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Prodigal-ElecGtr5",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.947543517104876,
+      "G2": 1.8775962378863267,
+      "G3": 1.640917912339503,
+      "G4": 1.8857939539072988
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "ac20|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.947543517104876,
+     "template": 1.8408836856421789,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Sculptor's_Request-GTR_2",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.4816971260817078,
+      "G2": 1.3905827193847873,
+      "G3": 1.6994369135062253,
+      "G4": 1.517311003323688
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.4816971260817078,
+     "template": 1.8119264347999897,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Fragments-GTR",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.633656917886267,
+      "G2": 1.1922412482313116,
+      "G3": 0.8636281407014955,
+      "G4": 1.4248965081009588
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.633656917886267,
+     "template": 1.327955792745158,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Drag_Me_Down-ElecGtr4",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.6077133903915042,
+      "G2": 1.067100313125113,
+      "G3": 1.750840297774525,
+      "G4": 1.807717084300751
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.6077133903915042,
+     "template": 1.1956937748365886,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Farthest_Step-GTR",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G3",
+     "logs": {
+      "G1": 0.9725804878308528,
+      "G2": 0.94150231082775,
+      "G3": 1.27959460725126,
+      "G4": 1.3658643410220124
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 0.9725804878308528,
+     "template": 0.8893305149211489,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Quicksand-ElecGtr1",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.3198629873632164,
+      "G2": 1.3873189727404547,
+      "G3": 1.5053653081001117,
+      "G4": 1.3126873143171744
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.3198629873632164,
+     "template": 1.3320524897925707,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Russian_Cream-GTR_2",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.74715470361832,
+      "G2": 1.7271245062632183,
+      "G3": 1.6903678139383522,
+      "G4": 1.4687307756574883
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "ac20|no drive",
+      "G4": "pr12|no drive"
+     },
+     "g1": 1.74715470361832,
+     "template": 1.5722568436541273,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+     "riff": "chords",
+     "letter": "B",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4635765204252043,
+      "G2": 1.5993073669344515,
+      "G3": 1.2673487680628204,
+      "G4": 1.6800550744565035
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.4635765204252043,
+     "template": 1.7913391554378066,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Passing_Ships-ElecGtr6",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.5725341544294553,
+      "G2": 1.2651935450512672,
+      "G3": 1.4568187142294808,
+      "G4": 1.5462992435382963
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.5725341544294553,
+     "template": 1.1910028945320916,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Signs-ElecGtr2",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6195358045218924,
+      "G2": 1.547236993425715,
+      "G3": 1.5978096210140877,
+      "G4": 1.595399172295884
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.6195358045218924,
+     "template": 1.8821141396382304,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Gym_Hours-GTR_1",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.8020646654165513,
+      "G2": 1.869671665855854,
+      "G3": 1.8521175798048992,
+      "G4": 1.9081830872838494
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.8020646654165513,
+     "template": 1.8260249579328265,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Blind_Spots-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.8270204272536468,
+      "G2": 1.9187991654728966,
+      "G3": 1.778193051387622,
+      "G4": 1.8629144109760545
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.8270204272536468,
+     "template": 1.5801702241369022,
+     "hot_di": false,
+     "clear_style": true
+    }
+   ]
+  },
+  "union": {
+   "all": {
+    "trials": 32,
+    "sum_c": -1.9905145263813995,
+    "p": 0.025132,
+    "taste_p": 0.231012,
+    "sum_c_by_class": -1.6901476026374629,
+    "sum_c_within_class": -0.3003669237439366,
+    "best_of_four": 10,
+    "best_of_four_p": 0.2633409625016541,
+    "clear_pairs": 40,
+    "clear_pairs_closer": 30,
+    "clear_pairs_share": 0.75,
+    "clear_pairs_net_p": 0.019346,
+    "captured_share": 0.3405358679661041,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.0413867937276875
+   },
+   "per_style": {
+    "chords": {
+     "trials": 18,
+     "sum_c": -1.3912809717141625,
+     "p": 0.063229,
+     "taste_p": 0.786074,
+     "sum_c_by_class": -1.2943701270509176,
+     "sum_c_within_class": -0.09691084466324495,
+     "best_of_four": 6,
+     "best_of_four_p": 0.28254918701713905,
+     "clear_pairs": 22,
+     "clear_pairs_closer": 17,
+     "clear_pairs_share": 0.7727272727272727,
+     "clear_pairs_net_p": 0.065922,
+     "captured_share": 0.37753362445207894,
+     "median_vs_g1": -0.01032344063227475,
+     "median_vs_template": 0.019046571684260494
+    },
+    "line": {
+     "trials": 14,
+     "sum_c": -0.599233554667237,
+     "p": 0.12093,
+     "taste_p": 0.235633,
+     "sum_c_by_class": -0.3957774755865454,
+     "sum_c_within_class": -0.20345607908069163,
+     "best_of_four": 4,
+     "best_of_four_p": 0.4786600396037102,
+     "clear_pairs": 18,
+     "clear_pairs_closer": 13,
+     "clear_pairs_share": 0.7222222222222222,
+     "clear_pairs_net_p": 0.117734,
+     "captured_share": 0.2774155385798221,
+     "median_vs_g1": 0.0,
+     "median_vs_template": -0.05796738320016004
+    }
+   },
+   "clear_style": {
+    "trials": 20,
+    "sum_c": -1.2855088028090766,
+    "p": 0.07994,
+    "taste_p": 0.552912,
+    "sum_c_by_class": -1.1822890647271525,
+    "sum_c_within_class": -0.1032197380819242,
+    "best_of_four": 6,
+    "best_of_four_p": 0.38282734561289544,
+    "clear_pairs": 18,
+    "clear_pairs_closer": 14,
+    "clear_pairs_share": 0.7777777777777778,
+    "clear_pairs_net_p": 0.100002,
+    "captured_share": 0.40934485392773445,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.07916970440976756
+   },
+   "style_unclear": {
+    "trials": 12,
+    "sum_c": -0.7050057235723229,
+    "p": 0.087224,
+    "taste_p": 0.230496,
+    "sum_c_by_class": -0.5078585379103105,
+    "sum_c_within_class": -0.1971471856620124,
+    "best_of_four": 4,
+    "best_of_four_p": 0.35122138261795044,
+    "clear_pairs": 22,
+    "clear_pairs_closer": 16,
+    "clear_pairs_share": 0.7272727272727273,
+    "clear_pairs_net_p": 0.074615,
+    "captured_share": 0.26064633850797814,
+    "median_vs_g1": 0.0,
+    "median_vs_template": 0.09977396464548649
+   },
+   "di_hotter_than_median_gap": {
+    "trials": 16,
+    "sum_c": -0.6426778531885995,
+    "p": 0.145364,
+    "taste_p": 0.299266,
+    "sum_c_by_class": -0.43922177410790786,
+    "sum_c_within_class": -0.20345607908069163,
+    "best_of_four": 5,
+    "best_of_four_p": 0.36981382477097213,
+    "clear_pairs": 20,
+    "clear_pairs_closer": 14,
+    "clear_pairs_share": 0.7,
+    "clear_pairs_net_p": 0.163917,
+    "captured_share": 0.2337281551531165,
+    "median_vs_g1": 0.0,
+    "median_vs_template": -0.0413867937276875
+   },
+   "di_nearer_the_riff": {
+    "trials": 16,
+    "sum_c": -1.3478366731928,
+    "p": 0.061476,
+    "taste_p": 0.388083,
+    "sum_c_by_class": -1.250925828529555,
+    "sum_c_within_class": -0.09691084466324495,
+    "best_of_four": 5,
+    "best_of_four_p": 0.36981382477097213,
+    "clear_pairs": 20,
+    "clear_pairs_closer": 16,
+    "clear_pairs_share": 0.8,
+    "clear_pairs_net_p": 0.027798,
+    "captured_share": 0.435409506416215,
+    "median_vs_g1": -0.01032344063227475,
+    "median_vs_template": -0.02395239980329089
+   },
+   "rows": [
+    {
+     "part": "cambridge-Quicksand-ElecGtr1",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.6100427174147638,
+      "G2": 1.6926472316400547,
+      "G3": 1.771013097520529,
+      "G4": 1.3193427235637176
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.6100427174147638,
+     "template": 1.3819318385010126,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Gym_Hours-GTR_1",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.7962776651696906,
+      "G2": 1.8784696847816023,
+      "G3": 1.8267954784287743,
+      "G4": 1.9030454380092974
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.7962776651696906,
+     "template": 1.8164621376877705,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-First_Offering-GTR_2",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.8028979081055612,
+      "G2": 1.7527203208151891,
+      "G3": 1.8970478941078095,
+      "G4": 1.8173633177736856
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.8028979081055612,
+     "template": 1.9927981879900496,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Sculptor's_Request-GTR_2",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4541595342135232,
+      "G2": 1.4397389717627513,
+      "G3": 1.701455059147605,
+      "G4": 1.488033483546906
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.4541595342135232,
+     "template": 1.8450814266847206,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Bloomlight-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.3329202010565337,
+      "G2": 1.271056072468253,
+      "G3": 1.186032836510368,
+      "G4": 1.464877761794743
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.3329202010565337,
+     "template": 1.085350578204552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Fragments-GTR",
+     "riff": "line",
+     "letter": "B",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.633656917886267,
+      "G2": 1.1922412482313116,
+      "G3": 0.8636281407014955,
+      "G4": 1.4248965081009588
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.633656917886267,
+     "template": 1.327955792745158,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Russian_Cream-GTR_2",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.914661151403517,
+      "G2": 1.8920920371667054,
+      "G3": 1.9649967963283999,
+      "G4": 1.5549098380489914
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "ac20|no drive",
+      "G4": "pr12|no drive"
+     },
+     "g1": 1.914661151403517,
+     "template": 1.6733340293721608,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Signs-ElecGtr2",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6216594870186798,
+      "G2": 1.526500050922496,
+      "G3": 1.5915836706572735,
+      "G4": 1.5944073307448274
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.6216594870186798,
+     "template": 1.8821141396382304,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Prodigal-ElecGtr5",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.9043294789739085,
+      "G2": 1.8676228383503484,
+      "G3": 1.640917912339503,
+      "G4": 1.8401147106677913
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "ac20|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.9043294789739085,
+     "template": 1.7895049702519008,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Farthest_Step-GTR",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.0287194797453558,
+      "G2": 0.97907449430617,
+      "G3": 1.27959460725126,
+      "G4": 1.4230138510693804
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.0287194797453558,
+     "template": 0.8985752387079697,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Passing_Ships-ElecGtr6",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.7063690761181114,
+      "G2": 1.3350602611451987,
+      "G3": 1.5168229684569823,
+      "G4": 1.6168820590270498
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.7063690761181114,
+     "template": 1.2503368405762334,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4635765204252043,
+      "G2": 1.5993073669344515,
+      "G3": 1.2673487680628204,
+      "G4": 1.6800550744565035
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.4635765204252043,
+     "template": 1.7913391554378066,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Blind_Spots-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.8270204272536468,
+      "G2": 1.9107607167257048,
+      "G3": 1.778193051387622,
+      "G4": 1.8629144109760545
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.8270204272536468,
+     "template": 1.5774571518644276,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Drag_Me_Down-ElecGtr4",
+     "riff": "chords",
+     "letter": "C",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.658449976293807,
+      "G2": 1.0876175734057494,
+      "G3": 1.8158849034183053,
+      "G4": 1.8811905852643553
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.658449976293807,
+     "template": 1.2676289566656072,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Today's_The_Day-ElecGtr07",
+     "riff": "chords",
+     "letter": "B",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.830559652781114,
+      "G2": 1.755798696970055,
+      "G3": 1.8099127715165646,
+      "G4": 1.9163445304097673
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.830559652781114,
+     "template": 2.341570711390552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Long_Way_Home-GTR",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6521105714928461,
+      "G2": 1.47233635074282,
+      "G3": 1.568153970544536,
+      "G4": 1.5552462065052615
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6521105714928461,
+     "template": 1.2649745051434067,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Long_Way_Home-GTR",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.6521105714928461,
+      "G2": 1.47233635074282,
+      "G3": 1.568153970544536,
+      "G4": 1.5552462065052615
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.6521105714928461,
+     "template": 1.2649745051434067,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Today's_The_Day-ElecGtr07",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.830559652781114,
+      "G2": 1.755798696970055,
+      "G3": 1.8099127715165646,
+      "G4": 1.9163445304097673
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.830559652781114,
+     "template": 2.341570711390552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Bloomlight-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.3329202010565337,
+      "G2": 1.271056072468253,
+      "G3": 1.186032836510368,
+      "G4": 1.464877761794743
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|no drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.3329202010565337,
+     "template": 1.085350578204552,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-First_Offering-GTR_2",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.8028979081055612,
+      "G2": 1.7527203208151891,
+      "G3": 1.8970478941078095,
+      "G4": 1.8173633177736856
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.8028979081055612,
+     "template": 1.9927981879900496,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Prodigal-ElecGtr5",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.9043294789739085,
+      "G2": 1.8676228383503484,
+      "G3": 1.640917912339503,
+      "G4": 1.8401147106677913
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "ac20|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.9043294789739085,
+     "template": 1.7895049702519008,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Sculptor's_Request-GTR_2",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.4541595342135232,
+      "G2": 1.4397389717627513,
+      "G3": 1.701455059147605,
+      "G4": 1.488033483546906
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.4541595342135232,
+     "template": 1.8450814266847206,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "telefunken-Fragments-GTR",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.633656917886267,
+      "G2": 1.1922412482313116,
+      "G3": 0.8636281407014955,
+      "G4": 1.4248965081009588
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "sw50r|no drive",
+      "G3": "pr12|no drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.633656917886267,
+     "template": 1.327955792745158,
+     "hot_di": false,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Drag_Me_Down-ElecGtr4",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.658449976293807,
+      "G2": 1.0876175734057494,
+      "G3": 1.8158849034183053,
+      "G4": 1.8811905852643553
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.658449976293807,
+     "template": 1.2676289566656072,
+     "hot_di": false,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Farthest_Step-GTR",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G3",
+     "logs": {
+      "G1": 1.0287194797453558,
+      "G2": 0.97907449430617,
+      "G3": 1.27959460725126,
+      "G4": 1.4230138510693804
+     },
+     "classes": {
+      "G1": "pr12|drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|drive",
+      "G4": "pr12|drive"
+     },
+     "g1": 1.0287194797453558,
+     "template": 0.8985752387079697,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Quicksand-ElecGtr1",
+     "riff": "chords",
+     "letter": "D",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.6100427174147638,
+      "G2": 1.6926472316400547,
+      "G3": 1.771013097520529,
+      "G4": 1.3193427235637176
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.6100427174147638,
+     "template": 1.3819318385010126,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Russian_Cream-GTR_2",
+     "riff": "chords",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.914661151403517,
+      "G2": 1.8920920371667054,
+      "G3": 1.9649967963283999,
+      "G4": 1.5549098380489914
+     },
+     "classes": {
+      "G1": "pr12|no drive",
+      "G2": "sw50r|no drive",
+      "G3": "ac20|no drive",
+      "G4": "pr12|no drive"
+     },
+     "g1": 1.914661151403517,
+     "template": 1.6733340293721608,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+     "riff": "chords",
+     "letter": "B",
+     "pick": "G4",
+     "logs": {
+      "G1": 1.4635765204252043,
+      "G2": 1.5993073669344515,
+      "G3": 1.2673487680628204,
+      "G4": 1.6800550744565035
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "sw50r|drive",
+      "G3": "pr12|drive",
+      "G4": "ac20|no drive"
+     },
+     "g1": 1.4635765204252043,
+     "template": 1.7913391554378066,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "cambridge-Passing_Ships-ElecGtr6",
+     "riff": "line",
+     "letter": "D",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.7063690761181114,
+      "G2": 1.3350602611451987,
+      "G3": 1.5168229684569823,
+      "G4": 1.6168820590270498
+     },
+     "classes": {
+      "G1": "ac20|no drive",
+      "G2": "pr12|no drive",
+      "G3": "sw50r|no drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.7063690761181114,
+     "template": 1.2503368405762334,
+     "hot_di": true,
+     "clear_style": false
+    },
+    {
+     "part": "cambridge-Signs-ElecGtr2",
+     "riff": "line",
+     "letter": null,
+     "pick": null,
+     "logs": {
+      "G1": 1.6216594870186798,
+      "G2": 1.526500050922496,
+      "G3": 1.5915836706572735,
+      "G4": 1.5944073307448274
+     },
+     "classes": {
+      "G1": "ac20|drive",
+      "G2": "pr12|drive",
+      "G3": "sw50r|drive",
+      "G4": "ac20|drive"
+     },
+     "g1": 1.6216594870186798,
+     "template": 1.8821141396382304,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Gym_Hours-GTR_1",
+     "riff": "line",
+     "letter": "C",
+     "pick": "G1",
+     "logs": {
+      "G1": 1.7962776651696906,
+      "G2": 1.8784696847816023,
+      "G3": 1.8267954784287743,
+      "G4": 1.9030454380092974
+     },
+     "classes": {
+      "G1": "sw50r|no drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|no drive",
+      "G4": "sw50r|no drive"
+     },
+     "g1": 1.7962776651696906,
+     "template": 1.8164621376877705,
+     "hot_di": true,
+     "clear_style": true
+    },
+    {
+     "part": "telefunken-Blind_Spots-GTR",
+     "riff": "chords",
+     "letter": "A",
+     "pick": "G2",
+     "logs": {
+      "G1": 1.8270204272536468,
+      "G2": 1.9107607167257048,
+      "G3": 1.778193051387622,
+      "G4": 1.8629144109760545
+     },
+     "classes": {
+      "G1": "sw50r|drive",
+      "G2": "pr12|no drive",
+      "G3": "ac20|drive",
+      "G4": "sw50r|drive"
+     },
+     "g1": 1.8270204272536468,
+     "template": 1.5774571518644276,
+     "hot_di": false,
+     "clear_style": true
+    }
+   ]
+  }
+ },
+ "taste_weights": {
+  "chords": {
+   "telefunken-Blind_Spots-GTR": [
+    0.0342513691755691,
+    0.9598812940219656,
+    0.004694577902273375,
+    0.0011727589001919512
+   ],
+   "telefunken-Bloomlight-GTR": [
+    0.021333968462799387,
+    0.3548078482000914,
+    0.6218756286804221,
+    0.0019825546566870347
+   ],
+   "cambridge-Drag_Me_Down-ElecGtr4": [
+    0.0029036245302289238,
+    0.9662977308036944,
+    0.012968901532559298,
+    0.017829743133517442
+   ],
+   "telefunken-Farthest_Step-GTR": [
+    0.028665400242290168,
+    0.607792621663654,
+    0.3609305859660987,
+    0.0026113921279571034
+   ],
+   "telefunken-First_Offering-GTR_2": [
+    0.1849029214027517,
+    0.6790794477925481,
+    0.006980562357452468,
+    0.12903706844724758
+   ],
+   "telefunken-Fragments-GTR": [
+    0.08240229546431019,
+    0.8785092853169479,
+    0.006442102658835923,
+    0.032646316559905936
+   ],
+   "telefunken-Gym_Hours-GTR_1": [
+    0.6517577049947013,
+    0.08345392716495496,
+    0.2633556601107124,
+    0.0014327077296313725
+   ],
+   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": [
+    0.04522225487837434,
+    0.09967853979181424,
+    0.011953463415440159,
+    0.8431457419143712
+   ],
+   "telefunken-Long_Way_Home-GTR": [
+    0.04609014046895327,
+    0.008840635673195173,
+    0.005132703460469092,
+    0.9399365203973825
+   ],
+   "cambridge-Passing_Ships-ElecGtr6": [
+    0.044649129454762015,
+    0.32379014305979514,
+    0.6258554458484001,
+    0.0057052816370426395
+   ],
+   "cambridge-Prodigal-ElecGtr5": [
+    0.2629739000866242,
+    0.020652903746835552,
+    0.7125438535773622,
+    0.003829342589177934
+   ],
+   "cambridge-Quicksand-ElecGtr1": [
+    0.11283497407841417,
+    0.0063129206794063164,
+    0.019959361361260263,
+    0.8608927438809193
+   ],
+   "telefunken-Russian_Cream-GTR_2": [
+    0.03645348368095837,
+    0.11760156667376294,
+    0.025439569224731808,
+    0.820505380420547
+   ],
+   "telefunken-Sculptor's_Request-GTR_2": [
+    0.7124609385901874,
+    0.26294329919456194,
+    0.0071645701088402175,
+    0.017431192106410275
+   ],
+   "cambridge-Signs-ElecGtr2": [
+    0.1470946308818264,
+    0.07658520048140997,
+    0.0035507533736930563,
+    0.7727694152630706
+   ],
+   "cambridge-Today's_The_Day-ElecGtr07": [
+    0.22955041484176714,
+    0.05118862772716542,
+    0.7063233372468569,
+    0.012937620184210526
+   ]
+  },
+  "line": {
+   "telefunken-Blind_Spots-GTR": [
+    0.567361107457116,
+    0.17194491944680193,
+    0.0679803375996707,
+    0.19271363549641143
+   ],
+   "telefunken-Bloomlight-GTR": [
+    0.19302472896632,
+    0.3685643567916226,
+    0.24447054937807947,
+    0.19394036486397798
+   ],
+   "cambridge-Drag_Me_Down-ElecGtr4": [
+    0.11193979883208442,
+    0.19283218167542723,
+    0.09041053705307593,
+    0.6048174824394124
+   ],
+   "telefunken-Farthest_Step-GTR": [
+    0.26573314237322915,
+    0.24316983555786392,
+    0.3669127088383221,
+    0.12418431323058478
+   ],
+   "telefunken-First_Offering-GTR_2": [
+    0.2931049673359425,
+    0.24695379033354092,
+    0.26648798716123706,
+    0.19345325516927964
+   ],
+   "telefunken-Fragments-GTR": [
+    0.39168984496877496,
+    0.221345863833229,
+    0.2580206378268873,
+    0.12894365337110877
+   ],
+   "telefunken-Gym_Hours-GTR_1": [
+    0.22167874848441,
+    0.23595468379601853,
+    0.19363655482972947,
+    0.34873001288984207
+   ],
+   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": [
+    0.17180010249236086,
+    0.2013363940782933,
+    0.42883455876420623,
+    0.1980289446651397
+   ],
+   "telefunken-Long_Way_Home-GTR": [
+    0.24199898794058997,
+    0.4091860634190215,
+    0.17848199801007894,
+    0.17033295063030973
+   ],
+   "cambridge-Passing_Ships-ElecGtr6": [
+    0.21111331700764055,
+    0.3876099792115498,
+    0.2854373685493269,
+    0.11583933523148285
+   ],
+   "cambridge-Prodigal-ElecGtr5": [
+    0.3568937275890173,
+    0.2210691206702143,
+    0.24329528996536853,
+    0.17874186177539994
+   ],
+   "cambridge-Quicksand-ElecGtr1": [
+    0.29076773276087536,
+    0.3000053364681742,
+    0.15186402788688236,
+    0.2573629028840682
+   ],
+   "telefunken-Russian_Cream-GTR_2": [
+    0.22536486140109052,
+    0.41096378992486443,
+    0.14874386618240124,
+    0.2149274824916437
+   ],
+   "telefunken-Sculptor's_Request-GTR_2": [
+    0.2119374544043039,
+    0.31089442022838226,
+    0.139733785291982,
+    0.3374343400753318
+   ],
+   "cambridge-Signs-ElecGtr2": [
+    0.1857581530206017,
+    0.4323211042057613,
+    0.11013864718007346,
+    0.27178209559356353
+   ],
+   "cambridge-Today's_The_Day-ElecGtr07": [
+    0.20689008181412996,
+    0.12516522849546804,
+    0.19604895487210988,
+    0.4718957348182922
+   ]
+  }
+ },
+ "same_preset_both_times": {
+  "cambridge-Drag_Me_Down-ElecGtr4": true,
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": true,
+  "cambridge-Passing_Ships-ElecGtr6": true,
+  "cambridge-Prodigal-ElecGtr5": false,
+  "cambridge-Quicksand-ElecGtr1": true,
+  "cambridge-Signs-ElecGtr2": null,
+  "cambridge-Today's_The_Day-ElecGtr07": false,
+  "telefunken-Blind_Spots-GTR": true,
+  "telefunken-Bloomlight-GTR": false,
+  "telefunken-Farthest_Step-GTR": false,
+  "telefunken-First_Offering-GTR_2": false,
+  "telefunken-Fragments-GTR": false,
+  "telefunken-Gym_Hours-GTR_1": null,
+  "telefunken-Long_Way_Home-GTR": null,
+  "telefunken-Russian_Cream-GTR_2": null,
+  "telefunken-Sculptor's_Request-GTR_2": false
+ },
+ "di_to_riff_gap_median_db": 2.53,
+ "cant_tell": 6,
+ "controls_hit": {
+  "1": [
+   false,
+   false
+  ],
+  "2": [
+   true,
+   true
+  ]
+ },
+ "controls": [
+  {
+   "sitting": 1,
+   "trial": 9,
+   "part": "telefunken-First_Offering-GTR_1",
+   "riff": "chords",
+   "answered": false,
+   "hit": false
+  },
+  {
+   "sitting": 1,
+   "trial": 12,
+   "part": "telefunken-Gym_Hours-GTR_2",
+   "riff": "chords",
+   "answered": false,
+   "hit": false
+  },
+  {
+   "sitting": 2,
+   "trial": 3,
+   "part": "telefunken-Sculptor's_Request-GTR_1",
+   "riff": "chords",
+   "answered": true,
+   "hit": true
+  },
+  {
+   "sitting": 2,
+   "trial": 15,
+   "part": "telefunken-Farthest_Step-GTR",
+   "riff": "line",
+   "answered": true,
+   "hit": true
+  }
+ ],
+ "void_sittings": [
+  "1"
+ ],
+ "inconclusive": true,
+ "inconclusive_because": [
+  "2 of 4 controls hit, fewer than 3"
+ ],
+ "primary_holds": false,
+ "main_path": false
+}

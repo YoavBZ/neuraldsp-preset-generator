@@ -28,12 +28,14 @@ lives in the linked documents. Last updated 2026-10-06.
 
 ## Next, in order
 
-1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
-   about 23 minutes, declared first). The page is in `generate` (step 5b): four presets
-   through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
-   Does a real ear, listening through another performance, follow the song: beat
-   chance, and beat a song-blind taste for an amp, drive or gain? It decides whether
-   the page is the main path or an option.
+1. **Listening check of the page: run, inconclusive**
+   ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
+   was void: both its controls were answered "?" (second guitars about 8 dB under the
+   mix). The page stays an option in `generate`. The listener reported that the target
+   guitar was sometimes not findable in the song, and that tone through different notes
+   often could not be compared. The picks leaned closer than chance under one band set
+   only, and not beyond a song-blind taste. **Next is a decision:** re-declare with
+   findable targets, run the own-DI version (same notes), or move on to step 2.
    - **Learned while setting it up:** a riff must match the song guitar's style. The
      listener found single-note parts can't be judged against strummed chords (drive
      sounds different on several notes at once), so the check now plays each part
@@ -97,6 +99,7 @@ lives in the linked documents. Last updated 2026-10-06.
 | Date | Decision | Record |
 |---|---|---|
 | 2026-10-02 | Song only: the user never records a DI | — |
+| 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | 2026-10-03 | Without a DI, keep the starting preset (figures later marked unconfirmed) | #107, [no-DI re-check](no-di-rule-under-the-judge-results.md) |
 | 2026-10-03 | The judge replaces the v3 score as the measure of closeness | [measuring-closeness.md](measuring-closeness.md) |
 | 2026-10-04 | Crop rule 2 (where the DI plays most) for new crops | [validation-datasets.md](validation-datasets.md) |
