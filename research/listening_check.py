@@ -464,8 +464,11 @@ def leak_check(folder: pathlib.Path, names=()) -> list:
     for path in folder.rglob("*"):
         if pattern.search(path.name):
             bad.append(str(path))
-        elif path.suffix in (".html", ".txt", ".json") and pattern.search(path.read_text()):
-            bad.append(str(path))
+        elif path.suffix in (".html", ".txt", ".json"):
+            # Embedded audio is base64, whose letters can spell anything ("/g3+").
+            text = re.sub(r"data:[\w/+.-]+;base64,[A-Za-z0-9+/=]*", "", path.read_text())
+            if pattern.search(text):
+                bad.append(str(path))
     return bad
 
 
@@ -945,6 +948,123 @@ def listed_trials(listen: pathlib.Path) -> set:
     return out
 
 
+MOBILE_KBPS = 160             # mono AAC; keeps a sitting under 30 MiB for a phone
+
+MOBILE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listening check, sitting {sitting}</title>
+<style>
+:root {{ --bg:#fbfaf7; --fg:#1d1d1b; --muted:#6b6a65; --line:#e3e0d8; --card:#fff;
+        --on:#1d1d1b; --on-fg:#fff; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --bg:#171716; --fg:#ecebe6; --muted:#a19f97;
+  --line:#34332f; --card:#201f1d; --on:#ecebe6; --on-fg:#171716; }} }}
+body {{ margin:0; background:var(--bg); color:var(--fg);
+        font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+main {{ max-width:760px; margin:0 auto; padding:24px 16px 48px; }}
+section {{ border:1px solid var(--line); border-radius:10px; background:var(--card);
+           padding:12px 16px; margin:16px 0; }}
+h2 {{ font-size:1.05rem; margin:0 0 4px; }}
+.cue {{ color:var(--muted); margin:0 0 8px; }}
+.row {{ display:grid; grid-template-columns:3.5rem 1fr; align-items:center; gap:8px;
+        margin:6px 0; }}
+audio {{ width:100%; height:40px; }}
+.pick {{ display:flex; gap:8px; margin-top:10px; }}
+.pick button {{ flex:1; padding:10px 0; font:inherit; border:1px solid var(--line);
+               border-radius:8px; background:var(--bg); color:var(--fg); }}
+.pick button[aria-pressed="true"] {{ background:var(--on); color:var(--on-fg); }}
+#sheet {{ position:sticky; bottom:0; background:var(--card); border-top:1px solid var(--line);
+          padding:12px 16px; }}
+#line {{ width:100%; box-sizing:border-box; font:15px ui-monospace, monospace; padding:8px;
+         border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }}
+#copy {{ margin-top:8px; padding:10px 16px; font:inherit; border-radius:8px;
+         border:1px solid var(--line); background:var(--on); color:var(--on-fg); }}
+</style></head><body><main>
+<h1>Listening check, sitting {sitting}</h1>
+<p>For each trial: play the song, then A to D. Which of A to D sounds most like the
+guitar named in the song? A–D all play the same riff, not the song's part, so listen
+for the tone: gain, brightness, body. Tap a letter, or "?" if you can't tell. Answer
+every trial; the line at the bottom fills in as you go. When all {count} are answered,
+copy it and send it.</p>
+{trials}
+</main>
+<div id="sheet"><input id="line" readonly aria-label="Your answer line">
+<button id="copy" type="button">Copy answer line</button></div>
+<script>
+const SITTING = {sitting}, COUNT = {count}, KEY = "lc-sitting-" + SITTING;
+let answers = {{}};
+try {{ answers = JSON.parse(localStorage.getItem(KEY) || "{{}}"); }} catch (e) {{}}
+function render() {{
+  document.querySelectorAll(".pick").forEach(group => {{
+    const n = group.dataset.trial;
+    group.querySelectorAll("button").forEach(b =>
+      b.setAttribute("aria-pressed", String(answers[n] === b.dataset.value)));
+  }});
+  const done = Object.keys(answers).length;
+  const parts = [];
+  for (let n = 1; n <= COUNT; n++) if (answers[n]) parts.push(n + answers[n]);
+  document.getElementById("line").value = "Sitting " + SITTING + ": " + parts.join(" ") +
+    (done < COUNT ? "   (" + (COUNT - done) + " left)" : "");
+}}
+document.querySelectorAll(".pick button").forEach(b => b.addEventListener("click", () => {{
+  answers[b.parentElement.dataset.trial] = b.dataset.value;
+  try {{ localStorage.setItem(KEY, JSON.stringify(answers)); }} catch (e) {{}}
+  render();
+}}));
+document.querySelectorAll("audio").forEach(a => a.addEventListener("play", () =>
+  document.querySelectorAll("audio").forEach(o => {{ if (o !== a) o.pause(); }})));
+document.getElementById("copy").addEventListener("click", async () => {{
+  const line = document.getElementById("line");
+  try {{ await navigator.clipboard.writeText(line.value); }}
+  catch (e) {{ line.select(); document.execCommand("copy"); }}
+}});
+render();
+</script></body></html>
+"""
+
+
+def mobile_page(args):
+    """One self-contained page per sitting for a phone, built from the listener's own
+    folder alone (never the key): each letter-named clip encoded as AAC at MOBILE_KBPS
+    and embedded, with buttons that assemble the answer line."""
+    import base64
+    import subprocess
+    import tempfile
+
+    listen = args.out_dir.expanduser() / "listen"
+    folder = listen / f"sitting-{args.sitting}"
+    text = (folder / "index.html").read_text()
+    found = re.findall(r'<section><h2>Trial (\d+)</h2><p class="cue">(.*?)</p>', text)
+    if not found:
+        die(f"no trials found in {folder / 'index.html'}")
+    sections = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for number, cue in found:
+            rows = []
+            for name in ("song", *LETTERS):
+                clip = folder / f"trial-{int(number):02d}-{name}.wav"
+                encoded = pathlib.Path(tmp) / "clip.m4a"
+                subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b",
+                                str(MOBILE_KBPS * 1000), str(clip), str(encoded)], check=True)
+                data = base64.b64encode(encoded.read_bytes()).decode()
+                label = "Song" if name == "song" else name
+                rows.append(f'<div class="row"><b>{label}</b><audio controls preload="none" '
+                            f'src="data:audio/mp4;base64,{data}"></audio></div>')
+            buttons = "".join(f'<button type="button" data-value="{x}">{x}</button>'
+                              for x in (*LETTERS, "?"))
+            sections.append(f'<section><h2>Trial {number}</h2><p class="cue">{cue}</p>'
+                            f'{"".join(rows)}<div class="pick" data-trial="{number}">'
+                            f'{buttons}</div></section>')
+    out = listen / f"sitting-{args.sitting}-phone.html"
+    out.write_text(MOBILE.format(sitting=args.sitting, count=len(found),
+                                 trials="\n".join(sections)))
+    leaks = leak_check(listen)
+    if leaks:
+        out.unlink()
+        die(f"the phone page names what it must not: {leaks}")
+    print(f"{out} ({out.stat().st_size / 1e6:.1f} MB, {len(found)} trials)")
+
+
 def check_sheet(args):
     """Whether an answer sheet can be scored, from the public pages alone: run before its
     hash is committed, so a format slip is mended while it still can be."""
@@ -965,7 +1085,9 @@ def check_sheet(args):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=("inputs", "build", "check-sheet", "score"))
+    ap.add_argument("command", choices=("inputs", "build", "phone-page", "check-sheet",
+                                        "score"))
+    ap.add_argument("--sitting", type=int, default=1)
     ap.add_argument("--json", type=pathlib.Path)
     ap.add_argument("--inputs", type=pathlib.Path)
     ap.add_argument("--inputs-sha")
@@ -975,8 +1097,8 @@ def main():
     ap.add_argument("--key-sha")
     ap.add_argument("--workers", type=int, default=3)
     args = ap.parse_args()
-    {"inputs": inputs, "build": build, "check-sheet": check_sheet,
-     "score": score}[args.command](args)
+    {"inputs": inputs, "build": build, "phone-page": mobile_page,
+     "check-sheet": check_sheet, "score": score}[args.command](args)
 
 
 if __name__ == "__main__":

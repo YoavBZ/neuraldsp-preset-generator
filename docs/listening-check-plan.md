@@ -3,6 +3,11 @@
 > **Built on 2026-10-06** from commit 6787638: 40 trials in two sittings at
 > `~/ndsp-presets/runs/listening-check/`. The key's SHA-256, committed before sitting 1:
 > `dec7547a7c8f3e4e6e93f238d1e9b917f9433ec96a1ad8b888bb080886f5c67f`.
+>
+> **Played on a phone,** at the listener's request: `listening_check.py phone-page`
+> builds one self-contained page per sitting from the listener's folder alone (never
+> the key), each clip encoded as mono AAC at 160 kbps (to stay under a 30 MiB
+> attachment), with tap-to-answer buttons that assemble the answer line.
 
 Declared on 2026-10-05, before any trial is built. Revised on 2026-10-06 after a
 second to sixth independent reviews, still before any trial existed.
