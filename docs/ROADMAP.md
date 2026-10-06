@@ -13,9 +13,10 @@ lives in the linked documents. Last updated 2026-10-06.
   factory presets ([song-only shortlist](song-only-shortlist-results.md)).
 - **Choosing among several helps, with a perfect ear.** The judge picking from four
   lands about 18% closer than the template. Whether a real ear does, listening through
-  another performance's DI, is untested. `generate` now offers four presets on a
-  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a
-  refine loop.
+  another performance's DI, was tested once and came out inconclusive
+  ([results](listening-check-results.md)). `generate` offers four presets on a
+  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a refine
+  loop, as an option.
 - **`match`** without a DI describes the recording and keeps the starting preset: no
   song-only search has been shown to get closer
   ([re-check under the judge: void](no-di-rule-under-the-judge-results.md)). With the
@@ -30,12 +31,14 @@ lives in the linked documents. Last updated 2026-10-06.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
-   was void: both its controls were answered "?" (second guitars about 8 dB under the
-   mix). The page stays an option in `generate`. The listener reported that the target
-   guitar was sometimes not findable in the song, and that tone through different notes
-   often could not be compared. The picks leaned closer than chance under one band set
-   only, and not beyond a song-blind taste. **Next is a decision:** re-declare with
-   findable targets, run the own-DI version (same notes), or move on to step 2.
+   was void: both its controls were answered "?", and the "?" answers cluster there,
+   so a playback problem in that sitting is not ruled out. The page stays an option in
+   `generate`. The listener reported that for some songs the target guitar could not
+   be found, or tone could not be compared across different notes. The picks leaned
+   closer than chance under one band set only, and not beyond a song-blind taste.
+   **Next:** the declared consequence is a rerun with fresh trials after a playback
+   check; the alternatives are a rerun with findable targets, the own-DI version (same
+   notes), or moving on to step 2.
    - **Learned while setting it up:** a riff must match the song guitar's style. The
      listener found single-note parts can't be judged against strummed chords (drive
      sounds different on several notes at once), so the check now plays each part
@@ -99,7 +102,6 @@ lives in the linked documents. Last updated 2026-10-06.
 | Date | Decision | Record |
 |---|---|---|
 | 2026-10-02 | Song only: the user never records a DI | — |
-| 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | 2026-10-03 | Without a DI, keep the starting preset (figures later marked unconfirmed) | #107, [no-DI re-check](no-di-rule-under-the-judge-results.md) |
 | 2026-10-03 | The judge replaces the v3 score as the measure of closeness | [measuring-closeness.md](measuring-closeness.md) |
 | 2026-10-04 | Crop rule 2 (where the DI plays most) for new crops | [validation-datasets.md](validation-datasets.md) |
@@ -107,4 +109,5 @@ lives in the linked documents. Last updated 2026-10-06.
 | 2026-10-05 | Amp choice is a set of acceptable amps; AC20 reaches fewer of these clean parts | [amp reach](amp-reach-results.md), [quick checks](quick-checks-results.md) |
 | 2026-10-05 | Research not shown to beat the template or chance at picking presets; choosing among four helps with a perfect ear | [song-only shortlist](song-only-shortlist-results.md) |
 | 2026-10-05 | `generate` offers four presets on a listening page; riffs from Guitar-TECHS P1 (CC BY 4.0) ship in `samples/riffs/` | `skills/generate/SKILL.md` step 5b |
+| 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

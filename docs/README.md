@@ -64,8 +64,8 @@ was declared, what was measured, and the research behind it.
   a random list; choosing by ear (a perfect one) helps.
 - [listening-check-plan.md](listening-check-plan.md), with its fixed inputs
   `listening-check-inputs.json` → [results](listening-check-results.md): inconclusive
-  (a void sitting); the listener often could not find the guitar or compare tone
-  across different notes.
+  (a void sitting); for some songs the listener could not find the guitar or compare
+  tone across different notes.
 
 **Settings model and amp choice** (parked)
 - [supervised-model-plan.md](supervised-model-plan.md).
