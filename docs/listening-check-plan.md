@@ -13,6 +13,13 @@
 > listener has heard part of the set-aside sitting 1: the same parts and candidates,
 > with other letters.
 >
+> **Built on 2026-10-06** from commit a06b27c (inputs `26e3d0e6…bfdb1`): 37 trials in two
+> sittings at `~/ndsp-presets/runs/listening-check/`. Committed before sitting 1: the
+> key's SHA-256 `f185d8d441ce3890f8fb678d95eac2c8272f56d4609d443960a01eaa4f052a4b`, and
+> the phone pages' `6d8a5a6adde26d18971c06b1e576d97d502cdcd80b53cefbe90f3b056e9f5d7e`
+> (sitting 1) and `ebaedefc7d4811ee8e948f717b4f109584947983859d92e4fe665149776b37a1`
+> (sitting 2).
+>
 > **Played on a phone,** at the listener's request: `listening_check.py phone-page`
 > builds one self-contained page per sitting from the listener's folder alone (never
 > the key), each clip encoded as mono AAC at 160 kbps (to stay under a 30 MiB
