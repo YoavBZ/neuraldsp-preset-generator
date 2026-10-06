@@ -13,9 +13,10 @@ lives in the linked documents. Last updated 2026-10-06.
   factory presets ([song-only shortlist](song-only-shortlist-results.md)).
 - **Choosing among several helps, with a perfect ear.** The judge picking from four
   lands about 18% closer than the template. Whether a real ear does, listening through
-  another performance's DI, is untested. `generate` now offers four presets on a
-  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a
-  refine loop.
+  another performance's DI, was tested once and came out inconclusive
+  ([results](listening-check-results.md)). `generate` offers four presets on a
+  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a refine
+  loop, as an option.
 - **`match`** without a DI describes the recording and keeps the starting preset: no
   song-only search has been shown to get closer
   ([re-check under the judge: void](no-di-rule-under-the-judge-results.md)). With the
@@ -28,12 +29,21 @@ lives in the linked documents. Last updated 2026-10-06.
 
 ## Next, in order
 
-1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
-   about 25 minutes, declared first). The page is in `generate` (step 5b): four presets
-   through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
-   Does a real ear, listening through another performance, follow the song: beat
-   chance, and beat a song-blind taste for an amp, drive or gain? It decides whether
-   the page is the main path or an option.
+1. **Listening check of the page: run, inconclusive**
+   ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
+   was void: both its controls were answered "?", and the "?" answers cluster there,
+   so a playback problem in that sitting is not ruled out. The page stays an option in
+   `generate`. The listener reported that for some songs the target guitar could not
+   be found, or tone could not be compared across different notes. The picks leaned
+   closer than chance under one band set only, and not beyond a song-blind taste.
+   The declared rerun was set aside with the listener (reasons in the results); the
+   own-DI version waits for the derived-DI route.
+   - **Learned while setting it up:** a riff must match the song guitar's style. The
+     listener found single-note parts can't be judged against strummed chords (drive
+     sounds different on several notes at once), so the check now plays each part
+     through the riff in its own style, measured from its clean recording. The page
+     should do the same from the song alone (classifying a separated guitar stem as
+     chords or single notes), and may need more styles (arpeggios, power chords).
 2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
    experiment 4: the judge as teacher). Gate, as declared there: median regret at most
    0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the
@@ -98,4 +108,5 @@ lives in the linked documents. Last updated 2026-10-06.
 | 2026-10-05 | Amp choice is a set of acceptable amps; AC20 reaches fewer of these clean parts | [amp reach](amp-reach-results.md), [quick checks](quick-checks-results.md) |
 | 2026-10-05 | Research not shown to beat the template or chance at picking presets; choosing among four helps with a perfect ear | [song-only shortlist](song-only-shortlist-results.md) |
 | 2026-10-05 | `generate` offers four presets on a listening page; riffs from Guitar-TECHS P1 (CC BY 4.0) ship in `samples/riffs/` | `skills/generate/SKILL.md` step 5b |
+| 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
