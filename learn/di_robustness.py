@@ -29,6 +29,8 @@ VARIANTS = ("swap", "mild", "swap+mild")
 # typical DI's spectrum at the assumed level; judged with lag 0.
 REBUILT = ("flatref", "flatstem")
 REPORTED = ("avg", "avg+mild")
+# Dose-response (di-recovery-plan.md, Phase 0 D): the avg DI mixed with flatref.
+BLENDS = {"blend25": 0.25, "blend50": 0.5, "blend75": 0.75}
 STEMS = pathlib.Path(os.path.expanduser("~/ndsp-presets/learn/poc/stems"))
 ASSUMED_LUFS = -22.9
 HALF_A, HALF_B = (1.0, 5.5), (5.5, 10.0)
@@ -230,6 +232,18 @@ def render(out):
                     y = degrade("mild", p, y, others, random.Random(f"{SEED}-{p}-mild"))
                 np.save(path, y)
             jobs.append((p, v))
+        for v, beta in BLENDS.items():
+            path = out / "di" / f"{p}--{v}.npy"
+            if not path.exists():
+                a = np.load(out / "di" / f"{p}--avg.npy")
+                fr = np.load(out / "di" / f"{p}--flatref.npy")
+                lag = lags[p]
+                # flatref is aligned with the recording; move it onto the DI's timeline
+                fr = np.roll(fr, -lag) if lag >= 0 else np.concatenate([np.zeros(-lag), fr[:lag]])
+                fr = fr / rms(fr) * rms(a)
+                y = (1 - beta) * a + beta * fr
+                np.save(path, y * (rms(a) / rms(y)))
+            jobs.append((p, v))
         for v in REBUILT:
             if v == "flatstem" and p not in usable:
                 continue
@@ -264,7 +278,7 @@ def score_part(job):
                                                  render_latency=LATENCY, start_s=HALF_A[0],
                                                  end_s=HALF_A[1], bands=bs).distance
                              for n in names}
-        for v in VARIANTS + REBUILT + REPORTED:
+        for v in VARIANTS + REBUILT + REPORTED + tuple(BLENDS):
             path = out / "di" / f"{p}--{v}.npy"
             if not path.exists():
                 continue
@@ -297,7 +311,7 @@ def score(out):
         res = dict(pool.map(score_part, jobs))
     summary, rows_out = {}, {}
     for bs in BAND_SETS:
-        for v in ["true"] + list(VARIANTS) + list(REBUILT) + list(REPORTED):
+        for v in ["true"] + list(VARIANTS) + list(REBUILT) + list(REPORTED) + list(BLENDS):
             rows = []
             for p in parts:
                 B, A = res[p]["true_B"][bs], res[p]["true_A"][bs]
