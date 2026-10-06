@@ -36,9 +36,8 @@ lives in the linked documents. Last updated 2026-10-06.
    `generate`. The listener reported that for some songs the target guitar could not
    be found, or tone could not be compared across different notes. The picks leaned
    closer than chance under one band set only, and not beyond a song-blind taste.
-   **Next:** the declared consequence is a rerun with fresh trials after a playback
-   check; the alternatives are a rerun with findable targets, the own-DI version (same
-   notes), or moving on to step 2.
+   The declared rerun was set aside with the listener (reasons in the results); the
+   own-DI version waits for the derived-DI route.
    - **Learned while setting it up:** a riff must match the song guitar's style. The
      listener found single-note parts can't be judged against strummed chords (drive
      sounds different on several notes at once), so the check now plays each part

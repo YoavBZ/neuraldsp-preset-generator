@@ -96,7 +96,14 @@ options:
 - **Move on:** the roadmap's next step, a DI-free distance, does not depend on this
   check.
 
-Departing from the declared rerun would be recorded here, with the reason.
+**Decided on 2026-10-06, with the listener: no rerun now.** The declared rerun is
+set aside, for three reasons. Its deciding test must beat a song-blind taste, which
+these picks were far from (p 0.23 to 0.32), and it detects a moderately good ear only
+about a third of the time. It would settle only the smaller question, a possible
+playback problem in sitting 1, while keeping the listener's two reported
+difficulties. And the page stays an option either way. The own-DI version waits
+until the product could supply the song's own notes (the derived-DI route); the
+roadmap moves on to the DI-free distance.
 
 ## Deviations
 
