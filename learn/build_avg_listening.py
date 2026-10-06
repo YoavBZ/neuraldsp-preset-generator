@@ -6,6 +6,8 @@ Declared in `docs/avg-measure-listening-plan.md` (Phase 0 L of `docs/di-recovery
     .venv/bin/python -m learn.build_avg_listening count     # pair counts only, no pair named
     .venv/bin/python -m learn.build_avg_listening build     # trials, audio, sheet, private key
     .venv/bin/python -m learn.build_avg_listening take      # the listener plays and answers
+    .venv/bin/python -m learn.build_avg_listening phone     # or: one phone page per sitting
+    .venv/bin/python -m learn.build_avg_listening check --answers SHEET   # public check
     .venv/bin/python -m learn.build_avg_listening score     # after the sheet's hash is committed
 
 Nothing is rendered: every option is an existing render (the `avg` and `swap` renders
@@ -17,6 +19,13 @@ The listener's folder (`listen/`) holds numbered trial files and the answer shee
 nothing else. The key (pairs, distances, A/B) is `private/trials.json`; the plan records
 its sha256, and the scorer refuses any other key. The scorer records the answer sheet's
 sha256 before it reads the key and refuses a different sheet afterwards.
+
+`phone` builds, from the listener's folder alone (never the key), one self-contained
+page per sitting, `listen/sitting-N-phone.html`, as `research/listening_check.py
+phone-page` did: every clip embedded as mono AAC at PHONE_KBPS, tap-to-answer A/B
+buttons, answers kept in the browser, and an answer line ("Sitting 1: 1A 2B ...") to
+copy and send. The scorer reads a sheet of those lines as it reads `ANSWERS.md`; `check`
+reads a sheet against the public trial numbers, before its hash is committed.
 """
 
 from __future__ import annotations
@@ -415,9 +424,46 @@ def count(args):
 
 # --- take ---------------------------------------------------------------------------
 
+PHONE_LINE = re.compile(r"\s*sitting\s*(\d+)\s*:(.*)", re.I)
+
+
+def read_phone_lines(text: str) -> dict:
+    """{trial: "A" | "B"} from the phone pages' answer lines ('Sitting 1: 1A 2B ...').
+
+    Strict, because the sheet's hash is committed before scoring and a slip cannot be
+    mended afterwards: every non-blank line is a sitting line, every token a trial number
+    and A or B, each trial in its own sitting (1 to 18, then 19 to 36), none twice."""
+    out = {}
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        m = PHONE_LINE.fullmatch(line)
+        if not m:
+            raise ValueError(f"not a sitting line: {line!r}")
+        sitting = int(m.group(1))
+        for token in m.group(2).split():
+            t = re.fullmatch(r"(\d+)([AaBb])", token)
+            if not t:
+                raise ValueError(f"not an answer: {token!r} in {line!r}")
+            n = int(t.group(1))
+            if not (sitting - 1) * SITTING < n <= sitting * SITTING:
+                raise ValueError(f"trial {n} is not in sitting {sitting}")
+            if n in out:
+                raise ValueError(f"trial {n} is answered twice")
+            out[n] = t.group(2).upper()
+    return out
+
+
 def read_sheet(path):
+    """{trial: "A" | "B" | None} from `ANSWERS.md`, or from the phone pages' answer lines."""
+    text = path.read_text()
+    if any(PHONE_LINE.fullmatch(line) for line in text.splitlines()):
+        try:
+            return read_phone_lines(text)
+        except ValueError as e:
+            die(f"the answer sheet cannot be read: {e}")
     answers = {}
-    for line in path.read_text().splitlines():
+    for line in text.splitlines():
         m = re.match(r"\s*(\d+)\s*:\s*([AB])?\s*$", line)
         if m:
             answers[int(m.group(1))] = m.group(2)
@@ -477,6 +523,205 @@ def take(args):
               "Commit that hash (docs/avg-measure-listening-answers.sha256) before scoring.")
 
 
+# --- phone ----------------------------------------------------------------------------
+
+PHONE_KBPS = 160              # mono AAC, as the earlier listening check's phone pages
+
+PHONE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listening check L, sitting {sitting}</title>
+<style>
+:root {{ --bg:#fbfaf7; --fg:#1d1d1b; --muted:#6b6a65; --line:#e3e0d8; --card:#fff;
+        --on:#1d1d1b; --on-fg:#fff; }}
+@media (prefers-color-scheme: dark) {{ :root {{ --bg:#171716; --fg:#ecebe6; --muted:#a19f97;
+  --line:#34332f; --card:#201f1d; --on:#ecebe6; --on-fg:#171716; }} }}
+body {{ margin:0; background:var(--bg); color:var(--fg);
+        font:16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+main {{ max-width:760px; margin:0 auto; padding:24px 16px 48px; }}
+section {{ border:1px solid var(--line); border-radius:10px; background:var(--card);
+           padding:12px 16px; margin:16px 0; }}
+h2 {{ font-size:1.05rem; margin:0 0 4px; }}
+.cue {{ color:var(--muted); margin:0 0 8px; min-height:1.5em; }}
+.row {{ display:grid; grid-template-columns:3.5rem 1fr; align-items:center; gap:8px;
+        margin:6px 0; }}
+audio {{ width:100%; height:40px; }}
+.pick {{ display:flex; gap:8px; margin-top:10px; }}
+.pick button {{ flex:1; padding:10px 0; font:inherit; border:1px solid var(--line);
+               border-radius:8px; background:var(--bg); color:var(--fg); }}
+.pick button[aria-pressed="true"] {{ background:var(--on); color:var(--on-fg); }}
+#sheet {{ position:sticky; bottom:0; background:var(--card); border-top:1px solid var(--line);
+          padding:12px 16px; }}
+#line {{ width:100%; box-sizing:border-box; font:15px ui-monospace, monospace; padding:8px;
+         border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); }}
+#copy, #clear {{ margin-top:8px; padding:10px 16px; font:inherit; border-radius:8px;
+                border:1px solid var(--line); background:var(--on); color:var(--on-fg); }}
+#clear {{ background:var(--bg); color:var(--fg); }}
+</style></head><body><main>
+<h1>Listening check L, sitting {sitting}</h1>
+<p>For each trial, play <b>Trial</b>: it plays the Reference, then A, then B, and then
+all three again (about 30 s). Which of A and B is closer to the Reference? Tap A or B;
+you must choose one. To listen again, play Trial again, or R, A or B alone. Use the same
+headphones and level throughout{brk}. The line at the bottom fills in as you go; when all
+{count} are answered, copy it and send it.</p>
+{trials}
+</main>
+<div id="sheet"><input id="line" readonly aria-label="Your answer line">
+<button id="copy" type="button">Copy answer line</button>
+<button id="clear" type="button">Clear answers</button></div>
+<script>
+const SITTING = {sitting}, FIRST = {first}, LAST = {last};
+const KEY = "avg-{build}-sitting-" + SITTING;
+let answers = {{}};
+try {{ answers = JSON.parse(localStorage.getItem(KEY) || "{{}}"); }} catch (e) {{}}
+function render() {{
+  document.querySelectorAll(".pick").forEach(group => {{
+    const n = group.dataset.trial;
+    group.querySelectorAll("button").forEach(b =>
+      b.setAttribute("aria-pressed", String(answers[n] === b.dataset.value)));
+  }});
+  const parts = [];
+  for (let n = FIRST; n <= LAST; n++) if (answers[n]) parts.push(n + answers[n]);
+  const left = LAST - FIRST + 1 - parts.length;
+  document.getElementById("line").value = "Sitting " + SITTING + ": " + parts.join(" ") +
+    (left ? "   (" + left + " left)" : "");
+}}
+document.querySelectorAll(".pick button").forEach(b => b.addEventListener("click", () => {{
+  answers[b.parentElement.dataset.trial] = b.dataset.value;
+  try {{ localStorage.setItem(KEY, JSON.stringify(answers)); }} catch (e) {{}}
+  render();
+}}));
+document.querySelectorAll("audio").forEach(a => a.addEventListener("play", () =>
+  document.querySelectorAll("audio").forEach(o => {{ if (o !== a) o.pause(); }})));
+// The trial file is R, gap, A, gap, B, longer gap, then again: name what is playing.
+document.querySelectorAll("audio.trial").forEach(a => {{
+  const cue = a.closest("section").querySelector(".cue");
+  const len = Number(a.dataset.clip), gap = {gap}, cycle = {cycle};
+  const at = t => {{
+    for (let k = 0; k < 2; k++) {{
+      const start = k * (3 * len + 2 * gap + cycle);
+      for (let i = 0; i < 3; i++) {{
+        const s = start + i * (len + gap);
+        if (t >= s && t < s + len) return "Now playing: " + "RAB"[i] + (k ? " (again)" : "");
+      }}
+    }}
+    return "";
+  }};
+  a.addEventListener("timeupdate", () => {{ cue.textContent = a.paused ? "" : at(a.currentTime); }});
+  ["pause", "ended"].forEach(e => a.addEventListener(e, () => {{ cue.textContent = ""; }}));
+}});
+document.getElementById("clear").addEventListener("click", () => {{
+  if (!confirm("Clear every answer on this page?")) return;
+  answers = {{}};
+  try {{ localStorage.removeItem(KEY); }} catch (e) {{}}
+  render();
+}});
+document.getElementById("copy").addEventListener("click", async () => {{
+  const line = document.getElementById("line");
+  try {{ await navigator.clipboard.writeText(line.value); }}
+  catch (e) {{ line.select(); document.execCommand("copy"); }}
+}});
+render();
+</script></body></html>
+"""
+
+
+def public_trials(listen) -> dict:
+    """{trial: sitting} from the listener's folder alone: the numbered trial files, the
+    first SITTING trials in sitting 1 (as `take` and `ANSWERS.md` have them)."""
+    found = sorted(int(m.group(1)) for f in listen.glob("trial-*.flac")
+                   if (m := re.fullmatch(r"trial-(\d+)\.flac", f.name)))
+    return {n: 1 if n <= SITTING else 2 for n in found}
+
+
+def aac_data_uri(path, tmp) -> str:
+    import base64
+
+    encoded = pathlib.Path(tmp) / "clip.m4a"
+    subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b", str(PHONE_KBPS * 1000),
+                    str(path), str(encoded)], check=True)
+    return "data:audio/mp4;base64," + base64.b64encode(encoded.read_bytes()).decode()
+
+
+def phone_leaks(page: str) -> list:
+    """Names the page must not hold: any factory preset, part or amp, in its text or in
+    any embedded clip (the names come from the panel, not the key)."""
+    import base64
+
+    parts, _, _, names, _ = k1()
+    words = (set(parts) | {p.split("-")[1].replace("_", " ") for p in parts}
+             | {seg for n in names for seg in n.split(":", 1)[-1].split("/")
+                if seg != "Artists"})
+    text_only = re.compile("|".join([r"\bAC20\b", r"\bPR12\b", r"\bSW50R\b", r"\.xml",
+                                     "factory", r"template\+R", r"\bmeasure\b"]
+                                    + [re.escape(w) for w in sorted(words)]), re.I)
+    payloads = re.findall(r"base64,([A-Za-z0-9+/=]+)", page)
+    bad = sorted(set(text_only.findall(re.sub(r"base64,[A-Za-z0-9+/=]+", "", page))))
+    # Clips are binary: only the long names are looked for, where chance cannot match.
+    binary = re.compile("|".join(re.escape(w) for w in sorted(words) if len(w) >= 6).encode(),
+                        re.I)
+    for p in payloads:
+        bad += sorted({m.decode(errors="replace") for m in binary.findall(base64.b64decode(p))})
+    return bad
+
+
+def phone(args):
+    import tempfile
+
+    import soundfile as sf
+
+    listen = args.listen_dir.expanduser()
+    trials = public_trials(listen)
+    if not trials:
+        die(f"no trial files in {listen}")
+    for sitting in args.sitting or sorted(set(trials.values())):
+        numbers = sorted(n for n, s in trials.items() if s == sitting)
+        files = [listen / f"trial-{n:02d}{x}.flac" for n in numbers for x in ("", "-R", "-A", "-B")]
+        # Answers are kept in the browser per build of these clips and per sitting, so a
+        # page of another build never opens pre-answered.
+        build_id = hashlib.sha256("".join(sha256(f) for f in files).encode()).hexdigest()[:12]
+        sections = []
+        with tempfile.TemporaryDirectory() as tmp:
+            for n in numbers:
+                clip_s = sf.info(str(listen / f"trial-{n:02d}-R.flac")).frames / SR
+                rows = [f'<div class="row"><b>Trial</b><audio class="trial" controls '
+                        f'preload="none" data-clip="{clip_s:.4f}" '
+                        f'src="{aac_data_uri(listen / f"trial-{n:02d}.flac", tmp)}"></audio></div>']
+                rows += [f'<div class="row"><b>{x}</b><audio controls preload="none" '
+                         f'src="{aac_data_uri(listen / f"trial-{n:02d}-{x}.flac", tmp)}">'
+                         f'</audio></div>' for x in "RAB"]
+                buttons = "".join(f'<button type="button" data-value="{x}">{x}</button>'
+                                  for x in "AB")
+                sections.append(f'<section><h2>Trial {n}</h2><p class="cue"></p>'
+                                f'{"".join(rows)}<div class="pick" data-trial="{n}">'
+                                f'{buttons}</div></section>')
+        page = PHONE.format(sitting=sitting, first=numbers[0], last=numbers[-1],
+                            count=len(numbers), build=build_id, gap=GAP_S, cycle=CYCLE_GAP_S,
+                            brk=", with a break between the sittings" if sitting == 1 else "",
+                            trials="\n".join(sections))
+        leaks = phone_leaks(page)
+        if leaks:
+            die(f"the sitting {sitting} page names what it must not: {leaks}")
+        out = listen / f"sitting-{sitting}-phone.html"
+        out.write_text(page)
+        print(f"{out} ({out.stat().st_size / 1e6:.1f} MB, {len(numbers)} trials, "
+              f"AAC {PHONE_KBPS} kbps mono); sha256 {sha256(out)}")
+
+
+def check(args):
+    """Whether a sheet can be scored, from the listener's folder alone (never the key):
+    run before its hash is committed, so a slip is mended while it still can be."""
+    sheet = args.answers.expanduser()
+    answers = read_sheet(sheet)
+    shown = public_trials(OUT / "listen")
+    missing = sorted(set(shown) - {n for n, a in answers.items() if a})
+    extra = sorted(set(answers) - set(shown))
+    if missing or extra:
+        die(f"the sheet does not answer exactly the built trials: missing {missing}, "
+            f"extra {extra}")
+    print(f"the sheet answers all {len(shown)} trials; its sha256 is {sha256(sheet)}")
+
+
 # --- score ----------------------------------------------------------------------------
 
 def declared_key_sha256() -> str:
@@ -530,7 +775,12 @@ def score(args):
     answers = read_sheet(sheet)
     if not answers or not all(answers.values()):
         die("every trial needs an answer, A or B")
+    if set(answers) != set(public_trials(OUT / "listen")):
+        die("the sheet does not answer exactly the built trials (run `check` first)")
     answers_sha = hashlib.sha256(raw).hexdigest()
+    committed = PLUGIN_ROOT / "docs" / "avg-measure-listening-answers.sha256"
+    if committed.exists() and answers_sha not in committed.read_text():
+        die(f"this sheet is not the one whose hash is committed in {committed.name}")
     recorded = private / "answers.sha256"
     if recorded.exists() and recorded.read_text().strip() != answers_sha:
         die("these answers differ from the ones already scored")
@@ -557,6 +807,12 @@ def main():
     sub.add_parser("build")
     t = sub.add_parser("take")
     t.add_argument("--listen-dir", type=pathlib.Path, default=OUT / "listen")
+    ph = sub.add_parser("phone")
+    ph.add_argument("--listen-dir", type=pathlib.Path, default=OUT / "listen")
+    ph.add_argument("--sitting", type=int, action="append", choices=(1, 2),
+                    help="one sitting's page (default: both)")
+    c = sub.add_parser("check")
+    c.add_argument("--answers", type=pathlib.Path, default=OUT / "listen" / "ANSWERS.md")
     s = sub.add_parser("score")
     s.add_argument("--answers", type=pathlib.Path, default=OUT / "listen" / "ANSWERS.md")
     s.add_argument("--json", type=pathlib.Path, default=OUT / "score.json")
@@ -565,7 +821,8 @@ def main():
         from analysis import require
 
         require("the average-measure listening check")
-    {"count": count, "build": build, "take": take, "score": score}[args.cmd](args)
+    {"count": count, "build": build, "take": take, "phone": phone, "check": check,
+     "score": score}[args.cmd](args)
 
 
 if __name__ == "__main__":

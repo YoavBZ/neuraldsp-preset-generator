@@ -116,3 +116,31 @@ Declared 2026-10-06, before any answer. This is Phase 0 L of
   - results by sitting, and how often A was chosen.
 
     .venv/bin/python -m learn.build_avg_listening score
+
+## Amendment, 2026-10-06: taking it on a phone
+
+Made before any answer, at the listener's request. Only the delivery changes: the
+trials, their order, the audio, the key, the pass rule and the hashing are as above.
+
+- **The pages.** `.venv/bin/python -m learn.build_avg_listening phone` builds one
+  self-contained page per sitting, `listen/sitting-1-phone.html` and
+  `listen/sitting-2-phone.html`, from the listener's folder alone; it never reads the
+  key. This follows the earlier listening check's phone pages.
+  - Each trial embeds its built files, the R-A-B-twice file and R, A and B alone, as
+    mono AAC at 160 kbps. A page is about 21 MB, and the AAC is within 0.04 LU of the
+    FLAC's loudness on every clip.
+  - Trials play in the built order, numbered as in `ANSWERS.md` (1–18, then 19–36).
+  - The listener taps A or B (forced choice). The phone's browser keeps the answers
+    across reloads, and the page shows an answer line, `Sitting 1: 1A 2B …`, to copy
+    and send.
+  - Page sha256 as sent: sitting 1
+    d92b3e5a1a91022cf293545785170e2ef1d95783f5d1d194f15506b8c348d1a6, sitting 2
+    5393ceea72392e78f57c183aa01ad59940cc2e5a4ca5862af2ab5ef99d63f238.
+- **The answer sheet** is a text file holding the two answer lines exactly as sent, one
+  per sitting, in place of `ANSWERS.md`.
+  - `check --answers SHEET` confirms it answers every trial, from the public trial
+    numbers alone, and prints its sha256.
+  - That hash is committed in `docs/avg-measure-listening-answers.sha256`, and then
+    `score --answers SHEET` is run.
+  - The scorer reads either kind of sheet. It refuses an incomplete sheet before
+    recording any hash, and refuses one whose hash differs from the committed one.
