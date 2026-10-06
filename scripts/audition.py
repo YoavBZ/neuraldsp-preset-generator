@@ -5,7 +5,11 @@ renders on one local page beside the song.
     python scripts/audition.py --song SONG.mp3 --start 83 --out-dir DIR \\
         --preset A.xml --note "PR12 at the edge of breakup" \\
         --preset B.xml --note "SW50R, clean and bright" \\
-        --di RIFF.wav [--di ANOTHER.wav] [--open]
+        [--riff chords] [--di YOUR-DI.wav] [--open]
+
+Without `--riff` or `--di` it plays the presets through every riff that ships in
+`samples/riffs/` (a strummed chord progression and a single-note line, CC BY 4.0, see
+`riffs.json`).
 
     python scripts/audition.py --add DIR --preset C2.xml --note "C, darker" [--open]
 
@@ -279,14 +283,40 @@ def page(record: dict) -> str:
                        song_file=html.escape(song["file"]), sections="\n".join(sections))
 
 
+RIFFS = PLUGIN_ROOT / "samples" / "riffs"
+
+
+def _riff_names() -> list:
+    """The shipped riffs' names, for --help, without checking the files."""
+    index = RIFFS / "riffs.json"
+    return sorted(json.loads(index.read_text())["riffs"]) if index.exists() else []
+
+
+def shipped_riffs() -> dict:
+    """{name: path} of the riffs in samples/riffs/, each checked against riffs.json."""
+    index = RIFFS / "riffs.json"
+    if not index.exists():
+        return {}
+    out = {}
+    for name, entry in json.loads(index.read_text())["riffs"].items():
+        path = RIFFS / entry["file"]
+        if not path.exists() or _sha(path) != entry["sha256"]:
+            die(f"the shipped riff {path} is missing or changed; reinstall the plugin")
+        out[name] = path
+    return out
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--song", type=pathlib.Path, help="the song, any common audio format")
     ap.add_argument("--start", type=float, help="where in the song the part plays, in seconds")
     ap.add_argument("--seconds", type=float, default=12.0, help="how much of the song (default 12)")
+    ap.add_argument("--riff", action="append", choices=_riff_names(),
+                    help="a shipped riff to play the presets through; repeat for more "
+                         "(default: every shipped riff, unless --di is given)")
     ap.add_argument("--di", type=pathlib.Path, action="append",
-                    help="a guitar DI to play the presets through; repeat for more riffs")
+                    help="a guitar DI of your own to play the presets through; repeatable")
     ap.add_argument("--out-dir", type=pathlib.Path, help="a new folder for the audition")
     ap.add_argument("--add", type=pathlib.Path, metavar="DIR",
                     help="add presets to the audition in DIR, through its own DIs")
@@ -308,20 +338,32 @@ def main():
         die("give one --note per --preset, or none")
     notes = args.note or [""] * len(args.preset)
     if args.add:
-        if any(x is not None for x in (args.song, args.start, args.di, args.out_dir)):
+        if any(x is not None for x in (args.song, args.start, args.di, args.riff, args.out_dir)):
             die("--add takes only --preset, --note and --open")
         out = args.add.expanduser().resolve()
         record = json.loads((out / "audition.json").read_text())
         if record.get("schema") != SCHEMA:
             die(f"{out} is not an audition")
         dis = {}
+        riffs = shipped_riffs()
         for d in record["dis"]:
-            if _sha(d["path"]) != d["sha256"]:
-                die(f"the DI {d['path']} changed since the audition was made")
-            dis[d["id"]] = io.load(d["path"])
+            # A shipped riff is found by name, so an audition outlives a plugin update.
+            path = riffs.get(d["riff"]) if d.get("riff") else pathlib.Path(d["path"])
+            if path is None or _sha(path) != d["sha256"]:
+                die(f"the DI {d.get('riff') or d['path']} changed since the audition was made")
+            dis[d["id"]] = io.load(path)
     else:
-        if args.song is None or args.start is None or not args.di or args.out_dir is None:
-            die("a new audition needs --song, --start, --di and --out-dir")
+        if args.song is None or args.start is None or args.out_dir is None:
+            die("a new audition needs --song, --start and --out-dir")
+        riffs = shipped_riffs()
+        chosen = args.riff or ([] if args.di else sorted(riffs))
+        sources = [(name, riffs[name], name) for name in chosen]
+        for path in args.di or []:
+            path = path.expanduser().resolve()
+            sources.append((path.stem, path, None))
+        if not sources:
+            die("no riff to play the presets through: this install ships none, so pass "
+                "--di with a guitar DI recording")
         out = args.out_dir.expanduser().resolve()
         if out.exists() and any(out.iterdir()):
             die(f"{out} is not empty; use --add to extend an audition")
@@ -339,11 +381,10 @@ def main():
                            "start_s": args.start, "seconds": args.seconds, "file": "song.wav"},
                   "dis": [], "candidates": []}
         dis = {}
-        for i, path in enumerate(args.di, start=1):
-            path = path.expanduser().resolve()
+        for i, (name, path, riff) in enumerate(sources, start=1):
             dis[f"riff-{i}"] = io.load(path)
-            record["dis"].append({"id": f"riff-{i}", "name": path.stem, "path": str(path),
-                                  "sha256": _sha(path)})
+            record["dis"].append({"id": f"riff-{i}", "name": name, "riff": riff,
+                                  "path": str(path), "sha256": _sha(path)})
         save(out, record)
     add_candidates(out, record, args.preset, notes, dis)
     level_page(out, record)

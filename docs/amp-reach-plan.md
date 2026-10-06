@@ -11,7 +11,7 @@ variety a recogniser sees. This measures that cap before any kill test is re-run
 
 ## Material
 
-- **Renders.** The SW50R, PR12 and AC20 panels (`scripts/render_preset_panel.py`), each
+- **Renders.** The SW50R, PR12 and AC20 panels (`research/render_preset_panel.py`), each
   through every development part's DI as cut by the first crop rule (`validation-crops`,
   the crops the panels were rendered from):
   - every factory preset with time effects off: 44 SW50R, 34 PR12 and 30 AC20;
@@ -54,12 +54,12 @@ verdicts.
 before any output of the re-run was read). The minority count compares the full joint menu with a
 smaller tested menu, so it can fire when the amps are interchangeable. So the joint
 menu's presets are reassigned to amps at random 1000 times
-(`scripts/amp_reach_null.py`). Each reassignment keeps each amp's menu size and uses
+(`research/amp_reach_null.py`). Each reassignment keeps each amp's menu size and uses
 one assignment for every part. The minority rule holds only if, under both band sets,
 the observed count also exceeds the null's 95th percentile.
 
 **Order of reading.** First only `canary_misses` is read. If the canaries missed,
-nothing else is read. Otherwise the decision comes from `scripts/amp_reach_null.py`.
+nothing else is read. Otherwise the decision comes from `research/amp_reach_null.py`.
 
 **Canaries.** Each tested menu against its own template reproduces the earlier K1 under
 the judge, on the same 25 parts in 9 bands. The recorded lags equal the frozen ones on

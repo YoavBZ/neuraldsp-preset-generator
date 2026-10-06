@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuraldsp-preset-generator"
-version = "0.7.80"
+version = "0.7.83"
 description = "Generate, match, and edit Neural DSP amp-sim preset files."
 requires-python = ">=3.10"
 license = "MIT"
@@ -30,7 +30,7 @@ analysis = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12", "pyloudnorm>=0.1"]
 # with Hansen's constants in about seventy lines of numpy, which is legible, pinned
 # by tests, and one fewer dependency to age.
 match = ["neuraldsp-preset-generator[analysis]"]
-# Hosting the plugin in-process, for scripts/spike_pedalboard.py. Local and
+# Hosting the plugin in-process, for research/spike_pedalboard.py. Local and
 # macOS-only, like every other plugin-dependent check — never used by CI.
 host = ["pedalboard>=0.9"]
 

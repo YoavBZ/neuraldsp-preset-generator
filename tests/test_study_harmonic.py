@@ -10,6 +10,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 import study_harmonic as H  # noqa: E402
 

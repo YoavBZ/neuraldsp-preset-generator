@@ -416,7 +416,7 @@ def excerpt_selection(audio: Audio, seconds: float,
     # tie held a guitar part (playing in half its frames or more) for 53 of their 83
     # parts and held one in 27 of the 29 songs; the earliest, 43 and 25. Ranking by
     # 300 Hz-3 kHz over 40-250 Hz did no better (47 and 23;
-    # `scripts/measure_excerpt_window_rules.py`).
+    # `research/measure_excerpt_window_rules.py`).
     start = int(best[tied // 2]) * HOP
     start = min(start, audio.frames - wanted)
 

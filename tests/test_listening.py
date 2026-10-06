@@ -343,7 +343,7 @@ def test_frozen_coverage_inspector_does_not_need_audio(record, tmp_path):
     key.write_text(json.dumps({"objective_record": frozen}))
     for spec in (record["reference"], *record["alternatives"].values()):
         pathlib.Path(spec["path"]).unlink()
-    script = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "inspect_listening_coverage.py"
+    script = pathlib.Path(__file__).resolve().parents[1] / "research" / "inspect_listening_coverage.py"
     done = subprocess.run([sys.executable, str(script), "--record", str(key)],
                           capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
@@ -376,7 +376,7 @@ def test_cli_retains_failed_record_but_discards_stale_scores(record, tmp_path):
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"comparisons": [stale]}))
     output = tmp_path / "audit"
-    done = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / "scripts/score_listening.py"),
+    done = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / "research/score_listening.py"),
                            "--manifest", str(manifest), "--out-dir", str(output)], capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
     row = json.loads((output / "comparison-001.json").read_text())
@@ -399,7 +399,7 @@ def test_cli_refuses_unignored_private_audit_inside_git(record, tmp_path):
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({"comparisons": [record]}))
     output = repository / "private" / "audit"
-    command = [sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / "scripts/score_listening.py"),
+    command = [sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / "research/score_listening.py"),
                "--manifest", str(manifest), "--out-dir", str(output)]
     refused = subprocess.run(command, capture_output=True, text=True)
     assert refused.returncode != 0 and "not Git-ignored" in refused.stderr

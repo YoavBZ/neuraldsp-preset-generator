@@ -11,7 +11,7 @@ pytest.importorskip("numpy", reason="needs the analysis extra")
 pytest.importorskip("scipy", reason="needs the analysis extra")
 pytest.importorskip("pyloudnorm", reason="needs the analysis extra")
 
-from scripts.simulate_rt60_evidence import experiment
+from research.simulate_rt60_evidence import experiment
 
 
 def _same_reading(actual, recorded):

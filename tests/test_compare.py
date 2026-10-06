@@ -357,7 +357,7 @@ def test_a_missing_reamp_suggests_the_current_unpaired_profile():
 
 def test_unpaired_v3_is_unpaired_v2_without_the_harmonic_dimension():
     """Measured on played passages, the harmonic terms follow the passage more
-    than the amp (scripts/study_harmonic.py), so -v3 weights them zero and
+    than the amp (research/study_harmonic.py), so -v3 weights them zero and
     changes nothing else."""
     from analysis.compare import load_profile
 

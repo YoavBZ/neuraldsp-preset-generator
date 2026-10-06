@@ -10,8 +10,9 @@ at a preset and describe a change in plain English.
 > **You need your own copy of the plugin.** No Neural DSP code, audio, impulse
 > responses, or factory presets are included here — see [NOTICE.md](NOTICE.md).
 > The repo ships one example preset that this project generated
-> (`samples/Example_Clean_PR12.xml`); everything else you'd want as a template
-> comes from your own library.
+> (`samples/Example_Clean_PR12.xml`) and two CC BY 4.0 guitar riffs for the
+> audition page (`samples/riffs/`); everything else you'd want as a template comes
+> from your own library.
 
 Production packs target **Morgan Amps Suite** and **Tone King Imperial MKII**.
 Both packs have verified writable Audio Unit mappings, ranges, selector tables,
@@ -103,25 +104,29 @@ All three preview their changes before writing:
 skills/          — generate/, match/ and edit/, the three entry points
 reference/       — shared detail, loaded on demand (spec format, cab/IRs,
                    selectors/timing, installing)
-scripts/         — show.py (inspect), apply_spec.py (write), probe.py (discover
-                   selectors), probe_state.py (the same, for a plugin whose
-                   live state is a binary record rather than XML),
-                   au_probe.swift (ask the running plugin directly),
-                   au_render.swift + spectrum_diff.py (measure what a control
-                   does to the sound), au_render_server.swift (render many
-                   parameter sets from one instance), au_silence_check.swift
-                   (whether a plugin renders at all from the bare CLI),
-                   spike_pedalboard.py (render through a JUCE host instead),
-                   fingerprint.py + compare_audio.py (measure a recording, and
-                   what a preset would have to change to match it),
-                   match_preset.py (match a reference recording with a preset,
-                   and say what not to believe about it),
-                   benchmark_match.py (recover 50 random parameter vectors
-                   three ways, to check the pipeline beats its baselines),
-                   audit_manifest.py (re-check every
-                   declared fact against the plugin), bootstrap_pack.py
-                   (support a new plugin),
-                   build_observed.py (optional taste anchors)
+scripts/         — the plugin's own tools. show.py (inspect), apply_spec.py
+                   (write), fingerprint.py + compare_audio.py (measure a
+                   recording, and what a preset would have to change to match
+                   it), match_preset.py (match a recording with a preset, and
+                   say what not to believe about it), render_paired_reference.py,
+                   export_match_audition.py + build_rab_audition.py +
+                   log_blind_verdict.py (blind auditions of a match),
+                   audition.py + build_di_library.py (hear a shortlist through a
+                   guitar riff beside the song), probe.py and probe_state.py
+                   (discover selectors), bootstrap_pack.py (support a new
+                   plugin), build_observed.py (optional taste anchors).
+                   Maintainer tools: audit_manifest.py (re-check every declared
+                   fact against the plugin), measure_eq_basis.py and
+                   measure_drive_curve.py (measure a pack's controls),
+                   benchmark_match.py (recover random parameter vectors to check
+                   the pipeline beats its baselines), au_render.swift +
+                   spectrum_diff.py (measure what a control does),
+                   au_silence_check.swift, and the Swift sources the renderer
+                   compiles (au_probe.swift, au_render_server.swift)
+research/        — the experiments behind docs/: benchmarks, kill tests,
+                   listening tests, validation data, the shortlist measurement.
+                   Not part of the installed plugin's workflow; each script is
+                   run directly and named in the doc it produced
 packs/           — one directory per Neural DSP plugin (see below)
 format/          — NDSP binary parser + writer (lossless) + value translation
 analysis/        — measure audio into a comparable fingerprint, plus a synthetic
@@ -137,7 +142,8 @@ match/           — turn a measured sound into preset parameters: the Renderer
                    Building the space, writing a spec and reading the store need
                    no dependencies; rendering, fitting and searching need the
                    analysis extra
-samples/         — the bundled example preset
+samples/         — the bundled example preset, and riffs/ (two CC BY 4.0 guitar DI
+                   riffs the audition page plays presets through; see NOTICE.md)
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
                    plugin-metadata tests, plus audio-analysis, synthetic-chain,
@@ -433,13 +439,13 @@ python -m pytest
 
 Two more extras exist and neither is needed for the tests. `match` resolves to
 `analysis` today, so the second line is already enough to run everything. `host`
-adds `pedalboard` for `scripts/spike_pedalboard.py`, which needs macOS and a
+adds `pedalboard` for `research/spike_pedalboard.py`, which needs macOS and a
 licensed plugin and is never run by CI.
 
 Passes on a bare clone against the bundled example preset: the IR-stripping
 check synthesises the preset it needs rather than requiring one of yours. The
 audio tests skip without the `analysis` extra and synthesise every signal they
-measure, so no audio is committed either. CI runs both installs, and one test
+measure; the only committed audio is the two audition riffs in `samples/riffs/`. CI runs both installs, and one test
 asserts that the preset tools still import and run with numpy made unavailable.
 
 ```bash
@@ -452,7 +458,8 @@ Point it at `plugin.json` explicitly: with a `marketplace.json` present, a bare
 
 ## License and scope
 
-MIT — see [LICENSE](LICENSE). Read [NOTICE.md](NOTICE.md) for scope, what is
+MIT — see [LICENSE](LICENSE) — except `samples/riffs/`, which is CC BY 4.0 (its
+attribution is in [NOTICE.md](NOTICE.md)). Read NOTICE.md for scope, what is
 deliberately excluded, and format credits.
 
 Not affiliated with, endorsed by, or supported by Neural DSP.

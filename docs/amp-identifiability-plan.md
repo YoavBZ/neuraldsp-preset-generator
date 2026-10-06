@@ -12,7 +12,7 @@ none of that.
 
 ## Material
 
-- **Renders.** The SW50R, PR12 and AC20 panels (`scripts/render_preset_panel.py`): every
+- **Renders.** The SW50R, PR12 and AC20 panels (`research/render_preset_panel.py`): every
   factory preset of each amp with time effects off, through each development part's DI.
   The SW50R and PR12 panels already exist; the AC20 panel is rendered for this.
 - **What is offered.** Each amp's factory presets with no drive pedal and the amp's

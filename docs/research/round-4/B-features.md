@@ -21,7 +21,7 @@ The aim is to add to `../round-1-song-only-matching.md` (round 1), `../round-2-f
 
 ## 1. Why features are only part of the failure
 
-The K2 and K3 recognisers use the following features [project, `scripts/kill_tests.py`]:
+The K2 and K3 recognisers use the following features [project, `research/kill_tests.py`]:
 - 64-band log-mel, mean (centred) plus standard deviation over active frames, loudness-normalised;
 - a 115-dimension "lean fingerprint".
 

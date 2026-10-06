@@ -16,7 +16,7 @@ used once, is declared the same way in [its own section](#the-second-set).
 
 None of the audio is in this repository. The files live in
 `~/ndsp-presets/references/datasets/`, and `validation-datasets.json` pins every one
-by SHA-256. `scripts/validation_datasets.py` rebuilds that file from the audio: the
+by SHA-256. `research/validation_datasets.py` rebuilds that file from the audio: the
 hashes, the pairing measurements below and the split draw.
 
 - **Telefunken "Live From The Lab", Season 6** — Rebecca Haviland & Whiskey Heart,
@@ -80,7 +80,7 @@ otherwise before it runs.
   cut to it.
 - **Lags.** `lag_ms` comes from 10-ms envelopes, so it is quantised to 10 ms. An
   analysis that needs a part's lag takes it from `validation-lags.json`
-  (`scripts/record_part_lags.py`, read by `benchmark_recordings.lag_samples`): one lag
+  (`research/record_part_lags.py`, read by `benchmark_recordings.lag_samples`): one lag
   per set-2 development part, measured on its 10-s validation crop. Candidates come
   from the cross-correlation of the amp track with all the part's SW50R panel renders;
   where a DI's buzz or pulse makes a comb of near-equal peaks, the judge chooses
@@ -121,7 +121,7 @@ otherwise before it runs.
     loudness (`analysis.io.loudness_lufs`). Integrated loudness is gated, so a loud
     burst in a silent stretch won, and many crops barely held the part (audit D-M6).
     Analyses declared on its crops (`validation-crops`) keep them.
-  - **Measured on the 57 usable development parts** (`scripts/measure_crop_rules.py`,
+  - **Measured on the 57 usable development parts** (`research/measure_crop_rules.py`,
     `docs/validation-crop-rules.json`): the part plays in at least half of the window
     on 43 under the first rule and 56 under rule 2, and in at least 90% on 40 and 56.
     The exception is Prodigal ElecGtr4, which plays in at most 38.3% of any 10 s.
@@ -224,7 +224,7 @@ as "Helix") listed apart as `simulated`. Two titles holding "/" are written with
 Everything in the sections above applies to the second set, except these rules:
 
 - **Which parts count.** The same two tests, measured by
-  `scripts/validation_datasets.py` from the audio, not taken from the research
+  `research/validation_datasets.py` from the audio, not taken from the research
   record. Two more rules leave a part out whatever its pairing, and its
   `excluded` field says which: a part named for the keyboard player ("Keys
   GTR"), which may be a keyboard through a guitar amp — the sessions do not say

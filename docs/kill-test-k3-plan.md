@@ -52,7 +52,7 @@ optimistic upper bound; reported, not used in the pass rule.
 K1–K3 were declared under ALM and v3c. Since then `docs/measuring-closeness.md` has
 retired v3c as a judge and made `analysis/aligned.py` the judge (PR #109). The tests
 are still computed and reported exactly as declared, and in addition
-`scripts/kill_tests_judge.py` scores K1 and K3 under the judge and emits the verdict
+`research/kill_tests_judge.py` scores K1 and K3 under the judge and emits the verdict
 below.
 
 **What was known when this was written.**

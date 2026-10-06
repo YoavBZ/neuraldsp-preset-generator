@@ -76,7 +76,7 @@ To audit logger-produced blind and backed verdicts together, use the private,
 no-render command:
 
 ```sh
-python scripts/audit_frozen_listening.py \
+python research/audit_frozen_listening.py \
   --record PRIVATE_BLIND_OBJECTIVE_VERDICT.json \
   --record PRIVATE_BACKED_VERDICT.json \
   --out-dir PRIVATE_NEW_IGNORED_DIRECTORY
@@ -106,7 +106,7 @@ count remain unchanged. For an older immutable key, inspect its frozen terms
 without opening or modifying it:
 
 ```sh
-python scripts/inspect_listening_coverage.py --record PRIVATE_KEY.json
+python research/inspect_listening_coverage.py --record PRIVATE_KEY.json
 ```
 
 The inspector needs no raw audio but cannot verify that the archived audio was
@@ -117,7 +117,7 @@ profiles that omit RT60, but listening objective scores remain frozen on
 `unpaired-v1` and can still include it. Its confidence measures agreement among
 release slopes, not evidence that the sound contains reverb.
 A deterministic [synthetic control](rt60-synthetic-evidence.json), reproduced by
-`scripts/simulate_rt60_evidence.py`, makes that limitation checkable without a
+`research/simulate_rt60_evidence.py`, makes that limitation checkable without a
 plugin: all three no-reverb inputs clear the `-v1` gate. On the guitar-like
 input, a 1.2 s rack-reverb setting measures as 2.85 s. This control alone does
 not validate an estimator or explain what a listener would hear.
@@ -233,7 +233,7 @@ Audio descriptors also accept `start_s`, `duration_s`, `gain_db`, `mono`, and
 corrections. Run:
 
 ```sh
-python scripts/score_listening.py --manifest PRIVATE_MANIFEST.json --out-dir NEW_PRIVATE_AUDIT
+python research/score_listening.py --manifest PRIVATE_MANIFEST.json --out-dir NEW_PRIVATE_AUDIT
 ```
 
 When the output is inside a Git worktree, the tool requires the audit files to

@@ -16,7 +16,7 @@ from match import atlas
 from match import space as space_module
 from match.regressor import RidgeWarmStart
 from match.renderer_synth import SyntheticRenderer
-from scripts import benchmark_warm_start
+from research import benchmark_warm_start
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

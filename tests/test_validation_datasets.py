@@ -14,6 +14,7 @@ sf = pytest.importorskip("soundfile", reason="needs the analysis extra")
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "research"))
 
 import validation_datasets as V  # noqa: E402
 

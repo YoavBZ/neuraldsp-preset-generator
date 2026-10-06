@@ -186,6 +186,41 @@ Pass `--strip-irs` so the result is portable — see
 nothing (Tone King declares no IR mapping), the listed paths are still in the
 preset: tell the user rather than calling the result portable.
 
+## 5b. From a song: let the user hear four
+
+When the user gave a song (a file, and where in it the guitar plays), don't stop at
+one preset. On 25 recordings, a researched preset was not shown to beat the shipped
+template, but choosing the best of four did land closer: about 18% closer than the
+template, picked by measurement ([the measurement](../../docs/song-only-shortlist-results.md)).
+Whether an ear does as well is still being checked, so offer the page, then let the
+user decide.
+
+1. **Write three alternatives** beside the preset from step 5, as copies of it with
+   their own specs. Use at least two amps (on Tone King, both channels), and make them
+   differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
+   lists were too alike to gain much. On Morgan, the shipped template as it is can be
+   one of the four.
+2. **Render them beside the song.** The page plays every preset through two shipped
+   guitar riffs (strummed chords and a single-note line), at one loudness, under the
+   song excerpt:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
+  --start START_SECONDS --out-dir AUDITION_DIR \
+  --preset A.xml --note "what A is" --preset B.xml --note "what B is"
+```
+
+   Use a folder under the data root for `AUDITION_DIR` (`auditions/<song>`), and add
+   `--open` to open the page. Rendering takes about 10 seconds a preset per riff, so
+   give the command a few minutes, or run it in the background; if it stops partway,
+   the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
+   listen for gain, brightness, body and space, not the notes.
+3. **Refine.** The user picks one, or says what is off ("B, but darker"). Make the
+   change on a copy with the edit skill's steps 1–4 (read, interpret, change only
+   that, preview and write a new file; don't install yet), then add it to the page:
+   `audition.py --add AUDITION_DIR --preset B2.xml --note "B, darker"`. Repeat until
+   they keep one, then install that one (step 6) and bank what they changed (step 7).
+
 ## 6. Install and report
 
 Write the preset into the user's preset folder and tell them how to load it —
