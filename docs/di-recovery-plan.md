@@ -178,3 +178,27 @@ with the same choosing procedure. The overnight run starts only if it already be
 - **Diagnostic** (reported, not a gate). How much of the gap to the oracle is the DI's
   *level* (unknowable from a song) rather than its shape? The check is re-run with the
   measure's DI at the assumed level, and with the rebuilt DI at the true level.
+
+### The level diagnostic, and a declared second look (2026-10-07)
+
+| choosing through… (16 clips, average-guitar measure, median vs template+R) | score |
+|---|---|
+| the measure's DI at its true level (the oracle) | −0.355 |
+| the measure's DI at the assumed −22.9 LUFS | −0.310 |
+| the rebuilt DI at the true level | −0.253 |
+| the rebuilt DI at the assumed level | −0.184 |
+| `flatref` | −0.125 |
+
+- **Level costs little.** Unknowable from a song, it moves the oracle by only 0.045.
+- **The rebuilt DI's shape is the bottleneck.** At the same assumed level, the ideal
+  shape beats the rebuilt DI on 11 of 14 decided clips (median −0.04, and −0.127 in the
+  medians). The network is what to improve.
+
+**Second look, declared before it runs.**
+- **Training:** resume fold 0's network from the one-hour checkpoint. Train 3 more hours
+  on the same PR12 cache, with the learning rate decaying (cosine) from 3e-4 to 2e-5.
+- **Check:** re-run the T check on the same 16 clips.
+- **Rule:** the overnight multi-fold run, with the SW50R/AC20 pairs, goes ahead if the
+  rebuilt DI beats `flatref` paired on at least 9 of the decided clips, with a median
+  difference ≤ −0.03.
+- **Reporting:** this is a second look on the same clips and is reported as such.

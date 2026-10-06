@@ -163,7 +163,7 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 
 # --- training -----------------------------------------------------------------------
 
-def fit(cache, fold, out, minutes, seed, batch=12, log_every=200):
+def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None):
     import numpy as np
     import torch
 
@@ -227,12 +227,19 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200):
                 torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
 
     net = build_model().to(dev)
+    if resume:
+        net.load_state_dict(torch.load(resume, map_location=dev))
+        print(f"resumed from {resume}", flush=True)
     print(f"parameters {sum(p.numel() for p in net.parameters()) / 1e6:.1f}M", flush=True)
-    opt = torch.optim.AdamW(net.parameters(), lr=3e-4, weight_decay=1e-5)
+    opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
     out.mkdir(parents=True, exist_ok=True)
     t0, step, skipped = time.time(), 0, 0
     vidx = rng.choice(va, min(96, len(va)), replace=False)
     while time.time() - t0 < minutes * 60:
+        if lr_end is not None:          # cosine decay over the run's wall-clock budget
+            frac = min(1.0, (time.time() - t0) / (minutes * 60))
+            for g in opt.param_groups:
+                g["lr"] = lr_end + 0.5 * (lr - lr_end) * (1 + math.cos(math.pi * frac))
         idx = rng.choice(tr, batch, replace=False)
         x, y = make(idx, True)
         p = net(x)
@@ -314,12 +321,15 @@ def main():
     f.add_argument("--minutes", type=float, default=60)
     f.add_argument("--seed", type=int, default=0)
     f.add_argument("--log-every", type=int, default=200)
+    f.add_argument("--resume", type=pathlib.Path)
+    f.add_argument("--lr", type=float, default=3e-4)
+    f.add_argument("--lr-end", type=float)
     args = ap.parse_args()
     if args.cmd == "cache":
         build_cache(args.renders.expanduser(), args.cache.expanduser())
     else:
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
-            log_every=args.log_every)
+            log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end)
 
 
 if __name__ == "__main__":
