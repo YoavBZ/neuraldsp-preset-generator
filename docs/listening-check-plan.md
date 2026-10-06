@@ -59,17 +59,18 @@ taste for an amp or for drive.
 ## Trials
 
 - **Style:** each part's clean recording is classified before any trial is built. In
-  every active frame, notes are counted (the strongest fundamental by its harmonic sum,
+  every active frame, notes are counted (the strongest fundamental from A1 to C#6 by
+  its harmonic sum,
   its harmonics removed, repeated while one keeps a quarter of the first's strength);
   the part's chord share is the share of frames with three or more. The riffs measure
-  0.913 (chords) and 0.026 (line), and a part plays through the riff whose share is
+  0.909 (chords) and 0.026 (line), and a part plays through the riff whose share is
   nearer: chords at 0.47 or more. 9 parts play chords, 7 the line.
   - **Reported apart, 6 parts:** the 5 within 0.15 of the split (0.37 to 0.59: mixed
     or two-note parts), and any part of two-note shapes, whose frames hold two notes
     or more 90% of the time or more while its chord share falls on the line side:
     Sculptor's Request GTR 2, played in fourths (0.24, and two notes or more in every
-    frame). The measure reads a fifth or an octave as part of the lower note, so
-    double stops and power chords read low.
+    frame). An octave reads as part of the lower note, so double stops and power
+    chords read as two notes, under the three-note mark.
 - **Main trials:** 32: each part twice, once in each sitting, through its style's
   riff, with four candidates labelled A–D.
   - The letters are a shuffle drawn per trial from system randomness, so a part's two
@@ -215,7 +216,7 @@ the controls, the practice part and each part's DI loudness are in
   the matched riffs are meant to make a real ear more accurate than that.
   The taste test costs power: a fail reads "not shown", never "the ear can't".
 - **Reported, not deciding,** each under both band sets, over all 32 trials, per style,
-  for the parts clear of the style split and those near it, and split at the median
+  for the parts of a clear style and those whose style is unclear, and split at the median
   gap between the part's DI loudness and the riffs' (-23.7
   LUFS). The DIs span -32.0 to -10.7 LUFS, so through a riff some candidates sound
   cleaner, and some dirtier, than in the scored renders.
@@ -260,9 +261,9 @@ it fails too, the ear or the judge is.
 - **Two styles only:** the riffs are strummed chords and a single-note line. Parts in
   between (mixed, or double stops and power chords) get the nearer one, and are
   reported apart. The style measure was checked on the two riffs and on synthetic
-  tones, not against a listener's labels. It reads two-note shapes as fewer notes, and
-  a low note with a strong second harmonic as more; the parts it might misread are
-  the ones reported apart.
+  tones, not against a listener's labels. It reads two-note shapes as two notes, which
+  is why they are reported apart. Its range starts at A1, so drop tunings to A1 read
+  correctly; a single note below A1 would read as several.
 - **Renders with R:** this tests the ear on what was scored, not the product page's
   full presets.
 - **Blinding is procedural:** the public inputs name every preset, so a listener who
@@ -291,5 +292,5 @@ parts, cues, presets and their hashes, each candidate's taste class and features
 part's DI loudness, the G1 rule's chance pass rate, the controls, the practice part,
 the factory presets' hashes, the song excerpts' and DIs' hashes, and every candidate's
 judge distance. Its SHA-256 is
-`a20d0baf5341cd5f99d30f92b00f1f223422e16d035dcddf9c3a717a5cd7f0bb`. `build` refuses any
+`26e3d0e644ded41d52bdccf9b3d594919acc163b9f58b6702e27a9b6188bfdb1`. `build` refuses any
 other file.

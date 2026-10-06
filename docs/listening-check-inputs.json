@@ -1289,14 +1289,14 @@
   }
  },
  "riff_chord_share": {
-  "chords": 0.913,
+  "chords": 0.909,
   "line": 0.026
  },
  "chord_share": {
   "telefunken-Blind_Spots-GTR": 0.823,
   "telefunken-Bloomlight-GTR": 0.996,
   "cambridge-Drag_Me_Down-ElecGtr4": 0.775,
-  "telefunken-Farthest_Step-GTR": 0.403,
+  "telefunken-Farthest_Step-GTR": 0.437,
   "telefunken-First_Offering-GTR_2": 0.03,
   "telefunken-Fragments-GTR": 0.446,
   "telefunken-Gym_Hours-GTR_1": 0.139,
@@ -1307,12 +1307,12 @@
   "cambridge-Quicksand-ElecGtr1": 0.835,
   "telefunken-Russian_Cream-GTR_2": 0.494,
   "telefunken-Sculptor's_Request-GTR_2": 0.242,
-  "cambridge-Signs-ElecGtr2": 0.004,
+  "cambridge-Signs-ElecGtr2": 0.0,
   "cambridge-Today's_The_Day-ElecGtr07": 0.723,
-  "telefunken-First_Offering-GTR_1": 0.654,
+  "telefunken-First_Offering-GTR_1": 0.684,
   "telefunken-Gym_Hours-GTR_2": 0.701,
-  "telefunken-Sculptor's_Request-GTR_1": 0.701,
-  "cambridge-Today's_The_Day-ElecGtr10": 0.121
+  "telefunken-Sculptor's_Request-GTR_1": 0.71,
+  "cambridge-Today's_The_Day-ElecGtr10": 0.13
  },
  "two_note_share": {
   "telefunken-Blind_Spots-GTR": 0.991,
@@ -1329,7 +1329,7 @@
   "cambridge-Quicksand-ElecGtr1": 0.957,
   "telefunken-Russian_Cream-GTR_2": 0.874,
   "telefunken-Sculptor's_Request-GTR_2": 1.0,
-  "cambridge-Signs-ElecGtr2": 0.039,
+  "cambridge-Signs-ElecGtr2": 0.048,
   "cambridge-Today's_The_Day-ElecGtr07": 0.818,
   "telefunken-First_Offering-GTR_1": 0.931,
   "telefunken-Gym_Hours-GTR_2": 0.961,

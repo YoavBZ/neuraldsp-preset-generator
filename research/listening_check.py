@@ -160,11 +160,12 @@ def choose_controls(parts, main, exposure_of, reach, gain_of, song_of, clear_son
 
 
 def notes_per_frame(x, rate: int, n: int = 8192, hop: int = 2048, harmonics: int = 8,
-                    floor_db: float = -40.0, rel: float = 0.25):
+                    floor_db: float = -40.0, rel: float = 0.25, lowest: int = 33):
     """How many notes sound in each active frame of a clean guitar recording.
 
     In each frame (those within `floor_db` of the loudest), the strongest fundamental
-    from E2 to C#6 is found by its harmonic sum, its harmonics are removed, and that
+    from A1 (MIDI `lowest`, low enough for drop tunings) to C#6 is found by its harmonic
+    sum, its harmonics are removed, and that
     repeats while a fundamental keeps at least `rel` of the first one's strength."""
     import numpy as np
 
@@ -172,7 +173,7 @@ def notes_per_frame(x, rate: int, n: int = 8192, hop: int = 2048, harmonics: int
     if x.ndim > 1:
         x = x.mean(axis=1)
     window = np.hanning(n)
-    f0s = 440 * 2 ** ((np.arange(40, 85) - 69) / 12)
+    f0s = 440 * 2 ** ((np.arange(lowest, 85) - 69) / 12)
     starts = range(0, len(x) - n, hop)
     rms = np.array([np.sqrt(np.mean(x[i:i + n] ** 2)) for i in starts])
     active = rms > rms.max() * 10 ** (floor_db / 20)
@@ -202,10 +203,9 @@ def notes_per_frame(x, rate: int, n: int = 8192, hop: int = 2048, harmonics: int
 
 def chord_share(x, rate: int, notes: int = 3) -> float:
     """The share of a clean recording's active frames in which `notes` or more notes
-    sound. With three: near 1 for strummed chords, near 0 for a single-note line. Two
-    notes (double stops, power chords) read as fewer, since a fifth or an octave
-    lies on the lower note's harmonics, so a part of mostly two-note shapes reads low
-    on three and high on two."""
+    sound. With three: near 1 for strummed chords, near 0 for a single-note line. An
+    octave reads as part of the lower note, so double stops and power chords read as
+    two notes: a part of mostly two-note shapes reads low on three and high on two."""
     counts = notes_per_frame(x, rate)
     return float((counts >= notes).mean()) if len(counts) else 0.0
 
@@ -998,7 +998,7 @@ def score(args):
             "per_style": {riff: readings([r for r in rows if r["riff"] == riff], taste)
                          for riff in RIFFS},
             "clear_style": readings([r for r in rows if r["clear_style"]], taste),
-            "near_the_style_split": readings([r for r in rows if not r["clear_style"]], taste),
+            "style_unclear": readings([r for r in rows if not r["clear_style"]], taste),
             "di_hotter_than_median_gap": readings([r for r in rows if r["hot_di"]], taste),
             "di_nearer_the_riff": readings([r for r in rows if not r["hot_di"]], taste),
             "rows": rows}
@@ -1150,8 +1150,9 @@ def mobile_page(args):
     build_id = hashlib.sha256(text.encode()).hexdigest()[:12]
     out.write_text(MOBILE.format(sitting=args.sitting, count=len(found), build=build_id,
                                  trials="\n".join(sections)))
-    data = json.loads(args.inputs.read_text()) if args.inputs else None
-    leaks = leak_check(listen, preset_names(data) if data else ())
+    if not args.inputs:
+        die("phone-page needs --inputs, to check the page for every preset's name")
+    leaks = leak_check(listen, preset_names(json.loads(args.inputs.read_text())))
     if leaks:
         out.unlink()
         die(f"the phone page names what it must not: {leaks}")

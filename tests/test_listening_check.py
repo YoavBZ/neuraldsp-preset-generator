@@ -153,6 +153,12 @@ def test_the_chord_share_tells_a_strum_from_a_single_note():
     assert L.chord_share(_tone([98.0, 123.5, 146.8]), 48000) > 0.9   # a G major triad
 
 
+def test_a_single_low_note_in_a_drop_tuning_reads_as_one_note():
+    pytest.importorskip("numpy", reason="needs the analysis extra")
+    for f0 in (73.42, 65.41, 55.0):                                  # D2, C2, A1
+        assert L.chord_share(_tone([f0]), 48000, notes=2) < 0.1
+
+
 def test_two_note_shapes_read_low_on_three_notes_and_high_on_two():
     pytest.importorskip("numpy", reason="needs the analysis extra")
     fourths = _tone([110.0, 146.8])                                  # A and D together
@@ -530,7 +536,7 @@ def test_score_end_to_end_on_a_listener_who_always_picks_the_best(tmp_path, monk
         assert r["all"]["trials"] == 32 and r["all"]["best_of_four"] == 32
         assert r["all"]["captured_share"] == pytest.approx(1.0)
         assert r["per_style"]["chords"]["trials"] == 16
-        assert r["clear_style"]["trials"] == 16 and r["near_the_style_split"]["trials"] == 16
+        assert r["clear_style"]["trials"] == 16 and r["style_unclear"]["trials"] == 16
         assert r["di_hotter_than_median_gap"]["trials"] == 16
 
 
