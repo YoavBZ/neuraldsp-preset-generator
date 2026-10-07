@@ -278,6 +278,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
     out.mkdir(parents=True, exist_ok=True)
     t0, step, skipped, streak, recoveries = time.time(), 0, 0, 0, 0
+    window = []
     vidx = rng.choice(va, min(96, len(va)), replace=False)
     while time.time() - t0 < minutes * 60:
         if lr_end is not None:          # cosine decay over the run's wall-clock budget
@@ -294,7 +295,16 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         # and skip a step whose gradient is not finite.
         grads = [q.grad for q in net.parameters() if q.grad is not None]
         total = torch.sqrt(sum((g.detach() ** 2).sum() for g in grads))
-        if not torch.isfinite(total):
+        window.append(not bool(torch.isfinite(total)))
+        if len(window) > 200:
+            window.pop(0)
+        if len(window) == 200 and sum(window) > 40:
+            # Scattered non-finite steps (more than 20% of the last 200) also count as a
+            # failure: fold 2 lost half its updates this way on 2026-10-07 without one streak
+            # of 25. Force the recovery below.
+            streak = 25
+            window.clear()
+        if not torch.isfinite(total) or streak >= 25:
             skipped += 1
             streak += 1
             if os.environ.get("DIREC_DEBUG"):
