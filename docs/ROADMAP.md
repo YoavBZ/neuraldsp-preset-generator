@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-06.
+lives in the linked documents. Last updated 2026-10-07.
 
 ## Where the product is
 
@@ -13,9 +13,10 @@ lives in the linked documents. Last updated 2026-10-06.
   factory presets ([song-only shortlist](song-only-shortlist-results.md)).
 - **Choosing among several helps, with a perfect ear.** The judge picking from four
   lands about 18% closer than the template. Whether a real ear does, listening through
-  another performance's DI, is untested. `generate` now offers four presets on a
-  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a
-  refine loop.
+  another performance's DI, was tested once and came out inconclusive
+  ([results](listening-check-results.md)). `generate` offers four presets on a
+  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a refine
+  loop, as an option.
 - **`match`** without a DI describes the recording and keeps the starting preset: no
   song-only search has been shown to get closer
   ([re-check under the judge: void](no-di-rule-under-the-judge-results.md)). With the
@@ -49,28 +50,42 @@ lives in the linked documents. Last updated 2026-10-06.
    - **A declared reference for multi-guitar stems.**
    - **Open source only** ([round 5](research/round-5-guitar-models.md)).
 
-1. **Listening check of the page** ([plan](listening-check-plan.md): two sittings of
-   about 25 minutes, declared first). The page is in `generate` (step 5b): four presets
-   through two shipped CC-BY riffs beside the song, then a refine loop through `edit`.
-   Does a real ear, listening through another performance, follow the song: beat
-   chance, and beat a song-blind taste for an amp, drive or gain? It decides whether
-   the page is the main path or an option.
-2. **A distance without a DI** ([research round 4](research/round-4-audio-ml.md) §5,
-   experiment 4: the judge as teacher). *Partly run, 2026-10-07: log-mel and PANNs CNN14
-   failed as rerankers ([rerank-plan.md](rerank-plan.md)); our own contrastive encoder
-   (below) is in progress (step 0).* Gate, as declared there: median regret at most
-   0.75× v3's, no worse on stems, and a Spearman correlation of at least 0.6 with the
-   judge. If it passes, score against real songs, not amp tracks.
-   - **Neural networks are among the candidates.** Pretrained effect encoders (AFx-Rep,
-     about 1.2 GB to download) and a small CNN's statistics sit beside the hand-made
-     features, with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are
-     floors only: once the notes differ they score near chance, and they discard the
-     input level that carries the drive.
-   - **If no pretrained row passes,** the next candidate is our own contrastive encoder
-     ([round 1](research/round-1-song-only-matching.md), approach 3c). It would be
-     trained on plugin renders of many CC BY DIs, with the same settings through
-     different playing as positives, so it learns the invariance general models lack.
-     Cost: 2–3 weeks and 16k–100k renders per amp.
+1. **Listening check of the page: run, inconclusive**
+   ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
+   was void: both its controls were answered "?", and the "?" answers cluster there,
+   so a playback problem in that sitting is not ruled out. The page stays an option in
+   `generate`. The listener reported that for some songs the target guitar could not
+   be found, or tone could not be compared across different notes. The picks leaned
+   closer than chance under one band set only, and not beyond a song-blind taste.
+   The declared rerun was set aside with the listener (reasons in the results); the
+   own-DI version waits for the derived-DI route.
+   - **Learned while setting it up:** a riff must match the song guitar's style. The
+     listener found single-note parts can't be judged against strummed chords (drive
+     sounds different on several notes at once), so the check now plays each part
+     through the riff in its own style, measured from its clean recording. The page
+     should do the same from the song alone (classifying a separated guitar stem as
+     chords or single notes), and may need more styles (arpeggios, power chords).
+2. **A distance without a DI: hand-made features fail**
+   ([plan](di-free-distance-plan.md), [results](di-free-distance-results.md)). None of
+   the eight DI-free distances tested beside the v3 baseline (v3c, log-mel and MFCC
+   statistics, the lean fingerprint, masked spectra, an LDA) picks presets clearly
+   better than a song-blind constant: regret 0.30 to 0.48 against 0.36 to 0.42,
+   agreement with the judge at most 0.38. With the part's own notes, the masked spectra
+   pick within the judge's near-tie range (0.04); through another player's notes they
+   fall to the constant (0.36): the performance moves them more than the preset.
+   *2026-10-07, from step 0: log-mel statistics and PANNs CNN14, used as rerankers over
+   renders through other players' DIs, also failed ([rerank-plan.md](rerank-plan.md)).
+   Our own contrastive guitar encoder is being trained (step 0).* Next, the candidates
+   that need downloads or training:
+   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
+     with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors
+     only: once the notes differ they score near chance, and they discard the input
+     level that carries the drive.
+   - **Then our own contrastive encoder**
+     ([round 1](research/round-1-song-only-matching.md), approach 3c), trained with the
+     same settings through different playing as positives, so it learns the invariance
+     the hand-made features lack. The panels already hold every preset through 43
+     players' DIs; a full run is 2–3 weeks and 16k–100k renders per amp.
 3. **The derived-DI route** (experiment 5). *Done, 2026-10-06*
    ([results](di-robustness-results.md)). It did not pass as declared. Under the
    average-guitar measure, a realistic rebuilt DI loses little, so DI recovery was
@@ -136,7 +151,9 @@ lives in the linked documents. Last updated 2026-10-06.
 | 2026-10-05 | Research not shown to beat the template or chance at picking presets; choosing among four helps with a perfect ear | [song-only shortlist](song-only-shortlist-results.md) |
 | 2026-10-05 | `generate` offers four presets on a listening page; riffs from Guitar-TECHS P1 (CC BY 4.0) ship in `samples/riffs/` | `skills/generate/SKILL.md` step 5b |
 | 2026-10-06 | Song-to-preset is judged on the product's question: does an average guitar, playing the recording's notes, through the preset sound like the record (the take's DI re-equalised to an average guitar's balance, then the judge). The judge's own question, recreating the original rig on its own guitar, is reported beside it. A short listening check confirms the measure first. | [DI robustness](di-robustness-results.md) |
+| 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | 2026-10-07 | The average-guitar measure is confirmed by listening (23 of 24 disagreement trials, 6/6 repeats, 6/6 swap) | [listening results](avg-measure-listening-results.md) |
 | 2026-10-07 | Rebuilt-DI preset choice not passed on clean PR12 (8.5% vs 10%); continue to heavier tones and a search beyond the menu | [results](di-recovery-results.md) |
 | 2026-10-07 | Open source only: no cloud APIs, commercial tools, or unlicensed or gated weights; published methods are reimplemented | [round 5](research/round-5-guitar-models.md) |
+| 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
