@@ -119,3 +119,5 @@ was declared, what was measured, and the research behind it.
    superseded by the supervised-model plan.
 4. [round-4-audio-ml.md](research/round-4-audio-ml.md), with its four input reports in
    `research/round-4/`. Its §5 lists the experiments the roadmap draws on.
+5. [round-5-guitar-models.md](research/round-5-guitar-models.md): guitar-specific networks, tools
+   and separators; what to try next.
