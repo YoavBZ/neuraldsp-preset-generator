@@ -230,3 +230,24 @@ the same 16 clips:
 
 **User's decision (2026-10-07 morning).** Run Phase 2 as planned despite the near miss.
 It runs once all four fold networks are trained, with the gates declared above.
+
+## Phase 2 on set 3: specifics, declared 2026-10-07 before any set-3 match
+
+- **One network for all of set 3.** It is trained on all three amps: the PR12 cache plus
+  the SW50R and AC20 pair caches.
+  - Its DIs come from set 2's development bands and Guitar-TECHS P1, leaving out K3
+    fold 2. That is Eat The Feeder's fold, the only band shared with set 3.
+  - So it has heard no DI from any set-3 band, development or held out.
+  - Its average balance is K3 fold 2's frozen average.
+  - Recipe: fold 0's, extended because the data is three times larger: 60 minutes at
+    3e-4, then 300 minutes of cosine decay to 2e-5.
+- **Menus.** For each development part, each amp's factory presets plus that amp's
+  template+R, all with R, in three separate menus: PR12, SW50R and AC20.
+  - Choosing and scoring are per amp, as in Phase 2 above.
+  - Also reported: the best of the three amps' picks, by the judge through the rebuilt
+    DI on half A.
+- **Inputs:** the amp track, and htdemucs_6s stems of the instrumental mix (shifts=0, a
+  30-s context, separated on CPU so the GPU stays free).
+- **Weighting.** Gates are applied with parts weighted by band (`validation-set3.md`).
+  Gain classes are descriptive only.
+- **Held-out bands** are not touched until a later, separately declared confirmation.
