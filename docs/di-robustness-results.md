@@ -60,3 +60,8 @@ This is exploratory, for three reasons:
   DI recovery on it, is the user's decision. If adopted, a short declared listening
   check comes first: does the ear agree that the average-guitar render of the
   better-scored preset sounds closer to the record?
+
+**Storage note, 2026-10-07.** The robustness renders (19 GB of float WAV) were deleted
+to free disk. The results, the distances and the degraded or rebuilt DIs
+(`~/ndsp-presets/learn/di-robust/{result.json, avg-yardstick-distances.json, di/}`)
+are kept. The renders can be regenerated with `learn/di_robustness.py render`.
