@@ -83,6 +83,8 @@ was declared, what was measured, and the research behind it.
   the judge through a wrong DI.
 - [di-recovery-plan.md](di-recovery-plan.md) → [results](di-recovery-results.md):
   rebuilding the DI. Not passed on clean PR12.
+- [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
+  PR12. Not passed.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.

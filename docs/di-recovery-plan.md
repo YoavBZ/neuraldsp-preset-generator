@@ -271,7 +271,9 @@ It runs once all four fold networks are trained, with the gates declared above.
 2. **Candidates from the POC model.** The POC model carried part-specific information
    (it beat its shuffled control on 21–22 of 28 parts). Its predictions join the menu
    as candidates, and the judge chooses through the rebuilt DI.
-3. **A DI-free reranker (E2, never built).** Rank candidates by an embedding distance
+3. **A DI-free reranker (E2).** Ran 2026-10-07, not passed
+   ([rerank-plan.md](rerank-plan.md)): neither log-mel nor PANNs beats `flatref` paired.
+   Rank candidates by an embedding distance
    between the recording and the candidate's renders through *other* bands' DIs, which
    already exist for every K1 part and preset.
    - **Rows:** a log-mel mean-and-spread baseline, and PANNs CNN14 (CC BY weights; listed

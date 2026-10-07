@@ -67,3 +67,43 @@ normalisation would blow their noise floor up to −22.9 LUFS, so a part whose t
 render over half A is quieter than −35 LUFS is dropped whole from every candidate's
 sound (all candidates lose the same parts). None of the 25 K1 parts is affected; no
 K1 recording is quieter than −32 LUFS. Nothing else changes.
+
+## Result, 2026-10-07: no reranker passes
+
+Run: `learn/rerank.py`, output `~/ndsp-presets/learn/rerank/result.json`. The 100
+recomputed oracle and `flatref` scores match phase2's `result.json`. CPU only: 510 s of
+CPU for features (989 clips), 140 s for picks and scoring, 260 s wall.
+
+Log ratio to template+R, band median (parts closer than template+R; sign-flip p):
+
+| Row | recording bands | union bands |
+|---|---|---|
+| oracle | −0.171 (25/25) | −0.146 (24/25) |
+| `flatref` | −0.034 (16/25) | −0.034 (17/25) |
+| `net` | −0.089 (20/25) | −0.088 (20/25) |
+| `mel_ref` | −0.096 (16/25; 0.24) | −0.046 (14/25; 0.43) |
+| `panns_ref` | −0.026 (16/25; 0.27) | −0.010 (12/25; 0.45) |
+| `flatstem` | −0.042 (13/18) | −0.042 (14/18) |
+| `netstem` | −0.038 (15/18) | −0.067 (15/18) |
+| `mel_stem` | −0.056 (13/18; 0.19) | −0.057 (12/18; 0.27) |
+| `panns_stem` | −0.011 (10/18; 0.33) | −0.016 (9/18; 0.37) |
+
+Paired, band median of the difference (parts where the reranker is closer; p):
+
+| Pair | recording bands | union bands |
+|---|---|---|
+| `mel_ref` − `flatref` | +0.044 (10/25; 0.42) | +0.054 (10/25; 0.51) |
+| `mel_ref` − `net` | +0.009 (8/25; 0.98) | +0.034 (8/25; 0.88) |
+| `panns_ref` − `flatref` | 0.000 (12/25; 0.32) | +0.012 (9/25; 0.57) |
+| `panns_ref` − `net` | 0.000 (11/25; 0.65) | 0.000 (11/25; 0.82) |
+| `mel_stem` − `flatstem` | −0.020 (10/18; 0.55) | −0.012 (8/18; 0.72) |
+| `mel_stem` − `netstem` | 0.000 (7/18; 0.64) | 0.000 (7/18; 0.67) |
+| `panns_stem` − `flatstem` | +0.000 (8/18; 0.65) | +0.028 (5/18; 0.88) |
+| `panns_stem` − `netstem` | +0.042 (5/18; 0.03) | +0.038 (2/18; 0.11) |
+
+**Gate:** none of the four passes; none beats `flatref`/`flatstem` paired under either
+band set. The log-mel row on the amp track has the best unpaired band median under the
+recording bands (−0.096, about 9% closer), but it falls to −0.046 under the union bands
+and is worse than `flatref` paired under both. PANNs is near template+R and does no
+better than the log-mel baseline; on stems it is worse than `netstem` (p 0.03, recording
+bands). The network's picks (`net`) remain the best chooser on this set.

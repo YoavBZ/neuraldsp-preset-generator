@@ -93,6 +93,9 @@ lives in the linked documents. Last updated 2026-10-06.
       25 parts), 52–60% of the menu oracle's gain, and short of the declared margins over
       the no-training stand-in.
     - **Next:** the same test on heavier tones (set 3), then a search beyond the menu.
+    - **DI-free reranker, 2026-10-07** ([rerank-plan.md](rerank-plan.md)): ranking the menu
+      by log-mel or PANNs CNN14 distance to renders through other folds' DIs did not pass.
+      Neither beats `flatref` paired; `net` stays the best chooser.
 
 ## Decisions
 
