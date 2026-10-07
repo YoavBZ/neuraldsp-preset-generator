@@ -144,3 +144,77 @@ fold leakage and no held-out data. Its fixes, applied before this commit:
 - groups drawn without replacement;
 - asserts that the panel and bleed parts are development parts and that the 8 silent
   parts match rerank's.
+
+## Result, 2026-10-08: screen 1 passes, screen 2 does not
+
+**What ran.**
+- **Renders:** 16,800 crossed renders (300 blocks; 16,787 non-silent) in 8,063 s with 3
+  workers. 3.5 GB of FLAC. After the 60-dB gain rule, 16,586 entered the cache, along
+  with 4,773 panel renders. The mel cache is 3.5 GB.
+- **Training:** four encoders of 486,976 parameters, 4,000 steps each, on CPU. All four
+  ran at once with 2 threads each, about 62 minutes per fold. No loss went non-finite.
+- **Monitoring** (8-way, held-back training-fold blocks): 0.96–0.98 at the end.
+
+**Screen 1, identification** (550 trials; `identify.json`):
+
+| Feature | top-1 | top-3 | mean rank | band bootstrap 95% (top-1) |
+|---|---|---|---|---|
+| encoder | **74.5%** | 93.5% | 1.47 | 69.8–81.0% |
+| log-mel (z-scored) | 13.8% | 29.5% | 7.96 | 9.7–16.2% |
+| PANNs CNN14 | 14.2% | 30.4% | 7.76 | 10.6–16.9% |
+| chance | 4.5% | | | |
+
+- **By fold:** the encoder scores 70%, 77%, 67% and 83%.
+- **Baselines:** the review reported 13.5% (log-mel) and 12.7% (PANNs); recomputed
+  here, with ties counted against the true candidate, they are 13.8% and 14.2%.
+- **Gate (≥ 30%): passed.**
+- **No-menu encoders** (secondary, descriptive; trained without the 22 presets or any
+  setting jittered from them): top-1 71.8%, top-3 91.3%, band bootstrap 64.9–80.1%. So
+  identification carries to presets the encoder never trained on.
+
+**Screen 2, reranker** (`rerank.json`). Band median log ratio to template+R (parts
+closer; p):
+
+| Row | recording bands | union bands |
+|---|---|---|
+| `flatref` | −0.034 (16/25) | −0.034 (17/25) |
+| `net` | −0.089 (20/25) | −0.088 (20/25) |
+| `mel_ref` | −0.096 (16/25) | −0.046 (14/25) |
+| `panns_ref` | −0.026 (16/25) | −0.009 (12/25) |
+| `enc_ref` | **+0.065** (11/25) | **+0.070** (9/25) |
+| `enc_stem` | +0.040 (8/18) | +0.034 (6/18) |
+
+Paired, band median of the difference (parts where the encoder is closer; p):
+
+| Pair | recording bands | union bands |
+|---|---|---|
+| `enc_ref` − `flatref` | +0.100 (8/25; 0.24) | +0.110 (6/25; 0.12) |
+| `enc_ref` − `net` | +0.101 (5/25; 0.012) | +0.118 (5/25; 0.008) |
+| `enc_stem` − `flatstem` | +0.030 (5/18; 0.26) | +0.051 (4/18; 0.20) |
+| `enc_stem` − `netstem` | +0.153 (5/18; 0.027) | +0.098 (3/18; 0.035) |
+
+**Gate: not passed.** The encoder's picks are worse than template+R, and worse than
+`flatref` and `net`. Against `net` the gap is significant.
+
+**Why: real recordings land off the render manifold.**
+- The encoder picks "Out of this World Clean" for 18 of 25 amp tracks and 13 of 18 stems.
+- An independent check found the recordings far from every candidate. Their cosine to
+  the nearest candidate has median 0.46, against 0.86 for renders. 64% fall below the
+  renders' 5th percentile.
+- The same preset is also the pick for 19 of 25 raw DIs, 22 of 25 white-noise inputs and
+  9 of 25 backings: it is where off-manifold input lands, not a spectral match.
+- The encoder recognises plugin presets across players. It does not transfer to real
+  mic'd recordings.
+
+**Independent verification.**
+- Screen 1 and screen 2 were recomputed with separate code.
+- **No leakage found:**
+  - no fold trains on its own bands;
+  - no DI or song is shared across bands;
+  - a cross-fold audio search found no shared DI (best match 0.235, self-match 1.0);
+  - scoring parts with an encoder that did hear their band gives 92.4%, against 74.5%
+    held out.
+
+**One change to `learn/rerank.py`.** Its scoring-check tolerance went from 1e-9 to 1e-6.
+The phase2 measure renders became 24-bit FLAC in 6b84ac7, after the rerank result, and
+that moved the 100 check scores by up to 1.1e-7. The rerank rows are unchanged.

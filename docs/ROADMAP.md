@@ -41,9 +41,14 @@ lives in the linked documents. Last updated 2026-10-07.
      three amps; declared in the plan's "Phase 2 on set 3").
    - **Separator:** open-source upgrades for stems, Mega-53 plus pan isolation
      (`separator-upgrade-plan.md`).
-   - **Our own guitar tone encoder,** reimplementing Open-Amp's recipe on our renders
-     (`tone-encoder-plan.md`). PANNs and log-mel failed as rerankers
-     ([rerank-plan.md](rerank-plan.md)).
+   - **Our own guitar tone encoder: run 2026-10-08, not passed as a reranker**
+     ([tone-encoder-plan.md](tone-encoder-plan.md)).
+     - It names a render's preset among 22 from other players' renders 74.5% of the
+       time, or 72% for presets it never trained on. Log-mel and PANNs manage 14%.
+     - On real recordings its picks are worse than template+R. Recordings land off the
+       render manifold, on one hub preset.
+     - Closing that domain gap comes before the encoder can rerank (for example,
+       training on recorded or room-and-mic augmented audio).
    - **Search beyond the menu,** with a positive control first.
    - **Candidates from the POC model.**
    - **Stem-aware training of the DI network.**
@@ -137,6 +142,10 @@ lives in the linked documents. Last updated 2026-10-07.
     - **DI-free reranker, 2026-10-07** ([rerank-plan.md](rerank-plan.md)): ranking the menu
       by log-mel or PANNs CNN14 distance to renders through other folds' DIs did not pass.
       Neither beats `flatref` paired; `net` stays the best chooser.
+    - **Tone encoder, 2026-10-08** ([tone-encoder-plan.md](tone-encoder-plan.md)): a
+      contrastive encoder trained on 16,800 crossed renders identifies presets across
+      players (74.5% vs 14%), but as a reranker on real recordings it is worse than
+      template+R. Not passed.
 
 ## Decisions
 

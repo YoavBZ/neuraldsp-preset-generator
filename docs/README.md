@@ -92,6 +92,8 @@ was declared, what was measured, and the research behind it.
   rebuilding the DI. Not passed on clean PR12.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
+- [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
+  passes identification across players (74.5%) but not reranking on real recordings.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.

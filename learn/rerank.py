@@ -225,7 +225,7 @@ def score(pk, names):
                 summ[f"{rk}_minus_{b}"] = K.band_stat(pr, "x")
         result[bs] = {"summary": summ, "rows": rows}
     bad = [c for c in check if (c[3] is None) != (c[4] is None)
-           or (c[3] is not None and abs(c[3] - c[4]) > 1e-9)]
+           or (c[3] is not None and abs(c[3] - c[4]) > 1e-6)]  # 1e-6: measure renders are 24-bit FLAC since 6b84ac7 (drift up to 1.1e-7)
     assert not bad, bad[:5]
     gate = {}
     for rk, (_, src) in RERANKERS.items():
