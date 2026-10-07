@@ -251,3 +251,38 @@ It runs once all four fold networks are trained, with the gates declared above.
 - **Weighting.** Gates are applied with parts weighted by band (`validation-set3.md`).
   Gain classes are descriptive only.
 - **Held-out bands** are not touched until a later, separately declared confirmation.
+
+## Checkpoint, 2026-10-07 evening
+
+**Status:**
+- **Phase 0 L:** passed (23/24).
+- **Phase 0 D and P:** done. Stems fail on multi-guitar sessions.
+- **Phase 0 T:** a near miss, then proceeded at the user's decision.
+- **Phase 0 S:** declared and reviewed.
+- **Phase 1:** four PR12 networks trained and verified; the set-3 network is training.
+- **Phase 2:** clean PR12 **not passed** (8.5% closer than template+R; 52–60% of the menu
+  oracle; short of the margins over the stand-in). Set 3 is next.
+
+**Steps added after the clean result**, each to be declared before it runs:
+
+1. **Beyond the menu (Phase 3, promoted).** On clean PR12 the menu caps the measure's
+   oracle at 15–17%. A judge-scored search through the rebuilt DI starts from the menu
+   pick, after a positive control on renders with known settings.
+2. **Candidates from the POC model.** The POC model carried part-specific information
+   (it beat its shuffled control on 21–22 of 28 parts). Its predictions join the menu
+   as candidates, and the judge chooses through the rebuilt DI.
+3. **A DI-free reranker (E2, never built).** Rank candidates by an embedding distance
+   between the recording and the candidate's renders through *other* bands' DIs, which
+   already exist for every K1 part and preset.
+   - **Rows:** a log-mel mean-and-spread baseline, and PANNs CNN14 (CC BY weights; listed
+     in round 4 and never tested).
+   - **Scoring:** under the average-guitar measure on half B, against `flatref` and the
+     network.
+   - **Cost:** no renders.
+4. **Stem-aware DI network.** Stage-two augmentation: renders mixed into backings and
+   separated, then fine-tuning.
+5. **The multi-guitar reference.** For stems of multi-guitar sessions, declare whether
+   the target is one part's amp track or the sum of the session's guitar amp tracks.
+   This is a product decision, for the user.
+6. **MPS reliability.** Four runs failed or were degraded by intermittent non-finite
+   gradients. Try a current torch release, and keep failed attempts' logs.
