@@ -56,3 +56,14 @@ A reranker earns a place only if, under **both** band sets, it beats `flatref` (
 rerankers: `flatstem`) paired: band median of the difference ≤ log 0.95 (−0.0513) and
 band sign-flip p < 0.1. Four rerankers are tested with no multiplicity correction;
 whatever comes out is reported.
+
+## Amendment before any result (data check)
+
+A data check found that 8 of the 43 development parts are silent or near-silent over half
+A: their template+R render reads −∞ LUFS (Drag Me Down ElecGtr3, Prodigal ElecGtr1 and
+ElecGtr4, Passing Ships ElecGtr3, Nosso Mundo ElecGtr03) or −39 to −56 LUFS (Prodigal
+ElecGtr2 and ElecGtr3, Hikikomori). The next quietest reads −19.5 LUFS. Loudness
+normalisation would blow their noise floor up to −22.9 LUFS, so a part whose template+R
+render over half A is quieter than −35 LUFS is dropped whole from every candidate's
+sound (all candidates lose the same parts). None of the 25 K1 parts is affected; no
+K1 recording is quieter than −32 LUFS. Nothing else changes.
