@@ -45,6 +45,18 @@ All under `~/ndsp-presets/learn/`:
 The listening check is in `~/ndsp-presets/listening/avg-measure/`. Set 3's audio is in
 `~/ndsp-presets/references/datasets-set3` and `validation-crops-set3`.
 
+## Disk
+
+The project data grew by about 180 GB during this work (2026-10-06/07). To keep it in
+bounds:
+- **Phase 2 renders** are stored as level-normalised 24-bit FLAC, about 4× smaller.
+  Distances agree with float WAV to 1e-7; `learn/compress_renders.py` converts old
+  renders.
+- **Training caches** (uncompressed int16 `input.npy`/`di.npy`) are deleted after
+  training, then rebuilt from the FLAC pairs with `learn.direc cache-pairs`. The PR12
+  cache stays: the fold averages live in it.
+- **The DI-robustness renders** were deleted (regenerable); their results are kept.
+
 ## Environments
 
 - `.venv` (Python 3.14): rendering and the judge.
