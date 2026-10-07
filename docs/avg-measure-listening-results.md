@@ -32,3 +32,23 @@ repeated (trial 34).
 
 **Decision.** The average-guitar measure is adopted as the measure for song-to-preset,
 as the user decided on 2026-10-06. This check was the plan's Phase 0 L, and it passed.
+
+## Verified independently (2026-10-07)
+
+A fresh-context reviewer re-scored the check from the key and the answer sheet with its
+own code, and matched every figure.
+- **Hashes:** the key's matches the plan's. The answer sheet's hash was committed (736bbed)
+  before the results commit, and the scorer's own record of it was written a second
+  later.
+- **No cue but tone:** every R, A and B clip is −20.00 LUFS, and A and B are equal to the
+  sample.
+  - The measure's pick is not systematically the brighter clip: by spectral centroid on
+    11 of 30 trials, by high-frequency energy on 12 of 30.
+  - It is A on exactly half the trials, and agreement was 11 of 12 when it was A and
+    12 of 12 when it was B.
+- **The old judge's margins:** the true-DI judge's margin on the disagreement trials has a
+  median of 0.038 (13 of 24 under 0.05). On the 4 trials where it was confident (0.19–0.37),
+  the ear followed the average-guitar measure all 4 times. That is too few to conclude
+  anything from.
+- **A note:** the measure's pick is closer to the reference by spectral centroid on 25 of
+  30 trials. The ear and the measure may both track overall spectral balance.
