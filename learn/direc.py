@@ -297,6 +297,13 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         if not torch.isfinite(total):
             skipped += 1
             streak += 1
+            if os.environ.get("DIREC_DEBUG"):
+                bad = [n for n, q in net.named_parameters() if q.grad is not None and not torch.isfinite(q.grad).all()]
+                with open(out / "nonfinite.jsonl", "a") as fh:
+                    fh.write(json.dumps({"step": step, "idx": [int(i) for i in idx],
+                                         "loss": float(loss.detach()), "params": bad[:5],
+                                         "pred_finite": bool(torch.isfinite(p).all()),
+                                         "x_max": float(x.abs().max()), "y_max": float(y.abs().max())}) + "\n")
             if streak >= 25:
                 # MPS sometimes falls into persistent non-finite gradients (measured
                 # 2026-10-07; the same run is clean on CPU and when restarted). Reload the
