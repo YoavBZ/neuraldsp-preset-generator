@@ -59,3 +59,17 @@ amp×cab presets on the EGDB DIs [V]. That is more than this machine's free disk
    - ask EG-VAE's authors for the weights;
    - allow, or not, uploading development audio to MVSep's API;
    - optionally run BIAS X Music-to-Tone by hand on a few songs, as a commercial bar.
+
+## User's decision, 2026-10-07: open source only
+
+**Kept:**
+- open-licensed separators (Mega-53 from the MIT repo; the X-LANCE refiner, MIT);
+- DSP pan isolation;
+- reimplementing published methods ourselves.
+
+**Dropped:**
+- MVSep's cloud API;
+- commercial tools, BIAS X included, even as baselines;
+- unreleased or unlicensed weights: EG-VAE, and Open-Amp's checkpoint, whose recipe is
+  reimplemented and trained on our own renders instead;
+- gated weights (SAM Audio).
