@@ -202,3 +202,28 @@ with the same choosing procedure. The overnight run starts only if it already be
   rebuilt DI beats `flatref` paired on at least 9 of the decided clips, with a median
   difference ≤ −0.03.
 - **Reporting:** this is a second look on the same clips and is reported as such.
+
+### Second look, result (2026-10-07 05:00): misses the declared rule by one clip
+
+After 4 hours of training in all (validation loss 53.1, from 56.8 after one hour), on
+the same 16 clips:
+
+| | median | mean |
+|---|---|---|
+| rebuilt DI | −0.295 | −0.304 |
+| `flatref` | −0.125 | −0.135 |
+| oracle | −0.355 | −0.408 |
+
+- **Paired, rebuilt against `flatref`:** 8 better, 4 worse, 4 ties, median −0.046.
+- **Against the rule:**
+  - "at least 9 better of the decided clips": 8 of 12, so **not met**;
+  - "median ≤ −0.03": met.
+
+**What happens next, decided before Phase 2 is run or read.**
+- The gate existed to avoid spending overnight compute on a network that doesn't
+  improve. The remaining folds' networks are trained overnight anyway, while the GPU
+  is idle, with fold 0's exact recipe: 60 minutes at 3e-4, then 180 minutes of cosine
+  decay to 2e-5, PR12 cache only.
+- **Phase 2 is neither run nor read** until the user decides whether to proceed despite
+  the near miss.
+- Training spends compute only. It reads no result on the Phase 2 parts.
