@@ -85,6 +85,14 @@ lives in the linked documents. Last updated 2026-10-06.
     - **The catch:** its gain over the template rests on two parts.
     - **Next:** learn the sound rather than the knobs, train on separated stems, and
       move to heavier tones.
+  - **Rebuilding the DI, 2026-10-07**
+    ([plan](di-recovery-plan.md) → [results on clean PR12](di-recovery-results.md)).
+    - **What ran:** a network rebuilds the guitar's DI from the recording, and the judge
+      picks a menu preset through it.
+    - **Result on clean PR12:** not passed. Picks were 8.5% closer than template+R (20 of
+      25 parts), 52–60% of the menu oracle's gain, and short of the declared margins over
+      the no-training stand-in.
+    - **Next:** the same test on heavier tones (set 3), then a search beyond the menu.
 
 ## Decisions
 

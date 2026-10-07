@@ -79,6 +79,13 @@ was declared, what was measured, and the research behind it.
 - [preset-model-poc-plan.md](preset-model-poc-plan.md) →
   [results](preset-model-poc-results.md): a trained network on PR12. Not passed, but it
   reads part-specific information.
+- [di-robustness-plan.md](di-robustness-plan.md) → [results](di-robustness-results.md):
+  the judge through a wrong DI.
+- [di-recovery-plan.md](di-recovery-plan.md) → [results](di-recovery-results.md):
+  rebuilding the DI. Not passed on clean PR12.
+- [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
+  [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
+- [validation-set3.md](validation-set3.md): the heavier-tone set, declared.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
