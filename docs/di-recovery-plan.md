@@ -227,3 +227,6 @@ the same 16 clips:
 - **Phase 2 is neither run nor read** until the user decides whether to proceed despite
   the near miss.
 - Training spends compute only. It reads no result on the Phase 2 parts.
+
+**User's decision (2026-10-07 morning).** Run Phase 2 as planned despite the near miss.
+It runs once all four fold networks are trained, with the gates declared above.
