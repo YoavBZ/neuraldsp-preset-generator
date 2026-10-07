@@ -277,7 +277,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     print(f"parameters {sum(p.numel() for p in net.parameters()) / 1e6:.1f}M", flush=True)
     opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
     out.mkdir(parents=True, exist_ok=True)
-    t0, step, skipped = time.time(), 0, 0
+    t0, step, skipped, streak, recoveries = time.time(), 0, 0, 0, 0
     vidx = rng.choice(va, min(96, len(va)), replace=False)
     while time.time() - t0 < minutes * 60:
         if lr_end is not None:          # cosine decay over the run's wall-clock budget
@@ -296,7 +296,24 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         total = torch.sqrt(sum((g.detach() ** 2).sum() for g in grads))
         if not torch.isfinite(total):
             skipped += 1
+            streak += 1
+            if streak >= 25:
+                # MPS sometimes falls into persistent non-finite gradients (measured
+                # 2026-10-07; the same run is clean on CPU and when restarted). Reload the
+                # last good weights, start a fresh optimiser, and carry on.
+                ckpt = out / f"fold{fold}.pt"
+                state = torch.load(ckpt, map_location=dev) if ckpt.exists() else (
+                    torch.load(resume, map_location=dev) if resume else None)
+                if state is not None:
+                    net.load_state_dict(state)
+                opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
+                recoveries += 1
+                streak = 0
+                print(f"fold {fold} recovery {recoveries} at step {step}", flush=True)
+                if recoveries > 20:
+                    raise RuntimeError("training keeps producing non-finite gradients")
             continue
+        streak = 0
         if total > 5.0:
             for g in grads:
                 g.mul_(5.0 / total)
