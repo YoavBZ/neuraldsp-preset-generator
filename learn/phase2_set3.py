@@ -42,8 +42,13 @@ REBUILT = {"flatref": "ref", "flatstem": "stem", "net": "ref", "netstem": "stem"
 
 
 def mono(path):
+    """A file as mono float64. A render named `.wav` may have been stored as a
+    level-normalised 24-bit `.flac` (the judge ignores level; distances agree to 1e-7)."""
     import soundfile as sf
 
+    path = pathlib.Path(path)
+    if not path.exists() and path.with_suffix(".flac").exists():
+        path = path.with_suffix(".flac")
     x, sr = sf.read(str(path), dtype="float64", always_2d=True)
     assert sr == SR, path
     return x.mean(axis=1)
@@ -150,9 +155,9 @@ def render(kinds, model, shard=(0, 1)):
                     (base / amp).mkdir(exist_ok=True)
                     r.render(d32, {"panel": f"{amp}|template+R"})            # warm-up per amp
                     for n in m:
-                        sf.write(base / amp / f"{RP._slug(n)}.wav",
-                                 np.asarray(r.render(d32, {"panel": f"{amp}|{n}"}).audio), SR,
-                                 subtype="FLOAT")
+                        y = np.asarray(r.render(d32, {"panel": f"{amp}|{n}"}).audio, np.float64)
+                        sf.write(base / amp / f"{RP._slug(n)}.flac",
+                                 y * (0.99 / max(np.abs(y).max(), 1e-12)), SR, subtype="PCM_24")
                 (base / "done").write_text("")
                 print(slug, kind, flush=True)
     finally:
