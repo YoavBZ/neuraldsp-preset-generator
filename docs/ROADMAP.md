@@ -103,7 +103,13 @@ lives in the linked documents. Last updated 2026-10-08.
        All 767 independent checks pass, with byte-identical predictions. Its baseline
        does not establish improvement over the simple tone-corrected stand-in or native transfer.
        The [fixed-render stand-in comparison](di-morgan-flatref-plan.md) is implemented
-       and independently reviewed and declared; commit precedes new scores. No rerender or training.
+       and declared before computation. Its [verified result](di-morgan-flatref-results.md)
+       improves all twelve performances over the better simple baseline, median 57.83%;
+       all 1,215 independent checks agree. No rerender or training was required.
+       Next: a separate known-offset and mismatched-performance control of the frozen
+       timing-confidence method, using saved dry arrays. Implementation is in progress;
+       review and committed declaration precede computation. No threshold tuning or
+       reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved

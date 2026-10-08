@@ -46,7 +46,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_domain_metric_probe.py` | synthetic window-coefficient interventions pass, independently verified; no audio/model access | `di-domain-metric-probe-plan.md` → `-results.md` |
 | `run_di_domain_pilot_v2.py` | independently verified QC stop, only 3/12 pairs accepted; no render/inference; closed/inconclusive | `di-domain-pilot-v2-plan.md` → `-results.md` |
 | `di_morgan_control.py` | verified 72.18% median improvement over wet-as-DI, all twelve wins, 767 independent checks; no native/flatref/product claim | `di-morgan-control-plan.md` → `-results.md` |
-| `di_morgan_flatref.py` | stronger comparison with existing tone-corrected stand-in; fixed saved arrays, all-score replay first, independently reviewed and declared | `di-morgan-flatref-plan.md` |
+| `di_morgan_flatref.py` | verified 57.83% median improvement over better simple baseline, all twelve wins, 1,215 independent checks; no native/product claim | `di-morgan-flatref-plan.md` → `-results.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

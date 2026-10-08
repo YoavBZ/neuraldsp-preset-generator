@@ -44,7 +44,12 @@ with 178 passing synthetic checks before commit/execution. Its
 versus processed audio directly on all twelve performances; all 767 independent
 checks pass, including byte-identical prediction replay. This does not establish
 benefit over the simple tone-corrected stand-in. The [fixed-render comparison](di-morgan-flatref-plan.md)
-is independently reviewed and declared; commit precedes new scores. No native neural transfer result exists. A domain gap
+was independently reviewed and committed before computation. Its
+[verified result](di-morgan-flatref-results.md) improves all twelve performances
+over the better simple baseline, median 57.83%; all 1,215 independent checks agree.
+Next: independently review a known-offset/mismatched-performance control of the
+frozen timing-confidence method, using saved dry arrays. No changed thresholds,
+native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

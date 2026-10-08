@@ -128,8 +128,9 @@ was declared, what was measured, and the research behind it.
 - [Known-DI Morgan control](di-morgan-control-plan.md) → [results](di-morgan-control-results.md):
   verified 72.18% median improvement over processed audio directly, all twelve wins;
   767 independent checks pass. No native/product claim.
-- [Fixed-render net versus simple tone correction](di-morgan-flatref-plan.md):
-  stronger baseline comparison independently reviewed and declared before new scoring.
+- [Fixed-render net versus simple tone correction](di-morgan-flatref-plan.md) →
+  [verified result](di-morgan-flatref-results.md): 57.83% median improvement over
+  the better simple baseline, all twelve wins; 1,215 independent checks agree.
   No audio or model-asset access.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.

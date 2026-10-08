@@ -56,9 +56,11 @@ sequence are supported by pinned code, not separately recorded plugin state.
 Fixed slicing is verified but does not independently remeasure physical latency.
 These limits carry forward to any diagnostic reusing the renders.
 
-Next: a separately reviewed and declared comparison with the existing simple
-`flatref` stand-in, using the same saved arrays. Its implementation and procedure
-are independently reviewed and declared; commit precedes new scores. No long training follows this control.
+The separately reviewed and declared comparison with the existing simple `flatref`
+stand-in is now [complete and independently verified](di-morgan-flatref-results.md):
+57.83% median improvement over the better simple baseline, all twelve wins and
+1,215 checks agree. This adds evidence of learned improvement on this fixed clean
+Morgan chain, without changing the native/product limits. No long training follows.
 
 Pedroza et al., Guitar-TECHS, CC BY4.0, https://zenodo.org/records/14963133.
 Catalogued P2 development material, one player/guitar; no reserved data used.
