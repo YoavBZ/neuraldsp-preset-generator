@@ -1,8 +1,10 @@
-# Set 3 held-out confirmation: DRAFT (not declared, not run)
+# Set 3 held-out confirmation: declared 2026-10-08
 
 Drafted 2026-10-08 after the development result ([di-recovery-set3-results.md](di-recovery-set3-results.md)).
-**It becomes a declaration only when the user approves it and it is committed with the
-`declared` line below filled in.** No held-out audio is read before then.
+**Approved by the user on 2026-10-08 ("Go ahead").** The procedure below is frozen by
+the first commit containing this approval. The input manifest is committed separately
+before any held-out audio is read. Earlier preparation notes below describe the draft
+state at that time.
 
 ## Why
 
@@ -114,4 +116,6 @@ split/leakage and judge checks. These tests validate preparation and bookkeeping
 model accuracy. No actual confirmation manifest or constant choices have been frozen;
 no held-out audio has been opened. User approval remains pending.
 
-**declared:** _(user approval, date, commit)_
+**declared:** user approval, 2026-10-08; the declaration commit is the first commit
+containing this line and the approved title. The separately committed manifest pins
+the exact model, constants, menus, runtime and source files before execution.

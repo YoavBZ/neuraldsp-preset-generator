@@ -44,9 +44,9 @@ lives in the linked documents. Last updated 2026-10-08.
        passed (the result depends on the constant's undeclared definition), and AC20
        fails.
      - **Next:** review and freeze the constant and test procedure, then a one-time
-       held-out confirmation. The [draft](set3-heldout-confirmation-plan.md) requires
-       user approval before any held-out audio is read. Preparation and synthetic
-       checks can proceed while approval is pending.
+       held-out confirmation. The [declaration](set3-heldout-confirmation-plan.md) was
+       approved by the user on 2026-10-08. Inputs are frozen and committed before
+       rendering; no retraining is needed. The final result is still pending.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
      ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
      - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more

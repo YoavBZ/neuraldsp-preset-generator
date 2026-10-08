@@ -24,7 +24,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `direc.py`, `direc_check.py`, `render_pairs.py` | the DI-rebuilding network: data, training, the pre-overnight check | `di-recovery-plan.md` |
 | `phase2.py` | the real-recordings test on clean PR12 (K1's 25 parts) | `di-recovery-results.md` |
 | `phase2_set3.py`, `set3.py` | the same on set 3 (heavier tones); set 3's declaration and leakage guards | `di-recovery-plan.md` ("Phase 2 on set 3"), `validation-set3.md` |
-| `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test; preparation only until approval | `set3-heldout-confirmation-plan.md` (draft) |
+| `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test | `set3-heldout-confirmation-plan.md` (approved 2026-10-08) |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 
@@ -51,8 +51,7 @@ The listening check is in `~/ndsp-presets/listening/avg-measure/`. Set 3's audio
 
 ## Reserved confirmation
 
-The plan is still a draft pending user approval. Synthetic tests may run meanwhile;
-held-out rendering and scoring may not. `set3_confirmation.py prepare --manifest PATH`
+The user approved the plan on 2026-10-08. `set3_confirmation.py prepare --manifest PATH`
 reads development scores and metadata only, and writes `approved: false`. Constants
 are factory-only, chosen separately under recording and union bands. Commit the
 approved declaration and frozen manifest before any held-out run.
