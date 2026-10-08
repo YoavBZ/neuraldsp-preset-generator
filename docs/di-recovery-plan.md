@@ -11,10 +11,14 @@ confirmation failed on both SW50R and PR12, independently verified
 ([results](set3-heldout-confirmation-results.md)). The existing learned method does
 not ship; Phase 3's requirement that Phase 2 pass has not been met.
 
-The next step is the [development-only diagnostic](set3-development-diagnostic-plan.md):
-compare preset choice using the known average-balanced DI against rebuilt-DI choice
-and a leave-band-out constant, using existing development scores. This comes before
-longer training, stem augmentation or expanding the knob search. No reserved audio
+The [development-only diagnostic](set3-development-diagnostic-plan.md) is complete
+and independently verified ([results](set3-development-diagnostic-results.md)).
+Known-DI selection shows useful menu headroom on all three amps; one recording has
+no valid rebuilt-DI choice. SW50R's recording-band median gap to known-DI selection
+is zero, so the pipeline contrast does not justify more waveform training yet.
+Next is a [fixed-panel activity-proxy diagnostic](set3-mask-diagnostic-plan.md),
+replaying the original scores before testing proxy effects on saved SW50R renders.
+This comes before longer training, stem augmentation or expanding the knob search. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
 Heavier-tone listening remains required before product decisions. The user authorized
 autonomous continuation on 2026-10-08, with consultation only for important decisions.

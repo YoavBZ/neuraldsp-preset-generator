@@ -1,5 +1,16 @@
 # Round 5: guitar-specific networks, tools and separators (2026-10-07)
 
+**Status update, 2026-10-08:** this is the historical research inventory and ranking,
+not the current execution plan. The separator upgrade and our own encoder have now
+been tested and did not pass their real-recording gates
+([separator results](../separator-upgrade-results.md),
+[encoder results](../tone-encoder-plan.md)). The inherited X-LANCE weights were
+excluded under the license check recorded in the separator results. The subsequent
+DI-recovery reserved confirmation also failed
+([results](../set3-heldout-confirmation-results.md)). Follow
+[ROADMAP.md](../ROADMAP.md) and the development-only diagnostics for current work.
+The open-source-only decision at the end supersedes the earlier optional user actions.
+
 Two research passes, done after the clean-PR12 result of `di-recovery-results.md` and
 the negative PANNs reranker result (`rerank-plan.md`). [V] = checked at the source,
 [S] = from a snippet or inferred. Nothing was downloaded except where noted.

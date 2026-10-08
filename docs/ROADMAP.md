@@ -53,14 +53,22 @@ lives in the linked documents. Last updated 2026-10-08.
        ([results](set3-heldout-confirmation-results.md)). SW50R misses the consistency
        test against the fixed driven preset; PR12 also misses the margin and joint-win
        requirements. No required comparisons were refused.
-     - **Next:** this model's shipping path is closed under the declared rule.
-       Use development data to distinguish errors in rebuilt DI from failures of
-       preset ranking, with true-DI selection
-       as a positive control. The [diagnostic plan](set3-development-diagnostic-plan.md)
-       passed independent design/code review and 19 synthetic checks. It reuses existing scores,
-       so no training or rendering is needed for this first check. Any later
-       model needs fresh reserved data; this split cannot be reused for tuning or a
-       new confirmation. Search beyond the menu remains conditional on that control.
+     - **Development diagnostic: independently verified**
+       ([results](set3-development-diagnostic-results.md)). Known-DI selection beats
+       the leave-band-out constant on all three amps under both band sets. All 14,067
+       independently recomputed fields agree. This establishes useful menu headroom
+       on development data; it does not isolate waveform recovery as the bottleneck.
+       Rebuilt-DI selection refuses every candidate on one recording, and SW50R's
+       recording-band median gap to known-DI selection is zero.
+     - **Next: a bounded activity-proxy check**
+       ([plan](set3-mask-diagnostic-plan.md)). Reuse saved SW50R renders on 12 fixed
+       development parts, first replaying the original scores, then swapping only the
+       chooser's activity proxy. Test known DI as a control and the isolated reference
+       as an unvalidated heuristic. Independently review and commit before execution;
+       verify results before any follow-up. No further long training is justified yet.
+       This model's shipping path remains closed. Any later model needs fresh reserved
+       data; the spent split cannot be reused for tuning or confirmation. Wider search
+       is deferred while the existing menu shows development headroom.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
      ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
      - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
@@ -111,17 +119,15 @@ lives in the linked documents. Last updated 2026-10-08.
    *2026-10-07, from step 0: log-mel statistics and PANNs CNN14, used as rerankers over
    renders through other players' DIs, also failed ([rerank-plan.md](rerank-plan.md)).
    Our own contrastive guitar encoder passed identification on renders but failed on
-   real recordings (step 0).* Next, the candidates
-   that need downloads or training:
-   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
+   real recordings (step 0).* Remaining candidate, deferred while the development
+   chooser diagnostic runs:
+   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB; verify open licence before use),
      with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors
      only: once the notes differ they score near chance, and they discard the input
      level that carries the drive.
-   - **Then our own contrastive encoder**
-     ([round 1](research/round-1-song-only-matching.md), approach 3c), trained with the
-     same settings through different playing as positives, so it learns the invariance
-     the hand-made features lack. The panels already hold every preset through 43
-     players' DIs; a full run is 2–3 weeks and 16k–100k renders per amp.
+   - **Own contrastive encoder: already tested, failed on real recordings** (step 0).
+     Another run needs a declared intervention addressing transfer from renders to
+     recordings and a cheap positive control; do not repeat the original training.
 3. **The derived-DI route** (experiment 5). *Done, 2026-10-06*
    ([results](di-robustness-results.md)). It did not pass as declared. Under the
    average-guitar measure, a realistic rebuilt DI loses little, so DI recovery was
@@ -201,4 +207,5 @@ lives in the linked documents. Last updated 2026-10-08.
 | 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
 | 2026-10-08 | Rebuilding the DI works on heavier tones against the clean default and the stand-in. Against a constant driven preset: SW50R a conditional pass, PR12 not passed, AC20 failed. The constant's definition is to be declared before the held-out confirmation | [set-3 results](di-recovery-set3-results.md) |
 | 2026-10-08 | Reserved confirmation not passed on SW50R or PR12 under either declared timing. Independent numerical/audio checks agree. This learned method does not ship; diagnose on development data and use fresh reserved data for future confirmation | [confirmation results](set3-heldout-confirmation-results.md) |
+| 2026-10-08 | Known-DI development selection shows menu headroom on all three amps. Diagnose the rebuilt chooser's refusal on a fixed panel before more training; neither this diagnostic nor a proxy rescue is confirmation | [development diagnostic](set3-development-diagnostic-results.md), [proxy-check plan](set3-mask-diagnostic-plan.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

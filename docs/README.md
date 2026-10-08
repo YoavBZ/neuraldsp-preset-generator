@@ -98,9 +98,13 @@ was declared, what was measured, and the research behind it.
 - [set3-heldout-confirmation-results.md](set3-heldout-confirmation-results.md): neither
   amp passes under either timing. Independent numerical/audio checks agree; this
   learned method does not ship. Full evidence is linked from the result.
-- [set3-development-diagnostic-plan.md](set3-development-diagnostic-plan.md): next
-  development-only check of known-DI choice, rebuilt-DI choice, menu headroom and a
-  leave-band-out constant; review before execution, no reserved-data reuse.
+- [set3-development-diagnostic-plan.md](set3-development-diagnostic-plan.md) →
+  [results](set3-development-diagnostic-results.md): known-DI selection shows menu
+  headroom on all three amps; independently verified. One rebuilt-DI refusal routes
+  the next check. No reserved-data reuse.
+- [set3-mask-diagnostic-plan.md](set3-mask-diagnostic-plan.md): next fixed-panel
+  development check of activity-proxy effects on the chooser, using existing SW50R
+  audio. Design/code review and commit precede execution; no training or rendering.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
