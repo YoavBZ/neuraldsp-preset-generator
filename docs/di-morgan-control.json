@@ -1,0 +1,297 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "qc_valid": true,
+      "morgan_input": 5.31811629248553,
+      "morgan_net": 1.356647989301702,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.356647989301702,
+        "canonical_waveform_l1": 0.03650782839257735,
+        "raw_lowband": 1.2083081951228967
+      },
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      }
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "qc_valid": true,
+      "morgan_input": 5.141863540456876,
+      "morgan_net": 1.3977110365376941,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.3977110365376941,
+        "canonical_waveform_l1": 0.03935065964323825,
+        "raw_lowband": 1.2614681107031411
+      },
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      }
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "qc_valid": true,
+      "morgan_input": 4.818732299485904,
+      "morgan_net": 1.5494068956363483,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.5494068956363483,
+        "canonical_waveform_l1": 0.04864496037247269,
+        "raw_lowband": 1.144331433280481
+      },
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      }
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "qc_valid": true,
+      "morgan_input": 4.870564322439565,
+      "morgan_net": 1.6238200988830815,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.6238200988830815,
+        "canonical_waveform_l1": 0.03934203167617609,
+        "raw_lowband": 0.9713436461767426
+      },
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      }
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "qc_valid": true,
+      "morgan_input": 4.869246607726732,
+      "morgan_net": 1.4083839514347356,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.4083839514347356,
+        "canonical_waveform_l1": 0.04136030828523231,
+        "raw_lowband": 1.361229986815313
+      },
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      }
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "qc_valid": true,
+      "morgan_input": 5.012802754664242,
+      "morgan_net": 1.6336465526082002,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.6336465526082002,
+        "canonical_waveform_l1": 0.04462718528441961,
+        "raw_lowband": 1.0993857645828702
+      },
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      }
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "qc_valid": true,
+      "morgan_input": 5.268729847149958,
+      "morgan_net": 1.4958130893720543,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.4958130893720543,
+        "canonical_waveform_l1": 0.03550792947125198,
+        "raw_lowband": 1.2950734554498204
+      },
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      }
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "qc_valid": true,
+      "morgan_input": 5.224219840883034,
+      "morgan_net": 1.3275160170855151,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.3275160170855151,
+        "canonical_waveform_l1": 0.03287761723977674,
+        "raw_lowband": 1.192069787900476
+      },
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      }
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "qc_valid": true,
+      "morgan_input": 5.315722567471393,
+      "morgan_net": 1.4918509766825998,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.4918509766825998,
+        "canonical_waveform_l1": 0.03814913990820794,
+        "raw_lowband": 1.3369532991910025
+      },
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      }
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "qc_valid": true,
+      "morgan_input": 5.230290357992964,
+      "morgan_net": 1.3653424044185862,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.3653424044185862,
+        "canonical_waveform_l1": 0.02956094500976365,
+        "raw_lowband": 1.1666840731854764
+      },
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      }
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "qc_valid": true,
+      "morgan_input": 5.261952816096986,
+      "morgan_net": 1.436663941701242,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.436663941701242,
+        "canonical_waveform_l1": 0.03126396928048826,
+        "raw_lowband": 1.1900368869864322
+      },
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      }
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "qc_valid": true,
+      "morgan_input": 5.325348897664405,
+      "morgan_net": 1.4686872032439706,
+      "oracle": 0.0,
+      "network_scores": {
+        "primary": 1.4686872032439706,
+        "canonical_waveform_l1": 0.031247899961588537,
+        "raw_lowband": 1.1023069403095764
+      },
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      }
+    }
+  ],
+  "screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "median_relative_improvement": 0.7217797505331673,
+    "strict_wins": 12,
+    "group_medians": {
+      "chords": 0.6946105454854318,
+      "scales": 0.7255898018614853
+    },
+    "per_take": [
+      {
+        "slug": "p2-chords-drop3-7-t098",
+        "relative_improvement": 0.7449006537862591
+      },
+      {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "relative_improvement": 0.7281703363886819
+      },
+      {
+        "slug": "p2-chords-set1-7-t099",
+        "relative_improvement": 0.6784617199420582
+      },
+      {
+        "slug": "p2-chords-set1-dim-t072",
+        "relative_improvement": 0.6666053476797646
+      },
+      {
+        "slug": "p2-chords-set1-m7-t094",
+        "relative_improvement": 0.7107593710288054
+      },
+      {
+        "slug": "p2-chords-set1-maj-t072",
+        "relative_improvement": 0.6741051598154051
+      },
+      {
+        "slug": "p2-scales-a-t075",
+        "relative_improvement": 0.716096073860915
+      },
+      {
+        "slug": "p2-scales-bb-t076",
+        "relative_improvement": 0.7458920073200577
+      },
+      {
+        "slug": "p2-scales-c-t075",
+        "relative_improvement": 0.7193512344282763
+      },
+      {
+        "slug": "p2-scales-db-t076",
+        "relative_improvement": 0.7389547594939809
+      },
+      {
+        "slug": "p2-scales-e-t076",
+        "relative_improvement": 0.7269713370849121
+      },
+      {
+        "slug": "p2-scales-g-t076",
+        "relative_improvement": 0.7242082666380585
+      }
+    ]
+  },
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "elapsed_seconds": 3.7910898750000004,
+  "torch_version": "2.8.0"
+}

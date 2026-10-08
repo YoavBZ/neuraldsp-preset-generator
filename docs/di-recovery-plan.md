@@ -39,7 +39,12 @@ Both runtime preflights pass, but native calibration accepts only 3/12 pairs;
 with no rendering or neural inference. Next: a separately declared known-DI Morgan
 control on all twelve dry recordings, without microphone alignment. Its
 [procedure](di-morgan-control-plan.md) is independently reviewed and declared,
-with 178 passing synthetic checks before commit/execution. No native neural transfer result exists. A domain gap
+with 178 passing synthetic checks before commit/execution. Its
+[verified result](di-morgan-control-results.md) passes with 72.18% median improvement
+versus processed audio directly on all twelve performances; all 767 independent
+checks pass, including byte-identical prediction replay. This does not establish
+benefit over the simple tone-corrected stand-in. The [fixed-render comparison](di-morgan-flatref-plan.md)
+is independently reviewed and declared; commit precedes new scores. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

@@ -1,0 +1,344 @@
+{
+  "complete": true,
+  "valid": true,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "qc_valid": true,
+      "di_excerpt_sha256": "48c4a1dd50fd99c7057f2f14341a5c4325c43de4ae08a5254d266b77b192efbf",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.05163295868551078,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.028068069488416537,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9883333333333333
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.1607457585823504
+      }
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "qc_valid": true,
+      "di_excerpt_sha256": "389c9f50829fe23bcbcc7880087450ed8165a9dcd32d2201745acc49763d7aad",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.04518935038286264,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.033707492624627716,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9766666666666667
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0782047864946693
+      }
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "qc_valid": true,
+      "di_excerpt_sha256": "9251b101e5a92865338c927368a12138e4c9ac74bc853d1337c9eda94414c2f5",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.01645417708066213,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.008763778316001043,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.5677900475063724
+      }
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "qc_valid": true,
+      "di_excerpt_sha256": "844a4072a29f3123f870293ce3ebfc6567191d262311af837f3559569ad915e1",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.005971599781369758,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9975
+          },
+          "score": {
+            "rms": 0.008963337042841893,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.4184545333860212
+      }
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "qc_valid": true,
+      "di_excerpt_sha256": "57c908e08d44a03c5cc356337af18e7eb2354d84343992c7fa9e5c6c5f304a37",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.019769082114728862,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.015790689692616447,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9966666666666667
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.2551788778356217
+      }
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "qc_valid": true,
+      "di_excerpt_sha256": "c9c8494c8f2a1c78e56429d75e2d9379ccea86f6be87165fbfff04f1b56c3ac6",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.00817626398257774,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.009762102834730967,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.4188706294463185
+      }
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "qc_valid": true,
+      "di_excerpt_sha256": "610354d87076c9fe4ef2f9e3a3e038ad028ac9d00e4ec935e6495ace63b3f5cb",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.025976513947273905,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.02746096566625228,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9883333333333333
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0851858798959686
+      }
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "qc_valid": true,
+      "di_excerpt_sha256": "bae2f53dba11528bd937650f0108e7dc8a381197ea5ee3bb59176ec75b29c71b",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.01266980004227707,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.99
+          },
+          "score": {
+            "rms": 0.015276557441771295,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 0.9836762315679934
+      }
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "qc_valid": true,
+      "di_excerpt_sha256": "af8e55d2e3478c0a2d70f4d2c16c54a5f696fa940c9003c985519e1db9afb1c1",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.017277578933472846,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.014096770709072063,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9983333333333333
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0541335757805137
+      }
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "qc_valid": true,
+      "di_excerpt_sha256": "e0c671a6d4930b9d21d6f8eaebbf95e6cc9de80a20174b45f649b0e7c2affb70",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.014714198459867009,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9825
+          },
+          "score": {
+            "rms": 0.016483877048650813,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 0.966253471288087
+      }
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "qc_valid": true,
+      "di_excerpt_sha256": "33a17041031852d4142a023602691ba6437079c7059498ed8fb1232a98c9b8bd",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.02275359041168192,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.031405829591815496,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.058220136972425
+      }
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "qc_valid": true,
+      "di_excerpt_sha256": "e05b11cb77cd2f48db149d1d5f1c95b5c9dc07d6657c878a0780696a4271f7c4",
+      "qc": {
+        "valid": true,
+        "reasons": [],
+        "metrics": {
+          "calibration": {
+            "rms": 0.019574134297213885,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9975
+          },
+          "score": {
+            "rms": 0.025534881686758153,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        }
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.125862394683943
+      }
+    }
+  ],
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "elapsed_seconds": 7.312983874697238
+}
