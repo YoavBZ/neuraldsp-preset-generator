@@ -47,8 +47,8 @@ benefit over the simple tone-corrected stand-in. The [fixed-render comparison](d
 was independently reviewed and committed before computation. Its
 [verified result](di-morgan-flatref-results.md) improves all twelve performances
 over the better simple baseline, median 57.83%; all 1,215 independent checks agree.
-Next: independently review a known-offset/mismatched-performance control of the
-frozen timing-confidence method, using saved dry arrays. No changed thresholds,
+Next: run the independently reviewed and declared [known-offset/mismatched-performance control](di-alignment-control-plan.md)
+of the frozen timing-confidence method, using saved dry arrays, after commit. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio

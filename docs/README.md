@@ -131,6 +131,9 @@ was declared, what was measured, and the research behind it.
 - [Fixed-render net versus simple tone correction](di-morgan-flatref-plan.md) →
   [verified result](di-morgan-flatref-results.md): 57.83% median improvement over
   the better simple baseline, all twelve wins; 1,215 independent checks agree.
+- [Frozen timing-confidence control](di-alignment-control-plan.md): independently
+  reviewed and declared, using known offsets and mismatched performances.
+  Commit precedes real-array computation; the native pilot remains closed.
   No audio or model-asset access.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.

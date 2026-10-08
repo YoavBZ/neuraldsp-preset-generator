@@ -106,9 +106,9 @@ lives in the linked documents. Last updated 2026-10-08.
        and declared before computation. Its [verified result](di-morgan-flatref-results.md)
        improves all twelve performances over the better simple baseline, median 57.83%;
        all 1,215 independent checks agree. No rerender or training was required.
-       Next: a separate known-offset and mismatched-performance control of the frozen
-       timing-confidence method, using saved dry arrays. Implementation is in progress;
-       review and committed declaration precede computation. No threshold tuning or
+       Next: a separate [known-offset and mismatched-performance control](di-alignment-control-plan.md)
+       of the frozen timing-confidence method, using saved dry arrays. It is independently
+       reviewed and declared; commit precedes computation. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
