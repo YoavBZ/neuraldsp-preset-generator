@@ -60,12 +60,20 @@ lives in the linked documents. Last updated 2026-10-08.
        on development data; it does not isolate waveform recovery as the bottleneck.
        Rebuilt-DI selection refuses every candidate on one recording, and SW50R's
        recording-band median gap to known-DI selection is zero.
-     - **Next: a bounded activity-proxy check**
-       ([plan](set3-mask-diagnostic-plan.md)). Reuse saved SW50R renders on 12 fixed
-       development parts, first replaying the original scores, then swapping only the
-       chooser's activity proxy. Test known DI as a control and the isolated reference
-       as an unvalidated heuristic. Independently review and commit before execution;
-       verify results before any follow-up. No further long training is justified yet.
+     - **Activity-proxy check: complete, independently verified**
+       ([results](set3-mask-diagnostic-results.md)). Both alternative proxies rescue
+       the one refused recording, but all 11 control choices remain unchanged under
+       both band sets. It misses its declared improvement rule, so do not expand or
+       tune this heuristic. Original-score replay, all 42,054 recomputed fields and
+       22 fresh audio checks agree.
+     - **Next: learn a small preset-rank calibration**
+       ([declared plan](set3-rank-calibration-plan.md)). Combine song-specific net scores
+       with a learned preset prior. Nested band exclusion keeps each prediction's
+       labels out of both fitting and weight selection. Compare against a prior-only
+       B-trained constant as well as the original chooser with the same fallback.
+       Existing development scores only; fresh independent design/code review and all
+       57 calibration checks pass. Commit before computation and independently verify
+       results. No further long waveform training is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search
        is deferred while the existing menu shows development headroom.

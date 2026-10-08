@@ -30,7 +30,8 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `phase2_set3.py`, `set3.py` | the same on set 3 (heavier tones); set 3's declaration and leakage guards | `di-recovery-plan.md` ("Phase 2 on set 3"), `validation-set3.md` |
 | `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test | `set3-heldout-confirmation-plan.md` (approved 2026-10-08) |
 | `set3_diagnostic.py` | development positive control/menu headroom; independently verified, existing scores only | `set3-development-diagnostic-plan.md` → `-results.md` |
-| `set3_mask_diagnostic.py` | next fixed-panel development activity-proxy check; replay baseline, reuse saved audio, no training/rendering | `set3-mask-diagnostic-plan.md` |
+| `set3_mask_diagnostic.py` | fixed-panel activity-proxy check, independently verified: rescues one refusal but no control gain; closed | `set3-mask-diagnostic-plan.md` → `-results.md` |
+| `set3_rank_calibration.py` | declared nested band-excluded supervised prior/score blend; existing development scores only | `set3-rank-calibration-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

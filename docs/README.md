@@ -73,7 +73,7 @@ was declared, what was measured, and the research behind it.
   presets clearly better than a song-blind constant; they track the tone only when the
   notes match.
 
-**Settings model and amp choice** (parked)
+**Song-to-preset research and amp choice** (active; individual methods noted below)
 - [supervised-model-plan.md](supervised-model-plan.md).
 - Kill tests: [kill-test-k3-plan.md](kill-test-k3-plan.md),
   [kill-test-results.md](kill-test-results.md),
@@ -102,9 +102,13 @@ was declared, what was measured, and the research behind it.
   [results](set3-development-diagnostic-results.md): known-DI selection shows menu
   headroom on all three amps; independently verified. One rebuilt-DI refusal routes
   the next check. No reserved-data reuse.
-- [set3-mask-diagnostic-plan.md](set3-mask-diagnostic-plan.md): next fixed-panel
-  development check of activity-proxy effects on the chooser, using existing SW50R
-  audio. Design/code review and commit precede execution; no training or rendering.
+- [set3-mask-diagnostic-plan.md](set3-mask-diagnostic-plan.md) →
+  [results](set3-mask-diagnostic-results.md): both alternative proxies rescue one
+  refusal but change none of 11 control choices. Independently verified; no expansion.
+- [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md): declared supervised
+  score-only study, mixing song-specific scores with a preset prior using nested band
+  exclusion and a B-trained prior-only comparator. Fresh independent review approved;
+  57 synthetic checks pass. Commit before execution; verify conclusions afterward.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
