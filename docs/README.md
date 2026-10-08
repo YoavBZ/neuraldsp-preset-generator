@@ -117,10 +117,10 @@ was declared, what was measured, and the research behind it.
   checked. [Frozen-model transfer pilot](di-domain-pilot-plan.md) →
   [preflight result](di-domain-pilot-results.md): mandatory synthetic NumPy/Torch
   agreement check failed before audio access. Independent numerical-cause review
-  precedes any separately declared retry. No neural transfer result or new training.
+  led to the separately declared correction below. No neural transfer result or new training.
 - [Synthetic metric precision probe](di-domain-metric-probe-plan.md) →
   [results](di-domain-metric-probe-results.md): shared-window interventions pass at
-  unchanged 1e-8, independently verified; a separate pilot correction is next.
+  unchanged 1e-8, independently verified; the separate pilot correction is complete below.
 - [Native-chain pilot attempt 2](di-domain-pilot-v2-plan.md) →
   [results](di-domain-pilot-v2-results.md): both runtime preflights pass; only 3/12
   native pairs pass calibration, so no neural test followed. Independently verified,
@@ -134,7 +134,10 @@ was declared, what was measured, and the research behind it.
 - [Frozen timing-confidence control](di-alignment-control-plan.md) →
   [verified result](di-alignment-control-results.md): exact-delay/polarity and mismatch
   controls pass; seven accepted distorted cases miss timing by two/three samples.
-  All 856 independent checks agree. Next: review fixed-render score sensitivity.
+  All 856 independent checks agree.
+- [Fixed-render score sensitivity](di-timing-sensitivity-plan.md): independently
+  reviewed and declared, synthetic tests pass; commit precedes saved-waveform
+  scoring. Tests common output offsets, not model-input timing. Result pending.
 - [Transfer-method source follow-up](research/di-transfer-method-followup-2026-10-08.md):
   published recovery/search and augmentation choices, with explicit synthetic-data
   limits. Research hypotheses only; no new model or training run selected.

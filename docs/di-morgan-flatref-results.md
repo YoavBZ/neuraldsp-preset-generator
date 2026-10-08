@@ -44,10 +44,11 @@ does not remeasure physical latency. The saved six-second arrays are reused exac
 The verifier freshly checked six-second raw score QC; full ten-second QC and
 renderer stability are inherited from the prior independent verification.
 
-Next: separately review and declare a positive/negative control for the frozen
-timing-confidence method that stopped the native pilot. Use artificial known
-offsets and mismatched performances from saved dry arrays, without native microphone
-audio, model inference or training. This will test that method's reliability;
-it will not change its thresholds or rescue/reopen the closed native study.
+The subsequent [timing-confidence control](di-alignment-control-results.md) is
+complete and independently verified: exact-delay and mismatch controls passed,
+but seven accepted distorted cases had two/three-sample errors. The next
+[score-sensitivity study](di-timing-sensitivity-plan.md) is independently reviewed
+and declared, awaiting committed execution. Neither study changes the timing thresholds or reopens
+the closed native pilot.
 
 Pedroza et al., Guitar-TECHS, CC BY4.0, https://zenodo.org/records/14963133.

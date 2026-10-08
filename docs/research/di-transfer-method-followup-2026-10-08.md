@@ -1,8 +1,10 @@
-# DI-transfer methods: follow-up while timing verification runs
+# DI-transfer methods: follow-up after timing verification
 
 2026-10-08. Source review and hypotheses only; no new experiment, data access,
-model selection or training authorization. The timing result is still awaiting
-independent verification. Current execution state remains in the roadmap/monitor.
+model selection or training authorization. The timing result is independently
+verified; score-coordinate sensitivity is independently reviewed and declared,
+awaiting committed execution.
+Current execution state remains in the roadmap/monitor.
 
 ## Relevant published choices
 
@@ -28,7 +30,7 @@ reserved confirmation.
 
 These are our hypotheses, not findings of either paper:
 
-1. **Timing relevance:** if independently verified, the constructed-pair timing
+1. **Timing relevance:** the independently verified constructed-pair timing
    errors should be related to recovery and selection error before treating a
    sample-level timing failure as an ML bottleneck. A few samples might matter
    differently to waveform and spectral objectives. Do not relax the stopped
@@ -46,3 +48,15 @@ A larger VAE, more Morgan-only training, or new pretrained weights is not select
 by this source review. Open-source restrictions remain; no unreleased or unlicensed
 checkpoint is used. Any proposed run still needs its own declared procedure,
 cheap controls and fresh independent review before computation.
+
+## Additional code-based hypothesis
+
+The frozen [network](../../learn/direc.py) has five encoder layers with stride four
+and corresponding transposed-convolution decoding. Its preprocessing also keeps
+the fixed 52-sample render latency. This motivates a possible **input-coordinate
+control**: a known shift applied before inference may behave differently from
+the same shift applied to an already saved prediction. Strided layers do not by
+themselves establish exact sample-shift equivalence. No actual shift response has
+been measured here. The current scoring-coordinate study cannot answer this
+question, and this source observation does not select a new run or justify
+altering the latency, training recipe or stopped native-pairing rules.

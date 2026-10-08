@@ -10,13 +10,17 @@ not a validated product method. Development diagnostics now test where it breaks
 before any further long training.
 
 The [training-domain audit](../docs/research/di-domain-transfer-audit-2026-10-08.md)
-independently supports Morgan-only wet supervision in the audited recipe. The next
+independently supports Morgan-only wet supervision in the audited recipe. The first
 [frozen-model P2 pilot](../docs/di-domain-pilot-plan.md) stopped at its mandatory
 synthetic metric preflight before native audio access
-([result](../docs/di-domain-pilot-results.md)). Independent numerical-cause review
-precedes any separately declared retry of native recordings versus matched Morgan
-renders with timing/recoverability controls. No
-adaptation or long training is authorized by that source observation alone.
+([result](../docs/di-domain-pilot-results.md)). The separately reviewed correction
+passed that preflight but stopped on native pairing checks
+([verified result](../docs/di-domain-pilot-v2-results.md)). Saved Morgan controls
+then established recovery improvement over simple baselines, while the
+[timing control](../docs/di-alignment-control-results.md) exposed small accepted
+timing errors. The next [score-sensitivity study](../docs/di-timing-sensitivity-plan.md)
+is independently reviewed and declared, awaiting committed execution. No native transfer result
+or case for long training follows from these controls.
 
 A song's guitar (the amp track, or a separated stem) goes through four steps:
 1. `direc.py` rebuilds its DI at an average guitar's balance.
@@ -48,6 +52,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_morgan_control.py` | verified 72.18% median improvement over wet-as-DI, all twelve wins, 767 independent checks; no native/flatref/product claim | `di-morgan-control-plan.md` → `-results.md` |
 | `di_morgan_flatref.py` | verified 57.83% median improvement over better simple baseline, all twelve wins, 1,215 independent checks; no native/product claim | `di-morgan-flatref-plan.md` → `-results.md` |
 | `di_alignment_control.py` | verified FAIL: seven accepted distorted cases have two/three-sample errors; exact-delay/polarity and mismatch controls pass; all 856 independent checks agree | `di-alignment-control-plan.md` → `-results.md` |
+| `di_timing_sensitivity.py` | common output-coordinate sensitivity on saved Morgan waveforms; synthetic tests pass, independently reviewed and declared, result pending | `di-timing-sensitivity-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

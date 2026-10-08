@@ -26,18 +26,18 @@ chooser, so that fixed blend is closed. The
 declared criteria, independently verified; no amp-selector or pooled-score tuning
 follows. The [training-domain audit](research/di-domain-transfer-audit-2026-10-08.md)
 has independently checked source claims: audited wet supervision is Morgan renders.
-A [small frozen-model pilot](di-domain-pilot-plan.md) is being prepared on existing
+A [small frozen-model pilot](di-domain-pilot-plan.md) was declared on existing
 licensed P2 pairs, with corrected timing, split caveats and recoverability controls.
 Code/design review and 105 synthetic checks passed; declaration committed `8e5a91b`.
 The mandatory CPU-Torch metric preflight then failed before audio access
-([result](di-domain-pilot-results.md)). Independent numerical-cause review precedes
-any separately declared correction; the [synthetic window-precision probe](di-domain-metric-probe-results.md)
+([result](di-domain-pilot-results.md)). Independent numerical-cause review preceded
+the separately declared correction; the [synthetic window-precision probe](di-domain-metric-probe-results.md)
 passes with zero independent mismatches. A separately reviewed coefficient correction
 was [independently reviewed and declared for attempt 2](di-domain-pilot-v2-plan.md).
 Both runtime preflights pass, but native calibration accepts only 3/12 pairs;
 [independent result verification](di-domain-pilot-v2-results.md) confirms the stop,
-with no rendering or neural inference. Next: a separately declared known-DI Morgan
-control on all twelve dry recordings, without microphone alignment. Its
+with no rendering or neural inference. The subsequent known-DI Morgan
+control used all twelve dry recordings, without microphone alignment. Its
 [procedure](di-morgan-control-plan.md) is independently reviewed and declared,
 with 178 passing synthetic checks before commit/execution. Its
 [verified result](di-morgan-control-results.md) passes with 72.18% median improvement
@@ -47,12 +47,13 @@ benefit over the simple tone-corrected stand-in. The [fixed-render comparison](d
 was independently reviewed and committed before computation. Its
 [verified result](di-morgan-flatref-results.md) improves all twelve performances
 over the better simple baseline, median 57.83%; all 1,215 independent checks agree.
-Next: run the independently reviewed and declared [known-offset/mismatched-performance control](di-alignment-control-plan.md)
-of the frozen timing-confidence method, using saved dry arrays, after commit. The
+The independently reviewed [known-offset/mismatched-performance control](di-alignment-control-plan.md)
+of the frozen timing-confidence method used saved dry arrays after declaration and commit. The
 [verified result](di-alignment-control-results.md) passes exact-delay/polarity and
 mismatch controls but fails on seven accepted distorted cases with two/three-sample
-errors; all 856 independent checks agree. Next: review a fixed-render score-sensitivity
-control before attributing recovery error to those small coordinate errors. No changed thresholds,
+errors; all 856 independent checks agree. Next: execute the independently reviewed and declared
+[fixed-render score-sensitivity control](di-timing-sensitivity-plan.md), after commit,
+before attributing recovery error to those small coordinate errors. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio

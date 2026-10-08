@@ -77,7 +77,7 @@ lives in the linked documents. Last updated 2026-10-08.
        Hindsight among the three fixed net picks also has median zero gain. Independent
        recomputation agrees on 20,864 fields. No amp-selector training, pooled-score
        tuning or knob expansion follows this procedure.
-     - **Training-domain audit: sources independently checked; pilot preparing.**
+     - **Training-domain audit and bounded recovery controls: independently checked.**
        [Audit](research/di-domain-transfer-audit-2026-10-08.md): audited wet supervision
        consists of Morgan renders, despite locally available licensed native DI/amp
        pairs. The [small frozen-model pilot](di-domain-pilot-plan.md) compares twelve
@@ -95,7 +95,7 @@ lives in the linked documents. Last updated 2026-10-08.
        runtime preflights pass, but only 3/12 recording pairs pass native calibration;
        [attempt-2 result](di-domain-pilot-v2-results.md) is independently verified,
        with zero mismatches. No rendering or neural inference followed the failed
-       pairing control. Next: separately declare the known-DI Morgan control on all
+       pairing control. The subsequent known-DI Morgan control used all
        twelve dry recordings, without relying on microphone alignment. Its
        [procedure](di-morgan-control-plan.md) is independently reviewed and declared;
        178 synthetic checks pass. Its [verified result](di-morgan-control-results.md)
@@ -106,12 +106,13 @@ lives in the linked documents. Last updated 2026-10-08.
        and declared before computation. Its [verified result](di-morgan-flatref-results.md)
        improves all twelve performances over the better simple baseline, median 57.83%;
        all 1,215 independent checks agree. No rerender or training was required.
-       Next: a separate [known-offset and mismatched-performance control](di-alignment-control-plan.md)
-       of the frozen timing-confidence method, using saved dry arrays. It is independently
+       The separate [known-offset and mismatched-performance control](di-alignment-control-plan.md)
+       of the frozen timing-confidence method used saved dry arrays. It was independently
        reviewed and committed before computation. Its [verified result](di-alignment-control-results.md)
        passes exact-delay/polarity and mismatch controls but misses timing by two/three
        samples on seven accepted distorted cases across three performances. All 856
-       independent checks agree. Next: review a fixed-render score-sensitivity control
+       independent checks agree. Next: execute the independently reviewed and declared
+       [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md), after commit,
        before deciding whether those small coordinate errors matter to recovery scoring. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
