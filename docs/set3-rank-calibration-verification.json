@@ -1,0 +1,411 @@
+{
+  "verified": true,
+  "verification_method": "Separate stdlib implementation; no production or project imports; manual median, fsum means, subset sign enumeration; complete independent derivation before production read; recursive comparison of all scientific output fields.",
+  "declaration_commit": "79136bf",
+  "declaration_commit_at": "2026-10-08T13:03:55+03:00",
+  "started_at_utc": "2026-10-08T10:08:50.087163+00:00",
+  "independent_derivation_completed_at_utc": "2026-10-08T10:08:50.708232+00:00",
+  "production_first_opened_at_utc": "2026-10-08T10:08:51.924421+00:00",
+  "verified_at_utc": "2026-10-08T10:08:52.905124+00:00",
+  "independent_expected_results_sha256": "403c712b1269c4a53400834b30e6a6a83075da39b607f15db4254e83f5915bb1",
+  "independent_script": {
+    "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/verify_set3_rank_independent.py",
+    "sha256": "8325936934f2e80559e8d54885571ce4599f3565a95dcfe004b918a6e2012ade"
+  },
+  "production_report": {
+    "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/set3-rank-calibration-20261008.json",
+    "sha256": "5260ec66e0bba7655e8244583d8aa0ddf2b1e595d4a0d5524c2288cec3906c83",
+    "started_at_utc": "2026-10-08T10:03:58.546669+00:00",
+    "finished_at_utc": "2026-10-08T10:03:59.746400+00:00"
+  },
+  "inputs": {
+    "metadata": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/validation-set3.json",
+      "sha256": "46126f5525e85411a309fad95dfdc7749271796e38bfd8d139c501b0ad621dfe"
+    },
+    "menu_inventory": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-menus.json",
+      "sha256": "25bd0ce48b0d7117d598688aef29b7b36d64128e210eee16a974427ebebbd557"
+    },
+    "full_development_diagnostic": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic.json",
+      "sha256": "2833e55df1354162bc99ee3cae25e4ddf114069bcb7609f04ed5d5ddcfe7ae9d"
+    },
+    "independent_verification": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-verification.json",
+      "sha256": "2c13bb3eaf524652c517b2e67c0cb44f2941257c04e80f3c0303e52c736524b9"
+    },
+    "script": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/learn/set3_rank_calibration.py",
+      "sha256": "4082cfe8f99d9c3f2f1fa9ebf628dfd304696fa5f3cb0ff3353fa0a84ff50bc1"
+    },
+    "tests": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tests/test_set3_rank_calibration.py",
+      "sha256": "973d0c4513db9bac46c730acbf8d2045586023cd335f9af0ae8193074a8c4093"
+    },
+    "plan": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-rank-calibration-plan.md",
+      "sha256": "1a3f2f0fc7ff3981a05952c379a53c9263b3334240a6fc20cb372da6bdf3fcaa"
+    },
+    "source_diagnostic_code": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/learn/set3_diagnostic.py",
+      "sha256": "770980a8b451c8f89ac77748808e159055a83c6eb3a3660b40414d6ca9ba3b2f"
+    },
+    "source_diagnostic_plan": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-plan.md",
+      "sha256": "2dc9fcd9b0f269dcb2c6a917e222f69d3a57509ba8754f17bc279aaa08000ff1"
+    },
+    "distances": {
+      "path": "/Users/yoavbz/ndsp-presets/learn/direc/phase2-set3/distances.json",
+      "sha256": "fd727b26024763f732cda5381a503009c5c58f6439a4ba9f603a24f34dd3f917"
+    }
+  },
+  "coverage": {
+    "inner_alpha_evaluations": 1100,
+    "inner_fixed_alpha_predictions": 3300,
+    "inner_folds": 220,
+    "prior_audits": 242,
+    "outer_folds": 22,
+    "outer_parts": 66,
+    "outer_method_predictions": 594
+  },
+  "comparison": {
+    "compared_scalar_fields": 651209,
+    "numeric_fields": 586441,
+    "exact_numeric_matches": 571146,
+    "exact_nonnumeric_matches": 64768,
+    "numeric_matches_within_tolerance": 15295,
+    "mismatch_count": 0,
+    "absolute_tolerance": 1e-12,
+    "relative_tolerance": 0,
+    "maximum_absolute_numeric_difference": 4.440892098500626e-16,
+    "maximum_difference_path": "production/cells/recording|sw50r/outer_folds/Renesans/alpha_losses/0.25/band_mean_log_B/Diesel13",
+    "mismatches": [],
+    "mismatch_details_truncated": false
+  },
+  "provenance_checks": {
+    "historical_independent_verification_and_frozen_report_match": true,
+    "original_development_input_hashes_match": true,
+    "committed_rank_plan_code_tests_match": true,
+    "declaration_commit_precedes_production_run": true,
+    "source_membership_exactly_development": true,
+    "all_input_hashes_unchanged_at_completion": true,
+    "frozen_A_constants_independently_rederived_on_original_training_sample": true
+  },
+  "independent_cells": {
+    "recording|sw50r": {
+      "selected_alpha_fold_counts": {
+        "0": 0,
+        "0.25": 0,
+        "0.5": 11,
+        "0.75": 0,
+        "1": 0,
+        "missing": 0
+      },
+      "selected_alpha_part_counts": {
+        "0": 0,
+        "0.25": 0,
+        "0.5": 33,
+        "0.75": 0,
+        "1": 0,
+        "missing": 0
+      },
+      "missing_selections": {
+        "calibration": [],
+        "prior": [],
+        "net": [],
+        "historical_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "constant": [],
+        "inclusive_constant": [],
+        "template": [],
+        "true_di": [],
+        "restricted_net": []
+      },
+      "fallback_counts": {
+        "calibration": 1,
+        "prior": 1,
+        "net": 1,
+        "historical_net": 0,
+        "constant": 0,
+        "inclusive_constant": 0,
+        "template": 0,
+        "true_di": 0,
+        "restricted_net": 1
+      },
+      "joint_win_share": 0.1212121212121212,
+      "followup_gates": {
+        "prior_complete_positive": true,
+        "prior_five_percent_margin": true,
+        "prior_sign_flip_below_point_one": true,
+        "net_complete_positive": true,
+        "net_five_percent_margin": false,
+        "net_sign_flip_below_point_one": false,
+        "joint_wins_above_half": false
+      },
+      "followup_justified": false,
+      "restricted_endpoint_improved": false,
+      "blending_benefit_observed": false,
+      "comparisons": {
+        "calibration_vs_prior": {
+          "band_median_log_ratio": -0.20878234019841524,
+          "sign_flip_p_two_sided": 0.0234375,
+          "band_weighted_win_share": 0.5454545454545454,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.5,
+          "band_weighted_win_share": 0.18181818181818182,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_historical_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.75,
+          "band_weighted_win_share": 0.18181818181818182,
+          "scorable_parts": 32,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": true
+        },
+        "calibration_vs_constant": {
+          "band_median_log_ratio": -0.20878234019841524,
+          "sign_flip_p_two_sided": 0.009765625,
+          "band_weighted_win_share": 0.7575757575757577,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.20878234019841524,
+          "sign_flip_p_two_sided": 0.009765625,
+          "band_weighted_win_share": 0.7575757575757577,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_template": {
+          "band_median_log_ratio": -0.7031525877127698,
+          "sign_flip_p_two_sided": 0.001953125,
+          "band_weighted_win_share": 0.9090909090909091,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_true_di": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.0625,
+          "band_weighted_win_share": 0.022727272727272728,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_restricted_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.5,
+          "band_weighted_win_share": 0.18181818181818182,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        }
+      },
+      "calibration_preset_counts": {
+        "factory:Artists/Royce Whittaker/Wall Of Doom": 12,
+        "factory:Artists/Jack Gardiner/Mid Boost Lead": 1,
+        "factory:Neural DSP/Dotted 8th Dark Echoes": 2,
+        "factory:Artists/John Connearn/Low Gain Solo": 3,
+        "factory:Neural DSP/Hair Metal": 2,
+        "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe": 4,
+        "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead": 4,
+        "factory:Neural DSP/Blue Hotel": 1,
+        "factory:Neural DSP/Strat 4th Position Funk": 1,
+        "factory:Artists/CARRTOONS/Benny Tele": 1,
+        "factory:Artists/Royce Whittaker/Warm Timmonsy Lead": 2
+      },
+      "calibration_vs_prior_agreement": {
+        "same": 10,
+        "both_selected": 33,
+        "original_denominator": 33,
+        "all_parts_share": 0.30303030303030304
+      },
+      "calibration_vs_restricted_net_agreement": {
+        "same": 20,
+        "both_selected": 33,
+        "original_denominator": 33,
+        "all_parts_share": 0.6060606060606061
+      }
+    },
+    "union|sw50r": {
+      "selected_alpha_fold_counts": {
+        "0": 0,
+        "0.25": 0,
+        "0.5": 10,
+        "0.75": 1,
+        "1": 0,
+        "missing": 0
+      },
+      "selected_alpha_part_counts": {
+        "0": 0,
+        "0.25": 0,
+        "0.5": 31,
+        "0.75": 2,
+        "1": 0,
+        "missing": 0
+      },
+      "missing_selections": {
+        "calibration": [],
+        "prior": [],
+        "net": [],
+        "historical_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "constant": [],
+        "inclusive_constant": [],
+        "template": [],
+        "true_di": [],
+        "restricted_net": []
+      },
+      "fallback_counts": {
+        "calibration": 1,
+        "prior": 1,
+        "net": 1,
+        "historical_net": 0,
+        "constant": 0,
+        "inclusive_constant": 0,
+        "template": 0,
+        "true_di": 0,
+        "restricted_net": 1
+      },
+      "joint_win_share": 0.13636363636363635,
+      "followup_gates": {
+        "prior_complete_positive": true,
+        "prior_five_percent_margin": true,
+        "prior_sign_flip_below_point_one": true,
+        "net_complete_positive": true,
+        "net_five_percent_margin": false,
+        "net_sign_flip_below_point_one": false,
+        "joint_wins_above_half": false
+      },
+      "followup_justified": false,
+      "restricted_endpoint_improved": false,
+      "blending_benefit_observed": false,
+      "comparisons": {
+        "calibration_vs_prior": {
+          "band_median_log_ratio": -0.19263752082691843,
+          "sign_flip_p_two_sided": 0.0234375,
+          "band_weighted_win_share": 0.5151515151515151,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 1.0,
+          "band_weighted_win_share": 0.2121212121212121,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_historical_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.5,
+          "band_weighted_win_share": 0.2121212121212121,
+          "scorable_parts": 32,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": true
+        },
+        "calibration_vs_constant": {
+          "band_median_log_ratio": -0.19263752082691843,
+          "sign_flip_p_two_sided": 0.0078125,
+          "band_weighted_win_share": 0.6363636363636364,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.19263752082691843,
+          "sign_flip_p_two_sided": 0.0078125,
+          "band_weighted_win_share": 0.6363636363636364,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_template": {
+          "band_median_log_ratio": -0.7031525877127698,
+          "sign_flip_p_two_sided": 0.0009765625,
+          "band_weighted_win_share": 0.9393939393939394,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_true_di": {
+          "band_median_log_ratio": 0.03542335128142593,
+          "sign_flip_p_two_sided": 0.03125,
+          "band_weighted_win_share": 0.022727272727272728,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        },
+        "calibration_vs_restricted_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 1.0,
+          "band_weighted_win_share": 0.2121212121212121,
+          "scorable_parts": 33,
+          "required_parts": 33,
+          "numeric_summaries_descriptive_only": false
+        }
+      },
+      "calibration_preset_counts": {
+        "factory:Artists/Royce Whittaker/Wall Of Doom": 11,
+        "factory:Artists/Royce Whittaker/Warm Timmonsy Lead": 3,
+        "factory:Artists/Richard Henshall/Tremolo Jam": 1,
+        "factory:Artists/John Connearn/Low Gain Solo": 2,
+        "factory:Artists/Rabea Massaad/Rock Yer Socks Off": 1,
+        "factory:Neural DSP/Hair Metal": 1,
+        "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe": 3,
+        "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead": 5,
+        "factory:Neural DSP/Drop-Tuned Doom": 1,
+        "factory:Artists/Rabea Massaad/All Out Amp Destruction": 1,
+        "factory:Neural DSP/Strat 4th Position Funk": 1,
+        "factory:Artists/CARRTOONS/Benny Tele": 2,
+        "factory:Neural DSP/Abrasive Stoner Rock Tone": 1
+      },
+      "calibration_vs_prior_agreement": {
+        "same": 10,
+        "both_selected": 33,
+        "original_denominator": 33,
+        "all_parts_share": 0.30303030303030304
+      },
+      "calibration_vs_restricted_net_agreement": {
+        "same": 20,
+        "both_selected": 33,
+        "original_denominator": 33,
+        "all_parts_share": 0.6060606060606061
+      }
+    }
+  },
+  "conclusions": {
+    "followup_justified_both_band_sets": false,
+    "blending_benefit_observed_both_band_sets": false,
+    "next_step": "close this fixed blend"
+  },
+  "limitations": [
+    "Overlapping fitted folds and reused development data preclude calibrated inference.",
+    "Available-case effects are descriptive; all original denominators are retained.",
+    "True DI is an unavailable-input descriptive control.",
+    "The prior minimizes band-weighted mean log B; evaluation uses medians of band medians.",
+    "The alpha=1 endpoint retains training-prior eligibility and differs from unrestricted net.",
+    "A pass supports development follow-up only, not release or new waveform training.",
+    "Do not retune this grid or prior, add features, choose subsets, or reuse the spent reserved split.",
+    "Heavy-tone listening and fresh reserved confirmation remain necessary for a changed method."
+  ],
+  "runtime": {
+    "python": "3.9.6 (default, Apr 17 2026, 18:15:52) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+    "executable": "/Library/Developer/CommandLineTools/usr/bin/python3"
+  },
+  "scope": "Committed development study only; no reserved scores/audio, no arrays, no model/plugin/rendering/training; compact verification without duplicated audits."
+}

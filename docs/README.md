@@ -105,10 +105,13 @@ was declared, what was measured, and the research behind it.
 - [set3-mask-diagnostic-plan.md](set3-mask-diagnostic-plan.md) →
   [results](set3-mask-diagnostic-results.md): both alternative proxies rescue one
   refusal but change none of 11 control choices. Independently verified; no expansion.
-- [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md): declared supervised
-  score-only study, mixing song-specific scores with a preset prior using nested band
-  exclusion and a B-trained prior-only comparator. Fresh independent review approved;
-  57 synthetic checks pass. Commit before execution; verify conclusions afterward.
+- [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →
+  [results](set3-rank-calibration-results.md): supervised prior/score blend misses
+  declared criteria versus the net chooser. Independently verified; fixed blend closed.
+- [set3-cross-amp-diagnostic-plan.md](set3-cross-amp-diagnostic-plan.md): declared
+  pooling the existing three amp menus, with known-DI/SW50R/global-constant controls.
+  Fresh review approved and 17 checks pass; commit precedes computation, with
+  independent verification afterward. Development scores only.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

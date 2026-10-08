@@ -66,14 +66,18 @@ lives in the linked documents. Last updated 2026-10-08.
        both band sets. It misses its declared improvement rule, so do not expand or
        tune this heuristic. Original-score replay, all 42,054 recomputed fields and
        22 fresh audio checks agree.
-     - **Next: learn a small preset-rank calibration**
-       ([declared plan](set3-rank-calibration-plan.md)). Combine song-specific net scores
-       with a learned preset prior. Nested band exclusion keeps each prediction's
-       labels out of both fitting and weight selection. Compare against a prior-only
-       B-trained constant as well as the original chooser with the same fallback.
-       Existing development scores only; fresh independent design/code review and all
-       57 calibration checks pass. Commit before computation and independently verify
-       results. No further long waveform training is justified yet.
+     - **Nested preset-rank calibration: complete, criteria missed**
+       ([results](set3-rank-calibration-results.md)). Learning a blend of net scores and
+       a preset prior improves on the prior alone but has median zero gain over the
+       original chooser with the same fallback. Independent recomputation agrees on
+       651,209 fields. Close this blend without changing its grid/prior/features.
+     - **Next: test choice across the existing three amp menus**
+       ([declared plan](set3-cross-amp-diagnostic-plan.md)). The product may choose any amp;
+       prior tests mostly fixed one. Compare pooled known-DI/net choices with SW50R
+       and global constants, keeping the same fallback. Development scores only;
+       fresh review approved and all 17 checks pass independently. Commit before computation
+       and verify conclusions afterward. No further long
+       waveform training or knob search is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search
        is deferred while the existing menu shows development headroom.

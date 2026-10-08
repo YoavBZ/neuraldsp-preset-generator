@@ -18,11 +18,13 @@ no valid rebuilt-DI choice. SW50R's recording-band median gap to known-DI select
 is zero, so the pipeline contrast does not justify more waveform training yet.
 The [fixed-panel activity-proxy diagnostic](set3-mask-diagnostic-results.md) is also
 complete and independently verified: it rescues one refusal, but none of 11 controls
-improves, so its declared expansion rule fails. Next is a separately reviewed
-[rank-calibration study](set3-rank-calibration-plan.md): learn a mixing weight for
-song-specific scores and a preset prior using nested band exclusion, against a
-B-trained constant and the original chooser with the same fallback. This uses saved
-development scores only and comes before longer training, stem augmentation or
+improves, so its declared expansion rule fails. The
+[rank-calibration study](set3-rank-calibration-results.md) is also complete and
+independently verified: it misses the declared improvement criteria versus the net
+chooser, so that fixed blend is closed. Next is a separately reviewed
+[cross-amp choice diagnostic](set3-cross-amp-diagnostic-plan.md), pooling the existing
+three menus with known-DI and fixed-constant controls. This uses saved development
+scores only and comes before longer training, stem augmentation or
 expanding the knob search. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
 Heavier-tone listening remains required before product decisions. The user authorized

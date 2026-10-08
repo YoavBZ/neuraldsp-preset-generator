@@ -31,7 +31,8 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test | `set3-heldout-confirmation-plan.md` (approved 2026-10-08) |
 | `set3_diagnostic.py` | development positive control/menu headroom; independently verified, existing scores only | `set3-development-diagnostic-plan.md` → `-results.md` |
 | `set3_mask_diagnostic.py` | fixed-panel activity-proxy check, independently verified: rescues one refusal but no control gain; closed | `set3-mask-diagnostic-plan.md` → `-results.md` |
-| `set3_rank_calibration.py` | declared nested band-excluded supervised prior/score blend; existing development scores only | `set3-rank-calibration-plan.md` |
+| `set3_rank_calibration.py` | nested band-excluded prior/score blend, independently verified; criteria missed, fixed blend closed | `set3-rank-calibration-plan.md` → `-results.md` |
+| `set3_cross_amp_diagnostic.py` | declared pooled existing Morgan amp menus with known-DI/net/SW50R controls; score-only | `set3-cross-amp-diagnostic-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 
