@@ -93,10 +93,11 @@ was declared, what was measured, and the research behind it.
   [set-3 results](di-recovery-set3-results.md): strong against the clean default; against
   a constant, a conditional pass on SW50R only.
 - [set3-heldout-confirmation-plan.md](set3-heldout-confirmation-plan.md): approved
-  one-time SW50R confirmation, with PR12 secondary (2026-10-08). Frozen inputs must be
-  committed before held-out audio is read; result pending.
-- [set3-heldout-confirmation-results.md](set3-heldout-confirmation-results.md): current
-  execution record for the approved confirmation; no accuracy verdict yet.
+  one-time SW50R confirmation, with PR12 secondary (2026-10-08). Inputs were committed
+  before held-out audio was read; the procedure remains frozen.
+- [set3-heldout-confirmation-results.md](set3-heldout-confirmation-results.md): neither
+  amp passes under either timing. Independent numerical/audio checks agree; this
+  learned method does not ship. Full evidence is linked from the result.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

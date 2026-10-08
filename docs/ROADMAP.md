@@ -27,7 +27,10 @@ lives in the linked documents. Last updated 2026-10-08.
     then let the judge pick a menu preset through it. Clean PR12 misses the declared
     bar ([results](di-recovery-results.md)). On heavier development recordings SW50R
     has a conditional pass against a fixed driven preset; PR12 and AC20 do not pass
-    ([set-3 results](di-recovery-set3-results.md)). No learned path is ready to ship.
+    ([set-3 results](di-recovery-set3-results.md)). The reserved confirmation has now
+    run: neither SW50R nor PR12 passes; independent numerical/audio checks agree
+    ([confirmation](set3-heldout-confirmation-results.md)). No learned path is ready
+    to ship.
   - **Measure:** the average-guitar measure, which listening confirmed (23 of 24
     trials, [results](avg-measure-listening-results.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
@@ -43,10 +46,19 @@ lives in the linked documents. Last updated 2026-10-08.
      - **Against a constant driven preset:** SW50R is a conditional pass, PR12 is not
        passed (the result depends on the constant's undeclared definition), and AC20
        fails.
-     - **Next:** review and freeze the constant and test procedure, then a one-time
-       held-out confirmation. The [declaration](set3-heldout-confirmation-plan.md) was
-       approved by the user on 2026-10-08. Inputs are frozen and committed before
-       rendering; no retraining is needed. The final result is still pending.
+     - **Reserved confirmation:** the [approved declaration](set3-heldout-confirmation-plan.md)
+       and inputs were committed before execution. All 4,320 renders and both timing
+       analyses completed successfully. Neither amp passes; independent checks of
+       all selections/gates and 1,321 distinct audio measurements agree
+       ([results](set3-heldout-confirmation-results.md)). SW50R misses the consistency
+       test against the fixed driven preset; PR12 also misses the margin and joint-win
+       requirements. No required comparisons were refused.
+     - **Next:** this model's shipping path is closed under the declared rule.
+       Use development data to distinguish errors in rebuilt DI from failures of
+       preset ranking, with true-DI selection
+       as a positive control. Declare that diagnostic before running it. Any later
+       model needs fresh reserved data; this split cannot be reused for tuning or a
+       new confirmation. Search beyond the menu remains conditional on that control.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
      ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
      - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
@@ -64,7 +76,8 @@ lives in the linked documents. Last updated 2026-10-08.
        render manifold, on one hub preset.
      - Closing that domain gap comes before the encoder can rerank (for example,
        training on recorded or room-and-mic augmented audio).
-   - **Search beyond the menu,** with a positive control first.
+   - **Search beyond the menu:** deferred until a development positive control
+     establishes that menu coverage is the bottleneck.
    - **Candidates from the POC model.**
    - **Stem-aware training of the DI network.**
    - **A declared reference for multi-guitar stems.**
@@ -154,7 +167,10 @@ lives in the linked documents. Last updated 2026-10-08.
     - **Result on clean PR12:** not passed. Picks were 8.5% closer than template+R (20 of
       25 parts), 52–60% of the menu oracle's gain, and short of the declared margins over
       the no-training stand-in.
-    - **Next:** the same test on heavier tones (set 3), then a search beyond the menu.
+    - **Follow-up, 2026-10-08:** heavier-tone development and reserved confirmation
+      are complete ([confirmation](set3-heldout-confirmation-results.md)). Neither
+      tested amp passes confirmation; wider search is deferred pending a development
+      positive control (step 0).
     - **DI-free reranker, 2026-10-07** ([rerank-plan.md](rerank-plan.md)): ranking the menu
       by log-mel or PANNs CNN14 distance to renders through other folds' DIs did not pass.
       Neither beats `flatref` paired; `net` stays the best chooser.
@@ -182,4 +198,5 @@ lives in the linked documents. Last updated 2026-10-08.
 | 2026-10-07 | Open source only: no cloud APIs, commercial tools, or unlicensed or gated weights; published methods are reimplemented | [round 5](research/round-5-guitar-models.md) |
 | 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
 | 2026-10-08 | Rebuilding the DI works on heavier tones against the clean default and the stand-in. Against a constant driven preset: SW50R a conditional pass, PR12 not passed, AC20 failed. The constant's definition is to be declared before the held-out confirmation | [set-3 results](di-recovery-set3-results.md) |
+| 2026-10-08 | Reserved confirmation not passed on SW50R or PR12 under either declared timing. Independent numerical/audio checks agree. This learned method does not ship; diagnose on development data and use fresh reserved data for future confirmation | [confirmation results](set3-heldout-confirmation-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

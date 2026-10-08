@@ -1,0 +1,14 @@
+{
+ "sw50r": {
+  "waveform_passed": false,
+  "onset_passed": false,
+  "verdict_changed": false,
+  "confirmed_amp_track_only": false
+ },
+ "pr12": {
+  "waveform_passed": false,
+  "onset_passed": false,
+  "verdict_changed": false,
+  "confirmed_amp_track_only": false
+ }
+}

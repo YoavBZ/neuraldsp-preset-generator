@@ -1,0 +1,210 @@
+{
+  "predeclared_at_utc": "2026-10-08T05:22:59.204764+00:00",
+  "frozen_commit": "4ad02fa",
+  "manifest_sha256": "097b3c05c58c86c21cc93634caf43233471179bf0b654823a1b4e3b3291d22ca",
+  "audio_read": false,
+  "heldout_scores_read": false,
+  "half_A_parts": [
+    {
+      "band": "Crazy Swedes",
+      "slug": "telefunken-big-trouble-gtr"
+    },
+    {
+      "band": "Dunning Kruger",
+      "slug": "cambridge-endance-gtr4"
+    },
+    {
+      "band": "Scott Elliott",
+      "slug": "cambridge-aeternum-vale-elecgtr01"
+    },
+    {
+      "band": "Silence Is Near",
+      "slug": "cambridge-the-forthcoming-turn-elecgtr2"
+    },
+    {
+      "band": "Silona",
+      "slug": "cambridge-learning-how-to-fly-elecgtr4"
+    },
+    {
+      "band": "V.M.GY",
+      "slug": "cambridge-aureus-necrosis-elecgtr1"
+    }
+  ],
+  "half_A_menu_count": 12,
+  "half_A_candidates": {
+    "sw50r": [
+      "factory:Artists/CARRTOONS/5 String P Bass",
+      "factory:Artists/CARRTOONS/Benny Tele",
+      "factory:Artists/CARRTOONS/Mustang",
+      "factory:Artists/Danny Dela Cruz/Riff Heavy",
+      "factory:Artists/Jack Gardiner/Mid Boost Lead",
+      "factory:Artists/John Connearn/Dotted Eighth Tape",
+      "factory:Artists/John Connearn/High Gain Solo",
+      "factory:Artists/John Connearn/Low Gain Solo",
+      "factory:Artists/Joseph Anidjar/Enormous Cranked Guy",
+      "factory:Artists/Josh De La Victoria/Octave Fuzz",
+      "factory:Artists/Keyan Houshmand/RockNRoll",
+      "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+      "factory:Artists/Keyan Houshmand/TriTone Tremolo",
+      "factory:Artists/Mark Johnston/Pedal Platform Clean",
+      "factory:Artists/Mark Johnston/When You Need a Very Angry Baritone",
+      "factory:Artists/Neil Zaza/Bell Tremolo",
+      "factory:Artists/Neil Zaza/Clean Chime",
+      "factory:Artists/Neil Zaza/Fuzz Face (Single Coil)",
+      "factory:Artists/Neil Zaza/Wide Open (Single Coil Bridge)",
+      "factory:Artists/Neil Zaza/Wide Open Trem (Single Coil Bridge)",
+      "factory:Artists/Pete Thorn/Country Slap and Spring",
+      "factory:Artists/Pete Thorn/Stacked Drives",
+      "factory:Artists/Rabea Massaad/All Out Amp Destruction",
+      "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+      "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+      "factory:Artists/Rabea Massaad/Rock Yer Socks Off",
+      "factory:Artists/Richard Henshall/Big Lead",
+      "factory:Artists/Richard Henshall/Small Lead",
+      "factory:Artists/Richard Henshall/Tele Jam",
+      "factory:Artists/Richard Henshall/Tremolo Jam",
+      "factory:Artists/Royce Whittaker/Big Tail Clean",
+      "factory:Artists/Royce Whittaker/Rhythm of The Young's",
+      "factory:Artists/Royce Whittaker/Wall Of Doom",
+      "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+      "factory:Neural DSP/Abrasive Stoner Rock Tone",
+      "factory:Neural DSP/Blue Hotel",
+      "factory:Neural DSP/Broken Radio",
+      "factory:Neural DSP/Distorted Spy",
+      "factory:Neural DSP/Doomish Riff",
+      "factory:Neural DSP/Dotted 8th Dark Echoes",
+      "factory:Neural DSP/Drop-Tuned Doom",
+      "factory:Neural DSP/Hair Metal",
+      "factory:Neural DSP/Jose Deluxe",
+      "factory:Neural DSP/Strat 4th Position Funk",
+      "template+R"
+    ],
+    "pr12": [
+      "factory:Artists/CARRTOONS/BC Guitar Chords",
+      "factory:Artists/CARRTOONS/Bass Chords",
+      "factory:Artists/Charlie Robbins/Ambient Clean",
+      "factory:Artists/Charlie Robbins/Out of this World Clean",
+      "factory:Artists/Charlie Robbins/Thump Tone",
+      "factory:Artists/Danny Dela Cruz/Lush Clean Wet",
+      "factory:Artists/Jack Gardiner/Double Stop Funk",
+      "factory:Artists/Jack Gardiner/Huge Ambient Wash",
+      "factory:Artists/John Connearn/Cleanish Rhythm",
+      "factory:Artists/John Connearn/Pedal Steel",
+      "factory:Artists/John Connearn/Wet Room",
+      "factory:Artists/Joseph Anidjar/Mean Little Crunchy Guy",
+      "factory:Artists/Josh De La Victoria/Tube-y Blues",
+      "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+      "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+      "factory:Artists/Mark Johnston/One Pass Rhythm Guitars",
+      "factory:Artists/Mark Johnston/Ragged Rhythm",
+      "factory:Artists/Mark Johnston/Royally Ambient",
+      "factory:Artists/Pete Thorn/Wide And Lucious",
+      "factory:Artists/Rabea Massaad/Time To Chime",
+      "factory:Artists/Richard Henshall/Crystal Clean",
+      "factory:Artists/Richard Henshall/Spacey Clean",
+      "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+      "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+      "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+      "factory:Neural DSP/Clean-ish Ambient Solo",
+      "factory:Neural DSP/Izzy Come Back",
+      "factory:Neural DSP/Meet You In The Mids",
+      "factory:Neural DSP/Overdriven Tremolo",
+      "factory:Neural DSP/Slow Dancing Bell Tone",
+      "factory:Neural DSP/The Creature of the Cave",
+      "factory:Neural DSP/US Breakup Tone",
+      "factory:Neural DSP/US Lead Tone",
+      "factory:Neural DSP/Vintage Metal",
+      "template+R"
+    ]
+  },
+  "half_A_band_sets": [
+    "recording",
+    "union"
+  ],
+  "half_A_window_seconds": [
+    1.0,
+    5.5
+  ],
+  "half_A_lag_samples": -52,
+  "render_latency_samples": 52,
+  "half_B_parts": [
+    "cambridge-aeternum-vale-elecgtr01",
+    "cambridge-aeternum-vale-elecgtr02",
+    "cambridge-aeternum-vale-elecgtr03",
+    "cambridge-aeternum-vale-elecgtr03dt",
+    "cambridge-aeternum-vale-elecgtr04",
+    "cambridge-aeternum-vale-elecgtr04dt",
+    "cambridge-aureus-necrosis-elecgtr1",
+    "cambridge-aureus-necrosis-elecgtr1dt",
+    "cambridge-aureus-necrosis-elecgtr3",
+    "cambridge-aureus-necrosis-elecgtr5",
+    "cambridge-bloodshed-elecgtr1",
+    "cambridge-bloodshed-elecgtr1dt",
+    "cambridge-bloodshed-elecgtr2",
+    "cambridge-endance-gtr4",
+    "cambridge-learning-how-to-fly-elecgtr4",
+    "cambridge-learning-how-to-fly-elecgtr5",
+    "cambridge-learning-how-to-fly-elecgtr6",
+    "cambridge-omen-elecgtr2",
+    "cambridge-omen-elecgtr2dt",
+    "cambridge-omen-elecgtr3",
+    "cambridge-omen-elecgtr4",
+    "cambridge-the-forthcoming-turn-elecgtr2",
+    "cambridge-the-forthcoming-turn-elecgtr3",
+    "cambridge-the-forthcoming-turn-elecgtr4",
+    "telefunken-big-trouble-gtr",
+    "telefunken-flight-4-gtr",
+    "telefunken-southern-fried-gtr"
+  ],
+  "half_B_presets": [
+    "selected_preset",
+    "template+R",
+    "frozen_constant"
+  ],
+  "half_B_amps": [
+    "sw50r",
+    "pr12"
+  ],
+  "half_B_band_sets": [
+    "recording",
+    "union"
+  ],
+  "half_B_lag_analyses": [
+    "waveform",
+    "onset"
+  ],
+  "half_B_window_seconds": [
+    5.5,
+    10.0
+  ],
+  "deduplication": "load each render once per part; score once per unique part/amp/preset/band-set/lag/window",
+  "network_DI_parts": [
+    "telefunken-big-trouble-gtr",
+    "cambridge-endance-gtr4",
+    "cambridge-aeternum-vale-elecgtr01",
+    "cambridge-the-forthcoming-turn-elecgtr2",
+    "cambridge-learning-how-to-fly-elecgtr4",
+    "cambridge-aureus-necrosis-elecgtr1"
+  ],
+  "measure_DI_parts": [
+    "telefunken-big-trouble-gtr",
+    "cambridge-endance-gtr4",
+    "cambridge-aeternum-vale-elecgtr01",
+    "cambridge-the-forthcoming-turn-elecgtr2",
+    "cambridge-learning-how-to-fly-elecgtr4",
+    "cambridge-aureus-necrosis-elecgtr1"
+  ],
+  "network_DI_check": "frozen model architecture/state, independent CPU window inference and LUFS scaling",
+  "measure_DI_check": "independent spectrum smoothing, FFT equalization and RMS restoration using frozen average",
+  "distance_match_tolerance": {
+    "absolute": 1e-09,
+    "relative": 1e-09
+  },
+  "DI_match_tolerance": {
+    "absolute": 1e-10,
+    "relative": 1e-07
+  },
+  "training_check": "existing training metadata, declarations and leakage tests; limits retained if historical lineage is incomplete",
+  "measurement_primitive": "analysis.aligned.aligned_distance; source-independent orchestration and numerical aggregation",
+  "interpretation": "amp-track evidence only; no full-song product claim or listening validation"
+}

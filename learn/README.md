@@ -51,6 +51,12 @@ The listening check is in `~/ndsp-presets/listening/avg-measure/`. Set 3's audio
 
 ## Reserved confirmation
 
+Execution completed 2026-10-08: 4,320 renders, 27 reserved parts, six bands and both
+declared timing analyses. Neither amp passes; independent numerical/audio
+verification agrees, including 1,321 distinct audio measurements
+([results](../docs/set3-heldout-confirmation-results.md)). Do not retrain or tune on
+this split. The commands below record the frozen procedure, not a new test to run.
+
 The user approved the plan on 2026-10-08. `set3_confirmation.py prepare --manifest PATH`
 reads development scores and metadata only, and writes `approved: false`. Constants
 are factory-only, chosen separately under recording and union bands. Commit the
