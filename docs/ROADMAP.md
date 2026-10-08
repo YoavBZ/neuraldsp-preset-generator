@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-07.
+lives in the linked documents. Last updated 2026-10-08.
 
 ## Where the product is
 
@@ -24,9 +24,10 @@ lives in the linked documents. Last updated 2026-10-07.
 - **`edit`** changes a preset from a plain-English ask.
 - **Predicting a preset from the song** is active research, not yet in the product.
   - **Best so far:** rebuild the guitar's DI from the recording with a trained network,
-    then let the judge pick a menu preset through it. On clean PR12 that lands 8.5%
-    closer than the template (20 of 25 parts), short of the 10% bar
-    ([results](di-recovery-results.md)).
+    then let the judge pick a menu preset through it. Clean PR12 misses the declared
+    bar ([results](di-recovery-results.md)). On heavier development recordings SW50R
+    has a conditional pass against a fixed driven preset; PR12 and AC20 do not pass
+    ([set-3 results](di-recovery-set3-results.md)). No learned path is ready to ship.
   - **Measure:** the average-guitar measure, which listening confirmed (23 of 24
     trials, [results](avg-measure-listening-results.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
@@ -42,8 +43,10 @@ lives in the linked documents. Last updated 2026-10-07.
      - **Against a constant driven preset:** SW50R is a conditional pass, PR12 is not
        passed (the result depends on the constant's undeclared definition), and AC20
        fails.
-     - **Next:** declare the constant, then a one-time held-out confirmation, which is
-       the user's call.
+     - **Next:** review and freeze the constant and test procedure, then a one-time
+       held-out confirmation. The [draft](set3-heldout-confirmation-plan.md) requires
+       user approval before any held-out audio is read. Preparation and synthetic
+       checks can proceed while approval is pending.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
      ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
      - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
@@ -92,7 +95,8 @@ lives in the linked documents. Last updated 2026-10-07.
    fall to the constant (0.36): the performance moves them more than the preset.
    *2026-10-07, from step 0: log-mel statistics and PANNs CNN14, used as rerankers over
    renders through other players' DIs, also failed ([rerank-plan.md](rerank-plan.md)).
-   Our own contrastive guitar encoder is being trained (step 0).* Next, the candidates
+   Our own contrastive guitar encoder passed identification on renders but failed on
+   real recordings (step 0).* Next, the candidates
    that need downloads or training:
    - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
      with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors

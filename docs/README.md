@@ -92,6 +92,9 @@ was declared, what was measured, and the research behind it.
   rebuilding the DI. Not passed on clean PR12;
   [set-3 results](di-recovery-set3-results.md): strong against the clean default; against
   a constant, a conditional pass on SW50R only.
+- [set3-heldout-confirmation-plan.md](set3-heldout-confirmation-plan.md): draft of the
+  one-time SW50R confirmation, with PR12 secondary. Requires user approval and a
+  committed declaration before held-out audio is read.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

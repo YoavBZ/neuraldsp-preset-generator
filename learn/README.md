@@ -24,6 +24,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `direc.py`, `direc_check.py`, `render_pairs.py` | the DI-rebuilding network: data, training, the pre-overnight check | `di-recovery-plan.md` |
 | `phase2.py` | the real-recordings test on clean PR12 (K1's 25 parts) | `di-recovery-results.md` |
 | `phase2_set3.py`, `set3.py` | the same on set 3 (heavier tones); set 3's declaration and leakage guards | `di-recovery-plan.md` ("Phase 2 on set 3"), `validation-set3.md` |
+| `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test; preparation only until approval | `set3-heldout-confirmation-plan.md` (draft) |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 
@@ -37,6 +38,9 @@ All under `~/ndsp-presets/learn/`:
   - fold models in `models-final/fold{0..3}.pt`, and the set-3 network in
     `models-set3/`;
   - Phase 2 renders and results (`phase2/`, `phase2-set3/`).
+  - The reserved confirmation uses `phase2-set3-heldout/`, separate from development.
+    `phase2_set3.py --split held_out` requires an approved, committed input manifest;
+    it fails before opening audio when that declaration or any frozen input differs.
 - `di-robust/`: the DI-robustness renders.
 - `rerank/`: reranker features and results.
 - `set3/stems/`: set 3's development stems.
@@ -44,6 +48,27 @@ All under `~/ndsp-presets/learn/`:
 
 The listening check is in `~/ndsp-presets/listening/avg-measure/`. Set 3's audio is in
 `~/ndsp-presets/references/datasets-set3` and `validation-crops-set3`.
+
+## Reserved confirmation
+
+The plan is still a draft pending user approval. Synthetic tests may run meanwhile;
+held-out rendering and scoring may not. `set3_confirmation.py prepare --manifest PATH`
+reads development scores and metadata only, and writes `approved: false`. Constants
+are factory-only, chosen separately under recording and union bands. Commit the
+approved declaration and frozen manifest before any held-out run.
+
+Render with `phase2_set3.py render --split held_out --amps sw50r pr12 --kinds measure net
+--confirmation-manifest PATH`. Score with the same split, amps and manifest, first
+with `--lag-mode waveform`, then `--lag-mode onset`. The onset analysis keeps the
+network's primary selections and substitutes only the four already declared timing
+disagreements. Both analyses and both band sets must pass. These commands require
+the same CPU torch environment (`~/ndsp-presets/tools/learn-venv/bin/python`) for
+preparation, rendering and scoring; its versions are part of the manifest. No new
+training is required. Retain failures and
+have an independent reviewer rederive the final result before acting on it.
+Failed scoring attempts archive the previous outputs in `score-history/` and remove
+the current verdict. After a failed onset attempt, rerun waveform scoring before onset
+scoring so the primary inputs are restored under the same frozen procedure.
 
 ## Disk
 
