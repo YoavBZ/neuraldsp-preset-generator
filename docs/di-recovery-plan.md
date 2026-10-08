@@ -31,7 +31,8 @@ licensed P2 pairs, with corrected timing, split caveats and recoverability contr
 Code/design review and 105 synthetic checks passed; declaration committed `8e5a91b`.
 The mandatory CPU-Torch metric preflight then failed before audio access
 ([result](di-domain-pilot-results.md)). Independent numerical-cause review precedes
-any separately declared correction; no neural transfer result exists. A domain gap
+any separately declared correction; the [synthetic window-precision probe](di-domain-metric-probe-plan.md)
+is preparing after source review. No neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

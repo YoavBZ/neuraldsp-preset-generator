@@ -23,6 +23,14 @@ The likely cause under independent investigation is window precision: the existi
 replica constructs it in float64. That is a hypothesis until independently checked;
 the small difference alone does not justify relaxing the failed tolerance.
 
+[Independent static review](research/di-domain-metric-failure-review-2026-10-08.md)
+confirms that the source uses different coefficient-construction precision. Whether
+that explains the numerical discrepancy still requires the separately declared
+[synthetic intervention probe](di-domain-metric-probe-plan.md), now preparing.
+The first runner also hashed model/average bytes before metric dispatch; it did
+not load those arrays or a neural checkpoint for inference. The separate probe
+needs neither asset-byte access nor any dataset path.
+
 ## Evidence and continuation
 
 - [Original metric output](di-domain-pilot-metric.json).
@@ -31,7 +39,7 @@ the small difference alone does not justify relaxing the failed tolerance.
 - Original log: `tmp/di-domain-pilot-metric-20261008.log`.
 - No retry, tolerance change, audio access, training or reserved-data use followed.
 
-An independent agent is inspecting source and the failed artifacts before proposing
-one small synthetic probe/correction. Any changed procedure requires its own declared,
+An independent agent is reviewing the concrete synthetic probe and its code before
+execution. Any changed procedure requires its own declared,
 reviewed and committed version before another attempt. Preserve this failure and the
 original declaration. No long training is justified by this preflight outcome.

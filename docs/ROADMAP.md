@@ -87,8 +87,10 @@ lives in the linked documents. Last updated 2026-10-08.
        The procedure was committed before execution. Its mandatory runtime metric
        preflight failed on tiny NumPy/Torch differences
        ([result](di-domain-pilot-results.md)); no recording, rendering or inference
-       followed. Independently inspect the numerical cause before any separately
-       declared correction. This is not evidence against neural transfer.
+       followed. Independent source review supports a window-precision mismatch;
+       the reviewed [synthetic intervention probe](di-domain-metric-probe-plan.md) is declared
+       to test causal sufficiency before any separately declared correction.
+       This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search
