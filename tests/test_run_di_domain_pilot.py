@@ -275,3 +275,107 @@ def test_native_rejected_loss_is_json_safe_and_other_takes_continue(tmp_path, mo
     assert len(calls) == 48
     with pytest.raises(ValueError, match="declared coverage"):
         R.render(run / "render", run, {}, takes)
+
+
+@pytest.mark.parametrize("stage", ["native", "infer"])
+def test_runner_invalid_windows_refused_before_assets_or_model(tmp_path, monkeypatch, stage):
+    monkeypatch.setattr(np, "load", lambda *a, **k: pytest.fail("asset access before validation"))
+    monkeypatch.setattr(R, "require_report", lambda *a: pytest.fail("report access before validation"))
+    monkeypatch.setitem(sys.modules, "torch", None)
+    args = (tmp_path, {}, []) if stage == "native" else (tmp_path, tmp_path, {}, [])
+    with pytest.raises(ValueError, match="window"):
+        getattr(R, stage)(*args, windows={})
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_native_and_infer_all_arms_propagate_windows_without_torch(tmp_path, monkeypatch, explicit):
+    run = tmp_path / "run"
+    native, render, infer = (run / name for name in ("native", "render", "infer"))
+    for directory in (native, render, infer):
+        directory.mkdir(parents=True)
+    average = tmp_path / "synthetic-average.npy"
+    np.save(average, np.zeros(4))
+    manifest = {"average": {"path": str(average)}, "model": {"path": "synthetic-model"},
+                "attribution": "synthetic credit"}
+    takes = [{"slug": f"take-{i}", "content": "chords" if i < 6 else "scales",
+              "take": str(i), "di": "synthetic", "micamp": "synthetic",
+              "start_frame": 123, "lag_samples": 0} for i in range(12)]
+    monkeypatch.setattr(R.P, "CALIBRATION", 40)
+    monkeypatch.setattr(R.P, "SCORE", 60)
+    monkeypatch.setattr(R.P, "SR", 10)
+    monkeypatch.setattr(R.P, "GUARD", 2)
+    x = np.arange(100, dtype=float) / 1000 + .01
+    monkeypatch.setattr(R.P, "read_bounded", lambda *a: x.copy())
+    monkeypatch.setattr(R.P, "calibrate", lambda *a: {"lag": 0})
+    monkeypatch.setattr(R, "asdict", dict)
+    monkeypatch.setattr(R.P, "align_pair", lambda *a: (x.copy(), x * 2 + .02))
+    monkeypatch.setattr(R.P, "pair_qc", lambda *a: {"valid": True})
+    monkeypatch.setattr(R.P, "canonical_target", lambda a, avg: a**2)
+    fir = SimpleNamespace(taps=np.ones(256), intercept=0.0)
+    monkeypatch.setattr(R.P, "fit_calibration_fir", lambda *a: fir)
+    monkeypatch.setattr(R.P, "predict_fir", lambda wet, model, **k: wet[2:-2] * 3)
+    monkeypatch.setattr(R.P, "bandpass", lambda a: a)
+    windows = {n: np.arange(n, dtype=np.float32) / n for n in R.P.FFTS} if explicit else None
+    expected_kwargs = {} if windows is None else {"windows": windows}
+    score_calls, fft_calls = [], []
+    real_score = R.P.score_prediction
+
+    def score(a, target, raw, **kwargs):
+        assert kwargs.keys() == expected_kwargs.keys()
+        if explicit:
+            assert kwargs["windows"] is windows
+        score_calls.append(a.copy())
+        return real_score(a, target, raw, **kwargs)
+
+    def fft(a, b, **kwargs):
+        assert kwargs.keys() == expected_kwargs.keys()
+        if explicit:
+            assert kwargs["windows"] is windows
+        fft_calls.append((a, b))
+        return 0.0 if np.array_equal(a, b) else 1.0
+
+    monkeypatch.setattr(R.P, "score_prediction", score)
+    monkeypatch.setattr(R.P, "mrstft_numpy", fft)
+    # Exercise explicit None as well as an actual mapping; default downstream
+    # calls must still work with the existing no-keyword scorers.
+    R.native(native, manifest, takes, windows=windows)
+    report = json.loads((native / "result.json").read_text())
+    assert report["complete"] and report["valid"]
+    d, wet = x[40:], (x * 2 + .02)[40:]
+    for i in range(12):
+        for actual, expected in zip(score_calls[4*i:4*i+4], (wet, wet**2, wet*3, d**2)):
+            np.testing.assert_array_equal(actual, expected)
+    assert len(score_calls) == 48 and len(fft_calls) == 96
+
+    morgan_input, baseline = d * 4 + .03, d * 5 + .04
+    for take in takes:
+        np.savez_compressed(render / f"{take['slug']}.npz", net_input=morgan_input, baseline=baseline)
+    R.write_new(render / "result.json", {"complete": True, "rows": takes})
+    loaded, rebuilt = [], []
+    net = SimpleNamespace(cpu=lambda: net, load_state_dict=loaded.append, eval=lambda: None)
+
+    def load(path, **kwargs):
+        assert path == "synthetic-model"
+        assert kwargs == {"map_location": "cpu", "weights_only": True}
+        return "synthetic-state"
+
+    def rebuild(model, a, **kwargs):
+        assert model is net and a.dtype == np.float32 and kwargs == {"device": "cpu"}
+        rebuilt.append(a.copy())
+        return a.astype(np.float64) + .07
+
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(
+        set_num_threads=lambda n: None, load=load, device=lambda d: d, __version__="synthetic"))
+    fake_direc = SimpleNamespace(build_model=lambda: net, rebuild=rebuild)
+    monkeypatch.setitem(sys.modules, "learn.direc", fake_direc)
+    monkeypatch.setattr(sys.modules["learn"], "direc", fake_direc, raising=False)
+    R.infer(infer, run, manifest, takes, windows=windows)
+    assert loaded == ["synthetic-state"] and len(rebuilt) == 24
+    for i in range(12):
+        expected = (rebuilt[2*i].astype(float) + .07,
+                    rebuilt[2*i+1].astype(float) + .07, baseline)
+        for actual, wanted in zip(score_calls[48+3*i:48+3*i+3], expected):
+            np.testing.assert_array_equal(actual, wanted)
+    assert len(score_calls) == 84 and len(fft_calls) == 168
+    final = json.loads((infer / "result.json").read_text())
+    assert final["complete"] and len(final["rows"]) == 12

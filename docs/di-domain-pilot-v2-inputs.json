@@ -1,0 +1,11 @@
+{
+  "schema": 2,
+  "original_inputs": "docs/di-domain-pilot-inputs.json",
+  "original_inputs_sha256": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+  "windows": "docs/di-domain-metric-probe-windows.json.gz",
+  "windows_sha256": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+  "windows_raw_sha256": "374cacf4a401139e681fc9c43088ff58d2c9e9c47748d73785b61fb9b7e915fc",
+  "window_family": "torch32",
+  "window_dtype": "<f4",
+  "tolerance": 1e-8
+}

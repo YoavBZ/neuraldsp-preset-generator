@@ -33,7 +33,8 @@ The mandatory CPU-Torch metric preflight then failed before audio access
 ([result](di-domain-pilot-results.md)). Independent numerical-cause review precedes
 any separately declared correction; the [synthetic window-precision probe](di-domain-metric-probe-results.md)
 passes with zero independent mismatches. A separately reviewed coefficient correction
-is next. No neural transfer result exists. A domain gap
+is [independently reviewed and declared for attempt 2](di-domain-pilot-v2-plan.md),
+with both runtime preflights required before recording access. No neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

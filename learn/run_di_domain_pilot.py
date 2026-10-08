@@ -210,9 +210,11 @@ def metric(output):
         raise ValueError("synthetic metric parity failed")
 
 
-def native(output, manifest, takes):
+def native(output, manifest, takes, *, windows=None):
     import numpy as np
 
+    P._validate_windows(windows)
+    window_args = {} if windows is None else {"windows": windows}
     started = time.monotonic()
     average = np.load(manifest["average"]["path"], allow_pickle=False)
     rows = []
@@ -240,11 +242,11 @@ def native(output, manifest, takes):
             # Prediction context stays inside 4..10 s; no true outer audio is used.
             fir_prediction = P.predict_fir(np.pad(w, P.GUARD, mode="reflect"), fir,
                                            start_frame=P.GUARD, frames=P.SCORE)
-            row["native_input_scores"] = P.score_prediction(w, target, d)
-            row["flatref_scores"] = P.score_prediction(flat, target, d)
-            row["fir_scores"] = P.score_prediction(fir_prediction, target, d)
+            row["native_input_scores"] = P.score_prediction(w, target, d, **window_args)
+            row["flatref_scores"] = P.score_prediction(flat, target, d, **window_args)
+            row["fir_scores"] = P.score_prediction(fir_prediction, target, d, **window_args)
             oracle = P.canonical_target(d.copy(), average)
-            row["oracle_scores"] = P.score_prediction(oracle, target, d)
+            row["oracle_scores"] = P.score_prediction(oracle, target, d, **window_args)
             row["oracle"] = row["oracle_scores"]["primary"]
             if row["oracle"] >= 1e-6:
                 raise ValueError("target-processing metric oracle failed")
@@ -340,7 +342,9 @@ def render(output, run, manifest, takes):
               "attribution": manifest["attribution"], "elapsed_seconds": time.monotonic()-started})
 
 
-def infer(output, run, manifest, takes):
+def infer(output, run, manifest, takes, *, windows=None):
+    P._validate_windows(windows)
+    window_args = {} if windows is None else {"windows": windows}
     require_report(run / "render/result.json", "complete", takes)
     native_report = require_report(run / "native/result.json", "valid", takes)
     import numpy as np
@@ -363,9 +367,9 @@ def infer(output, run, manifest, takes):
         native_input = P.delay_samples(wet, 52)
         native_prediction = D.rebuild(net, native_input.astype(np.float32), device=torch.device("cpu"))
         morgan_prediction = D.rebuild(net, morgan_input.astype(np.float32), device=torch.device("cpu"))
-        native_scores = P.score_prediction(native_prediction, target, di)
-        morgan_scores = P.score_prediction(morgan_prediction, target, di)
-        baseline_scores = P.score_prediction(morgan_baseline, target, di)
+        native_scores = P.score_prediction(native_prediction, target, di, **window_args)
+        morgan_scores = P.score_prediction(morgan_prediction, target, di, **window_args)
+        baseline_scores = P.score_prediction(morgan_baseline, target, di, **window_args)
         previous = by_slug[take["slug"]]
         row = {k: take[k] for k in ("slug", "content", "take")}
         row.update(qc_valid=True, native_net=native_scores["primary"],

@@ -500,6 +500,127 @@ def test_mrstft_analytic_periodic_hann_dc_fixture_and_added_epsilon():
     assert pilot.mrstft_numpy(np.full(16, 2e-7), np.full(16, 1e-7), ffts=(8,)) == pytest.approx(tiny_expected, abs=1e-12)
 
 
+@pytest.mark.parametrize("batch", [False, True])
+def test_explicit_unit_windows_analytic_dc_and_batch_norm(batch):
+    # Rectangular windows: only DC is nonzero. Compute the batch norm from
+    # known coefficients and frame counts, without another FFT implementation.
+    scales = np.array([2.0, 3.0]) if batch else np.array([2.0])
+    a = scales[:, None] * np.ones((len(scales), 16))
+    b = np.ones_like(a)
+    expected = []
+    for n in (4, 8):
+        frames, bins = 1 + 16 // (n // 4), n // 2 + 1
+        numerator = np.sqrt(frames * np.sum(((scales - 1) * n) ** 2))
+        denominator = np.sqrt(len(scales) * frames *
+                              ((n + 1e-6) ** 2 + (bins - 1) * 1e-12)) + 1e-6
+        log_term = np.mean(np.log((scales * n + 1e-6) / (n + 1e-6))) / bins
+        expected.append(numerator / denominator + log_term)
+    if not batch:
+        a, b = a[0], b[0]
+    windows = {4: np.ones(4, dtype=np.int16), 8: np.ones(8, dtype=np.float32)}
+    assert pilot.mrstft_numpy(a, b, (4, 8), windows=windows) == pytest.approx(
+        np.mean(expected), rel=1e-13)
+    assert windows[4].dtype == np.int16 and windows[8].dtype == np.float32
+
+
+def test_explicit_asymmetric_window_analytic_reflected_edge_impulse():
+    # At hop 1, the reflected/padded first-sample impulse appears in three
+    # of nine frames, multiplied by coefficients 3, 2, 1 respectively.
+    x = np.zeros(8)
+    x[0] = 1
+    eps = 1e-6
+    expected = (np.sqrt(3 * (3**2 + 2**2 + 1)) / (np.sqrt(27) * eps + eps)
+                + sum(np.log((v + eps) / eps) for v in (3, 2, 1)) / 9)
+    assert pilot.mrstft_numpy(x, np.zeros(8), (4,),
+                              windows={4: np.array([1, 2, 3, 4])}) == pytest.approx(
+                                  expected, rel=1e-13)
+
+
+def test_explicit_zero_windows_suppress_all_signal_differences():
+    a = np.arange(32, dtype=np.float64)
+    b = a[::-1] ** 2
+    assert pilot.mrstft_numpy(a, b, (4, 8),
+                              windows={4: np.zeros(4), 8: np.zeros(8)}) == 0.0
+
+
+def test_default_windows_none_and_explicit_periodic_hann_are_exactly_equal():
+    rng = np.random.default_rng(214)
+    a, b = rng.normal(size=(2, 8192)), rng.normal(size=(2, 8192))
+    windows = {n: 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(n) / n)
+               for n in pilot.FFTS}
+    default = pilot.mrstft_numpy(a, b)
+    assert pilot.mrstft_numpy(a, b, windows=None).hex() == default.hex()
+    assert pilot.mrstft_numpy(a, b, windows=windows).hex() == default.hex()
+
+
+@pytest.mark.parametrize("bad", [
+    {}, {4: np.ones(4)}, {4: np.ones(4), 8: np.ones(8), 12: np.ones(12)},
+    {4.0: np.ones(4), 8: np.ones(8)}, {"4": np.ones(4), 8: np.ones(8)},
+    {True: np.ones(4), 8: np.ones(8)}, [(4, np.ones(4)), (8, np.ones(8))],
+    {4: np.ones(4), 8: np.ones((8, 1))}, {4: np.ones(4), 8: np.ones(7)},
+    {4: np.ones(4), 8: 1.0}, {4: np.ones(4), 8: np.full(8, np.nan)},
+    {4: np.ones(4), 8: np.full(8, np.inf)},
+    {4: np.ones(4), 8: np.ones(8, dtype=complex)},
+    {4: np.ones(4), 8: np.array([1j] * 8)},
+    {4: np.ones(4), 8: np.ones(8, dtype=object)},
+    {4: np.ones(4), 8: np.array(["1"] * 8)},
+])
+def test_explicit_windows_refuse_entire_malformed_mapping_before_fft(monkeypatch, bad):
+    monkeypatch.setattr(np.fft, "rfft", lambda *a, **k: pytest.fail("FFT before validation"))
+    with pytest.raises(ValueError, match="window"):
+        pilot.mrstft_numpy(np.ones(32), np.zeros(32), (4, 8), windows=bad)
+
+
+@pytest.mark.parametrize("scorer", ["lowband_mrstft", "score_prediction"])
+def test_scorers_validate_before_filter_or_primary_fft(monkeypatch, scorer):
+    monkeypatch.setattr(pilot, "bandpass", lambda *a: pytest.fail("filter before validation"))
+    monkeypatch.setattr(pilot, "mrstft_numpy", lambda *a, **k: pytest.fail("FFT before validation"))
+    args = [np.zeros(pilot.SCORE)] * (3 if scorer == "score_prediction" else 2)
+    with pytest.raises(ValueError, match="window"):
+        getattr(pilot, scorer)(*args, windows={})
+
+
+def test_score_propagates_same_windows_through_primary_and_lowband(monkeypatch):
+    monkeypatch.setattr(pilot, "SR", 4)
+    monkeypatch.setattr(pilot, "SCORE", 24)
+    windows = {n: np.ones(n) for n in pilot.FFTS}
+    prediction = np.arange(24, dtype=float)
+    canonical = prediction**2
+    raw = prediction[::-1]**3
+    filtered, calls = [], []
+
+    def bandpass(x):
+        filtered.append(x)
+        return x + 7
+
+    def capture(a, b, *, windows):
+        calls.append((a, b, windows))
+        return float(len(calls))
+
+    monkeypatch.setattr(pilot, "bandpass", bandpass)
+    monkeypatch.setattr(pilot, "mrstft_numpy", capture)
+    result = pilot.score_prediction(prediction, canonical, raw, windows=windows)
+    assert result["primary"] == 1 and result["raw_lowband"] == 2
+    assert len(calls) == 2 and all(call[2] is windows for call in calls)
+    np.testing.assert_array_equal(filtered[0], prediction)
+    np.testing.assert_array_equal(filtered[1], raw)
+    for actual, expected in zip(calls[0][:2], (prediction[6:18], canonical[6:18])):
+        np.testing.assert_array_equal(actual, pilot.standardize(expected))
+    for actual, expected in zip(calls[1][:2], (prediction[6:18] + 7, raw[6:18] + 7)):
+        np.testing.assert_array_equal(actual, pilot.standardize(expected))
+
+
+def test_explicit_zero_windows_reach_both_real_scorers(monkeypatch):
+    monkeypatch.setattr(pilot, "SR", 1000)
+    monkeypatch.setattr(pilot, "SCORE", 6000)
+    monkeypatch.setattr(pilot, "bandpass", lambda x: x)
+    x = np.arange(6000, dtype=float)
+    windows = {n: np.zeros(n) for n in pilot.FFTS}
+    result = pilot.score_prediction(x, x**2, x[::-1], windows=windows)
+    assert result["primary"] == result["raw_lowband"] == 0.0
+    assert result["canonical_waveform_l1"] > 0
+
+
 def test_mrstft_all_five_ffts_analytic_dc_fixture():
     expected = []
     for n in pilot.FFTS:

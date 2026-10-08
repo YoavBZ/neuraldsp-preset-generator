@@ -433,11 +433,39 @@ def predict_fir_score(wet_score, model):
     return predict_fir(np.pad(wet, (GUARD, GUARD), mode="reflect"), model)
 
 
-def mrstft_numpy(a, b, ffts=FFTS):
+def _validate_windows(windows, ffts=FFTS):
+    """Validate every explicit window before any FFT; never fill missing entries."""
+    from collections.abc import Mapping
+    import numpy as np
+
+    if windows is None:
+        return None
+    if (not isinstance(windows, Mapping)
+            or any(type(key) is not int for key in windows)
+            or set(windows) != set(ffts)):
+        raise ValueError("windows must be a mapping keyed by exactly the FFT size integers")
+    validated = {}
+    for n in ffts:
+        try:
+            window = np.asarray(windows[n])
+            if window.shape != (n,) or window.dtype.kind not in "iuf":
+                raise ValueError("expected real numeric array of shape (n,)")
+            window = window.astype(np.float64)
+            if not np.isfinite(window).all():
+                raise ValueError("expected finite coefficients")
+        except (TypeError, ValueError, OverflowError) as error:
+            raise ValueError(f"invalid window for FFT size {n}: {error}") from error
+        validated[n] = window
+    return validated
+
+
+def mrstft_numpy(a, b, ffts=FFTS, *, windows=None):
     """NumPy replica of direc.mrstft, including its two epsilon placements.
 
     Mono or (batch, time); unnormalized one-sided FFT, default centered reflect
     padding, periodic Hann, hop=n//4. Norms cover the full batch, as in torch.
+    Optional windows must map exactly the FFT size integers to finite real
+    arrays of shape (n,). They are cast to float64 without normalization.
     """
     import numpy as np
 
@@ -448,9 +476,11 @@ def mrstft_numpy(a, b, ffts=FFTS):
         raise ValueError("FFT sizes must be positive multiples of four")
     if a.shape[-1] <= max(ffts) // 2:
         raise ValueError("signal too short for torch reflect padding")
+    explicit = _validate_windows(windows, ffts)
     loss = 0.0
     for n in ffts:
-        window = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(n) / n)
+        window = (0.5 - 0.5 * np.cos(2 * np.pi * np.arange(n) / n)
+                  if explicit is None else explicit[n])
         pad = [(0, 0)] * (a.ndim - 1) + [(n // 2, n // 2)]
 
         def magnitude(x):
@@ -463,20 +493,23 @@ def mrstft_numpy(a, b, ffts=FFTS):
     return float(loss / len(ffts))
 
 
-def lowband_mrstft(a, raw_di):
+def lowband_mrstft(a, raw_di, *, windows=None):
     """Filter BOTH signals with bandpass(), THEN independently standardize.
 
     Filter each entire six-second scoring signal separately, then take its
     center three seconds and standardize. Never filter a ten-second concatenation
     across calibration/score. This targets raw DI, separately from canonical EQ.
     """
+    _validate_windows(windows)
+    window_args = {} if windows is None else {"windows": windows}
     a, raw_di = _mono(a, SCORE), _mono(raw_di, SCORE)
     start = (SCORE - 3 * SR) // 2
     center = slice(start, start + 3 * SR)
-    return mrstft_numpy(standardize(bandpass(a)[center]), standardize(bandpass(raw_di)[center]))
+    return mrstft_numpy(standardize(bandpass(a)[center]),
+                        standardize(bandpass(raw_di)[center]), **window_args)
 
 
-def score_prediction(prediction, canonical_di, raw_di):
+def score_prediction(prediction, canonical_di, raw_di, *, windows=None):
     """Score six-second predictions; primary uses their center three seconds.
 
     Canonical EQ must be constructed on the whole six-second DI first. Primary
@@ -487,14 +520,16 @@ def score_prediction(prediction, canonical_di, raw_di):
     """
     import numpy as np
 
+    _validate_windows(windows)
+    window_args = {} if windows is None else {"windows": windows}
     prediction = _mono(prediction, SCORE)
     canonical_di, raw_di = _mono(canonical_di, SCORE), _mono(raw_di, SCORE)
     start = (SCORE - 3 * SR) // 2
     center = slice(start, start + 3 * SR)
     p, y = standardize(prediction[center]), standardize(canonical_di[center])
-    return {"primary": mrstft_numpy(p, y),
+    return {"primary": mrstft_numpy(p, y, **window_args),
             "canonical_waveform_l1": float(np.mean(np.abs(p - y))),
-            "raw_lowband": lowband_mrstft(prediction, raw_di)}
+            "raw_lowband": lowband_mrstft(prediction, raw_di, **window_args)}
 
 
 GATE_LOSSES = ("native_net", "native_input", "flatref", "morgan_net", "morgan_input",

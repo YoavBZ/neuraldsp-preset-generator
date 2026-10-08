@@ -90,7 +90,9 @@ lives in the linked documents. Last updated 2026-10-08.
        followed. Independent source review supports a window-precision mismatch;
        the [synthetic intervention probe](di-domain-metric-probe-results.md) passes
        with shared coefficients at unchanged 1e-8, independently verified with zero
-       mismatches. Next: separately review and declare the coefficient correction.
+       mismatches. The [separate attempt-2 correction](di-domain-pilot-v2-plan.md)
+       is independently reviewed and declared, with a required synthetic replay in
+       both execution environments before any asset/recording access. Commit precedes runs.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
