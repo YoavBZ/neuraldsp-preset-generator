@@ -43,7 +43,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `set3_rank_calibration.py` | nested band-excluded prior/score blend, independently verified; criteria missed, fixed blend closed | `set3-rank-calibration-plan.md` → `-results.md` |
 | `set3_cross_amp_diagnostic.py` | pooled existing amp menus, independently verified; criteria missed, no selector follow-up | `set3-cross-amp-diagnostic-plan.md` → `-results.md` |
 | `di_domain_pilot.py`, `run_di_domain_pilot.py` | twelve native P2 pairs versus matched Morgan renders, frozen checkpoint; metric preflight failed before audio | `di-domain-pilot-plan.md` → `-results.md`, fixed `di-domain-pilot-inputs.json` |
-| `di_domain_metric_probe.py` | synthetic window-coefficient interventions, no audio/model access; reviewed/declared | `di-domain-metric-probe-plan.md` |
+| `di_domain_metric_probe.py` | synthetic window-coefficient interventions pass, independently verified; no audio/model access | `di-domain-metric-probe-plan.md` → `-results.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

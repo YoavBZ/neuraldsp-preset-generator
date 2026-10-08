@@ -118,9 +118,10 @@ was declared, what was measured, and the research behind it.
   [preflight result](di-domain-pilot-results.md): mandatory synthetic NumPy/Torch
   agreement check failed before audio access. Independent numerical-cause review
   precedes any separately declared retry. No neural transfer result or new training.
-- [Synthetic metric precision probe](di-domain-metric-probe-plan.md): reviewed/declared;
-  tests shared window coefficients against the unchanged historical Torch function,
-  keeping the 1e-8 agreement rule. No audio or model-asset access.
+- [Synthetic metric precision probe](di-domain-metric-probe-plan.md) →
+  [results](di-domain-metric-probe-results.md): shared-window interventions pass at
+  unchanged 1e-8, independently verified; a separate pilot correction is next.
+  No audio or model-asset access.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

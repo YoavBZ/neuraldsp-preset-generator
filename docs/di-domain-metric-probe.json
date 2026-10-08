@@ -1,0 +1,770 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "index": 0,
+      "original_numpy": 0.0,
+      "original_torch": 0.0,
+      "numpy_t32": {
+        "aggregate": 0.0,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          }
+        ]
+      },
+      "torch_t32": {
+        "aggregate": 0.0,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          }
+        ]
+      },
+      "numpy_np64": {
+        "aggregate": 0.0,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          }
+        ]
+      },
+      "torch_np64": {
+        "aggregate": 0.0,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          }
+        ]
+      },
+      "torch_t64": {
+        "aggregate": 0.0,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.0,
+            "log_l1": 0.0,
+            "total": 0.0
+          }
+        ]
+      },
+      "checks": {
+        "reproduced": true,
+        "same_original_pass_pattern": true,
+        "explicit_t32_equals_frozen_exactly": true,
+        "explicit_np64_matches_original": true,
+        "shared_t32_components_agree": true,
+        "shared_np64_components_agree": true,
+        "signed_intervention_accounts_for_error": true
+      },
+      "torch64_diagnostic_agreement": true,
+      "stft_output_dtype": "torch.complex128"
+    },
+    {
+      "index": 1,
+      "original_numpy": 1.1931456121136257,
+      "original_torch": 1.1931456240869132,
+      "numpy_t32": {
+        "aggregate": 1.1931456240869136,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.4999995477549962,
+            "log_l1": 0.6931440206806182,
+            "total": 1.1931435684356144
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.49999968010373663,
+            "log_l1": 0.6931458597895234,
+            "total": 1.19314553989326
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.49999977369830256,
+            "log_l1": 0.693146263840489,
+            "total": 1.1931460375387917
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.4999998400241113,
+            "log_l1": 0.6931465304734206,
+            "total": 1.1931463704975318
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.49999988689704294,
+            "log_l1": 0.6931467171723267,
+            "total": 1.1931466040693697
+          }
+        ]
+      },
+      "torch_t32": {
+        "aggregate": 1.1931456240869132,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.49999954775499544,
+            "log_l1": 0.693144020680618,
+            "total": 1.1931435684356133
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.49999968010373497,
+            "log_l1": 0.6931458597895236,
+            "total": 1.1931455398932584
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.49999977369829973,
+            "log_l1": 0.6931462638404892,
+            "total": 1.193146037538789
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.4999998400241114,
+            "log_l1": 0.6931465304734201,
+            "total": 1.1931463704975316
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.4999998868970475,
+            "log_l1": 0.6931467171723266,
+            "total": 1.1931466040693741
+          }
+        ]
+      },
+      "numpy_np64": {
+        "aggregate": 1.1931456121136257,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.499999547755001,
+            "log_l1": 0.6931439608162578,
+            "total": 1.193143508571259
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.499999680103741,
+            "log_l1": 0.6931458597894687,
+            "total": 1.1931455398932098
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.499999773698305,
+            "log_l1": 0.6931462638407049,
+            "total": 1.19314603753901
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.499999840024112,
+            "log_l1": 0.6931465304723009,
+            "total": 1.193146370496413
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.49999988689704483,
+            "log_l1": 0.6931467171711928,
+            "total": 1.1931466040682377
+          }
+        ]
+      },
+      "torch_np64": {
+        "aggregate": 1.193145612113625,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.49999954775499617,
+            "log_l1": 0.6931439608162578,
+            "total": 1.193143508571254
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.4999996801037366,
+            "log_l1": 0.6931458597894689,
+            "total": 1.1931455398932054
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.4999997736983083,
+            "log_l1": 0.6931462638407049,
+            "total": 1.1931460375390133
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.4999998400241131,
+            "log_l1": 0.6931465304723008,
+            "total": 1.1931463704964138
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.49999988689704417,
+            "log_l1": 0.6931467171711928,
+            "total": 1.193146604068237
+          }
+        ]
+      },
+      "torch_t64": {
+        "aggregate": 1.193145612113625,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.49999954775499617,
+            "log_l1": 0.6931439608162578,
+            "total": 1.193143508571254
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.4999996801037366,
+            "log_l1": 0.6931458597894689,
+            "total": 1.1931455398932054
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.4999997736983083,
+            "log_l1": 0.6931462638407049,
+            "total": 1.1931460375390133
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.4999998400241131,
+            "log_l1": 0.6931465304723008,
+            "total": 1.1931463704964138
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.49999988689704417,
+            "log_l1": 0.6931467171711928,
+            "total": 1.193146604068237
+          }
+        ]
+      },
+      "checks": {
+        "reproduced": true,
+        "same_original_pass_pattern": true,
+        "explicit_t32_equals_frozen_exactly": true,
+        "explicit_np64_matches_original": true,
+        "shared_t32_components_agree": true,
+        "shared_np64_components_agree": true,
+        "signed_intervention_accounts_for_error": true
+      },
+      "torch64_diagnostic_agreement": true,
+      "stft_output_dtype": "torch.complex128"
+    },
+    {
+      "index": 2,
+      "original_numpy": 0.42241531000708454,
+      "original_torch": 0.4224152784955262,
+      "numpy_t32": {
+        "aggregate": 0.42241527849552585,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.4404545363808887,
+            "log_l1": 0.5054238569987145,
+            "total": 0.9458783933796032
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.24928184543764956,
+            "log_l1": 0.30890567623527193,
+            "total": 0.5581875216729215
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.13297222424453717,
+            "log_l1": 0.1707003814831028,
+            "total": 0.30367260572764
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.08359608378922688,
+            "log_l1": 0.09404817925491343,
+            "total": 0.17764426304414033
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.07155859273491788,
+            "log_l1": 0.0551350159184064,
+            "total": 0.1266936086533243
+          }
+        ]
+      },
+      "torch_t32": {
+        "aggregate": 0.4224152784955262,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.44045453638089094,
+            "log_l1": 0.5054238569987145,
+            "total": 0.9458783933796054
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.2492818454376486,
+            "log_l1": 0.308905676235272,
+            "total": 0.5581875216729206
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.13297222424453659,
+            "log_l1": 0.17070038148310276,
+            "total": 0.3036726057276393
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.083596083789227,
+            "log_l1": 0.09404817925491343,
+            "total": 0.17764426304414044
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.07155859273491844,
+            "log_l1": 0.05513501591840639,
+            "total": 0.12669360865332482
+          }
+        ]
+      },
+      "numpy_np64": {
+        "aggregate": 0.42241531000708454,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.4404545271680038,
+            "log_l1": 0.5054240486612592,
+            "total": 0.945878575829263
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.24928183890419556,
+            "log_l1": 0.3089056670345202,
+            "total": 0.5581875059387158
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.13297222099643116,
+            "log_l1": 0.17070037667653915,
+            "total": 0.3036725976729703
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.08359608325699587,
+            "log_l1": 0.09404817831033593,
+            "total": 0.17764426156733182
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.07155859354711078,
+            "log_l1": 0.05513501548003097,
+            "total": 0.12669360902714175
+          }
+        ]
+      },
+      "torch_np64": {
+        "aggregate": 0.42241531000708443,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.44045452716800354,
+            "log_l1": 0.5054240486612592,
+            "total": 0.9458785758292627
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.2492818389041952,
+            "log_l1": 0.30890566703452016,
+            "total": 0.5581875059387154
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.1329722209964308,
+            "log_l1": 0.1707003766765391,
+            "total": 0.3036725976729699
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.08359608325699623,
+            "log_l1": 0.0940481783103359,
+            "total": 0.17764426156733215
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.07155859354711112,
+            "log_l1": 0.055135015480030955,
+            "total": 0.12669360902714208
+          }
+        ]
+      },
+      "torch_t64": {
+        "aggregate": 0.42241531000708443,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.44045452716800354,
+            "log_l1": 0.5054240486612592,
+            "total": 0.9458785758292627
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.2492818389041952,
+            "log_l1": 0.30890566703452016,
+            "total": 0.5581875059387154
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.1329722209964308,
+            "log_l1": 0.1707003766765391,
+            "total": 0.3036725976729699
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.08359608325699623,
+            "log_l1": 0.0940481783103359,
+            "total": 0.17764426156733215
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.07155859354711112,
+            "log_l1": 0.055135015480030955,
+            "total": 0.12669360902714208
+          }
+        ]
+      },
+      "checks": {
+        "reproduced": true,
+        "same_original_pass_pattern": true,
+        "explicit_t32_equals_frozen_exactly": true,
+        "explicit_np64_matches_original": true,
+        "shared_t32_components_agree": true,
+        "shared_np64_components_agree": true,
+        "signed_intervention_accounts_for_error": true
+      },
+      "torch64_diagnostic_agreement": true,
+      "stft_output_dtype": "torch.complex128"
+    },
+    {
+      "index": 3,
+      "original_numpy": 15.197900270957183,
+      "original_torch": 15.197900298572147,
+      "numpy_t32": {
+        "aggregate": 15.19790029857215,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.9999990955099924,
+            "log_l1": 13.502842105247886,
+            "total": 14.502841200757878
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.9999993602074732,
+            "log_l1": 13.850364087086449,
+            "total": 14.850363447293923
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.9999995473966051,
+            "log_l1": 14.199589742698953,
+            "total": 15.199589290095558
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.9999996800482224,
+            "log_l1": 14.545484035194937,
+            "total": 15.54548371524316
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.9999997737940859,
+            "log_l1": 14.891224065676147,
+            "total": 15.891223839470232
+          }
+        ]
+      },
+      "torch_t32": {
+        "aggregate": 15.197900298572147,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.9999990955099907,
+            "log_l1": 13.502842105247888,
+            "total": 14.502841200757878
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.9999993602074698,
+            "log_l1": 13.850364087086447,
+            "total": 14.850363447293917
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.9999995473965992,
+            "log_l1": 14.199589742698953,
+            "total": 15.199589290095552
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.9999996800482228,
+            "log_l1": 14.54548403519494,
+            "total": 15.545483715243163
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.999999773794095,
+            "log_l1": 14.891224065676147,
+            "total": 15.891223839470241
+          }
+        ]
+      },
+      "numpy_np64": {
+        "aggregate": 15.197900270957183,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.9999990955100022,
+            "log_l1": 13.502841917663822,
+            "total": 14.502841013173825
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.999999360207482,
+            "log_l1": 13.850364100723047,
+            "total": 14.850363460930529
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.9999995473966099,
+            "log_l1": 14.199589755412555,
+            "total": 15.199589302809166
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.9999996800482239,
+            "log_l1": 14.54548404668222,
+            "total": 15.545483726730446
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.9999997737940897,
+            "log_l1": 14.891224077347855,
+            "total": 15.891223851141945
+          }
+        ]
+      },
+      "torch_np64": {
+        "aggregate": 15.19790027095718,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.9999990955099926,
+            "log_l1": 13.50284191766382,
+            "total": 14.502841013173812
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.9999993602074732,
+            "log_l1": 13.85036410072305,
+            "total": 14.850363460930524
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.9999995473966166,
+            "log_l1": 14.199589755412557,
+            "total": 15.199589302809173
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.999999680048226,
+            "log_l1": 14.545484046682228,
+            "total": 15.545483726730454
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.9999997737940883,
+            "log_l1": 14.891224077347855,
+            "total": 15.891223851141945
+          }
+        ]
+      },
+      "torch_t64": {
+        "aggregate": 15.19790027095718,
+        "terms": [
+          {
+            "fft": 256,
+            "spectral_convergence": 0.9999990955099926,
+            "log_l1": 13.50284191766382,
+            "total": 14.502841013173812
+          },
+          {
+            "fft": 512,
+            "spectral_convergence": 0.9999993602074732,
+            "log_l1": 13.85036410072305,
+            "total": 14.850363460930524
+          },
+          {
+            "fft": 1024,
+            "spectral_convergence": 0.9999995473966166,
+            "log_l1": 14.199589755412557,
+            "total": 15.199589302809173
+          },
+          {
+            "fft": 2048,
+            "spectral_convergence": 0.999999680048226,
+            "log_l1": 14.545484046682228,
+            "total": 15.545483726730454
+          },
+          {
+            "fft": 4096,
+            "spectral_convergence": 0.9999997737940883,
+            "log_l1": 14.891224077347855,
+            "total": 15.891223851141945
+          }
+        ]
+      },
+      "checks": {
+        "reproduced": true,
+        "same_original_pass_pattern": true,
+        "explicit_t32_equals_frozen_exactly": true,
+        "explicit_np64_matches_original": true,
+        "shared_t32_components_agree": true,
+        "shared_np64_components_agree": true,
+        "signed_intervention_accounts_for_error": true
+      },
+      "torch64_diagnostic_agreement": true,
+      "stft_output_dtype": "torch.complex128"
+    }
+  ],
+  "elapsed_seconds": 0.9357679579999999
+}

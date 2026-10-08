@@ -88,8 +88,9 @@ lives in the linked documents. Last updated 2026-10-08.
        preflight failed on tiny NumPy/Torch differences
        ([result](di-domain-pilot-results.md)); no recording, rendering or inference
        followed. Independent source review supports a window-precision mismatch;
-       the reviewed [synthetic intervention probe](di-domain-metric-probe-plan.md) is declared
-       to test causal sufficiency before any separately declared correction.
+       the [synthetic intervention probe](di-domain-metric-probe-results.md) passes
+       with shared coefficients at unchanged 1e-8, independently verified with zero
+       mismatches. Next: separately review and declare the coefficient correction.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
