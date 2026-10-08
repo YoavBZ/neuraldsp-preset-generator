@@ -20,8 +20,9 @@ then established recovery improvement over simple baselines, while the
 [timing control](../docs/di-alignment-control-results.md) exposed small accepted
 timing errors. The next [score-sensitivity study](../docs/di-timing-sensitivity-plan.md)
 was reviewed and committed before scoring; its [verified PASS](../docs/di-timing-sensitivity-results.md)
-has 23,734 agreeing independent checks. Next: separately implement and review a
-known input-shift control before new inference. No native transfer result
+has 23,734 agreeing independent checks. The next [known input-shift control](../docs/di-input-shift-control-plan.md)
+is independently reviewed and declared with passing synthetic tests; commit and
+both replay barriers precede shifted inference. Result pending. No native transfer result
 or case for long training follows from these controls.
 
 A song's guitar (the amp track, or a separated stem) goes through four steps:
@@ -55,6 +56,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_morgan_flatref.py` | verified 57.83% median improvement over better simple baseline, all twelve wins, 1,215 independent checks; no native/product claim | `di-morgan-flatref-plan.md` → `-results.md` |
 | `di_alignment_control.py` | verified FAIL: seven accepted distorted cases have two/three-sample errors; exact-delay/polarity and mismatch controls pass; all 856 independent checks agree | `di-alignment-control-plan.md` → `-results.md` |
 | `di_timing_sensitivity.py` | verified common saved-output coordinate robustness PASS, all thirteen screens pass; 23,734 independent checks agree; no input-timing/native/product claim | `di-timing-sensitivity-plan.md` → `-results.md` |
+| `di_input_shift_control.py` | known shifts before frozen-model inference; independently reviewed and declared, both replay barriers required before shifted calls; result pending | `di-input-shift-control-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

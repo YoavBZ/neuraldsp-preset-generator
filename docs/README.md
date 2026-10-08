@@ -139,6 +139,9 @@ was declared, what was measured, and the research behind it.
   reviewed and committed before scoring. [Verified result](di-timing-sensitivity-results.md)
   passes all tested offsets; 23,734 independent checks agree.
   Tests common output offsets, not model-input timing.
+- [Known model-input shifts](di-input-shift-control-plan.md): independently reviewed
+  and declared, 93 synthetic tests pass with one expected skip. Commit precedes
+  model access; both replay barriers must pass before shifted inference. Result pending.
 - [Transfer-method source follow-up](research/di-transfer-method-followup-2026-10-08.md):
   published recovery/search and augmentation choices, with explicit synthetic-data
   limits. Research hypotheses only; no new model or training run selected.

@@ -114,8 +114,10 @@ lives in the linked documents. Last updated 2026-10-08.
        independent checks agree. The reviewed and committed
        [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md) has an
        [verified PASS](di-timing-sensitivity-results.md) at all thirteen offsets;
-       all 23,734 independent checks agree. Next: separately implement and review
-       a known input-shift control before any new inference. No threshold tuning or
+       all 23,734 independent checks agree. Next: the
+       [known input-shift control](di-input-shift-control-plan.md) is independently
+       reviewed and declared, with 93 passing synthetic tests and one expected skip;
+       commit and both replay barriers precede shifted inference. Result pending. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.

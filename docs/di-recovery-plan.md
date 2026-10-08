@@ -54,8 +54,10 @@ mismatch controls but fails on seven accepted distorted cases with two/three-sam
 errors; all 856 independent checks agree. The reviewed and committed
 [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md) has an
 [verified PASS](di-timing-sensitivity-results.md) at all thirteen offsets; all 23,734
-independent checks agree. Next: separately implement and review a known input-shift
-control before new inference, with original prediction-byte replay first. No changed thresholds,
+independent checks agree. Next: the [known input-shift control](di-input-shift-control-plan.md)
+is independently reviewed and declared with 93 passing synthetic tests and one
+expected skip. Commit and both replay barriers precede shifted inference; result
+pending. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
