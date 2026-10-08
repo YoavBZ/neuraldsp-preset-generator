@@ -108,7 +108,11 @@ lives in the linked documents. Last updated 2026-10-08.
        all 1,215 independent checks agree. No rerender or training was required.
        Next: a separate [known-offset and mismatched-performance control](di-alignment-control-plan.md)
        of the frozen timing-confidence method, using saved dry arrays. It is independently
-       reviewed and declared; commit precedes computation. No threshold tuning or
+       reviewed and committed before computation. Its [verified result](di-alignment-control-results.md)
+       passes exact-delay/polarity and mismatch controls but misses timing by two/three
+       samples on seven accepted distorted cases across three performances. All 856
+       independent checks agree. Next: review a fixed-render score-sensitivity control
+       before deciding whether those small coordinate errors matter to recovery scoring. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.

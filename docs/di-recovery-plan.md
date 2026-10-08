@@ -48,7 +48,11 @@ was independently reviewed and committed before computation. Its
 [verified result](di-morgan-flatref-results.md) improves all twelve performances
 over the better simple baseline, median 57.83%; all 1,215 independent checks agree.
 Next: run the independently reviewed and declared [known-offset/mismatched-performance control](di-alignment-control-plan.md)
-of the frozen timing-confidence method, using saved dry arrays, after commit. No changed thresholds,
+of the frozen timing-confidence method, using saved dry arrays, after commit. The
+[verified result](di-alignment-control-results.md) passes exact-delay/polarity and
+mismatch controls but fails on seven accepted distorted cases with two/three-sample
+errors; all 856 independent checks agree. Next: review a fixed-render score-sensitivity
+control before attributing recovery error to those small coordinate errors. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio

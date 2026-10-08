@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-7-t098.npz": "28e4c57606b7b906ac3acac6712e00ab1b717e1a184b1f834774e0a64062cede",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-m7b5-t098.npz": "105efbea9823e17268b6be0ee5254a79e4748ef4fbfaf5b7856caa07941d9663",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-7-t099.npz": "65845a00cc612215454bb9cced5d9a2cdae94863dc57f0f811166e5bfdad7813",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-dim-t072.npz": "0208c30a9ca891322340ff562429a500d804aaf36c944ad3183275157f63791e",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-m7-t094.npz": "1b5403b217d5c52bd28838aa8e30a96354667ad8cf17175b363cbf8b5b0a86b2",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-maj-t072.npz": "1baa8f630b7de352f48c0fa952761c54233bb6c0c4e776c88055682fe4aa9351",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-a-t075.npz": "0a341122213ade4cabfd2b66708b67b646750f7eda98ddacf1a4e553ab4f4acb",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-bb-t076.npz": "c10a0b718893ad41eedaf267cffff2c5db06114e3df8d58622c781e89ec61f04",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-c-t075.npz": "039932a19ba24a8871a7edd53197bd18f460ed379bfe1e29b37c88c516403f62",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-db-t076.npz": "59defee37eedd955e802547fcf275530838d45cd074d99f58066f8712e8e6589",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-e-t076.npz": "7724935daf36529093e78e12454452deb347952b4a1a867307ce889c7a987c30",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-g-t076.npz": "9eb83f978fd986f3d0b58b9d11d1e71166e938d37112f27a625422a7898c9091"
+  },
+  "di6_sha256": {
+    "p2-chords-drop3-7-t098": "2d4cf691fcdc9539aac66860a7792d438cf178dc3f37de15a9ffb98b38dcf0eb",
+    "p2-chords-drop3-m7b5-t098": "8a44fc225304938e1797e3a1a4d67a8c8a6d4046ade96b9755d6c9d0687c7f26",
+    "p2-chords-set1-7-t099": "da288355e8681d105337d56db43ddcca570df9cbd2f29a4b82f65ff1272eef43",
+    "p2-chords-set1-dim-t072": "f92c034ef9eb6dc730a21fcf07b1320adb11d30e8e63422c038e566b37b58830",
+    "p2-chords-set1-m7-t094": "0db301b499caba54cd8c8e876181e428b5736f1a4a951780baef7b76f7320ae1",
+    "p2-chords-set1-maj-t072": "cc2da16644a392b4f689738321afed0cecfd87a5391b84e796416169851f59cc",
+    "p2-scales-a-t075": "6efd68dc6d3b03034fb8f54f9312b0c7f7480b3349bdce92a140fc6e95442b33",
+    "p2-scales-bb-t076": "79e7f7b00e7f551333b5ff55917e262415313669a2fa32957f026ad84e586450",
+    "p2-scales-c-t075": "4e2b5bbfce36ee9c755c7a5686399b8a1fe5c1a85392921273229fd06e4f312f",
+    "p2-scales-db-t076": "475cbbce405f32a042a9c83166ef1a50d898b73116ab3f2d95b0a0366429be33",
+    "p2-scales-e-t076": "e635a10a699fa9e69545cad2f86d79c8a5469c15c02ad85a68b59412339143ac",
+    "p2-scales-g-t076": "64c2381b1a09ba5563f8acdfa45035da5d9834191cb2d963084c047664087a3b"
+  }
+}
