@@ -1,5 +1,14 @@
 # Set 3: heavier-tone validation recordings, and its split
 
+**Use recorded 2026-10-08:** the 27 reserved parts were used in the approved one-time
+confirmation and its predetermined independent checks. Neither tested amp passed
+([results](set3-heldout-confirmation-results.md)). This reserved split is spent and
+remains excluded from training, tuning and new confirmations. The completed use is
+recorded in [set3-heldout-use-ledger.json](set3-heldout-use-ledger.json). The original
+manifest-pinned `validation-set3.json` snapshot, including its then-empty
+`held_out_uses`, is preserved unchanged for provenance; the ledger adds the completed
+use without rewriting that frozen input. Rules below describe the original split.
+
 Sets 1 and 2 ([validation-datasets.md](validation-datasets.md)) are mostly clean and
 crunch rock. Set 3 adds heavier tones: 27 sessions searched and downloaded for crunch and
 high-gain guitar recorded both as a DI and as an amp track of the same take, catalogued in

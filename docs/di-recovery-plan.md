@@ -3,6 +3,22 @@
 Written 2026-10-06, before any of its models, listening trials or new renders exist.
 Revised the same day after an independent review (findings at the end).
 
+## Current checkpoint, 2026-10-08
+
+This document retains the original phases and dated decisions below. Phase 1
+training and Phase 2 evaluation are complete. The separately declared reserved
+confirmation failed on both SW50R and PR12, independently verified
+([results](set3-heldout-confirmation-results.md)). The existing learned method does
+not ship; Phase 3's requirement that Phase 2 pass has not been met.
+
+The next step is the [development-only diagnostic](set3-development-diagnostic-plan.md):
+compare preset choice using the known average-balanced DI against rebuilt-DI choice
+and a leave-band-out constant, using existing development scores. This comes before
+longer training, stem augmentation or expanding the knob search. No reserved audio
+or scores are reused, and any later accuracy confirmation needs fresh reserved data.
+Heavier-tone listening remains required before product decisions. The user authorized
+autonomous continuation on 2026-10-08, with consultation only for important decisions.
+
 ## The idea, and the measure
 
 A song has no DI. The judge (`analysis/aligned.py`) chooses presets well but needs one.

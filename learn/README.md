@@ -25,6 +25,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `phase2.py` | the real-recordings test on clean PR12 (K1's 25 parts) | `di-recovery-results.md` |
 | `phase2_set3.py`, `set3.py` | the same on set 3 (heavier tones); set 3's declaration and leakage guards | `di-recovery-plan.md` ("Phase 2 on set 3"), `validation-set3.md` |
 | `set3_confirmation.py` | frozen inputs, exact constants and gates for the reserved set-3 test | `set3-heldout-confirmation-plan.md` (approved 2026-10-08) |
+| `set3_diagnostic.py` | development-only positive control and menu headroom after failed confirmation; existing scores only | `set3-development-diagnostic-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

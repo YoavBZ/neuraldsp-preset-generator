@@ -1,5 +1,13 @@
 # Song to preset by rebuilding the DI: results on heavier tones (set 3, development)
 
+**Current status, 2026-10-08:** this is the historical development result, with an
+ambiguous constant definition. The subsequent [reserved confirmation](set3-heldout-confirmation-results.md)
+fixed that definition before execution and failed on both SW50R and PR12. The
+development gains below do not override that decision. The old "What follows"
+section is superseded by [ROADMAP.md](ROADMAP.md) and the
+[development diagnostic](set3-development-diagnostic-plan.md); no constant preset
+has been validated for automatic shipping from song inputs.
+
 Run as declared in [di-recovery-plan.md](di-recovery-plan.md), "Phase 2 on set 3"
 (2026-10-08).
 - **Material:** 33 development parts in 11 bands, mostly crunch to high gain.

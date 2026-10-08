@@ -56,7 +56,9 @@ lives in the linked documents. Last updated 2026-10-08.
      - **Next:** this model's shipping path is closed under the declared rule.
        Use development data to distinguish errors in rebuilt DI from failures of
        preset ranking, with true-DI selection
-       as a positive control. Declare that diagnostic before running it. Any later
+       as a positive control. The [diagnostic plan](set3-development-diagnostic-plan.md)
+       passed independent design/code review and 19 synthetic checks. It reuses existing scores,
+       so no training or rendering is needed for this first check. Any later
        model needs fresh reserved data; this split cannot be reused for tuning or a
        new confirmation. Search beyond the menu remains conditional on that control.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**

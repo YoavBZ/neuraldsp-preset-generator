@@ -98,6 +98,9 @@ was declared, what was measured, and the research behind it.
 - [set3-heldout-confirmation-results.md](set3-heldout-confirmation-results.md): neither
   amp passes under either timing. Independent numerical/audio checks agree; this
   learned method does not ship. Full evidence is linked from the result.
+- [set3-development-diagnostic-plan.md](set3-development-diagnostic-plan.md): next
+  development-only check of known-DI choice, rebuilt-DI choice, menu headroom and a
+  leave-band-out constant; review before execution, no reserved-data reuse.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
@@ -108,6 +111,8 @@ was declared, what was measured, and the research behind it.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.
+- [set3-heldout-use-ledger.json](set3-heldout-use-ledger.json): completed reserved-set
+  use, recorded without altering the frozen metadata snapshot; the split is spent.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
