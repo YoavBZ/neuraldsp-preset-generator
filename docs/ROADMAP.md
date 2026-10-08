@@ -96,7 +96,9 @@ lives in the linked documents. Last updated 2026-10-08.
        [attempt-2 result](di-domain-pilot-v2-results.md) is independently verified,
        with zero mismatches. No rendering or neural inference followed the failed
        pairing control. Next: separately declare the known-DI Morgan control on all
-       twelve dry recordings, without relying on microphone alignment.
+       twelve dry recordings, without relying on microphone alignment. Its
+       [procedure](di-morgan-control-plan.md) is independently reviewed and declared;
+       178 synthetic checks pass. Commit and both runtime preflights precede execution.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved

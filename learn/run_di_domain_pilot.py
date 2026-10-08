@@ -272,8 +272,10 @@ def native(output, manifest, takes, *, windows=None):
               "attribution": manifest["attribution"], "elapsed_seconds": time.monotonic()-started})
 
 
-def render(output, run, manifest, takes):
-    require_report(run / "native/result.json", "valid", takes)
+def render(output, run, manifest, takes, *, source_stage="native"):
+    if source_stage not in ("native", "prepare"):
+        raise ValueError("source_stage must be native or prepare")
+    require_report(run / source_stage / "result.json", "valid", takes)
     import numpy as np
     import render_preset_panel as RP
     from match.renderer_au import AudioUnitRenderer
@@ -296,7 +298,7 @@ def render(output, run, manifest, takes):
         renderer.command = {"selectAmp": select, "edits": edits}
         for index, take in enumerate(takes):
             check_time(started)
-            with np.load(run / "native" / f"{take['slug']}.npz", allow_pickle=False) as saved:
+            with np.load(run / source_stage / f"{take['slug']}.npz", allow_pickle=False) as saved:
                 # 2 s pre-roll + 6 s evaluation + fixed-latency guard.
                 di = np.pad(saved["render_di"], (0, 52))
             if index == 0:

@@ -37,7 +37,9 @@ was [independently reviewed and declared for attempt 2](di-domain-pilot-v2-plan.
 Both runtime preflights pass, but native calibration accepts only 3/12 pairs;
 [independent result verification](di-domain-pilot-v2-results.md) confirms the stop,
 with no rendering or neural inference. Next: a separately declared known-DI Morgan
-control on all twelve dry recordings, without microphone alignment. No native neural transfer result exists. A domain gap
+control on all twelve dry recordings, without microphone alignment. Its
+[procedure](di-morgan-control-plan.md) is independently reviewed and declared,
+with 178 passing synthetic checks before commit/execution. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

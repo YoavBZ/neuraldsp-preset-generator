@@ -45,6 +45,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_domain_pilot.py`, `run_di_domain_pilot.py` | twelve native P2 pairs versus matched Morgan renders, frozen checkpoint; metric preflight failed before audio | `di-domain-pilot-plan.md` → `-results.md`, fixed `di-domain-pilot-inputs.json` |
 | `di_domain_metric_probe.py` | synthetic window-coefficient interventions pass, independently verified; no audio/model access | `di-domain-metric-probe-plan.md` → `-results.md` |
 | `run_di_domain_pilot_v2.py` | independently verified QC stop, only 3/12 pairs accepted; no render/inference; closed/inconclusive | `di-domain-pilot-v2-plan.md` → `-results.md` |
+| `di_morgan_control.py` | independently reviewed/declared all-twelve known-DI frozen Morgan control, no mic alignment; runtime preflights required | `di-morgan-control-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

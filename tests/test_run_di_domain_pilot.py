@@ -155,29 +155,43 @@ def test_repeat_canary_band_change_inactive_mask_and_inside_tolerance():
     assert result["repeat_band_power"][5] > result["first_band_power"][5]
 
 
-@pytest.mark.parametrize("fail", [False, True])
-def test_render_slices_level_and_closes_host_on_error(tmp_path, monkeypatch, fail):
+@pytest.mark.parametrize("source_stage", ["native", "prepare"])
+@pytest.mark.parametrize("fail", [None, "host", "canary", "identity"])
+def test_render_slices_level_and_closes_host_on_error(tmp_path, monkeypatch, source_stage, fail):
     run, output = tmp_path / "run", tmp_path / "render"
-    (run / "native").mkdir(parents=True)
+    source = run / source_stage
+    source.mkdir(parents=True)
     output.mkdir()
     takes = [{"slug": f"take-{i}"} for i in range(12)]
-    R.write_new(run / "native/result.json", {"complete": True, "valid": True, "rows": takes})
+    R.write_new(source / "result.json", {"complete": True, "valid": True, "rows": takes})
     monkeypatch.setattr(R.P, "SR", 10)
     monkeypatch.setattr(R.P, "SCORE", 60)
     di = np.arange(80, dtype=np.float64) / 1000 + 0.01
-    for take in takes:
-        np.savez_compressed(run / "native" / f"{take['slug']}.npz", render_di=di)
-    calls, closed = [], []
+    inputs = [di + i / 100 for i in range(12)]
+    for take, x in zip(takes, inputs):
+        np.savez_compressed(source / f"{take['slug']}.npz", render_di=x)
+    calls, closed, canaries, loaded = [], [], [], []
+    identity = {"plugin_version": "synthetic", "band_noise_db": .23}
+    real_load = np.load
+
+    def load(path, **kwargs):
+        loaded.append(path)
+        assert kwargs == {"allow_pickle": False}
+        return real_load(path, **kwargs)
+
+    monkeypatch.setattr(np, "load", load)
 
     class FakeRenderer:
         def __init__(self, *args, **kwargs):
+            assert args == ("morgan",)
             assert kwargs["process_policy"] == "reuse"
             assert kwargs["workdir"] == output / "au-host"
 
         def render(self, x, settings):
-            assert self.command == {"selectAmp": 1, "edits": ["fixed"]}
+            assert settings == {} and x.dtype == np.float32
+            assert self._state_command(settings) == {"selectAmp": 1, "edits": ["fixed"]}
             calls.append(x.copy())
-            if fail:
+            if fail == "host":
                 raise RuntimeError("synthetic host failure")
             delayed = np.pad(x * 2, (52, 0))[:len(x)]
             return SimpleNamespace(audio=delayed, metadata=self.metadata())
@@ -186,25 +200,131 @@ def test_render_slices_level_and_closes_host_on_error(tmp_path, monkeypatch, fai
             closed.append(True)
 
         def metadata(self):
-            return SimpleNamespace(as_dict=lambda: {"plugin_version": "synthetic", "band_noise_db": .23})
+            value = dict(identity)
+            if fail == "identity" and len(calls) == 3:
+                value["plugin_version"] = "changed"
+            return SimpleNamespace(as_dict=lambda: value)
+
+    def preset_edits(path, pack, renderer, amp, original_gain):
+        assert path == R.ROOT / "fixed.xml" and pack == "pack"
+        assert isinstance(renderer, FakeRenderer) and amp == "pr12"
+        assert original_gain is True
+        return 1, ["fixed"]
+
+    def load_pack(name):
+        assert name == "morgan"
+        return "pack"
+
+    def canary(first, repeat):
+        canaries.append((first.copy(), repeat.copy()))
+        return {"passed": fail != "canary"}
 
     monkeypatch.setitem(sys.modules, "render_preset_panel", SimpleNamespace(
-        preset_edits=lambda *a: (1, ["fixed"])))
+        preset_edits=preset_edits))
     monkeypatch.setitem(sys.modules, "match.renderer_au", SimpleNamespace(AudioUnitRenderer=FakeRenderer))
-    monkeypatch.setitem(sys.modules, "packs.loader", SimpleNamespace(load_pack=lambda _: "pack"))
-    monkeypatch.setattr(R, "repeat_canary", lambda *a: {"passed": True})
+    monkeypatch.setitem(sys.modules, "packs.loader", SimpleNamespace(load_pack=load_pack))
+    monkeypatch.setattr(R, "repeat_canary", canary)
+    # Omit the keyword for native to preserve coverage of the existing caller.
+    kwargs = {} if source_stage == "native" else {"source_stage": "prepare"}
+    manifest = {"preset": "fixed.xml", "attribution": "credit"}
     if fail:
-        with pytest.raises(RuntimeError, match="synthetic host failure"):
-            R.render(output, run, {"preset": "fixed.xml", "attribution": "credit"}, takes)
+        error = RuntimeError if fail == "host" else ValueError
+        message = "synthetic host failure" if fail == "host" else "repeatability control failed"
+        with pytest.raises(error, match=message):
+            R.render(output, run, manifest, takes, **kwargs)
+        assert not (output / "result.json").exists()
+        assert not (output / "take-0.npz").exists()
     else:
-        R.render(output, run, {"preset": "fixed.xml", "attribution": "credit"}, takes)
-        with np.load(output / "take-0.npz") as saved:
-            expected = np.pad(di.astype(np.float32)*2, (52, 0))[:132]
-            np.testing.assert_array_equal(saved["net_input"], expected[20:80])
-            np.testing.assert_array_equal(saved["baseline"], expected[72:132])
+        R.render(output, run, manifest, takes, **kwargs)
+        report = json.loads((output / "result.json").read_text())
+        assert report["complete"] is True and report["attribution"] == "credit"
+        assert [row["slug"] for row in report["rows"]] == [take["slug"] for take in takes]
+        for take, x, row in zip(takes, inputs, report["rows"]):
+            expected = np.pad(x.astype(np.float32)*2, (52, 0))[:132]
+            with real_load(output / f"{take['slug']}.npz") as saved:
+                np.testing.assert_array_equal(saved["net_input"], expected[20:80])
+                np.testing.assert_array_equal(saved["baseline"], expected[72:132])
+            assert row["renderer_metadata"] == identity
+            assert row["render_peak"] == float(np.max(np.abs(expected)))
+            assert row["render_hash"] == hashlib.sha256(expected.astype(np.float64).tobytes()).hexdigest()
         assert len(calls) == 14  # warm-up, twelve renders, one immediate canary
     assert closed == [True]
-    np.testing.assert_array_equal(calls[0], np.pad(di, (0, 52)).astype(np.float32))
+    count = 12 if fail is None else 1
+    assert loaded == [source / f"{take['slug']}.npz" for take in takes[:count]]
+    expected_calls = [inputs[0]] if fail == "host" else [inputs[0]] * 3
+    if fail is None:
+        expected_calls += inputs[1:]
+    assert len(calls) == len(expected_calls)
+    for actual, x in zip(calls, expected_calls):
+        np.testing.assert_array_equal(actual, np.pad(x, (0, 52)).astype(np.float32))
+    if fail == "host":
+        assert canaries == [] and not (output / "repeatability.json").exists()
+    else:
+        expected = np.pad(di.astype(np.float32)*2, (52, 0))[:132].astype(np.float64)
+        assert len(canaries) == 1
+        for actual in canaries[0]:
+            np.testing.assert_array_equal(actual, expected[72:132])
+        with real_load(output / "repeatability-audio.npz") as saved:
+            np.testing.assert_array_equal(saved["first"], expected)
+            np.testing.assert_array_equal(saved["repeat"], expected)
+        report = json.loads((output / "repeatability.json").read_text())
+        assert report["passed"] is (fail != "canary")
+        assert report["same_renderer_identity"] is (fail != "identity")
+        assert report["first_renderer_metadata"] == identity
+        repeat_identity = dict(identity, plugin_version="changed") if fail == "identity" else identity
+        assert report["repeat_renderer_metadata"] == repeat_identity
+    assert not (run / ("native" if source_stage == "prepare" else "prepare")).exists()
+
+
+@pytest.mark.parametrize("stage", ["", "infer", "Prepare", "../native", "native/result.json", None, []])
+def test_render_bad_source_stage_refuses_before_io(monkeypatch, stage):
+    class NoPaths:
+        def __truediv__(self, other):
+            pytest.fail("path access before stage validation")
+
+    monkeypatch.setattr(R, "require_report", lambda *a: pytest.fail("report access before validation"))
+    monkeypatch.setattr(np, "load", lambda *a, **k: pytest.fail("array access before validation"))
+    monkeypatch.setitem(sys.modules, "render_preset_panel", None)
+    monkeypatch.setitem(sys.modules, "match.renderer_au", None)
+    monkeypatch.setitem(sys.modules, "packs.loader", None)
+    with pytest.raises(ValueError, match="source_stage must be native or prepare"):
+        R.render(NoPaths(), NoPaths(), {}, [], source_stage=stage)
+
+
+def test_render_source_stage_is_keyword_only():
+    with pytest.raises(TypeError):
+        R.render(None, None, {}, [], "prepare")
+
+
+@pytest.mark.parametrize("fault", ["missing-report", "duplicate", "missing", "wrong", "incomplete", "invalid"])
+def test_prepare_requires_own_valid_coverage_before_renderer(tmp_path, monkeypatch, fault):
+    takes = [{"slug": f"take-{i}"} for i in range(12)]
+    report = {"complete": True, "valid": True, "rows": [dict(take) for take in takes]}
+    (tmp_path / "native").mkdir()
+    # A valid native report cannot substitute for prepare coverage.
+    R.write_new(tmp_path / "native/result.json", report)
+    (tmp_path / "prepare").mkdir()
+    if fault == "duplicate":
+        report["rows"][-1] = report["rows"][0]
+    elif fault == "missing":
+        report["rows"].pop()
+    elif fault == "wrong":
+        report["rows"][-1]["slug"] = "undeclared"
+    elif fault == "incomplete":
+        report["complete"] = False
+    elif fault == "invalid":
+        report["valid"] = False
+    if fault != "missing-report":
+        R.write_new(tmp_path / "prepare/result.json", report)
+    monkeypatch.setattr(np, "load", lambda *a, **k: pytest.fail("array access before coverage"))
+    monkeypatch.setitem(sys.modules, "render_preset_panel", None)
+    monkeypatch.setitem(sys.modules, "match.renderer_au", None)
+    monkeypatch.setitem(sys.modules, "packs.loader", None)
+    error = FileNotFoundError if fault == "missing-report" else ValueError
+    message = "prepare/result.json" if fault == "missing-report" else "declared coverage"
+    with pytest.raises(error, match=message):
+        R.render(tmp_path / "unused", tmp_path, {}, takes, source_stage="prepare")
+    assert not (tmp_path / "unused").exists()
 
 
 def test_bad_prerequisite_never_imports_or_calls_renderer_or_model(tmp_path, monkeypatch):

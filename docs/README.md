@@ -125,6 +125,8 @@ was declared, what was measured, and the research behind it.
   [results](di-domain-pilot-v2-results.md): both runtime preflights pass; only 3/12
   native pairs pass calibration, so no neural test followed. Independently verified,
   scientific transfer screen inconclusive; closed without changing its rules.
+- [Known-DI Morgan control](di-morgan-control-plan.md): all twelve original dry
+  performances through fixed PR12+R; independently reviewed and declared before execution.
   No audio or model-asset access.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
