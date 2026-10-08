@@ -28,8 +28,10 @@ follows. The [training-domain audit](research/di-domain-transfer-audit-2026-10-0
 has independently checked source claims: audited wet supervision is Morgan renders.
 A [small frozen-model pilot](di-domain-pilot-plan.md) is being prepared on existing
 licensed P2 pairs, with corrected timing, split caveats and recoverability controls.
-Code/design review and 105 synthetic checks passed; the declaration is being frozen.
-Commitment and a mandatory CPU-Torch metric preflight precede new audio access. A domain gap
+Code/design review and 105 synthetic checks passed; declaration committed `8e5a91b`.
+The mandatory CPU-Torch metric preflight then failed before audio access
+([result](di-domain-pilot-results.md)). Independent numerical-cause review precedes
+any separately declared correction; no neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.

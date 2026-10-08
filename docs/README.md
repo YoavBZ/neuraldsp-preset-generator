@@ -114,9 +114,10 @@ was declared, what was measured, and the research behind it.
   pooled-score tuning follows.
 - [Training-domain audit](research/di-domain-transfer-audit-2026-10-08.md): native
   paired recordings are absent from audited wet supervision; source claims independently
-  checked. [Frozen-model transfer pilot](di-domain-pilot-plan.md): reviewed and declared,
-  not run; 105 synthetic checks pass, mandatory CPU-Torch metric preflight outstanding;
-  twelve existing P2 takes, matched Morgan controls, no training or reserved-data use.
+  checked. [Frozen-model transfer pilot](di-domain-pilot-plan.md) →
+  [preflight result](di-domain-pilot-results.md): mandatory synthetic NumPy/Torch
+  agreement check failed before audio access. Independent numerical-cause review
+  precedes any separately declared retry. No neural transfer result or new training.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

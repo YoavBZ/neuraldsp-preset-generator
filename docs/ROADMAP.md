@@ -84,8 +84,11 @@ lives in the linked documents. Last updated 2026-10-08.
        P2 takes through the original recording chain and a fixed Morgan setting.
        Independent review approved corrected timing, split caveats, controls and code;
        105 synthetic checks pass, two Torch checks await the mandatory separate preflight.
-       The procedure is declared before execution; commit and metric preflight precede
-       native audio access.
+       The procedure was committed before execution. Its mandatory runtime metric
+       preflight failed on tiny NumPy/Torch differences
+       ([result](di-domain-pilot-results.md)); no recording, rendering or inference
+       followed. Independently inspect the numerical cause before any separately
+       declared correction. This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search

@@ -11,8 +11,11 @@ before any further long training.
 
 The [training-domain audit](../docs/research/di-domain-transfer-audit-2026-10-08.md)
 independently supports Morgan-only wet supervision in the audited recipe. The next
-[frozen-model P2 pilot](../docs/di-domain-pilot-plan.md) is reviewed/declared, not run: native
-recordings versus matched Morgan renders with timing/recoverability controls. No
+[frozen-model P2 pilot](../docs/di-domain-pilot-plan.md) stopped at its mandatory
+synthetic metric preflight before native audio access
+([result](../docs/di-domain-pilot-results.md)). Independent numerical-cause review
+precedes any separately declared retry of native recordings versus matched Morgan
+renders with timing/recoverability controls. No
 adaptation or long training is authorized by that source observation alone.
 
 A song's guitar (the amp track, or a separated stem) goes through four steps:
@@ -39,7 +42,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `set3_mask_diagnostic.py` | fixed-panel activity-proxy check, independently verified: rescues one refusal but no control gain; closed | `set3-mask-diagnostic-plan.md` → `-results.md` |
 | `set3_rank_calibration.py` | nested band-excluded prior/score blend, independently verified; criteria missed, fixed blend closed | `set3-rank-calibration-plan.md` → `-results.md` |
 | `set3_cross_amp_diagnostic.py` | pooled existing amp menus, independently verified; criteria missed, no selector follow-up | `set3-cross-amp-diagnostic-plan.md` → `-results.md` |
-| `di_domain_pilot.py`, `run_di_domain_pilot.py` | twelve native P2 pairs versus matched Morgan renders, frozen checkpoint; reviewed/declared, preflight pending | `di-domain-pilot-plan.md`, fixed `di-domain-pilot-inputs.json` |
+| `di_domain_pilot.py`, `run_di_domain_pilot.py` | twelve native P2 pairs versus matched Morgan renders, frozen checkpoint; metric preflight failed before audio | `di-domain-pilot-plan.md` → `-results.md`, fixed `di-domain-pilot-inputs.json` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 
