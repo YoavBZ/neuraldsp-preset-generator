@@ -83,3 +83,19 @@ not the separator. Two things could address it: a way to choose among guitars (p
 picked by the user, or the declared multi-guitar reference), or a lead/rhythm splitter.
 If one separator is adopted anyway, X-LANCE gives the same SNR as Mega-53 with a better
 spectral shape and at 60% of the CPU time.
+
+## Verified independently (2026-10-08)
+
+A fresh-context reviewer:
+- confirmed the declaration (5bd02e4) preceded every stem and score. The speed tests
+  before it ran on random noise;
+- re-scored all 61 parts with its own code, reproducing the medians and usable counts;
+- confirmed the rule fails only on the +2 dB margin, and that no held-out part was
+  processed.
+
+**Licences.**
+- Mega-53's release assets match the recorded hashes, in ZFTurbo's MIT repo, with no
+  separate licence.
+- X-LANCE `gtr_mss` is MIT, but was fine-tuned from BS-RoFormer-SW. That model's
+  current mirror declares `license: unknown`, so under the open-source-only rule
+  X-LANCE is not usable even if it had passed.
