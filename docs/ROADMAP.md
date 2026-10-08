@@ -91,8 +91,12 @@ lives in the linked documents. Last updated 2026-10-08.
        the [synthetic intervention probe](di-domain-metric-probe-results.md) passes
        with shared coefficients at unchanged 1e-8, independently verified with zero
        mismatches. The [separate attempt-2 correction](di-domain-pilot-v2-plan.md)
-       is independently reviewed and declared, with a required synthetic replay in
-       both execution environments before any asset/recording access. Commit precedes runs.
+       was independently reviewed, declared and committed before execution. Both
+       runtime preflights pass, but only 3/12 recording pairs pass native calibration;
+       [attempt-2 result](di-domain-pilot-v2-results.md) is independently verified,
+       with zero mismatches. No rendering or neural inference followed the failed
+       pairing control. Next: separately declare the known-DI Morgan control on all
+       twelve dry recordings, without relying on microphone alignment.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved

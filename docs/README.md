@@ -121,8 +121,10 @@ was declared, what was measured, and the research behind it.
 - [Synthetic metric precision probe](di-domain-metric-probe-plan.md) →
   [results](di-domain-metric-probe-results.md): shared-window interventions pass at
   unchanged 1e-8, independently verified; a separate pilot correction is next.
-- [Native-chain pilot attempt 2](di-domain-pilot-v2-plan.md): coefficient correction
-  independently reviewed and declared; both runtime preflights precede data access.
+- [Native-chain pilot attempt 2](di-domain-pilot-v2-plan.md) →
+  [results](di-domain-pilot-v2-results.md): both runtime preflights pass; only 3/12
+  native pairs pass calibration, so no neural test followed. Independently verified,
+  scientific transfer screen inconclusive; closed without changing its rules.
   No audio or model-asset access.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
