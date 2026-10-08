@@ -1,0 +1,12 @@
+{
+  "complete": true,
+  "derivation_file": "independent-derivation.json",
+  "derivation_sha256": "26d18e63640fc011feacb9289b0b2d793c613723cdacf8d1f877ef649a045293",
+  "readback_passed": true,
+  "archives_readback": 37,
+  "unix": 1791495468.7065668,
+  "elapsed_seconds": 24.973427959,
+  "primary_artifacts_read": [],
+  "verifier_sha256": "2d0504481d9edd5c4cccdcf14a3afc7f71b1e7545ec56f3ce2719b0a6bf44473",
+  "checks_after_derivation": []
+}

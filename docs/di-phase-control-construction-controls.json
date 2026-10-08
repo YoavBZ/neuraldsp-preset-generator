@@ -1,0 +1,1097 @@
+{
+  "complete": true,
+  "passed": true,
+  "config": {
+    "a": -0.9,
+    "samples": 288000,
+    "sample_rate": 48000,
+    "formula": "(a+exp(-j*2*pi*k/N))/(1+a*exp(-j*2*pi*k/N))",
+    "dc": 1.0,
+    "nyquist": -1.0,
+    "boundary": "periodic",
+    "transform_dtype": "float64",
+    "model_input_dtype": "<f4",
+    "renderer_latency_samples": 52,
+    "inverse_prediction": false,
+    "control_tolerance": 1e-12,
+    "quantized_inverse_tolerance": 1e-06,
+    "coefficients": {
+      "dtype": "complex128",
+      "samples": 144001,
+      "sha256": "ac7c747f3385c2ee7924bca954004f0f933c81d4ba20358e9183ed4d330b2cad"
+    }
+  },
+  "coefficients_attempt": {
+    "attempted_file": "coefficients.npz",
+    "constructed": true,
+    "members": {
+      "h": {
+        "dtype": "complex128",
+        "shape": [
+          144001
+        ],
+        "sha256": "ac7c747f3385c2ee7924bca954004f0f933c81d4ba20358e9183ed4d330b2cad"
+      }
+    },
+    "archive": {
+      "file": "coefficients.npz",
+      "sha256": "138fd3cbd37094f7762d7c2616f1b321c8762fdcec4b31a7766be50e034f1edc",
+      "members": {
+        "h": {
+          "dtype": "complex128",
+          "shape": [
+            144001
+          ],
+          "sha256": "ac7c747f3385c2ee7924bca954004f0f933c81d4ba20358e9183ed4d330b2cad"
+        }
+      }
+    }
+  },
+  "coefficients_archive": {
+    "file": "coefficients.npz",
+    "sha256": "138fd3cbd37094f7762d7c2616f1b321c8762fdcec4b31a7766be50e034f1edc",
+    "members": {
+      "h": {
+        "dtype": "complex128",
+        "shape": [
+          144001
+        ],
+        "sha256": "ac7c747f3385c2ee7924bca954004f0f933c81d4ba20358e9183ed4d330b2cad"
+      }
+    }
+  },
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "passed": true,
+      "attempted_file": "p2-chords-drop3-7-t098.controls.npz",
+      "archive": {
+        "file": "p2-chords-drop3-7-t098.controls.npz",
+        "sha256": "b471bd5515e56ac449c39083e7025c9fa688baa11269fe06cae2b6c276bdb7df",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "5300a1a684ad13398a2e205225874bef7427f47aaa5c5134c049cbd417627810"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9199e3ad6d29bf2a928ab681932c17616a7f76f344812598d75d9906ad8c1ece"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "9acf2e3d58caf9130fdc163a2007eb6a89f51aa07666656679994305bd978a70"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0ee7e03e00dbb7b5fdc868bae08da5312bb04e9a5827365ecd26859b56415c10"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9a3996b59b50bcd94dbfdf6f581c2e3a259d0e6a31123a63c4dce297953928cb"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0297e2ee18dcbff6428a8efa9994b14ad3a6c974efcfb4218e5f3ea09e3c15fb"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "ae27c3004d0c1b124b9d60c8c88d4f83bfa410216b13fe63a1742b02f7436cf1"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 7.208476121873264e-16,
+          "denominator": 96.47146997108155
+        },
+        "norm": {
+          "relative_l2": 1.7971367864243685e-14,
+          "denominator": 96.47146997108155
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.17976397058397878
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 6.800523705639665e-16,
+          "denominator": 36608.348927526094
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5866563824194205e-08,
+          "denominator": 96.47146997108155
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "passed": true,
+      "attempted_file": "p2-chords-drop3-m7b5-t098.controls.npz",
+      "archive": {
+        "file": "p2-chords-drop3-m7b5-t098.controls.npz",
+        "sha256": "bac05fd897acb6df7f4d0d39c09cc96fe68f7cce6818c4ef1075407d18a341b6",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "03efc2b12bda1634c263ceceb2a4634d67f34ec9664dac0783beb3bbe4da75de"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "bc79f848806659a78576f6d3941c4b930f098b092e3d74ca11db1799c1846881"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "81069850353de32ee36baffb83917b6f66e6440f7ff9d7394fcf916aa10e2907"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "3d7eb03cc56b288e66d66b49ea67f6fefb59cb4f8df457134d55a9a724589e81"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "e7649be8530db4a526bf0e395759ef1eadf04761eb679ca625cdb65f024809a2"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "cb504371682895fa05af6f23e5f824cd2147b600500499cb4c8c503e4089007e"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "b59b18e79e8aa8eb993f8417575fbfd511ab01b806ae1d8d1d2c3e431e49e1e2"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.950770384303284e-16,
+          "denominator": 83.70407253661092
+        },
+        "norm": {
+          "relative_l2": 1.765659478198727e-14,
+          "denominator": 83.70407253661092
+        },
+        "std": {
+          "relative_l2": 1.779507871303504e-16,
+          "denominator": 0.1559733230923993
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.334338388804878e-16,
+          "denominator": 31763.463675935778
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5730178214350647e-08,
+          "denominator": 83.70407253661092
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "passed": true,
+      "attempted_file": "p2-chords-set1-7-t099.controls.npz",
+      "archive": {
+        "file": "p2-chords-set1-7-t099.controls.npz",
+        "sha256": "00248097e51695cbd92a4d41c3383f6417fc8d6a6b37a1324953d7106782456f",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "8a7855adf701972ea71c4a54cb9f288a9f1aa230793dfe57a80ff1d555e3e867"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "76904771c492e01ef78ca4688440499f43d03c15113d04c8da25efda76d9b4d6"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "244b22b4070e97eef3b4752770c7c8eadb03769d261f601e6eafe9c6ba94f895"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "f899bc0f4a5668af096daa9f44967279d758c1d74590aa62f17124666acedbd3"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "52ccbbb4cc3f74aaf053d485ed3085766e6785efaee008ece2583888ed47d104"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "a8b138bf8fde6b9346835ad0a56536a31db0447db1e65ce8286f36857efb9ab9"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "8d738ec7809a9d5e1bdca3a0ac4473f8f000905d404f39df0781dcf35b8f2b1b"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 6.866760385231229e-16,
+          "denominator": 42.094758662263246
+        },
+        "norm": {
+          "relative_l2": 1.3166088879129829e-14,
+          "denominator": 42.094758662263246
+        },
+        "std": {
+          "relative_l2": 1.7692469910746585e-16,
+          "denominator": 0.07843895102167137
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 5.027107910607219e-16,
+          "denominator": 15973.837899843951
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.544836870878986e-08,
+          "denominator": 42.094758662263246
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "passed": true,
+      "attempted_file": "p2-chords-set1-dim-t072.controls.npz",
+      "archive": {
+        "file": "p2-chords-set1-dim-t072.controls.npz",
+        "sha256": "fbcd7d1e102077fb0b634bdd389efb52dba913ff89e6369522c86fa204b588c0",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "ee887fab3b1f2263413fb9e51c43dff8ee103c06f5be0e4d801a5de8779c6608"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "1bbdf4c1aa3c191e0a2644077fc73445c049d8f8a0136dbc4dd5d54830dd9b2c"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "51e4f933fdd76e0083a37dba3292644dfb130f38beadb75eda12a92346b159bf"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "2de7e9a5f5373edbbee7b3dcf27134fe1edca5cc781b45de63c7af1079c40f52"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "c8d9a8602c2d13db24c2364cb5a4daa672bfb55f1a2c0c6f6b3f7c5c2f505e7a"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "75e2df4d33c95afde66c0e06ce72f56a79a6c246a01fb4650b87fbdd16d9e1ea"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "25a1af8f7d884843dba59d71bad75557b5e1a221159c9b99c076c33c8a582414"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 7.037659278720802e-16,
+          "denominator": 46.707553145655716
+        },
+        "norm": {
+          "relative_l2": 1.3843454559165471e-14,
+          "denominator": 46.707553145655716
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.08703438651511844
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 6.02807425419336e-16,
+          "denominator": 17724.2702381232
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5323906336394607e-08,
+          "denominator": 46.707553145655716
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "passed": true,
+      "attempted_file": "p2-chords-set1-m7-t094.controls.npz",
+      "archive": {
+        "file": "p2-chords-set1-m7-t094.controls.npz",
+        "sha256": "cc17717fb19e72350429541558f2f1eca2434981a5f3047f96cbf52396f60b72",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "2f5b4300d72c655c0c67a71e067758212f05cdc80465061a43fc0724f7aaa207"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "d8ec13e5c591c84dfd79776c0bdf5cd41f3e3c8162292f558de08297ff54a831"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "59a1e4da64fb6c3290783f0eae625f12b5d104cb5bafdf597dec6d69a851961b"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "fca31ccbfc0185f0d5fb8ee03b086e8680b9f43786de97c24e0b47b3d90249d2"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "30eccf7ee97d6cca0b73489a817be0e9e3d4f77d70c563af57eb387e1e0f743a"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "560a3bb6794019eaad1d4593a7b1bfeff313383b634dae5e9d3543f3189bf139"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "429854d05c3eea6d2d01d077c3628bb3526de653a4bda9d6f54aab2174c5a7be"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 7.957407337555089e-16,
+          "denominator": 49.83181591951102
+        },
+        "norm": {
+          "relative_l2": 1.5542110350332763e-14,
+          "denominator": 49.83181591951102
+        },
+        "std": {
+          "relative_l2": 2.989095417714721e-16,
+          "denominator": 0.09285610439578781
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 6.50529773663656e-16,
+          "denominator": 18909.84502476576
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5329291135578057e-08,
+          "denominator": 49.83181591951102
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "passed": true,
+      "attempted_file": "p2-chords-set1-maj-t072.controls.npz",
+      "archive": {
+        "file": "p2-chords-set1-maj-t072.controls.npz",
+        "sha256": "84d635ab04ae9af2bf3e60b007caea0ceca34ec605cac22f8bb93dc2d5eb53e9",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "a060054d73c5b825bf491a2a6238b07fb54879945019d166cf99e2ff7130c1d6"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0bf852c097b7c23b498df2e7edcbcd0b1463bee8c5c538fc78ad0743ee23f278"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "1379a1c9574ee0be2bc6767352dfb899b4dcbd88760f13deeb4087b70c227b34"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0b1977c69b5c7ef1aaa3264516a7c334ac9930e2d5f0786d633968d479fc5806"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "98199b8dfff33e6a3278fb8771d5470ee71656bdf4e5a39b0b106616db4c9975"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "eaea82f8615a224abc06004f7bb681d509c204840876a4c59cecc5973282e989"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "2c9aba1360cb18e324cda0167648d30ca3bccfd4313e1865b26f65b3a92e0dd5"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 7.111459487320482e-16,
+          "denominator": 53.260329788009116
+        },
+        "norm": {
+          "relative_l2": 1.7743446995585313e-14,
+          "denominator": 53.260329788009116
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.09924476491677395
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 6.30758214257365e-16,
+          "denominator": 20210.874129104785
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.518692488351592e-08,
+          "denominator": 53.260329788009116
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "passed": true,
+      "attempted_file": "p2-scales-a-t075.controls.npz",
+      "archive": {
+        "file": "p2-scales-a-t075.controls.npz",
+        "sha256": "2df103814c08a2c29b27e245dc408796a6bb4193ed35a92915f7697089b26a8b",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0d1ff062878b3ae4477021d266098e93dba7b1f46b41931d64e72261025fc907"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "5f0694d88606855f1e1979f737619bfb5ddaad4e5b52f226566210749c952153"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "1668dac5ecbdbbdc350cf9d43e80e411c8e7426f96d0511679124c07b62b706e"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "21ddf6c2bcd9ca1806c01f04c75f09d19f16c22e19ba9e1f9f6ce7e6e145111f"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "c0708ea7a2908604dbd8c4a205770af71b0ed2ba01c7dd29688c35be6ebc4e02"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0878c8f709d6a2fb515f984d5b678f5858c6e85867385fff9f893ad2e7fd6341"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "862710118a62f1fe751baadebbc4741dd52232e4d41cc639aeb982435c50b541"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.226698701519555e-16,
+          "denominator": 87.11497254561196
+        },
+        "norm": {
+          "relative_l2": 1.4192099521987965e-14,
+          "denominator": 87.11497254561196
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.16232914482082272
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.194965397771007e-16,
+          "denominator": 33057.81231438246
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.569293632825868e-08,
+          "denominator": 87.11497254561196
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "passed": true,
+      "attempted_file": "p2-scales-bb-t076.controls.npz",
+      "archive": {
+        "file": "p2-scales-bb-t076.controls.npz",
+        "sha256": "861522c00177e6e92759d0658f221653ed1e059bdee5e93f6e1065751a6534f9",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "5931967d4cc957a66e2ce08f0c5498e2bc006064130e7c3ed7057fe7ddc423e2"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "1e0916247fd98e81c77a292cf970a380bbcc60bf62f141de96fc09192b55ee84"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "cf2e21d4306fa47f0e8882faf3228cc6fa140b858ac60d85e3032c96f83f4f6b"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "a74d7e7d294e42bfe0a4e6888f50629567962f4221803c79e7e05ddb116b858b"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "c792928f28a2e2000848f0af2e33c86140d10b1c102d58c8b8c237f8426cbee7"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "1ab1c06c8dbbaa324b31d808a27d0e50b63ceb1cca9510c86d8ae1d39898aadb"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "068665184637efc3d3cd1911df9b1768b0dd2411826044aa0ece2a20308552f7"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.345790637177504e-16,
+          "denominator": 80.93469568414038
+        },
+        "norm": {
+          "relative_l2": 1.9489847463484367e-14,
+          "denominator": 80.93469568414038
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.15081290105987477
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.333639557015555e-16,
+          "denominator": 30712.557614090412
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5006008401409908e-08,
+          "denominator": 80.93469568414038
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "passed": true,
+      "attempted_file": "p2-scales-c-t075.controls.npz",
+      "archive": {
+        "file": "p2-scales-c-t075.controls.npz",
+        "sha256": "5a49f4941f2c8c173d70ee5bcff2e6739b650cc73ad727a0ac3ddce9fc12fbab",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "96eaf29cf1812abc9b986b4d268de741e8e567d34235e6741d38c54a2405681c"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "21bf060ec9d4fb7e2854be9a7e0615fc4a865decb06dcc5d71117a9101ef0256"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "8b3279f75700d1373ab3fe55a1ee8a72d31ebe1ceb7133fbd1af8eb9c54c09e3"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "df44d411e545ae8a607ac6adae7dc0a389c802fb92c4611199b99c3ab2e25661"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "8c0cadc402f414b5d3a6082b00da6cc48f2b602f7c6927c944aec9ae4e5e7be0"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "13460ee7bdc448e1b5ec1a3a0c610196638564ae53d9da1ec32b9fafd4b8ae44"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "465ba1a22d66d1355c635702c79b7c67f7827f787de269fa7631cd3243b7dab0"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.270987415492377e-16,
+          "denominator": 76.50415735417555
+        },
+        "norm": {
+          "relative_l2": 1.4488711543533628e-14,
+          "denominator": 76.50415735417555
+        },
+        "std": {
+          "relative_l2": 0.0,
+          "denominator": 0.14255707686719343
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.275293588857283e-16,
+          "denominator": 29031.287232109775
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.4671442423691566e-08,
+          "denominator": 76.50415735417555
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "passed": true,
+      "attempted_file": "p2-scales-db-t076.controls.npz",
+      "archive": {
+        "file": "p2-scales-db-t076.controls.npz",
+        "sha256": "bfeee6fad6e43f782c0dcffe9a0bf62cb4de514e86864987d9de5d1cd2cfd1f6",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "167893381377f2c353e29f398499f4e20e55b2be6377900af03a3d1f8c572978"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "71e358ff532dae272970739234c6c7305336ad5c62c069f48e43070965d25fbc"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "d2bcd0377832d91c7d661ebf927503cd84ab6794ebd35cb2f44b7f1ace778082"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "5eaef39ab927074f73c8c47f68fb58ee85fdb7ec46db923734a1fe3ed9d8f3ab"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "13f1b8f853d4828a21a0ca1f396895d1b6eaad5f1ff73685325f9b01b09075e7"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "f14cb372d849c8fce3cca1e8dd003b1f2c9251301e8b27f81c114eef55e4916a"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9d914d99ddd1aa6fc08cab3b2048bef20eefd28f942b9bc25fdb521c3b933932"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.250956329280571e-16,
+          "denominator": 81.11727337569162
+        },
+        "norm": {
+          "relative_l2": 1.6292577813763555e-14,
+          "denominator": 81.11727337569162
+        },
+        "std": {
+          "relative_l2": 1.8362556210904307e-16,
+          "denominator": 0.1511531145056303
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.29977686229538e-16,
+          "denominator": 30781.840975959964
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.507165062181014e-08,
+          "denominator": 81.11727337569162
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "passed": true,
+      "attempted_file": "p2-scales-e-t076.controls.npz",
+      "archive": {
+        "file": "p2-scales-e-t076.controls.npz",
+        "sha256": "3cf1e63789dcc0474276f548d165780e27bb899891e454f1764c1848dace0d74",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "60fbc79f707b5978d7f50a4b79f27bcb4bd4aa13751feeb4919df045e9558ef4"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "36bb2f02d4ae3906577f090a4c3cba76399b69de7a128da0429235fbd025e271"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "20efd9b7cce3f64d404549b99e33a2ee52df5b657a3803df292fb2c5be698ed1"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "fcf8df8b61ec445461d240cde5541de044b93ec5663de253716962dcbb5c05f3"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "f39047c15075dc0903be004c1cc1a8ee3d88eabbbb5cd8be671abe841b7da14d"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "471203de2b6ddd14044dd52d8b022978e003ae7791675ad6bd8e8ca81ae67838"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9687f0f500b0dfbcab5f2be1388be47f0b9ce641390e9e87e8085e399fc4ddfb"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.1092875480934e-16,
+          "denominator": 91.41106484355298
+        },
+        "norm": {
+          "relative_l2": 1.50797161124178e-14,
+          "denominator": 91.41106484355298
+        },
+        "std": {
+          "relative_l2": 1.6294750756595974e-16,
+          "denominator": 0.1703344594233434
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 7.104541386294206e-16,
+          "denominator": 34688.060796830134
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5969024264855027e-08,
+          "denominator": 91.41106484355298
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "passed": true,
+      "attempted_file": "p2-scales-g-t076.controls.npz",
+      "archive": {
+        "file": "p2-scales-g-t076.controls.npz",
+        "sha256": "ab185357d4a12e6a12a4d5146f5831b6e20e69a8b58a55fd4e4bfe50677a811a",
+        "members": {
+          "model_converted_input": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "c63dca4efebf9a788715c0185977e7f238bcb4494b332acbc7c99d2b66938711"
+          },
+          "forward_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "c45bef86e3a40a60f759ab61d02e89b311b65aa4a87cab653d05e3d39c0cf9e3"
+          },
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "92fbea00aa0e6dcc03a7cbfeae5b25f7a04eb7ab12824537009c8023a5479c9c"
+          },
+          "inverse_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9ad4241069cd16b2e5ba8a180dbaf3913fe3a2385c36ff9ebee4019af2f87dfb"
+          },
+          "inverse_quantized_float64": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "d0b9d588b3f3deb56c9ca63876707c359bee652dff0d5ef8468f0d1faa10b910"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "6611cdbf442c2191138303cfe111e815358e1624cae62fcbf63799ed3b1deaa1"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "22a95a86fe0182b25d24dc0374de3bce9ae6a6154e8553fe3e607c6d199942f4"
+          }
+        }
+      },
+      "unit_magnitude_max_deviation": 1.6653345369377348e-15,
+      "errors": {
+        "inverse": {
+          "relative_l2": 8.089871702237954e-16,
+          "denominator": 88.39051563407587
+        },
+        "norm": {
+          "relative_l2": 1.5755805383636698e-14,
+          "denominator": 88.39051563407587
+        },
+        "std": {
+          "relative_l2": 1.6851587379294596e-16,
+          "denominator": 0.1647060006331033
+        },
+        "whole_rfft_magnitude": {
+          "relative_l2": 6.975743261913967e-16,
+          "denominator": 33541.842484958084
+        },
+        "quantized_inverse": {
+          "relative_l2": 2.5831791709354977e-08,
+          "denominator": 88.39051563407587
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    }
+  ]
+}

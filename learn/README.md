@@ -23,9 +23,10 @@ was reviewed and committed before scoring; its [verified PASS](../docs/di-timing
 has 23,734 agreeing independent checks. The next [known input-shift control](../docs/di-input-shift-control-plan.md)
 was reviewed and committed before access; both replay controls pass and its
 [verified PASS](../docs/di-input-shift-control-results.md) has 21,246 agreeing final
-checks and exact prediction bytes. Next is the [fixed periodic phase challenge](../docs/di-phase-control-plan.md),
-Reviewed and declared with 66 synthetic checks passing and one expected Torch skip. Fresh independent
-review approves; commit before any new actual study access. No native transfer result
+checks and exact prediction bytes. The [fixed periodic phase challenge](../docs/di-phase-control-plan.md)
+was reviewed and committed before access. All replay/construction controls pass;
+its [verified PASS](../docs/di-phase-control-results.md) has twelve wins and 57.56%
+median improvement, with all 15,976 independent checks agreeing. No native transfer result
 or case for long training follows from these controls.
 
 A song's guitar (the amp track, or a separated stem) goes through four steps:
@@ -60,7 +61,7 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_alignment_control.py` | verified FAIL: seven accepted distorted cases have two/three-sample errors; exact-delay/polarity and mismatch controls pass; all 856 independent checks agree | `di-alignment-control-plan.md` → `-results.md` |
 | `di_timing_sensitivity.py` | verified common saved-output coordinate robustness PASS, all thirteen screens pass; 23,734 independent checks agree; no input-timing/native/product claim | `di-timing-sensitivity-plan.md` → `-results.md` |
 | `di_input_shift_control.py` | verified PASS at four input shifts; twelve original and 120 raw/corrected prediction-byte checks match; 21,246 final checks agree | `di-input-shift-control-plan.md` → `-results.md` |
-| `di_phase_control.py` | reviewed and declared; 66 synthetic checks pass and one expected Torch skip; fresh independent review approves; commit before actual access | `di-phase-control-plan.md` |
+| `di_phase_control.py` | verified PASS, twelve wins and 57.56% median improvement; 15,976 independent checks agree | `di-phase-control-plan.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

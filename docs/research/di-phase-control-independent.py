@@ -1,0 +1,847 @@
+"""Fresh phase verifier. No repository code imports; fixed original asset allowlist.
+
+derive persists and reads back complete independent evidence before compare may
+open any primary phase artifact. FFT-conjugate inverse is intentionally distinct
+from the primary periodic time-domain recurrence. No waveform payloads in JSON.
+"""
+import argparse
+import gzip
+import hashlib
+import importlib.metadata
+import json
+import math
+import os
+from pathlib import Path
+import statistics
+import subprocess
+import sys
+import time
+import traceback
+
+ROOT = Path('/Users/yoavbz/projects/neuraldsp-preset-generator')
+OWN = ROOT / 'tmp/di-phase-independent-arrays'
+SELF = ROOT / 'tmp/di-phase-independent.py'
+REV = '03b8c00e848727e1864fd948b2a588fae8b3f34a'
+CPU = '/Users/yoavbz/ndsp-presets/tools/learn-venv'
+PRIMARY = ROOT / 'tmp/di-phase-control-20261008'
+N = 288000
+A = -0.9
+METRICS = ('primary', 'canonical_waveform_l1', 'raw_lowband')
+ARMS = {'wet': 'input_scores', 'net': 'network_scores', 'flatref': 'flatref_scores'}
+EXTRA = ('learn/di_phase_control.py', 'tests/test_di_phase_control.py',
+         'docs/di-phase-control-plan.md', 'docs/research/di-phase-control-review-2026-10-08.md',
+         'docs/research/di-input-shift-control-independent-2026-10-08.py',
+         'docs/di-input-shift-control-verification.json.gz',
+         'docs/di-input-shift-control-verification-archive.json',
+         'docs/research/di-input-shift-control-verification-2026-10-08.md',
+         'docs/di-input-shift-control-results.md',
+         'docs/di-input-shift-control-provenance.json', 'docs/di-input-shift-control-inputs.json',
+         'docs/di-input-shift-control-baseline-replay.json',
+         'docs/di-input-shift-control-baseline-inference-replay.json', 'docs/di-input-shift-control.json')
+CONFIG = {'a': A, 'samples': N, 'sample_rate': 48000,
+          'formula': '(a+exp(-j*2*pi*k/N))/(1+a*exp(-j*2*pi*k/N))',
+          'dc': 1.0, 'nyquist': -1.0, 'boundary': 'periodic',
+          'transform_dtype': 'float64', 'model_input_dtype': '<f4',
+          'renderer_latency_samples': 52, 'inverse_prediction': False,
+          'control_tolerance': 1e-12, 'quantized_inverse_tolerance': 1e-6}
+CHECKS = []
+START = time.monotonic()
+
+
+def sha(blob):
+    return hashlib.sha256(blob).hexdigest()
+
+
+def regular(path):
+    path = Path(path)
+    if path.resolve() != path or not path.is_file() or path.stat().st_nlink != 1:
+        raise ValueError('nonregular/aliased input: ' + str(path))
+    return path
+
+
+def blob(path):
+    return regular(path).read_bytes()
+
+
+def read(path):
+    return json.loads(blob(path))
+
+
+def persist(path, value):
+    data = (json.dumps(value, indent=2, allow_nan=False) + '\n').encode()
+    with path.open('xb') as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    return sha(data)
+
+
+def check(name, passed, category='new', **details):
+    CHECKS.append(dict(name=name, passed=bool(passed), category=category, **details))
+
+
+def require(name, passed, category='new', **details):
+    check(name, passed, category, **details)
+    if not passed:
+        raise ValueError(name)
+
+
+def tick(stage):
+    elapsed = time.monotonic() - START
+    entry = dict(stage=stage, unix=time.time(), elapsed_seconds=elapsed)
+    with (OWN / 'transcript.jsonl').open('a') as f:
+        f.write(json.dumps(entry) + '\n')
+        f.flush()
+        os.fsync(f.fileno())
+    print(stage, round(elapsed, 3), flush=True)
+    if elapsed > 900:
+        raise TimeoutError('independent execution budget exceeded')
+
+
+def identity(row):
+    return {k: row[k] for k in ('slug', 'content', 'take')}
+
+
+def member(x):
+    return dict(dtype=str(x.dtype), shape=list(x.shape), sha256=sha(x.tobytes()))
+
+
+def wave_identity(x):
+    return dict(dtype=str(x.dtype), samples=len(x), sha256=sha(x.tobytes()))
+
+
+def archive(path, arrays):
+    import numpy as np
+    arrays = {k: np.asarray(v) for k, v in arrays.items()}
+    with path.open('xb') as f:
+        np.savez_compressed(f, **arrays)
+        f.flush()
+        os.fsync(f.fileno())
+    manifest = dict(file=path.name, sha256=sha(blob(path)),
+                    members={k: member(v) for k, v in arrays.items()})
+    with np.load(path, allow_pickle=False) as z:
+        require('own NPZ member coverage ' + path.name, set(z.files) == set(arrays))
+        for k, x in arrays.items():
+            require('own NPZ durable readback ' + path.name + '/' + k,
+                    member(z[k]) == member(x))
+    return manifest
+
+
+def screen(rows, takes):
+    def invalid(reason):
+        return dict(valid=False, passed=False, disposition='INCONCLUSIVE', reason=reason)
+    try:
+        if len(rows) != 12 or len(takes) != 12:
+            return invalid('require all twelve declared takes')
+        by = {r['slug']: r for r in rows}
+        if len(by) != 12 or set(by) != {t['slug'] for t in takes} or len({t['take'] for t in takes}) != 12:
+            return invalid('coverage or group identity differs from declaration')
+        if any(sum(t['content'] == g for t in takes) != 6 for g in ('chords', 'scales')):
+            return invalid('coverage or group identity differs from declaration')
+        ordered = [by[t['slug']] for t in takes]
+        for r, t in zip(ordered, takes):
+            if identity(r) != identity(t) or r.get('valid', True) is not True or r['qc_valid'] is not True:
+                return invalid('invalid identity or raw-DI QC')
+            vals = [r[k] for k in ('wet', 'net', 'flatref', 'oracle')]
+            if any(type(v) not in (int, float) or not math.isfinite(v) or v < 0 for v in vals):
+                return invalid('invalid baseline/net loss')
+            if min(r['wet'], r['flatref']) <= 0 or r['oracle'] >= 1e-6:
+                return invalid('invalid baseline denominator or oracle')
+        v = [(min(r['wet'], r['flatref']) - r['net']) / min(r['wet'], r['flatref']) for r in ordered]
+        median = statistics.median(v)
+        groups = {g: statistics.median(x for r, x in zip(ordered, v) if r['content'] == g)
+                  for g in ('chords', 'scales')}
+        wins = sum(x > 0 for x in v)
+        passed = median >= .1 - 8 * math.ulp(.1) and wins >= 9 and all(x > 0 for x in groups.values())
+        return dict(valid=True, passed=passed, disposition='PASS' if passed else 'FAIL',
+                    median_relative_improvement=median, strict_wins=wins, group_medians=groups,
+                    per_take=[dict(slug=r['slug'], relative_improvement=x) for r, x in zip(ordered, v)])
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return invalid('missing score or identity fields')
+
+
+def paired(row, zero):
+    changes = {}
+    for arm, key in ARMS.items():
+        before = zero[key]['primary']
+        delta = row[key]['primary'] - before
+        changes[arm] = dict(primary_absolute_change=delta,
+                            primary_relative_change=delta / before if before > 0 else None,
+                            canonical_waveform_l1_change=row[key]['canonical_waveform_l1'] - zero[key]['canonical_waveform_l1'],
+                            raw_lowband_change=row[key]['raw_lowband'] - zero[key]['raw_lowband'])
+    s, b = min(row['wet'], row['flatref']), min(zero['wet'], zero['flatref'])
+    changes['advantage'] = dict(primary_absolute_change=(s-row['net'])-(b-zero['net']),
+                                primary_relative_change=(s-row['net'])/s-(b-zero['net'])/b)
+    return changes
+
+
+def structure(a, b, name, category='new', tol=1e-8):
+    """Full schema and all leaves; exact booleans/types, finite scalar tolerance."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        check(name + '/keys', set(a) == set(b), category, expected=sorted(a), observed=sorted(b))
+        for k in sorted(set(a) & set(b)):
+            structure(a[k], b[k], name + '/' + k, category, tol)
+    elif isinstance(a, list) and isinstance(b, list):
+        check(name + '/length', len(a) == len(b), category, expected=len(a), observed=len(b))
+        for i, (x, y) in enumerate(zip(a, b)):
+            structure(x, y, name + '/' + str(i), category, tol)
+    elif type(a) in (int, float) and type(b) in (int, float):
+        d = abs(a - b)
+        check(name, math.isfinite(a) and math.isfinite(b) and d <= tol, category, absolute_difference=d)
+    else:
+        check(name, type(a) is type(b) and a == b, category, expected=a, observed=b)
+
+
+def sources(pins, hashes, model, stage):
+    require(stage + '/HEAD', subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip() == REV, 'stability')
+    for n, h in pins.items():
+        require(stage + '/source/' + n, sha(blob(ROOT/n)) == h, 'stability')
+    for n, h in hashes.items():
+        require(stage + '/asset/' + n, sha(blob(ROOT/n)) == h, 'stability')
+    require(stage + '/checkpoint', sha(blob(Path(model['path']))) == model['sha256'], 'stability')
+
+
+def scorer(windows):
+    import numpy as np
+    from scipy import signal
+    sos = signal.butter(4, (80, 4000), btype='bandpass', fs=48000, output='sos')
+    center = slice(72000, 216000)
+    def standard(x):
+        return x / (x.std() + 1e-9) * .1
+    def spectral(x, y):
+        terms = []
+        for n, window in windows.items():
+            def stft(z):
+                padded = np.pad(z, (n//2, n//2), mode='reflect')
+                frames = np.lib.stride_tricks.sliding_window_view(padded, n)[::n//4]
+                return abs(np.fft.rfft(frames * window, axis=-1)) + 1e-6
+            p, q = stft(x), stft(y)
+            terms.append(np.linalg.norm(p-q)/(np.linalg.norm(q)+1e-6) + np.mean(abs(np.log(p)-np.log(q))))
+        # Accumulate in declared FFT order, matching the scientific definition.
+        return float(sum(terms) / len(terms))
+    def score(x, target, di):
+        x, target, di = [np.asarray(z, dtype=np.float64) for z in (x, target, di)]
+        if any(z.shape != (N,) or not np.isfinite(z).all() for z in (x, target, di)):
+            raise ValueError('invalid scoring input')
+        p, q = standard(x[center]), standard(target[center])
+        px = standard(signal.sosfiltfilt(sos, x, padtype='odd', padlen=27)[center])
+        dx = standard(signal.sosfiltfilt(sos, di, padtype='odd', padlen=27)[center])
+        return dict(primary=spectral(p, q), canonical_waveform_l1=float(np.mean(abs(p-q))), raw_lowband=spectral(px, dx))
+    return score
+
+
+def own_model():
+    import torch
+    from torch import nn
+    class IndependentNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            widths = (32, 64, 128, 256, 512)
+            self.enc = nn.ModuleList()
+            self.mid = nn.ModuleList()
+            self.dec = nn.ModuleList()
+            inp = 1
+            for out in widths:
+                self.enc.append(nn.Sequential(nn.Conv1d(inp, out, 8, stride=4, padding=2), nn.GELU(),
+                                              nn.Conv1d(out, out*2, 1), nn.GLU(dim=1)))
+                inp = out
+            for dilation in (1, 3, 9, 27):
+                self.mid.append(nn.Sequential(nn.Conv1d(512, 512, 3, padding=dilation, dilation=dilation),
+                                              nn.GELU(), nn.Conv1d(512, 512, 1)))
+            for inp, out in zip(reversed(widths), (256, 128, 64, 32, 1)):
+                layers = [nn.Conv1d(inp, inp*2, 3, padding=1), nn.GLU(dim=1),
+                          nn.ConvTranspose1d(inp, out, 8, stride=4, padding=2)]
+                if out != 1:
+                    layers.append(nn.GELU())
+                self.dec.append(nn.Sequential(*layers))
+        def forward(self, x):
+            size = x.shape[-1]
+            x = nn.functional.pad(x, (0, (-size) % 1024))
+            skips = []
+            for block in self.enc:
+                x = block(x)
+                skips.append(x)
+            for block in self.mid:
+                x = x + block(x)
+            for block, skip in zip(self.dec, reversed(skips)):
+                x = block(x + skip[..., :x.shape[-1]])
+            return x[..., :size]
+    return IndependentNet()
+
+
+def rebuild(net, raw):
+    import numpy as np
+    import torch
+    # Complete reimplementation of the fixed six-second window/five-second hop.
+    raw = np.asarray(raw, dtype='<f4')
+    size, window, hop, overlap = len(raw), 288000, 240000, 48000
+    output, weight = np.zeros(size, np.float32), np.zeros(size, np.float32)
+    fade = np.ones(window, np.float32)
+    fade[:overlap] = np.linspace(0, 1, overlap)
+    fade[-overlap:] = np.linspace(1, 0, overlap)
+    starts = list(range(0, max(1, size-window+1), hop))
+    if starts[-1] + window < size:
+        starts.append(max(0, size-window))
+    with torch.no_grad():
+        for start in starts:
+            seg = raw[start:start+window].astype(np.float32)
+            scale = seg.std() + 1e-9
+            tensor = torch.tensor(seg / scale * .1, device='cpu')[None, None]
+            pred = net(tensor)[0, 0].cpu().numpy() / .1 * scale
+            f = fade[:len(seg)].copy()
+            if start == 0:
+                f[:overlap] = 1
+            if start + window >= size:
+                f[-min(overlap, len(seg)):] = 1
+            output[start:start+len(seg)] += pred * f
+            weight[start:start+len(seg)] += f
+    return output / np.maximum(weight, 1e-6)
+
+
+def relative(actual, expected):
+    import numpy as np
+    den = float(np.linalg.norm(expected))
+    if not math.isfinite(den) or den <= 0:
+        raise ValueError('invalid normalization denominator')
+    error = float(np.linalg.norm(np.asarray(actual) - expected) / den)
+    if not math.isfinite(error):
+        raise ValueError('nonfinite relative error')
+    return dict(relative_l2=error, denominator=den)
+
+
+def controls(values, h):
+    import numpy as np
+    x, y = values['model_converted_input'], values['forward_float64']
+    unit = float(np.max(abs(abs(h) - 1)))
+    errors = dict(inverse=relative(values['inverse_float64'], x),
+                  norm=relative(np.linalg.norm(y), np.linalg.norm(x)),
+                  std=relative(np.std(y), np.std(x)),
+                  whole_rfft_magnitude=relative(abs(np.fft.rfft(y)), abs(np.fft.rfft(x))),
+                  quantized_inverse=relative(values['inverse_quantized_float64'], x))
+    passed = bool(np.isfinite(h).all() and h[0] == 1+0j and h[-1] == -1+0j and unit <= 1e-12
+                  and all(e['relative_l2'] <= (1e-6 if k == 'quantized_inverse' else 1e-12) for k, e in errors.items()))
+    return dict(passed=passed, unit_magnitude_max_deviation=unit, errors=errors)
+
+
+def metadata():
+    prior = read(ROOT/'docs/di-input-shift-control-provenance.json')
+    pins = dict(prior['pins'])
+    require('exact inherited63 pins', len(pins) == 63, 'inherited')
+    for name in EXTRA:
+        require('disjoint phase pin ' + name, name not in pins, 'inherited')
+        pins[name] = sha(blob(ROOT/name))
+    require('exact77 source pins', len(pins) == 77, 'stability')
+    for name, h in pins.items():
+        committed = subprocess.check_output(['git', 'show', REV+':'+name], cwd=ROOT)
+        require('committed source ' + name, sha(committed) == h and blob(ROOT/name) == committed, 'stability')
+    import re
+    plan = blob(ROOT/'docs/di-phase-control-plan.md').decode()
+    approval = json.loads(re.search(r'<!-- phase-approval\n(.*?)\nphase-approval -->', plan, re.S)[1])
+    expect = dict(status='DECLARED', fresh_independent_review=True, scope='fixed-periodic-phase-only-a-minus-0.9',
+                  source_sha256=pins[EXTRA[0]], test_sha256=pins[EXTRA[1]],
+                  design_sha256=sha(plan.split('## Frozen design\n', 1)[1].encode()),
+                  review_sha256=pins[EXTRA[3]], inputs_sha256=pins['docs/di-timing-sensitivity-inputs.sha256'])
+    structure(expect, approval, 'declaration', 'stability', 0)
+    require('review APPROVE', 'Verdict: APPROVE' in blob(ROOT/EXTRA[3]).decode(), 'stability')
+    manifest = read(ROOT/'docs/di-domain-pilot-inputs.json')
+    takes = [identity(t) for t in manifest['takes']]
+    hashes = {}
+    for line in blob(ROOT/'docs/di-timing-sensitivity-inputs.sha256').decode().splitlines():
+        h, name = line.split('  ')
+        require('unique manifest path ' + name, name not in hashes, 'original')
+        hashes[name] = h
+    expected = {f'tmp/di-morgan-control-20261008/{stage}/{t["slug"]}.npz'
+                for stage in ('prepare', 'render', 'infer') for t in takes}
+    expected |= {f'tmp/di-morgan-flatref-20261008/{t["slug"]}.npz' for t in takes}
+    require('exact original48 names', set(hashes) == expected and len(hashes) == 48, 'original')
+    require('only original checkpoint', manifest['model'] == dict(path='/Users/yoavbz/ndsp-presets/learn/direc/models-set3/fold2.pt',
+            sha256='16b2b734b49cc1cc2d7e547d96d3bb56208007c9cae0d0e33acb1c2a1cdd042b'), 'original')
+    versions = {n: importlib.metadata.version(n) for n in ('numpy', 'scipy', 'torch')}
+    require('original environment', sys.prefix == CPU and sys.byteorder == 'little' and versions == prior['packages']
+            and prior['prefix'] == CPU and prior['thread_count'] == 2, 'original')
+    gz = blob(ROOT/EXTRA[5]); payload = gzip.decompress(gz)
+    attestation = read(ROOT/EXTRA[6]); old = json.loads(payload)
+    require('prior compact archive identity', sha(gz) == attestation['tracked_gzip_sha256']
+            and len(gz) == attestation['tracked_gzip_size'] and sha(payload) == attestation['tracked_uncompressed_sha256']
+            and len(payload) == attestation['tracked_uncompressed_size'], 'inherited')
+    require('prior VERIFIED PASS all21246 checks', old['status'] == 'VERIFIED' and old['scientific_disposition'] == 'PASS'
+            and old['failures'] == [] and len(old['checks']) == 21246 and all(c['passed'] is True for c in old['checks']), 'inherited')
+    require('prior archive attestation', attestation['status'] == 'VERIFIED' and attestation['scientific_disposition'] == 'PASS'
+            and attestation['final_comparison_checks'] == 21246 and attestation['final_failures'] == 0
+            and attestation['payload_references'] == 120 and attestation['lossless_decompression_verified'] is True
+            and attestation['original_sha256'] == old['archive_storage_note']['full_report_sha256'], 'inherited')
+    require('prior source/artifact/verifier identities', old['source_pins'] == prior['pins'] and old['input_artifacts'] == hashes
+            and old['verifier_sha256'] == pins[EXTRA[4]] == attestation['verifier_sha256'], 'inherited')
+    reports = {n: read(ROOT/p) for n, p in {'result.json': EXTRA[-1], 'provenance.json': EXTRA[-5],
+                'inputs.json': EXTRA[-4], 'baseline-replay.json': EXTRA[-3], 'baseline-inference-replay.json': EXTRA[-2]}.items()}
+    require('prior input48/six-member metadata', reports['inputs.json'] == old['inputs'] and reports['inputs.json']['artifacts'] == hashes,
+            'inherited')
+    result = reports['result.json']; independent = {(r['offset'], r['slug']): r for r in old['independent_rows']}
+    require('prior unique60 coverage', len(result['rows']) == len(independent) == 60 and
+            {(r['offset'], r['slug']) for r in result['rows']} == {(o,t['slug']) for o in (-3,-2,0,2,3) for t in takes}, 'inherited')
+    derived_screens = []
+    for offset in (-3,-2,0,2,3):
+        rs = [r for r in result['rows'] if r['offset'] == offset]
+        own = screen([independent[offset,t['slug']] for t in takes], takes)
+        gate = screen(rs, takes)
+        require('prior screen ' + str(offset), own['passed'] and gate['passed'], 'inherited')
+        # Compare the small scientific screen and 540 arm scalars, never inherited check trees.
+        structure(gate, own, 'prior independent gate '+str(offset), 'inherited')
+        derived_screens.append(dict(offset=offset, role='prerequisite' if offset == 0 else 'robustness', screen=gate))
+        for r in rs:
+            q = independent[offset,r['slug']]
+            for key in ARMS.values():
+                for m in METRICS:
+                    structure(r[key][m], q[key][m], 'prior scalar/'+r['slug']+'/'+str(offset)+'/'+key+'/'+m, 'inherited')
+    for stored in (result['screen'], old['independent_screen']):
+        structure(dict(valid=True, passed=True, disposition='PASS', offset_screens=derived_screens, required_small_offsets=[-3,-2,2,3]),
+                  stored, 'prior aggregate screen', 'inherited')
+    for name, count in (('baseline-replay.json',108), ('baseline-inference-replay.json',36)):
+        r = reports[name]
+        require('prior barrier '+name, r['complete'] is True and r['passed'] is True and r['scalar_count'] == count
+                and r['absolute_tolerance'] == 1e-8 and [identity(x) for x in r['rows']] == takes
+                and r['screen']['passed'] is True and all(x['valid'] is True and len(x['errors']) == count//12
+                and all(math.isfinite(v) and 0 <= v <= 1e-8 for v in x['errors'].values()) for x in r['rows']), 'inherited')
+    bas = old['independent_baseline_inference_replay']
+    require('prior independent original12/36', bas['complete'] and bas['passed'] and bas['scalar_count'] == 36
+            and [identity(x) for x in bas['rows']] == takes, 'inherited')
+    for p, q in zip(reports['baseline-inference-replay.json']['rows'], bas['rows']):
+        zero = next(r for r in result['rows'] if r['offset'] == 0 and r['slug'] == p['slug'])
+        require('prior original exact bytes '+p['slug'], p['byte_identical'] and q['byte_identical'] and
+                q['raw_prediction_sha256'] == p['raw_prediction_sha256'] == p['original_prediction_sha256_float32']
+                == zero['raw_prediction_sha256'] == zero['corrected_prediction_sha256'], 'inherited')
+    refs = old['independent_prediction_archives']; byfile = {r['prediction_file']:r for r in result['rows']}
+    bc = old['prediction_byte_checks']
+    require('prior120 exact member coverage', len(bc) == 120 and set(refs) == set(byfile) and
+            {(c['file'],c['member']) for c in bc} == {(f,m) for f in refs for m in ('raw','corrected')}, 'inherited')
+    for c in bc:
+        r, ref = byfile[c['file']], refs[c['file']]
+        h = r[c['member']+'_prediction_sha256']; pointer = ref['npz_base64']
+        require('prior byte reference '+c['file']+'/'+c['member'], c['byte_identical'] is True and
+                c['independent_sha256'] == c['primary_sha256'] == h and c['dtype'] == '<f4' and c['samples'] == N
+                and ref[c['member']+'_identity'] == dict(dtype='float32',samples=N,sha256=h)
+                and isinstance(pointer,dict) and pointer['storage'] == 'full local JSON at original JSON pointer'
+                and pointer['json_pointer'] == '/independent_prediction_archives/'+c['file']+'/npz_base64'
+                and pointer['decoded_npz_sha256'] == ref['npz_sha256'] == r['prediction_file_sha256'], 'inherited')
+    names = {f'tmp/di-input-shift-control-20261008/{n}' for n in reports}
+    names |= {'tmp/di-input-shift-control-20261008/progress.jsonl','tmp/di-input-shift-control-20261008.log'}
+    snapshots = old['primary_artifact_snapshots']
+    require('prior67 snapshot name identities', len(snapshots) == 67 and set(snapshots) == names | {
+            'tmp/di-input-shift-control-20261008/'+f for f in refs}, 'inherited')
+    for f, r in byfile.items():
+        require('prior snapshot array identity '+f, snapshots['tmp/di-input-shift-control-20261008/'+f]['sha256'] == r['prediction_file_sha256'], 'inherited')
+    for name in names:
+        data = blob(ROOT/name)
+        require('prior7 metadata snapshot '+name, sha(data) == snapshots[name]['sha256'] and len(data) == snapshots[name]['size'], 'inherited')
+        base = Path(name).name
+        if base in reports:
+            expected_path = {'result.json':EXTRA[-1], 'provenance.json':EXTRA[-5], 'inputs.json':EXTRA[-4],
+                             'baseline-replay.json':EXTRA[-3], 'baseline-inference-replay.json':EXTRA[-2]}[base]
+            require('prior original/archive bytes '+base, data == blob(ROOT/expected_path), 'inherited')
+    original = read(ROOT/'docs/di-morgan-flatref.json')
+    prep = read(ROOT/'docs/di-morgan-control-prepare.json')
+    control = read(ROOT/'docs/di-morgan-control-verification.json')
+    require('inherited original QC/oracles', prep['complete'] and prep['valid'] and [identity(r) for r in prep['rows']] == takes
+            and [identity(r) for r in control['preparation']] == takes and
+            all(r['qc_valid'] is True and r['qc']['valid'] is True and 0 <= r['oracle_scores']['primary'] < 1e-6 for r in prep['rows']), 'inherited')
+    for p,q,r in zip(prep['rows'],control['preparation'],original['rows']):
+        structure(p['qc'],q['qc'],'inherited QC/'+p['slug'],'inherited')
+        structure(p['oracle_scores'],q['oracle_scores'],'inherited oracle/'+p['slug'],'inherited')
+        structure(p['oracle_scores']['primary'],r['oracle'],'inherited original oracle/'+p['slug'],'inherited')
+    return pins, hashes, manifest, takes, versions, reports['inputs.json'], original
+
+
+def derive():
+    OWN.mkdir(exist_ok=False)
+    tick('independent derivation started; primary unread')
+    pins, hashes, manifest, takes, versions, prior_inputs, original = metadata()
+    sources(pins, hashes, manifest['model'], 'before_original_load')
+    import numpy as np
+    correction = read(ROOT/'docs/di-domain-pilot-v2-inputs.json')
+    winzip = blob(ROOT/'docs/di-domain-metric-probe-windows.json.gz')
+    winraw = gzip.decompress(winzip)
+    require('window compressed/raw identity', sha(winzip) == correction['windows_sha256'] and sha(winraw) == correction['windows_raw_sha256'], 'original')
+    table = json.loads(winraw); windows = {}
+    require('window exact five sizes', set(table) == {str(n) for n in (256,512,1024,2048,4096)}, 'original')
+    for n in (256,512,1024,2048,4096):
+        row = table[str(n)]['torch32']; raw = np.array(row['bits'],dtype='<u4').tobytes()
+        require('window bits '+str(n), row['dtype'] == '<f4' and len(row['bits']) == n and sha(raw) == row['sha256'], 'original')
+        windows[n] = np.frombuffer(raw,dtype='<f4').astype(np.float64)
+    loaded, identities = {}, {}
+    for t in takes:
+        s = t['slug']; values = {}
+        pairs = ((f'tmp/di-morgan-control-20261008/prepare/{s}.npz',{'di':'di','target':'target'}),
+                 (f'tmp/di-morgan-control-20261008/render/{s}.npz',{'baseline':'wet','net_input':'net_input'}),
+                 (f'tmp/di-morgan-control-20261008/infer/{s}.npz',{'prediction':'net'}),
+                 (f'tmp/di-morgan-flatref-20261008/{s}.npz',{'flatref':'flatref'}))
+        for path, members in pairs:
+            with np.load(regular(ROOT/path), allow_pickle=False) as z:
+                for m,key in members.items():
+                    x = z[m]
+                    require('original active finite waveform '+s+'/'+key, x.shape == (N,) and x.dtype.kind == 'f'
+                            and np.isfinite(x).all() and float(np.std(x)) > 0, 'original')
+                    values[key] = x
+        require('original52 exact overlap '+s, values['net_input'].dtype == values['wet'].dtype and
+                values['net_input'][52:].tobytes() == values['wet'][:-52].tobytes(), 'original')
+        require('original prediction/flatref dtype '+s, values['net'].dtype == np.dtype('<f4') and values['flatref'].dtype == np.dtype('<f8'), 'original')
+        loaded[s] = values; identities[s] = {k:wave_identity(x) for k,x in values.items()}
+    inputs = dict(artifacts=hashes, waveforms=identities)
+    structure(prior_inputs, inputs, 'original six-member identities', 'original', 0)
+    sources(pins, hashes, manifest['model'], 'after_original_load')
+    score = scorer(windows)
+    archived = {r['slug']:r for r in original['rows']}
+    zero, baseline_errors = [], []
+    for t in takes:
+        s = t['slug']; v = loaded[s]; old = archived[s]
+        row = dict(**t, offset=0, qc_valid=old['qc_valid'], oracle=old['oracle'])
+        errors = {}
+        for arm,key in ARMS.items():
+            row[key] = score(v[arm],v['target'],v['di']); row[arm] = row[key]['primary']
+            for m in METRICS:
+                d = abs(row[key][m]-old[key][m]); errors[arm+'.'+m] = d
+                require('original scalar '+s+'/'+arm+'/'+m, d <= 1e-8, 'original', absolute_difference=d)
+        baseline_errors.append(dict(**t, valid=True, scores={key:row[key] for key in ARMS.values()}, errors=errors,
+                                    nonfinite_diagnostic_fields=[]))
+        zero.append(row); tick('original scalar replay '+s)
+    gate = screen(zero,takes)
+    structure(original['screen'],gate,'original F gate','original')
+    require('original scalar replay gate PASS', gate['passed'], 'original')
+    baseline = dict(complete=True,passed=True,scalar_count=108,absolute_tolerance=1e-8,rows=baseline_errors,screen=gate)
+    persist(OWN/'original-scalar-replay.json',baseline)
+    require('original scalar barrier readback',read(OWN/'original-scalar-replay.json') == baseline,'original')
+    sources(pins, hashes, manifest['model'], 'before_model_load')
+    import torch
+    torch.set_num_threads(2)
+    net = own_model().cpu()
+    net.load_state_dict(torch.load(manifest['model']['path'], map_location='cpu',weights_only=True))
+    net.eval()
+    require('CPU eval exactly two threads', torch.get_num_threads() == 2 and not net.training and all(p.device.type == 'cpu' for p in net.parameters()),'original')
+    replay = []; original_archives = {}
+    for t,row in zip(takes,zero):
+        s=t['slug']; v=loaded[s]; pred=rebuild(net,v['net_input'])
+        evidence = archive(OWN/(s+'.offset-+0.npz'),dict(raw_prediction=pred,offset=np.int64(0),corrected_prediction=pred.copy()))
+        require('original prediction exact bytes '+s, member(pred) == member(v['net']), 'original')
+        scores=score(pred,v['target'],v['di'])
+        errors={m:abs(scores[m]-archived[s]['network_scores'][m]) for m in METRICS}
+        for m,d in errors.items():
+            require('direct original network score '+s+'/'+m,d <= 1e-8,'original',absolute_difference=d)
+        row['network_scores']=scores; row['net']=scores['primary']; row['valid']=True
+        replay.append(dict(**t,offset=0,valid=True,attempted_file=evidence['file'],returned=True,archive=evidence,
+                           prediction_file=evidence['file'],prediction_file_sha256=evidence['sha256'],
+                           raw_prediction_sha256=sha(pred.tobytes()),corrected_prediction_sha256=sha(pred.tobytes()),
+                           original_prediction_sha256_float32=sha(v['net'].tobytes()),byte_identical=True,
+                           scores=scores,errors=errors,nonfinite_diagnostic_fields=[]))
+        original_archives[s]=evidence; tick('original model prediction '+s)
+    baseline_inference=dict(complete=True,passed=True,scalar_count=36,absolute_tolerance=1e-8,rows=replay,screen=screen(zero,takes))
+    persist(OWN/'original-inference-replay.json',baseline_inference)
+    require('original inference barrier readback',read(OWN/'original-inference-replay.json') == baseline_inference,'original')
+    sources(pins,hashes,manifest['model'],'before_phase_construction')
+    z=np.exp(-2j*np.pi*np.arange(N//2+1,dtype=np.float64)/N)
+    h=(A+z)/(1+A*z); h[0]=1+0j; h[-1]=-1+0j
+    coeff=archive(OWN/'coefficients.npz',dict(h=h))
+    def transform(x):
+        return np.fft.irfft(np.fft.rfft(np.asarray(x,dtype=np.float64))*h,n=N)
+    def inverse(x):
+        return np.fft.irfft(np.fft.rfft(np.asarray(x,dtype=np.float64))*np.conj(h),n=N)
+    prepared={}; control_rows=[]
+    for t in takes:
+        s=t['slug']; v=loaded[s]; x=np.asarray(v['net_input'],dtype='<f4').astype(np.float64)
+        y=transform(x); q=y.astype('<f4')
+        arrays=dict(model_converted_input=x,forward_float64=y,phase_input=q,inverse_float64=inverse(y),
+                    inverse_quantized_float64=inverse(q),phase_wet=transform(v['wet']),phase_flatref=transform(v['flatref']))
+        art=archive(OWN/(s+'.controls.npz'),arrays); measures=controls(arrays,h)
+        require('phase construction controls '+s,measures['passed'], 'new')
+        prepared[s]=arrays
+        control_rows.append(dict(**t,attempted_file=art['file'],archive=art,**measures,nonfinite_diagnostic_fields=[]))
+        tick('independent FFT inverse controls '+s)
+    config=dict(CONFIG,coefficients=wave_identity(h))
+    construction=dict(complete=True,passed=True,config=config,coefficients_archive=coeff,
+                      coefficients_attempt=dict(attempted_file='coefficients.npz',constructed=True,members=coeff['members'],archive=coeff),rows=control_rows)
+    persist(OWN/'construction-controls.json',construction)
+    require('construction barrier readback',read(OWN/'construction-controls.json') == construction)
+    sources(pins,hashes,manifest['model'],'before_phase_inference')
+    predictions={}; prediction_evidence=[]
+    for t in takes:
+        s=t['slug']; arrays={k:prepared[s][k] for k in ('phase_input','phase_wet','phase_flatref')}
+        pred=rebuild(net,arrays['phase_input']); arrays['raw_prediction']=pred; predictions[s]=pred
+        art=archive(OWN/(s+'.phase.npz'),arrays)
+        prediction_evidence.append(dict(**t,returned=True,attempted_file=art['file'],archive=art))
+        tick('phase model return retained '+s)
+    rows=[]
+    for t,base,evidence in zip(takes,zero,prediction_evidence):
+        s=t['slug']; v=loaded[s]; pred=predictions[s]
+        require('phase raw return validity '+s,pred.dtype == np.dtype('<f4') and pred.shape == (N,) and np.isfinite(pred).all())
+        row=dict(**t,valid=True,prediction_evidence=evidence,qc_valid=base['qc_valid'],oracle=base['oracle'])
+        for arm,key in ARMS.items():
+            wave=pred if arm == 'net' else prepared[s]['phase_'+arm]
+            row[key]=score(wave,v['target'],v['di']); row[arm]=row[key]['primary']
+            require('phase metric validity '+s+'/'+arm,set(row[key]) == set(METRICS) and all(math.isfinite(a) and a >= 0 for a in row[key].values()))
+        row['changes_from_zero']=paired(row,base); row['nonfinite_diagnostic_fields']=[]; rows.append(row)
+        tick('phase scores and paired changes '+s)
+    phase_gate=screen(rows,takes)
+    require('phase gate valid',phase_gate['valid'])
+    # Explicit invalid-priority controls on the independently derived panel.
+    require('missing coverage yields INCONCLUSIVE',screen(rows[:-1],takes)['disposition'] == 'INCONCLUSIVE')
+    bad=[dict(r) for r in rows]; bad[-1]['valid']=False
+    require('invalid last case yields INCONCLUSIVE',screen(bad,takes)['disposition'] == 'INCONCLUSIVE')
+    sources(pins,hashes,manifest['model'],'after_independent_scoring')
+    tick('complete independent derivation BEFORE any primary phase reads')
+    result=dict(complete=True,rows=rows,prediction_evidence=prediction_evidence,config=CONFIG,screen=phase_gate,
+                baseline_reused_no_new_score=zero,source_pins=pins,input_artifacts=hashes,inputs=inputs,
+                model=manifest['model'],takes=takes,packages=versions,prefix=sys.prefix,thread_count=2,
+                baseline_replay=baseline,baseline_inference_replay=baseline_inference,construction_controls=construction,
+                verifier_sha256_at_derivation=sha(blob(SELF)),elapsed_seconds=time.monotonic()-START,
+                primary_read_before_derivation=False,checks=CHECKS)
+    digest=persist(OWN/'independent-derivation.json',result)
+    require('full independent derivation durable readback',read(OWN/'independent-derivation.json') == result)
+    # Reopen every own waveform file and compare each member manifest once more.
+    arts=[coeff]+[r['archive'] for r in replay]+[r['archive'] for r in control_rows]+[r['archive'] for r in prediction_evidence]
+    for art in arts:
+        require('full readback archive '+art['file'],sha(blob(OWN/art['file'])) == art['sha256'])
+        with np.load(OWN/art['file'],allow_pickle=False) as saved:
+            require('full readback members '+art['file'],{k:member(saved[k]) for k in saved.files} == art['members'])
+    persist(OWN/'read-barrier.json',dict(complete=True,derivation_file='independent-derivation.json',derivation_sha256=digest,
+            readback_passed=True,archives_readback=len(arts),unix=time.time(),elapsed_seconds=time.monotonic()-START,
+            primary_artifacts_read=[],verifier_sha256=sha(blob(SELF)),checks_after_derivation=CHECKS[len(result['checks']):]))
+    tick('DURABLE READ BARRIER CLOSED; comparison now permitted')
+
+
+def compare():
+    import copy
+    import numpy as np
+    barrier = read(OWN/'read-barrier.json')
+    require('durable blind derivation barrier', barrier['complete'] is True and barrier['readback_passed'] is True
+            and barrier['primary_artifacts_read'] == [] and barrier['archives_readback'] == 37
+            and sha(blob(OWN/barrier['derivation_file'])) == barrier['derivation_sha256'])
+    d = read(OWN/barrier['derivation_file'])
+    require('preserved derivation source identity', sha(blob(OWN/'derivation-source.py')) == barrier['verifier_sha256']
+            == d['verifier_sha256_at_derivation'])
+    derivation_checks = d['checks']
+    require('blind derivation has no failed checks', all(c['passed'] for c in derivation_checks))
+    pins, hashes, model, takes = d['source_pins'], d['input_artifacts'], d['model'], d['takes']
+    sources(pins, hashes, model, 'before_primary_comparison')
+    tick('FIRST PRIMARY ARTIFACT READ follows persisted/readback derivation')
+    snapshots = {}
+    def primary_blob(name):
+        data = blob(PRIMARY/name)
+        snap = dict(sha256=sha(data),size=len(data))
+        if name in snapshots:
+            require('primary repeated read stable '+name,snapshots[name] == snap,'stability')
+        snapshots[name] = snap
+        return data
+    def primary_json(name):
+        return json.loads(primary_blob(name))
+    p = primary_json('result.json')
+    provenance = primary_json('provenance.json')
+    inputs = primary_json('inputs.json')
+    br = primary_json('baseline-replay.json')
+    bi = primary_json('baseline-inference-replay.json')
+    cc = primary_json('construction-controls.json')
+    attempts = [primary_json(f'baseline-replay-attempt-{i:02d}.json') for i in range(1,13)]
+    structure(d['inputs'],inputs,'primary inputs','original',0)
+    # Timing and interpreter text are observational metadata, checked explicitly;
+    # their exact observed values remain in the complete schema comparison.
+    require('primary timing finite and in900 budget',type(p.get('elapsed_seconds')) in (int,float)
+            and math.isfinite(p['elapsed_seconds']) and 0 <= p['elapsed_seconds'] <= 900)
+    require('primary start before blind verification',type(provenance.get('started_unix')) in (int,float)
+            and math.isfinite(provenance['started_unix']) and provenance['started_unix'] < barrier['unix'])
+    require('primary interpreter matches original',provenance.get('python') == sys.version)
+    manifest = read(ROOT/'docs/di-domain-pilot-inputs.json')
+    exp_prov = dict(pins=pins,git_revision=REV,input_artifacts=hashes,model=model,config=CONFIG,
+                    scope='fixed-periodic-phase-only-a-minus-0.9',prefix=CPU,python=sys.version,thread_count=2,
+                    budget_seconds=900,started_unix=provenance.get('started_unix'),attribution=manifest['attribution'],packages=d['packages'])
+    structure(exp_prov,provenance,'primary provenance',tol=0)
+    # NPZ containers are hashed as saved artifacts; numerical equality is at
+    # member level, never an inference from zip-container equality.
+    array_checks=[]; primary_manifests={}; inverse_crosschecks=[]; actual_controls=[]
+    def verify_npz(name, expected_manifest, tolerant_inverse=False):
+        raw = primary_blob(name)
+        actual = dict(file=name,sha256=sha(raw),members={})
+        arrays={}
+        with np.load(regular(PRIMARY/name),allow_pickle=False) as z:
+            check('primary NPZ exact member coverage '+name,set(z.files) == set(expected_manifest['members']))
+            for key in expected_manifest['members']:
+                arrays[key]=z[key]; actual['members'][key]=member(arrays[key])
+        with np.load(OWN/expected_manifest['file'],allow_pickle=False) as own:
+            for key, x in arrays.items():
+                y=own[key]
+                same_layout=x.dtype == y.dtype and x.shape == y.shape
+                maxerr=float(np.max(abs(x-y))) if same_layout and x.size else 0.0
+                if tolerant_inverse and key in ('inverse_float64','inverse_quantized_float64'):
+                    rel=relative(x,y)['relative_l2'] if same_layout else None
+                    passed=same_layout and np.isfinite(x).all() and rel <= 1e-12
+                    rec=dict(file=name,member=key,byte_identical=x.tobytes() == y.tobytes(),
+                             max_absolute_difference=maxerr,relative_l2=rel,tolerance=1e-12,
+                             algorithm='primary periodic lfilter versus independently derived FFT-conjugate inverse',passed=bool(passed))
+                    inverse_crosschecks.append(rec)
+                else:
+                    passed=same_layout and x.tobytes() == y.tobytes()
+                    rec=dict(file=name,member=key,byte_identical=bool(passed),max_absolute_difference=maxerr,
+                             independent_sha256=sha(y.tobytes()),primary_sha256=sha(x.tobytes()),passed=bool(passed))
+                    array_checks.append(rec)
+                check('primary member comparison '+name+'/'+key,passed,absolute_difference=maxerr)
+        primary_manifests[name]=actual
+        return actual,arrays
+    coeff, coefficient_arrays=verify_npz('coefficients.npz',d['construction_controls']['coefficients_archive'])
+    h=coefficient_arrays['h']
+    expected_bi=copy.deepcopy(d['baseline_inference_replay'])
+    expected_cc=copy.deepcopy(d['construction_controls'])
+    expected_cc['coefficients_archive']=coeff
+    expected_cc['coefficients_attempt']['archive']=coeff
+    expected_cc['coefficients_attempt']['members']=coeff['members']
+    expected_rows=copy.deepcopy(d['rows']); expected_evidence=copy.deepcopy(d['prediction_evidence'])
+    for i,t in enumerate(takes):
+        s=t['slug']
+        biman,original_arrays=verify_npz(s+'.offset-+0.npz',d['baseline_inference_replay']['rows'][i]['archive'])
+        expected_bi['rows'][i]['archive']=biman
+        expected_bi['rows'][i]['prediction_file_sha256']=biman['sha256']
+        # Directly tie saved primary offset-zero bytes to the original inference
+        # member identity already verified from the allowed original input file.
+        check('primary offset-zero matches original prediction '+s,
+              wave_identity(original_arrays['raw_prediction']) == d['inputs']['waveforms'][s]['net'],'original')
+        cm,arrays=verify_npz(s+'.controls.npz',d['construction_controls']['rows'][i]['archive'],True)
+        measures=controls(arrays,h)
+        check('actual saved PRIMARY inverse controls pass unchanged gates '+s,measures['passed'])
+        for name in ('inverse','quantized_inverse'):
+            metric=measures['errors'][name]
+            check('actual primary inverse residual '+s+'/'+name,math.isfinite(metric['denominator']) and metric['denominator'] > 0
+                  and metric['relative_l2'] <= (1e-6 if name == 'quantized_inverse' else 1e-12),
+                  relative_l2=metric['relative_l2'],denominator=metric['denominator'])
+        actual_controls.append(dict(**t,**measures))
+        # Independently derived FFT metrics and primary saved recurrence metrics
+        # are compared explicitly before checking the primary recorded metrics.
+        structure(d['construction_controls']['rows'][i]['errors'],measures['errors'],
+                  'different inverse algorithm control crosscheck/'+s,tol=1e-12)
+        expected_cc['rows'][i].update(archive=cm,**measures)
+        pm,_=verify_npz(s+'.phase.npz',d['prediction_evidence'][i]['archive'])
+        expected_evidence[i]['archive']=pm
+        expected_rows[i]['prediction_evidence']=expected_evidence[i]
+    structure(d['baseline_replay'],br,'primary original108 replay','original')
+    structure(expected_bi,bi,'primary original12 bytes/direct36 replay','original')
+    structure(expected_cc,cc,'primary construction controls',tol=1e-12)
+    for i,attempt in enumerate(attempts,1):
+        expected=dict(complete=False,passed=False,scalar_count=i*9,absolute_tolerance=1e-8,
+                      rows=d['baseline_replay']['rows'][:i],screen=screen(d['baseline_reused_no_new_score'][:i],takes))
+        structure(expected,attempt,'primary replay attempt '+str(i),'original')
+    interpretation=('Artificial finite periodic phase challenge of dependent known-clean Morgan cases. No physical cabinet, native transfer, complete processing panel or product claim. Saved flatref transform is a declared simple arm; ideal magnitude correction commutes, but new flatref reconstruction and finite scoring-window equivalence are not established.')
+    expected_result=dict(complete=True,rows=expected_rows,prediction_evidence=expected_evidence,config=CONFIG,
+                         screen=d['screen'],interpretation=interpretation,baseline_reused_no_new_score=d['baseline_reused_no_new_score'],
+                         elapsed_seconds=p.get('elapsed_seconds'),nonfinite_diagnostic_fields=[])
+    structure(expected_result,p,'primary result full schema')
+    # Independently verify all four ordered progress stages and the preserved
+    # stdout transcript. These repeated artifacts are checks, not extra cases.
+    progress=[json.loads(line) for line in primary_blob('progress.jsonl').splitlines()]
+    expected_progress=([dict(stage='baseline-inference',**r) for r in expected_bi['rows']] +
+                       [dict(stage='construction-controls',**r) for r in expected_cc['rows']] +
+                       [dict(stage='phase-predictions',**r) for r in expected_evidence] +
+                       [dict(stage='phase-cases',**r) for r in expected_rows])
+    structure(expected_progress,progress,'primary48 progress records')
+    logpath=ROOT/'tmp/di-phase-control-20261008.log'
+    logdata=blob(logpath); snapshots['../di-phase-control-20261008.log']=dict(sha256=sha(logdata),size=len(logdata))
+    stdout=[json.loads(line) for line in logdata.splitlines()]
+    structure(expected_progress,stdout,'primary48 stdout records')
+    for n in ('failure.json','result-before-final-budget.json'):
+        check('primary successful absence '+n,not (PRIMARY/n).exists())
+    # Verify primary whole result independently meets the unchanged F conditions
+    # and invalid-priority rule without using its recorded disposition.
+    structure(screen(p['rows'],takes),d['screen'],'independent F on primary phase rows')
+    structure(screen(p['baseline_reused_no_new_score'],takes),d['baseline_inference_replay']['screen'],
+              'independent F on primary baseline rows','original')
+    for i,(row,base) in enumerate(zip(p['rows'],p['baseline_reused_no_new_score'])):
+        structure(paired(row,base),row['changes_from_zero'],'paired primary recomputation/'+takes[i]['slug'])
+    sources(pins,hashes,model,'after_primary_comparison')
+    for name,snap in snapshots.items():
+        path=logpath if name.startswith('../') else PRIMARY/name
+        data=blob(path)
+        check('primary final snapshot stable '+name,dict(sha256=sha(data),size=len(data)) == snap,'stability')
+    require('blind independent evidence remains byte stable',sha(blob(OWN/'independent-derivation.json')) == barrier['derivation_sha256'],'stability')
+    # Hash all owned evidence references again, including the preserved source.
+    own_arts=[d['construction_controls']['coefficients_archive']]
+    own_arts += [r['archive'] for r in d['baseline_inference_replay']['rows']]
+    own_arts += [r['archive'] for r in d['construction_controls']['rows']]
+    own_arts += [r['archive'] for r in d['prediction_evidence']]
+    for art in own_arts:
+        check('independent final snapshot stable '+art['file'],sha(blob(OWN/art['file'])) == art['sha256'],'stability')
+    tick('all primary comparisons complete')
+    all_checks=derivation_checks+CHECKS
+    failures=[c for c in all_checks if not c['passed']]
+    status='VERIFIED' if not failures else 'NOT_VERIFIED'
+    disposition=d['screen']['disposition'] if not failures else 'INCONCLUSIVE'
+    categories={k:dict(checks=sum(c['category'] == k for c in all_checks),
+                       failures=sum(c['category'] == k and not c['passed'] for c in all_checks))
+                for k in sorted({c['category'] for c in all_checks})}
+    maxes={k:max((c.get('absolute_difference',0) for c in all_checks if c['category'] == k),default=0)
+           for k in categories}
+    scalar_names=('primary original108 replay','primary original12 bytes/direct36 replay','primary result full schema')
+    scalar_max=max((c.get('absolute_difference',0) for c in CHECKS if c['name'].startswith(scalar_names)),default=0)
+    limitations=['Shares NumPy/SciPy/Torch, CPU and floating-point ecosystem with primary; all repository numerical code was independently reimplemented.',
+                 'Primary exit0/session98354/duration supplied by main, not independently observed; saved logs and artifacts were independently checked.',
+                 'File snapshots and read-barrier transcript establish this verifier procedure, not an independent retrospective runtime-access audit of primary.',
+                 'Original full rendering, plugin transcript and physical 52-sample latency limits inherited; only saved overlap and original bytes rechecked.',
+                 'Twelve dependent development takes from one player/guitar and known-clean Morgan chain; one artificial periodic filter, no physical cabinet/native/song/product/augmentation claim.',
+                 'Prior21246 checks are verified as pinned prerequisite status, not recursively counted as fresh scientific evidence.',
+                 'Inverse float64 bytes are not required equal across valid lfilter and FFT algorithms; saved primary residuals are independently gated at unchanged1e-12/1e-6.']
+    report=dict(status=status,scientific_disposition=disposition,verdict=status+' '+disposition,
+                check_count=len(all_checks),failure_count=len(failures),categories=categories,failures=failures,checks=all_checks,
+                source_revision=REV,source_pins=pins,input_artifacts=hashes,model=model,packages=d['packages'],
+                independent_derivation_file=str(OWN/'independent-derivation.json'),independent_derivation_sha256=barrier['derivation_sha256'],
+                read_barrier=barrier,derivation_source_sha256=d['verifier_sha256_at_derivation'],
+                comparison_source_sha256=sha(blob(SELF)),source_evolution='Comparison/reporting added after complete blind derivation; original source archived byte-identically. No scientific computation repeated or changed.',
+                primary_artifact_snapshots=snapshots,independent_archive_manifests=own_arts,
+                scientific_counts=dict(original_scalar_replay=108,original_prediction_returns=12,direct_original_network_scores=36,
+                                       phase_construction_cases=12,phase_prediction_returns=12,phase_network_metrics=36,
+                                       phase_simple_arm_metrics=72,phase_paired_change_scalars=168),
+                baseline_screen=d['baseline_inference_replay']['screen'],phase_screen=d['screen'],
+                independent_phase_rows=d['rows'],primary_actual_construction_controls=actual_controls,
+                exact_member_checks=array_checks,inverse_algorithm_crosschecks=inverse_crosschecks,
+                max_absolute_discrepancy_by_category=maxes,max_primary_scalar_discrepancy=scalar_max,
+                max_exact_member_absolute_discrepancy=max((r['max_absolute_difference'] for r in array_checks),default=0),
+                max_inverse_algorithm_absolute_discrepancy=max(r['max_absolute_difference'] for r in inverse_crosschecks),
+                max_inverse_algorithm_relative_l2=max(r['relative_l2'] for r in inverse_crosschecks),
+                max_actual_primary_inverse_relative_l2=max(r['errors']['inverse']['relative_l2'] for r in actual_controls),
+                max_actual_primary_quantized_inverse_relative_l2=max(r['errors']['quantized_inverse']['relative_l2'] for r in actual_controls),
+                comparison_elapsed_seconds=time.monotonic()-START,limitations=limitations)
+    target=ROOT/'tmp/di-phase-verification.json'
+    persist(target,report)
+    if read(target) != report:
+        raise ValueError('final compact report readback failed')
+    lines=[report['verdict'], '',f"{len(all_checks)} checks; {len(failures)} failures. Fresh original108 scalars, original12 byte comparisons/direct36 scores, all12 phase controls/predictions,108 phase metrics and168 paired-change scalars.", '',
+           f"Original median relative advantage: {d['baseline_inference_replay']['screen']['median_relative_improvement']:.17g}; phase: {d['screen']['median_relative_improvement']:.17g}.",
+           f"Phase strict wins: {d['screen']['strict_wins']}/12; group medians: {d['screen']['group_medians']}; disposition {disposition}.", '',
+           f"Full primary schema/progress/stdout/NPZ manifests compared. Exact member checks: {len(array_checks)}; maximum absolute difference {report['max_exact_member_absolute_discrepancy']:.17g}.",
+           f"Maximum primary scalar discrepancy: {scalar_max:.17g}.",
+           f"Inverse algorithm crosschecks: {len(inverse_crosschecks)}; max absolute difference {report['max_inverse_algorithm_absolute_discrepancy']:.17g}, max relative L2 {report['max_inverse_algorithm_relative_l2']:.17g}.",
+           f"Actual saved primary inverse max residual {report['max_actual_primary_inverse_relative_l2']:.17g} <=1e-12; quantized {report['max_actual_primary_quantized_inverse_relative_l2']:.17g} <=1e-6.", '',
+           f"Read barrier: complete durable independent derivation {barrier['derivation_sha256']},37 independently saved NPZs read back BEFORE first primary artifact access.",
+           f"HEAD {REV};77 source pins,48 original files,original checkpoint and all primary snapshots stable before/after. Categories: {categories}.",
+           f"Derivation source {d['verifier_sha256_at_derivation']}; comparison source {report['comparison_source_sha256']}. Comparison/reporting was added after blind derivation; original source and numeric derivation preserved; no scientific inference/scoring repeated.", '',
+           'Evidence: tmp/di-phase-verification.json; tmp/di-phase-independent-arrays/independent-derivation.json; read-barrier.json; transcript.jsonl; derivation-source.py;37 NPZs. No base64 waveform payloads.', '', 'Limits:']
+    lines += ['- '+x for x in limitations]
+    if failures:
+        lines += ['', 'Failed comparisons (preserved, no omission rescue):']+[json.dumps(f) for f in failures]
+    md=ROOT/'tmp/di-phase-verification.md'
+    with md.open('x') as f:
+        f.write('\n'.join(lines)+'\n'); f.flush(); os.fsync(f.fileno())
+    print(json.dumps({k:report[k] for k in ('verdict','check_count','failure_count','categories','max_primary_scalar_discrepancy',
+          'max_exact_member_absolute_discrepancy','max_inverse_algorithm_absolute_discrepancy','max_inverse_algorithm_relative_l2')}),flush=True)
+    if failures:
+        print(json.dumps(failures,indent=2),flush=True)
+
+
+def main():
+    parser=argparse.ArgumentParser(); parser.add_argument('mode',choices=['derive','compare']); args=parser.parse_args()
+    try:
+        if args.mode == 'derive':
+            derive()
+        else:
+            compare()
+    except Exception as error:
+        if OWN.exists():
+            stamp=str(time.time_ns())
+            persist(OWN/('failure-'+stamp+'.json'),dict(mode=args.mode,error_type=type(error).__name__,message=str(error),
+                    traceback=traceback.format_exc(),checks=CHECKS,elapsed_seconds=time.monotonic()-START))
+        raise
+
+
+if __name__ == '__main__':
+    main()

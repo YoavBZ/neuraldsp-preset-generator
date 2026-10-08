@@ -58,9 +58,10 @@ independent checks agree. The [known input-shift control](di-input-shift-control
 was independently reviewed and committed before access. Both replay controls pass,
 including twelve exact original predictions. Its [verified PASS](di-input-shift-control-results.md)
 at all four shifts has 21,246 agreeing final checks and exact prediction bytes.
-Next: [fixed periodic phase challenge](di-phase-control-plan.md), reviewed and declared; 66
-synthetic checks pass with one expected Torch skip. Fresh independent review
-approves; commit before new experimental audio/model access. No changed thresholds,
+The [fixed periodic phase challenge](di-phase-control-plan.md) was reviewed and
+committed before access. All replay/construction controls pass; its
+[verified PASS](di-phase-control-results.md) has twelve wins and 57.56% median
+improvement. All 15,976 independent checks agree; this study is closed. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio

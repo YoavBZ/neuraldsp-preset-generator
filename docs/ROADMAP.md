@@ -119,9 +119,10 @@ lives in the linked documents. Last updated 2026-10-08.
        reviewed and committed before access. Both replay controls pass, including
        twelve exact original predictions. Its [verified PASS](di-input-shift-control-results.md)
        at all four shifts has 21,246 agreeing final checks and exact prediction bytes.
-       Next: [fixed periodic phase challenge](di-phase-control-plan.md), reviewed and declared;
-       66 synthetic checks pass with one expected Torch skip. Fresh independent
-       review approves; commit before new experimental audio/model access. No threshold tuning or
+       The [fixed periodic phase challenge](di-phase-control-plan.md) was reviewed
+       and committed before access. All replay/construction controls pass;
+       [verified PASS](di-phase-control-results.md) has twelve wins and 57.56% median
+       improvement. All 15,976 independent checks agree; this study is closed. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
