@@ -95,6 +95,8 @@ was declared, what was measured, and the research behind it.
 - [set3-heldout-confirmation-plan.md](set3-heldout-confirmation-plan.md): approved
   one-time SW50R confirmation, with PR12 secondary (2026-10-08). Frozen inputs must be
   committed before held-out audio is read; result pending.
+- [set3-heldout-confirmation-results.md](set3-heldout-confirmation-results.md): current
+  execution record for the approved confirmation; no accuracy verdict yet.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
