@@ -89,7 +89,9 @@ was declared, what was measured, and the research behind it.
 - [di-robustness-plan.md](di-robustness-plan.md) → [results](di-robustness-results.md):
   the judge through a wrong DI.
 - [di-recovery-plan.md](di-recovery-plan.md) → [results](di-recovery-results.md):
-  rebuilding the DI. Not passed on clean PR12.
+  rebuilding the DI. Not passed on clean PR12;
+  [set-3 results](di-recovery-set3-results.md): strong against the clean default; against
+  a constant, a conditional pass on SW50R only.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

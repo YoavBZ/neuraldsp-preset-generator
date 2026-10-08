@@ -37,8 +37,13 @@ lives in the linked documents. Last updated 2026-10-07.
 ## Next, in order
 
 0. **Song-to-preset model** ([plan and checkpoint](di-recovery-plan.md)), in this order:
-   - **Set 3:** the rebuilt-DI test on heavier tones (the network is trained on all
-     three amps; declared in the plan's "Phase 2 on set 3").
+   - **Set 3, development:** done ([results](di-recovery-set3-results.md)).
+     - **Large gains over the clean default and the stand-in** (SW50R −0.70, PR12 −0.42).
+     - **Against a constant driven preset:** SW50R is a conditional pass, PR12 is not
+       passed (the result depends on the constant's undeclared definition), and AC20
+       fails.
+     - **Next:** declare the constant, then a one-time held-out confirmation, which is
+       the user's call.
    - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
      ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
      - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
@@ -172,4 +177,5 @@ lives in the linked documents. Last updated 2026-10-07.
 | 2026-10-07 | Rebuilt-DI preset choice not passed on clean PR12 (8.5% vs 10%); continue to heavier tones and a search beyond the menu | [results](di-recovery-results.md) |
 | 2026-10-07 | Open source only: no cloud APIs, commercial tools, or unlicensed or gated weights; published methods are reimplemented | [round 5](research/round-5-guitar-models.md) |
 | 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
+| 2026-10-08 | Rebuilding the DI works on heavier tones against the clean default and the stand-in. Against a constant driven preset: SW50R a conditional pass, PR12 not passed, AC20 failed. The constant's definition is to be declared before the held-out confirmation | [set-3 results](di-recovery-set3-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
