@@ -144,6 +144,9 @@ was declared, what was measured, and the research behind it.
   predictions. [Verified PASS](di-input-shift-control-results.md) at all four shifts;
   21,246 final comparison checks agree, with exact prediction bytes.
   Next: separately reviewed processing diversity; no native/product claim.
+- [Fixed periodic phase control](di-phase-control-plan.md): reviewed and declared; 66 synthetic
+  checks pass with one expected Torch skip; fresh independent review approves the frozen procedure.
+  No experimental audio/model access until reviewed declaration is committed.
 - [Transfer-method source follow-up](research/di-transfer-method-followup-2026-10-08.md):
   published recovery/search and augmentation choices, with explicit synthetic-data
   limits. Research hypotheses only; no new model or training run selected.
