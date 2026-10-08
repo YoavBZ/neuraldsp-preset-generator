@@ -94,6 +94,9 @@ was declared, what was measured, and the research behind it.
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It
   passes identification across players (74.5%) but not reranking on real recordings.
+- [separator-upgrade-plan.md](separator-upgrade-plan.md) →
+  [results](separator-upgrade-results.md): open separators (Mega-53, X-LANCE) and pan
+  isolation against htdemucs_6s. About +1 dB SNR; not passed.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.

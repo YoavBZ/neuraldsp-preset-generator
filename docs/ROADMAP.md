@@ -39,8 +39,15 @@ lives in the linked documents. Last updated 2026-10-07.
 0. **Song-to-preset model** ([plan and checkpoint](di-recovery-plan.md)), in this order:
    - **Set 3:** the rebuilt-DI test on heavier tones (the network is trained on all
      three amps; declared in the plan's "Phase 2 on set 3").
-   - **Separator:** open-source upgrades for stems, Mega-53 plus pan isolation
-     (`separator-upgrade-plan.md`).
+   - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
+     ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
+     - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
+       usable parts (sets 1–2: 14 → 21 of 28; set 3: 12 → 21 of 33).
+     - The gain is on single-guitar parts (+4 dB); multi-guitar parts gain about
+       0.4 dB. Other guitars in the stem are the bottleneck.
+     - Pan isolation can't be tested here (the sessions have no pan). On a simulated
+       pan, a choice of side made by ear would help multi-guitar parts by about 1 dB; a
+       "loudest side" rule hurts.
    - **Our own guitar tone encoder: run 2026-10-08, not passed as a reranker**
      ([tone-encoder-plan.md](tone-encoder-plan.md)).
      - It names a render's preset among 22 from other players' renders 74.5% of the
