@@ -108,10 +108,15 @@ was declared, what was measured, and the research behind it.
 - [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →
   [results](set3-rank-calibration-results.md): supervised prior/score blend misses
   declared criteria versus the net chooser. Independently verified; fixed blend closed.
-- [set3-cross-amp-diagnostic-plan.md](set3-cross-amp-diagnostic-plan.md): declared
-  pooling the existing three amp menus, with known-DI/SW50R/global-constant controls.
-  Fresh review approved and 17 checks pass; commit precedes computation, with
-  independent verification afterward. Development scores only.
+- [set3-cross-amp-diagnostic-plan.md](set3-cross-amp-diagnostic-plan.md) →
+  [results](set3-cross-amp-diagnostic-results.md): pooling the three existing amp menus
+  misses all declared routing conditions. Independently verified; no amp-selector or
+  pooled-score tuning follows.
+- [Training-domain audit](research/di-domain-transfer-audit-2026-10-08.md): native
+  paired recordings are absent from audited wet supervision; source claims independently
+  checked. [Frozen-model transfer pilot](di-domain-pilot-plan.md): reviewed and declared,
+  not run; 105 synthetic checks pass, mandatory CPU-Torch metric preflight outstanding;
+  twelve existing P2 takes, matched Morgan controls, no training or reserved-data use.
 - [rerank-plan.md](rerank-plan.md): a DI-free reranker (log-mel, PANNs CNN14) on clean
   PR12. Not passed.
 - [tone-encoder-plan.md](tone-encoder-plan.md): our own contrastive tone encoder. It

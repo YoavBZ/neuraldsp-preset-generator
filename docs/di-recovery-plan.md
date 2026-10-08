@@ -21,11 +21,17 @@ complete and independently verified: it rescues one refusal, but none of 11 cont
 improves, so its declared expansion rule fails. The
 [rank-calibration study](set3-rank-calibration-results.md) is also complete and
 independently verified: it misses the declared improvement criteria versus the net
-chooser, so that fixed blend is closed. Next is a separately reviewed
-[cross-amp choice diagnostic](set3-cross-amp-diagnostic-plan.md), pooling the existing
-three menus with known-DI and fixed-constant controls. This uses saved development
-scores only and comes before longer training, stem augmentation or
-expanding the knob search. No reserved audio
+chooser, so that fixed blend is closed. The
+[cross-amp choice diagnostic](set3-cross-amp-diagnostic-results.md) also missed its
+declared criteria, independently verified; no amp-selector or pooled-score tuning
+follows. The [training-domain audit](research/di-domain-transfer-audit-2026-10-08.md)
+has independently checked source claims: audited wet supervision is Morgan renders.
+A [small frozen-model pilot](di-domain-pilot-plan.md) is being prepared on existing
+licensed P2 pairs, with corrected timing, split caveats and recoverability controls.
+Code/design review and 105 synthetic checks passed; the declaration is being frozen.
+Commitment and a mandatory CPU-Torch metric preflight precede new audio access. A domain gap
+remains a hypothesis. Longer training, stem augmentation and expanding knobs are
+not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
 Heavier-tone listening remains required before product decisions. The user authorized
 autonomous continuation on 2026-10-08, with consultation only for important decisions.

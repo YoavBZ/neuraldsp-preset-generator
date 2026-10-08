@@ -71,13 +71,22 @@ lives in the linked documents. Last updated 2026-10-08.
        a preset prior improves on the prior alone but has median zero gain over the
        original chooser with the same fallback. Independent recomputation agrees on
        651,209 fields. Close this blend without changing its grid/prior/features.
-     - **Next: test choice across the existing three amp menus**
-       ([declared plan](set3-cross-amp-diagnostic-plan.md)). The product may choose any amp;
-       prior tests mostly fixed one. Compare pooled known-DI/net choices with SW50R
-       and global constants, keeping the same fallback. Development scores only;
-       fresh review approved and all 17 checks pass independently. Commit before computation
-       and verify conclusions afterward. No further long
-       waveform training or knob search is justified yet.
+     - **Cross-amp diagnostic: complete, criteria missed**
+       ([results](set3-cross-amp-diagnostic-results.md)). Pooling the existing three
+       menus shows median zero gain over SW50R for both known-DI and net choices.
+       Hindsight among the three fixed net picks also has median zero gain. Independent
+       recomputation agrees on 20,864 fields. No amp-selector training, pooled-score
+       tuning or knob expansion follows this procedure.
+     - **Training-domain audit: sources independently checked; pilot preparing.**
+       [Audit](research/di-domain-transfer-audit-2026-10-08.md): audited wet supervision
+       consists of Morgan renders, despite locally available licensed native DI/amp
+       pairs. The [small frozen-model pilot](di-domain-pilot-plan.md) compares twelve
+       P2 takes through the original recording chain and a fixed Morgan setting.
+       Independent review approved corrected timing, split caveats, controls and code;
+       105 synthetic checks pass, two Torch checks await the mandatory separate preflight.
+       The procedure is declared before execution; commit and metric preflight precede
+       native audio access.
+       Transfer failure remains a hypothesis. No long training run is justified yet.
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search
        is deferred while the existing menu shows development headroom.
