@@ -1,0 +1,21 @@
+{
+  "original_sha256": "51c0a420e4819f525c8e9d3d2eb022089f1450d9ff7c24a206d6db4acdd1fc41",
+  "original_size": 359187246,
+  "lossless_decompression_verified": true,
+  "status": "VERIFIED",
+  "scientific_disposition": "PASS",
+  "final_comparison_checks": 21246,
+  "final_failures": 0,
+  "original_local_report": "tmp/di-input-shift-verification.json",
+  "verifier_sha256": "4ad1bfcd4ff01cf2da2df505853e8c17073c1bb3600f143fac90edb11228a176",
+  "full_lossless_archive": "tmp/di-input-shift-verification.full.json.gz",
+  "full_lossless_archive_sha256": "615dd04d894c5bab339226f65b86040681b4a57464c8b4ed483d92c5769db1cd",
+  "full_lossless_archive_size": 259749108,
+  "tracked_report": "docs/di-input-shift-control-verification.json.gz",
+  "tracked_gzip_sha256": "53ac147bc2ea2c4a3d54e63b4b52571791fe9b24ec64b28eca644c82abd34100",
+  "tracked_gzip_size": 802666,
+  "tracked_uncompressed_sha256": "30fa2e1554e5e7a4961c316032449a504169ff431a4400d4a23e1c745d0cf873",
+  "tracked_uncompressed_size": 17270253,
+  "payload_references": 120,
+  "storage_note": "Only 120 base64 payload strings (60 unique prediction NPZs duplicated in derivation). All numbers/checks/failures retained; each payload replaced by original JSON pointer and content hashes. Full original report and lossless archive retained locally."
+}

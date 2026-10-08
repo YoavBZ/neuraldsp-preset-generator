@@ -1,0 +1,489 @@
+{
+  "complete": true,
+  "passed": true,
+  "scalar_count": 108,
+  "absolute_tolerance": 1e-08,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.31811629248553,
+          "canonical_waveform_l1": 0.06957521852177596,
+          "raw_lowband": 0.8387529574977808
+        },
+        "network_scores": {
+          "primary": 1.356647989301702,
+          "canonical_waveform_l1": 0.03650782839257735,
+          "raw_lowband": 1.2083081951228967
+        },
+        "flatref_scores": {
+          "primary": 3.5585204760495026,
+          "canonical_waveform_l1": 0.06957521211173694,
+          "raw_lowband": 0.8022731600101778
+        }
+      },
+      "errors": {
+        "wet.primary": 9.414691248821327e-14,
+        "wet.canonical_waveform_l1": 1.3877787807814457e-17,
+        "wet.raw_lowband": 1.0554890295111363e-12,
+        "net.primary": 2.220446049250313e-16,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 7.542855229303314e-13,
+        "flatref.primary": 8.881784197001252e-16,
+        "flatref.canonical_waveform_l1": 1.3877787807814457e-17,
+        "flatref.raw_lowband": 3.071987109137808e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.141863540456876,
+          "canonical_waveform_l1": 0.06627324010112691,
+          "raw_lowband": 1.0770030879068435
+        },
+        "network_scores": {
+          "primary": 1.3977110365376941,
+          "canonical_waveform_l1": 0.03935065964323825,
+          "raw_lowband": 1.2614681107031411
+        },
+        "flatref_scores": {
+          "primary": 3.3646525744065108,
+          "canonical_waveform_l1": 0.06627318562755427,
+          "raw_lowband": 1.0452991725591751
+        }
+      },
+      "errors": {
+        "wet.primary": 8.881784197001252e-16,
+        "wet.canonical_waveform_l1": 1.3877787807814457e-17,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 6.938893903907228e-18,
+        "net.raw_lowband": 1.837197061149709e-12,
+        "flatref.primary": 4.440892098500626e-16,
+        "flatref.canonical_waveform_l1": 1.3877787807814457e-17,
+        "flatref.raw_lowband": 1.836308882730009e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.818732299485904,
+          "canonical_waveform_l1": 0.049658252571410974,
+          "raw_lowband": 0.9994720437125183
+        },
+        "network_scores": {
+          "primary": 1.5494068956363483,
+          "canonical_waveform_l1": 0.04864496037247269,
+          "raw_lowband": 1.144331433280481
+        },
+        "flatref_scores": {
+          "primary": 3.02816527569074,
+          "canonical_waveform_l1": 0.04959409623720978,
+          "raw_lowband": 0.9466559012984757
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 4.991562718714704e-13,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 6.938893903907228e-18,
+        "net.raw_lowband": 7.489564524121306e-13,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 6.938893903907228e-18,
+        "flatref.raw_lowband": 2.3658852654762086e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.870564322439565,
+          "canonical_waveform_l1": 0.044105579964644294,
+          "raw_lowband": 0.9978787952300386
+        },
+        "network_scores": {
+          "primary": 1.6238200988830815,
+          "canonical_waveform_l1": 0.03934203167617609,
+          "raw_lowband": 0.9713436461767426
+        },
+        "flatref_scores": {
+          "primary": 3.017100620998192,
+          "canonical_waveform_l1": 0.044102286308141676,
+          "raw_lowband": 0.929205636846137
+        }
+      },
+      "errors": {
+        "wet.primary": 8.881784197001252e-16,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 9.708900350346994e-13,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 5.737632591262809e-13,
+        "flatref.primary": 6.217248937900877e-15,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 1.7863488466218769e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.869246607726732,
+          "canonical_waveform_l1": 0.044359482779514604,
+          "raw_lowband": 1.0707950625381855
+        },
+        "network_scores": {
+          "primary": 1.4083839514347356,
+          "canonical_waveform_l1": 0.04136030828523231,
+          "raw_lowband": 1.361229986815313
+        },
+        "flatref_scores": {
+          "primary": 3.0875490228539633,
+          "canonical_waveform_l1": 0.04435923488534468,
+          "raw_lowband": 1.0407888190172734
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 8.04623034866836e-12,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 6.938893903907228e-18,
+        "net.raw_lowband": 7.858380612901783e-12,
+        "flatref.primary": 8.881784197001252e-16,
+        "flatref.canonical_waveform_l1": 1.3877787807814457e-17,
+        "flatref.raw_lowband": 7.366107723782989e-12
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.012802754664242,
+          "canonical_waveform_l1": 0.05141229178897682,
+          "raw_lowband": 1.0678435121365928
+        },
+        "network_scores": {
+          "primary": 1.6336465526082002,
+          "canonical_waveform_l1": 0.04462718528441961,
+          "raw_lowband": 1.0993857645828702
+        },
+        "flatref_scores": {
+          "primary": 3.1612424880458385,
+          "canonical_waveform_l1": 0.0514107391022757,
+          "raw_lowband": 1.0036000634592637
+        }
+      },
+      "errors": {
+        "wet.primary": 8.881784197001252e-16,
+        "wet.canonical_waveform_l1": 6.938893903907228e-18,
+        "wet.raw_lowband": 7.547296121401814e-13,
+        "net.primary": 2.220446049250313e-16,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 2.020605904817785e-13,
+        "flatref.primary": 4.440892098500626e-16,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 1.6542323066914832e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.268729847149958,
+          "canonical_waveform_l1": 0.06924559486746196,
+          "raw_lowband": 0.6408694722233699
+        },
+        "network_scores": {
+          "primary": 1.4958130893720543,
+          "canonical_waveform_l1": 0.03550792947125198,
+          "raw_lowband": 1.2950734554498204
+        },
+        "flatref_scores": {
+          "primary": 3.5667571344976574,
+          "canonical_waveform_l1": 0.0692453839383102,
+          "raw_lowband": 0.5912443784008986
+        }
+      },
+      "errors": {
+        "wet.primary": 2.877698079828406e-13,
+        "wet.canonical_waveform_l1": 1.3877787807814457e-17,
+        "wet.raw_lowband": 2.3991919562149633e-13,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 2.1804780203638074e-13,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 8.182343691487404e-14
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.224219840883034,
+          "canonical_waveform_l1": 0.05337137854635508,
+          "raw_lowband": 0.5948321944762326
+        },
+        "network_scores": {
+          "primary": 1.3275160170855151,
+          "canonical_waveform_l1": 0.03287761723977674,
+          "raw_lowband": 1.192069787900476
+        },
+        "flatref_scores": {
+          "primary": 3.4188565709721486,
+          "canonical_waveform_l1": 0.053371332245066946,
+          "raw_lowband": 0.5463412327717885
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 6.938893903907228e-18,
+        "wet.raw_lowband": 2.631228568361621e-13,
+        "net.primary": 2.220446049250313e-16,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 6.812328479099961e-13,
+        "flatref.primary": 8.881784197001252e-16,
+        "flatref.canonical_waveform_l1": 1.3877787807814457e-17,
+        "flatref.raw_lowband": 3.126388037344441e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.315722567471393,
+          "canonical_waveform_l1": 0.07557680580805,
+          "raw_lowband": 0.7479442524135026
+        },
+        "network_scores": {
+          "primary": 1.4918509766825998,
+          "canonical_waveform_l1": 0.03814913990820794,
+          "raw_lowband": 1.3369532991910025
+        },
+        "flatref_scores": {
+          "primary": 3.58652440282249,
+          "canonical_waveform_l1": 0.07557674017243134,
+          "raw_lowband": 0.6987381928361435
+        }
+      },
+      "errors": {
+        "wet.primary": 5.329070518200751e-15,
+        "wet.canonical_waveform_l1": 1.3877787807814457e-17,
+        "wet.raw_lowband": 2.937650123158164e-13,
+        "net.primary": 4.440892098500626e-16,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 1.2876366639602566e-12,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 1.3877787807814457e-17,
+        "flatref.raw_lowband": 1.1446399383885364e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.230290357992964,
+          "canonical_waveform_l1": 0.05594809887421997,
+          "raw_lowband": 0.6018490603448975
+        },
+        "network_scores": {
+          "primary": 1.3653424044185862,
+          "canonical_waveform_l1": 0.02956094500976365,
+          "raw_lowband": 1.1666840731854764
+        },
+        "flatref_scores": {
+          "primary": 3.416077304129911,
+          "canonical_waveform_l1": 0.05594803713450681,
+          "raw_lowband": 0.5554813788119302
+        }
+      },
+      "errors": {
+        "wet.primary": 8.881784197001252e-16,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 6.962208587424357e-13,
+        "net.primary": 6.661338147750939e-16,
+        "net.canonical_waveform_l1": 1.3877787807814457e-17,
+        "net.raw_lowband": 3.412825577697731e-13,
+        "flatref.primary": 4.440892098500626e-16,
+        "flatref.canonical_waveform_l1": 6.938893903907228e-18,
+        "flatref.raw_lowband": 5.221378884812111e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.261952816096986,
+          "canonical_waveform_l1": 0.048747084034056594,
+          "raw_lowband": 0.6185444589909656
+        },
+        "network_scores": {
+          "primary": 1.436663941701242,
+          "canonical_waveform_l1": 0.03126396928048826,
+          "raw_lowband": 1.1900368869864322
+        },
+        "flatref_scores": {
+          "primary": 3.3869750585322067,
+          "canonical_waveform_l1": 0.0487469601855303,
+          "raw_lowband": 0.5706568712202976
+        }
+      },
+      "errors": {
+        "wet.primary": 8.881784197001252e-16,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 1.411537553508424e-12,
+        "net.primary": 2.220446049250313e-16,
+        "net.canonical_waveform_l1": 6.938893903907228e-18,
+        "net.raw_lowband": 4.864997293907436e-13,
+        "flatref.primary": 2.1316282072803006e-14,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 4.4075854077618715e-14
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.325348897664405,
+          "canonical_waveform_l1": 0.050611072960783904,
+          "raw_lowband": 0.5950892665702903
+        },
+        "network_scores": {
+          "primary": 1.4686872032439706,
+          "canonical_waveform_l1": 0.031247899961588537,
+          "raw_lowband": 1.1023069403095764
+        },
+        "flatref_scores": {
+          "primary": 3.464152665375974,
+          "canonical_waveform_l1": 0.05061098262910847,
+          "raw_lowband": 0.5431629893430628
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 1.3877787807814457e-17,
+        "wet.raw_lowband": 1.112887559884257e-12,
+        "net.primary": 2.220446049250313e-16,
+        "net.canonical_waveform_l1": 6.938893903907228e-18,
+        "net.raw_lowband": 1.4432899320127035e-13,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 5.594413821086164e-13
+      },
+      "nonfinite_diagnostic_fields": []
+    }
+  ],
+  "screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "median_relative_improvement": 0.5783282809072523,
+    "strict_wins": 12,
+    "group_medians": {
+      "chords": 0.5160926314261821,
+      "scales": 0.5823318550724486
+    },
+    "per_take": [
+      {
+        "slug": "p2-chords-drop3-7-t098",
+        "relative_improvement": 0.6187606623503858
+      },
+      {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "relative_improvement": 0.5845897888033104
+      },
+      {
+        "slug": "p2-chords-set1-7-t099",
+        "relative_improvement": 0.4883347655841141
+      },
+      {
+        "slug": "p2-chords-set1-dim-t072",
+        "relative_improvement": 0.4617945163705382
+      },
+      {
+        "slug": "p2-chords-set1-m7-t094",
+        "relative_improvement": 0.5438504972682501
+      },
+      {
+        "slug": "p2-chords-set1-maj-t072",
+        "relative_improvement": 0.4832264342941755
+      },
+      {
+        "slug": "p2-scales-a-t075",
+        "relative_improvement": 0.5806237899114135
+      },
+      {
+        "slug": "p2-scales-bb-t076",
+        "relative_improvement": 0.6117076017880336
+      },
+      {
+        "slug": "p2-scales-c-t075",
+        "relative_improvement": 0.5840399202334837
+      },
+      {
+        "slug": "p2-scales-db-t076",
+        "relative_improvement": 0.6003186453749341
+      },
+      {
+        "slug": "p2-scales-e-t076",
+        "relative_improvement": 0.575826831649643
+      },
+      {
+        "slug": "p2-scales-g-t076",
+        "relative_improvement": 0.5760327719030911
+      }
+    ]
+  }
+}

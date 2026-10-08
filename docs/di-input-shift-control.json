@@ -1,0 +1,4416 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.31811629248553,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "flatref": 3.5585204760495026,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.3592290261986393,
+        "canonical_waveform_l1": 0.036716572600231555,
+        "raw_lowband": 1.2095770898359839
+      },
+      "net": 1.3592290261986393,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0025810368969372277,
+          "primary_relative_change": 0.0019025103912664529,
+          "canonical_waveform_l1_change": 0.00020874420765420315,
+          "raw_lowband_change": 0.0012688947130872208
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0025810368969372277,
+          "primary_relative_change": -0.0007253118014379778
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "a1372844f6825c34819c5a3898ffb0880d53a6cda571157aef5ad51d28e7545c"
+      },
+      "input_sha256_float32": "4ad57b0a64ee397eed4a0eb609c36e3221b8abf3917e02129ba29dae1975dfe6",
+      "prediction_file": "p2-chords-drop3-7-t098.offset--3.npz",
+      "prediction_file_sha256": "b293c347502ae3ce0ae4de5ad33ae38f33dc6671a0caeb6277ced47c00ac3905",
+      "original_prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "f43f51b426df7a784e292ca52dbb137343d9a7a916c51aea341d5dee18d05ca7",
+      "corrected_prediction_sha256": "60551f8f0f444086f0f4ede6ed1238a1522cb003d6ffcdd66d07d6c1762a8d63",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz",
+      "original_prediction_file_sha256": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.141863540456876,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "flatref": 3.3646525744065108,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4001294134769786,
+        "canonical_waveform_l1": 0.039530779264881646,
+        "raw_lowband": 1.2663816931238139
+      },
+      "net": 1.4001294134769786,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0024183769392844834,
+          "primary_relative_change": 0.0017302409983648028,
+          "canonical_waveform_l1_change": 0.0001801196216433959,
+          "raw_lowband_change": 0.004913582420672746
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0024183769392844834,
+          "primary_relative_change": -0.0007187597785518474
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "d97112b2c66ce55ad8ad255ddfefc1d1c3653c101a8d92f216eee889d1cf33e2"
+      },
+      "input_sha256_float32": "924bdb8cc399e99c7e3b665709f793f973e5066405b7c847358f8d8dc978b143",
+      "prediction_file": "p2-chords-drop3-m7b5-t098.offset--3.npz",
+      "prediction_file_sha256": "31f403c3c653bf3d221ae88d62f967ade0cc4de5afa538ec84265a56a3843472",
+      "original_prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "d9d0fcbead61027a30d5f807560484416591e5c344650da21ebcf13d7a82470b",
+      "corrected_prediction_sha256": "7474966e2ac5534786e59242ce28cf18270321d736bc707231d51ea4b1f52858",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz",
+      "original_prediction_file_sha256": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.818732299485904,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "flatref": 3.02816527569074,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.5511617950069159,
+        "canonical_waveform_l1": 0.048681828231966685,
+        "raw_lowband": 1.1440071064021669
+      },
+      "net": 1.5511617950069159,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0017548993705676086,
+          "primary_relative_change": 0.00113262653955523,
+          "canonical_waveform_l1_change": 3.6867859493992794e-05,
+          "raw_lowband_change": -0.00032432687831418505
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0017548993705676086,
+          "primary_relative_change": -0.0005795256238672053
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "ee636c17948429fbd2ce87ed4ac9c723694f1161622dcdb92301083dd362ca2d"
+      },
+      "input_sha256_float32": "a9b8b4f441a432d16babe25f886238d6a3482ca90f66b0b35f04928abad5d4d5",
+      "prediction_file": "p2-chords-set1-7-t099.offset--3.npz",
+      "prediction_file_sha256": "454858d72895225da2cfc2ad10bf6b29c58bffc0e3f808ddef14da94504a3070",
+      "original_prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "e0f3b8e238918f17bf0a3a1b8ffabbb4e1339e0fb7969ebac28f470b881a5107",
+      "corrected_prediction_sha256": "2612385c7f1085931344f342d0d58f239380440d43476fc75d601fb9ac1b9b5b",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz",
+      "original_prediction_file_sha256": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.870564322439565,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "flatref": 3.017100620998192,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.6247959381304988,
+        "canonical_waveform_l1": 0.03919781045917448,
+        "raw_lowband": 0.963862635084551
+      },
+      "net": 1.6247959381304988,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0009758392474172872,
+          "primary_relative_change": 0.0006009528075730203,
+          "canonical_waveform_l1_change": -0.00014422121700160412,
+          "raw_lowband_change": -0.007481011092191681
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0009758392474172872,
+          "primary_relative_change": -0.00032343609643831206
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "5c8444c946ae8c3ae7c5743ff2dd1ee6689bbdda7e20caa07f216049ba8053fb"
+      },
+      "input_sha256_float32": "ac3db714806c00efb4c1fefaae29218f74ab9eca38b5a143a22c4a6f00ef7443",
+      "prediction_file": "p2-chords-set1-dim-t072.offset--3.npz",
+      "prediction_file_sha256": "d673f9dfd0841b627aa180498a866ab7c79679bbce97007a1781e24524b0bd45",
+      "original_prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "56e735c84018a42842e634bfd82548cb69ea571b9da9652afb86a51b26c1d2b1",
+      "corrected_prediction_sha256": "7b95fde9af4318fe7c71bd6f90af4222f52717c983b81c347068ae9edfab4f42",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz",
+      "original_prediction_file_sha256": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.869246607726732,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "flatref": 3.0875490228539633,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4082151908400768,
+        "canonical_waveform_l1": 0.04140409361745015,
+        "raw_lowband": 1.3581825479900724
+      },
+      "net": 1.4082151908400768,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0001687605946587567,
+          "primary_relative_change": -0.00011982570128468058,
+          "canonical_waveform_l1_change": 4.378533221784109e-05,
+          "raw_lowband_change": -0.0030474388252406115
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0001687605946587567,
+          "primary_relative_change": 5.465843405549897e-05
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "3a3d22e0c91642798fdcccd48e147eefe5b14baca9a6c6a96d06b65daadd08fb"
+      },
+      "input_sha256_float32": "35b7436d769c30843a0ed47e899f99136f51c564b60a20b54b5b66aa74bb64a5",
+      "prediction_file": "p2-chords-set1-m7-t094.offset--3.npz",
+      "prediction_file_sha256": "b32ce12c10ff4d54857966830d8b6a093ac6e95e5ee483e67e57cd57529a45fb",
+      "original_prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "634f8c3ad367cff50ebc8a4ae0b313c805ca3d0dbc10cced71b4d34773c47afc",
+      "corrected_prediction_sha256": "bd888014665dc91ad9e734b69fa8d7f5e91d8334ab27db3730f9b501a2ba68f3",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz",
+      "original_prediction_file_sha256": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.012802754664242,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "flatref": 3.1612424880458385,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.6324585953732265,
+        "canonical_waveform_l1": 0.04453821504135699,
+        "raw_lowband": 1.0931184180830809
+      },
+      "net": 1.6324585953732265,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.00118795723497378,
+          "primary_relative_change": -0.0007271813067992862,
+          "canonical_waveform_l1_change": -8.897024306261936e-05,
+          "raw_lowband_change": -0.006267346499789328
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.00118795723497378,
+          "primary_relative_change": 0.0003757880768293087
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "7d65b3edcc11e29f38ee1bbad2e6e00a2e98db4e95f1cfdb7e97b9ff283d45ff"
+      },
+      "input_sha256_float32": "4bacd93864086b5a1078c660ddc4c3255e2f543f2c1b5a8994f1c0a7da3312a4",
+      "prediction_file": "p2-chords-set1-maj-t072.offset--3.npz",
+      "prediction_file_sha256": "2608633542f2198eafec1797c5da877898f02f55e3e877214ebfe2599a2709d2",
+      "original_prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "22d047cec3061b84cf8871b464d486ed08006d1246d5306a286b34bea7c3def6",
+      "corrected_prediction_sha256": "9ca3aacaba22a8a693c98e52474324b0e8d06d7954ecb99fc8b7fb3c8feec467",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz",
+      "original_prediction_file_sha256": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.268729847149958,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "flatref": 3.5667571344976574,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4963388449844817,
+        "canonical_waveform_l1": 0.03553405248217184,
+        "raw_lowband": 1.2975008292882324
+      },
+      "net": 1.4963388449844817,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0005257556124274032,
+          "primary_relative_change": 0.0003514848320040551,
+          "canonical_waveform_l1_change": 2.612301091985819e-05,
+          "raw_lowband_change": 0.0024273738384119614
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0005257556124274032,
+          "primary_relative_change": -0.00014740437674942708
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "42011efbc534454e4f418b2bbf8315f39ff6d8f47b5a8eecd83b296f5a4f546c"
+      },
+      "input_sha256_float32": "5c26ad452fad465d1c0ab8740cfbaba1a5d39e71cdcad50ac85601539873b06d",
+      "prediction_file": "p2-scales-a-t075.offset--3.npz",
+      "prediction_file_sha256": "58c86ce3c5ab2202c8f5196591c350f129aecc26acb504f20cf621d6d4504ce7",
+      "original_prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "63702015c72d49e9c960c56a4ac283d97c1180bee534f8bcd2691721cce21522",
+      "corrected_prediction_sha256": "b26b64d22827c4e570fedcd3689f038fd8f346d5a272bf463c62be38f03e3f87",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz",
+      "original_prediction_file_sha256": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.224219840883034,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "flatref": 3.4188565709721486,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.329654890123984,
+        "canonical_waveform_l1": 0.03296035068734347,
+        "raw_lowband": 1.1937056471398981
+      },
+      "net": 1.329654890123984,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.002138873038468825,
+          "primary_relative_change": 0.0016111843555489426,
+          "canonical_waveform_l1_change": 8.273344756673517e-05,
+          "raw_lowband_change": 0.0016358592394221105
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0021388730384686028,
+          "primary_relative_change": -0.0006256106373776493
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "4e4fb573c28732297892eff3be8bd4ee9d3a311e22e9768bc4d8abc7fd9e4ba7"
+      },
+      "input_sha256_float32": "a5fb9e126a84ad2555e2e5a4bc24c31fad7641f7bc0489390aaf41687ded4dc6",
+      "prediction_file": "p2-scales-bb-t076.offset--3.npz",
+      "prediction_file_sha256": "fb66f720b24ec667dda2d4138bf16312515b6af49639ed639249a815bf147725",
+      "original_prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "6ca57ab5a3594c1445797bb2891bb06b15c6ed0fa826927ac5455c4eaf96aeb5",
+      "corrected_prediction_sha256": "a06f3d2d2505c508b0d9530fff6aa6e87b813b661924d09ce70c2901b8196318",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz",
+      "original_prediction_file_sha256": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.315722567471393,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "flatref": 3.58652440282249,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4905551899907583,
+        "canonical_waveform_l1": 0.03808421200715758,
+        "raw_lowband": 1.3374070455888933
+      },
+      "net": 1.4905551899907583,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.001295786691841494,
+          "primary_relative_change": -0.0008685764946328016,
+          "canonical_waveform_l1_change": -6.492790105035867e-05,
+          "raw_lowband_change": 0.000453746397890864
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.001295786691841716,
+          "primary_relative_change": 0.00036129314799082657
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "5b5a3c267ddb74a0090d3e70ecce4bfdb5bb51e610bdc253702763e63ce66ea6"
+      },
+      "input_sha256_float32": "eb13ff695083c9a886269ec8ce9479eb330edba52d331e2b1f8feef46410a075",
+      "prediction_file": "p2-scales-c-t075.offset--3.npz",
+      "prediction_file_sha256": "62f26dadb300483836ee48f4d4177a6dab68e900b0beab4d1d0f79aff6931f91",
+      "original_prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "9b195d97af28c93a1829f6b98c4615160df5eb8fff51ef4e223377a387210db2",
+      "corrected_prediction_sha256": "8cb2eae05763b8ea7392e252eadc7665bde5a5cf25b63e384da482716700c28e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz",
+      "original_prediction_file_sha256": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.230290357992964,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "flatref": 3.416077304129911,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.3673308482895083,
+        "canonical_waveform_l1": 0.0296096286498488,
+        "raw_lowband": 1.1669775669062648
+      },
+      "net": 1.3673308482895083,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0019884438709221186,
+          "primary_relative_change": 0.001456370112352053,
+          "canonical_waveform_l1_change": 4.868364008514883e-05,
+          "raw_lowband_change": 0.00029349372078835145
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0019884438709221186,
+          "primary_relative_change": -0.0005820839793403421
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "b106f652db19c9bd93d691e2eb54511c9e47f60286435441a58b73f52989ff63"
+      },
+      "input_sha256_float32": "adc706d19aaba51a9544e9db9bd94e5a081a2386991832c9a8d9c923d38e01b3",
+      "prediction_file": "p2-scales-db-t076.offset--3.npz",
+      "prediction_file_sha256": "6ae7874ae0ac620614f7437ab11dac051ed656c7e0628f100a199ceb8798181e",
+      "original_prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "60a61e9391ab268f601a2b1196b08bfa000a80ec1482b2cad980395fa85c0c0c",
+      "corrected_prediction_sha256": "4de13abedb7f6a39451ac3875b6f2f665a0da86921139c434deea3fb819d42f0",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz",
+      "original_prediction_file_sha256": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.261952816096986,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "flatref": 3.3869750585322067,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4387336996823237,
+        "canonical_waveform_l1": 0.031387490783398087,
+        "raw_lowband": 1.1902307258264322
+      },
+      "net": 1.4387336996823237,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0020697579810817768,
+          "primary_relative_change": 0.0014406695407353576,
+          "canonical_waveform_l1_change": 0.00012352150290982633,
+          "raw_lowband_change": 0.00019383884000001572
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0020697579810817768,
+          "primary_relative_change": -0.0006110933636395144
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "e6bae332b8ae0990e1985748438a93ee6d220a3b7720fa82ef4e0e25535384f6"
+      },
+      "input_sha256_float32": "bc242a3ce9eae997718267cb0f06332526ac6bc085d23c28e350ff3fe71fd2b5",
+      "prediction_file": "p2-scales-e-t076.offset--3.npz",
+      "prediction_file_sha256": "fdc49619647e07520927161095c971befd8bf96cbab815af843ecd8ee2b11cb6",
+      "original_prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "c408ce688c2a325bc0097cdee01dbb51a09434e647023267a7f8d319234b7dc1",
+      "corrected_prediction_sha256": "db3dbb1863572ae931855d003b33d8a7c7eb468b96382b33b7e54d4cef291a63",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz",
+      "original_prediction_file_sha256": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": -3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.325348897664405,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "flatref": 3.464152665375974,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "imposed_offset": -3,
+      "inverse_offset": 3,
+      "network_scores": {
+        "primary": 1.4707362194367397,
+        "canonical_waveform_l1": 0.0313293977547441,
+        "raw_lowband": 1.1056974172284255
+      },
+      "net": 1.4707362194367397,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.002049016192769093,
+          "primary_relative_change": 0.0013951345039592623,
+          "canonical_waveform_l1_change": 8.149779315556535e-05,
+          "raw_lowband_change": 0.0033904769188490835
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.002049016192769093,
+          "primary_relative_change": -0.000591491308465919
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "b9bc7c6421865238a46f9aaff1ec9884490c1e076fbe09ba1ef417f2643e8840"
+      },
+      "input_sha256_float32": "0ef4ee7a3ef9e19dd11bb5ed2a5a1bcd85dce96509b6783c602f56364e6a3250",
+      "prediction_file": "p2-scales-g-t076.offset--3.npz",
+      "prediction_file_sha256": "b3be17802e9a617f3331db7c1b0ff51a467a6f966447e04a394505458e351b9b",
+      "original_prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "2026692b0f8aa2c3a317f1ce84697a00d2fc3de596aaff30732b724d37a2b1fb",
+      "corrected_prediction_sha256": "821a91c7062661d93d0672e913f9599dbbcdac5dedd3c1c3f1a84e69758f58a7",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz",
+      "original_prediction_file_sha256": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744"
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.31811629248553,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "flatref": 3.5585204760495026,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.358374989952384,
+        "canonical_waveform_l1": 0.036642156598948074,
+        "raw_lowband": 1.2092114060346753
+      },
+      "net": 1.358374989952384,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0017270006506819868,
+          "primary_relative_change": 0.0012729909779845793,
+          "canonical_waveform_l1_change": 0.00013432820637072213,
+          "raw_lowband_change": 0.0009032109117785847
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0017270006506819868,
+          "primary_relative_change": -0.00048531423728082057
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "9c81c0a6aff7d8f37c1781bd0fce4c45339ee4c94070acb0fd190f8a4b703610"
+      },
+      "input_sha256_float32": "d67891f0f942434d1eee89e2b0ce93617d7b4f977e0f7cc24e42d617c860548c",
+      "prediction_file": "p2-chords-drop3-7-t098.offset--2.npz",
+      "prediction_file_sha256": "a8f09f1c973c24f46acee73f920c957a1a05b27f6116cd45fe20b70cbb6382d0",
+      "original_prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "d788ff0ccdf4ee7c9f72ab3d22b4b0883d0a2a2983ded295c5cb2c79c8cec7e4",
+      "corrected_prediction_sha256": "ce6adf087fc2996b9fdece0a2716a97f6a77614c76a9494db240047ad6f491e6",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz",
+      "original_prediction_file_sha256": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.141863540456876,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "flatref": 3.3646525744065108,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.3993465611781308,
+        "canonical_waveform_l1": 0.03947522589417837,
+        "raw_lowband": 1.2651664788640011
+      },
+      "net": 1.3993465611781308,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.001635524640436703,
+          "primary_relative_change": 0.0011701450426320615,
+          "canonical_waveform_l1_change": 0.00012456625094012241,
+          "raw_lowband_change": 0.0036983681608599994
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.001635524640436703,
+          "primary_relative_change": -0.0004860901992905786
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "bea71cba7f5ab96c558b99afc2182134cd9b7e88f9e18f6e18792023429c3cc5"
+      },
+      "input_sha256_float32": "328d8ba048b14c27e1c68dd95137f807ff53662eab6e03101d35536f877f0087",
+      "prediction_file": "p2-chords-drop3-m7b5-t098.offset--2.npz",
+      "prediction_file_sha256": "14f699ff6e2c184309154bafd82e5b11b42995318ffe2dea49963bda0ed2e6ae",
+      "original_prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "c05a502092f4fade80f10af55b9afed9052d525d1e83df5bc456aac8e47cdd4e",
+      "corrected_prediction_sha256": "50b392ab721ceda593849c9b3eb5f54c85ebd7a2c512434e2f43c4334a82fb17",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz",
+      "original_prediction_file_sha256": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.818732299485904,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "flatref": 3.02816527569074,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.5508619196171496,
+        "canonical_waveform_l1": 0.04868585280487704,
+        "raw_lowband": 1.1430245483668475
+      },
+      "net": 1.5508619196171496,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0014550239808013288,
+          "primary_relative_change": 0.000939084487683104,
+          "canonical_waveform_l1_change": 4.0892432404349144e-05,
+          "raw_lowband_change": -0.0013068849136335103
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0014550239808013288,
+          "primary_relative_change": -0.00048049688452667105
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "a4d6befce8f041410a812508a1f99699c26d4c28ae3c010c1d7ec7c72bfec59a"
+      },
+      "input_sha256_float32": "d9ed3c81ebe69e50fb19a3fd3ead6da978e743d4f91c8e6388165083652eb574",
+      "prediction_file": "p2-chords-set1-7-t099.offset--2.npz",
+      "prediction_file_sha256": "4cc1b00f9f73f672fbf1d61f351bb8bb426650566ace703e383b3cf88d335b17",
+      "original_prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "0184ab24afc8f90bc0cc5de8bd265ccdfd918066f34dba33ead45e14226119a3",
+      "corrected_prediction_sha256": "d9a653499908fecd80241963ea8aed0373ecb719603002c44db1a5472de813c9",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz",
+      "original_prediction_file_sha256": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.870564322439565,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "flatref": 3.017100620998192,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.6247345988334938,
+        "canonical_waveform_l1": 0.03926881155831851,
+        "raw_lowband": 0.9681983976561455
+      },
+      "net": 1.6247345988334938,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.000914499950412262,
+          "primary_relative_change": 0.0005631781199415415,
+          "canonical_waveform_l1_change": -7.32201178575767e-05,
+          "raw_lowband_change": -0.003145248520597166
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.000914499950412262,
+          "primary_relative_change": -0.0003031055524126969
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "74f470ea5ab7b7f736eceefb4a1e6261110ee6a608eb5fa43acd8202d505cbbb"
+      },
+      "input_sha256_float32": "fc28e409c98a3c91fd497b2be2c725a4ff4ac11ade716886cb174fb6ceba0131",
+      "prediction_file": "p2-chords-set1-dim-t072.offset--2.npz",
+      "prediction_file_sha256": "48e8492a17978bde15b9dd2cb03c5c1bb496e1c2aff9740905ddeed0fb7cdc9a",
+      "original_prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "65d5a3d2c880b549a198bf91ef748dc13070bd484d75fdd6a761fd844fca9463",
+      "corrected_prediction_sha256": "d7652a933d85a39d926f7599bfa5d75ef8d02bd26a73214509eece538c3bbcbe",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz",
+      "original_prediction_file_sha256": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.869246607726732,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "flatref": 3.0875490228539633,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.4087142295010353,
+        "canonical_waveform_l1": 0.04139262985862149,
+        "raw_lowband": 1.3596349795917901
+      },
+      "net": 1.4087142295010353,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.00033027806629970513,
+          "primary_relative_change": 0.0002345085414834835,
+          "canonical_waveform_l1_change": 3.232157338917824e-05,
+          "raw_lowband_change": -0.001595007223522904
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.00033027806629970513,
+          "primary_relative_change": -0.00010697095458400696
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "ae7d18b2ec0d6a14d84358eaf45dcecaf5726191f98f3e5b8e543cedda19eb21"
+      },
+      "input_sha256_float32": "02c8a729e0ba73e8108df1a822c23f1fa9fe32b2a31bbacbff7e47503d2e0b68",
+      "prediction_file": "p2-chords-set1-m7-t094.offset--2.npz",
+      "prediction_file_sha256": "f7fb1c98b43cdcbe92596ef4a0d4dcbf4631edd69ded3fa9fc3f9a9832d12eae",
+      "original_prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "8d539f054206ca12c8276e837e8f10400fc69f7fed5cdb05c01a9be695e08fc4",
+      "corrected_prediction_sha256": "ba89a31418b95b9da14112580b2d27aa2304f85d3ca68dc9d9c15c14916aac25",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz",
+      "original_prediction_file_sha256": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.012802754664242,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "flatref": 3.1612424880458385,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.63313520798356,
+        "canonical_waveform_l1": 0.04456875153607738,
+        "raw_lowband": 1.0959851143992465
+      },
+      "net": 1.63313520798356,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0005113446246403086,
+          "primary_relative_change": -0.00031300811293845707,
+          "canonical_waveform_l1_change": -5.843374834223203e-05,
+          "raw_lowband_change": -0.003400650183623677
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0005113446246403086,
+          "primary_relative_change": 0.0001617543186180348
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "3f6549445475fb617e3ab1b1222906626f76bfeced0b8a0d0ca529f0c518c843"
+      },
+      "input_sha256_float32": "6d855bc0525945b177b68cb770e367b2d0f55d8ad5db554067a69ba4ba11c9ed",
+      "prediction_file": "p2-chords-set1-maj-t072.offset--2.npz",
+      "prediction_file_sha256": "a8f28413bbd3b8e622449538ffb03c6674c773d1ea04891d9c619768f251ae23",
+      "original_prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "5031f78dc99e31181d1e2e4ede5abfcc3c178490e189f7d447a2455c99392e0c",
+      "corrected_prediction_sha256": "7792b0dd12e95fecb3999a7bf349b1903804bb4b5b4b2fabba4e5b8b6e04c95b",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz",
+      "original_prediction_file_sha256": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.268729847149958,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "flatref": 3.5667571344976574,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.4961679737137994,
+        "canonical_waveform_l1": 0.035526674452094315,
+        "raw_lowband": 1.2977050150210208
+      },
+      "net": 1.4961679737137994,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.00035488434174513195,
+          "primary_relative_change": 0.00023725179587385026,
+          "canonical_waveform_l1_change": 1.874498084233206e-05,
+          "raw_lowband_change": 0.002631559571200315
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0003548843417449099,
+          "primary_relative_change": -9.949775899020796e-05
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "df3eca288814a5d721d249ea6112e2c0a249293f5fa0a36d0671bbafff7dbd2b"
+      },
+      "input_sha256_float32": "c60a89f47e8b2250128dbe90a31616941a9bbff9564f8520637765dc27fe8fc5",
+      "prediction_file": "p2-scales-a-t075.offset--2.npz",
+      "prediction_file_sha256": "7d4720f766e82bfa6a44c5bb01785d9cd2297b8d0c8d7cfa22ae08d6111e4d18",
+      "original_prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "cbbd272a124c0c223a0f8b7da576ba7f46ca15c7e375dfe2d83e3f9c219fc1e7",
+      "corrected_prediction_sha256": "c29b6dc5b091621d73c059678b6bd1e0f73c4c31ed3e2a61496690d49e2b9f37",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz",
+      "original_prediction_file_sha256": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.224219840883034,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "flatref": 3.4188565709721486,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.328613720731038,
+        "canonical_waveform_l1": 0.03292978350844695,
+        "raw_lowband": 1.1935459136422906
+      },
+      "net": 1.328613720731038,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0010977036455228628,
+          "primary_relative_change": 0.0008268854246540903,
+          "canonical_waveform_l1_change": 5.21662686702104e-05,
+          "raw_lowband_change": 0.001476125741814549
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0010977036455228628,
+          "primary_relative_change": -0.00032107332458541915
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "16fbbd351766681f00f07c874450b511f891b58147b9d635bc4a1ea6e16b1815"
+      },
+      "input_sha256_float32": "62aaa11376dd4bd9d13ff1b6357bcea05a122a59f0125a7ef7890a4711247a11",
+      "prediction_file": "p2-scales-bb-t076.offset--2.npz",
+      "prediction_file_sha256": "20eab0a13d8526e25dafc7dcc26764658e66fc7e5a85bcce1a78f9f3c71a9961",
+      "original_prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "2f699bd25b0fcd3a116ce2b21edfda35d46a59de6c0322c3ff2d0500543e1ea3",
+      "corrected_prediction_sha256": "8bf9e7793ee90f6ea6202a92c577d2f3c25a6d8b0e8452d4ccca16e72db87446",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz",
+      "original_prediction_file_sha256": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.315722567471393,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "flatref": 3.58652440282249,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.4905981342254015,
+        "canonical_waveform_l1": 0.03809988282870081,
+        "raw_lowband": 1.336536045608966
+      },
+      "net": 1.4905981342254015,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0012528424571982555,
+          "primary_relative_change": -0.0008397906203635547,
+          "canonical_waveform_l1_change": -4.9257079507127044e-05,
+          "raw_lowband_change": -0.00041725358203636986
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0012528424571982555,
+          "primary_relative_change": 0.00034931937343363195
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "c3ead84343a0a1a5da2cf5213235fb2d4326843622b17730df6c7ec5dbefc747"
+      },
+      "input_sha256_float32": "44a06f02e39f3fc1b61ad1412240f73ae91b6334ed51c298690ac811104f4e9b",
+      "prediction_file": "p2-scales-c-t075.offset--2.npz",
+      "prediction_file_sha256": "93bc313b54f1355d9870ee20ca8b00bd4a87c54d1c671380582d1ad4a9b4af9e",
+      "original_prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "a0861a2a41bfcaf22daba3e1b8c0845ec874ab99794daec454e82fbbb51ec118",
+      "corrected_prediction_sha256": "a64f138f9be191163f04882b197e56b19a5a57d437310b5796e9b2d80d7e4b0e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz",
+      "original_prediction_file_sha256": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.230290357992964,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "flatref": 3.416077304129911,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.366505664066144,
+        "canonical_waveform_l1": 0.029592757262413436,
+        "raw_lowband": 1.1652589847745474
+      },
+      "net": 1.366505664066144,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0011632596475577017,
+          "primary_relative_change": 0.0008519911516650368,
+          "canonical_waveform_l1_change": 3.181225264978563e-05,
+          "raw_lowband_change": -0.0014250884109290318
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0011632596475577017,
+          "primary_relative_change": -0.0003405249776260444
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "578785d9a0457e085566da75aa52c09624a39899d3b2fe46d28d2fa0f8fbbabb"
+      },
+      "input_sha256_float32": "da3d773f0f71ce50aa82fe041874b8b1ca9717685880020f5d59ba9c873ea80b",
+      "prediction_file": "p2-scales-db-t076.offset--2.npz",
+      "prediction_file_sha256": "f6a62648d02248d9b86ef54371f0c99688f33234d45c49e53fcfe8ffa1e1b1d9",
+      "original_prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "1cf92f7a77614ddd15ac94ee8c6c605f2c3f94d97a74bfd7a4b44faea311a1a8",
+      "corrected_prediction_sha256": "18814d06a32ddcfccbc3e8a07ca42e65399c854e83bb42dde8b9388ae5f6e3cb",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz",
+      "original_prediction_file_sha256": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.261952816096986,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "flatref": 3.3869750585322067,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.4379794741408034,
+        "canonical_waveform_l1": 0.03133736623172091,
+        "raw_lowband": 1.1905918569926475
+      },
+      "net": 1.4379794741408034,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0013155324395615065,
+          "primary_relative_change": 0.0009156855694475799,
+          "canonical_waveform_l1_change": 7.339695123265155e-05,
+          "raw_lowband_change": 0.000554970006215294
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0013155324395615065,
+          "primary_relative_change": -0.000388409249205246
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "dfa321f395401485ac9d8388d57b73068514241ce4226a135a19dff5aea24223"
+      },
+      "input_sha256_float32": "668fcce9b3320de702e9792c687e602f7b41a1407f05d6c5d223af7366a23267",
+      "prediction_file": "p2-scales-e-t076.offset--2.npz",
+      "prediction_file_sha256": "f274c4efa3dd6558e7b722ac7d9a1859e8c35b127c86106a220a6e92fe9f9eef",
+      "original_prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "3d9f5788bed2966f7e65e023dbf1de56985142059e4badd8426a4db87c24e461",
+      "corrected_prediction_sha256": "35a7d22ee53d5727763fb899952980363e7a7c45d9c7e188dd7e4860112033ae",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz",
+      "original_prediction_file_sha256": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": -2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.325348897664405,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "flatref": 3.464152665375974,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "imposed_offset": -2,
+      "inverse_offset": 2,
+      "network_scores": {
+        "primary": 1.469778178698303,
+        "canonical_waveform_l1": 0.03129426195812979,
+        "raw_lowband": 1.1042086475711976
+      },
+      "net": 1.469778178698303,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0010909754543324546,
+          "primary_relative_change": 0.0007428235582925736,
+          "canonical_waveform_l1_change": 4.636199654125053e-05,
+          "raw_lowband_change": 0.0019017072616211994
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0010909754543324546,
+          "primary_relative_change": -0.00031493284497441376
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "4fed2c7689dc33e8f15953963aadb339271c4d6c5ae73f80cd5bea7e00273876"
+      },
+      "input_sha256_float32": "c36b412e3472657ccedfca8c05f8dafa363240da923f5b2e96d30eda8dfa0306",
+      "prediction_file": "p2-scales-g-t076.offset--2.npz",
+      "prediction_file_sha256": "abb841bd2fa4a8d8df6f0e76e8f42db24dbb7e847925ef24e0e923d311e8dc68",
+      "original_prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "6d76ef6b5eb2892b3625d91d4d4599e8d7493de80419accd873a19ed2ef63fb8",
+      "corrected_prediction_sha256": "fae93b3601ef7375813a37c03ef9a3254f860788801992b66a702d122a081de2",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz",
+      "original_prediction_file_sha256": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744"
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "wet": 5.31811629248553,
+      "network_scores": {
+        "primary": 1.356647989301702,
+        "canonical_waveform_l1": 0.03650782839257735,
+        "raw_lowband": 1.2083081951228967
+      },
+      "net": 1.356647989301702,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "flatref": 3.5585204760495026,
+      "valid": true,
+      "prediction_file": "p2-chords-drop3-7-t098.offset-+0.npz",
+      "prediction_file_sha256": "047678b4b05bc41e7ce2ed99e10433cdac7da4e9790522d6c0bbd1ce260eb792",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "5300a1a684ad13398a2e205225874bef7427f47aaa5c5134c049cbd417627810"
+      },
+      "input_sha256_float32": "802c02e9136dd910a106f9cf4093929581bbed13cd94ff4c95f25535257a817b",
+      "original_prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "corrected_prediction_sha256": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz",
+      "original_prediction_file_sha256": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "wet": 5.141863540456876,
+      "network_scores": {
+        "primary": 1.3977110365376941,
+        "canonical_waveform_l1": 0.03935065964323825,
+        "raw_lowband": 1.2614681107031411
+      },
+      "net": 1.3977110365376941,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "flatref": 3.3646525744065108,
+      "valid": true,
+      "prediction_file": "p2-chords-drop3-m7b5-t098.offset-+0.npz",
+      "prediction_file_sha256": "7139bb1a91f5e399d52d15f05a419b0fe6cf1a030b149d89306a895abe6491ad",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "03efc2b12bda1634c263ceceb2a4634d67f34ec9664dac0783beb3bbe4da75de"
+      },
+      "input_sha256_float32": "2a4fd34ddc8558670a0351548e11ee96de003cfb31e777db1feb5283cd93baf3",
+      "original_prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "corrected_prediction_sha256": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz",
+      "original_prediction_file_sha256": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "wet": 4.818732299485904,
+      "network_scores": {
+        "primary": 1.5494068956363483,
+        "canonical_waveform_l1": 0.04864496037247269,
+        "raw_lowband": 1.144331433280481
+      },
+      "net": 1.5494068956363483,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "flatref": 3.02816527569074,
+      "valid": true,
+      "prediction_file": "p2-chords-set1-7-t099.offset-+0.npz",
+      "prediction_file_sha256": "bc29587f49010b8fd2c38c2f97e65f1e3301ecc68c3ca15464fb4418b936b46a",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "8a7855adf701972ea71c4a54cb9f288a9f1aa230793dfe57a80ff1d555e3e867"
+      },
+      "input_sha256_float32": "5c3fdcd9d928dbed7626a6435d7d335af8b3d0a8dd4867b84f5e9ca0d6cd89bd",
+      "original_prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "corrected_prediction_sha256": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz",
+      "original_prediction_file_sha256": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "wet": 4.870564322439565,
+      "network_scores": {
+        "primary": 1.6238200988830815,
+        "canonical_waveform_l1": 0.03934203167617609,
+        "raw_lowband": 0.9713436461767426
+      },
+      "net": 1.6238200988830815,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "flatref": 3.017100620998192,
+      "valid": true,
+      "prediction_file": "p2-chords-set1-dim-t072.offset-+0.npz",
+      "prediction_file_sha256": "5ef7eb4c6d18ea2bb6633ee5104a8e9d4908860a8e81f6ad52395f956156405e",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "ee887fab3b1f2263413fb9e51c43dff8ee103c06f5be0e4d801a5de8779c6608"
+      },
+      "input_sha256_float32": "2da8a25fa7d59ec3a8d5da5e2e156c2fa8a3e44a3c3525ec70df0ac5a918b3dc",
+      "original_prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "corrected_prediction_sha256": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz",
+      "original_prediction_file_sha256": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "wet": 4.869246607726732,
+      "network_scores": {
+        "primary": 1.4083839514347356,
+        "canonical_waveform_l1": 0.04136030828523231,
+        "raw_lowband": 1.361229986815313
+      },
+      "net": 1.4083839514347356,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "flatref": 3.0875490228539633,
+      "valid": true,
+      "prediction_file": "p2-chords-set1-m7-t094.offset-+0.npz",
+      "prediction_file_sha256": "3d8a88d60bd44c3c13de4b7de45775c749f6e95976233239b0f83d33581f58f7",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "2f5b4300d72c655c0c67a71e067758212f05cdc80465061a43fc0724f7aaa207"
+      },
+      "input_sha256_float32": "63108aaa23a29aa22fc310ed9ac12ec5ac950f1f33d64f482eb950e4ab6a282b",
+      "original_prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "corrected_prediction_sha256": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz",
+      "original_prediction_file_sha256": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "wet": 5.012802754664242,
+      "network_scores": {
+        "primary": 1.6336465526082002,
+        "canonical_waveform_l1": 0.04462718528441961,
+        "raw_lowband": 1.0993857645828702
+      },
+      "net": 1.6336465526082002,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "flatref": 3.1612424880458385,
+      "valid": true,
+      "prediction_file": "p2-chords-set1-maj-t072.offset-+0.npz",
+      "prediction_file_sha256": "28437cadcf37a0e92a67a149cd8326a19a635523e0192d61a506ec2867adbfc7",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "a060054d73c5b825bf491a2a6238b07fb54879945019d166cf99e2ff7130c1d6"
+      },
+      "input_sha256_float32": "7269cc1657b90bab59c9b49857551632277ea3094aa8fab9c7445807cac06c59",
+      "original_prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "corrected_prediction_sha256": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz",
+      "original_prediction_file_sha256": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "wet": 5.268729847149958,
+      "network_scores": {
+        "primary": 1.4958130893720543,
+        "canonical_waveform_l1": 0.03550792947125198,
+        "raw_lowband": 1.2950734554498204
+      },
+      "net": 1.4958130893720543,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "flatref": 3.5667571344976574,
+      "valid": true,
+      "prediction_file": "p2-scales-a-t075.offset-+0.npz",
+      "prediction_file_sha256": "da42547fbc8b70d432a4959f080b83e8b42f456a2a2bd74539d9667d71e6ce2a",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "0d1ff062878b3ae4477021d266098e93dba7b1f46b41931d64e72261025fc907"
+      },
+      "input_sha256_float32": "45e9b8f86070eedf8f92009586f7f1c3ec19a5a4ed8c127668535518c67f8612",
+      "original_prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "corrected_prediction_sha256": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz",
+      "original_prediction_file_sha256": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "wet": 5.224219840883034,
+      "network_scores": {
+        "primary": 1.3275160170855151,
+        "canonical_waveform_l1": 0.03287761723977674,
+        "raw_lowband": 1.192069787900476
+      },
+      "net": 1.3275160170855151,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "flatref": 3.4188565709721486,
+      "valid": true,
+      "prediction_file": "p2-scales-bb-t076.offset-+0.npz",
+      "prediction_file_sha256": "c2f23b3c4d905b30bc7988f356d21bf7021451d1bc67f6932181b662ce7d94c5",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "5931967d4cc957a66e2ce08f0c5498e2bc006064130e7c3ed7057fe7ddc423e2"
+      },
+      "input_sha256_float32": "960e231ca5d3cd987129834b4920b91a6f93eb9a6641a09a35eabc4c66436852",
+      "original_prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "corrected_prediction_sha256": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz",
+      "original_prediction_file_sha256": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "wet": 5.315722567471393,
+      "network_scores": {
+        "primary": 1.4918509766825998,
+        "canonical_waveform_l1": 0.03814913990820794,
+        "raw_lowband": 1.3369532991910025
+      },
+      "net": 1.4918509766825998,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "flatref": 3.58652440282249,
+      "valid": true,
+      "prediction_file": "p2-scales-c-t075.offset-+0.npz",
+      "prediction_file_sha256": "9a5d6859b7ceaa6e955b3fc0290583a937d7a3d6ac9bf15677f35c6819aadc86",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "96eaf29cf1812abc9b986b4d268de741e8e567d34235e6741d38c54a2405681c"
+      },
+      "input_sha256_float32": "6a6a8a186ee9cb6dc503ed05006a0b4fb41233c994b55f24d51a34593a98fa13",
+      "original_prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "corrected_prediction_sha256": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz",
+      "original_prediction_file_sha256": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "wet": 5.230290357992964,
+      "network_scores": {
+        "primary": 1.3653424044185862,
+        "canonical_waveform_l1": 0.02956094500976365,
+        "raw_lowband": 1.1666840731854764
+      },
+      "net": 1.3653424044185862,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "flatref": 3.416077304129911,
+      "valid": true,
+      "prediction_file": "p2-scales-db-t076.offset-+0.npz",
+      "prediction_file_sha256": "6865ed27cb9938f261b544575e338cc5e64254321f87c4d1a0e305c49010e525",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "167893381377f2c353e29f398499f4e20e55b2be6377900af03a3d1f8c572978"
+      },
+      "input_sha256_float32": "7b6af4103baabd44e95ec2b0730d6492014a73c3083c6080f6f977e3ab717b56",
+      "original_prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "corrected_prediction_sha256": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz",
+      "original_prediction_file_sha256": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "wet": 5.261952816096986,
+      "network_scores": {
+        "primary": 1.436663941701242,
+        "canonical_waveform_l1": 0.03126396928048826,
+        "raw_lowband": 1.1900368869864322
+      },
+      "net": 1.436663941701242,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "flatref": 3.3869750585322067,
+      "valid": true,
+      "prediction_file": "p2-scales-e-t076.offset-+0.npz",
+      "prediction_file_sha256": "9e4901e5d6dbca547b0222a557ed40a9bbaf8635e643726a6c8dfa73ecc7a100",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "60fbc79f707b5978d7f50a4b79f27bcb4bd4aa13751feeb4919df045e9558ef4"
+      },
+      "input_sha256_float32": "0251c54c386120194ec7bbf812632eae36811c8b59ed86188599d56c7063513a",
+      "original_prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "corrected_prediction_sha256": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz",
+      "original_prediction_file_sha256": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "wet": 5.325348897664405,
+      "network_scores": {
+        "primary": 1.4686872032439706,
+        "canonical_waveform_l1": 0.031247899961588537,
+        "raw_lowband": 1.1023069403095764
+      },
+      "net": 1.4686872032439706,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "flatref": 3.464152665375974,
+      "valid": true,
+      "prediction_file": "p2-scales-g-t076.offset-+0.npz",
+      "prediction_file_sha256": "22d466a5bc07a00e33a1ac162c421eeaf8bf9b5f62674f6c13c993123b02f88d",
+      "imposed_offset": 0,
+      "inverse_offset": 0,
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "c63dca4efebf9a788715c0185977e7f238bcb4494b332acbc7c99d2b66938711"
+      },
+      "input_sha256_float32": "7adf4316707ea6e40ee3be514d45d1f08933a83ec5c5bd35cea049d6939b9545",
+      "original_prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "corrected_prediction_sha256": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0
+        }
+      },
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz",
+      "original_prediction_file_sha256": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744"
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.31811629248553,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "flatref": 3.5585204760495026,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.3549646108480533,
+        "canonical_waveform_l1": 0.036393927759566895,
+        "raw_lowband": 1.2059555448096213
+      },
+      "net": 1.3549646108480533,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0016833784536487428,
+          "primary_relative_change": -0.0012408365817246495,
+          "canonical_waveform_l1_change": -0.00011390063301045666,
+          "raw_lowband_change": -0.0023526503132753618
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0016833784536487428,
+          "primary_relative_change": 0.00047305571654809864
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "4dcc7d02bc2927d44ebf7a251ace1fc00196abaa393511208c92d58fe19fed34"
+      },
+      "input_sha256_float32": "a5ecec53ef04c30a6d9acd32121c5343b23df860dc0d12fbcd7f33f1bbea0646",
+      "prediction_file": "p2-chords-drop3-7-t098.offset-+2.npz",
+      "prediction_file_sha256": "40ee4732daf3fd37af952f96425be73a945160818983b504c4243bb6c6e4a9ac",
+      "original_prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "6c1a46ab39e27006b5a68dfa7265a7c079b4bf493662b351fa99c260a29412c2",
+      "corrected_prediction_sha256": "f192567ea8ee55a5529d87c68fc2bd18d5aba1ba37407794b781adf0f320fa8e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz",
+      "original_prediction_file_sha256": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.141863540456876,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "flatref": 3.3646525744065108,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.3963400595902087,
+        "canonical_waveform_l1": 0.03921471917650582,
+        "raw_lowband": 1.2574974650252015
+      },
+      "net": 1.3963400595902087,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0013709769474854472,
+          "primary_relative_change": -0.0009808729498777726,
+          "canonical_waveform_l1_change": -0.00013594046673243154,
+          "raw_lowband_change": -0.003970645677939588
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0013709769474854472,
+          "primary_relative_change": 0.0004074646392658865
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "56f9f5978af5de26d9194579b7a270eb3ba83866d9956a5a07b4938388fba6be"
+      },
+      "input_sha256_float32": "25dd6291ac108fd349bc5078bf354cf29e88584b7a0f9c6e38e3ca79c3d7bada",
+      "prediction_file": "p2-chords-drop3-m7b5-t098.offset-+2.npz",
+      "prediction_file_sha256": "4f67bfa57fd7ec2ed2c8769c89eb078cfdc65d814f6e87dbeed17386d64b27f1",
+      "original_prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "5ea236f98393fe5853e86686d040a61ac9506094763e92be3e86d633c2892338",
+      "corrected_prediction_sha256": "9bf5eee523f1cd779e584e4a2bb13a4052eb80b3ffc953b929c3122f123726c2",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz",
+      "original_prediction_file_sha256": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.818732299485904,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "flatref": 3.02816527569074,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.548521716231878,
+        "canonical_waveform_l1": 0.04848380293774518,
+        "raw_lowband": 1.1474555263439796
+      },
+      "net": 1.548521716231878,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0008851794044701933,
+          "primary_relative_change": -0.0005713020943453631,
+          "canonical_waveform_l1_change": -0.00016115743472751298,
+          "raw_lowband_change": 0.0031240930634985897
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0008851794044701933,
+          "primary_relative_change": 0.0002923154200255018
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "e40d5ed673cdd85d0758e5fa581dad21bb294fe3c0fab16daaa5172602ca055c"
+      },
+      "input_sha256_float32": "9925925d95144f5294daea3edbbd351bd288696b05bf882c6a3eeda3a4721b4d",
+      "prediction_file": "p2-chords-set1-7-t099.offset-+2.npz",
+      "prediction_file_sha256": "f9375012c0e1743c23e6a6b837ef252ac42b2c670f8dba302da5da6107f637d5",
+      "original_prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "9cfe6c4489b2f2915962d43779ae42e136ba3d4e8475f094e3c2659ca00dd74a",
+      "corrected_prediction_sha256": "d47b6d92602796fd2dd10312cf8367cde615359980afecc9cb26bcedcf88c448",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz",
+      "original_prediction_file_sha256": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.870564322439565,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "flatref": 3.017100620998192,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.6235870032447288,
+        "canonical_waveform_l1": 0.03935133766990627,
+        "raw_lowband": 0.9702318845400599
+      },
+      "net": 1.6235870032447288,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0002330956383527205,
+          "primary_relative_change": -0.0001435476987340233,
+          "canonical_waveform_l1_change": 9.305993730182593e-06,
+          "raw_lowband_change": -0.0011117616366826955
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0002330956383527205,
+          "primary_relative_change": 7.72581586210297e-05
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "abc00eafb948a052425f907ec39dabef2e01a818734320e3c1f974d46cf18dc2"
+      },
+      "input_sha256_float32": "b8cd45792f26fa531d3034bfa055c91303faa1f67e5b64dc8739e1bd105e5d48",
+      "prediction_file": "p2-chords-set1-dim-t072.offset-+2.npz",
+      "prediction_file_sha256": "94bc8d6edcf74277f90a31bafe56fe25705bc98fd84dccf4eac70cc34468b5f2",
+      "original_prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "7ae9f4b6c5c81069a3857d68a8b70ea6e64dbf840b5f107ddc20c78ab3e35ad6",
+      "corrected_prediction_sha256": "ed165a70aba43cae303e396b69a006e31fb7fbf0acd2b9c9bae01d2fa7f6716e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz",
+      "original_prediction_file_sha256": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.869246607726732,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "flatref": 3.0875490228539633,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.405597422995078,
+        "canonical_waveform_l1": 0.04133995756246934,
+        "raw_lowband": 1.3606424424303418
+      },
+      "net": 1.405597422995078,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.002786528439657543,
+          "primary_relative_change": -0.001978528963510893,
+          "canonical_waveform_l1_change": -2.0350722762969842e-05,
+          "raw_lowband_change": -0.000587544384971217
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.002786528439657543,
+          "primary_relative_change": 0.0009025050028459436
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "eec93a6e25ca4b3df0466540980bdee4bf78d1b2b7690f4e7a82dffbee49b985"
+      },
+      "input_sha256_float32": "dd5463861b94a631cc2434624ff5f9240b1ae4bfcaeead9babb3b40afad89c74",
+      "prediction_file": "p2-chords-set1-m7-t094.offset-+2.npz",
+      "prediction_file_sha256": "53397b722d18f0db081b065ee40e6435b8801c418527717c60e3cda369fee38d",
+      "original_prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "bd50c5a28184a89bf4bd01a0e76cede2e73c9ad4b460977b7880b2cc30c6e515",
+      "corrected_prediction_sha256": "cf1251b3d7a0b0627ac3f5fd0f707f1748fb26c7b70fcb85cc4f88be56194a7e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz",
+      "original_prediction_file_sha256": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.012802754664242,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "flatref": 3.1612424880458385,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.6335943895401044,
+        "canonical_waveform_l1": 0.044637375392648275,
+        "raw_lowband": 1.1003795871423074
+      },
+      "net": 1.6335943895401044,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -5.2163068095856246e-05,
+          "primary_relative_change": -3.193044910025075e-05,
+          "canonical_waveform_l1_change": 1.0190108228662342e-05,
+          "raw_lowband_change": 0.0009938225594372518
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 5.2163068095856246e-05,
+          "primary_relative_change": 1.6500812036135404e-05
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "83c05a32daa7e7fa80d6b5235ba4a92dd32dfff42d92bc6f3673dc93444d7725"
+      },
+      "input_sha256_float32": "e6163d21a0ee4eda7b788da5f84edf9ff616cdc73b56a49aff1e702e46def4a5",
+      "prediction_file": "p2-chords-set1-maj-t072.offset-+2.npz",
+      "prediction_file_sha256": "701977ec23407d7a8d6454f249e682c4f337aa7244561e9b1bf963f2778668fb",
+      "original_prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "8cb5afa5bacbec1841a1eae8246d18e7414a38facd9f4736a241e7918a1e5930",
+      "corrected_prediction_sha256": "9d42f29df38958e698e69e35ad3c7aa39bd7b8effff24bc7d215926ff9b8b352",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz",
+      "original_prediction_file_sha256": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.268729847149958,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "flatref": 3.5667571344976574,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.494963176095586,
+        "canonical_waveform_l1": 0.035493648499246036,
+        "raw_lowband": 1.2915334596317178
+      },
+      "net": 1.494963176095586,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0008499132764683281,
+          "primary_relative_change": -0.0005681948383170813,
+          "canonical_waveform_l1_change": -1.4280972005946413e-05,
+          "raw_lowband_change": -0.0035399958181026037
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0008499132764683281,
+          "primary_relative_change": 0.00023828739788533948
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "800bf9cb85905554c3fba4dcb0c563eee89af8b6f48d6d697be89f15145d22c4"
+      },
+      "input_sha256_float32": "b28d19ac0881140a2c902bc6f624677abc7fedc6ddc4e431ff99f6f4342c4180",
+      "prediction_file": "p2-scales-a-t075.offset-+2.npz",
+      "prediction_file_sha256": "65aa0887cfaea9df77f06910938462a356bcbd83f10b06ad15dbda801d6de8f8",
+      "original_prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "9b72afdce44185b2b6098d51b095e491b0d4a7c2059557e06286bcf6e783a74f",
+      "corrected_prediction_sha256": "6190a0ce9fb0c16337f07a9327777969036010bb4fc7039e020786923e726440",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz",
+      "original_prediction_file_sha256": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.224219840883034,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "flatref": 3.4188565709721486,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.3265669493601273,
+        "canonical_waveform_l1": 0.0328509619925072,
+        "raw_lowband": 1.1926762278732674
+      },
+      "net": 1.3265669493601273,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.000949067725387831,
+          "primary_relative_change": -0.0007149199807558288,
+          "canonical_waveform_l1_change": -2.6655247269538607e-05,
+          "raw_lowband_change": 0.0006064399727914171
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0009490677253882751,
+          "primary_relative_change": 0.0002775979938575146
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "877eecd9b1a791cf2bd0f2d4bc36524a5d0784f6829f692889b67aec3df9f2fc"
+      },
+      "input_sha256_float32": "9d76e0906619783e7e9638ddda276f1dace37e88f32979a56d0bd745d37ec1e9",
+      "prediction_file": "p2-scales-bb-t076.offset-+2.npz",
+      "prediction_file_sha256": "f1ec47b249f99b0418a928ec8e1a112a606255c9aa782c45b2e02bc71ea7a148",
+      "original_prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "6569779a46eda302b8c9c87c22e4a64aa5136aab59bc1e053cb031eef210e540",
+      "corrected_prediction_sha256": "9a91097e213a26e2d25676dfab412fbdeb72ee87e001ae4eb6e17b95e67582b2",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz",
+      "original_prediction_file_sha256": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.315722567471393,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "flatref": 3.58652440282249,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.4938775994603306,
+        "canonical_waveform_l1": 0.03823248187002981,
+        "raw_lowband": 1.3412256887205012
+      },
+      "net": 1.4938775994603306,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.002026622777730802,
+          "primary_relative_change": 0.0013584619438580681,
+          "canonical_waveform_l1_change": 8.334196182187281e-05,
+          "raw_lowband_change": 0.00427238952949871
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.00202662277773058,
+          "primary_relative_change": -0.0005650659385268986
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "aac0f12a09e704b84458cdf44b9a4801f1b4e1c7826950c15e198f0360eabbe8"
+      },
+      "input_sha256_float32": "0182d39ac8954e1ad5c6f6c90758038392991d9f0d3ef65d20d63534009a00f7",
+      "prediction_file": "p2-scales-c-t075.offset-+2.npz",
+      "prediction_file_sha256": "20aaefc4b55e25fc00e3f41c9b054e110755b9ac1285d421cbd77f81a1ae76f8",
+      "original_prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "1eb5d827a40fcd3ec7b141cc3d2f70b5ae56925c085e0a6b61af829560b26350",
+      "corrected_prediction_sha256": "e6a1928dc241a85f97adcf00bc8d17c4a28710de22cb4081bf347bd89b5874a2",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz",
+      "original_prediction_file_sha256": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.230290357992964,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "flatref": 3.416077304129911,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.3645753370240201,
+        "canonical_waveform_l1": 0.029535508669387436,
+        "raw_lowband": 1.1660154011107857
+      },
+      "net": 1.3645753370240201,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0007670673945661122,
+          "primary_relative_change": -0.0005618132067704717,
+          "canonical_waveform_l1_change": -2.5436340376213534e-05,
+          "raw_lowband_change": -0.0006686720746906794
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0007670673945661122,
+          "primary_relative_change": 0.00022454626352830243
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "b49078f7b92d981eea99c969a8e3d13e238e80fb78a05128d6326132f8b7a139"
+      },
+      "input_sha256_float32": "e3cf00ff4c3e1d90b3a81f4250bb990d1f92623e97896c566c3c74f9f9e69170",
+      "prediction_file": "p2-scales-db-t076.offset-+2.npz",
+      "prediction_file_sha256": "619d38de61bec54ecf175b23c631fb51a0a97eeded0d069bba7a09647c86fb5a",
+      "original_prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "21b1609b13d70c533de12331982908c9fa739314ff3f1a90346e1dbe84279c38",
+      "corrected_prediction_sha256": "d1ea7ef8d75b4c396eca2070b18111eb5e4fb987bbf714412c22360c247cd076",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz",
+      "original_prediction_file_sha256": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.261952816096986,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "flatref": 3.3869750585322067,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.4349350671388619,
+        "canonical_waveform_l1": 0.031229320930533114,
+        "raw_lowband": 1.1868414801552523
+      },
+      "net": 1.4349350671388619,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0017288745623800228,
+          "primary_relative_change": -0.0012033952493669163,
+          "canonical_waveform_l1_change": -3.464834995514643e-05,
+          "raw_lowband_change": -0.0031954068311799144
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0017288745623800228,
+          "primary_relative_change": 0.0005104479757017666
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "e040388164622db40814f5890bb7e38ea167fd087f362790bfb1ccddcf32b0f6"
+      },
+      "input_sha256_float32": "02293c40b0f625b10ada5ad1a96c5434f6d6b865b3a4af5f8bf00b5336056885",
+      "prediction_file": "p2-scales-e-t076.offset-+2.npz",
+      "prediction_file_sha256": "d566890604ad32fa2c94e139d60d737315fb93c638c824a84961a947a2b9535c",
+      "original_prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "81f7971a9edf1253e7db816b3c36e6f543f435d8136c6f0c53e8e52c1e87e5a8",
+      "corrected_prediction_sha256": "ce4b09e80260a3300d4510d1f4101b1db8d1537a45eacc48acdd683f74a7eebf",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz",
+      "original_prediction_file_sha256": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": 2,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.325348897664405,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "flatref": 3.464152665375974,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "imposed_offset": 2,
+      "inverse_offset": -2,
+      "network_scores": {
+        "primary": 1.4679458458416614,
+        "canonical_waveform_l1": 0.0312465864463609,
+        "raw_lowband": 1.100442052047706
+      },
+      "net": 1.4679458458416614,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.000741357402309184,
+          "primary_relative_change": -0.000504775557839482,
+          "canonical_waveform_l1_change": -1.313515227637646e-06,
+          "raw_lowband_change": -0.0018648882618703677
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.000741357402309184,
+          "primary_relative_change": 0.0002140082940682575
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "913961e7fc724b0ca218c889b0ebd1efab67f156cf5553d1252fc22f4248369a"
+      },
+      "input_sha256_float32": "598f02d1f1d95d2f8bbb53136051f818e1c5ec582e99aa3af067679d0062b756",
+      "prediction_file": "p2-scales-g-t076.offset-+2.npz",
+      "prediction_file_sha256": "85165aa36a093fef944fcd2a565fe7a7f8266ef5cf86d974b2ac378255c75eb8",
+      "original_prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "b0454cc9989ad72cc616b241cfaf24c7abb0e7ec5c190214989395d143e88c83",
+      "corrected_prediction_sha256": "db52dc9d531c0ff4c9328f84572fcd8398fac19df9ffcb3d913429edd16e07c3",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz",
+      "original_prediction_file_sha256": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744"
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.31811629248553,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "flatref": 3.5585204760495026,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.3545146249392583,
+        "canonical_waveform_l1": 0.03634797952347655,
+        "raw_lowband": 1.2042746859069848
+      },
+      "net": 1.3545146249392583,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0021333643624437126,
+          "primary_relative_change": -0.0015725260931848683,
+          "canonical_waveform_l1_change": -0.00015984886910080237,
+          "raw_lowband_change": -0.004033509215911835
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0021333643624434906,
+          "primary_relative_change": 0.000599508806202409
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "112a372da16d1069c0193b79475f77901e1a25d16c345efe84d7bf0f9e66ba67"
+      },
+      "input_sha256_float32": "cca39afcf9f2c54a9b694d721f71e6c3ae4a6e5bd1ec4167484ca8fad3e8212f",
+      "prediction_file": "p2-chords-drop3-7-t098.offset-+3.npz",
+      "prediction_file_sha256": "1774d56c622a1404c235cb5be288c8cf222ead0f20d25b8b6a7c00ae45c341e9",
+      "original_prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "d09d323f2720ad34f83b030ecf37e3368a11e66507348859a8663aae0b28df7a",
+      "corrected_prediction_sha256": "3e585c41049452c298be1d6fa95e01cddf1d012e1495a2a5535ba7cea64f94d5",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz",
+      "original_prediction_file_sha256": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.141863540456876,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "flatref": 3.3646525744065108,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.39600768538484,
+        "canonical_waveform_l1": 0.03914938860703305,
+        "raw_lowband": 1.2562377940531158
+      },
+      "net": 1.39600768538484,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0017033511528541379,
+          "primary_relative_change": -0.001218671891633304,
+          "canonical_waveform_l1_change": -0.00020127103620520143,
+          "raw_lowband_change": -0.0052303166500253795
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0017033511528541379,
+          "primary_relative_change": 0.0005062487478828537
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "3e472933837d6e644caa7abf9757d9ba295e925220e2165384f9ea201539e4ba"
+      },
+      "input_sha256_float32": "c39a2ab30b1b5dc2b874ee09862038ef3c0ddf3493b457b0fd6bda0317804597",
+      "prediction_file": "p2-chords-drop3-m7b5-t098.offset-+3.npz",
+      "prediction_file_sha256": "72ebee62fbac4f9bb3459f3b0af8fc275ecafd0479e007140ab07c00a78dce86",
+      "original_prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "3fb398b5b80dccc447e61d8eb06ab7a6d16ce9e7fe0698dff5cbfcb9ffbe6a45",
+      "corrected_prediction_sha256": "4275436abdaa95f68ec76fef1c871377a218d8e8ebcfd7f728af34014b533e9e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz",
+      "original_prediction_file_sha256": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.818732299485904,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "flatref": 3.02816527569074,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.5479825374190916,
+        "canonical_waveform_l1": 0.04836977583277074,
+        "raw_lowband": 1.151604698003172
+      },
+      "net": 1.5479825374190916,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.001424358217256616,
+          "primary_relative_change": -0.0009192925507612549,
+          "canonical_waveform_l1_change": -0.0002751845397019545,
+          "raw_lowband_change": 0.007273264722690964
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.001424358217256616,
+          "primary_relative_change": 0.0004703700384820486
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "eacee7c40e0f740a14d227958f22adc273adb65fcd78bc412dbb8d81f7f4b139"
+      },
+      "input_sha256_float32": "bfb78cac377ea59b7fce425fa1e3ee52af8e60eda0f9cf415e5a98799632013f",
+      "prediction_file": "p2-chords-set1-7-t099.offset-+3.npz",
+      "prediction_file_sha256": "11b0b1b6034e4d4a3f6d7c39cf1c8a4ad910c8409b364996529b3c60c349ed2f",
+      "original_prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "7932e86353859e0a618b70e9f4cd8842b502f5b3bc16ca4bdf7df5718562b426",
+      "corrected_prediction_sha256": "89b4db4c1f07c9d2cf20e68cd50cc2f81e3c70b68eb759caf99a810a092614bd",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz",
+      "original_prediction_file_sha256": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.870564322439565,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "flatref": 3.017100620998192,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.6238223130289615,
+        "canonical_waveform_l1": 0.039326410625018286,
+        "raw_lowband": 0.9706973272781612
+      },
+      "net": 1.6238223130289615,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 2.214145879975149e-06,
+          "primary_relative_change": 1.3635413685901002e-06,
+          "canonical_waveform_l1_change": -1.5621051157800603e-05,
+          "raw_lowband_change": -0.0006463188985814661
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -2.214145879975149e-06,
+          "primary_relative_change": -7.338654417488044e-07
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "563f83dc9d7f2cf28f2012cac8dcd9298392043593e93c184b9928f8f5d2d0e2"
+      },
+      "input_sha256_float32": "1213c2acf22c974435ad11d5590fbc5077d426fc8167501a07623a9306d7a406",
+      "prediction_file": "p2-chords-set1-dim-t072.offset-+3.npz",
+      "prediction_file_sha256": "a5bb1fde1ea4bb5aaf7a6aa375471116681b5f704d9fc6b6d91d6c1993c82966",
+      "original_prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "c8e4350baa9dc9bf02702d0a316aa460725105eb87c709f10520f19a3f22cbf6",
+      "corrected_prediction_sha256": "cffcaf065d1e6fc74900e03b00d3b800bf87dbed09bcc43c2216f15a9b33e325",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz",
+      "original_prediction_file_sha256": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 4.869246607726732,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "flatref": 3.0875490228539633,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.4041751696666602,
+        "canonical_waveform_l1": 0.04134892594579932,
+        "raw_lowband": 1.3596396512212645
+      },
+      "net": 1.4041751696666602,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.004208781768075376,
+          "primary_relative_change": -0.0029883766878966815,
+          "canonical_waveform_l1_change": -1.1382339432985944e-05,
+          "raw_lowband_change": -0.0015903355940485309
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.004208781768075376,
+          "primary_relative_change": 0.0013631465401592324
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "06e090fb5a65115df39794be3a01963c74dbc2f0d97541b1abcb04471e5ad648"
+      },
+      "input_sha256_float32": "5edb51ac38ceedeff990f14f5a79571d2ab5d4bd7a53469d7cce146ca6634ee1",
+      "prediction_file": "p2-chords-set1-m7-t094.offset-+3.npz",
+      "prediction_file_sha256": "5ea4c01f51b57c8ac1b13ac9430a1933fd20e3bc909fb67694eae59360eb7689",
+      "original_prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "a7ca7fe09b5ca37acbf4d7191da1b96c1e6ea2d58f058c0517c9f0e738f2e043",
+      "corrected_prediction_sha256": "48f8b1d5c3939bd8be66ab2189dda1b19f6f25cfdd255147740357b8e53bbb7a",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz",
+      "original_prediction_file_sha256": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.012802754664242,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "flatref": 3.1612424880458385,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.6338760154003762,
+        "canonical_waveform_l1": 0.04466560841257207,
+        "raw_lowband": 1.1010674131406155
+      },
+      "net": 1.6338760154003762,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.00022946279217594956,
+          "primary_relative_change": 0.00014046048810839804,
+          "canonical_waveform_l1_change": 3.842312815245663e-05,
+          "raw_lowband_change": 0.00168164855774533
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.00022946279217594956,
+          "primary_relative_change": -7.258626728057216e-05
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "fa891c287191966b1ff965afbcbd4335d3c9d41964e14cfef06378ba0bc6fa84"
+      },
+      "input_sha256_float32": "08f027d1678ec643a00d58f488eea9e2c7ed660b0bd97b4f1798735f392fed8f",
+      "prediction_file": "p2-chords-set1-maj-t072.offset-+3.npz",
+      "prediction_file_sha256": "e238fba3b95f50dee21cb7f797b6cbf6aa67046d48edd5d7aa518eb8ab2cce24",
+      "original_prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "609e21e93227041846067ee32662d0017a8d788e98ea4a8f16e6d58ed6b6f2a4",
+      "corrected_prediction_sha256": "510eaf4b9f69d9cc71f596642c49b71221c564d75cddcf8a0aa0b56116e4b29e",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz",
+      "original_prediction_file_sha256": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.268729847149958,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "flatref": 3.5667571344976574,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.4947288146506912,
+        "canonical_waveform_l1": 0.035488803145714364,
+        "raw_lowband": 1.2895094922714065
+      },
+      "net": 1.4947288146506912,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0010842747213630766,
+          "primary_relative_change": -0.000724873133593354,
+          "canonical_waveform_l1_change": -1.912632553761895e-05,
+          "raw_lowband_change": -0.0055639631784139
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0010842747213630766,
+          "primary_relative_change": 0.00030399454756147026
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "3ac610f7789014fe315c1a405e75bb32b2f5cf4a7227d2bf6b15b2c705a824c3"
+      },
+      "input_sha256_float32": "35c5549869ddbf20a7ca3ac3692747a03fb8fb96538b0a0a8cea32d33f5f0fea",
+      "prediction_file": "p2-scales-a-t075.offset-+3.npz",
+      "prediction_file_sha256": "ac595f8a9ba54d3645710f2dddc90fc783d0746739f406d05397e81128caaf31",
+      "original_prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "2151ded16452f03ee8ab0f1755d1bca332597382e2dcd1220d1f18155d2f1310",
+      "corrected_prediction_sha256": "78fd4c40ef162c9c8ae4b6ca718e999171f94ce02754052bbf5f8bc371f4b002",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz",
+      "original_prediction_file_sha256": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.224219840883034,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "flatref": 3.4188565709721486,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.326139189154836,
+        "canonical_waveform_l1": 0.03284942805558311,
+        "raw_lowband": 1.1934355827787564
+      },
+      "net": 1.326139189154836,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0013768279306791698,
+          "primary_relative_change": -0.0010371460027291542,
+          "canonical_waveform_l1_change": -2.818918419363048e-05,
+          "raw_lowband_change": 0.0013657948782803686
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0013768279306791698,
+          "primary_relative_change": 0.0004027159086956722
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "5edd588e790cf29dda27fe5932d41331db550a041c146896067298c9f32fde65"
+      },
+      "input_sha256_float32": "349fb749efd5180d564b95cb02271314b116be97288901a9e481bbd7404f04eb",
+      "prediction_file": "p2-scales-bb-t076.offset-+3.npz",
+      "prediction_file_sha256": "8d98e6cd1672834e5764d2387eae423930015c36e4b6e3702b76dfdc17b777e9",
+      "original_prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "5788c6a5dae9ce62b690acdb400a652692a85db06640b28aeb8260f63e1bd68b",
+      "corrected_prediction_sha256": "5aad17c3688558358059a6e52cb1e35a1f23245374f433aaa66bba46f98126a0",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz",
+      "original_prediction_file_sha256": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.315722567471393,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "flatref": 3.58652440282249,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.494770983167762,
+        "canonical_waveform_l1": 0.038278364334338226,
+        "raw_lowband": 1.3422697871703204
+      },
+      "net": 1.494770983167762,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": 0.0029200064851622187,
+          "primary_relative_change": 0.0019573044029205793,
+          "canonical_waveform_l1_change": 0.000129224426130288,
+          "raw_lowband_change": 0.005316487979317941
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0029200064851622187,
+          "primary_relative_change": -0.0008141604955661519
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "7cd077437783fe3663087f13d7ef6e4241a5387933c443130410b1eb82b7a56d"
+      },
+      "input_sha256_float32": "a350d6d19695c3d7d6c7a58ea86a7706eec07e548b766a50737eb0c39c0586c0",
+      "prediction_file": "p2-scales-c-t075.offset-+3.npz",
+      "prediction_file_sha256": "96036bdc3666b10312202e0ffa7d7667fd4848e1765205bffda0e6784dd39834",
+      "original_prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "e0291eaf367eed3ca7334301e53208c26e3bfd08c614a08e46da20298604c11c",
+      "corrected_prediction_sha256": "0096c0c8e137a6fa2633220218e06023545c876d01cc5770a5fbb866c82936c3",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz",
+      "original_prediction_file_sha256": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.230290357992964,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "flatref": 3.416077304129911,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.3643857448771397,
+        "canonical_waveform_l1": 0.02952715985929314,
+        "raw_lowband": 1.1648967459875974
+      },
+      "net": 1.3643857448771397,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0009566595414465251,
+          "primary_relative_change": -0.0007006737199039141,
+          "canonical_waveform_l1_change": -3.3785150470509034e-05,
+          "raw_lowband_change": -0.0017873271978789962
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.000956659541446303,
+          "primary_relative_change": 0.00028004622152133507
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "00378d7cec845a9e1fd58a3fe6fe14c6d9e16fd9cbf0e252b387ee0139fda665"
+      },
+      "input_sha256_float32": "039dd45ccbbba079fce7b22075b0bb33c2cb50a57a35d42d51022d60c1966365",
+      "prediction_file": "p2-scales-db-t076.offset-+3.npz",
+      "prediction_file_sha256": "dc4b2d2d146a4c15d18b1038b1d25e9c8412cd3dbea17426224d2158aeb2e66d",
+      "original_prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "75abfd645a4301b3622164bcd1f0adfcfa97aeacb8c9ee58b3c711c8d0f4e594",
+      "corrected_prediction_sha256": "16b40255414dd01fab6b702307080a776930e518c972d0a44fe1801f90f9bbdf",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz",
+      "original_prediction_file_sha256": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.261952816096986,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "flatref": 3.3869750585322067,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.4347836847461872,
+        "canonical_waveform_l1": 0.03122269494175001,
+        "raw_lowband": 1.184691184860005
+      },
+      "net": 1.4347836847461872,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.001880256955054671,
+          "primary_relative_change": -0.0013087660241741317,
+          "canonical_waveform_l1_change": -4.127433873825012e-05,
+          "raw_lowband_change": -0.005345702126427154
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.001880256955054671,
+          "primary_relative_change": 0.0005551434311032999
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "71efcd556e66bfd735223607e985aba9be8868a87e325fc1905cef6a199b903b"
+      },
+      "input_sha256_float32": "c16a5cdc801b8280f0f5951bfd6e51717e05c697b80c1f6648d5cd263e8b9711",
+      "prediction_file": "p2-scales-e-t076.offset-+3.npz",
+      "prediction_file_sha256": "38124f8dad270b95d720f51c5ffe15d7de30f43a85f4915422f0758e03a6f442",
+      "original_prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "5f7da94d4708545efc23a60a0b75ed993339e28cf2402b9c58f865200e2a73b7",
+      "corrected_prediction_sha256": "40fef542c8a78965cfdb58eb4b6ac4d73bd18987ed2ade6513edf9ce330539ff",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz",
+      "original_prediction_file_sha256": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": 3,
+      "valid": true,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "wet": 5.325348897664405,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "flatref": 3.464152665375974,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "imposed_offset": 3,
+      "inverse_offset": -3,
+      "network_scores": {
+        "primary": 1.4674481696214403,
+        "canonical_waveform_l1": 0.03126106200929007,
+        "raw_lowband": 1.0998488944160905
+      },
+      "net": 1.4674481696214403,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "net": {
+          "primary_absolute_change": -0.0012390336225303056,
+          "primary_relative_change": -0.0008436334297688327,
+          "canonical_waveform_l1_change": 1.3162047701530816e-05,
+          "raw_lowband_change": -0.0024580458934859717
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0,
+          "primary_relative_change": 0.0,
+          "canonical_waveform_l1_change": 0.0,
+          "raw_lowband_change": 0.0
+        },
+        "advantage": {
+          "primary_absolute_change": 0.0012390336225303056,
+          "primary_relative_change": 0.0003576729267489309
+        }
+      },
+      "input": {
+        "dtype": "float64",
+        "samples": 288000,
+        "sha256": "e7a1e0a8ae7899f182739854bb4022e5318308dec2317e5987a258af188bc55e"
+      },
+      "input_sha256_float32": "48b770ee4b955eba3e82f69a06eef073eedd9244c5ac958257d7593ec9840dbe",
+      "prediction_file": "p2-scales-g-t076.offset-+3.npz",
+      "prediction_file_sha256": "705066400fef1d95ccfb86fe165387e29a6b3a5949115c3e3e8717c1e248263e",
+      "original_prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "raw_prediction_dtype": "float32",
+      "raw_prediction_sha256": "98801118be4c4bfc9543a92915b2c42db42e49734e76e8366c16870ddc7aeef7",
+      "corrected_prediction_sha256": "eb56e0d1492f0bde162a224f2cdf4371cb52b2ed3fdaa056837603552557d8c3",
+      "original_prediction_file": "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz",
+      "original_prediction_file_sha256": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744"
+    }
+  ],
+  "screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "offset_screens": [
+      {
+        "offset": -3,
+        "role": "robustness",
+        "screen": {
+          "valid": true,
+          "passed": true,
+          "disposition": "PASS",
+          "median_relative_improvement": 0.5779588330646446,
+          "strict_wins": 12,
+          "group_medians": {
+            "chords": 0.5158301978312763,
+            "scales": 0.5824387994580693
+          },
+          "per_take": [
+            {
+              "slug": "p2-chords-drop3-7-t098",
+              "relative_improvement": 0.6180353505489479
+            },
+            {
+              "slug": "p2-chords-drop3-m7b5-t098",
+              "relative_improvement": 0.5838710290247585
+            },
+            {
+              "slug": "p2-chords-set1-7-t099",
+              "relative_improvement": 0.4877552399602469
+            },
+            {
+              "slug": "p2-chords-set1-dim-t072",
+              "relative_improvement": 0.4614710802740999
+            },
+            {
+              "slug": "p2-chords-set1-m7-t094",
+              "relative_improvement": 0.5439051557023056
+            },
+            {
+              "slug": "p2-chords-set1-maj-t072",
+              "relative_improvement": 0.4836022223710048
+            },
+            {
+              "slug": "p2-scales-a-t075",
+              "relative_improvement": 0.5804763855346641
+            },
+            {
+              "slug": "p2-scales-bb-t076",
+              "relative_improvement": 0.611081991150656
+            },
+            {
+              "slug": "p2-scales-c-t075",
+              "relative_improvement": 0.5844012133814745
+            },
+            {
+              "slug": "p2-scales-db-t076",
+              "relative_improvement": 0.5997365613955937
+            },
+            {
+              "slug": "p2-scales-e-t076",
+              "relative_improvement": 0.5752157382860035
+            },
+            {
+              "slug": "p2-scales-g-t076",
+              "relative_improvement": 0.5754412805946252
+            }
+          ]
+        }
+      },
+      {
+        "offset": -2,
+        "role": "robustness",
+        "screen": {
+          "valid": true,
+          "passed": true,
+          "disposition": "PASS",
+          "median_relative_improvement": 0.57812106560527,
+          "strict_wins": 12,
+          "group_medians": {
+            "chords": 0.5157988975066268,
+            "scales": 0.5824567658796703
+          },
+          "per_take": [
+            {
+              "slug": "p2-chords-drop3-7-t098",
+              "relative_improvement": 0.618275348113105
+            },
+            {
+              "slug": "p2-chords-drop3-m7b5-t098",
+              "relative_improvement": 0.5841036986040198
+            },
+            {
+              "slug": "p2-chords-set1-7-t099",
+              "relative_improvement": 0.4878542686995874
+            },
+            {
+              "slug": "p2-chords-set1-dim-t072",
+              "relative_improvement": 0.4614914108181255
+            },
+            {
+              "slug": "p2-chords-set1-m7-t094",
+              "relative_improvement": 0.5437435263136661
+            },
+            {
+              "slug": "p2-chords-set1-maj-t072",
+              "relative_improvement": 0.48338818861279353
+            },
+            {
+              "slug": "p2-scales-a-t075",
+              "relative_improvement": 0.5805242921524233
+            },
+            {
+              "slug": "p2-scales-bb-t076",
+              "relative_improvement": 0.6113865284634482
+            },
+            {
+              "slug": "p2-scales-c-t075",
+              "relative_improvement": 0.5843892396069174
+            },
+            {
+              "slug": "p2-scales-db-t076",
+              "relative_improvement": 0.599978120397308
+            },
+            {
+              "slug": "p2-scales-e-t076",
+              "relative_improvement": 0.5754384224004377
+            },
+            {
+              "slug": "p2-scales-g-t076",
+              "relative_improvement": 0.5757178390581167
+            }
+          ]
+        }
+      },
+      {
+        "offset": 0,
+        "role": "prerequisite",
+        "screen": {
+          "valid": true,
+          "passed": true,
+          "disposition": "PASS",
+          "median_relative_improvement": 0.5783282809072523,
+          "strict_wins": 12,
+          "group_medians": {
+            "chords": 0.5160926314261821,
+            "scales": 0.5823318550724486
+          },
+          "per_take": [
+            {
+              "slug": "p2-chords-drop3-7-t098",
+              "relative_improvement": 0.6187606623503858
+            },
+            {
+              "slug": "p2-chords-drop3-m7b5-t098",
+              "relative_improvement": 0.5845897888033104
+            },
+            {
+              "slug": "p2-chords-set1-7-t099",
+              "relative_improvement": 0.4883347655841141
+            },
+            {
+              "slug": "p2-chords-set1-dim-t072",
+              "relative_improvement": 0.4617945163705382
+            },
+            {
+              "slug": "p2-chords-set1-m7-t094",
+              "relative_improvement": 0.5438504972682501
+            },
+            {
+              "slug": "p2-chords-set1-maj-t072",
+              "relative_improvement": 0.4832264342941755
+            },
+            {
+              "slug": "p2-scales-a-t075",
+              "relative_improvement": 0.5806237899114135
+            },
+            {
+              "slug": "p2-scales-bb-t076",
+              "relative_improvement": 0.6117076017880336
+            },
+            {
+              "slug": "p2-scales-c-t075",
+              "relative_improvement": 0.5840399202334837
+            },
+            {
+              "slug": "p2-scales-db-t076",
+              "relative_improvement": 0.6003186453749341
+            },
+            {
+              "slug": "p2-scales-e-t076",
+              "relative_improvement": 0.575826831649643
+            },
+            {
+              "slug": "p2-scales-g-t076",
+              "relative_improvement": 0.5760327719030911
+            }
+          ]
+        }
+      },
+      {
+        "offset": 2,
+        "role": "robustness",
+        "screen": {
+          "valid": true,
+          "passed": true,
+          "disposition": "PASS",
+          "median_relative_improvement": 0.5785996784673217,
+          "strict_wins": 12,
+          "group_medians": {
+            "chords": 0.5166900416376178,
+            "scales": 0.5821684658021278
+          },
+          "per_take": [
+            {
+              "slug": "p2-chords-drop3-7-t098",
+              "relative_improvement": 0.619233718066934
+            },
+            {
+              "slug": "p2-chords-drop3-m7b5-t098",
+              "relative_improvement": 0.5849972534425762
+            },
+            {
+              "slug": "p2-chords-set1-7-t099",
+              "relative_improvement": 0.4886270810041396
+            },
+            {
+              "slug": "p2-chords-set1-dim-t072",
+              "relative_improvement": 0.46187177452915923
+            },
+            {
+              "slug": "p2-chords-set1-m7-t094",
+              "relative_improvement": 0.544753002271096
+            },
+            {
+              "slug": "p2-chords-set1-maj-t072",
+              "relative_improvement": 0.48324293510621164
+            },
+            {
+              "slug": "p2-scales-a-t075",
+              "relative_improvement": 0.5808620773092988
+            },
+            {
+              "slug": "p2-scales-bb-t076",
+              "relative_improvement": 0.6119851997818911
+            },
+            {
+              "slug": "p2-scales-c-t075",
+              "relative_improvement": 0.5834748542949568
+            },
+            {
+              "slug": "p2-scales-db-t076",
+              "relative_improvement": 0.6005431916384624
+            },
+            {
+              "slug": "p2-scales-e-t076",
+              "relative_improvement": 0.5763372796253448
+            },
+            {
+              "slug": "p2-scales-g-t076",
+              "relative_improvement": 0.5762467801971594
+            }
+          ]
+        }
+      },
+      {
+        "offset": 3,
+        "role": "robustness",
+        "screen": {
+          "valid": true,
+          "passed": true,
+          "disposition": "PASS",
+          "median_relative_improvement": 0.5786591146444076,
+          "strict_wins": 12,
+          "group_medians": {
+            "chords": 0.5170093897155027,
+            "scales": 0.5820767720984463
+          },
+          "per_take": [
+            {
+              "slug": "p2-chords-drop3-7-t098",
+              "relative_improvement": 0.6193601711565883
+            },
+            {
+              "slug": "p2-chords-drop3-m7b5-t098",
+              "relative_improvement": 0.5850960375511932
+            },
+            {
+              "slug": "p2-chords-set1-7-t099",
+              "relative_improvement": 0.48880513562259614
+            },
+            {
+              "slug": "p2-chords-set1-dim-t072",
+              "relative_improvement": 0.46179378250509645
+            },
+            {
+              "slug": "p2-chords-set1-m7-t094",
+              "relative_improvement": 0.5452136438084093
+            },
+            {
+              "slug": "p2-chords-set1-maj-t072",
+              "relative_improvement": 0.4831538480268949
+            },
+            {
+              "slug": "p2-scales-a-t075",
+              "relative_improvement": 0.580927784458975
+            },
+            {
+              "slug": "p2-scales-bb-t076",
+              "relative_improvement": 0.6121103176967293
+            },
+            {
+              "slug": "p2-scales-c-t075",
+              "relative_improvement": 0.5832257597379176
+            },
+            {
+              "slug": "p2-scales-db-t076",
+              "relative_improvement": 0.6005986915964554
+            },
+            {
+              "slug": "p2-scales-e-t076",
+              "relative_improvement": 0.5763819750807463
+            },
+            {
+              "slug": "p2-scales-g-t076",
+              "relative_improvement": 0.57639044482984
+            }
+          ]
+        }
+      }
+    ],
+    "required_small_offsets": [
+      -3,
+      -2,
+      2,
+      3
+    ]
+  },
+  "input_artifacts": {
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-7-t098.npz": "28e4c57606b7b906ac3acac6712e00ab1b717e1a184b1f834774e0a64062cede",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-m7b5-t098.npz": "105efbea9823e17268b6be0ee5254a79e4748ef4fbfaf5b7856caa07941d9663",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-7-t099.npz": "65845a00cc612215454bb9cced5d9a2cdae94863dc57f0f811166e5bfdad7813",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-dim-t072.npz": "0208c30a9ca891322340ff562429a500d804aaf36c944ad3183275157f63791e",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-m7-t094.npz": "1b5403b217d5c52bd28838aa8e30a96354667ad8cf17175b363cbf8b5b0a86b2",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-maj-t072.npz": "1baa8f630b7de352f48c0fa952761c54233bb6c0c4e776c88055682fe4aa9351",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-a-t075.npz": "0a341122213ade4cabfd2b66708b67b646750f7eda98ddacf1a4e553ab4f4acb",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-bb-t076.npz": "c10a0b718893ad41eedaf267cffff2c5db06114e3df8d58622c781e89ec61f04",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-c-t075.npz": "039932a19ba24a8871a7edd53197bd18f460ed379bfe1e29b37c88c516403f62",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-db-t076.npz": "59defee37eedd955e802547fcf275530838d45cd074d99f58066f8712e8e6589",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-e-t076.npz": "7724935daf36529093e78e12454452deb347952b4a1a867307ce889c7a987c30",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-g-t076.npz": "9eb83f978fd986f3d0b58b9d11d1e71166e938d37112f27a625422a7898c9091",
+    "tmp/di-morgan-control-20261008/render/p2-chords-drop3-7-t098.npz": "cccaedc9ed197d50a2239703a1b3576ed9c2557b443151f97aee8f8359e13d04",
+    "tmp/di-morgan-control-20261008/render/p2-chords-drop3-m7b5-t098.npz": "d90afecb805812966ed958ef10f252d3dce3dc34c9c1827b1b72a58a09fc4d00",
+    "tmp/di-morgan-control-20261008/render/p2-chords-set1-7-t099.npz": "8b60f90311e2d450a8b462aabb6d10acadd97cef7a6809f4401de6636596a1f3",
+    "tmp/di-morgan-control-20261008/render/p2-chords-set1-dim-t072.npz": "d9c02fc80443573b4d24a0fb04f831b6c8724a417af8973e0f33b03b48b7ebdb",
+    "tmp/di-morgan-control-20261008/render/p2-chords-set1-m7-t094.npz": "a9796d3a573bbb80cba3378dc47aa00e3f4bf79b503515e148dda63a66da3b77",
+    "tmp/di-morgan-control-20261008/render/p2-chords-set1-maj-t072.npz": "43fe4f70675ff8f2c98a50dc286cf6bf8ddb29d6f26f38fa154c51189cfb090a",
+    "tmp/di-morgan-control-20261008/render/p2-scales-a-t075.npz": "b22ddeeed8dc0efe4d40dec079ec92001fcf6f80a388a0e424a30a98803840f5",
+    "tmp/di-morgan-control-20261008/render/p2-scales-bb-t076.npz": "60b6782aa6f0d0b625d8b531d1f6fcf7b0d8807e6aa3ee22c373361f5044491e",
+    "tmp/di-morgan-control-20261008/render/p2-scales-c-t075.npz": "0152daceb4a31f4e123005c441619f28d3cdb1de92d775224d507bb1d37d48a9",
+    "tmp/di-morgan-control-20261008/render/p2-scales-db-t076.npz": "74937d1a0a85ae90b5e02e6b767c93d516106695045ccdcce59da8eba964136a",
+    "tmp/di-morgan-control-20261008/render/p2-scales-e-t076.npz": "01f97b3c922f68ebe814d1c37fbebefb2f77af2a2dd1177313334bc77b7a16d4",
+    "tmp/di-morgan-control-20261008/render/p2-scales-g-t076.npz": "1c5fc204278f668ebfb187ad01026d5c4d68831b40b12e3f239bfbc3854a770d",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-7-t098.npz": "c65cc96ea21c35cdb21d3953ccc11afd582ca1cbfb40f19721f043b28f7b9259",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-drop3-m7b5-t098.npz": "8fc96cadbdc11a2f5066173037066e8d02629ff71434f98b44525c877f3f84cd",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-set1-7-t099.npz": "2c10a486cf4bf5ea5a8bd2136e44e239579399b131f304529672bc10ffd911b8",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-set1-dim-t072.npz": "529eb5e03e74ec4d5f593f09b0a88c5a98514581698787f93c0591f9bbae1e21",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-set1-m7-t094.npz": "b75bc8d485388a5be855e8210fc8d4ea6d41bde085b4042e8166a457fe54eabb",
+    "tmp/di-morgan-control-20261008/infer/p2-chords-set1-maj-t072.npz": "5363a2bfb2430d296cf957818ac76ca306256d4bc6b4129eb6aa8f4a74538f12",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-a-t075.npz": "97e8b6712be9952ab22299d9a9bb4fa9dd75218df7578735579c53d6300cfbf8",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-bb-t076.npz": "92929d1c5e24a37b98f9e94ea3c38d6aa6511a7fc239726a08579c1ecc3539bf",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-c-t075.npz": "7f1f4e93e9c04abde0ff4211d8969d2281c64061b2de429d086e364908fcae03",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-db-t076.npz": "ffa938f95b1a0c4578d9e84728cafa3662217c0984eff6f7d29897cab59cef31",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-e-t076.npz": "22d48457b9062a55798b15615d10c5ccccf08f97411c48f987611007ead7d5ce",
+    "tmp/di-morgan-control-20261008/infer/p2-scales-g-t076.npz": "76f4bf02966596b2a6c21b2d2f7ca7a708ac4c818ca7184e6bf1252b370c5744",
+    "tmp/di-morgan-flatref-20261008/p2-chords-drop3-7-t098.npz": "e4455d6a50b034c30a6f9e5ce5bf1dc9596f5368f9b6533f681348585517f782",
+    "tmp/di-morgan-flatref-20261008/p2-chords-drop3-m7b5-t098.npz": "3073772782765383e739e79b7c40b8265da8c07aecbb72ec3aa6cf73bc2cdc13",
+    "tmp/di-morgan-flatref-20261008/p2-chords-set1-7-t099.npz": "88a165c951c9af4cad2ea63205636fe151bed1ed14865df5e1cc34111a547dbf",
+    "tmp/di-morgan-flatref-20261008/p2-chords-set1-dim-t072.npz": "519b310697b944f295f6507fa7245640edf90c2a251d3f0c8c30910428c3affd",
+    "tmp/di-morgan-flatref-20261008/p2-chords-set1-m7-t094.npz": "4c4e63e792a91ad7ab8bd93e65e3192cffcd32130812ec1e55532f4e06cc841d",
+    "tmp/di-morgan-flatref-20261008/p2-chords-set1-maj-t072.npz": "9e39bfb712dd6263871162defd18d0c2cb5456ed6f53196d5670232e3ff52276",
+    "tmp/di-morgan-flatref-20261008/p2-scales-a-t075.npz": "707f79940bffd152cac2afe8ba020c2fc33b9d8941783e470498ea286f8ac453",
+    "tmp/di-morgan-flatref-20261008/p2-scales-bb-t076.npz": "a01824b9380d18c6813917d9d4aaf1ad990abbe6bc1e228a984141956337527d",
+    "tmp/di-morgan-flatref-20261008/p2-scales-c-t075.npz": "fb9da7c8fe2e44743985aaf879c927a6d18f5c599b04eb6ca1c8a6e460b034d9",
+    "tmp/di-morgan-flatref-20261008/p2-scales-db-t076.npz": "ed69ef23e7b0469bcdac011f50269d3039991f653decf688eb7f4fc7b142c15d",
+    "tmp/di-morgan-flatref-20261008/p2-scales-e-t076.npz": "6f64f0088237b1f2f0a22e7813610d27f1705a577960dcbc9e665aae86bcb089",
+    "tmp/di-morgan-flatref-20261008/p2-scales-g-t076.npz": "d9a2c601d5ad4be3491ff68a4c650d2e6b7be0d73a543e1f524ebc81fbb76e12"
+  },
+  "elapsed_seconds": 19.597388458,
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "interpretation": "Known input shifts with known inverse; finite padding/window normalization included. Dependent clean Morgan controls; no isolated stride cause, native or song product claim."
+}
