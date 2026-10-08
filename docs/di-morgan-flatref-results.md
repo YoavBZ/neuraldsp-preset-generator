@@ -47,8 +47,9 @@ renderer stability are inherited from the prior independent verification.
 The subsequent [timing-confidence control](di-alignment-control-results.md) is
 complete and independently verified: exact-delay and mismatch controls passed,
 but seven accepted distorted cases had two/three-sample errors. The next
-[score-sensitivity study](di-timing-sensitivity-plan.md) is independently reviewed
-and declared, awaiting committed execution. Neither study changes the timing thresholds or reopens
+[score-sensitivity study](di-timing-sensitivity-results.md) completed after review
+and commit; its result is independently verified PASS with 23,734 agreeing checks.
+Neither study changes the timing thresholds or reopens
 the closed native pilot.
 
 Pedroza et al., Guitar-TECHS, CC BY4.0, https://zenodo.org/records/14963133.

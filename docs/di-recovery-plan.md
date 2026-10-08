@@ -51,9 +51,11 @@ The independently reviewed [known-offset/mismatched-performance control](di-alig
 of the frozen timing-confidence method used saved dry arrays after declaration and commit. The
 [verified result](di-alignment-control-results.md) passes exact-delay/polarity and
 mismatch controls but fails on seven accepted distorted cases with two/three-sample
-errors; all 856 independent checks agree. Next: execute the independently reviewed and declared
-[fixed-render score-sensitivity control](di-timing-sensitivity-plan.md), after commit,
-before attributing recovery error to those small coordinate errors. No changed thresholds,
+errors; all 856 independent checks agree. The reviewed and committed
+[fixed-render score-sensitivity control](di-timing-sensitivity-plan.md) has an
+[verified PASS](di-timing-sensitivity-results.md) at all thirteen offsets; all 23,734
+independent checks agree. Next: separately implement and review a known input-shift
+control before new inference, with original prediction-byte replay first. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio

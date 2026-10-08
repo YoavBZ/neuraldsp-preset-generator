@@ -111,9 +111,11 @@ lives in the linked documents. Last updated 2026-10-08.
        reviewed and committed before computation. Its [verified result](di-alignment-control-results.md)
        passes exact-delay/polarity and mismatch controls but misses timing by two/three
        samples on seven accepted distorted cases across three performances. All 856
-       independent checks agree. Next: execute the independently reviewed and declared
-       [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md), after commit,
-       before deciding whether those small coordinate errors matter to recovery scoring. No threshold tuning or
+       independent checks agree. The reviewed and committed
+       [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md) has an
+       [verified PASS](di-timing-sensitivity-results.md) at all thirteen offsets;
+       all 23,734 independent checks agree. Next: separately implement and review
+       a known input-shift control before any new inference. No threshold tuning or
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.

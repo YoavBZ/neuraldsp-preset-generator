@@ -1,0 +1,489 @@
+{
+  "complete": true,
+  "passed": true,
+  "scalar_count": 108,
+  "absolute_tolerance": 1e-08,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.318116292485436,
+          "canonical_waveform_l1": 0.06957521852177595,
+          "raw_lowband": 0.8387529574967253
+        },
+        "network_scores": {
+          "primary": 1.3566479893017018,
+          "canonical_waveform_l1": 0.03650782839257735,
+          "raw_lowband": 1.208308195123651
+        },
+        "flatref_scores": {
+          "primary": 3.5585204760495017,
+          "canonical_waveform_l1": 0.06957521211173695,
+          "raw_lowband": 0.802273160010485
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.141863540456877,
+          "canonical_waveform_l1": 0.06627324010112692,
+          "raw_lowband": 1.0770030879068435
+        },
+        "network_scores": {
+          "primary": 1.3977110365376941,
+          "canonical_waveform_l1": 0.03935065964323826,
+          "raw_lowband": 1.2614681107049783
+        },
+        "flatref_scores": {
+          "primary": 3.3646525744065103,
+          "canonical_waveform_l1": 0.06627318562755426,
+          "raw_lowband": 1.0452991725589915
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.818732299485904,
+          "canonical_waveform_l1": 0.049658252571410974,
+          "raw_lowband": 0.9994720437130175
+        },
+        "network_scores": {
+          "primary": 1.5494068956363483,
+          "canonical_waveform_l1": 0.0486449603724727,
+          "raw_lowband": 1.14433143328123
+        },
+        "flatref_scores": {
+          "primary": 3.02816527569074,
+          "canonical_waveform_l1": 0.049594096237209784,
+          "raw_lowband": 0.9466559012987122
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.870564322439566,
+          "canonical_waveform_l1": 0.044105579964644294,
+          "raw_lowband": 0.9978787952290677
+        },
+        "network_scores": {
+          "primary": 1.6238200988830815,
+          "canonical_waveform_l1": 0.03934203167617609,
+          "raw_lowband": 0.9713436461761689
+        },
+        "flatref_scores": {
+          "primary": 3.017100620998186,
+          "canonical_waveform_l1": 0.044102286308141676,
+          "raw_lowband": 0.9292056368459584
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 4.869246607726732,
+          "canonical_waveform_l1": 0.044359482779514604,
+          "raw_lowband": 1.0707950625301392
+        },
+        "network_scores": {
+          "primary": 1.4083839514347356,
+          "canonical_waveform_l1": 0.041360308285232315,
+          "raw_lowband": 1.3612299868074547
+        },
+        "flatref_scores": {
+          "primary": 3.0875490228539624,
+          "canonical_waveform_l1": 0.04435923488534466,
+          "raw_lowband": 1.0407888190099073
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.012802754664243,
+          "canonical_waveform_l1": 0.05141229178897683,
+          "raw_lowband": 1.067843512135838
+        },
+        "network_scores": {
+          "primary": 1.6336465526082005,
+          "canonical_waveform_l1": 0.04462718528441961,
+          "raw_lowband": 1.0993857645830722
+        },
+        "flatref_scores": {
+          "primary": 3.161242488045839,
+          "canonical_waveform_l1": 0.0514107391022757,
+          "raw_lowband": 1.003600063459429
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.2687298471502455,
+          "canonical_waveform_l1": 0.06924559486746194,
+          "raw_lowband": 0.64086947222313
+        },
+        "network_scores": {
+          "primary": 1.4958130893720543,
+          "canonical_waveform_l1": 0.03550792947125198,
+          "raw_lowband": 1.2950734554500385
+        },
+        "flatref_scores": {
+          "primary": 3.5667571344976574,
+          "canonical_waveform_l1": 0.0692453839383102,
+          "raw_lowband": 0.5912443784008168
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.224219840883034,
+          "canonical_waveform_l1": 0.053371378546355076,
+          "raw_lowband": 0.5948321944759695
+        },
+        "network_scores": {
+          "primary": 1.327516017085515,
+          "canonical_waveform_l1": 0.03287761723977674,
+          "raw_lowband": 1.1920697878997948
+        },
+        "flatref_scores": {
+          "primary": 3.4188565709721495,
+          "canonical_waveform_l1": 0.05337133224506696,
+          "raw_lowband": 0.5463412327714758
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.315722567471387,
+          "canonical_waveform_l1": 0.07557680580804998,
+          "raw_lowband": 0.7479442524137964
+        },
+        "network_scores": {
+          "primary": 1.4918509766826002,
+          "canonical_waveform_l1": 0.03814913990820794,
+          "raw_lowband": 1.3369532991897148
+        },
+        "flatref_scores": {
+          "primary": 3.58652440282249,
+          "canonical_waveform_l1": 0.07557674017243135,
+          "raw_lowband": 0.6987381928362579
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.230290357992965,
+          "canonical_waveform_l1": 0.05594809887421997,
+          "raw_lowband": 0.6018490603442013
+        },
+        "network_scores": {
+          "primary": 1.3653424044185856,
+          "canonical_waveform_l1": 0.029560945009763664,
+          "raw_lowband": 1.1666840731851351
+        },
+        "flatref_scores": {
+          "primary": 3.4160773041299115,
+          "canonical_waveform_l1": 0.055948037134506814,
+          "raw_lowband": 0.555481378811408
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.2619528160969855,
+          "canonical_waveform_l1": 0.048747084034056594,
+          "raw_lowband": 0.618544458989554
+        },
+        "network_scores": {
+          "primary": 1.4366639417012417,
+          "canonical_waveform_l1": 0.03126396928048827,
+          "raw_lowband": 1.1900368869859457
+        },
+        "flatref_scores": {
+          "primary": 3.386975058532228,
+          "canonical_waveform_l1": 0.0487469601855303,
+          "raw_lowband": 0.5706568712203417
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "valid": true,
+      "scores": {
+        "input_scores": {
+          "primary": 5.325348897664405,
+          "canonical_waveform_l1": 0.05061107296078392,
+          "raw_lowband": 0.5950892665691774
+        },
+        "network_scores": {
+          "primary": 1.4686872032439708,
+          "canonical_waveform_l1": 0.03124789996158853,
+          "raw_lowband": 1.102306940309432
+        },
+        "flatref_scores": {
+          "primary": 3.464152665375974,
+          "canonical_waveform_l1": 0.05061098262910847,
+          "raw_lowband": 0.5431629893425034
+        }
+      },
+      "errors": {
+        "wet.primary": 0.0,
+        "wet.canonical_waveform_l1": 0.0,
+        "wet.raw_lowband": 0.0,
+        "net.primary": 0.0,
+        "net.canonical_waveform_l1": 0.0,
+        "net.raw_lowband": 0.0,
+        "flatref.primary": 0.0,
+        "flatref.canonical_waveform_l1": 0.0,
+        "flatref.raw_lowband": 0.0
+      },
+      "nonfinite_diagnostic_fields": []
+    }
+  ],
+  "screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "median_relative_improvement": 0.5783282809072523,
+    "strict_wins": 12,
+    "group_medians": {
+      "chords": 0.516092631426182,
+      "scales": 0.5823318550724486
+    },
+    "per_take": [
+      {
+        "slug": "p2-chords-drop3-7-t098",
+        "relative_improvement": 0.6187606623503858
+      },
+      {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "relative_improvement": 0.5845897888033104
+      },
+      {
+        "slug": "p2-chords-set1-7-t099",
+        "relative_improvement": 0.4883347655841141
+      },
+      {
+        "slug": "p2-chords-set1-dim-t072",
+        "relative_improvement": 0.4617945163705371
+      },
+      {
+        "slug": "p2-chords-set1-m7-t094",
+        "relative_improvement": 0.54385049726825
+      },
+      {
+        "slug": "p2-chords-set1-maj-t072",
+        "relative_improvement": 0.4832264342941755
+      },
+      {
+        "slug": "p2-scales-a-t075",
+        "relative_improvement": 0.5806237899114135
+      },
+      {
+        "slug": "p2-scales-bb-t076",
+        "relative_improvement": 0.6117076017880339
+      },
+      {
+        "slug": "p2-scales-c-t075",
+        "relative_improvement": 0.5840399202334837
+      },
+      {
+        "slug": "p2-scales-db-t076",
+        "relative_improvement": 0.6003186453749344
+      },
+      {
+        "slug": "p2-scales-e-t076",
+        "relative_improvement": 0.5758268316496458
+      },
+      {
+        "slug": "p2-scales-g-t076",
+        "relative_improvement": 0.576032771903091
+      }
+    ]
+  }
+}

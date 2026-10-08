@@ -2,8 +2,9 @@
 
 2026-10-08. Source review and hypotheses only; no new experiment, data access,
 model selection or training authorization. The timing result is independently
-verified; score-coordinate sensitivity is independently reviewed and declared,
-awaiting committed execution.
+verified; score-coordinate sensitivity completed after review and commit and
+is independently verified PASS. A separate input-coordinate control is next
+for implementation and independent review, before any new inference.
 Current execution state remains in the roadmap/monitor.
 
 ## Relevant published choices
