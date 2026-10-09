@@ -1,4 +1,8 @@
 """Synthetic precision-probe contracts; no model/dataset files or Torch needed."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import hashlib
 import json
 import math

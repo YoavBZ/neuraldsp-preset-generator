@@ -1,4 +1,8 @@
 """Source-only synthetic checks: never read any actual study assets."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 from copy import deepcopy
 import io
 import json

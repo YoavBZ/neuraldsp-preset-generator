@@ -1,4 +1,8 @@
 """Known-DI control tests use synthetic data/fake model only."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import json
 import hashlib
 import math

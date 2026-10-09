@@ -1,4 +1,8 @@
 """Synthetic only: no real arrays, weights, audio, catalogs or study execution."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 from copy import deepcopy
 import builtins
 import importlib

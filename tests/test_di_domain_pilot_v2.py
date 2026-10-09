@@ -1,4 +1,8 @@
 """Synthetic guards for attempt 2; no recording/model/catalog access."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import gzip
 import hashlib
 import json

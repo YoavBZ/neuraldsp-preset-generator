@@ -1,5 +1,9 @@
 """Synthetic-only pilot contracts: no dataset/audio/array/model/result files."""
 
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import builtins
 from dataclasses import replace
 import importlib.util

@@ -1,4 +1,8 @@
 """Synthetic only: no original NPZ, checkpoint or study computation."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 from copy import deepcopy
 import gzip
 import json

@@ -1,4 +1,8 @@
 """Execution safety tests use only synthetic metadata and temporary directories."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import json
 import hashlib
 import sys

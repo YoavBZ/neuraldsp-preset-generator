@@ -1,4 +1,8 @@
 """Synthetic evidence only: never load/hash any real study asset or score report."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 from copy import deepcopy
 import json
 from pathlib import Path

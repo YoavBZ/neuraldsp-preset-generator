@@ -1,4 +1,8 @@
 """Synthetic flatref diagnostic tests; no real run artifacts opened."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 import json
 import hashlib
 

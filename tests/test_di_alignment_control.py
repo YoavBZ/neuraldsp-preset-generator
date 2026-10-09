@@ -1,4 +1,8 @@
 """Synthetic/mock evidence only. Never open real assets or numerical reports."""
+import pytest
+
+pytest.importorskip("numpy", reason="needs the analysis extra")
+
 from copy import deepcopy
 from dataclasses import replace
 import json
