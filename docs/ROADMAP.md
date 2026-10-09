@@ -131,9 +131,10 @@ lives in the linked documents. Last updated 2026-10-08.
        INCONCLUSIVE. Both replay controls pass, but startup failed before any audio;
        all 235 independent checks agree. No changed-chain result exists. Keep this
        attempt closed; no path/settings/threshold rescue or missing-stage execution.
-       Next: separately reviewed [startup/version/shutdown readiness](morgan-au-startup-plan.md)
-       in approved host execution, with no audio/presets/model access. It cannot
-       reopen the failed study. Prioritize different-equipment pairing evidence
+       Separately reviewed [startup/version/shutdown readiness](morgan-au-startup-plan.md)
+       is now [READY](morgan-au-startup-results.md): Morgan 1.1.1, clean logs and
+       process exit0, with no audio/presets/model access. It cannot establish rendering
+       or reopen the failed study. Prioritize different-equipment pairing evidence
        after infrastructure, with no further timing/phase microtests.
        A [source-only direct-ranker proposal](research/direct-preset-ranker-proposal-2026-10-09.md)
        offers a different route from song stems to preset risk. No experiment is

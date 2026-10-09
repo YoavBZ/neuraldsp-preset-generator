@@ -1,0 +1,13 @@
+{
+  "archive": "docs/morgan-au-startup-evidence.json.gz",
+  "source_bytes": 5083,
+  "source_sha256": "06933eabcac96d3290d0c0bd61dd7f069205318454daadd7d096113a5747dda3",
+  "archive_bytes": 1852,
+  "archive_sha256": "4e65a1332efe08c203acaae1a0a72205527bd68d5343a76d2c9b12009dc16ff3",
+  "file_count": 8,
+  "lossless_readback": true,
+  "declaration_commit": "9aab649f9bad525dc5678290c86ac103f4c2e7b1",
+  "original_checker_session": 57308,
+  "original_checker_exit_code": 0,
+  "waveforms_or_executables_embedded": false
+}

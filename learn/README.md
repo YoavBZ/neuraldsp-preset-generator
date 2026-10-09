@@ -32,10 +32,11 @@ or case for long training follows from these controls.
 The [broader processing attempt](../docs/di-morgan-processing-control-results.md)
 is closed, independently verified INCONCLUSIVE. Original replay controls pass,
 but startup failed before audio. All 235 independent checks agree; no changed-chain
-result or new training follows. Next is a separate
-[startup/version/shutdown check](../docs/morgan-au-startup-plan.md) in approved host
-execution, without audio/presets/model access. Fresh review and committed declaration
-are required; it cannot reopen the stopped study. See
+result or new training follows. The separate
+[startup/version/shutdown check](../docs/morgan-au-startup-plan.md) was reviewed
+and committed before approved host execution. Its [READY result](../docs/morgan-au-startup-results.md)
+reports Morgan 1.1.1, clean logs and process exit0, without audio/presets/model access.
+It cannot establish rendering or reopen the stopped study. See
 [next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09).
 The [direct-ranker proposal](../docs/research/direct-preset-ranker-proposal-2026-10-09.md)
 is a source-only alternative, not a selected training run. Metadata feasibility,

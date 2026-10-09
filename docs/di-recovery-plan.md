@@ -65,7 +65,8 @@ improvement. All 15,976 independent checks agree; this study is closed. No chang
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
 remains a hypothesis. The [broader processing attempt](di-morgan-processing-control-results.md)
 is independently verified INCONCLUSIVE: startup failed before audio, with 235
-agreeing checks. It remains closed; a separate infrastructure check is next.
+agreeing checks. It remains closed. A separately declared [startup check](morgan-au-startup-results.md)
+now establishes instance/version/process exit only, with no audio or model access.
 Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
@@ -81,9 +82,11 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
    agrees on all 235 checks; no changed-chain result exists. Preserve all failures;
    never repeat this attempt or compute its missing stages. The first and second
    blocked reviews and all repaired failure paths remain archived.
-   Next is a separate [one-time startup/version/shutdown check](morgan-au-startup-plan.md)
-   under approved host execution. It requires fresh review and committed declaration,
-   sends no audio/preset commands, and cannot reopen the closed processing test.
+   The separate [one-time startup/version/shutdown check](morgan-au-startup-plan.md)
+   was freshly reviewed and committed before host execution. Its
+   [READY result](morgan-au-startup-results.md) reports Morgan 1.1.1, clean logs
+   and process exit0. No audio/preset/model operation ran; this cannot establish
+   renderability or reopen the closed processing test.
 2. **Different development recordings — source and license audit.** Identify
    dry/processed guitar pairs from other equipment, with evidence for usable
    timing and licenses. Check overlap with training material. Source metadata

@@ -152,9 +152,10 @@ was declared, what was measured, and the research behind it.
   all 235 independent checks agree. Replay controls pass; startup failed before
   audio, so no broader result exists. Closed with full failures and evidence.
 - [Next development steps](di-recovery-plan.md#next-development-steps-2026-10-09):
-  separate [startup/version/shutdown readiness](morgan-au-startup-plan.md), with
-  no audio/preset/model access and fresh review/commit before execution. Cannot
-  reopen the processing attempt. Then pursue usable different-equipment pairs.
+  separate [startup/version/shutdown readiness](morgan-au-startup-plan.md) is
+  [READY](morgan-au-startup-results.md), Morgan 1.1.1 with clean logs/process exit0.
+  Reviewed and committed before execution; no audio/preset/model access. Cannot
+  establish rendering or reopen the processing attempt. Check new study feasibility next.
 - [Direct preset-ranker proposal](research/direct-preset-ranker-proposal-2026-10-09.md):
   source-only alternative using real development stems and saved average-guitar
   labels. Not declared; metadata admission, complete guitar targets and target
