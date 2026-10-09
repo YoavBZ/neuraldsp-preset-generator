@@ -78,6 +78,8 @@ A song's guitar (the amp track, or a separated stem) goes through four steps:
 | `di_timing_sensitivity.py` | verified common saved-output coordinate robustness PASS, all thirteen screens pass; 23,734 independent checks agree; no input-timing/native/product claim | `di-timing-sensitivity-plan.md` → `-results.md` |
 | `di_input_shift_control.py` | verified PASS at four input shifts; twelve original and 120 raw/corrected prediction-byte checks match; 21,246 final checks agree | `di-input-shift-control-plan.md` → `-results.md` |
 | `di_phase_control.py` | verified PASS, twelve wins and 57.56% median improvement; 15,976 independent checks agree | `di-phase-control-plan.md` |
+| `set3_gap_split.py` | where the rebuilt DI loses the choice: level, mask, balance, the rest (development) | `set3-gap-split-plan.md` |
+| `rebuilt_judge.py` | the judge through a rebuilt DI, with the reference-proxy fallback for refusals | `codex-continuation-review.md` |
 | `rerank.py` | DI-free reranker: log-mel, PANNs CNN14 | `rerank-plan.md` |
 | `render_crossed.py` | crossed renders for our own guitar tone encoder | `tone-encoder-plan.md` |
 

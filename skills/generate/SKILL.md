@@ -43,7 +43,7 @@ the differences that decide it are:
 
 | | Morgan Amps Suite | Tone King Imperial MKII |
 |---|---|---|
-| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable | **requires one of the user's own presets**; no Tone King content ships here |
+| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; distorted parts start from a factory driven baseline (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
 | voices | PR12 blackface Princeton (12 W, breaks up), AC20 darkened Vox, SW50R Dumble-ish high headroom | Rhythm channel clean, Lead channel with Mid-Bite, attenuator, spring reverb, tremolo |
 | reach for it | jangle and chime, Dumble-style singing lead, anything needing three different amp characters | vintage Fender-flavoured cleans, edge of breakup, blues lead, real spring reverb |
 
@@ -153,6 +153,7 @@ it resolves `{amp}` and note divisions for you. Then put **what the song needs**
 in a `--spec`, which is applied last and overrides the recipes.
 
 Handing back an unmodified stack is a failure — it's a renamed factory preset.
+(The dry driven baseline of step 4 is the exception: it is a measured starting point.)
 The research in step 2 is what should move the values.
 
 Select the amp or channel through the pack's `amp/*` recipe. Morgan uses
@@ -169,6 +170,36 @@ Tone King recipes use its verified sync-note selectors. See
 
 - For Morgan, default to `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
   — IR-free, portable, and shipped with the repo.
+- **For a crunch or high-gain Morgan part, start from the amp's driven baseline
+  instead.** These are factory presets the plugin installs, under
+  `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
+
+  | amp | driven baseline | evidence |
+  |---|---|---|
+  | SW50R | `Artists/Royce Whittaker/Wall Of Doom.xml` | development, and reserved recordings |
+  | PR12 | `Neural DSP/Vintage Metal.xml` | development, and reserved recordings |
+  | AC20 | `Artists/Charlie Robbins/Dirty Coil Rhythm.xml` | development recordings only |
+
+  - **The evidence.** On reserved crunch and high-gain recordings, the dry SW50R and
+    PR12 baselines were closer to the record than the clean template on the same amp on
+    all 23 parts, and about half the distance on average. On clean parts they were
+    further on every part, so keep the clean template for a clean part. Heavy-tone
+    listening has not been run yet; say so when you report
+    ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
+  - **Make it dry first, always,** in the spec, because the installed presets are not
+    (Wall Of Doom is transposed down 5 semitones):
+    - `parameters/transpose` 0;
+    - the amp's spring reverb 0 (`sw50rAmp/sw50rReverb` or `pr12Amp/pr12Reverb`);
+    - `reverb/reverbActive`, `delay/delayActive`, `tremolo/tremoloActive`,
+      `parameters/doublerActive` and `parameters/gateActive` off.
+
+    Then turn effects back on only where the research calls for them.
+  - **Keep the baseline's amp, drive, pedals, EQ and cab.** Skip step 3's amp, drive,
+    eq and cab recipe layers unless the research contradicts the baseline, and don't
+    re-select the amp. A dry baseline chosen this way is the measured starting point,
+    not the "renamed factory preset" failure step 3 warns about.
+  - **If the file is missing** (an older or trimmed install), say so and use the
+    clean template.
 - For Tone King, require one of the user's own Tone King presets. No Tone King
   preset content ships in the repository.
 - One of the user's own presets is a fine template too, especially if it already
@@ -199,7 +230,8 @@ user decide.
    their own specs. Use at least two amps (on Tone King, both channels), and make them
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
-   one of the four.
+   one of the four. For a crunch or high-gain part, make the dry driven baseline of
+   the chosen amp (step 4, transpose reset) one of the four.
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:
