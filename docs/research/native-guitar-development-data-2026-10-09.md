@@ -152,3 +152,14 @@ window changes that procedure and cannot be treated as neutral. Pairing
 feasibility can be assessed separately, but any later recovery test needs an
 explicitly reviewed short-input procedure and controls before new computation.
 This further limits the dataset's immediate value for the current model.
+
+### Follow-up after the processing attempt closed
+
+The [broader Morgan attempt](../di-morgan-processing-control-results.md) stopped
+at startup before audio and is independently verified INCONCLUSIVE. Its earlier
+baseline replays pass, but it supplies no broader processing or transfer result.
+It remains closed. A separate minimal infrastructure probe is under source review.
+The recommendations above remain source-audit proposals, not acquired/admitted
+data or training instructions. Any next source intake, pairing test or short-input
+model procedure must address the five-second constraint and receive its own
+fresh review and committed declaration. No index, CSV or audio was fetched.

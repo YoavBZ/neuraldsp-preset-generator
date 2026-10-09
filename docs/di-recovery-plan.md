@@ -102,6 +102,18 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
    Synthetic success alone cannot choose an augmentation recipe or justify a
    larger network. Pairing failure calls for better pairing evidence, not a
    silently relaxed acceptance rule.
+   A separate [source-only proposal](research/direct-preset-ranker-proposal-2026-10-09.md)
+   suggests a small model that learns preset rankings directly from development
+   song stems and existing average-guitar labels, without rebuilding a DI or
+   rendering. It is not declared or selected for execution. First establish
+   metadata-only feasibility: permitted recordings, exact shared excerpt
+   identities, complete guitar labels, source grouping and strong baselines.
+   Its proposed equal-weight multi-guitar compromise changes the target and is
+   not adopted; an important target decision would need the user after a concrete
+   feasible design exists. Do not silently replace the current product measure.
+   This is a different hypothesis from the closed score-blend study, not a
+   threshold adjustment or rescue. EGFxSet remains an alternative source-feasibility
+   proposal, with no acquisition or short-input model test authorized by this note.
 4. **Return to the product question.** Improved DI recovery must eventually
    improve preset selection from song audio, including multiple guitars, under
    the average-guitar measure and listening checks. Only then consider product

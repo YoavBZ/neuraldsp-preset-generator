@@ -135,6 +135,10 @@ lives in the linked documents. Last updated 2026-10-08.
        in approved host execution, with no audio/presets/model access. It cannot
        reopen the failed study. Prioritize different-equipment pairing evidence
        after infrastructure, with no further timing/phase microtests.
+       A [source-only direct-ranker proposal](research/direct-preset-ranker-proposal-2026-10-09.md)
+       offers a different route from song stems to preset risk. No experiment is
+       declared: first check metadata feasibility and complete guitar targets;
+       its equal-weight compromise objective is not adopted.
        The parallel [data source audit](research/native-guitar-development-data-2026-10-09.md)
        is complete: EGFxSet is a conditional real-pedal feasibility candidate, with
        edited isolated notes and unverified timing/noise; no audio downloaded.

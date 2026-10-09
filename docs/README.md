@@ -155,6 +155,10 @@ was declared, what was measured, and the research behind it.
   separate [startup/version/shutdown readiness](morgan-au-startup-plan.md), with
   no audio/preset/model access and fresh review/commit before execution. Cannot
   reopen the processing attempt. Then pursue usable different-equipment pairs.
+- [Direct preset-ranker proposal](research/direct-preset-ranker-proposal-2026-10-09.md):
+  source-only alternative using real development stems and saved average-guitar
+  labels. Not declared; metadata admission, complete guitar targets and target
+  interpretation remain unresolved. Its proposed equal-weight compromise is not adopted.
 - [Different-equipment development data audit](research/native-guitar-development-data-2026-10-09.md):
   EGFxSet is a conditional hardware-pedal feasibility candidate; pairing and
   recording quality remain unverified. ToneTwist external amp releases have

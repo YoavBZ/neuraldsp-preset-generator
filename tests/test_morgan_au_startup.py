@@ -6,7 +6,6 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-from types import SimpleNamespace
 
 import pytest
 from scripts import check_morgan_au_startup as M
@@ -87,11 +86,21 @@ def test_quit_failure_does_not_skip_close_wait():
     assert result["errors"][0]["message"] == "broken input" and proc.waits == [10]
 
 
-@pytest.mark.parametrize("kind", ["ready", "invalid", "partial", "launch-log-error", "source-drift", "stderr-errors"])
+@pytest.mark.parametrize("kind", ["ready", "invalid", "partial", "launch-log-error", "source-drift", "stderr-errors", "compile-failure", "compile-timeout"])
 def test_execute_no_render_commands_and_retained_errors(tmp_path, monkeypatch, kind):
     # Compile and OS process creation are replaced before execute is called.
-    build = lambda *a: (subprocess.CompletedProcess(["synthetic"], 0, "", ""), None)
-    monkeypatch.setitem(sys.modules, "_swift", SimpleNamespace(compile_swift=build))
+    builds = []
+    def build(command, **kwargs):
+        builds.append(command)
+        assert command[0] == "/usr/bin/swiftc" and command[3:5] == ["-sdk", M.SDK]
+        assert kwargs == {"capture_output": True, "timeout": 120}
+        if kind == "compile-timeout":
+            raise subprocess.TimeoutExpired(command, 120, output=b"partial\xff", stderr=b"compiler timeout")
+        Path(command[-1]).write_bytes(b"synthetic binary never executed")
+        return subprocess.CompletedProcess(command, 1 if kind == "compile-failure" else 0, b"", b"compile rejected" if kind == "compile-failure" else b"")
+    monkeypatch.setattr(M.subprocess, "run", build)
+    for name in ("DEVELOPER_DIR", "SDKROOT", "TOOLCHAINS", "MACOSX_DEPLOYMENT_TARGET"):
+        monkeypatch.delenv(name, raising=False)
     r, w = os.pipe()
     stream = os.fdopen(r, "rb")
     payload = b'{"ready":true,"version":"test-only"}\n' if kind != "invalid" else b'{"ready":true,"version":"unknown"}\n'
@@ -102,7 +111,7 @@ def test_execute_no_render_commands_and_retained_errors(tmp_path, monkeypatch, k
     calls = []
     def launch(command, **kwargs):
         calls.append(command)
-        assert command[1:] == ["aumf", "NMAS", "NDSP", "--settle", "0"]
+        assert command == [str(tmp_path / "morgan_au_startup")]
         assert kwargs["stdin"] == subprocess.PIPE and kwargs["stdout"] == subprocess.PIPE
         return proc
     monkeypatch.setattr(M.subprocess, "Popen", launch)
@@ -136,9 +145,15 @@ def test_execute_no_render_commands_and_retained_errors(tmp_path, monkeypatch, k
     try:
         result = M.execute(tmp_path, time.monotonic(), {"pins": {"source": "sha"}, "revision": "synthetic"})
         assert result["complete"] and result["no_render_or_model"]
-        assert result["partial_raw_hex"] == (b"" if kind == "launch-log-error" else payload).hex()
+        assert result["partial_raw_hex"] == (b"" if kind in ("launch-log-error", "compile-failure", "compile-timeout") else payload).hex()
         assert result["disposition"] == ("READY" if kind == "ready" else "INCONCLUSIVE")
-        assert len(calls) == (0 if kind == "launch-log-error" else 1)
+        assert len(builds) == 1
+        assert len(calls) == (0 if kind in ("launch-log-error", "compile-failure", "compile-timeout") else 1)
+        if kind == "compile-timeout":
+            assert result["compile"]["stdout_hex"] == b"partial\xff".hex()
+            assert result["error"]["type"] == "TimeoutExpired"
+        if kind == "compile-failure":
+            assert result["compile"]["returncode"] == 1
         if calls:
             assert proc.stdin.sent == b'{"quit":true}\n'
             assert proc.stdin.closed and proc.stdout.closed
@@ -231,7 +246,7 @@ def test_guard_exact_declaration_sources_and_review(tmp_path, monkeypatch, kind)
     monkeypatch.setattr(M.subprocess, "check_output", git)
     if kind == "valid":
         result = M.guard()
-        assert len(result["pins"]) == 7 and result["revision"] == "synthetic"
+        assert len(result["pins"]) == 6 and result["revision"] == "synthetic"
     else:
         with pytest.raises(ValueError, match="drift|review|uncommitted"):
             M.guard()

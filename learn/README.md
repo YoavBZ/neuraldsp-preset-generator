@@ -37,6 +37,9 @@ result or new training follows. Next is a separate
 execution, without audio/presets/model access. Fresh review and committed declaration
 are required; it cannot reopen the stopped study. See
 [next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09).
+The [direct-ranker proposal](../docs/research/direct-preset-ranker-proposal-2026-10-09.md)
+is a source-only alternative, not a selected training run. Metadata feasibility,
+complete multi-guitar targets and the proposed target interpretation are unresolved.
 The [different-equipment source audit](../docs/research/native-guitar-development-data-2026-10-09.md)
 has identified a conditional hardware-pedal candidate, with unverified pairing
 and recording quality. No audio acquisition or training follows automatically.

@@ -15,8 +15,9 @@ PLAN = "docs/morgan-au-startup-plan.md"
 REVIEW = "docs/research/morgan-au-startup-review-2026-10-09.md"
 OUTPUT = "tmp/morgan-au-startup-20261009"
 SOURCES = ("scripts/check_morgan_au_startup.py", "tests/test_morgan_au_startup.py",
-           "scripts/_swift.py", "scripts/au_render_server.swift", "packs/morgan/manifest.json")
+           "scripts/morgan_au_startup.swift", "packs/morgan/manifest.json")
 TOTAL_SECONDS, COMPILE_SECONDS, REPLY_SECONDS, MAX_REPLY = 180, 120, 30, 1048576
+SDK = "/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk"
 
 
 def sha(data):
@@ -146,25 +147,38 @@ def stop_process(process):
 
 
 def execute(out, started, context):
-    # Imports/build only after declaration. No Neural DSP Python renderer, preset,
-    # waveform, model, average, raw recording or scientific scorer is imported.
-    sys.path.insert(0, str(ROOT / "scripts"))
-    from _swift import compile_swift
+    # Build only after declaration. No shared render server/compiler cache,
+    # Neural DSP renderer, preset, waveform, model or scientific scorer.
     raw, process, stderr = bytearray(), None, None
     report = {"scope": "morgan-startup-metadata-only", "context": context,
               "no_render_or_model": True, "disposition": "INCONCLUSIVE", "complete": False}
     try:
         deadline(started)
-        build_start = time.monotonic()
-        built, error = compile_swift(ROOT / "scripts/au_render_server.swift", out / "au_render_server")
-        report["compile"] = {"returncode": None if built is None else built.returncode, "error": error,
-                             "stdout": None if built is None else built.stdout,
-                             "stderr": None if built is None else built.stderr}
+        require(not any(os.environ.get(name) for name in
+                ("DEVELOPER_DIR", "SDKROOT", "TOOLCHAINS", "MACOSX_DEPLOYMENT_TARGET")),
+                "unexpected toolchain environment override")
+        build_command = ["/usr/bin/swiftc", "-swift-version", "5", "-sdk", SDK,
+                         "-module-cache-path", str(out / "swift-module-cache"), "-O",
+                         str(ROOT / "scripts/morgan_au_startup.swift"), "-o", str(out / "morgan_au_startup")]
+        write_json(out / "compile-command.json", {"command": build_command, "timeout_seconds": COMPILE_SECONDS,
+                                                  "attempts": 1, "cache": False})
+        try:
+            built = subprocess.run(build_command, capture_output=True, timeout=COMPILE_SECONDS)
+        except subprocess.TimeoutExpired as error:
+            report["compile"] = {"returncode": None, "error": error_record(error),
+                                 "stdout_hex": (error.stdout or b"").hex(), "stderr_hex": (error.stderr or b"").hex(),
+                                 "stdout": (error.stdout or b"").decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout,
+                                 "stderr": (error.stderr or b"").decode(errors="replace") if isinstance(error.stderr, bytes) else error.stderr}
+            write_json(out / "compile.json", report["compile"])
+            raise
+        report["compile"] = {"returncode": built.returncode,
+                             "stdout": built.stdout.decode(errors="replace"), "stderr": built.stderr.decode(errors="replace"),
+                             "stdout_hex": built.stdout.hex(), "stderr_hex": built.stderr.hex()}
         write_json(out / "compile.json", report["compile"])
-        deadline(build_start, COMPILE_SECONDS)
         deadline(started)
-        require(built is not None and built.returncode == 0 and error is None, "startup server build failed")
-        command = [str(out / "au_render_server"), "aumf", "NMAS", "NDSP", "--settle", "0"]
+        require(built.returncode == 0, "startup probe build failed")
+        report["binary_sha256"] = sha((out / "morgan_au_startup").read_bytes())
+        command = [str(out / "morgan_au_startup")]
         write_json(out / "launch.json", {"command": command, "reply_seconds": REPLY_SECONDS,
                                          "only_subsequent_command": {"quit": True}})
         stderr = (out / "server.log").open("xb")
