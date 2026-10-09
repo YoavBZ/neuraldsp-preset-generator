@@ -147,11 +147,14 @@ was declared, what was measured, and the research behind it.
 - [Fixed periodic phase control](di-phase-control-plan.md): reviewed and committed
   before access. All replay/construction controls pass; [verified PASS](di-phase-control-results.md)
   has twelve wins and 57.56% median improvement. All 15,976 independent checks agree; this study is closed.
+- [Broader Morgan processing control](di-morgan-processing-control-plan.md): reviewed
+  and declared before execution. [Verified INCONCLUSIVE](di-morgan-processing-control-results.md),
+  all 235 independent checks agree. Replay controls pass; startup failed before
+  audio, so no broader result exists. Closed with full failures and evidence.
 - [Next development steps](di-recovery-plan.md#next-development-steps-2026-10-09):
-  the small actual PR12 processing panel has fresh source approval. Its first
-  reviews found five initial and two combined-error gaps; repairs pass 76 synthetic tests; fresh review approved
-  the corrected procedure. No new audio run has started. The separate data audit is
-  complete; review and committed declaration precede acquisition or computation.
+  separate [startup/version/shutdown readiness](morgan-au-startup-plan.md), with
+  no audio/preset/model access and fresh review/commit before execution. Cannot
+  reopen the processing attempt. Then pursue usable different-equipment pairs.
 - [Different-equipment development data audit](research/native-guitar-development-data-2026-10-09.md):
   EGFxSet is a conditional hardware-pedal feasibility candidate; pairing and
   recording quality remain unverified. ToneTwist external amp releases have

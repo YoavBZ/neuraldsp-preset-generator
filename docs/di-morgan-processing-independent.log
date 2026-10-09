@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 386, in <module>
+    derive()
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 240, in derive
+    assert sha(ROOT/name)==expected
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 53, in sha
+    h = hashlib.file_digest(f, 'sha256').hexdigest()
+AttributeError: module 'hashlib' has no attribute 'file_digest'
+
+Traceback (most recent call last):
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 386, in <module>
+    derive()
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 240, in derive
+    assert sha(ROOT/name)==expected
+  File "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent.py", line 53, in sha
+    h = hashlib.file_digest(f, 'sha256').hexdigest()
+AttributeError: module 'hashlib' has no attribute 'file_digest'
+{"barrier": "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/di-morgan-processing-independent-read-barrier.json", "counts": {"original_scalar_controls": 108, "original_predictions": 12, "direct_scalar_controls": 36, "retained_render_input_copies": 12, "new_audio_returns": 0, "new_predictions_computed": 0}, "checks": [{"name": "old108", "passed": true}, {"name": "retained12", "passed": true}, {"name": "original12_model_bytes", "passed": true}, {"name": "original36_direct_scores", "passed": true}], "seconds": 7.932276292}

@@ -29,12 +29,14 @@ its [verified PASS](../docs/di-phase-control-results.md) has twelve wins and 57.
 median improvement, with all 15,976 independent checks agreeing. No native transfer result
 or case for long training follows from these controls.
 
-Next, run the fixed actual PR12 processing panel under the approved source procedure.
-Five initial and two combined-error review gaps were repaired, with 76 synthetic checks passing. The
-panel will replay the original result and require a new clean control before
-driven rendering. The different-equipment source audit is complete. Neither
-workstream has produced new audio results. See [next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09);
-fresh review and a committed procedure are required before computation.
+The [broader processing attempt](../docs/di-morgan-processing-control-results.md)
+is closed, independently verified INCONCLUSIVE. Original replay controls pass,
+but startup failed before audio. All 235 independent checks agree; no changed-chain
+result or new training follows. Next is a separate
+[startup/version/shutdown check](../docs/morgan-au-startup-plan.md) in approved host
+execution, without audio/presets/model access. Fresh review and committed declaration
+are required; it cannot reopen the stopped study. See
+[next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09).
 The [different-equipment source audit](../docs/research/native-guitar-development-data-2026-10-09.md)
 has identified a conditional hardware-pedal candidate, with unverified pairing
 and recording quality. No audio acquisition or training follows automatically.

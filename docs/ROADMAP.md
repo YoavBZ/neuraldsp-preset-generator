@@ -126,13 +126,15 @@ lives in the linked documents. Last updated 2026-10-08.
        reopening the stopped native screen.
        This is not evidence against neural transfer.
        Transfer failure remains a hypothesis. No long training run is justified yet.
-       Next: source preparation for a fixed PR12 processing panel (volume/drive1/
-       drive2), with a new clean replay before experimental rendering and coherent
-       simple competitors per chain. Five initial and two combined-error gaps were repaired;
-       76 synthetic checks pass and fresh review approved the corrected procedure. No new audio run has
-       started; fresh review and committed
-       declaration precede new data/numbers. After this coverage control, prioritize
-       transfer evidence rather than further timing/phase microtests.
+       The [broader Morgan processing attempt](di-morgan-processing-control-results.md)
+       was reviewed and committed before execution; it is now independently verified
+       INCONCLUSIVE. Both replay controls pass, but startup failed before any audio;
+       all 235 independent checks agree. No changed-chain result exists. Keep this
+       attempt closed; no path/settings/threshold rescue or missing-stage execution.
+       Next: separately reviewed [startup/version/shutdown readiness](morgan-au-startup-plan.md)
+       in approved host execution, with no audio/presets/model access. It cannot
+       reopen the failed study. Prioritize different-equipment pairing evidence
+       after infrastructure, with no further timing/phase microtests.
        The parallel [data source audit](research/native-guitar-development-data-2026-10-09.md)
        is complete: EGFxSet is a conditional real-pedal feasibility candidate, with
        edited isolated notes and unverified timing/noise; no audio downloaded.

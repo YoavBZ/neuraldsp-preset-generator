@@ -63,7 +63,10 @@ committed before access. All replay/construction controls pass; its
 [verified PASS](di-phase-control-results.md) has twelve wins and 57.56% median
 improvement. All 15,976 independent checks agree; this study is closed. No changed thresholds,
 native data access or rescue of the stopped study. No native neural transfer result exists. A domain gap
-remains a hypothesis. Longer training, stem augmentation and expanding knobs are
+remains a hypothesis. The [broader processing attempt](di-morgan-processing-control-results.md)
+is independently verified INCONCLUSIVE: startup failed before audio, with 235
+agreeing checks. It remains closed; a separate infrastructure check is next.
+Longer training, stem augmentation and expanding knobs are
 not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
 Heavier-tone listening remains required before product decisions. The user authorized
@@ -71,19 +74,16 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
 
 ## Next development steps, 2026-10-09
 
-1. **Broader Morgan processing control — [declared procedure](di-morgan-processing-control-plan.md).** Keep the frozen
-   model and all twelve existing development DIs. Compare the original clean PR12
-   with three fixed changes: volume 0.85, drive 1 at 0.65, and drive 2 at 0.65.
-   Each new processed signal gets its own simple tone-corrected competitor.
-   Replay the original scores/predictions, then require a newly rendered clean
-   control to pass before any experimental rendering. Preserve full renders,
-   warmups, repeated renders and plugin requests/replies. Independent review and
-   committed declaration are required before new audio-member access or numbers.
-   No new run has started. The [first source review](research/di-morgan-processing-blocked-review-2026-10-09.md)
-   blocked five failure-path gaps. The [second review](research/di-morgan-processing-blocked-review-v2-2026-10-09.md)
-   confirmed those repairs and found two combined-error evidence gaps. These are
-   also repaired; 76 synthetic checks pass and fresh review approved the corrected procedure.
-   This asks about coverage within Morgan, not transfer.
+1. **Broader Morgan processing control — closed inconclusive.** The
+   [declared procedure](di-morgan-processing-control-plan.md) was reviewed and
+   committed at `df68127` before execution. Original replay controls pass, but
+   startup failed before any new audio returned. [Independent verification](di-morgan-processing-control-results.md)
+   agrees on all 235 checks; no changed-chain result exists. Preserve all failures;
+   never repeat this attempt or compute its missing stages. The first and second
+   blocked reviews and all repaired failure paths remain archived.
+   Next is a separate [one-time startup/version/shutdown check](morgan-au-startup-plan.md)
+   under approved host execution. It requires fresh review and committed declaration,
+   sends no audio/preset commands, and cannot reopen the closed processing test.
 2. **Different development recordings — source and license audit.** Identify
    dry/processed guitar pairs from other equipment, with evidence for usable
    timing and licenses. Check overlap with training material. Source metadata
@@ -94,10 +94,11 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
    candidate, but contains edited isolated notes with unverified timing and
    reported recording issues. No audio has been downloaded; this is a feasibility
    candidate, not admitted training material or song-level evidence.
-3. **Decide whether training has a concrete target.** A verified processing
-   weakness can motivate a small training-only experiment with separate
-   development performances. If the broader Morgan control passes, move to
-   usable different-equipment evidence rather than more timing/phase checks.
+3. **Decide whether training has a concrete target.** No processing weakness was
+   measured in the stopped attempt. After infrastructure readiness, prioritize
+   usable different-equipment pairing evidence rather than more timing/phase
+   checks. A demonstrated weakness could motivate a small training experiment
+   on separate development performances.
    Synthetic success alone cannot choose an augmentation recipe or justify a
    larger network. Pairing failure calls for better pairing evidence, not a
    silently relaxed acceptance rule.
