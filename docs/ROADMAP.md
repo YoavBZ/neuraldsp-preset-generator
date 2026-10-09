@@ -65,11 +65,21 @@ lives in the linked documents. Last updated 2026-10-09.
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
-      songs. It is the strongest thing shown so far.
-   2. **Split the rebuilt-DI gap cheaply** on development (no training): rebuilt DI at
-      the true level, with the true-DI activity mask, and with the true-DI alignment.
-      This says which part of the rebuild loses the preset choice.
-   3. **Adopt the reference-proxy fallback** for judge refusals.
+      songs. *Done 2026-10-09
+      ([results](driven-baseline-results.md)).*
+      - **SW50R:** Wall Of Doom; **PR12:** Vintage Metal; **AC20:** Dirty Coil Rhythm.
+      - Dry, they beat the clean template on all 23 reserved crunch and high-gain parts,
+        at about half the distance, and lose on clean parts.
+      - `generate` now starts distorted Morgan parts from them, before heavy-tone
+        listening, as a stated exception.
+   2. **Split the rebuilt-DI gap cheaply** on development (no training)
+      ([plan](set3-gap-split-plan.md)). The parts tested are level, mask, long-term
+      balance and the rest. Alignment is left out: Codex's controls showed the judge
+      ignores few-sample shifts.
+      - **Level is the first suspect:** the true DIs span −46.5 to −16.8 LUFS, while
+        the rebuilt DI is always played at −22.9.
+   3. **Adopt the reference-proxy fallback** for judge refusals. *Done 2026-10-09:
+      `learn/rebuilt_judge.py`, for every new rebuilt-DI scoring.*
    4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
       multi-amp training, stem-aware training (renders mixed and separated), and
       room-and-mic augmentation.

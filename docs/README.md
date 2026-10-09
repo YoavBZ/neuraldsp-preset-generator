@@ -106,6 +106,12 @@ was declared, what was measured, and the research behind it.
   [results](set3-mask-diagnostic-results.md): both alternative proxies rescue one
   refusal but change none of 11 control choices. *Review: adopt the reference-proxy
   fallback ([review](codex-continuation-review.md)).*
+- [driven-baseline-results.md](driven-baseline-results.md): a fixed driven factory preset
+  per amp beats the clean template on every reserved crunch and high-gain part (SW50R,
+  PR12), and loses on clean parts. `generate` now starts distorted Morgan parts from it.
+  Fallback for judge refusals through a rebuilt DI: `learn/rebuilt_judge.py`.
+- [set3-gap-split-plan.md](set3-gap-split-plan.md): where the rebuilt DI loses the
+  preset choice: level, mask, balance or the rest (development only).
 - [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →
   [results](set3-rank-calibration-results.md): supervised prior/score blend misses
   declared criteria versus the net chooser. *Review: rebuilt-DI scores carry about 0.2 of
