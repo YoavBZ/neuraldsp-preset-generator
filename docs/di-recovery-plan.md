@@ -3,7 +3,7 @@
 Written 2026-10-06, before any of its models, listening trials or new renders exist.
 Revised the same day after an independent review (findings at the end).
 
-## Current checkpoint, 2026-10-08
+## Current checkpoint, 2026-10-09
 
 This document retains the original phases and dated decisions below. Phase 1
 training and Phase 2 evaluation are complete. The separately declared reserved
@@ -68,6 +68,39 @@ not justified by these results. No reserved audio
 or scores are reused, and any later accuracy confirmation needs fresh reserved data.
 Heavier-tone listening remains required before product decisions. The user authorized
 autonomous continuation on 2026-10-08, with consultation only for important decisions.
+
+## Next development steps, 2026-10-09
+
+1. **Broader Morgan processing control — source preparation.** Keep the frozen
+   model and all twelve existing development DIs. Compare the original clean PR12
+   with three fixed changes: volume 0.85, drive 1 at 0.65, and drive 2 at 0.65.
+   Each new processed signal gets its own simple tone-corrected competitor.
+   Replay the original scores/predictions, then require a newly rendered clean
+   control to pass before any experimental rendering. Preserve full renders,
+   warmups, repeated renders and plugin requests/replies. Independent review and
+   committed declaration are required before new audio-member access or numbers.
+   No new run has started. This asks about coverage within Morgan, not transfer.
+2. **Different development recordings — source and license audit.** Identify
+   dry/processed guitar pairs from other equipment, with evidence for usable
+   timing and licenses. Check overlap with training material. Source metadata
+   alone can select a candidate; audio pairing and recovery still need their own
+   reviewed procedure. The stopped P2 microphone panel stays closed.
+3. **Decide whether training has a concrete target.** A verified processing
+   weakness can motivate a small training-only experiment with separate
+   development performances. If the broader Morgan control passes, move to
+   usable different-equipment evidence rather than more timing/phase checks.
+   Synthetic success alone cannot choose an augmentation recipe or justify a
+   larger network. Pairing failure calls for better pairing evidence, not a
+   silently relaxed acceptance rule.
+4. **Return to the product question.** Improved DI recovery must eventually
+   improve preset selection from song audio, including multiple guitars, under
+   the average-guitar measure and listening checks. Only then consider product
+   integration. Any final accuracy confirmation requires fresh reserved material
+   and the user's decision to spend it; the old final test is exhausted.
+
+The controls use twelve dependent examples from one player/guitar. Their counts
+of agreeing calculations measure reproducibility, not independent musical
+coverage. No new training, download or rendering is implied by this roadmap.
 
 ## The idea, and the measure
 
