@@ -40,6 +40,8 @@ packs/*/.learned-tones.md.lock
 
 # --- Generated output -----------------------------------------------------
 out/
+# Local experiment output and handover notes are not plugin assets.
+/tmp/
 
 # One match run's --out-dir: its render database, report, summary, and the
 # preset written from the winning spec. The README, the plan, and

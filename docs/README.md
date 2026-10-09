@@ -1,23 +1,27 @@
 # docs
 
-Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
-decisions so far. It is the one living plan. Everything else here is a record: what
-was declared, what was measured, and the research behind it.
+Start with **[ROADMAP.md](ROADMAP.md)** for current product capabilities, priorities
+and validation limits. Keep documentation that explains or supports the plugin's
+current behavior; this folder is not an experiment or session archive.
 
 ## How this folder is kept
 
-- **Each experiment is a pair, plus its data.** `<topic>-plan.md` is written and
-  committed before anything is computed; `<topic>-results.md` records what came out;
-  `<topic>.json` is the script's output. Changes to a plan after it is declared are
-  added as dated amendments, never silent edits. The only edits made in place are
-  path updates when files move.
+- **Keep durable, relevant information.** Product contracts, operating guidance,
+  unresolved limitations, required test fixtures and evidence necessary for a
+  shipped claim belong here. Superseded proposals and incidental observations do
+  not. Update current guidance instead of adding iterative progress documents.
+- **Keep experiment output outside the repository.** Run logs, generated score
+  dumps, failure transcripts, agent reviews, handovers and session checkpoints are
+  local working material. If an experiment changes a product decision, retain the
+  concise conclusion and the minimum evidence needed to support that decision.
 - **Declarations are frozen.**
   - [heldout-listening-sw50r.md](heldout-listening-sw50r.md) is pinned by hash in
     code and stays byte-identical.
   - [listening-validation-plan.md](listening-validation-plan.md) is read by code,
     which requires the single trial hash in it, so it isn't edited either.
-  - Other plans keep their text and gain only dated status notes at the top, or a
-    note in this index.
+  - Preserve an existing declaration when a live validation contract depends on
+    its bytes. Audit those dependencies before removing or moving old material;
+    frozen files are not a reason to accumulate new progress records.
 - **Some files keep their paths because code reads them:**
   - `validation-datasets.json`, `validation-sources-2.json`, `validation-lags.json`;
   - `amp-reach.json` and `reach-sets.json` (the shortlist measurement);
@@ -29,10 +33,11 @@ was declared, what was measured, and the research behind it.
     (its Tone King sibling moved);
   - `toneking-control-grid.json`, cited by the Tone King manifest;
   - `validation-crop-rules.json` and the listening-validation results files.
-- **When an experiment closes** and nothing reads or cites its outputs, they move to
-  `data/<workstream>/`.
-- **`docs/research/`** holds the literature research rounds, oldest first (the
-  research *tooling* is the top-level `research/` folder).
+- **Do not turn closed studies into new repository archives.** Remove obsolete
+  material once its code, fixture, validation and product-document dependencies
+  have been checked. A historical citation alone does not justify keeping it.
+- **`docs/research/`** is for literature that supports current technical choices.
+  Research tooling belongs in the top-level `research/` folder, not among docs.
 - **Crop rules:** rule 1 (the loudest 10 s) cut the crops every experiment through the
   shortlist measurement used. Rule 2 (where the DI plays most) is for crops cut from now
   on ([validation-datasets.md](validation-datasets.md)). The product's own excerpt rule
