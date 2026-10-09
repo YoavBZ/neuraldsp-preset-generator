@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "case": 0,
+      "numpy": 0.0,
+      "torch": 0.0,
+      "absolute_error": 0.0
+    },
+    {
+      "case": 1,
+      "numpy": 1.1931456240869134,
+      "torch": 1.1931456240869132,
+      "absolute_error": 2.220446049250313e-16
+    },
+    {
+      "case": 2,
+      "numpy": 0.42241527849552585,
+      "torch": 0.4224152784955262,
+      "absolute_error": 3.3306690738754696e-16
+    },
+    {
+      "case": 3,
+      "numpy": 15.19790029857215,
+      "torch": 15.197900298572147,
+      "absolute_error": 3.552713678800501e-15
+    }
+  ],
+  "numpy_version": "2.5.1",
+  "tolerance": 1e-08,
+  "metric_result_sha256": "9395a956e3c18f52d95a4f763288e834750e063e19deea3e086fa25c8e441044"
+}

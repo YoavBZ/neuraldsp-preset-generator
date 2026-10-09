@@ -1,0 +1,235 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "render_peak": 0.8373619914054871,
+      "render_hash": "52cfbdda00e4238b4b3fc2ec7d0d6384fd7516cc1d5464ab5e5d9581c9af2c93",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "render_peak": 0.6984446048736572,
+      "render_hash": "559cf8ed2e677d7f5228302b46c111ba39cb58d3f3d4eef32c062790068ca5a5",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "render_peak": 0.6148090958595276,
+      "render_hash": "f3284b69803c25ce7a5eff95ce6d0d63986553cf83406a93fcac0021682ab5ab",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "render_peak": 0.5991124510765076,
+      "render_hash": "4a1edcca844d634050505d8141ab3ee86c29aa073439a83d964062b02843a68d",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "render_peak": 0.6566860675811768,
+      "render_hash": "8d634ac04cc7b0e31403e46d8f2ef4148991709b253f63550184625c1f19cd37",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "render_peak": 0.6732837557792664,
+      "render_hash": "2b91f919bdd1420471334a485b84b3843b3c75ed8da1fadb3a7bdcb81b24e698",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "render_peak": 0.7670232653617859,
+      "render_hash": "3dd377df9db724c1734bccf416e7d35de13cb839c01da85d5ce7f05a675bce2c",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "render_peak": 0.6389530897140503,
+      "render_hash": "9d5bdeba9c8ffbd6f820d4019dffad3beb24862c841d726bd2273d64f44d0006",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "render_peak": 0.6662474274635315,
+      "render_hash": "8a374718edf8979a0098e7e27e2d015512b15b677a18b07072488cfd0ceb62ee",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "render_peak": 0.7720891833305359,
+      "render_hash": "91457b6ca960975ec8e6b25ace3399ac2a677517bd23bf5dcd2d8c3c3f75e2db",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "render_peak": 0.7754409909248352,
+      "render_hash": "424f5aaa2bb76f5a6f3dd1df4cb0b62f0bbbaae0a22a3741009632d45fb607bb",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "render_peak": 0.7734882235527039,
+      "render_hash": "c5b4c056f30d755453af1e70c383d73cd1dc22d6fe4157bef3c911183feb0226",
+      "renderer_metadata": {
+        "renderer_id": "swift",
+        "sample_rate": 48000,
+        "block_size": 512,
+        "plugin_version": "1.1.1",
+        "renderer_build": "audio-unit-renderer-810ebcd7a922",
+        "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+        "reproducible": false,
+        "band_noise_db": 0.23,
+        "notes": [
+          "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+          "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+        ]
+      }
+    }
+  ],
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "elapsed_seconds": 22.724650791846216
+}

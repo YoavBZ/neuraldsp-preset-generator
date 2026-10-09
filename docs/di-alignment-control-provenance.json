@@ -1,0 +1,2725 @@
+{
+  "pins": {
+    "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+    "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+    "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+    "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+    "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+    "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+    "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+    "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+    "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+    "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+    "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+    "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+    "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+    "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+    "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+    "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+    "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+    "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+    "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+    "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+    "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+    "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+    "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+    "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+    "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+    "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+    "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+    "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+    "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+    "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+    "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+    "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+    "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+    "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96",
+    "learn/di_alignment_control.py": "dc0ea39b69095bd7406ed7d6908e31ee04b0a9a23e115995880bf4b9b6e62b77",
+    "tests/test_di_alignment_control.py": "b543a668c35594f2900e8b74a30ad6268345afa7bddf502000584adf9281c45b",
+    "docs/di-alignment-control-plan.md": "270be43de6964e7e2ea3ffa2620982aeef95f4a4d4b41069c57df96efcfd476e",
+    "docs/di-morgan-flatref-inputs.sha256": "404ad70b3274a373df539c33119657c4db4353ef81d59d6c7ed72f573c7ee5e9",
+    "docs/di-morgan-control-prepare.json": "0c778956c77976118241d163a7e98145daa5d2e8949b470972b9bac40562e615",
+    "docs/di-morgan-control-verification.json": "58f74aca051f27ab0996efeefa1016a7d963143bb56cb845578a3954a311581b",
+    "docs/research/di-morgan-control-independent-2026-10-08.py": "8ab45b7b5cf56a3535baa0ebf624fcb8ddcaff384f10632c761ba7896f3b7eb6",
+    "docs/research/di-alignment-control-review-2026-10-08.md": "e311891fc954c383b7f746001b47818ffbb92472b4accbf8733c6333c77cba02"
+  },
+  "git_revision": "3ae99769948cf6a09fc7f32ed8f472b4717d5905",
+  "declared_input_artifacts": {
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-7-t098.npz": "28e4c57606b7b906ac3acac6712e00ab1b717e1a184b1f834774e0a64062cede",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-drop3-m7b5-t098.npz": "105efbea9823e17268b6be0ee5254a79e4748ef4fbfaf5b7856caa07941d9663",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-7-t099.npz": "65845a00cc612215454bb9cced5d9a2cdae94863dc57f0f811166e5bfdad7813",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-dim-t072.npz": "0208c30a9ca891322340ff562429a500d804aaf36c944ad3183275157f63791e",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-m7-t094.npz": "1b5403b217d5c52bd28838aa8e30a96354667ad8cf17175b363cbf8b5b0a86b2",
+    "tmp/di-morgan-control-20261008/prepare/p2-chords-set1-maj-t072.npz": "1baa8f630b7de352f48c0fa952761c54233bb6c0c4e776c88055682fe4aa9351",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-a-t075.npz": "0a341122213ade4cabfd2b66708b67b646750f7eda98ddacf1a4e553ab4f4acb",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-bb-t076.npz": "c10a0b718893ad41eedaf267cffff2c5db06114e3df8d58622c781e89ec61f04",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-c-t075.npz": "039932a19ba24a8871a7edd53197bd18f460ed379bfe1e29b37c88c516403f62",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-db-t076.npz": "59defee37eedd955e802547fcf275530838d45cd074d99f58066f8712e8e6589",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-e-t076.npz": "7724935daf36529093e78e12454452deb347952b4a1a867307ce889c7a987c30",
+    "tmp/di-morgan-control-20261008/prepare/p2-scales-g-t076.npz": "9eb83f978fd986f3d0b58b9d11d1e71166e938d37112f27a625422a7898c9091"
+  },
+  "python": "3.14.6 (main, Jul 30 2026, 22:50:40) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "prefix": "/Users/yoavbz/projects/neuraldsp-preset-generator/.venv",
+  "started_unix": 1791475842.537737,
+  "budget_seconds": 900,
+  "packages": {
+    "numpy": "2.5.1",
+    "scipy": "1.18.0"
+  },
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "cases": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:identity:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:identity:0",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:identity:128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:polarity:0",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:polarity:128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:tanh:0",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:tanh:128",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:identity:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:identity:0",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:identity:128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:polarity:0",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:polarity:128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:tanh:0",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:tanh:128",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:identity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:identity:0",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:identity:128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:polarity:0",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:polarity:128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:tanh:0",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:tanh:128",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:identity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:identity:0",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:identity:128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:polarity:0",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:polarity:128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:tanh:0",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:tanh:128",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:identity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:identity:0",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:identity:128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:polarity:0",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:polarity:128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:tanh:0",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:tanh:128",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:identity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:identity:0",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:identity:128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:polarity:-128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:polarity:0",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:polarity:128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:lowpass:-128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:lowpass:0",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:lowpass:128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:tanh:-128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:tanh:0",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:tanh:128",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:identity:-128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:identity:0",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:identity:128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:polarity:0",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:polarity:128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:tanh:0",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:tanh:128",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:identity:-128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:identity:0",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:identity:128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:polarity:0",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:polarity:128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:tanh:0",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:tanh:128",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:identity:-128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:identity:0",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:identity:128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:polarity:0",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:polarity:128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:tanh:0",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:tanh:128",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:identity:-128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:identity:0",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:identity:128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:polarity:0",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:polarity:128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:tanh:0",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:tanh:128",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:identity:-128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:identity:0",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:identity:128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:polarity:0",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:polarity:128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:tanh:0",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:tanh:128",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:identity:-128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:identity:0",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:identity:128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "identity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:polarity:-128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:polarity:0",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:polarity:128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "polarity",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": -1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:lowpass:-128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:lowpass:0",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:lowpass:128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "lowpass",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:tanh:-128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": -128,
+      "catalog_lag": -128,
+      "truth_lag": -128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:tanh:0",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": 0,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:tanh:128",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "tanh",
+      "positive": true,
+      "imposed_lag": 128,
+      "catalog_lag": 128,
+      "truth_lag": 128,
+      "truth_polarity": 1
+    },
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "case_id": "p2-chords-drop3-7-t098:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "case_id": "p2-chords-drop3-m7b5-t098:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "case_id": "p2-chords-set1-7-t099:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "case_id": "p2-chords-set1-dim-t072:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "case_id": "p2-chords-set1-m7-t094:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "case_id": "p2-chords-set1-maj-t072:mismatch:0",
+      "pair": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "case_id": "p2-scales-a-t075:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "case_id": "p2-scales-bb-t076:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "case_id": "p2-scales-c-t075:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "case_id": "p2-scales-db-t076:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "case_id": "p2-scales-e-t076:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "case_id": "p2-scales-g-t076:mismatch:0",
+      "pair": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A"
+      },
+      "arm": "mismatch",
+      "positive": false,
+      "imposed_lag": 0,
+      "catalog_lag": 0,
+      "truth_lag": null,
+      "truth_polarity": null
+    }
+  ]
+}

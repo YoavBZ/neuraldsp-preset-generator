@@ -1,0 +1,65 @@
+{"stage": "independent derivation started; primary unread", "unix": 1791495443.734144, "elapsed_seconds": 0.0008497089999999971}
+{"stage": "original scalar replay p2-chords-drop3-7-t098", "unix": 1791495446.428909, "elapsed_seconds": 2.6956315839999996}
+{"stage": "original scalar replay p2-chords-drop3-m7b5-t098", "unix": 1791495446.665774, "elapsed_seconds": 2.932498542}
+{"stage": "original scalar replay p2-chords-set1-7-t099", "unix": 1791495446.904633, "elapsed_seconds": 3.1713582089999997}
+{"stage": "original scalar replay p2-chords-set1-dim-t072", "unix": 1791495447.1428401, "elapsed_seconds": 3.4095653749999997}
+{"stage": "original scalar replay p2-chords-set1-m7-t094", "unix": 1791495447.3813329, "elapsed_seconds": 3.648061834}
+{"stage": "original scalar replay p2-chords-set1-maj-t072", "unix": 1791495447.618585, "elapsed_seconds": 3.8853150839999997}
+{"stage": "original scalar replay p2-scales-a-t075", "unix": 1791495447.8550122, "elapsed_seconds": 4.121744084}
+{"stage": "original scalar replay p2-scales-bb-t076", "unix": 1791495448.093707, "elapsed_seconds": 4.360440125}
+{"stage": "original scalar replay p2-scales-c-t075", "unix": 1791495448.3319979, "elapsed_seconds": 4.598732459}
+{"stage": "original scalar replay p2-scales-db-t076", "unix": 1791495448.568855, "elapsed_seconds": 4.835591417}
+{"stage": "original scalar replay p2-scales-e-t076", "unix": 1791495448.807295, "elapsed_seconds": 5.074032709}
+{"stage": "original scalar replay p2-scales-g-t076", "unix": 1791495449.044736, "elapsed_seconds": 5.311474375}
+{"stage": "original model prediction p2-chords-drop3-7-t098", "unix": 1791495450.109925, "elapsed_seconds": 6.376669875}
+{"stage": "original model prediction p2-chords-drop3-m7b5-t098", "unix": 1791495450.3320801, "elapsed_seconds": 6.598826625}
+{"stage": "original model prediction p2-chords-set1-7-t099", "unix": 1791495450.556299, "elapsed_seconds": 6.823046875}
+{"stage": "original model prediction p2-chords-set1-dim-t072", "unix": 1791495450.776213, "elapsed_seconds": 7.0429625840000005}
+{"stage": "original model prediction p2-chords-set1-m7-t094", "unix": 1791495450.9968798, "elapsed_seconds": 7.263631209000001}
+{"stage": "original model prediction p2-chords-set1-maj-t072", "unix": 1791495451.2217631, "elapsed_seconds": 7.48851575}
+{"stage": "original model prediction p2-scales-a-t075", "unix": 1791495451.442522, "elapsed_seconds": 7.709275917}
+{"stage": "original model prediction p2-scales-bb-t076", "unix": 1791495451.66407, "elapsed_seconds": 7.930824959000001}
+{"stage": "original model prediction p2-scales-c-t075", "unix": 1791495451.885866, "elapsed_seconds": 8.1526225}
+{"stage": "original model prediction p2-scales-db-t076", "unix": 1791495452.106573, "elapsed_seconds": 8.373330459}
+{"stage": "original model prediction p2-scales-e-t076", "unix": 1791495452.328723, "elapsed_seconds": 8.595482292}
+{"stage": "original model prediction p2-scales-g-t076", "unix": 1791495452.549709, "elapsed_seconds": 8.816468709}
+{"stage": "independent FFT inverse controls p2-chords-drop3-7-t098", "unix": 1791495453.455969, "elapsed_seconds": 9.722735584}
+{"stage": "independent FFT inverse controls p2-chords-drop3-m7b5-t098", "unix": 1791495454.1385732, "elapsed_seconds": 10.405342834}
+{"stage": "independent FFT inverse controls p2-chords-set1-7-t099", "unix": 1791495454.827096, "elapsed_seconds": 11.093867917}
+{"stage": "independent FFT inverse controls p2-chords-set1-dim-t072", "unix": 1791495455.518742, "elapsed_seconds": 11.785520667}
+{"stage": "independent FFT inverse controls p2-chords-set1-m7-t094", "unix": 1791495456.203081, "elapsed_seconds": 12.469864}
+{"stage": "independent FFT inverse controls p2-chords-set1-maj-t072", "unix": 1791495456.8936992, "elapsed_seconds": 13.160486500000001}
+{"stage": "independent FFT inverse controls p2-scales-a-t075", "unix": 1791495457.571776, "elapsed_seconds": 13.838566959}
+{"stage": "independent FFT inverse controls p2-scales-bb-t076", "unix": 1791495458.2554188, "elapsed_seconds": 14.52221475}
+{"stage": "independent FFT inverse controls p2-scales-c-t075", "unix": 1791495458.934483, "elapsed_seconds": 15.201282792}
+{"stage": "independent FFT inverse controls p2-scales-db-t076", "unix": 1791495459.608277, "elapsed_seconds": 15.87508075}
+{"stage": "independent FFT inverse controls p2-scales-e-t076", "unix": 1791495460.286378, "elapsed_seconds": 16.553185624999998}
+{"stage": "independent FFT inverse controls p2-scales-g-t076", "unix": 1791495460.962795, "elapsed_seconds": 17.229607416999997}
+{"stage": "phase model return retained p2-chords-drop3-7-t098", "unix": 1791495461.388139, "elapsed_seconds": 17.654953374999998}
+{"stage": "phase model return retained p2-chords-drop3-m7b5-t098", "unix": 1791495461.6786308, "elapsed_seconds": 17.9454475}
+{"stage": "phase model return retained p2-chords-set1-7-t099", "unix": 1791495461.96575, "elapsed_seconds": 18.232567791999998}
+{"stage": "phase model return retained p2-chords-set1-dim-t072", "unix": 1791495462.255488, "elapsed_seconds": 18.522308125}
+{"stage": "phase model return retained p2-chords-set1-m7-t094", "unix": 1791495462.5439858, "elapsed_seconds": 18.810807167}
+{"stage": "phase model return retained p2-chords-set1-maj-t072", "unix": 1791495462.835875, "elapsed_seconds": 19.102698}
+{"stage": "phase model return retained p2-scales-a-t075", "unix": 1791495463.1284978, "elapsed_seconds": 19.39532275}
+{"stage": "phase model return retained p2-scales-bb-t076", "unix": 1791495463.421982, "elapsed_seconds": 19.688808959}
+{"stage": "phase model return retained p2-scales-c-t075", "unix": 1791495463.716811, "elapsed_seconds": 19.983640459}
+{"stage": "phase model return retained p2-scales-db-t076", "unix": 1791495464.009516, "elapsed_seconds": 20.276346792}
+{"stage": "phase model return retained p2-scales-e-t076", "unix": 1791495464.302778, "elapsed_seconds": 20.569610375}
+{"stage": "phase model return retained p2-scales-g-t076", "unix": 1791495464.594411, "elapsed_seconds": 20.861245792}
+{"stage": "phase scores and paired changes p2-chords-drop3-7-t098", "unix": 1791495464.831706, "elapsed_seconds": 21.098542541999997}
+{"stage": "phase scores and paired changes p2-chords-drop3-m7b5-t098", "unix": 1791495465.071085, "elapsed_seconds": 21.337922624999997}
+{"stage": "phase scores and paired changes p2-chords-set1-7-t099", "unix": 1791495465.308387, "elapsed_seconds": 21.575224959}
+{"stage": "phase scores and paired changes p2-chords-set1-dim-t072", "unix": 1791495465.544634, "elapsed_seconds": 21.811474292}
+{"stage": "phase scores and paired changes p2-chords-set1-m7-t094", "unix": 1791495465.782928, "elapsed_seconds": 22.049770541999997}
+{"stage": "phase scores and paired changes p2-chords-set1-maj-t072", "unix": 1791495466.019953, "elapsed_seconds": 22.286796333999998}
+{"stage": "phase scores and paired changes p2-scales-a-t075", "unix": 1791495466.2571929, "elapsed_seconds": 22.524034916999998}
+{"stage": "phase scores and paired changes p2-scales-bb-t076", "unix": 1791495466.49388, "elapsed_seconds": 22.760726709}
+{"stage": "phase scores and paired changes p2-scales-c-t075", "unix": 1791495466.732867, "elapsed_seconds": 22.999715624999997}
+{"stage": "phase scores and paired changes p2-scales-db-t076", "unix": 1791495466.9717429, "elapsed_seconds": 23.238592334}
+{"stage": "phase scores and paired changes p2-scales-e-t076", "unix": 1791495467.208663, "elapsed_seconds": 23.475514041999997}
+{"stage": "phase scores and paired changes p2-scales-g-t076", "unix": 1791495467.444315, "elapsed_seconds": 23.7111675}
+{"stage": "complete independent derivation BEFORE any primary phase reads", "unix": 1791495467.567478, "elapsed_seconds": 23.834330584}
+{"stage": "DURABLE READ BARRIER CLOSED; comparison now permitted", "unix": 1791495468.707408, "elapsed_seconds": 24.974268708999997}
+{"stage": "FIRST PRIMARY ARTIFACT READ follows persisted/readback derivation", "unix": 1791495583.96135, "elapsed_seconds": 0.15253770800000002}
+{"stage": "all primary comparisons complete", "unix": 1791495586.5324428, "elapsed_seconds": 2.723649666}

@@ -1,0 +1,2008 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-drop3-7-t098",
+        "content": "chords",
+        "take": "Drop3_7",
+        "returned": true,
+        "attempted_file": "p2-chords-drop3-7-t098.phase.npz",
+        "archive": {
+          "file": "p2-chords-drop3-7-t098.phase.npz",
+          "sha256": "9a21ac16cd58339a90d47360026bf7b5c09462f42266a6a761f8e8d5829b9d0a",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "9acf2e3d58caf9130fdc163a2007eb6a89f51aa07666656679994305bd978a70"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "0297e2ee18dcbff6428a8efa9994b14ad3a6c974efcfb4218e5f3ea09e3c15fb"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "ae27c3004d0c1b124b9d60c8c88d4f83bfa410216b13fe63a1742b02f7436cf1"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "3e3ab9d47fe5b381a4655040b5fc6a39683db7e3d34cde957239a5c9c26f24d5"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.317292920479845,
+        "canonical_waveform_l1": 0.04798841480715121,
+        "raw_lowband": 0.8332123493255604
+      },
+      "wet": 5.317292920479845,
+      "network_scores": {
+        "primary": 1.3568219173650693,
+        "canonical_waveform_l1": 0.061490273902267946,
+        "raw_lowband": 1.2316213660599882
+      },
+      "net": 1.3568219173650693,
+      "flatref_scores": {
+        "primary": 3.5556466171364294,
+        "canonical_waveform_l1": 0.04798851949625289,
+        "raw_lowband": 0.7978017211965582
+      },
+      "flatref": 3.5556466171364294,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.0008233720056844973,
+          "primary_relative_change": -0.00015482399413640458,
+          "canonical_waveform_l1_change": -0.021586803714624757,
+          "raw_lowband_change": -0.0055406081722203515
+        },
+        "net": {
+          "primary_absolute_change": 0.00017392806336724576,
+          "primary_relative_change": 0.000128204268711422,
+          "canonical_waveform_l1_change": 0.024982445509690594,
+          "raw_lowband_change": 0.02331317093709151
+        },
+        "flatref": {
+          "primary_absolute_change": -0.002873858913073235,
+          "primary_relative_change": -0.000807599375194169,
+          "canonical_waveform_l1_change": -0.021586692615484043,
+          "raw_lowband_change": -0.004471438813619555
+        },
+        "advantage": {
+          "primary_absolute_change": -0.003047786976440481,
+          "primary_relative_change": -0.000357053517570427
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "content": "chords",
+        "take": "Drop3_m7b5",
+        "returned": true,
+        "attempted_file": "p2-chords-drop3-m7b5-t098.phase.npz",
+        "archive": {
+          "file": "p2-chords-drop3-m7b5-t098.phase.npz",
+          "sha256": "3a98b900fb7da88c6f06b225792fc14cd437da8bc201e7850c4a7b6dad8bef51",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "81069850353de32ee36baffb83917b6f66e6440f7ff9d7394fcf916aa10e2907"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "cb504371682895fa05af6f23e5f824cd2147b600500499cb4c8c503e4089007e"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "b59b18e79e8aa8eb993f8417575fbfd511ab01b806ae1d8d1d2c3e431e49e1e2"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "574b999d758ec3709aa61d2c978aa27e2ab8664cacf4b718f1cc842c4fe3bb9f"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.145684319838932,
+        "canonical_waveform_l1": 0.06559750020834774,
+        "raw_lowband": 1.1064875042189501
+      },
+      "wet": 5.145684319838932,
+      "network_scores": {
+        "primary": 1.3996928046959056,
+        "canonical_waveform_l1": 0.06293436172778355,
+        "raw_lowband": 1.2932682581391575
+      },
+      "net": 1.3996928046959056,
+      "flatref_scores": {
+        "primary": 3.3696882769268113,
+        "canonical_waveform_l1": 0.06559777358654861,
+        "raw_lowband": 1.0758254969615328
+      },
+      "flatref": 3.3696882769268113,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.003820779382055939,
+          "primary_relative_change": 0.0007430728863170971,
+          "canonical_waveform_l1_change": -0.0006757398927791647,
+          "raw_lowband_change": 0.02948441631210663
+        },
+        "net": {
+          "primary_absolute_change": 0.0019817681582114943,
+          "primary_relative_change": 0.0014178668597484808,
+          "canonical_waveform_l1_change": 0.0235837020845453,
+          "raw_lowband_change": 0.031800147436016335
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0050357025203005,
+          "primary_relative_change": 0.0014966485867233246,
+          "canonical_waveform_l1_change": -0.0006754120410056574,
+          "raw_lowband_change": 0.030526324402357696
+        },
+        "advantage": {
+          "primary_absolute_change": 0.003053934362089006,
+          "primary_relative_change": 3.267782661808827e-05
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-set1-7-t099",
+        "content": "chords",
+        "take": "Set1_7",
+        "returned": true,
+        "attempted_file": "p2-chords-set1-7-t099.phase.npz",
+        "archive": {
+          "file": "p2-chords-set1-7-t099.phase.npz",
+          "sha256": "96a628dc55c38075d22893032e8d0edcb3f7954a93f8160afe94b876b8b0777e",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "244b22b4070e97eef3b4752770c7c8eadb03769d261f601e6eafe9c6ba94f895"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "a8b138bf8fde6b9346835ad0a56536a31db0447db1e65ce8286f36857efb9ab9"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "8d738ec7809a9d5e1bdca3a0ac4473f8f000905d404f39df0781dcf35b8f2b1b"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "a59a6d4e9abe75279ef4aa93a57dcb660cc0c05b2bb987d24df28514f17ffbb6"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.828666343752574,
+        "canonical_waveform_l1": 0.07238899110475938,
+        "raw_lowband": 1.0456286598029758
+      },
+      "wet": 4.828666343752574,
+      "network_scores": {
+        "primary": 1.5501450798804473,
+        "canonical_waveform_l1": 0.08196047788300607,
+        "raw_lowband": 1.1773955240417735
+      },
+      "net": 1.5501450798804473,
+      "flatref_scores": {
+        "primary": 3.03261746558296,
+        "canonical_waveform_l1": 0.07235924502457708,
+        "raw_lowband": 0.9918091520769279
+      },
+      "flatref": 3.03261746558296,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": 0.009934044266669773,
+          "primary_relative_change": 0.0020615472388307615,
+          "canonical_waveform_l1_change": 0.022730738533348407,
+          "raw_lowband_change": 0.046156616090457514
+        },
+        "net": {
+          "primary_absolute_change": 0.0007381842440989939,
+          "primary_relative_change": 0.00047643020447241417,
+          "canonical_waveform_l1_change": 0.03331551751053338,
+          "raw_lowband_change": 0.033064090761292464
+        },
+        "flatref": {
+          "primary_absolute_change": 0.004452189892219849,
+          "primary_relative_change": 0.0014702598725243891,
+          "canonical_waveform_l1_change": 0.022765148787367302,
+          "raw_lowband_change": 0.045153250778452225
+        },
+        "advantage": {
+          "primary_absolute_change": 0.003714005648120855,
+          "primary_relative_change": 0.000507761548643515
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-set1-dim-t072",
+        "content": "chords",
+        "take": "Set1_dim",
+        "returned": true,
+        "attempted_file": "p2-chords-set1-dim-t072.phase.npz",
+        "archive": {
+          "file": "p2-chords-set1-dim-t072.phase.npz",
+          "sha256": "31f5c831fbb79cb23db57940816760e3facc043ab20c411acde9fe2e5e4660fd",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "51e4f933fdd76e0083a37dba3292644dfb130f38beadb75eda12a92346b159bf"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "75e2df4d33c95afde66c0e06ce72f56a79a6c246a01fb4650b87fbdd16d9e1ea"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "25a1af8f7d884843dba59d71bad75557b5e1a221159c9b99c076c33c8a582414"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "4da5216668386258830349d0dd6a6abd0d576ca2a2c6df7cfb26ba9dd345a5c9"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.869551418368828,
+        "canonical_waveform_l1": 0.06502599131161595,
+        "raw_lowband": 1.0368104201857034
+      },
+      "wet": 4.869551418368828,
+      "network_scores": {
+        "primary": 1.6270547798061519,
+        "canonical_waveform_l1": 0.07090602711524015,
+        "raw_lowband": 0.9978217916796381
+      },
+      "net": 1.6270547798061519,
+      "flatref_scores": {
+        "primary": 3.016750940986781,
+        "canonical_waveform_l1": 0.06502530891277629,
+        "raw_lowband": 0.9682701016795241
+      },
+      "flatref": 3.016750940986781,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.001012904070736731,
+          "primary_relative_change": -0.0002079644171970176,
+          "canonical_waveform_l1_change": 0.020920411346971653,
+          "raw_lowband_change": 0.03893162495566471
+        },
+        "net": {
+          "primary_absolute_change": 0.003234680923070332,
+          "primary_relative_change": 0.001992019266971295,
+          "canonical_waveform_l1_change": 0.03156399543906406,
+          "raw_lowband_change": 0.02647814550289551
+        },
+        "flatref": {
+          "primary_absolute_change": -0.00034968001141111316,
+          "primary_relative_change": -0.00011589935349767133,
+          "canonical_waveform_l1_change": 0.020923022604634613,
+          "raw_lowband_change": 0.0390644648333871
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0035843609344814453,
+          "primary_relative_change": -0.001134624862869138
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-set1-m7-t094",
+        "content": "chords",
+        "take": "Set1_m7",
+        "returned": true,
+        "attempted_file": "p2-chords-set1-m7-t094.phase.npz",
+        "archive": {
+          "file": "p2-chords-set1-m7-t094.phase.npz",
+          "sha256": "59a674d0616d0e56e2dcb46a5c10750aaa846f5fde40d63ccf2377ddc8143bd0",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "59a1e4da64fb6c3290783f0eae625f12b5d104cb5bafdf597dec6d69a851961b"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "560a3bb6794019eaad1d4593a7b1bfeff313383b634dae5e9d3543f3189bf139"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "429854d05c3eea6d2d01d077c3628bb3526de653a4bda9d6f54aab2174c5a7be"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "86016844408f63b15dad6397884f5a6ee024568904403336369d3d1fb1a7b77f"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.86227520171893,
+        "canonical_waveform_l1": 0.07061166040906428,
+        "raw_lowband": 1.1353873940440784
+      },
+      "wet": 4.86227520171893,
+      "network_scores": {
+        "primary": 1.3949559815987478,
+        "canonical_waveform_l1": 0.07546346584213119,
+        "raw_lowband": 1.3860228754322153
+      },
+      "net": 1.3949559815987478,
+      "flatref_scores": {
+        "primary": 3.08875382239923,
+        "canonical_waveform_l1": 0.07061167890346796,
+        "raw_lowband": 1.1054074511169263
+      },
+      "flatref": 3.08875382239923,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.0069714060078016615,
+          "primary_relative_change": -0.0014317216952493498,
+          "canonical_waveform_l1_change": 0.02625217762954967,
+          "raw_lowband_change": 0.06459233150589294
+        },
+        "net": {
+          "primary_absolute_change": -0.013427969835987819,
+          "primary_relative_change": -0.009534310457250386,
+          "canonical_waveform_l1_change": 0.03410315755689888,
+          "raw_lowband_change": 0.02479288861690221
+        },
+        "flatref": {
+          "primary_absolute_change": 0.0012047995452668658,
+          "primary_relative_change": 0.00039021228046873707,
+          "canonical_waveform_l1_change": 0.026252444018123287,
+          "raw_lowband_change": 0.0646186320996529
+        },
+        "advantage": {
+          "primary_absolute_change": 0.014632769381254684,
+          "primary_relative_change": 0.004525300283916955
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-chords-set1-maj-t072",
+        "content": "chords",
+        "take": "Set1_maj",
+        "returned": true,
+        "attempted_file": "p2-chords-set1-maj-t072.phase.npz",
+        "archive": {
+          "file": "p2-chords-set1-maj-t072.phase.npz",
+          "sha256": "6e7569117a1a75b7df00db9f89d74fd926cce97353237d747dd24b3b53185f78",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "1379a1c9574ee0be2bc6767352dfb899b4dcbd88760f13deeb4087b70c227b34"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "eaea82f8615a224abc06004f7bb681d509c204840876a4c59cecc5973282e989"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "2c9aba1360cb18e324cda0167648d30ca3bccfd4313e1865b26f65b3a92e0dd5"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "3eeea35bee3e5962b509370d21f923b7b50c22f0e5b2c29a8724641b5cd23b39"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.012293428295573,
+        "canonical_waveform_l1": 0.07027128915009434,
+        "raw_lowband": 1.1074422314844905
+      },
+      "wet": 5.012293428295573,
+      "network_scores": {
+        "primary": 1.6442384821061427,
+        "canonical_waveform_l1": 0.07579346016590005,
+        "raw_lowband": 1.1656116552855114
+      },
+      "net": 1.6442384821061427,
+      "flatref_scores": {
+        "primary": 3.161633472134107,
+        "canonical_waveform_l1": 0.07027077305103935,
+        "raw_lowband": 1.0437374700465454
+      },
+      "flatref": 3.161633472134107,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.0005093263686690719,
+          "primary_relative_change": -0.00010160510867800674,
+          "canonical_waveform_l1_change": 0.01885899736111752,
+          "raw_lowband_change": 0.039598719347897715
+        },
+        "net": {
+          "primary_absolute_change": 0.01059192949794241,
+          "primary_relative_change": 0.006483611452570235,
+          "canonical_waveform_l1_change": 0.031166274881480438,
+          "raw_lowband_change": 0.06622589070264118
+        },
+        "flatref": {
+          "primary_absolute_change": 0.00039098408826854225,
+          "primary_relative_change": 0.00012368051161751719,
+          "canonical_waveform_l1_change": 0.01886003394876365,
+          "raw_lowband_change": 0.04013740658728171
+        },
+        "advantage": {
+          "primary_absolute_change": -0.010200945409673867,
+          "primary_relative_change": -0.0032862377464331627
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-a-t075",
+        "content": "scales",
+        "take": "A",
+        "returned": true,
+        "attempted_file": "p2-scales-a-t075.phase.npz",
+        "archive": {
+          "file": "p2-scales-a-t075.phase.npz",
+          "sha256": "f2f2abc4889a60f3b99d9f287d5142af9cbc1754f7a0b691f7ab5bbce9a1f264",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "1668dac5ecbdbbdc350cf9d43e80e411c8e7426f96d0511679124c07b62b706e"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "0878c8f709d6a2fb515f984d5b678f5858c6e85867385fff9f893ad2e7fd6341"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "862710118a62f1fe751baadebbc4741dd52232e4d41cc639aeb982435c50b541"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "bcd27b5bae9b7bc99081210a0cad6adc9104d2c8c8c0af0505f4f36adbddc21e"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.257047042796937,
+        "canonical_waveform_l1": 0.04370871084395134,
+        "raw_lowband": 0.592193431489371
+      },
+      "wet": 5.257047042796937,
+      "network_scores": {
+        "primary": 1.4950019750124177,
+        "canonical_waveform_l1": 0.05675311429475851,
+        "raw_lowband": 1.3256872518807161
+      },
+      "net": 1.4950019750124177,
+      "flatref_scores": {
+        "primary": 3.5556198815242395,
+        "canonical_waveform_l1": 0.04370869444580349,
+        "raw_lowband": 0.54491666101233
+      },
+      "flatref": 3.5556198815242395,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.011682804353021048,
+          "primary_relative_change": -0.0022173853456048218,
+          "canonical_waveform_l1_change": -0.02553688402351062,
+          "raw_lowband_change": -0.04867604073399889
+        },
+        "net": {
+          "primary_absolute_change": -0.0008111143596365444,
+          "primary_relative_change": -0.0005422564927393783,
+          "canonical_waveform_l1_change": 0.021245184823506527,
+          "raw_lowband_change": 0.03061379643089568
+        },
+        "flatref": {
+          "primary_absolute_change": -0.011137252973417944,
+          "primary_relative_change": -0.0031225150896029585,
+          "canonical_waveform_l1_change": -0.02553668949250671,
+          "raw_lowband_change": -0.04632771738856856
+        },
+        "advantage": {
+          "primary_absolute_change": -0.0103261386137814,
+          "primary_relative_change": -0.0010854885257022273
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-bb-t076",
+        "content": "scales",
+        "take": "Bb",
+        "returned": true,
+        "attempted_file": "p2-scales-bb-t076.phase.npz",
+        "archive": {
+          "file": "p2-scales-bb-t076.phase.npz",
+          "sha256": "66260587d6645c58bf26e252aa000effe98344b2d5151f1219787be040652d9d",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "cf2e21d4306fa47f0e8882faf3228cc6fa140b858ac60d85e3032c96f83f4f6b"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "1ab1c06c8dbbaa324b31d808a27d0e50b63ceb1cca9510c86d8ae1d39898aadb"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "068665184637efc3d3cd1911df9b1768b0dd2411826044aa0ece2a20308552f7"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "02e747c4588760d9f154cc76c1a2f315d12736b1454d3659c1ddc0469e558c02"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.218325325340705,
+        "canonical_waveform_l1": 0.03849562685890822,
+        "raw_lowband": 0.573675307517565
+      },
+      "wet": 5.218325325340705,
+      "network_scores": {
+        "primary": 1.3515242423301805,
+        "canonical_waveform_l1": 0.069781366959747,
+        "raw_lowband": 1.2713489434607128
+      },
+      "net": 1.3515242423301805,
+      "flatref_scores": {
+        "primary": 3.411205872430904,
+        "canonical_waveform_l1": 0.03849569539140281,
+        "raw_lowband": 0.5272776282433442
+      },
+      "flatref": 3.411205872430904,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.005894515542329337,
+          "primary_relative_change": -0.0011283054162845117,
+          "canonical_waveform_l1_change": -0.014875751687446863,
+          "raw_lowband_change": -0.021156886958667576
+        },
+        "net": {
+          "primary_absolute_change": 0.024008225244665393,
+          "primary_relative_change": 0.018085073879088906,
+          "canonical_waveform_l1_change": 0.036903749719970264,
+          "raw_lowband_change": 0.07927915556023679
+        },
+        "flatref": {
+          "primary_absolute_change": -0.0076506985412447825,
+          "primary_relative_change": -0.002237794532301574,
+          "canonical_waveform_l1_change": -0.014875636853664137,
+          "raw_lowband_change": -0.019063604528444245
+        },
+        "advantage": {
+          "primary_absolute_change": -0.031658923785910176,
+          "primary_relative_change": -0.007908913838148512
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-c-t075",
+        "content": "scales",
+        "take": "C",
+        "returned": true,
+        "attempted_file": "p2-scales-c-t075.phase.npz",
+        "archive": {
+          "file": "p2-scales-c-t075.phase.npz",
+          "sha256": "d2d5317646761c749027397a4cc067ce447f59a72c9f46ceb0b7329e377ef811",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "8b3279f75700d1373ab3fe55a1ee8a72d31ebe1ceb7133fbd1af8eb9c54c09e3"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "13460ee7bdc448e1b5ec1a3a0c610196638564ae53d9da1ec32b9fafd4b8ae44"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "465ba1a22d66d1355c635702c79b7c67f7827f787de269fa7631cd3243b7dab0"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "79661994dff2262bf791312333671f89e357a23707a3d9fa633b4a52e3bcc5ae"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.314317613665125,
+        "canonical_waveform_l1": 0.05571478624975223,
+        "raw_lowband": 0.716988410557251
+      },
+      "wet": 5.314317613665125,
+      "network_scores": {
+        "primary": 1.499681290164742,
+        "canonical_waveform_l1": 0.0580057640822884,
+        "raw_lowband": 1.387096494409668
+      },
+      "net": 1.499681290164742,
+      "flatref_scores": {
+        "primary": 3.5850127023284224,
+        "canonical_waveform_l1": 0.05571482513189705,
+        "raw_lowband": 0.6701216414104844
+      },
+      "flatref": 3.5850127023284224,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.0014049538062677058,
+          "primary_relative_change": -0.0002643015673664137,
+          "canonical_waveform_l1_change": -0.01986201955829777,
+          "raw_lowband_change": -0.030955841856251554
+        },
+        "net": {
+          "primary_absolute_change": 0.007830313482142248,
+          "primary_relative_change": 0.00524872363562369,
+          "canonical_waveform_l1_change": 0.01985662417408046,
+          "raw_lowband_change": 0.050143195218665504
+        },
+        "flatref": {
+          "primary_absolute_change": -0.0015117004940674583,
+          "primary_relative_change": -0.00042149455134831765,
+          "canonical_waveform_l1_change": -0.019861915040534285,
+          "raw_lowband_change": -0.02861655142565911
+        },
+        "advantage": {
+          "primary_absolute_change": -0.009342013976209707,
+          "primary_relative_change": -0.002359578959021169
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-db-t076",
+        "content": "scales",
+        "take": "Db",
+        "returned": true,
+        "attempted_file": "p2-scales-db-t076.phase.npz",
+        "archive": {
+          "file": "p2-scales-db-t076.phase.npz",
+          "sha256": "663270505ba06ba851af40fcd9466a7e99ca4f33a0f2082387916d5746b58dd8",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "d2bcd0377832d91c7d661ebf927503cd84ab6794ebd35cb2f44b7f1ace778082"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "f14cb372d849c8fce3cca1e8dd003b1f2c9251301e8b27f81c114eef55e4916a"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "9d914d99ddd1aa6fc08cab3b2048bef20eefd28f942b9bc25fdb521c3b933932"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "63c8156d6d4eed5baf766eff400a47d40168e2367bf5c6d1854ff435daf5c1cc"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.219458997758431,
+        "canonical_waveform_l1": 0.042221250986685846,
+        "raw_lowband": 0.5870877964384953
+      },
+      "wet": 5.219458997758431,
+      "network_scores": {
+        "primary": 1.3796937611884066,
+        "canonical_waveform_l1": 0.061702527505139555,
+        "raw_lowband": 1.219897943236472
+      },
+      "net": 1.3796937611884066,
+      "flatref_scores": {
+        "primary": 3.40513011279186,
+        "canonical_waveform_l1": 0.042221292232171206,
+        "raw_lowband": 0.5424272562751501
+      },
+      "flatref": 3.40513011279186,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.01083136023453335,
+          "primary_relative_change": -0.0020708908097197306,
+          "canonical_waveform_l1_change": -0.013726847887534123,
+          "raw_lowband_change": -0.0147612639064022
+        },
+        "net": {
+          "primary_absolute_change": 0.014351356769820356,
+          "primary_relative_change": 0.010511177799338694,
+          "canonical_waveform_l1_change": 0.03214158249537591,
+          "raw_lowband_change": 0.05321387005099565
+        },
+        "flatref": {
+          "primary_absolute_change": -0.010947191338050999,
+          "primary_relative_change": -0.0032046087847064377,
+          "canonical_waveform_l1_change": -0.013726744902335601,
+          "raw_lowband_change": -0.013054122536780066
+        },
+        "advantage": {
+          "primary_absolute_change": -0.025298548107871355,
+          "primary_relative_change": -0.0054995681259880635
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-e-t076",
+        "content": "scales",
+        "take": "E",
+        "returned": true,
+        "attempted_file": "p2-scales-e-t076.phase.npz",
+        "archive": {
+          "file": "p2-scales-e-t076.phase.npz",
+          "sha256": "18b72dc1a47a84a7fdca81740117fbdb87244c55f666d9c1483666533e38fa1f",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "20efd9b7cce3f64d404549b99e33a2ee52df5b657a3803df292fb2c5be698ed1"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "471203de2b6ddd14044dd52d8b022978e003ae7791675ad6bd8e8ca81ae67838"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "9687f0f500b0dfbcab5f2be1388be47f0b9ce641390e9e87e8085e399fc4ddfb"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "f62e2cf1d9421ddbb292c93b81575ec13aeea5801f13aed03b3aa45589eaa353"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.258887219714206,
+        "canonical_waveform_l1": 0.03686426202994837,
+        "raw_lowband": 0.5946202936404719
+      },
+      "wet": 5.258887219714206,
+      "network_scores": {
+        "primary": 1.448836746537443,
+        "canonical_waveform_l1": 0.06408745434488537,
+        "raw_lowband": 1.2434127166064688
+      },
+      "net": 1.448836746537443,
+      "flatref_scores": {
+        "primary": 3.3821506434203754,
+        "canonical_waveform_l1": 0.03686433318057049,
+        "raw_lowband": 0.5484093460250814
+      },
+      "flatref": 3.3821506434203754,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.003065596382780811,
+          "primary_relative_change": -0.0005825967069493211,
+          "canonical_waveform_l1_change": -0.011882822004108222,
+          "raw_lowband_change": -0.023924165350493687
+        },
+        "net": {
+          "primary_absolute_change": 0.01217280483620109,
+          "primary_relative_change": 0.008472966072905349,
+          "canonical_waveform_l1_change": 0.03282348506439711,
+          "raw_lowband_change": 0.05337582962003662
+        },
+        "flatref": {
+          "primary_absolute_change": -0.004824415111831293,
+          "primary_relative_change": -0.001424402314294579,
+          "canonical_waveform_l1_change": -0.01188262700495981,
+          "raw_lowband_change": -0.022247525195216222
+        },
+        "advantage": {
+          "primary_absolute_change": -0.016997219948032383,
+          "primary_relative_change": -0.004204186560195278
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "valid": true,
+      "prediction_evidence": {
+        "slug": "p2-scales-g-t076",
+        "content": "scales",
+        "take": "G",
+        "returned": true,
+        "attempted_file": "p2-scales-g-t076.phase.npz",
+        "archive": {
+          "file": "p2-scales-g-t076.phase.npz",
+          "sha256": "dfebef2ef79a91bc68e4905099805df4b15f39f08c5e19a312bf172fa32cdaff",
+          "members": {
+            "phase_input": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "92fbea00aa0e6dcc03a7cbfeae5b25f7a04eb7ab12824537009c8023a5479c9c"
+            },
+            "phase_wet": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "6611cdbf442c2191138303cfe111e815358e1624cae62fcbf63799ed3b1deaa1"
+            },
+            "phase_flatref": {
+              "dtype": "float64",
+              "shape": [
+                288000
+              ],
+              "sha256": "22a95a86fe0182b25d24dc0374de3bce9ae6a6154e8553fe3e607c6d199942f4"
+            },
+            "raw_prediction": {
+              "dtype": "float32",
+              "shape": [
+                288000
+              ],
+              "sha256": "07ff08056d66be0aa77222688b8975ed68010c1e01a4ac70ddaeee6884b9b492"
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.29785697058956,
+        "canonical_waveform_l1": 0.037404149047189146,
+        "raw_lowband": 0.5645177022559766
+      },
+      "wet": 5.29785697058956,
+      "network_scores": {
+        "primary": 1.4828288353260521,
+        "canonical_waveform_l1": 0.06360742456149376,
+        "raw_lowband": 1.1597693395949684
+      },
+      "net": 1.4828288353260521,
+      "flatref_scores": {
+        "primary": 3.4498244799334907,
+        "canonical_waveform_l1": 0.03740431268202085,
+        "raw_lowband": 0.5144652046129622
+      },
+      "flatref": 3.4498244799334907,
+      "changes_from_zero": {
+        "wet": {
+          "primary_absolute_change": -0.027491927074844824,
+          "primary_relative_change": -0.005162464958287006,
+          "canonical_waveform_l1_change": -0.013206923913594758,
+          "raw_lowband_change": -0.030571564314313626
+        },
+        "net": {
+          "primary_absolute_change": 0.014141632082081523,
+          "primary_relative_change": 0.009628756927170141,
+          "canonical_waveform_l1_change": 0.03235952459990522,
+          "raw_lowband_change": 0.057462399285391985
+        },
+        "flatref": {
+          "primary_absolute_change": -0.014328185442483488,
+          "primary_relative_change": -0.004136129907233292,
+          "canonical_waveform_l1_change": -0.013206669947087621,
+          "raw_lowband_change": -0.02869778473010065
+        },
+        "advantage": {
+          "primary_absolute_change": -0.02846981752456501,
+          "primary_relative_change": -0.005860099047178102
+        }
+      },
+      "nonfinite_diagnostic_fields": []
+    }
+  ],
+  "prediction_evidence": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "returned": true,
+      "attempted_file": "p2-chords-drop3-7-t098.phase.npz",
+      "archive": {
+        "file": "p2-chords-drop3-7-t098.phase.npz",
+        "sha256": "9a21ac16cd58339a90d47360026bf7b5c09462f42266a6a761f8e8d5829b9d0a",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "9acf2e3d58caf9130fdc163a2007eb6a89f51aa07666656679994305bd978a70"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0297e2ee18dcbff6428a8efa9994b14ad3a6c974efcfb4218e5f3ea09e3c15fb"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "ae27c3004d0c1b124b9d60c8c88d4f83bfa410216b13fe63a1742b02f7436cf1"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "3e3ab9d47fe5b381a4655040b5fc6a39683db7e3d34cde957239a5c9c26f24d5"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "returned": true,
+      "attempted_file": "p2-chords-drop3-m7b5-t098.phase.npz",
+      "archive": {
+        "file": "p2-chords-drop3-m7b5-t098.phase.npz",
+        "sha256": "3a98b900fb7da88c6f06b225792fc14cd437da8bc201e7850c4a7b6dad8bef51",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "81069850353de32ee36baffb83917b6f66e6440f7ff9d7394fcf916aa10e2907"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "cb504371682895fa05af6f23e5f824cd2147b600500499cb4c8c503e4089007e"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "b59b18e79e8aa8eb993f8417575fbfd511ab01b806ae1d8d1d2c3e431e49e1e2"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "574b999d758ec3709aa61d2c978aa27e2ab8664cacf4b718f1cc842c4fe3bb9f"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "returned": true,
+      "attempted_file": "p2-chords-set1-7-t099.phase.npz",
+      "archive": {
+        "file": "p2-chords-set1-7-t099.phase.npz",
+        "sha256": "96a628dc55c38075d22893032e8d0edcb3f7954a93f8160afe94b876b8b0777e",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "244b22b4070e97eef3b4752770c7c8eadb03769d261f601e6eafe9c6ba94f895"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "a8b138bf8fde6b9346835ad0a56536a31db0447db1e65ce8286f36857efb9ab9"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "8d738ec7809a9d5e1bdca3a0ac4473f8f000905d404f39df0781dcf35b8f2b1b"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "a59a6d4e9abe75279ef4aa93a57dcb660cc0c05b2bb987d24df28514f17ffbb6"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "returned": true,
+      "attempted_file": "p2-chords-set1-dim-t072.phase.npz",
+      "archive": {
+        "file": "p2-chords-set1-dim-t072.phase.npz",
+        "sha256": "31f5c831fbb79cb23db57940816760e3facc043ab20c411acde9fe2e5e4660fd",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "51e4f933fdd76e0083a37dba3292644dfb130f38beadb75eda12a92346b159bf"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "75e2df4d33c95afde66c0e06ce72f56a79a6c246a01fb4650b87fbdd16d9e1ea"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "25a1af8f7d884843dba59d71bad75557b5e1a221159c9b99c076c33c8a582414"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "4da5216668386258830349d0dd6a6abd0d576ca2a2c6df7cfb26ba9dd345a5c9"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "returned": true,
+      "attempted_file": "p2-chords-set1-m7-t094.phase.npz",
+      "archive": {
+        "file": "p2-chords-set1-m7-t094.phase.npz",
+        "sha256": "59a674d0616d0e56e2dcb46a5c10750aaa846f5fde40d63ccf2377ddc8143bd0",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "59a1e4da64fb6c3290783f0eae625f12b5d104cb5bafdf597dec6d69a851961b"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "560a3bb6794019eaad1d4593a7b1bfeff313383b634dae5e9d3543f3189bf139"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "429854d05c3eea6d2d01d077c3628bb3526de653a4bda9d6f54aab2174c5a7be"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "86016844408f63b15dad6397884f5a6ee024568904403336369d3d1fb1a7b77f"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "returned": true,
+      "attempted_file": "p2-chords-set1-maj-t072.phase.npz",
+      "archive": {
+        "file": "p2-chords-set1-maj-t072.phase.npz",
+        "sha256": "6e7569117a1a75b7df00db9f89d74fd926cce97353237d747dd24b3b53185f78",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "1379a1c9574ee0be2bc6767352dfb899b4dcbd88760f13deeb4087b70c227b34"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "eaea82f8615a224abc06004f7bb681d509c204840876a4c59cecc5973282e989"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "2c9aba1360cb18e324cda0167648d30ca3bccfd4313e1865b26f65b3a92e0dd5"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "3eeea35bee3e5962b509370d21f923b7b50c22f0e5b2c29a8724641b5cd23b39"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "returned": true,
+      "attempted_file": "p2-scales-a-t075.phase.npz",
+      "archive": {
+        "file": "p2-scales-a-t075.phase.npz",
+        "sha256": "f2f2abc4889a60f3b99d9f287d5142af9cbc1754f7a0b691f7ab5bbce9a1f264",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "1668dac5ecbdbbdc350cf9d43e80e411c8e7426f96d0511679124c07b62b706e"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "0878c8f709d6a2fb515f984d5b678f5858c6e85867385fff9f893ad2e7fd6341"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "862710118a62f1fe751baadebbc4741dd52232e4d41cc639aeb982435c50b541"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "bcd27b5bae9b7bc99081210a0cad6adc9104d2c8c8c0af0505f4f36adbddc21e"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "returned": true,
+      "attempted_file": "p2-scales-bb-t076.phase.npz",
+      "archive": {
+        "file": "p2-scales-bb-t076.phase.npz",
+        "sha256": "66260587d6645c58bf26e252aa000effe98344b2d5151f1219787be040652d9d",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "cf2e21d4306fa47f0e8882faf3228cc6fa140b858ac60d85e3032c96f83f4f6b"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "1ab1c06c8dbbaa324b31d808a27d0e50b63ceb1cca9510c86d8ae1d39898aadb"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "068665184637efc3d3cd1911df9b1768b0dd2411826044aa0ece2a20308552f7"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "02e747c4588760d9f154cc76c1a2f315d12736b1454d3659c1ddc0469e558c02"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "returned": true,
+      "attempted_file": "p2-scales-c-t075.phase.npz",
+      "archive": {
+        "file": "p2-scales-c-t075.phase.npz",
+        "sha256": "d2d5317646761c749027397a4cc067ce447f59a72c9f46ceb0b7329e377ef811",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "8b3279f75700d1373ab3fe55a1ee8a72d31ebe1ceb7133fbd1af8eb9c54c09e3"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "13460ee7bdc448e1b5ec1a3a0c610196638564ae53d9da1ec32b9fafd4b8ae44"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "465ba1a22d66d1355c635702c79b7c67f7827f787de269fa7631cd3243b7dab0"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "79661994dff2262bf791312333671f89e357a23707a3d9fa633b4a52e3bcc5ae"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "returned": true,
+      "attempted_file": "p2-scales-db-t076.phase.npz",
+      "archive": {
+        "file": "p2-scales-db-t076.phase.npz",
+        "sha256": "663270505ba06ba851af40fcd9466a7e99ca4f33a0f2082387916d5746b58dd8",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "d2bcd0377832d91c7d661ebf927503cd84ab6794ebd35cb2f44b7f1ace778082"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "f14cb372d849c8fce3cca1e8dd003b1f2c9251301e8b27f81c114eef55e4916a"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9d914d99ddd1aa6fc08cab3b2048bef20eefd28f942b9bc25fdb521c3b933932"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "63c8156d6d4eed5baf766eff400a47d40168e2367bf5c6d1854ff435daf5c1cc"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "returned": true,
+      "attempted_file": "p2-scales-e-t076.phase.npz",
+      "archive": {
+        "file": "p2-scales-e-t076.phase.npz",
+        "sha256": "18b72dc1a47a84a7fdca81740117fbdb87244c55f666d9c1483666533e38fa1f",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "20efd9b7cce3f64d404549b99e33a2ee52df5b657a3803df292fb2c5be698ed1"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "471203de2b6ddd14044dd52d8b022978e003ae7791675ad6bd8e8ca81ae67838"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "9687f0f500b0dfbcab5f2be1388be47f0b9ce641390e9e87e8085e399fc4ddfb"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "f62e2cf1d9421ddbb292c93b81575ec13aeea5801f13aed03b3aa45589eaa353"
+          }
+        }
+      }
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "returned": true,
+      "attempted_file": "p2-scales-g-t076.phase.npz",
+      "archive": {
+        "file": "p2-scales-g-t076.phase.npz",
+        "sha256": "dfebef2ef79a91bc68e4905099805df4b15f39f08c5e19a312bf172fa32cdaff",
+        "members": {
+          "phase_input": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "92fbea00aa0e6dcc03a7cbfeae5b25f7a04eb7ab12824537009c8023a5479c9c"
+          },
+          "phase_wet": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "6611cdbf442c2191138303cfe111e815358e1624cae62fcbf63799ed3b1deaa1"
+          },
+          "phase_flatref": {
+            "dtype": "float64",
+            "shape": [
+              288000
+            ],
+            "sha256": "22a95a86fe0182b25d24dc0374de3bce9ae6a6154e8553fe3e607c6d199942f4"
+          },
+          "raw_prediction": {
+            "dtype": "float32",
+            "shape": [
+              288000
+            ],
+            "sha256": "07ff08056d66be0aa77222688b8975ed68010c1e01a4ac70ddaeee6884b9b492"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "a": -0.9,
+    "samples": 288000,
+    "sample_rate": 48000,
+    "formula": "(a+exp(-j*2*pi*k/N))/(1+a*exp(-j*2*pi*k/N))",
+    "dc": 1.0,
+    "nyquist": -1.0,
+    "boundary": "periodic",
+    "transform_dtype": "float64",
+    "model_input_dtype": "<f4",
+    "renderer_latency_samples": 52,
+    "inverse_prediction": false,
+    "control_tolerance": 1e-12,
+    "quantized_inverse_tolerance": 1e-06
+  },
+  "screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "median_relative_improvement": 0.5755804732375795,
+    "strict_wins": 12,
+    "group_medians": {
+      "chords": 0.5186091623424623,
+      "scales": 0.5806093213300869
+    },
+    "per_take": [
+      {
+        "slug": "p2-chords-drop3-7-t098",
+        "relative_improvement": 0.6184036088328154
+      },
+      {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "relative_improvement": 0.5846224666299285
+      },
+      {
+        "slug": "p2-chords-set1-7-t099",
+        "relative_improvement": 0.4888425271327576
+      },
+      {
+        "slug": "p2-chords-set1-dim-t072",
+        "relative_improvement": 0.46065989150766906
+      },
+      {
+        "slug": "p2-chords-set1-m7-t094",
+        "relative_improvement": 0.548375797552167
+      },
+      {
+        "slug": "p2-chords-set1-maj-t072",
+        "relative_improvement": 0.47994019654774234
+      },
+      {
+        "slug": "p2-scales-a-t075",
+        "relative_improvement": 0.5795383013857113
+      },
+      {
+        "slug": "p2-scales-bb-t076",
+        "relative_improvement": 0.6037986879498851
+      },
+      {
+        "slug": "p2-scales-c-t075",
+        "relative_improvement": 0.5816803412744626
+      },
+      {
+        "slug": "p2-scales-db-t076",
+        "relative_improvement": 0.594819077248946
+      },
+      {
+        "slug": "p2-scales-e-t076",
+        "relative_improvement": 0.5716226450894477
+      },
+      {
+        "slug": "p2-scales-g-t076",
+        "relative_improvement": 0.570172672855913
+      }
+    ]
+  },
+  "interpretation": "Artificial finite periodic phase challenge of dependent known-clean Morgan cases. No physical cabinet, native transfer, complete processing panel or product claim. Saved flatref transform is a declared simple arm; ideal magnitude correction commutes, but new flatref reconstruction and finite scoring-window equivalence are not established.",
+  "baseline_reused_no_new_score": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "wet": 5.31811629248553,
+      "network_scores": {
+        "primary": 1.356647989301702,
+        "canonical_waveform_l1": 0.03650782839257735,
+        "raw_lowband": 1.2083081951228967
+      },
+      "net": 1.356647989301702,
+      "flatref_scores": {
+        "primary": 3.5585204760495026,
+        "canonical_waveform_l1": 0.06957521211173694,
+        "raw_lowband": 0.8022731600101778
+      },
+      "flatref": 3.5585204760495026,
+      "valid": true
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "wet": 5.141863540456876,
+      "network_scores": {
+        "primary": 1.3977110365376941,
+        "canonical_waveform_l1": 0.03935065964323825,
+        "raw_lowband": 1.2614681107031411
+      },
+      "net": 1.3977110365376941,
+      "flatref_scores": {
+        "primary": 3.3646525744065108,
+        "canonical_waveform_l1": 0.06627318562755427,
+        "raw_lowband": 1.0452991725591751
+      },
+      "flatref": 3.3646525744065108,
+      "valid": true
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "wet": 4.818732299485904,
+      "network_scores": {
+        "primary": 1.5494068956363483,
+        "canonical_waveform_l1": 0.04864496037247269,
+        "raw_lowband": 1.144331433280481
+      },
+      "net": 1.5494068956363483,
+      "flatref_scores": {
+        "primary": 3.02816527569074,
+        "canonical_waveform_l1": 0.04959409623720978,
+        "raw_lowband": 0.9466559012984757
+      },
+      "flatref": 3.02816527569074,
+      "valid": true
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "wet": 4.870564322439565,
+      "network_scores": {
+        "primary": 1.6238200988830815,
+        "canonical_waveform_l1": 0.03934203167617609,
+        "raw_lowband": 0.9713436461767426
+      },
+      "net": 1.6238200988830815,
+      "flatref_scores": {
+        "primary": 3.017100620998192,
+        "canonical_waveform_l1": 0.044102286308141676,
+        "raw_lowband": 0.929205636846137
+      },
+      "flatref": 3.017100620998192,
+      "valid": true
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "wet": 4.869246607726732,
+      "network_scores": {
+        "primary": 1.4083839514347356,
+        "canonical_waveform_l1": 0.04136030828523231,
+        "raw_lowband": 1.361229986815313
+      },
+      "net": 1.4083839514347356,
+      "flatref_scores": {
+        "primary": 3.0875490228539633,
+        "canonical_waveform_l1": 0.04435923488534468,
+        "raw_lowband": 1.0407888190172734
+      },
+      "flatref": 3.0875490228539633,
+      "valid": true
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "wet": 5.012802754664242,
+      "network_scores": {
+        "primary": 1.6336465526082002,
+        "canonical_waveform_l1": 0.04462718528441961,
+        "raw_lowband": 1.0993857645828702
+      },
+      "net": 1.6336465526082002,
+      "flatref_scores": {
+        "primary": 3.1612424880458385,
+        "canonical_waveform_l1": 0.0514107391022757,
+        "raw_lowband": 1.0036000634592637
+      },
+      "flatref": 3.1612424880458385,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "wet": 5.268729847149958,
+      "network_scores": {
+        "primary": 1.4958130893720543,
+        "canonical_waveform_l1": 0.03550792947125198,
+        "raw_lowband": 1.2950734554498204
+      },
+      "net": 1.4958130893720543,
+      "flatref_scores": {
+        "primary": 3.5667571344976574,
+        "canonical_waveform_l1": 0.0692453839383102,
+        "raw_lowband": 0.5912443784008986
+      },
+      "flatref": 3.5667571344976574,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "wet": 5.224219840883034,
+      "network_scores": {
+        "primary": 1.3275160170855151,
+        "canonical_waveform_l1": 0.03287761723977674,
+        "raw_lowband": 1.192069787900476
+      },
+      "net": 1.3275160170855151,
+      "flatref_scores": {
+        "primary": 3.4188565709721486,
+        "canonical_waveform_l1": 0.053371332245066946,
+        "raw_lowband": 0.5463412327717885
+      },
+      "flatref": 3.4188565709721486,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "wet": 5.315722567471393,
+      "network_scores": {
+        "primary": 1.4918509766825998,
+        "canonical_waveform_l1": 0.03814913990820794,
+        "raw_lowband": 1.3369532991910025
+      },
+      "net": 1.4918509766825998,
+      "flatref_scores": {
+        "primary": 3.58652440282249,
+        "canonical_waveform_l1": 0.07557674017243134,
+        "raw_lowband": 0.6987381928361435
+      },
+      "flatref": 3.58652440282249,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "wet": 5.230290357992964,
+      "network_scores": {
+        "primary": 1.3653424044185862,
+        "canonical_waveform_l1": 0.02956094500976365,
+        "raw_lowband": 1.1666840731854764
+      },
+      "net": 1.3653424044185862,
+      "flatref_scores": {
+        "primary": 3.416077304129911,
+        "canonical_waveform_l1": 0.05594803713450681,
+        "raw_lowband": 0.5554813788119302
+      },
+      "flatref": 3.416077304129911,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "wet": 5.261952816096986,
+      "network_scores": {
+        "primary": 1.436663941701242,
+        "canonical_waveform_l1": 0.03126396928048826,
+        "raw_lowband": 1.1900368869864322
+      },
+      "net": 1.436663941701242,
+      "flatref_scores": {
+        "primary": 3.3869750585322067,
+        "canonical_waveform_l1": 0.0487469601855303,
+        "raw_lowband": 0.5706568712202976
+      },
+      "flatref": 3.3869750585322067,
+      "valid": true
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "offset": 0,
+      "qc_valid": true,
+      "oracle": 0.0,
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "wet": 5.325348897664405,
+      "network_scores": {
+        "primary": 1.4686872032439706,
+        "canonical_waveform_l1": 0.031247899961588537,
+        "raw_lowband": 1.1023069403095764
+      },
+      "net": 1.4686872032439706,
+      "flatref_scores": {
+        "primary": 3.464152665375974,
+        "canonical_waveform_l1": 0.05061098262910847,
+        "raw_lowband": 0.5431629893430628
+      },
+      "flatref": 3.464152665375974,
+      "valid": true
+    }
+  ],
+  "elapsed_seconds": 23.358363917,
+  "nonfinite_diagnostic_fields": []
+}

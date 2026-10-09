@@ -1,0 +1,6494 @@
+{
+  "status": "VERIFIED_WITH_EVIDENCE_LIMITS",
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "pinned_revision": "a5b96052bb16d6a3695b4040a9b3923ba90de645",
+  "primary_scores_unread": false,
+  "checks": [
+    {
+      "name": "explicit CPU Torch environment",
+      "passed": true
+    },
+    {
+      "name": "original manifest fixed hash",
+      "passed": true
+    },
+    {
+      "name": "control plan fixed hash",
+      "passed": true
+    },
+    {
+      "name": "manifest twelve unique six/six",
+      "passed": true
+    },
+    {
+      "name": "manifest ordering",
+      "passed": true
+    },
+    {
+      "name": "attribution",
+      "passed": true
+    },
+    {
+      "name": "metric exact complete source pins",
+      "passed": true
+    },
+    {
+      "name": "metric recorded versions",
+      "passed": true,
+      "detail": {
+        "numpy": "2.0.2",
+        "scipy": "1.13.1",
+        "soundfile": "0.13.1",
+        "torch": "2.8.0"
+      }
+    },
+    {
+      "name": "metric explicit environment",
+      "passed": true
+    },
+    {
+      "name": "metric failure artifact absent",
+      "passed": true
+    },
+    {
+      "name": "metric attribution",
+      "passed": true
+    },
+    {
+      "name": "numpy exact complete source pins",
+      "passed": true
+    },
+    {
+      "name": "numpy recorded versions",
+      "passed": true,
+      "detail": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    {
+      "name": "numpy explicit environment",
+      "passed": true
+    },
+    {
+      "name": "numpy failure artifact absent",
+      "passed": true
+    },
+    {
+      "name": "numpy attribution",
+      "passed": true
+    },
+    {
+      "name": "prepare exact complete source pins",
+      "passed": true
+    },
+    {
+      "name": "prepare recorded versions",
+      "passed": true,
+      "detail": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    {
+      "name": "prepare explicit environment",
+      "passed": true
+    },
+    {
+      "name": "prepare failure artifact absent",
+      "passed": true
+    },
+    {
+      "name": "prepare attribution",
+      "passed": true
+    },
+    {
+      "name": "render exact complete source pins",
+      "passed": true
+    },
+    {
+      "name": "render recorded versions",
+      "passed": true,
+      "detail": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    {
+      "name": "render explicit environment",
+      "passed": true
+    },
+    {
+      "name": "render failure artifact absent",
+      "passed": true
+    },
+    {
+      "name": "render attribution",
+      "passed": true
+    },
+    {
+      "name": "infer exact complete source pins",
+      "passed": true
+    },
+    {
+      "name": "infer recorded versions",
+      "passed": true,
+      "detail": {
+        "numpy": "2.0.2",
+        "scipy": "1.13.1",
+        "soundfile": "0.13.1",
+        "torch": "2.8.0"
+      }
+    },
+    {
+      "name": "infer explicit environment",
+      "passed": true
+    },
+    {
+      "name": "infer failure artifact absent",
+      "passed": true
+    },
+    {
+      "name": "infer attribution",
+      "passed": true
+    },
+    {
+      "name": "live CPU package versions",
+      "passed": true
+    },
+    {
+      "name": "correction definition",
+      "passed": true
+    },
+    {
+      "name": "decompressed window hash",
+      "passed": true
+    },
+    {
+      "name": "all five coefficient definitions",
+      "passed": true
+    },
+    {
+      "name": "live frozen default dtype",
+      "passed": true
+    },
+    {
+      "name": "256 exact bits definition",
+      "passed": true
+    },
+    {
+      "name": "256 coefficient hash",
+      "passed": true
+    },
+    {
+      "name": "256 live Torch coefficient bytes",
+      "passed": true
+    },
+    {
+      "name": "512 exact bits definition",
+      "passed": true
+    },
+    {
+      "name": "512 coefficient hash",
+      "passed": true
+    },
+    {
+      "name": "512 live Torch coefficient bytes",
+      "passed": true
+    },
+    {
+      "name": "1024 exact bits definition",
+      "passed": true
+    },
+    {
+      "name": "1024 coefficient hash",
+      "passed": true
+    },
+    {
+      "name": "1024 live Torch coefficient bytes",
+      "passed": true
+    },
+    {
+      "name": "2048 exact bits definition",
+      "passed": true
+    },
+    {
+      "name": "2048 coefficient hash",
+      "passed": true
+    },
+    {
+      "name": "2048 live Torch coefficient bytes",
+      "passed": true
+    },
+    {
+      "name": "4096 exact bits definition",
+      "passed": true
+    },
+    {
+      "name": "4096 coefficient hash",
+      "passed": true
+    },
+    {
+      "name": "4096 live Torch coefficient bytes",
+      "passed": true
+    },
+    {
+      "name": "synthetic metric and helper gates",
+      "passed": true
+    },
+    {
+      "name": "helper synthetic reference file hash",
+      "passed": true
+    },
+    {
+      "name": "synthetic coverage",
+      "passed": true
+    },
+    {
+      "name": "synthetic reported runtime/dtype",
+      "passed": true
+    },
+    {
+      "name": "synthetic 0 byte hashes",
+      "passed": true
+    },
+    {
+      "name": "synthetic 0 independent NumPy vs live Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 0 metric NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 0 metric Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 0 helper NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 0 helper Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 0 metric error field",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 0 helper error field",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 1 byte hashes",
+      "passed": true
+    },
+    {
+      "name": "synthetic 1 independent NumPy vs live Torch",
+      "passed": true,
+      "detail": {
+        "independent": 1.1931456240869136,
+        "recorded": 1.1931456240869132,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 1 metric NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 1.1931456240869136,
+        "recorded": 1.1931456240869136,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 1 metric Torch",
+      "passed": true,
+      "detail": {
+        "independent": 1.1931456240869136,
+        "recorded": 1.1931456240869132,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 1 helper NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 1.1931456240869136,
+        "recorded": 1.1931456240869134,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 1 helper Torch",
+      "passed": true,
+      "detail": {
+        "independent": 1.1931456240869136,
+        "recorded": 1.1931456240869132,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 1 metric error field",
+      "passed": true,
+      "detail": {
+        "independent": 4.440892098500626e-16,
+        "recorded": 4.440892098500626e-16,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 1 helper error field",
+      "passed": true,
+      "detail": {
+        "independent": 2.220446049250313e-16,
+        "recorded": 2.220446049250313e-16,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 2 byte hashes",
+      "passed": true
+    },
+    {
+      "name": "synthetic 2 independent NumPy vs live Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.42241527849552585,
+        "recorded": 0.42241527849552607,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 2 metric NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 0.42241527849552585,
+        "recorded": 0.42241527849552585,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 2 metric Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.42241527849552585,
+        "recorded": 0.4224152784955262,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 2 helper NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 0.42241527849552585,
+        "recorded": 0.42241527849552585,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 2 helper Torch",
+      "passed": true,
+      "detail": {
+        "independent": 0.42241527849552585,
+        "recorded": 0.4224152784955262,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 2 metric error field",
+      "passed": true,
+      "detail": {
+        "independent": 3.3306690738754696e-16,
+        "recorded": 3.3306690738754696e-16,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 2 helper error field",
+      "passed": true,
+      "detail": {
+        "independent": 3.3306690738754696e-16,
+        "recorded": 3.3306690738754696e-16,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 3 byte hashes",
+      "passed": true
+    },
+    {
+      "name": "synthetic 3 independent NumPy vs live Torch",
+      "passed": true,
+      "detail": {
+        "independent": 15.19790029857215,
+        "recorded": 15.19790029857215,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 3 metric NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 15.19790029857215,
+        "recorded": 15.19790029857215,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 3 metric Torch",
+      "passed": true,
+      "detail": {
+        "independent": 15.19790029857215,
+        "recorded": 15.197900298572147,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 3 helper NumPy",
+      "passed": true,
+      "detail": {
+        "independent": 15.19790029857215,
+        "recorded": 15.19790029857215,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 3 helper Torch",
+      "passed": true,
+      "detail": {
+        "independent": 15.19790029857215,
+        "recorded": 15.197900298572147,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "synthetic 3 metric error field",
+      "passed": true,
+      "detail": {
+        "independent": 3.552713678800501e-15,
+        "recorded": 3.552713678800501e-15,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "synthetic 3 helper error field",
+      "passed": true,
+      "detail": {
+        "independent": 3.552713678800501e-15,
+        "recorded": 3.552713678800501e-15,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "independent identity oracle synthetic",
+      "passed": true
+    },
+    {
+      "name": "model exact declared path/hash",
+      "passed": true
+    },
+    {
+      "name": "model observed hash",
+      "passed": true
+    },
+    {
+      "name": "model saved asset provenance",
+      "passed": true
+    },
+    {
+      "name": "average exact declared path/hash",
+      "passed": true
+    },
+    {
+      "name": "average observed hash",
+      "passed": true
+    },
+    {
+      "name": "average saved asset provenance",
+      "passed": true
+    },
+    {
+      "name": "asset revision",
+      "passed": true
+    },
+    {
+      "name": "catalog historical hash recorded, catalog not reopened",
+      "passed": true
+    },
+    {
+      "name": "asset source docs/di-domain-pilot-inputs.json",
+      "passed": true
+    },
+    {
+      "name": "asset source docs/di-domain-pilot-plan.md",
+      "passed": true
+    },
+    {
+      "name": "asset source learn/di_domain_pilot.py",
+      "passed": true
+    },
+    {
+      "name": "asset source learn/run_di_domain_pilot.py",
+      "passed": true
+    },
+    {
+      "name": "asset source learn/direc.py",
+      "passed": true
+    },
+    {
+      "name": "asset source learn/di_robustness.py",
+      "passed": true
+    },
+    {
+      "name": "asset source research/render_preset_panel.py",
+      "passed": true
+    },
+    {
+      "name": "asset source match/renderer_au.py",
+      "passed": true
+    },
+    {
+      "name": "asset source samples/Example_Clean_PR12.xml",
+      "passed": true
+    },
+    {
+      "name": "asset source match/renderer.py",
+      "passed": true
+    },
+    {
+      "name": "asset source match/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "asset source learn/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "asset source packs/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "asset source packs/loader.py",
+      "passed": true
+    },
+    {
+      "name": "asset source packs/morgan/manifest.json",
+      "passed": true
+    },
+    {
+      "name": "asset source format/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "asset source format/parser.py",
+      "passed": true
+    },
+    {
+      "name": "asset source format/structured.py",
+      "passed": true
+    },
+    {
+      "name": "asset source format/markers.py",
+      "passed": true
+    },
+    {
+      "name": "asset source format/translate.py",
+      "passed": true
+    },
+    {
+      "name": "asset source format/writer.py",
+      "passed": true
+    },
+    {
+      "name": "asset source scripts/au_render_server.swift",
+      "passed": true
+    },
+    {
+      "name": "asset source scripts/au_probe.swift",
+      "passed": true
+    },
+    {
+      "name": "asset source scripts/_cli.py",
+      "passed": true
+    },
+    {
+      "name": "render identical asset provenance",
+      "passed": true
+    },
+    {
+      "name": "infer identical asset provenance",
+      "passed": true
+    },
+    {
+      "name": "average shape and finiteness",
+      "passed": true
+    },
+    {
+      "name": "prepare completion",
+      "passed": true
+    },
+    {
+      "name": "render completion before saved wave reads",
+      "passed": true
+    },
+    {
+      "name": "prepare report coverage",
+      "passed": true
+    },
+    {
+      "name": "prepare report coverage identities",
+      "passed": true
+    },
+    {
+      "name": "render report coverage",
+      "passed": true
+    },
+    {
+      "name": "prepare progress equals result rows",
+      "passed": true
+    },
+    {
+      "name": "prepare attribution",
+      "passed": true
+    },
+    {
+      "name": "prepare declared cooperative budget",
+      "passed": true
+    },
+    {
+      "name": "prepare exact saved NPZ coverage",
+      "passed": true
+    },
+    {
+      "name": "render progress equals result rows",
+      "passed": true
+    },
+    {
+      "name": "render attribution",
+      "passed": true
+    },
+    {
+      "name": "render declared cooperative budget",
+      "passed": true
+    },
+    {
+      "name": "render exact saved NPZ coverage",
+      "passed": true
+    },
+    {
+      "name": "DI source root",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.05163295868551079,
+        "recorded": 0.05163295868551078,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.028068069488416534,
+        "recorded": 0.028068069488416537,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9883333333333333,
+        "recorded": 0.9883333333333333,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.1607457585825736,
+        "recorded": 1.1607457585823504,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.045189350382862634,
+        "recorded": 0.04518935038286264,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.033707492624627716,
+        "recorded": 0.033707492624627716,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9766666666666667,
+        "recorded": 0.9766666666666667,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0782047864942383,
+        "recorded": 1.0782047864946693,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.01645417708066213,
+        "recorded": 0.01645417708066213,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.008763778316001043,
+        "recorded": 0.008763778316001043,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.5677900475057398,
+        "recorded": 1.5677900475063724,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.005971599781369758,
+        "recorded": 0.005971599781369758,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9975,
+        "recorded": 0.9975,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.008963337042841893,
+        "recorded": 0.008963337042841893,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.4184545333856604,
+        "recorded": 1.4184545333860212,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.019769082114728862,
+        "recorded": 0.019769082114728862,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.015790689692616447,
+        "recorded": 0.015790689692616447,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9966666666666667,
+        "recorded": 0.9966666666666667,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.2551788778438773,
+        "recorded": 1.2551788778356217,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.00817626398257774,
+        "recorded": 0.00817626398257774,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.009762102834730967,
+        "recorded": 0.009762102834730967,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.4188706294466507,
+        "recorded": 1.4188706294463185,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.02597651394727391,
+        "recorded": 0.025976513947273905,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.027460965666252286,
+        "recorded": 0.02746096566625228,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9883333333333333,
+        "recorded": 0.9883333333333333,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0851858798963605,
+        "recorded": 1.0851858798959686,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.01266980004227707,
+        "recorded": 0.01266980004227707,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.99,
+        "recorded": 0.99,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.015276557441771295,
+        "recorded": 0.015276557441771295,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.9836762315684003,
+        "recorded": 0.9836762315679934,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.017277578933472846,
+        "recorded": 0.017277578933472846,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.014096770709072063,
+        "recorded": 0.014096770709072063,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9983333333333333,
+        "recorded": 0.9983333333333333,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0541335757802028,
+        "recorded": 1.0541335757805137,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.014714198459867009,
+        "recorded": 0.014714198459867009,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9825,
+        "recorded": 0.9825,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.016483877048650813,
+        "recorded": 0.016483877048650813,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.9662534712877369,
+        "recorded": 0.966253471288087,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.02275359041168192,
+        "recorded": 0.02275359041168192,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.031405829591815496,
+        "recorded": 0.031405829591815496,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0582201369721154,
+        "recorded": 1.058220136972425,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 explicit DI-only source",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 DI containment/no link",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 bounded start",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 DI header",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 bounded read finite length",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 excerpt hash",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 raw QC validity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 QC reasons",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 QC calibration rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.019574134297213885,
+        "recorded": 0.019574134297213885,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 QC calibration clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 QC calibration active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.9975,
+        "recorded": 0.9975,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 QC score rms",
+      "passed": true,
+      "detail": {
+        "independent": 0.025534881686758153,
+        "recorded": 0.025534881686758153,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 QC score clipped_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 QC score active_fraction",
+      "passed": true,
+      "detail": {
+        "independent": 1.0,
+        "recorded": 1.0,
+        "absolute_tolerance": 1e-14
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 prepare array keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 raw scoring DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 canonical target",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-10,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 original pre-roll/render DI",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384000
+        ],
+        "other_shape": [
+          384000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 independent canonical oracle",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 oracle primary",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 oracle canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 oracle raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.1258623946842201,
+        "recorded": 1.125862394683943,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 host input format",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 host input original level",
+      "passed": true,
+      "detail": {
+        "shape": [
+          384052
+        ],
+        "other_shape": [
+          384052
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "host input coverage exactly all12",
+      "passed": true
+    },
+    {
+      "name": "renderer metadata fixed options",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 renderer identity",
+      "passed": true
+    },
+    {
+      "name": "canary array keys",
+      "passed": true
+    },
+    {
+      "name": "canary saved full waves",
+      "passed": true
+    },
+    {
+      "name": "canary finite active",
+      "passed": true
+    },
+    {
+      "name": "independent saved-wave canary gate",
+      "passed": true
+    },
+    {
+      "name": "canary rms drift",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary active bands",
+      "passed": true
+    },
+    {
+      "name": "canary edge/limit/pass",
+      "passed": true
+    },
+    {
+      "name": "canary first power 0",
+      "passed": true,
+      "detail": {
+        "independent": 3267302.9986956106,
+        "recorded": 3267302.9986956106,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary first power 1",
+      "passed": true,
+      "detail": {
+        "independent": 593753795.1954687,
+        "recorded": 593753795.1954687,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary first power 2",
+      "passed": true,
+      "detail": {
+        "independent": 14744517.793268474,
+        "recorded": 14744517.793268474,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary first power 3",
+      "passed": true,
+      "detail": {
+        "independent": 421893.33870003134,
+        "recorded": 421893.33870003134,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary first power 4",
+      "passed": true,
+      "detail": {
+        "independent": 171202.2600902125,
+        "recorded": 171202.2600902125,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary first power 5",
+      "passed": true,
+      "detail": {
+        "independent": 9215.712422779914,
+        "recorded": 9215.712422779914,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 0",
+      "passed": true,
+      "detail": {
+        "independent": 3267302.9986956106,
+        "recorded": 3267302.9986956106,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 1",
+      "passed": true,
+      "detail": {
+        "independent": 593753795.1954687,
+        "recorded": 593753795.1954687,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 2",
+      "passed": true,
+      "detail": {
+        "independent": 14744517.793268474,
+        "recorded": 14744517.793268474,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 3",
+      "passed": true,
+      "detail": {
+        "independent": 421893.33870003134,
+        "recorded": 421893.33870003134,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 4",
+      "passed": true,
+      "detail": {
+        "independent": 171202.2600902125,
+        "recorded": 171202.2600902125,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary repeat power 5",
+      "passed": true,
+      "detail": {
+        "independent": 9215.712422779914,
+        "recorded": 9215.712422779914,
+        "absolute_tolerance": 1e-06
+      }
+    },
+    {
+      "name": "canary drift 0",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary drift 1",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary drift 2",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary drift 3",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary drift 4",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary drift 5",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary max waveform difference",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary relative RMS difference",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "canary sample hashes",
+      "passed": true
+    },
+    {
+      "name": "canary metadata identity",
+      "passed": true
+    },
+    {
+      "name": "first full render hash",
+      "passed": true
+    },
+    {
+      "name": "first full render peak",
+      "passed": true,
+      "detail": {
+        "independent": 0.8373619914054871,
+        "recorded": 0.8373619914054871,
+        "absolute_tolerance": 0
+      }
+    },
+    {
+      "name": "saved log one host /14 requests",
+      "passed": true,
+      "detail": {
+        "observed_pids": [
+          "50451"
+        ],
+        "observed_log_records": 14
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 saved full-wave net input slice",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 saved full-wave baseline slice",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 render keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 six-second finite render",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 exact +52 latency relationship",
+      "passed": true,
+      "detail": {
+        "shape": [
+          287948
+        ],
+        "other_shape": [
+          287948
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 recorded peak bounds retained samples",
+      "passed": true
+    },
+    {
+      "name": "gate inclusive boundary",
+      "passed": true
+    },
+    {
+      "name": "gate below boundary",
+      "passed": true
+    },
+    {
+      "name": "gate zero denominator",
+      "passed": true
+    },
+    {
+      "name": "gate missing coverage",
+      "passed": true
+    },
+    {
+      "name": "gate no added win/group criteria",
+      "passed": true
+    },
+    {
+      "name": "no shared C/P/R/V numerical imports",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 all independent metrics valid",
+      "passed": true
+    },
+    {
+      "name": "all12 own predictions/metrics derived before primary read",
+      "passed": true
+    },
+    {
+      "name": "primary inference complete",
+      "passed": true
+    },
+    {
+      "name": "infer report coverage",
+      "passed": true
+    },
+    {
+      "name": "infer report coverage identities",
+      "passed": true
+    },
+    {
+      "name": "infer exact saved prediction coverage",
+      "passed": true
+    },
+    {
+      "name": "infer progress equals report",
+      "passed": true
+    },
+    {
+      "name": "infer attribution/version/budget",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.356647989301702,
+        "recorded": 1.356647989301702,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03650782839257735,
+        "recorded": 0.03650782839257735,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.2083081951228967,
+        "recorded": 1.2083081951228967,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.31811629248553,
+        "recorded": 5.31811629248553,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.06957521852177596,
+        "recorded": 0.06957521852177596,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.8387529574977808,
+        "recorded": 0.8387529574977808,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.31811629248553,
+        "recorded": 5.31811629248553,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.356647989301702,
+        "recorded": 1.356647989301702,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-7-t098 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.3977110365376941,
+        "recorded": 1.3977110365376941,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03935065964323825,
+        "recorded": 0.03935065964323825,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.2614681107031411,
+        "recorded": 1.2614681107031411,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.141863540456876,
+        "recorded": 5.141863540456876,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.06627324010112691,
+        "recorded": 0.06627324010112691,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0770030879068435,
+        "recorded": 1.0770030879068435,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.141863540456876,
+        "recorded": 5.141863540456876,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.3977110365376941,
+        "recorded": 1.3977110365376941,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-drop3-m7b5-t098 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.5494068956363483,
+        "recorded": 1.5494068956363483,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.04864496037247269,
+        "recorded": 0.04864496037247269,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.144331433280481,
+        "recorded": 1.144331433280481,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-7-t099 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 4.818732299485904,
+        "recorded": 4.818732299485904,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.049658252571410974,
+        "recorded": 0.049658252571410974,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.9994720437125183,
+        "recorded": 0.9994720437125183,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 4.818732299485904,
+        "recorded": 4.818732299485904,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.5494068956363483,
+        "recorded": 1.5494068956363483,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-7-t099 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.6238200988830815,
+        "recorded": 1.6238200988830815,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03934203167617609,
+        "recorded": 0.03934203167617609,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.9713436461767426,
+        "recorded": 0.9713436461767426,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 4.870564322439565,
+        "recorded": 4.870564322439565,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.044105579964644294,
+        "recorded": 0.044105579964644294,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.9978787952300386,
+        "recorded": 0.9978787952300386,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 4.870564322439565,
+        "recorded": 4.870564322439565,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.6238200988830815,
+        "recorded": 1.6238200988830815,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-dim-t072 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.4083839514347356,
+        "recorded": 1.4083839514347356,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.04136030828523231,
+        "recorded": 0.04136030828523231,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.361229986815313,
+        "recorded": 1.361229986815313,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 4.869246607726732,
+        "recorded": 4.869246607726732,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.044359482779514604,
+        "recorded": 0.044359482779514604,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0707950625381855,
+        "recorded": 1.0707950625381855,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 4.869246607726732,
+        "recorded": 4.869246607726732,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.4083839514347356,
+        "recorded": 1.4083839514347356,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-m7-t094 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.6336465526082002,
+        "recorded": 1.6336465526082002,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.04462718528441961,
+        "recorded": 0.04462718528441961,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0993857645828702,
+        "recorded": 1.0993857645828702,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.012802754664242,
+        "recorded": 5.012802754664242,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.05141229178897682,
+        "recorded": 0.05141229178897682,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.0678435121365928,
+        "recorded": 1.0678435121365928,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.012802754664242,
+        "recorded": 5.012802754664242,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.6336465526082002,
+        "recorded": 1.6336465526082002,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-chords-set1-maj-t072 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.4958130893720543,
+        "recorded": 1.4958130893720543,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03550792947125198,
+        "recorded": 0.03550792947125198,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.2950734554498204,
+        "recorded": 1.2950734554498204,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-a-t075 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.268729847149958,
+        "recorded": 5.268729847149958,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.06924559486746196,
+        "recorded": 0.06924559486746196,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.6408694722233699,
+        "recorded": 0.6408694722233699,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.268729847149958,
+        "recorded": 5.268729847149958,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.4958130893720543,
+        "recorded": 1.4958130893720543,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-a-t075 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.3275160170855151,
+        "recorded": 1.3275160170855151,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03287761723977674,
+        "recorded": 0.03287761723977674,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.192069787900476,
+        "recorded": 1.192069787900476,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-bb-t076 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.224219840883034,
+        "recorded": 5.224219840883034,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.05337137854635508,
+        "recorded": 0.05337137854635508,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.5948321944762326,
+        "recorded": 0.5948321944762326,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.224219840883034,
+        "recorded": 5.224219840883034,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.3275160170855151,
+        "recorded": 1.3275160170855151,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-bb-t076 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.4918509766825998,
+        "recorded": 1.4918509766825998,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03814913990820794,
+        "recorded": 0.03814913990820794,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.3369532991910025,
+        "recorded": 1.3369532991910025,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-c-t075 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.315722567471393,
+        "recorded": 5.315722567471393,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.07557680580805,
+        "recorded": 0.07557680580805,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.7479442524135026,
+        "recorded": 0.7479442524135026,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.315722567471393,
+        "recorded": 5.315722567471393,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.4918509766825998,
+        "recorded": 1.4918509766825998,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-c-t075 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.3653424044185862,
+        "recorded": 1.3653424044185862,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.02956094500976365,
+        "recorded": 0.02956094500976365,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.1666840731854764,
+        "recorded": 1.1666840731854764,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-db-t076 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.230290357992964,
+        "recorded": 5.230290357992964,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.05594809887421997,
+        "recorded": 0.05594809887421997,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.6018490603448975,
+        "recorded": 0.6018490603448975,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.230290357992964,
+        "recorded": 5.230290357992964,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.3653424044185862,
+        "recorded": 1.3653424044185862,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-db-t076 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.436663941701242,
+        "recorded": 1.436663941701242,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.03126396928048826,
+        "recorded": 0.03126396928048826,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.1900368869864322,
+        "recorded": 1.1900368869864322,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-e-t076 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.261952816096986,
+        "recorded": 5.261952816096986,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.048747084034056594,
+        "recorded": 0.048747084034056594,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.6185444589909656,
+        "recorded": 0.6185444589909656,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.261952816096986,
+        "recorded": 5.261952816096986,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.436663941701242,
+        "recorded": 1.436663941701242,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-e-t076 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 primary prediction keys",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 checkpoint replay prediction bytes",
+      "passed": true,
+      "detail": {
+        "shape": [
+          288000
+        ],
+        "other_shape": [
+          288000
+        ],
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 0,
+        "byte_identical": true
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 prediction hash identical",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 primary raw-QC flag",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 network_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 network_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 1.4686872032439706,
+        "recorded": 1.4686872032439706,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 network_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.031247899961588537,
+        "recorded": 0.031247899961588537,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 network_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 1.1023069403095764,
+        "recorded": 1.1023069403095764,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 input_scores exact metric coverage",
+      "passed": true
+    },
+    {
+      "name": "p2-scales-g-t076 input_scores primary",
+      "passed": true,
+      "detail": {
+        "independent": 5.325348897664405,
+        "recorded": 5.325348897664405,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 input_scores canonical_waveform_l1",
+      "passed": true,
+      "detail": {
+        "independent": 0.050611072960783904,
+        "recorded": 0.050611072960783904,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 input_scores raw_lowband",
+      "passed": true,
+      "detail": {
+        "independent": 0.5950892665702903,
+        "recorded": 0.5950892665702903,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 primary morgan_input",
+      "passed": true,
+      "detail": {
+        "independent": 5.325348897664405,
+        "recorded": 5.325348897664405,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 primary morgan_net",
+      "passed": true,
+      "detail": {
+        "independent": 1.4686872032439706,
+        "recorded": 1.4686872032439706,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "p2-scales-g-t076 primary oracle",
+      "passed": true,
+      "detail": {
+        "independent": 0.0,
+        "recorded": 0.0,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate valid",
+      "passed": true
+    },
+    {
+      "name": "recorded primary gate passed",
+      "passed": true
+    },
+    {
+      "name": "recorded primary gate disposition",
+      "passed": true
+    },
+    {
+      "name": "recorded primary gate strict_wins",
+      "passed": true
+    },
+    {
+      "name": "recorded primary gate median",
+      "passed": true,
+      "detail": {
+        "independent": 0.7217797505331673,
+        "recorded": 0.7217797505331673,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate chords",
+      "passed": true,
+      "detail": {
+        "independent": 0.6946105454854318,
+        "recorded": 0.6946105454854318,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate scales",
+      "passed": true,
+      "detail": {
+        "independent": 0.7255898018614853,
+        "recorded": 0.7255898018614853,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate per-take coverage",
+      "passed": true
+    },
+    {
+      "name": "recorded primary gate p2-chords-drop3-7-t098",
+      "passed": true,
+      "detail": {
+        "independent": 0.7449006537862591,
+        "recorded": 0.7449006537862591,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-chords-drop3-m7b5-t098",
+      "passed": true,
+      "detail": {
+        "independent": 0.7281703363886819,
+        "recorded": 0.7281703363886819,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-chords-set1-7-t099",
+      "passed": true,
+      "detail": {
+        "independent": 0.6784617199420582,
+        "recorded": 0.6784617199420582,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-chords-set1-dim-t072",
+      "passed": true,
+      "detail": {
+        "independent": 0.6666053476797646,
+        "recorded": 0.6666053476797646,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-chords-set1-m7-t094",
+      "passed": true,
+      "detail": {
+        "independent": 0.7107593710288054,
+        "recorded": 0.7107593710288054,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-chords-set1-maj-t072",
+      "passed": true,
+      "detail": {
+        "independent": 0.6741051598154051,
+        "recorded": 0.6741051598154051,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-a-t075",
+      "passed": true,
+      "detail": {
+        "independent": 0.716096073860915,
+        "recorded": 0.716096073860915,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-bb-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7458920073200577,
+        "recorded": 0.7458920073200577,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-c-t075",
+      "passed": true,
+      "detail": {
+        "independent": 0.7193512344282763,
+        "recorded": 0.7193512344282763,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-db-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7389547594939809,
+        "recorded": 0.7389547594939809,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-e-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7269713370849121,
+        "recorded": 0.7269713370849121,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "recorded primary gate p2-scales-g-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7242082666380585,
+        "recorded": 0.7242082666380585,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows valid",
+      "passed": true
+    },
+    {
+      "name": "own gate over primary rows passed",
+      "passed": true
+    },
+    {
+      "name": "own gate over primary rows disposition",
+      "passed": true
+    },
+    {
+      "name": "own gate over primary rows strict_wins",
+      "passed": true
+    },
+    {
+      "name": "own gate over primary rows median",
+      "passed": true,
+      "detail": {
+        "independent": 0.7217797505331673,
+        "recorded": 0.7217797505331673,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows chords",
+      "passed": true,
+      "detail": {
+        "independent": 0.6946105454854318,
+        "recorded": 0.6946105454854318,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows scales",
+      "passed": true,
+      "detail": {
+        "independent": 0.7255898018614853,
+        "recorded": 0.7255898018614853,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows per-take coverage",
+      "passed": true
+    },
+    {
+      "name": "own gate over primary rows p2-chords-drop3-7-t098",
+      "passed": true,
+      "detail": {
+        "independent": 0.7449006537862591,
+        "recorded": 0.7449006537862591,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-chords-drop3-m7b5-t098",
+      "passed": true,
+      "detail": {
+        "independent": 0.7281703363886819,
+        "recorded": 0.7281703363886819,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-chords-set1-7-t099",
+      "passed": true,
+      "detail": {
+        "independent": 0.6784617199420582,
+        "recorded": 0.6784617199420582,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-chords-set1-dim-t072",
+      "passed": true,
+      "detail": {
+        "independent": 0.6666053476797646,
+        "recorded": 0.6666053476797646,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-chords-set1-m7-t094",
+      "passed": true,
+      "detail": {
+        "independent": 0.7107593710288054,
+        "recorded": 0.7107593710288054,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-chords-set1-maj-t072",
+      "passed": true,
+      "detail": {
+        "independent": 0.6741051598154051,
+        "recorded": 0.6741051598154051,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-a-t075",
+      "passed": true,
+      "detail": {
+        "independent": 0.716096073860915,
+        "recorded": 0.716096073860915,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-bb-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7458920073200577,
+        "recorded": 0.7458920073200577,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-c-t075",
+      "passed": true,
+      "detail": {
+        "independent": 0.7193512344282763,
+        "recorded": 0.7193512344282763,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-db-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7389547594939809,
+        "recorded": 0.7389547594939809,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-e-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7269713370849121,
+        "recorded": 0.7269713370849121,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "own gate over primary rows p2-scales-g-t076",
+      "passed": true,
+      "detail": {
+        "independent": 0.7242082666380585,
+        "recorded": 0.7242082666380585,
+        "absolute_tolerance": 1e-08
+      }
+    },
+    {
+      "name": "sources unchanged through verification",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "preparation": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "source": "P2_chords/audio/directinput/directinput_Drop3_7.wav",
+      "start_read": 4703488,
+      "frames_read": 481024,
+      "excerpt_sha256": "48c4a1dd50fd99c7057f2f14341a5c4325c43de4ae08a5254d266b77b192efbf",
+      "target_sha256": "542b3c8936732309bcd27908ff3c8322940cd2a7b2eaa3e247a675f61f372a0d",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.05163295868551079,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.028068069488416534,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9883333333333333
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.1607457585825736
+      },
+      "host_input_sha256_float32": "a1c1da9554852a62ed409dffa564be5c17e332776ef905542cb33cb00e642d92"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "source": "P2_chords/audio/directinput/directinput_Drop3_m7b5.wav",
+      "start_read": 4703488,
+      "frames_read": 481024,
+      "excerpt_sha256": "389c9f50829fe23bcbcc7880087450ed8165a9dcd32d2201745acc49763d7aad",
+      "target_sha256": "ee625bd9dfdd5fa4c42a9592f6bc7533d7412d946be0d6300d724ab1bb352441",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.045189350382862634,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.033707492624627716,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9766666666666667
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0782047864942383
+      },
+      "host_input_sha256_float32": "2273ecaa2abbb39023be27ba65f431ae526c55ec2a1bc727941a55400b5c20a7"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "source": "P2_chords/audio/directinput/directinput_Set1_7.wav",
+      "start_read": 4751488,
+      "frames_read": 481024,
+      "excerpt_sha256": "9251b101e5a92865338c927368a12138e4c9ac74bc853d1337c9eda94414c2f5",
+      "target_sha256": "6587482ea0761dbc0ba0f83c512afa3d87b364e7071af42c835d27736781c9ff",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.01645417708066213,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.008763778316001043,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.5677900475057398
+      },
+      "host_input_sha256_float32": "c9551dad96eeac7961e1a41dc48be6113e625c47317fb580b509d5432e07bf4f"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "source": "P2_chords/audio/directinput/directinput_Set1_dim.wav",
+      "start_read": 3455488,
+      "frames_read": 481024,
+      "excerpt_sha256": "844a4072a29f3123f870293ce3ebfc6567191d262311af837f3559569ad915e1",
+      "target_sha256": "2bd711e26cba47ce540b7f8fb2bd98c3f001cee25270fa5bc03273351c86cb2d",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.005971599781369758,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9975
+          },
+          "score": {
+            "rms": 0.008963337042841893,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.4184545333856604
+      },
+      "host_input_sha256_float32": "2a1777d670330ab7950159bc5ce59cb8eb1d809139f14741f64e1dc47a0d0814"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "source": "P2_chords/audio/directinput/directinput_Set1_m7.wav",
+      "start_read": 4511488,
+      "frames_read": 481024,
+      "excerpt_sha256": "57c908e08d44a03c5cc356337af18e7eb2354d84343992c7fa9e5c6c5f304a37",
+      "target_sha256": "2050795a75fd6493d3f1777b98b3a0a209f0361cbc2fe16b30635109965ecedc",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.019769082114728862,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.015790689692616447,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9966666666666667
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.2551788778438773
+      },
+      "host_input_sha256_float32": "3adc58ce85e90bb59c572339c8812fe087065ec389a847b6168b077feeddd949"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "source": "P2_chords/audio/directinput/directinput_Set1_maj.wav",
+      "start_read": 3455488,
+      "frames_read": 481024,
+      "excerpt_sha256": "c9c8494c8f2a1c78e56429d75e2d9379ccea86f6be87165fbfff04f1b56c3ac6",
+      "target_sha256": "af154b1ab58143b8be302cf70419227931b657ec4ccdaf69d443ce2b36bb83c4",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.00817626398257774,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.009762102834730967,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.4188706294466507
+      },
+      "host_input_sha256_float32": "bb26b2f92b6179e45465f7ef2e752f98c358e161010db848bc21cd4e7b4b1a7e"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "source": "P2_scales/audio/directinput/directinput_A.wav",
+      "start_read": 3599488,
+      "frames_read": 481024,
+      "excerpt_sha256": "610354d87076c9fe4ef2f9e3a3e038ad028ac9d00e4ec935e6495ace63b3f5cb",
+      "target_sha256": "4ac0095b2ff712dfeb59b477f55e34c273f7a0470feb177b1cd31ddd2a6f5b86",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.02597651394727391,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.027460965666252286,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9883333333333333
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0851858798963605
+      },
+      "host_input_sha256_float32": "c446b64bb39467e4699e8482b4c0c5901a12f30d94dfd7ee2277930951d148f6"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "source": "P2_scales/audio/directinput/directinput_Bb.wav",
+      "start_read": 3647488,
+      "frames_read": 481024,
+      "excerpt_sha256": "bae2f53dba11528bd937650f0108e7dc8a381197ea5ee3bb59176ec75b29c71b",
+      "target_sha256": "8882ce80aa1edb3b33bc9134136bf17a1722b586d3eb77c2953f1f7bd869598c",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.01266980004227707,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.99
+          },
+          "score": {
+            "rms": 0.015276557441771295,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 0.9836762315684003
+      },
+      "host_input_sha256_float32": "4242614a34d85fbee7601d7c5e1baf2509260f37fabe0fa6d5fd8eb15626b01d"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "source": "P2_scales/audio/directinput/directinput_C.wav",
+      "start_read": 3599488,
+      "frames_read": 481024,
+      "excerpt_sha256": "af8e55d2e3478c0a2d70f4d2c16c54a5f696fa940c9003c985519e1db9afb1c1",
+      "target_sha256": "0cd513713827132024c3035e3125eaa7d39e8fb231b75d6050315039e6bc0dce",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.017277578933472846,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.014096770709072063,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9983333333333333
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0541335757802028
+      },
+      "host_input_sha256_float32": "260f3124bb7f60c59dff873e4add1bbb6bcd1e3baf9715a05042d65c78d5e2a7"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "source": "P2_scales/audio/directinput/directinput_Db.wav",
+      "start_read": 3647488,
+      "frames_read": 481024,
+      "excerpt_sha256": "e0c671a6d4930b9d21d6f8eaebbf95e6cc9de80a20174b45f649b0e7c2affb70",
+      "target_sha256": "1c22d98143f6dae6248c9840cc2a3a9623cf92b7fbd01b94f47ff36828576dd4",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.014714198459867009,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9825
+          },
+          "score": {
+            "rms": 0.016483877048650813,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 0.9662534712877369
+      },
+      "host_input_sha256_float32": "1394369897b9ce08757b5acc69bb72fc831772ca55cd4178d1a56067e3e16320"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "source": "P2_scales/audio/directinput/directinput_E.wav",
+      "start_read": 3647488,
+      "frames_read": 481024,
+      "excerpt_sha256": "33a17041031852d4142a023602691ba6437079c7059498ed8fb1232a98c9b8bd",
+      "target_sha256": "e1ea6652458d8bdfaf1bf6bf9bc4774048cf0939dd1892042dce96b3ffc06ec3",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.02275359041168192,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          },
+          "score": {
+            "rms": 0.031405829591815496,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.0582201369721154
+      },
+      "host_input_sha256_float32": "b08e11be9af33f134a8cd53a2a9ba8d8e67ccdedef2965d950b14580720cbedb"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "source": "P2_scales/audio/directinput/directinput_G.wav",
+      "start_read": 3647488,
+      "frames_read": 481024,
+      "excerpt_sha256": "e05b11cb77cd2f48db149d1d5f1c95b5c9dc07d6657c878a0780696a4271f7c4",
+      "target_sha256": "cda6c84167bf1282cc415010ba2a3d5bcb807c7fc001885561794885c20313b2",
+      "qc": {
+        "valid": true,
+        "metrics": {
+          "calibration": {
+            "rms": 0.019574134297213885,
+            "clipped_fraction": 0.0,
+            "active_fraction": 0.9975
+          },
+          "score": {
+            "rms": 0.025534881686758153,
+            "clipped_fraction": 0.0,
+            "active_fraction": 1.0
+          }
+        },
+        "reasons": []
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.1258623946842201
+      },
+      "host_input_sha256_float32": "9ebd02e3e85969678c33cb72547bd7070da551b02a7e07049c936f17d52a8839"
+    }
+  ],
+  "replay": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.356647989301702,
+        "canonical_waveform_l1": 0.03650782839257735,
+        "raw_lowband": 1.2083081951228967
+      },
+      "input_scores": {
+        "primary": 5.31811629248553,
+        "canonical_waveform_l1": 0.06957521852177596,
+        "raw_lowband": 0.8387529574977808
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.31811629248553,
+      "morgan_net": 1.356647989301702,
+      "relative_improvement": 0.7449006537862591,
+      "prediction_sha256_float32": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "802c02e9136dd910a106f9cf4093929581bbed13cd94ff4c95f25535257a817b"
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.3977110365376941,
+        "canonical_waveform_l1": 0.03935065964323825,
+        "raw_lowband": 1.2614681107031411
+      },
+      "input_scores": {
+        "primary": 5.141863540456876,
+        "canonical_waveform_l1": 0.06627324010112691,
+        "raw_lowband": 1.0770030879068435
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.141863540456876,
+      "morgan_net": 1.3977110365376941,
+      "relative_improvement": 0.7281703363886819,
+      "prediction_sha256_float32": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "2a4fd34ddc8558670a0351548e11ee96de003cfb31e777db1feb5283cd93baf3"
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.5494068956363483,
+        "canonical_waveform_l1": 0.04864496037247269,
+        "raw_lowband": 1.144331433280481
+      },
+      "input_scores": {
+        "primary": 4.818732299485904,
+        "canonical_waveform_l1": 0.049658252571410974,
+        "raw_lowband": 0.9994720437125183
+      },
+      "oracle": 0.0,
+      "morgan_input": 4.818732299485904,
+      "morgan_net": 1.5494068956363483,
+      "relative_improvement": 0.6784617199420582,
+      "prediction_sha256_float32": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "5c3fdcd9d928dbed7626a6435d7d335af8b3d0a8dd4867b84f5e9ca0d6cd89bd"
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.6238200988830815,
+        "canonical_waveform_l1": 0.03934203167617609,
+        "raw_lowband": 0.9713436461767426
+      },
+      "input_scores": {
+        "primary": 4.870564322439565,
+        "canonical_waveform_l1": 0.044105579964644294,
+        "raw_lowband": 0.9978787952300386
+      },
+      "oracle": 0.0,
+      "morgan_input": 4.870564322439565,
+      "morgan_net": 1.6238200988830815,
+      "relative_improvement": 0.6666053476797646,
+      "prediction_sha256_float32": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "2da8a25fa7d59ec3a8d5da5e2e156c2fa8a3e44a3c3525ec70df0ac5a918b3dc"
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.4083839514347356,
+        "canonical_waveform_l1": 0.04136030828523231,
+        "raw_lowband": 1.361229986815313
+      },
+      "input_scores": {
+        "primary": 4.869246607726732,
+        "canonical_waveform_l1": 0.044359482779514604,
+        "raw_lowband": 1.0707950625381855
+      },
+      "oracle": 0.0,
+      "morgan_input": 4.869246607726732,
+      "morgan_net": 1.4083839514347356,
+      "relative_improvement": 0.7107593710288054,
+      "prediction_sha256_float32": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "63108aaa23a29aa22fc310ed9ac12ec5ac950f1f33d64f482eb950e4ab6a282b"
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.6336465526082002,
+        "canonical_waveform_l1": 0.04462718528441961,
+        "raw_lowband": 1.0993857645828702
+      },
+      "input_scores": {
+        "primary": 5.012802754664242,
+        "canonical_waveform_l1": 0.05141229178897682,
+        "raw_lowband": 1.0678435121365928
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.012802754664242,
+      "morgan_net": 1.6336465526082002,
+      "relative_improvement": 0.6741051598154051,
+      "prediction_sha256_float32": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "7269cc1657b90bab59c9b49857551632277ea3094aa8fab9c7445807cac06c59"
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.4958130893720543,
+        "canonical_waveform_l1": 0.03550792947125198,
+        "raw_lowband": 1.2950734554498204
+      },
+      "input_scores": {
+        "primary": 5.268729847149958,
+        "canonical_waveform_l1": 0.06924559486746196,
+        "raw_lowband": 0.6408694722233699
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.268729847149958,
+      "morgan_net": 1.4958130893720543,
+      "relative_improvement": 0.716096073860915,
+      "prediction_sha256_float32": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "45e9b8f86070eedf8f92009586f7f1c3ec19a5a4ed8c127668535518c67f8612"
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.3275160170855151,
+        "canonical_waveform_l1": 0.03287761723977674,
+        "raw_lowband": 1.192069787900476
+      },
+      "input_scores": {
+        "primary": 5.224219840883034,
+        "canonical_waveform_l1": 0.05337137854635508,
+        "raw_lowband": 0.5948321944762326
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.224219840883034,
+      "morgan_net": 1.3275160170855151,
+      "relative_improvement": 0.7458920073200577,
+      "prediction_sha256_float32": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "960e231ca5d3cd987129834b4920b91a6f93eb9a6641a09a35eabc4c66436852"
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.4918509766825998,
+        "canonical_waveform_l1": 0.03814913990820794,
+        "raw_lowband": 1.3369532991910025
+      },
+      "input_scores": {
+        "primary": 5.315722567471393,
+        "canonical_waveform_l1": 0.07557680580805,
+        "raw_lowband": 0.7479442524135026
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.315722567471393,
+      "morgan_net": 1.4918509766825998,
+      "relative_improvement": 0.7193512344282763,
+      "prediction_sha256_float32": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "6a6a8a186ee9cb6dc503ed05006a0b4fb41233c994b55f24d51a34593a98fa13"
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.3653424044185862,
+        "canonical_waveform_l1": 0.02956094500976365,
+        "raw_lowband": 1.1666840731854764
+      },
+      "input_scores": {
+        "primary": 5.230290357992964,
+        "canonical_waveform_l1": 0.05594809887421997,
+        "raw_lowband": 0.6018490603448975
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.230290357992964,
+      "morgan_net": 1.3653424044185862,
+      "relative_improvement": 0.7389547594939809,
+      "prediction_sha256_float32": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "7b6af4103baabd44e95ec2b0730d6492014a73c3083c6080f6f977e3ab717b56"
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.436663941701242,
+        "canonical_waveform_l1": 0.03126396928048826,
+        "raw_lowband": 1.1900368869864322
+      },
+      "input_scores": {
+        "primary": 5.261952816096986,
+        "canonical_waveform_l1": 0.048747084034056594,
+        "raw_lowband": 0.6185444589909656
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.261952816096986,
+      "morgan_net": 1.436663941701242,
+      "relative_improvement": 0.7269713370849121,
+      "prediction_sha256_float32": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "0251c54c386120194ec7bbf812632eae36811c8b59ed86188599d56c7063513a"
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "qc_valid": true,
+      "network_scores": {
+        "primary": 1.4686872032439706,
+        "canonical_waveform_l1": 0.031247899961588537,
+        "raw_lowband": 1.1023069403095764
+      },
+      "input_scores": {
+        "primary": 5.325348897664405,
+        "canonical_waveform_l1": 0.050611072960783904,
+        "raw_lowband": 0.5950892665702903
+      },
+      "oracle": 0.0,
+      "morgan_input": 5.325348897664405,
+      "morgan_net": 1.4686872032439706,
+      "relative_improvement": 0.7242082666380585,
+      "prediction_sha256_float32": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+      "prediction_dtype": "float32",
+      "input_sha256_float32": "7adf4316707ea6e40ee3be514d45d1f08933a83ec5c5bd35cea049d6939b9545"
+    }
+  ],
+  "limitations": [
+    "Full wet renders were retained only for the first take/canary. For the other 11, full-render hashes/peaks and wet pre-roll cannot be independently reconstructed; six-second input/baseline overlap and all original-level host inputs are verified.",
+    "Saved host log has no parameter command transcript. Fixed PR12+R and warm-up/close sequence are supported by pinned code; actual plugin state is not separately recorded.",
+    "The fixed 52-sample slicing is checked exactly from saved waves. This does not remeasure physical plugin latency or fit a delay."
+  ],
+  "runtime": {
+    "python": "3.9.6 (default, Apr 17 2026, 18:15:52) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+    "prefix": "/Users/yoavbz/ndsp-presets/tools/learn-venv",
+    "packages": {
+      "numpy": "2.0.2",
+      "scipy": "1.13.1",
+      "soundfile": "0.13.1",
+      "torch": "2.8.0"
+    }
+  },
+  "source_pins": {
+    "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+    "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+    "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+    "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+    "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+    "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+    "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+    "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+    "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+    "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+    "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+    "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+    "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+    "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+    "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+    "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+    "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+    "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+    "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+    "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+    "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+    "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+    "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+    "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+    "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+    "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+    "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+    "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+    "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+    "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+    "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+    "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+    "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+    "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+  },
+  "stage_provenance": {
+    "metric": {
+      "pins": {
+        "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+        "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+        "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+        "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+        "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+        "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+        "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+        "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+        "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+        "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+        "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+        "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+        "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+        "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+        "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+        "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+        "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+        "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+        "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+        "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+        "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+        "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+        "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+        "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+        "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+        "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+        "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+        "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+        "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+        "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+        "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+        "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+        "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+        "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+      },
+      "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+      "python": "3.9.6 (default, Apr 17 2026, 18:15:52) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/Users/yoavbz/ndsp-presets/tools/learn-venv",
+      "packages": {
+        "numpy": "2.0.2",
+        "scipy": "1.13.1",
+        "soundfile": "0.13.1",
+        "torch": "2.8.0"
+      }
+    },
+    "numpy": {
+      "pins": {
+        "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+        "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+        "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+        "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+        "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+        "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+        "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+        "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+        "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+        "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+        "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+        "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+        "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+        "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+        "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+        "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+        "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+        "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+        "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+        "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+        "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+        "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+        "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+        "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+        "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+        "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+        "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+        "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+        "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+        "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+        "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+        "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+        "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+        "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+      },
+      "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+      "python": "3.14.6 (main, Jul 30 2026, 22:50:40) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/Users/yoavbz/projects/neuraldsp-preset-generator/.venv",
+      "packages": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    "prepare": {
+      "pins": {
+        "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+        "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+        "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+        "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+        "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+        "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+        "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+        "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+        "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+        "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+        "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+        "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+        "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+        "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+        "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+        "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+        "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+        "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+        "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+        "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+        "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+        "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+        "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+        "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+        "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+        "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+        "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+        "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+        "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+        "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+        "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+        "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+        "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+        "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+      },
+      "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+      "python": "3.14.6 (main, Jul 30 2026, 22:50:40) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/Users/yoavbz/projects/neuraldsp-preset-generator/.venv",
+      "packages": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    "render": {
+      "pins": {
+        "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+        "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+        "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+        "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+        "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+        "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+        "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+        "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+        "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+        "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+        "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+        "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+        "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+        "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+        "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+        "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+        "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+        "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+        "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+        "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+        "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+        "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+        "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+        "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+        "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+        "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+        "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+        "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+        "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+        "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+        "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+        "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+        "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+        "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+      },
+      "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+      "python": "3.14.6 (main, Jul 30 2026, 22:50:40) [Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/Users/yoavbz/projects/neuraldsp-preset-generator/.venv",
+      "packages": {
+        "numpy": "2.5.1",
+        "scipy": "1.18.0",
+        "soundfile": "0.14.0",
+        "torch": null
+      }
+    },
+    "infer": {
+      "pins": {
+        "docs/di-domain-pilot-inputs.json": "3220d15a5dfbfb40ee39462377e88104cc8c3a6f6cfcabb4aa2f7d80613e8930",
+        "docs/di-domain-pilot-plan.md": "3fe8a65c46c216f360dbca8e472eaedaea4b261a85a4a47f924f7c74b9592465",
+        "learn/di_domain_pilot.py": "338abb963b122f3bc6710e45253674829f2db2be585a0fd56164f36323088076",
+        "learn/run_di_domain_pilot.py": "e2ba7db8935b4602f86658dba57c67a6918c6fa824852e8d118ed7632a36bb79",
+        "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+        "learn/di_robustness.py": "072dfe5dfd1fc892eef1449ad6ab9d7a2725e2ddb701311714437d95aba27fb1",
+        "research/render_preset_panel.py": "0df8864f17e1c8c704fbc13ef5693b2978cdf4f01c238d0f12021c3f9d45f39b",
+        "match/renderer_au.py": "7a43e2741583dcfe91d16d359104f094f6ac4cb326c176d678a25311d4442887",
+        "samples/Example_Clean_PR12.xml": "d57a78cb78e527db66748937c4b206df4cae0f9633cb87797b06344c6e895ac3",
+        "match/renderer.py": "fbb9a8250e4751cf578e02b7e06bb5f5ffad784cd3bfea97815890d92d3aaade",
+        "match/__init__.py": "9ef6e8d3301c9c41de4ed497e5a4c9589c508d6c07034e65c658b6d8fdf702e6",
+        "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d",
+        "packs/__init__.py": "c27a532cf2419d4dd2f8c6a1db0646acf6d82621f9751bb6a0bc1de5bb292f96",
+        "packs/loader.py": "afa9cf96387b1397dccf752862e8bf115f46ef7f3c30f6a8b7168fc5fd8670ba",
+        "packs/morgan/manifest.json": "0d81b1540d76f66f5d75889d8615a2bc30007ab16b2482b461d9bb69d9a67ad0",
+        "format/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "format/parser.py": "93586273c398f766cce82bb043923416a2a1fbec191d29b87797b395105b4e88",
+        "format/structured.py": "00880b4373a5300c6a285652dc310fa21d9e1b6bc65bdb1feecebb91920b5279",
+        "format/markers.py": "bd29491dd3fdeebd656d6bafce71d101570bd40c9a9b0848336c1d93fcbd76f7",
+        "format/translate.py": "8dd3de2a011aa4d829cae050576eb6348c3fd76482cecb582de9ebfe90484dea",
+        "format/writer.py": "0ba5e099478d993dc1a01361a2733cfc59079929c07311b3983797b63fc78ca5",
+        "scripts/au_render_server.swift": "e1f9a375e7b331edc938e9f671fe20d27b49597da72c4d290d9e68ed2c578e3c",
+        "scripts/au_probe.swift": "1f05a301e64a71496400d5a8129279dfd45f90cc08f6984fcca68b9f4cc78537",
+        "scripts/_cli.py": "33ce25338ac5a2f3713694e5bf7fee8182bd85f4a4cf06f684ec2cc9647a6428",
+        "learn/run_di_domain_pilot_v2.py": "397a8abd55a516047288b789db1375c21c5cbf89a1b3e10dbc3ae7eb56869d10",
+        "tests/test_di_domain_pilot_v2.py": "c8b8ec0384fd73f09011e640feebf54414ed3253974fbb9dae6758009e3138f9",
+        "tests/test_di_domain_pilot.py": "c8bc917e4097222df329cacd5e560702fbef78d6a756d99ea8ec109bc933d787",
+        "tests/test_run_di_domain_pilot.py": "e4eba3bd950679d18d5b1df6c2c547d4003511cb85a226db125abc1e76c46dce",
+        "docs/di-domain-pilot-v2-plan.md": "96b807d1a7b421bc18412ed8887ddf998588a2ba33caabe4dfb623cd140e262c",
+        "docs/di-domain-pilot-v2-inputs.json": "fe501e97053276208020e56a8bce8ba1689237795c3d232b18ceadc74b2421dc",
+        "docs/di-domain-metric-probe-windows.json.gz": "41a9dae241f2090fc5a1e7f3b73f3b628741b05e1ad85811af750045dbca93bc",
+        "docs/di-morgan-control-plan.md": "b07d77d97958866fa8d3b68e5d78e564ba8985c4f808a48b02b5ac3499003ff2",
+        "learn/di_morgan_control.py": "b89a40f6aaa9318479b5de2af35a4e4e7a66d017a1d9c16a4fd62caea33d1428",
+        "tests/test_di_morgan_control.py": "01362758e3d4a1609edb755fef11fc5726d9b97e09e2334544a7576f7f5b5c56",
+        "scripts/_swift.py": "f1211cc98ab82e269d676a96005b1cab7a873fbcb07e7b46538c63d7b3d17e96"
+      },
+      "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+      "python": "3.9.6 (default, Apr 17 2026, 18:15:52) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+      "prefix": "/Users/yoavbz/ndsp-presets/tools/learn-venv",
+      "packages": {
+        "numpy": "2.0.2",
+        "scipy": "1.13.1",
+        "soundfile": "0.13.1",
+        "torch": "2.8.0"
+      }
+    }
+  },
+  "synthetic": [
+    {
+      "case": 0,
+      "independent_numpy": 0.0,
+      "independent_torch": 0.0
+    },
+    {
+      "case": 1,
+      "independent_numpy": 1.1931456240869136,
+      "independent_torch": 1.1931456240869132
+    },
+    {
+      "case": 2,
+      "independent_numpy": 0.42241527849552585,
+      "independent_torch": 0.42241527849552607
+    },
+    {
+      "case": 3,
+      "independent_numpy": 15.19790029857215,
+      "independent_torch": 15.19790029857215
+    }
+  ],
+  "assets": {
+    "model": {
+      "path": "/Users/yoavbz/ndsp-presets/learn/direc/models-set3/fold2.pt",
+      "sha256": "16b2b734b49cc1cc2d7e547d96d3bb56208007c9cae0d0e33acb1c2a1cdd042b"
+    },
+    "average": {
+      "path": "/Users/yoavbz/ndsp-presets/learn/direc/cache/average-fold2.npy",
+      "sha256": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8"
+    }
+  },
+  "canary": {
+    "passed": true,
+    "rms_drift_db": 0.0,
+    "active_band_indices": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "band_drift_db": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "renderer_metadata": {
+      "renderer_id": "swift",
+      "sample_rate": 48000,
+      "block_size": 512,
+      "plugin_version": "1.1.1",
+      "renderer_build": "audio-unit-renderer-810ebcd7a922",
+      "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse",
+      "reproducible": false,
+      "band_noise_db": 0.23,
+      "notes": [
+        "morgan through aumf NMAS NDSP, one reused plugin instance in a batched server",
+        "no settle after the state write: 0/5/10/25/50/100/200/400 ms measured byte-identical on Morgan's XML state path"
+      ]
+    }
+  },
+  "elapsed_seconds": 5.566508125,
+  "verifier_sha256": "8ab45b7b5cf56a3535baa0ebf624fcb8ddcaff384f10632c761ba7896f3b7eb6",
+  "independent_screen": {
+    "valid": true,
+    "passed": true,
+    "disposition": "PASS",
+    "median_relative_improvement": 0.7217797505331673,
+    "strict_wins": 12,
+    "group_medians": {
+      "chords": 0.6946105454854318,
+      "scales": 0.7255898018614853
+    },
+    "per_take": [
+      {
+        "slug": "p2-chords-drop3-7-t098",
+        "relative_improvement": 0.7449006537862591
+      },
+      {
+        "slug": "p2-chords-drop3-m7b5-t098",
+        "relative_improvement": 0.7281703363886819
+      },
+      {
+        "slug": "p2-chords-set1-7-t099",
+        "relative_improvement": 0.6784617199420582
+      },
+      {
+        "slug": "p2-chords-set1-dim-t072",
+        "relative_improvement": 0.6666053476797646
+      },
+      {
+        "slug": "p2-chords-set1-m7-t094",
+        "relative_improvement": 0.7107593710288054
+      },
+      {
+        "slug": "p2-chords-set1-maj-t072",
+        "relative_improvement": 0.6741051598154051
+      },
+      {
+        "slug": "p2-scales-a-t075",
+        "relative_improvement": 0.716096073860915
+      },
+      {
+        "slug": "p2-scales-bb-t076",
+        "relative_improvement": 0.7458920073200577
+      },
+      {
+        "slug": "p2-scales-c-t075",
+        "relative_improvement": 0.7193512344282763
+      },
+      {
+        "slug": "p2-scales-db-t076",
+        "relative_improvement": 0.7389547594939809
+      },
+      {
+        "slug": "p2-scales-e-t076",
+        "relative_improvement": 0.7269713370849121
+      },
+      {
+        "slug": "p2-scales-g-t076",
+        "relative_improvement": 0.7242082666380585
+      }
+    ]
+  },
+  "blindness_barrier": "All12 own predictions, hashes, independent metrics and gate persisted before primary result/prediction reads."
+}

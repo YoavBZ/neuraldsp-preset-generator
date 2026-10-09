@@ -1,0 +1,13 @@
+{
+  "complete_derivation_readback": true,
+  "all_output_arrays_readback": true,
+  "primary_numeric_content_read_before_barrier": false,
+  "head": "df68127c2f0806407f5a5d018cf54844e876223a",
+  "derivation_sha256": "a64a49dd4d7b8800bb910d7661d8749b724263b77af607b6c1b12eab4015f9b9",
+  "array_manifest_sha256": "65ed4cd687a00aae5d9845f50eaef74a3003070ebe8ca04e8674d1f64ec57563",
+  "blind_source_sha256": "b61c3475fdcd01a22cd34996013bb769fa3325ba0f523553332ccf9b5b968ced",
+  "source_sha256": "b61c3475fdcd01a22cd34996013bb769fa3325ba0f523553332ccf9b5b968ced",
+  "transcript_prefix_sha256": "a178cff257c8e07db2386242fea00abd5f286c7c37a6b36f8e5589ed4c92a334",
+  "scientific_elapsed_seconds": 7.931752250000001,
+  "unix": 1791511134.627307
+}

@@ -40,6 +40,8 @@ packs/*/.learned-tones.md.lock
 
 # --- Generated output -----------------------------------------------------
 out/
+# Local handovers and experiment scratch files.
+/tmp/
 
 # One match run's --out-dir: its render database, report, summary, and the
 # preset written from the winning spec. The README, the plan, and

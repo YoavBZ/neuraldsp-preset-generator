@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "note": "Recorded after completion, without changing the manifest-pinned validation-set3.json snapshot. This ledger does not authorize another use.",
+  "uses": [
+    {
+      "date": "2026-10-08",
+      "purpose": "One-time SW50R primary and PR12 secondary amp-track confirmation",
+      "authorization": "User approved execution with Go ahead on 2026-10-08",
+      "declaration_commit": "15aad30",
+      "input_manifest_commit": "4ad02fa",
+      "manifest_sha256": "097b3c05c58c86c21cc93634caf43233471179bf0b654823a1b4e3b3291d22ca",
+      "parts": 27,
+      "bands": 6,
+      "data_used": ["isolated amp tracks", "same-take DIs for evaluation"],
+      "operations": ["measure/net renders", "waveform scoring", "declared onset sensitivity", "predetermined independent numerical/audio verification"],
+      "verification_completed_at_utc": "2026-10-08T06:13:10.163906+00:00",
+      "result": "Neither amp passed under either timing",
+      "result_commit": "b79ce06",
+      "result_document": "set3-heldout-confirmation-results.md",
+      "state": "spent; excluded from further tuning, training, or confirmation",
+      "new_confirmation_requires_fresh_reserved_data": true
+    }
+  ]
+}

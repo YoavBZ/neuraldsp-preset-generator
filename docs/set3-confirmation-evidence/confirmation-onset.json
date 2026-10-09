@@ -1,0 +1,1254 @@
+{
+ "recording|sw50r": {
+  "rows": [
+   {
+    "part": "telefunken-big-trouble-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Neural DSP/Distorted Spy",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.3540103857697505,
+    "net_vs_constant": -0.10537779338611353,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-flight-4-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.4018684363971059,
+    "net_vs_constant": -0.3017680649091212,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-southern-fried-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.37168932140049904,
+    "net_vs_constant": -0.32909273189463195,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-endance-gtr4",
+    "band": "Dunning Kruger",
+    "pick": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.1823327817299214,
+    "net_vs_constant": -0.38574473628404626,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr01",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6287845132105832,
+    "net_vs_constant": 0.736141417013237,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr02",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5789275627220165,
+    "net_vs_constant": 0.5500704638992964,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5719054317680043,
+    "net_vs_constant": 0.4766811408431011,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5883784363316578,
+    "net_vs_constant": 0.618225270877407,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5721744767491446,
+    "net_vs_constant": -0.14900821416252796,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5752986613133066,
+    "net_vs_constant": -0.124035772954463,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr2",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5830984710933014,
+    "net_vs_constant": 0.05570314260519016,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr3",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5928893398983808,
+    "net_vs_constant": 0.18023812149811747,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr4",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6858511558453513,
+    "net_vs_constant": 0.22171834628349352,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr4",
+    "band": "Silona",
+    "pick": "factory:Neural DSP/Dotted 8th Dark Echoes",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.32358167770244006,
+    "net_vs_constant": -0.514364290185316,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr5",
+    "band": "Silona",
+    "pick": "factory:Neural DSP/Strat 4th Position Funk",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.12174755443064789,
+    "net_vs_constant": -0.5084573728257911,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr6",
+    "band": "Silona",
+    "pick": "factory:Neural DSP/Strat 4th Position Funk",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.12188433504583629,
+    "net_vs_constant": -0.8451353964673427,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.47364103131768776,
+    "net_vs_constant": 0.5387840966575623,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5476375739355386,
+    "net_vs_constant": 0.43187196382277193,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6620211547537225,
+    "net_vs_constant": -0.12115061643674196,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr5",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.29059861160448675,
+    "net_vs_constant": 0.48854116668719993,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.464312733315128,
+    "net_vs_constant": 0.4496555952940171,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5218704724132706,
+    "net_vs_constant": 0.3860022511164303,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.1151406298885955,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.4016146239224254,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.4226589441666446,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.1313278534359585,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr4",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.8713313775431575,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   }
+  ],
+  "parts": 27,
+  "bands": 6,
+  "refusals": 0,
+  "joint_win_share": 0.5707070707070707,
+  "net_vs_template": {
+   "band_medians": {
+    "Crazy Swedes": -0.37168932140049904,
+    "Dunning Kruger": -0.1823327817299214,
+    "Scott Elliott": -0.5771131120176616,
+    "Silence Is Near": -0.5928893398983808,
+    "Silona": -0.12188433504583629,
+    "V.M.GY": -0.6620211547537225
+   },
+   "band_median_log_ratio": -0.4744012167090803,
+   "sign_flip_p_two_sided": 0.03125,
+   "scorable_parts": 27
+  },
+  "net_vs_constant": {
+   "band_medians": {
+    "Crazy Swedes": -0.3017680649091212,
+    "Dunning Kruger": -0.38574473628404626,
+    "Scott Elliott": 0.5133758023711987,
+    "Silence Is Near": 0.18023812149811747,
+    "Silona": -0.514364290185316,
+    "V.M.GY": 0.0
+   },
+   "band_median_log_ratio": -0.1508840324545606,
+   "sign_flip_p_two_sided": 0.625,
+   "scorable_parts": 27
+  },
+  "numeric_summaries_descriptive_only": false,
+  "gates": {
+   "complete_required_comparisons": true,
+   "template_margin": true,
+   "constant_margin": true,
+   "constant_sign_flip": false,
+   "joint_win_share": true
+  },
+  "passed": false
+ },
+ "recording|pr12": {
+  "rows": [
+   {
+    "part": "telefunken-big-trouble-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.3026066715406619,
+    "net_vs_constant": -0.06301399803670305,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-flight-4-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Neural DSP/Meet You In The Mids",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.34585939412148115,
+    "net_vs_constant": -0.13698620819480656,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-southern-fried-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.19095168280221975,
+    "net_vs_constant": -0.10810598654585779,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-endance-gtr4",
+    "band": "Dunning Kruger",
+    "pick": "factory:Artists/Charlie Robbins/Thump Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": 0.1421720596294973,
+    "net_vs_constant": -0.2830164431335851,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr01",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.17331590053222845,
+    "net_vs_constant": 0.8097025376228357,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr02",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.4723180585087756,
+    "net_vs_constant": 0.12708774735667094,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.44495686502533993,
+    "net_vs_constant": 0.060219713786627604,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.47446293137721174,
+    "net_vs_constant": 0.25838498508790386,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": 0.006369755187177972,
+    "net_vs_constant": 0.22283832777367252,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.010002519139690413,
+    "net_vs_constant": 0.211771361856826,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr2",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Time To Chime",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.1262146500732566,
+    "net_vs_constant": 0.12815163477959257,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr3",
+    "band": "Silence Is Near",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.37303225604685775,
+    "net_vs_constant": -0.011185023816986606,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr4",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.4064662065793401,
+    "net_vs_constant": 0.1528178665604818,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr4",
+    "band": "Silona",
+    "pick": "factory:Artists/Charlie Robbins/Thump Tone",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.12644898465084986,
+    "net_vs_constant": -0.3744646113036618,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr5",
+    "band": "Silona",
+    "pick": "factory:Artists/John Connearn/Cleanish Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.04616283041554259,
+    "net_vs_constant": -0.4076004528154542,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr6",
+    "band": "Silona",
+    "pick": "factory:Artists/Charlie Robbins/Out of this World Clean",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": 0.1427099302375332,
+    "net_vs_constant": -0.5713118260542391,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.37882491088499703,
+    "net_vs_constant": 0.6009852564343681,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.37692688721561707,
+    "net_vs_constant": 0.5770577438280249,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/The Creature of the Cave",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.585273539765587,
+    "net_vs_constant": -0.17877894881549294,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr5",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/The Creature of the Cave",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.9704871629915923,
+    "net_vs_constant": -0.26536223771835243,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.2071493957510111,
+    "net_vs_constant": 0.5142878646364824,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Time To Chime",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.12557340598665623,
+    "net_vs_constant": 0.5485468672757678,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Vintage Metal",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -1.1157787731203255,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -1.3232955803015405,
+    "net_vs_constant": 0.11469195058820358,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -1.3684960555030332,
+    "net_vs_constant": 0.016689880430154957,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Izzy Come Back",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -1.1844742419922205,
+    "net_vs_constant": -0.0034927624905207733,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-omen-elecgtr4",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Neural DSP/Vintage Metal",
+    "refused": false,
+    "net_vs_template": -0.7648631626021751,
+    "net_vs_constant": 0.12274533156883116,
+    "joint_win": false
+   }
+  ],
+  "parts": 27,
+  "bands": 6,
+  "refusals": 0,
+  "joint_win_share": 0.3787878787878788,
+  "net_vs_template": {
+   "band_medians": {
+    "Crazy Swedes": -0.3026066715406619,
+    "Dunning Kruger": 0.1421720596294973,
+    "Scott Elliott": -0.3091363827787842,
+    "Silence Is Near": -0.37303225604685775,
+    "Silona": -0.04616283041554259,
+    "V.M.GY": -0.7648631626021751
+   },
+   "band_median_log_ratio": -0.30587152715972304,
+   "sign_flip_p_two_sided": 0.09375,
+   "scorable_parts": 27
+  },
+  "net_vs_constant": {
+   "band_medians": {
+    "Crazy Swedes": -0.10810598654585779,
+    "Dunning Kruger": -0.2830164431335851,
+    "Scott Elliott": 0.21730484481524925,
+    "Silence Is Near": 0.12815163477959257,
+    "Silona": -0.4076004528154542,
+    "V.M.GY": 0.11469195058820358
+   },
+   "band_median_log_ratio": 0.0032929820211728966,
+   "sign_flip_p_two_sided": 0.625,
+   "scorable_parts": 27
+  },
+  "numeric_summaries_descriptive_only": false,
+  "gates": {
+   "complete_required_comparisons": true,
+   "template_margin": true,
+   "constant_margin": false,
+   "constant_sign_flip": false,
+   "joint_win_share": false
+  },
+  "passed": false
+ },
+ "union|sw50r": {
+  "rows": [
+   {
+    "part": "telefunken-big-trouble-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.4715698851621941,
+    "net_vs_constant": -0.2793524186871681,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-flight-4-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.36307463088927405,
+    "net_vs_constant": -0.32660415939197174,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-southern-fried-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Keyan Houshmand/Slightly Driven Neck Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.33137757216764596,
+    "net_vs_constant": -0.36282590105213197,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-endance-gtr4",
+    "band": "Dunning Kruger",
+    "pick": "factory:Artists/Royce Whittaker/Warm Timmonsy Lead",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.19509814586816288,
+    "net_vs_constant": -0.5837774396225379,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr01",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6291397912464012,
+    "net_vs_constant": 0.664668992987741,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr02",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5794518180091135,
+    "net_vs_constant": 0.497559870590925,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5673364731859165,
+    "net_vs_constant": 0.4326388718718692,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5953087926146619,
+    "net_vs_constant": 0.5592113755620265,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.64120529632655,
+    "net_vs_constant": -0.03340393835767008,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Josh De La Victoria/Octave Fuzz",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5683441057629166,
+    "net_vs_constant": -0.002919865511257669,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr2",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5864754405446471,
+    "net_vs_constant": 0.03723433654156838,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr3",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.524838172144074,
+    "net_vs_constant": 0.031470096492509425,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr4",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6858511558453513,
+    "net_vs_constant": 0.2240353817055225,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr4",
+    "band": "Silona",
+    "pick": "factory:Neural DSP/Dotted 8th Dark Echoes",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.237633382112594,
+    "net_vs_constant": -0.48465289658511224,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr5",
+    "band": "Silona",
+    "pick": "factory:Neural DSP/Strat 4th Position Funk",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.1413614461626942,
+    "net_vs_constant": -0.44202882714528124,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr6",
+    "band": "Silona",
+    "pick": "factory:Artists/CARRTOONS/5 String P Bass",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.15519805745007398,
+    "net_vs_constant": -0.7796779516478822,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.47364103131768776,
+    "net_vs_constant": 0.5070823761620775,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5476375739355386,
+    "net_vs_constant": 0.40039047473544254,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.6726074784810772,
+    "net_vs_constant": -0.16096632803316369,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr5",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Blue Hotel",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.29049927258280617,
+    "net_vs_constant": 0.4095726287732797,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Full Bodied Single Coils",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.4329647472843605,
+    "net_vs_constant": 0.4878748023482269,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Crunchy Sustain Vibe",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.5218704724132706,
+    "net_vs_constant": 0.39145305632165894,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.1151406298885955,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.4016146239224254,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.4226589441666446,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -1.1313278534359585,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr4",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "constant": "factory:Artists/Royce Whittaker/Wall Of Doom",
+    "refused": false,
+    "net_vs_template": -0.8770335053019551,
+    "net_vs_constant": 0.0,
+    "joint_win": false
+   }
+  ],
+  "parts": 27,
+  "bands": 6,
+  "refusals": 0,
+  "joint_win_share": 0.5707070707070707,
+  "net_vs_template": {
+   "band_medians": {
+    "Crazy Swedes": -0.36307463088927405,
+    "Dunning Kruger": -0.19509814586816288,
+    "Scott Elliott": -0.5873803053118877,
+    "Silence Is Near": -0.5864754405446471,
+    "Silona": -0.15519805745007398,
+    "V.M.GY": -0.6726074784810772
+   },
+   "band_median_log_ratio": -0.47477503571696056,
+   "sign_flip_p_two_sided": 0.03125,
+   "scorable_parts": 27
+  },
+  "net_vs_constant": {
+   "band_medians": {
+    "Crazy Swedes": -0.32660415939197174,
+    "Dunning Kruger": -0.5837774396225379,
+    "Scott Elliott": 0.4650993712313971,
+    "Silence Is Near": 0.03723433654156838,
+    "Silona": -0.48465289658511224,
+    "V.M.GY": 0.0
+   },
+   "band_median_log_ratio": -0.16330207969598587,
+   "sign_flip_p_two_sided": 0.4375,
+   "scorable_parts": 27
+  },
+  "numeric_summaries_descriptive_only": false,
+  "gates": {
+   "complete_required_comparisons": true,
+   "template_margin": true,
+   "constant_margin": true,
+   "constant_sign_flip": false,
+   "joint_win_share": true
+  },
+  "passed": false
+ },
+ "union|pr12": {
+  "rows": [
+   {
+    "part": "telefunken-big-trouble-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.22017505963369732,
+    "net_vs_constant": 0.0332400250252014,
+    "joint_win": false
+   },
+   {
+    "part": "telefunken-flight-4-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Neural DSP/Meet You In The Mids",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.24896095444826893,
+    "net_vs_constant": -0.0875032663568529,
+    "joint_win": true
+   },
+   {
+    "part": "telefunken-southern-fried-gtr",
+    "band": "Crazy Swedes",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.136152340808104,
+    "net_vs_constant": 0.003926709675438289,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-endance-gtr4",
+    "band": "Dunning Kruger",
+    "pick": "factory:Neural DSP/Slow Dancing Bell Tone",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.015197238742561625,
+    "net_vs_constant": -0.3447082694635093,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr01",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.5113825114261581,
+    "net_vs_constant": 0.43493915990641807,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr02",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.4723180585087756,
+    "net_vs_constant": 0.21998422874397172,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.44495686502533993,
+    "net_vs_constant": 0.16682735946267102,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr03dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Neural DSP/US Lead Tone",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.47446293137721174,
+    "net_vs_constant": 0.29471253970584366,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.021262243878482412,
+    "net_vs_constant": 0.60670857216542,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aeternum-vale-elecgtr04dt",
+    "band": "Scott Elliott",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.051509819233945375,
+    "net_vs_constant": 0.516675994384538,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr2",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Rabea Massaad/Time To Chime",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.13040369441558775,
+    "net_vs_constant": 0.3353670228519967,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr3",
+    "band": "Silence Is Near",
+    "pick": "factory:Neural DSP/Overdriven Tremolo",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.1060324071660883,
+    "net_vs_constant": 0.24861693259783246,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-the-forthcoming-turn-elecgtr4",
+    "band": "Silence Is Near",
+    "pick": "factory:Artists/Royce Whittaker/Heartbreaker Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.4064662065793401,
+    "net_vs_constant": 0.3193866951345201,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr4",
+    "band": "Silona",
+    "pick": "factory:Artists/Mark Johnston/Royally Ambient",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.16544684313951152,
+    "net_vs_constant": -0.46723488999418983,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr5",
+    "band": "Silona",
+    "pick": "factory:Artists/John Connearn/Cleanish Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.056770191158720174,
+    "net_vs_constant": -0.28736928904539516,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-learning-how-to-fly-elecgtr6",
+    "band": "Silona",
+    "pick": "factory:Artists/Charlie Robbins/Out of this World Clean",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": 0.2830124290365521,
+    "net_vs_constant": -0.16271714810694138,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Clean-ish Ambient Solo",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.04339692470205403,
+    "net_vs_constant": 0.8906232500167355,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Clean-ish Ambient Solo",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.06488432402037025,
+    "net_vs_constant": 0.8108667470792097,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/The Creature of the Cave",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.578226836116347,
+    "net_vs_constant": -0.3014794319163363,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-aureus-necrosis-elecgtr5",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/The Creature of the Cave",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.9686280119646693,
+    "net_vs_constant": -0.32360202270531446,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Mark Johnston/It Can Sparkle and It Can Mellow",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.2136311021106434,
+    "net_vs_constant": 0.561932643426809,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr1dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Rabea Massaad/Time To Chime",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.12557340598665623,
+    "net_vs_constant": 0.6311112881774403,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-bloodshed-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Vintage Metal",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -1.1157787731203255,
+    "net_vs_constant": -0.04859372208137436,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-omen-elecgtr2",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -1.3232955803015405,
+    "net_vs_constant": 0.03185479139802139,
+    "joint_win": false
+   },
+   {
+    "part": "cambridge-omen-elecgtr2dt",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -1.3684960555030332,
+    "net_vs_constant": -0.0015507671211412166,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-omen-elecgtr3",
+    "band": "V.M.GY",
+    "pick": "factory:Neural DSP/Izzy Come Back",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -1.185473918784767,
+    "net_vs_constant": -0.12731733032279702,
+    "joint_win": true
+   },
+   {
+    "part": "cambridge-omen-elecgtr4",
+    "band": "V.M.GY",
+    "pick": "factory:Artists/Royce Whittaker/Standout Thrash Rhythm",
+    "constant": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+    "refused": false,
+    "net_vs_template": -0.7728359999144465,
+    "net_vs_constant": 0.04179667277190213,
+    "joint_win": false
+   }
+  ],
+  "parts": 27,
+  "bands": 6,
+  "refusals": 0,
+  "joint_win_share": 0.40909090909090906,
+  "net_vs_template": {
+   "band_medians": {
+    "Crazy Swedes": -0.22017505963369732,
+    "Dunning Kruger": -0.015197238742561625,
+    "Scott Elliott": -0.4586374617670578,
+    "Silence Is Near": -0.13040369441558775,
+    "Silona": -0.056770191158720174,
+    "V.M.GY": -0.7728359999144465
+   },
+   "band_median_log_ratio": -0.17528937702464253,
+   "sign_flip_p_two_sided": 0.03125,
+   "scorable_parts": 27
+  },
+  "net_vs_constant": {
+   "band_medians": {
+    "Crazy Swedes": 0.003926709675438289,
+    "Dunning Kruger": -0.3447082694635093,
+    "Scott Elliott": 0.36482584980613086,
+    "Silence Is Near": 0.3193866951345201,
+    "Silona": -0.28736928904539516,
+    "V.M.GY": 0.03185479139802139
+   },
+   "band_median_log_ratio": 0.017890750536729838,
+   "sign_flip_p_two_sided": 0.71875,
+   "scorable_parts": 27
+  },
+  "numeric_summaries_descriptive_only": false,
+  "gates": {
+   "complete_required_comparisons": true,
+   "template_margin": true,
+   "constant_margin": false,
+   "constant_sign_flip": false,
+   "joint_win_share": false
+  },
+  "passed": false
+ }
+}

@@ -1,0 +1,21 @@
+{
+  "pins": {
+    "learn/di_domain_metric_probe.py": "7e56ac6c856cea35e0e1b3f7370605879880c7a0369d1be6f8d044683cbc0f6f",
+    "tests/test_di_domain_metric_probe.py": "2df0f788d88408ec6b4e60e688e74bbea6768332e579bee2882f88eabe3b7cff",
+    "docs/di-domain-metric-probe-plan.md": "0a3effae2c583e778ca59c6904307797cf045433de57fe3b8a405f2bbdccd563",
+    "docs/di-domain-pilot-metric.json": "02f53d2521fe268c28b05ff4b00b806d8199028f5c5ed3764970fff5327513b7",
+    "learn/direc.py": "43b698ba69fc97d91b547e9948b9b0611dec7b01453eef43609e365a85885969",
+    "learn/di_domain_pilot.py": "af4358ee3717d9b828a1875262489047a896e953531cc2ca814750344d570eb3",
+    "learn/__init__.py": "950da993349f85949c8094f0787bcf1b56f149cf3a7a829f8b7986bea7c3525d"
+  },
+  "versions": {
+    "python": "3.9.6 (default, Apr 17 2026, 18:15:52) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+    "torch": "2.8.0",
+    "torch_build": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+    "numpy": "2.0.2",
+    "threads": 2,
+    "device": "cpu",
+    "default_dtype": "torch.float32",
+    "input_dtype": "float64"
+  }
+}

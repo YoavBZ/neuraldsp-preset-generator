@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "dataset": "Guitar-TECHS P2",
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "source_root": "/Users/yoavbz/ndsp-presets/references/datasets/guitar-techs/P2-downloads",
+  "catalog": "/Users/yoavbz/ndsp-presets/references/datasets/guitar-techs/P2-catalog.json",
+  "model": {
+    "path": "/Users/yoavbz/ndsp-presets/learn/direc/models-set3/fold2.pt",
+    "sha256": "16b2b734b49cc1cc2d7e547d96d3bb56208007c9cae0d0e33acb1c2a1cdd042b"
+  },
+  "average": {
+    "path": "/Users/yoavbz/ndsp-presets/learn/direc/cache/average-fold2.npy",
+    "sha256": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8"
+  },
+  "preset": "samples/Example_Clean_PR12.xml",
+  "takes": [
+    {"slug":"p2-chords-drop3-7-t098","content":"chords","take":"Drop3_7","start_frame":4704000,"lag_samples":37,"di":"P2_chords/audio/directinput/directinput_Drop3_7.wav","micamp":"P2_chords/audio/micamp/micamp_Drop3_7.wav"},
+    {"slug":"p2-chords-drop3-m7b5-t098","content":"chords","take":"Drop3_m7b5","start_frame":4704000,"lag_samples":37,"di":"P2_chords/audio/directinput/directinput_Drop3_m7b5.wav","micamp":"P2_chords/audio/micamp/micamp_Drop3_m7b5.wav"},
+    {"slug":"p2-chords-set1-7-t099","content":"chords","take":"Set1_7","start_frame":4752000,"lag_samples":39,"di":"P2_chords/audio/directinput/directinput_Set1_7.wav","micamp":"P2_chords/audio/micamp/micamp_Set1_7.wav"},
+    {"slug":"p2-chords-set1-dim-t072","content":"chords","take":"Set1_dim","start_frame":3456000,"lag_samples":-46,"di":"P2_chords/audio/directinput/directinput_Set1_dim.wav","micamp":"P2_chords/audio/micamp/micamp_Set1_dim.wav"},
+    {"slug":"p2-chords-set1-m7-t094","content":"chords","take":"Set1_m7","start_frame":4512000,"lag_samples":39,"di":"P2_chords/audio/directinput/directinput_Set1_m7.wav","micamp":"P2_chords/audio/micamp/micamp_Set1_m7.wav"},
+    {"slug":"p2-chords-set1-maj-t072","content":"chords","take":"Set1_maj","start_frame":3456000,"lag_samples":-46,"di":"P2_chords/audio/directinput/directinput_Set1_maj.wav","micamp":"P2_chords/audio/micamp/micamp_Set1_maj.wav"},
+    {"slug":"p2-scales-a-t075","content":"scales","take":"A","start_frame":3600000,"lag_samples":36,"di":"P2_scales/audio/directinput/directinput_A.wav","micamp":"P2_scales/audio/micamp/micamp_A.wav"},
+    {"slug":"p2-scales-bb-t076","content":"scales","take":"Bb","start_frame":3648000,"lag_samples":36,"di":"P2_scales/audio/directinput/directinput_Bb.wav","micamp":"P2_scales/audio/micamp/micamp_Bb.wav"},
+    {"slug":"p2-scales-c-t075","content":"scales","take":"C","start_frame":3600000,"lag_samples":37,"di":"P2_scales/audio/directinput/directinput_C.wav","micamp":"P2_scales/audio/micamp/micamp_C.wav"},
+    {"slug":"p2-scales-db-t076","content":"scales","take":"Db","start_frame":3648000,"lag_samples":36,"di":"P2_scales/audio/directinput/directinput_Db.wav","micamp":"P2_scales/audio/micamp/micamp_Db.wav"},
+    {"slug":"p2-scales-e-t076","content":"scales","take":"E","start_frame":3648000,"lag_samples":37,"di":"P2_scales/audio/directinput/directinput_E.wav","micamp":"P2_scales/audio/micamp/micamp_E.wav"},
+    {"slug":"p2-scales-g-t076","content":"scales","take":"G","start_frame":3648000,"lag_samples":36,"di":"P2_scales/audio/directinput/directinput_G.wav","micamp":"P2_scales/audio/micamp/micamp_G.wav"}
+  ]
+}

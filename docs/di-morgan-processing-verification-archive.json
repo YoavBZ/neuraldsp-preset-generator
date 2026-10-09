@@ -1,0 +1,126 @@
+{
+  "scope": "exact metadata/text archives only; no waveform or executable payload",
+  "primary_declaration_head": "df68127c2f0806407f5a5d018cf54844e876223a",
+  "primary_metadata_file_count": 91,
+  "archives": [
+    {
+      "source": "tmp/di-morgan-processing-verification.json",
+      "archive": "docs/di-morgan-processing-verification.json.gz",
+      "source_bytes": 743059,
+      "source_sha256": "6645a41b95de0573a71f79626c4efd6b246c163fc48c264fac7b34b0840920e9",
+      "archive_bytes": 85967,
+      "archive_sha256": "8e268b844a6ca859c50da6c5d4f9e9b46799065a27c17ac27b38763be617a646",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-derivation.json",
+      "archive": "docs/di-morgan-processing-independent-derivation.json.gz",
+      "source_bytes": 116275,
+      "source_sha256": "a64a49dd4d7b8800bb910d7661d8749b724263b77af607b6c1b12eab4015f9b9",
+      "archive_bytes": 21696,
+      "archive_sha256": "d3c9f2a363c5366edc029c8324f4571050ab2821660f02cc8f05de77737d79a9",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-transcript.jsonl",
+      "archive": "docs/di-morgan-processing-independent-transcript.jsonl.gz",
+      "source_bytes": 318933,
+      "source_sha256": "518e910c9ebc7487da2f3107c42e789b1eeb3b3333257a38e007f0f2ff02ac21",
+      "archive_bytes": 55145,
+      "archive_sha256": "d8ff84a914eeac211908bc3fdcbf299ffe21ad2fe1f35f355718de2d418d5e2d",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-verification.md",
+      "archive": "docs/di-morgan-processing-verification.md",
+      "source_bytes": 3655,
+      "source_sha256": "9ce77feff350f5350ef3f404864eb0c57f5ee3a8fb602b52247844fe4bf7c180",
+      "archive_bytes": 3655,
+      "archive_sha256": "9ce77feff350f5350ef3f404864eb0c57f5ee3a8fb602b52247844fe4bf7c180",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-read-barrier.json",
+      "archive": "docs/di-morgan-processing-independent-read-barrier.json",
+      "source_bytes": 735,
+      "source_sha256": "94871591101f6a60be5dbde56772fd15317db7eb4ca2a7114be861a8fe531440",
+      "archive_bytes": 735,
+      "archive_sha256": "94871591101f6a60be5dbde56772fd15317db7eb4ca2a7114be861a8fe531440",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-array-hashes.json",
+      "archive": "docs/di-morgan-processing-independent-array-hashes.json",
+      "source_bytes": 6418,
+      "source_sha256": "65ed4cd687a00aae5d9845f50eaef74a3003070ebe8ca04e8674d1f64ec57563",
+      "archive_bytes": 6418,
+      "archive_sha256": "65ed4cd687a00aae5d9845f50eaef74a3003070ebe8ca04e8674d1f64ec57563",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent.log",
+      "archive": "docs/di-morgan-processing-independent.log",
+      "source_bytes": 1651,
+      "source_sha256": "0b7e937f598c590176ea88aeb36b1d19d48b2650052f75a96a226ae322a3613d",
+      "archive_bytes": 1651,
+      "archive_sha256": "0b7e937f598c590176ea88aeb36b1d19d48b2650052f75a96a226ae322a3613d",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-blind.py",
+      "archive": "docs/research/di-morgan-processing-independent-blind.py",
+      "source_bytes": 20055,
+      "source_sha256": "b61c3475fdcd01a22cd34996013bb769fa3325ba0f523553332ccf9b5b968ced",
+      "archive_bytes": 20055,
+      "archive_sha256": "b61c3475fdcd01a22cd34996013bb769fa3325ba0f523553332ccf9b5b968ced",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent.py",
+      "archive": "docs/research/di-morgan-processing-independent.py",
+      "source_bytes": 51486,
+      "source_sha256": "06b1798580ba9e7424e05d962918b223bca6cf95533e853279ce533dce434b63",
+      "archive_bytes": 51486,
+      "archive_sha256": "06b1798580ba9e7424e05d962918b223bca6cf95533e853279ce533dce434b63",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-arrays/comparison-attempt-01.report.json",
+      "archive": "docs/research/di-morgan-processing-comparison-attempt-01.report.json.gz",
+      "source_bytes": 700605,
+      "source_sha256": "6ede4bc7503246d2bc7e408ff00f098f38c18f034a23d31a8ceb7ad489ba7891",
+      "archive_bytes": 77818,
+      "archive_sha256": "66b7321adbbd3fe5ec7d47ad552760cc6a4a6510997aeea678a16f4f9601ebe6",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-arrays/comparison-attempt-01.source.py",
+      "archive": "docs/research/di-morgan-processing-comparison-attempt-01.source.py",
+      "source_bytes": 44085,
+      "source_sha256": "5f409597bcb1a2ad47c260b375af9c03a3082466f493c456d9c7674fd03e5e47",
+      "archive_bytes": 44085,
+      "archive_sha256": "5f409597bcb1a2ad47c260b375af9c03a3082466f493c456d9c7674fd03e5e47",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-independent-arrays/comparison-attempt-01.report.md",
+      "archive": "docs/research/di-morgan-processing-comparison-attempt-01.report.md",
+      "source_bytes": 3832,
+      "source_sha256": "ea8e05c18d410f3572c33d0baa4b74db928d8db40ae4c9fff6ac95b287b71159",
+      "archive_bytes": 3832,
+      "archive_sha256": "ea8e05c18d410f3572c33d0baa4b74db928d8db40ae4c9fff6ac95b287b71159",
+      "lossless_readback": true
+    },
+    {
+      "source": "tmp/di-morgan-processing-primary-metadata.json",
+      "archive": "docs/di-morgan-processing-primary-metadata.json.gz",
+      "source_bytes": 292393,
+      "source_sha256": "5dd72341e1a4cf9e42b3822097200bbd0d3b15544606a27ddb7e1c3d78659993",
+      "archive_bytes": 45959,
+      "archive_sha256": "c6e494f6f469b39230ede484092462d73c1a079146a5c80d6811b1c6dfe6f377",
+      "lossless_readback": true
+    }
+  ],
+  "local_array_count": 13,
+  "local_arrays_not_embedded": true
+}

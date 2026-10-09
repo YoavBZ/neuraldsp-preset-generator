@@ -1,0 +1,697 @@
+{
+  "verified": true,
+  "verified_at_utc": "2026-10-08T10:19:52.994053+00:00",
+  "verification_method": "Independent standard-library derivation from original development scores; no project-code imports. All derived fields computed and hashed before opening production report. No audio/render/inference/reserved access.",
+  "declaration_commit": "20483baf5ebbd4cd9bcd7669364eaf60352811e1",
+  "declaration_commit_utc": "2026-10-08T10:16:48+00:00",
+  "production_started_at_utc": "2026-10-08T10:16:52.710117+00:00",
+  "production_finished_at_utc": "2026-10-08T10:16:52.848570+00:00",
+  "independent_derivation_completed_at_utc": "2026-10-08T10:19:52.845111+00:00",
+  "production_opened_at_utc": "2026-10-08T10:19:52.852745+00:00",
+  "independent_derived_audit_sha256": "b6a9320dc3086d5934eff4399e7d83067018c9eb150449cc966cab5da7a07352",
+  "independent_script": {
+    "path": "/private/tmp/set3_cross_amp_independent_verify_20261008.py",
+    "sha256": "59099f54c2a5ae02393388d35b1f75a84a08e40b66594ce7376f917ff53f37ab"
+  },
+  "inputs": {
+    "metadata": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/validation-set3.json",
+      "sha256": "46126f5525e85411a309fad95dfdc7749271796e38bfd8d139c501b0ad621dfe"
+    },
+    "menu_inventory": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-menus.json",
+      "sha256": "25bd0ce48b0d7117d598688aef29b7b36d64128e210eee16a974427ebebbd557"
+    },
+    "plan": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-cross-amp-diagnostic-plan.md",
+      "sha256": "7adcc0f67bf2c1865c6a00b1471698dbb1c172464afda8196298c18da659fcfa"
+    },
+    "distances": {
+      "path": "/Users/yoavbz/ndsp-presets/learn/direc/phase2-set3/distances.json",
+      "sha256": "fd727b26024763f732cda5381a503009c5c58f6439a4ba9f603a24f34dd3f917"
+    },
+    "production_report": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/set3-cross-amp-diagnostic-20261008.json",
+      "sha256": "b4485ff6051afaf3f15c08a577b9aecab76228cedbe0d4106abac96fc47fbc3a"
+    },
+    "development_archive": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic.json",
+      "sha256": "2833e55df1354162bc99ee3cae25e4ddf114069bcb7609f04ed5d5ddcfe7ae9d"
+    },
+    "development_verification": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-verification.json",
+      "sha256": "2c13bb3eaf524652c517b2e67c0cb44f2941257c04e80f3c0303e52c736524b9"
+    },
+    "script": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/learn/set3_cross_amp_diagnostic.py",
+      "sha256": "ec3e27eabc558c45f4f219fdbc3a617fb8e89141e9f6c7b00e480527025ec0ad"
+    },
+    "tests": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tests/test_set3_cross_amp_diagnostic.py",
+      "sha256": "e0a6bfe8105832dcbc88fa951ebc4d153b67bce9beb759758cf592e0d11da994"
+    },
+    "source_diagnostic_code": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/learn/set3_diagnostic.py",
+      "sha256": "770980a8b451c8f89ac77748808e159055a83c6eb3a3660b40414d6ca9ba3b2f"
+    },
+    "source_diagnostic_plan": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/docs/set3-development-diagnostic-plan.md",
+      "sha256": "2dc9fcd9b0f269dcb2c6a917e222f69d3a57509ba8754f17bc279aaa08000ff1"
+    },
+    "source_calibration_code": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/learn/set3_rank_calibration.py",
+      "sha256": "4082cfe8f99d9c3f2f1fa9ebf628dfd304696fa5f3cb0ff3353fa0a84ff50bc1"
+    },
+    "production_log": {
+      "path": "/Users/yoavbz/projects/neuraldsp-preset-generator/tmp/set3-cross-amp-diagnostic-20261008.log",
+      "sha256": "4c99452ca42eb33562cc7fe608da7bb293add5fad7f6536830fc3fdc34b91bea"
+    }
+  },
+  "committed_source_hashes": {
+    "learn/set3_cross_amp_diagnostic.py": "ec3e27eabc558c45f4f219fdbc3a617fb8e89141e9f6c7b00e480527025ec0ad",
+    "tests/test_set3_cross_amp_diagnostic.py": "e0a6bfe8105832dcbc88fa951ebc4d153b67bce9beb759758cf592e0d11da994",
+    "docs/set3-cross-amp-diagnostic-plan.md": "7adcc0f67bf2c1865c6a00b1471698dbb1c172464afda8196298c18da659fcfa",
+    "learn/set3_diagnostic.py": "770980a8b451c8f89ac77748808e159055a83c6eb3a3660b40414d6ca9ba3b2f",
+    "docs/set3-development-diagnostic-plan.md": "2dc9fcd9b0f269dcb2c6a917e222f69d3a57509ba8754f17bc279aaa08000ff1",
+    "learn/set3_rank_calibration.py": "4082cfe8f99d9c3f2f1fa9ebf628dfd304696fa5f3cb0ff3353fa0a84ff50bc1"
+  },
+  "parts": 33,
+  "bands": 11,
+  "band_sets": [
+    "recording",
+    "union"
+  ],
+  "menu_counts": {
+    "ac20": 31,
+    "pr12": 35,
+    "sw50r": 45
+  },
+  "counts": {
+    "global_constant_fits": 44,
+    "policy_predictions": 594,
+    "net_policy_fallback_audits": 264,
+    "comparisons": 22,
+    "original_raw_score_fields": 21978,
+    "raw_score_coverage": {
+      "measure_A": {
+        "valid_positive": 7326,
+        "zero": 0,
+        "null": 0
+      },
+      "measure_B": {
+        "valid_positive": 7324,
+        "zero": 0,
+        "null": 2
+      },
+      "net_A": {
+        "valid_positive": 7104,
+        "zero": 0,
+        "null": 222
+      }
+    }
+  },
+  "comparison": {
+    "compared_scalar_fields": 20864,
+    "exact_numeric_matches": 6198,
+    "numeric_matches_within_tolerance": 8,
+    "structure_checks": 12239,
+    "provenance_checks": 41,
+    "maximum_absolute_numeric_difference": 1.1102230246251565e-16,
+    "mismatch_count": 0,
+    "mismatches": [],
+    "absolute_tolerance": 1e-12,
+    "relative_tolerance": 1e-12,
+    "coverage": "Every independently rederived cell, constant audit, row choice/fallback/B value, comparison, coverage list, gate and routing field. Runtime/log/narrative validated separately."
+  },
+  "routing": {
+    "headroom_both_band_sets": false,
+    "net_improvement_both_band_sets": false,
+    "fixed_net_pick_headroom_both_band_sets": false,
+    "small_amp_selector_followup_supported": false
+  },
+  "summary": {
+    "recording": {
+      "gates": {
+        "headroom_gates": {
+          "complete_positive": true,
+          "five_percent_margin": false,
+          "sign_flip_below_point_one": false,
+          "wins_above_half": false
+        },
+        "net_improvement_gates": {
+          "sw50r_net_complete_positive": true,
+          "sw50r_net_five_percent_margin": false,
+          "sw50r_net_sign_flip_below_point_one": false,
+          "constant_complete_positive": true,
+          "constant_five_percent_margin": true,
+          "constant_sign_flip_below_point_one": false,
+          "inclusive_constant_complete_positive": true,
+          "inclusive_constant_five_percent_margin": true,
+          "inclusive_constant_sign_flip_below_point_one": false,
+          "joint_wins_above_half": false
+        },
+        "fixed_net_pick_headroom_gates": {
+          "all_three_picks_raw_scorable": true,
+          "complete_positive_pairs": true,
+          "five_percent_headroom": false
+        }
+      },
+      "comparisons": {
+        "pooled_known_di_vs_sw50r_known_di": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.125,
+          "band_weighted_win_share": 0.34848484848484845,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 11,
+            "loss": 3,
+            "tie": 19,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_known_di_vs_constant": {
+          "band_median_log_ratio": -0.2644280729644244,
+          "sign_flip_p_two_sided": 0.0009765625,
+          "band_weighted_win_share": 0.9545454545454546,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 31,
+            "loss": 0,
+            "tie": 2,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_known_di_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.2644280729644244,
+          "sign_flip_p_two_sided": 0.0009765625,
+          "band_weighted_win_share": 0.9545454545454546,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 31,
+            "loss": 0,
+            "tie": 2,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_sw50r_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.25,
+          "band_weighted_win_share": 0.17424242424242423,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 7,
+            "loss": 9,
+            "tie": 17,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_constant": {
+          "band_median_log_ratio": -0.1362302162280734,
+          "sign_flip_p_two_sided": 0.53515625,
+          "band_weighted_win_share": 0.5075757575757576,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 16,
+            "loss": 14,
+            "tie": 3,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.1362302162280734,
+          "sign_flip_p_two_sided": 0.53515625,
+          "band_weighted_win_share": 0.5075757575757576,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 16,
+            "loss": 14,
+            "tie": 3,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_pooled_known_di": {
+          "band_median_log_ratio": 0.253266141422525,
+          "sign_flip_p_two_sided": 0.001953125,
+          "band_weighted_win_share": 0.053030303030303025,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 2,
+            "loss": 23,
+            "tie": 8,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_pooled_net_historical": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 1.0,
+          "band_weighted_win_share": 0.0,
+          "required_parts": 33,
+          "scorable_parts": 32,
+          "raw_counts": {
+            "win": 0,
+            "loss": 0,
+            "tie": 32,
+            "refusal": 1
+          },
+          "refused_parts": [
+            "cambridge-colour-me-red-elecgtr03"
+          ],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_amp_net_vs_sw50r_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.0625,
+          "band_weighted_win_share": 0.45454545454545453,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 15,
+            "loss": 0,
+            "tie": 18,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_amp_net_vs_pooled_net": {
+          "band_median_log_ratio": -0.021003867664690423,
+          "sign_flip_p_two_sided": 0.0078125,
+          "band_weighted_win_share": 0.6287878787878788,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 18,
+            "loss": 0,
+            "tie": 15,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_menu_B_vs_pooled_known_di": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.125,
+          "band_weighted_win_share": 0.3484848484848485,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 12,
+            "loss": 0,
+            "tie": 21,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        }
+      },
+      "joint_win_share": 0.08333333333333333,
+      "fallback_parts": {
+        "pooled_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "ac20_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "pr12_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "sw50r_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ]
+      },
+      "chosen_amp_counts": {
+        "pooled_net": {
+          "ac20": 9,
+          "pr12": 8,
+          "sw50r": 16
+        },
+        "ac20_net": {
+          "ac20": 32,
+          "pr12": 1,
+          "sw50r": 0
+        },
+        "pr12_net": {
+          "ac20": 0,
+          "pr12": 33,
+          "sw50r": 0
+        },
+        "sw50r_net": {
+          "ac20": 0,
+          "pr12": 1,
+          "sw50r": 32
+        },
+        "pooled_known_di": {
+          "ac20": 6,
+          "pr12": 8,
+          "sw50r": 19
+        },
+        "sw50r_known_di": {
+          "ac20": 0,
+          "pr12": 0,
+          "sw50r": 33
+        },
+        "constant": {
+          "ac20": 0,
+          "pr12": 17,
+          "sw50r": 16
+        },
+        "inclusive_constant": {
+          "ac20": 0,
+          "pr12": 17,
+          "sw50r": 16
+        },
+        "pooled_net_historical": {
+          "ac20": 9,
+          "pr12": 7,
+          "sw50r": 16
+        },
+        "sw50r_net_historical": {
+          "ac20": 0,
+          "pr12": 0,
+          "sw50r": 32
+        },
+        "hindsight_amp_net": {
+          "ac20": 9,
+          "pr12": 7,
+          "sw50r": 17
+        },
+        "hindsight_menu_B": {
+          "ac20": 4,
+          "pr12": 10,
+          "sw50r": 19
+        }
+      },
+      "known_net_agreement": {
+        "same": 8,
+        "original_denominator": 33
+      },
+      "full_menu_B_coverage_complete": false,
+      "fixed_pick_B_coverage_complete": true
+    },
+    "union": {
+      "gates": {
+        "headroom_gates": {
+          "complete_positive": true,
+          "five_percent_margin": false,
+          "sign_flip_below_point_one": false,
+          "wins_above_half": false
+        },
+        "net_improvement_gates": {
+          "sw50r_net_complete_positive": true,
+          "sw50r_net_five_percent_margin": false,
+          "sw50r_net_sign_flip_below_point_one": false,
+          "constant_complete_positive": true,
+          "constant_five_percent_margin": false,
+          "constant_sign_flip_below_point_one": false,
+          "inclusive_constant_complete_positive": true,
+          "inclusive_constant_five_percent_margin": false,
+          "inclusive_constant_sign_flip_below_point_one": false,
+          "joint_wins_above_half": false
+        },
+        "fixed_net_pick_headroom_gates": {
+          "all_three_picks_raw_scorable": true,
+          "complete_positive_pairs": true,
+          "five_percent_headroom": false
+        }
+      },
+      "comparisons": {
+        "pooled_known_di_vs_sw50r_known_di": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.125,
+          "band_weighted_win_share": 0.34848484848484845,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 11,
+            "loss": 3,
+            "tie": 19,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_known_di_vs_constant": {
+          "band_median_log_ratio": -0.3140898029717121,
+          "sign_flip_p_two_sided": 0.001953125,
+          "band_weighted_win_share": 0.8333333333333333,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 28,
+            "loss": 1,
+            "tie": 4,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_known_di_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.3140898029717121,
+          "sign_flip_p_two_sided": 0.001953125,
+          "band_weighted_win_share": 0.8333333333333333,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 28,
+            "loss": 1,
+            "tie": 4,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_sw50r_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.25,
+          "band_weighted_win_share": 0.17424242424242423,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 7,
+            "loss": 8,
+            "tie": 18,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_constant": {
+          "band_median_log_ratio": -0.040459795782401775,
+          "sign_flip_p_two_sided": 0.59375,
+          "band_weighted_win_share": 0.41666666666666663,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 14,
+            "loss": 14,
+            "tie": 5,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_inclusive_constant": {
+          "band_median_log_ratio": -0.040459795782401775,
+          "sign_flip_p_two_sided": 0.59375,
+          "band_weighted_win_share": 0.41666666666666663,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 14,
+            "loss": 14,
+            "tie": 5,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_pooled_known_di": {
+          "band_median_log_ratio": 0.09174106286504669,
+          "sign_flip_p_two_sided": 0.001953125,
+          "band_weighted_win_share": 0.053030303030303025,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 2,
+            "loss": 23,
+            "tie": 8,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "pooled_net_vs_pooled_net_historical": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 1.0,
+          "band_weighted_win_share": 0.0,
+          "required_parts": 33,
+          "scorable_parts": 32,
+          "raw_counts": {
+            "win": 0,
+            "loss": 0,
+            "tie": 32,
+            "refusal": 1
+          },
+          "refused_parts": [
+            "cambridge-colour-me-red-elecgtr03"
+          ],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_amp_net_vs_sw50r_net": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.0625,
+          "band_weighted_win_share": 0.4318181818181818,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 14,
+            "loss": 0,
+            "tie": 19,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_amp_net_vs_pooled_net": {
+          "band_median_log_ratio": -0.02740218127185501,
+          "sign_flip_p_two_sided": 0.0078125,
+          "band_weighted_win_share": 0.5757575757575757,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 16,
+            "loss": 0,
+            "tie": 17,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        },
+        "hindsight_menu_B_vs_pooled_known_di": {
+          "band_median_log_ratio": 0.0,
+          "sign_flip_p_two_sided": 0.0625,
+          "band_weighted_win_share": 0.37121212121212116,
+          "required_parts": 33,
+          "scorable_parts": 33,
+          "raw_counts": {
+            "win": 12,
+            "loss": 0,
+            "tie": 21,
+            "refusal": 0
+          },
+          "refused_parts": [],
+          "nonpositive_log_parts": []
+        }
+      },
+      "joint_win_share": 0.053030303030303025,
+      "fallback_parts": {
+        "pooled_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "ac20_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "pr12_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ],
+        "sw50r_net": [
+          "cambridge-colour-me-red-elecgtr03"
+        ]
+      },
+      "chosen_amp_counts": {
+        "pooled_net": {
+          "ac20": 11,
+          "pr12": 4,
+          "sw50r": 18
+        },
+        "ac20_net": {
+          "ac20": 32,
+          "pr12": 0,
+          "sw50r": 1
+        },
+        "pr12_net": {
+          "ac20": 0,
+          "pr12": 32,
+          "sw50r": 1
+        },
+        "sw50r_net": {
+          "ac20": 0,
+          "pr12": 0,
+          "sw50r": 33
+        },
+        "pooled_known_di": {
+          "ac20": 7,
+          "pr12": 7,
+          "sw50r": 19
+        },
+        "sw50r_known_di": {
+          "ac20": 0,
+          "pr12": 0,
+          "sw50r": 33
+        },
+        "constant": {
+          "ac20": 0,
+          "pr12": 4,
+          "sw50r": 29
+        },
+        "inclusive_constant": {
+          "ac20": 0,
+          "pr12": 4,
+          "sw50r": 29
+        },
+        "pooled_net_historical": {
+          "ac20": 11,
+          "pr12": 4,
+          "sw50r": 17
+        },
+        "sw50r_net_historical": {
+          "ac20": 0,
+          "pr12": 0,
+          "sw50r": 32
+        },
+        "hindsight_amp_net": {
+          "ac20": 9,
+          "pr12": 5,
+          "sw50r": 19
+        },
+        "hindsight_menu_B": {
+          "ac20": 7,
+          "pr12": 10,
+          "sw50r": 16
+        }
+      },
+      "known_net_agreement": {
+        "same": 8,
+        "original_denominator": 33
+      },
+      "full_menu_B_coverage_complete": false,
+      "fixed_pick_B_coverage_complete": true
+    }
+  },
+  "conclusions": [
+    "Routing is exploratory development-only; no release, fresh confirmation, or automatic new study authorization.",
+    "B hindsight demonstrates available fixed-pick headroom only; it cannot establish learnability.",
+    "Original denominators and zero/refusal handling remain in all derived comparisons."
+  ]
+}

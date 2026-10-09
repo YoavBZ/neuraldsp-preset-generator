@@ -1,0 +1,165 @@
+# Different development data for native guitar transfer — 2026-10-09
+
+## Decision and boundaries
+
+**EGFxSet is the clearest legally reusable candidate found, for a small real-pedal pairing feasibility check. It is not yet a verified sample-paired training corpus.** Its audio release is CC BY 4.0, its clean performances were replayed through physical effects, and clean/effect archives are separately available. The smallest relevant combination is Clean + TubeScreamer, about 903 MB compressed. It contains isolated notes from one guitar/player, not musical phrases. No reviewed candidate simultaneously supplies small size, unambiguous permissive provenance, verified sample timing, and real microphone/amp performances.
+
+**ToneTwist's compact external amp captures are technically attractive but are not cleared for the project's open-source development path.** The HT1 archive is only 60.3 MB and includes its own dry files. The original Marshall release declares CC BY 4.0, unlike ToneTwist's NC repack, but its IDMT ancestry creates an unresolved upstream rights conflict. Public availability and local computation do not resolve that conflict.
+
+This is a source audit and a proposal for Main to consider **after the fixed broader Morgan control**. The current small control cannot establish native, song, or multiguitar validity. Main owns the next choice, fresh independent review, and committed declaration before any acquisition, pairing measurements, inference, or training. This report is neither a declaration nor permission to execute.
+
+Current state is supplied by the task owner, without reopening results: frozen final `bothamps` failed; reserved audio and scores are permanently spent; P3 reserved material is unavailable; the P2 all12 native pilot failed QC, with only three valid chords and zero valid scales, and is **CLOSED**. Do not rescue, repeat, tune from, replace excerpts within, or relax rules against that panel. Historical proposals in the context documents do not reopen it.
+
+## Three candidates, with their actual limits
+
+“Verified” below means supported by a primary release, paper, or source-code page. It does not mean that this audit checked audio. File sizes are published compressed archive sizes, not memory or extraction budgets.
+
+| Candidate and primary sources | Dry/wet provenance and content | Pair timing evidence | Separate rights and suitability |
+| --- | --- | --- | --- |
+| **1. EGFxSet, Clean + one gain pedal**: [author site](https://egfxset.github.io/), [ISMIR paper](https://archives.ismir.net/ismir2022/latebreaking/000006.pdf), [release 7044411](https://zenodo.org/records/7044411), [loader source](https://mirdata.readthedocs.io/en/stable/_modules/mirdata/datasets/egfxset.html) | Original recorded clean notes replayed through real hardware. Gain devices are Ibanez TS Mini, Boss BD-2 and Pro Co RAT2. One Stratocaster/player; five pickup configurations. No phrases/chords/scales in this corpus. Direct interface return; the gain subsets are not mic'd cabinet recordings. | Replay of the same recorded performances establishes stronger identity than matching pitch names. **Unknown:** release delay correction, residual lag/drift, polarity and exact crop correspondence. No sample-alignment guarantee found. Normalization and fade-outs alter supervision. | **Audio: CC BY 4.0**, verified in Zenodo API and loader. **Loader code: BSD-3-Clause** in mirdata; author website code has no explicit license in the inspected root. **Weights: none required or cleared by this audit.** Best permissive candidate for a bounded diagnostic, conditional on QC; not yet suitable for waveform training. |
+| **2. ToneTwist external Blackstar HT1 Overdrive**: [release 10794425](https://zenodo.org/records/10794425), [archive listing](https://zenodo.org/records/10794425/preview/Blackstar-HT1-ChOverdrive.zip?include_deleted=0), [original code/data](https://github.com/Alec-Wright/Automated-GuitarAmpModelling), [DAFx19 paper](https://www.dafx.de/paper-archive/2019/DAFx2019_paper_43.pdf) | Hardware HT1 capture; the paper uses IDMT guitar and bass performances. Published capture uses a speaker-output attenuator return, not a microphone. Gain 5, volume 10; publication also varies ISF. The repack's full settings correspondence needs its README. Includes dry + wet in one 60.3 MB zip. | Paper records a loopback direct signal and device output through the same interface. This supports common acquisition timing, **not zero relative device/channel delay**. No measured residual timing evidence found. ToneTwist's internal marker protocol cannot automatically be assigned to this external entry. | **Repack audio: CC BY-NC 4.0. Original repository code: GPL-3.0.** Repository license is not sufficient evidence of separately cleared upstream audio or weights. IDMT ancestry remains restrictive/unclear for this use. Reject for permissive training or commercial redistribution; at most a separately cleared noncommercial research option. |
+| **3. Original Marshall JVM410H OD1**: [original release 7970723](https://zenodo.org/records/7970723), [paper §2.1](https://www.pure.ed.ac.uk/ws/portalfiles/portal/408428956/Wright2023DAFX23NeuralGrey.pdf), [original archive listing](https://zenodo.org/records/7970723/preview/MarshallJVM410H.zip?include_deleted=0), [code](https://github.com/stepanmk/grey-box-amp); compare [ToneTwist repack 10892012](https://zenodo.org/records/10892012) | Six-minute IDMT guitar/bass compilation, multiple tone-stack settings. Real amplifier; speaker return through Two Notes Torpedo Captor 8 reactive load into RME UCX. Original archive also lists preamp signals. Musical styles/performances, but source segmentation and guitar-only boundaries remain unverified. | Original recording at 44.1 kHz; no explicit residual sample-delay/drift guarantee found. Repack is trimmed/reorganized and must be treated as a separate version. Original listing has a control-label inconsistency described below. | **Original audio: CC BY 4.0; repack audio: CC BY-NC 4.0**, separately verified in APIs. **Code: no explicit root license found; weights: no separate usable license verified.** Upstream IDMT terms conflict with treating the audio as freely reusable. Hold; do not select as a cleared training corpus merely because its top-level record says BY. Original 4.37 GB; repack 2.76 GB. |
+
+The EGFxSet paper describes 690 dry notes and their hardware processing, 48 kHz/24-bit acquisition, five-second released files, amplitude normalization, and a **two-second linear fade-out on each file**. A future test must account for the fade and cannot infer original absolute guitar or reamp level. These are edited note captures, not raw level-calibrated measurements. [Paper §§2.1–2.2](https://archives.ismir.net/ismir2022/latebreaking/000006.pdf).
+
+The ToneTwist paper explicitly reports background noise and artifacts in EGFxSet as reasons for not using it in their effect-modeling study. That is a published concern, not our own measurement and not proof every gain pair fails. Their internal recording protocol shifts files using endpoint impulses to remove interface latency and **assumes device delay negligible**. That assumption does not establish waveform alignment for every nonlinear device, and does not document external repacks. [ToneTwist paper §3.3](https://arxiv.org/html/2502.14405).
+
+## Availability: direct files, versions, and archive evidence
+
+All links below identify publicly listed files. **None was fetched.** Metadata API responses supplied exact bytes, MD5 values and license identifiers; the HTML pages omit license text in the web reader. Archive previews supplied member names and listed sizes only. No byte-range audio inspection or selective extraction was attempted, and member-by-member downloading is not established.
+
+| Public direct file | Published bytes | Published MD5 | What acquisition would actually require |
+| --- | ---: | --- | --- |
+| [EGFxSet Clean.zip](https://zenodo.org/records/7044411/files/Clean.zip) | 431036829 | `cdb1b401960f56becc8640387910e78a` | Dry notes; separate archive. |
+| [EGFxSet TubeScreamer.zip](https://zenodo.org/records/7044411/files/TubeScreamer.zip) | 471923566 | `b9c46ed65037d0bd17bdf82dc3125beb` | Smallest of the three relevant gain archives; pair with Clean. |
+| [EGFxSet BluesDriver.zip](https://zenodo.org/records/7044411/files/BluesDriver.zip) | 486282388 | `b1d6dce9064a25a1cff2a0c40c30a2e4` | Alternative, not an automatic additional download. |
+| [EGFxSet RAT.zip](https://zenodo.org/records/7044411/files/RAT.zip) | 487361491 | `afe9fc757a51d04126c23159706f4e8e` | Alternative stronger-distortion device; no assertion that its pairing is better. |
+| [EGFxSet metadata CSV](https://zenodo.org/records/7044411/files/egfxset_metadata.csv) | 2274 | `ec8d160fe79469c7de8cad528d7d35e1` | Effect/settings metadata; not a sample-offset manifest. |
+| [ToneTwist HT1 zip](https://zenodo.org/records/10794425/files/Blackstar-HT1-ChOverdrive.zip) | 60268284 | `a748ac0fa6608a2dd57444bac6f132b7` | Own `DRY/test/test.input.wav` and `DRY/trainval/{train,val}.input.wav`, corresponding target files and README are visible in preview. **No common ToneTwist dry archive needed.** |
+| [Original Marshall zip](https://zenodo.org/records/7970723/files/MarshallJVM410H.zip) | 4369237770 | `4d08dac89b44f618f2d6c2a69739e104` | One archive containing inputs, preamp and speaker-output measurements. No small independent public archive verified. |
+| [ToneTwist Marshall repack zip](https://zenodo.org/records/10892012/files/Marshall-JVM410H-ChOD1.zip) | 2755382616 | `05ee998404f44c3a449c4ad6a8160cb6` | Own dry, `PreampOut`, `SpeakerOut` and README. Not additional independent performances relative to the original. |
+
+Source for EGFxSet file sizes/checksums: [release](https://zenodo.org/records/7044411) and [API](https://zenodo.org/api/records/7044411). Other exact metadata: [HT1 API](https://zenodo.org/api/records/10794425), [original Marshall API](https://zenodo.org/api/records/7970723), [repack API](https://zenodo.org/api/records/10892012). MD5 is the publisher's identity check, not a locally verified hash.
+
+**A concrete Marshall contradiction:** the original preview's folder `B5_M5_T5_G6` lists files named `B5_M5_T5_G4-{input,preamp,speakerout}.wav`. This could be a naming error; neither the intended control setting nor file duplication can be resolved from the listing. Exclude that setting from any proposed manifest until independently resolved; do not silently repair the label. [Original archive preview](https://zenodo.org/records/7970723/preview/MarshallJVM410H.zip?include_deleted=0).
+
+ToneTwist's compact Mesa Mark V Extreme external archive is even smaller, 45098210 bytes, and its preview also contains own dry train/val/test files. Its audio API declares CC BY-NC 4.0. It is **not a fourth qualified recommendation**: the original acquisition/timing and underlying performance rights were not established here. [Release](https://zenodo.org/records/10796864), [API](https://zenodo.org/api/records/10796864), [listing](https://zenodo.org/records/10796864/preview/MesaBoogie-MarkV-ChExtreme.zip?include_deleted=0).
+
+## ToneTwist licensing and dry-source corrections
+
+The previously cited 417.6 MB `DRY.zip` is the digital-section dry release. The analog/internal marker release is **865850744 bytes**, `DRY-with-markers.zip`; its archive includes an Audacity project listed as 545.4 MB, contributing substantial overhead. Both API records declare **CC BY-NC 4.0**. The marked archive lists IDMT guitar material, NAM, private guitar, and bass material; it is not all electric guitar. [Digital dry API](https://zenodo.org/api/records/10901426), [marked dry API](https://zenodo.org/api/records/10455730), [marked archive preview](https://zenodo.org/records/10455730/preview/DRY-with-markers.zip?include_deleted=0).
+
+The repository explicitly distinguishes internal sources from external entries with different dry inputs. Hence “common dry + several real amps” is not a valid universal join recipe. The HT1 and Marshall previews establish separate dry members; filenames still do not prove delay, polarity, gain or source independence. [Repository, External Data and recording guidance](https://github.com/mcomunita/tonetwist-afx-dataset).
+
+For a representative internal distortion capture, Harley Benton Rodent, the release lists seven settings and a 2913794564-byte wet archive; it points to the mixed-origin dry material and its endpoint markers. Its API declares NC. Private-guitar and YouTube-derived material lacks per-performance permission evidence in the inspected public descriptions. Restricting to guitar would not remove those rights questions; selecting IDMT would retain its upstream restrictions. [Rodent release](https://zenodo.org/records/10796378), [API](https://zenodo.org/api/records/10796378). This is why the more explicitly documented internal marker route is not the default permissive recommendation.
+
+License layers must remain separate:
+
+- **Audio:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) permits sharing/adaptation, including commercially, with attribution and the stated conditions. EGFxSet's release metadata and loader agree on BY. No contradictory upstream source was identified for its original note recordings.
+- **NC audio:** [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) does not grant commercial use. Local-only execution is not itself proof of noncommercial purpose. NC material cannot be assumed eligible for the project's permissively distributable training/model path.
+- **IDMT ancestry:** both [IDMT-SMT-Guitar](https://www.idmt.fraunhofer.de/en/publications/datasets/guitar.html) and [IDMT-SMT-Audio-Effects](https://www.idmt.fraunhofer.de/en/publications/datasets/audio_effects.html) currently specify evaluation use under **CC BY-NC-ND 4.0**. [ND terms](https://creativecommons.org/licenses/by-nc-nd/4.0/) restrict sharing adapted material. A downstream BY/NC record is not evidence of the upstream right to relicense. Older or special permissions may exist, but none was found here. Hold those branches rather than assert they are unlawful or cleared.
+- **Code:** ToneTwist is [MIT](https://github.com/mcomunita/tonetwist-afx-dataset/blob/master/LICENSE); mirdata is [BSD-3-Clause](https://github.com/mir-dataset-loaders/mirdata); original HT1 implementation is [GPL-3.0](https://github.com/Alec-Wright/Automated-GuitarAmpModelling). The inspected Marshall repository root contains no explicit license. These findings do not extend code licenses to recordings.
+- **Weights:** no third-party checkpoint is needed for this data investigation. No separate weight permission was established for the bundled HT1/Marshall models. Audio rights do not automatically license a checkpoint, and code rights do not settle whether a newly trained model may be distributed. Record that decision explicitly before training or release; do not turn NC training into a shipping route by relabeling weights.
+
+## Overlap and rejected alternatives
+
+The source context reviewed was [round 5](round-5-guitar-models.md), [round 4](round-4-audio-ml.md), the [DI-domain audit](di-domain-transfer-audit-2026-10-08.md), and the [method follow-up](di-transfer-method-followup-2026-10-08.md). The audit describes Morgan-rendered supervision from Cambridge/Telefunken DIs and Guitar-TECHS P1. That is documentary provenance, not a fresh inspection of actual training assets or checkpoint lineage.
+
+| Source | Relationship to existing Guitar-TECHS / Cambridge / EGDB material | Consequence |
+| --- | --- | --- |
+| EGFxSet | Public methods describe newly recorded Stratocaster notes, not a re-render of those corpora. Authors overlap with Guitar-TECHS; performer identity/session independence is not established. Shared authors or instrument type prove neither duplicate audio nor an independent player. | New corpus and pedal chain are plausible; “unseen player” is not established. Main must compare permitted source/session manifests before claiming independent transfer. |
+| ToneTwist internal and HT1/Marshall external | Documented IDMT ancestry, including reused dry performances across processors and publications. No named Cambridge, Guitar-TECHS or EGDB dependency found in the inspected provenance. This is not a duplicate-content clearance. | Group every reamp/settings variant and every excerpt of one original performance together. The same IDMT material appearing in two releases is one source, not two validation domains. |
+| EGDB / EGDB-PG / EGDB-NDSP | PG re-renders **the same EGDB clean performances** with BIAS FX2. Changing presets/cabs/vendors does not create independent performances from any existing EGDB training use. | Useful for a plugin-domain diagnostic only, not the requested new native evidence. Do not assume EGDB was absent from all existing training just because the supplied DI audit covers a narrower recipe. |
+
+The current [EGDB-PG release](https://zenodo.org/records/19789500) openly lists the 135.4 GB FLAC bundle containing PG/NDSP; the older [random-preset release](https://zenodo.org/records/12674910) is much smaller. Full hosting is no longer the missing fact described in early round-4 notes. The [paper](https://arxiv.org/html/2504.07406) identifies 256 BIAS FX2 amp/cab combinations. This is plugin-generated audio, with exact timing still unverified here, and requires a proprietary processing lineage; it does not satisfy the hardware priority. The present web reader did not expose those records' license text; the earlier project report's BY claim is not a new independent license verification. No EGDB code/weights are proposed.
+
+[IDMT-SMT-Audio-Effects](https://www.idmt.fraunhofer.de/en/publications/datasets/audio_effects.html) uses DAW/plugins and isolated notes/polyphonic sounds, not real hardware processing. Its NC-ND/evaluation restrictions and the documented IDMT ancestry of GUITAR-FX-DIST exclude both as clean permissive replacements. A plugin render can have acquisition timing advantages without supplying native transfer evidence. No request-only, account-gated, commercial, or contact-dependent source is selected.
+
+**No global overlap check was performed.** Before future admission, compare source identifiers against Main's approved training manifests, including EGDB and any IDMT-derived sources used by other components. Do not inspect spent reserved audio/scores or use them for a duplicate search. If metadata cannot clear a possible match to protected material, exclude the candidate. Hash/fingerprint checks against permitted development/training assets belong to a later reviewed declaration, not this audit.
+
+## Smallest bounded next procedure for Main to consider
+
+These are proposed design constraints, not measured findings or authorization. No acquisition or computation should start until Main fixes the broader Morgan control and reviews/commits a separate declaration.
+
+1. **Admit one source for feasibility only.** Prefer EGFxSet Clean + TubeScreamer because its published audio permission is clear and it is the smallest separately packaged gain combination. Freeze record 7044411, the two exact files/hashes above, and the metadata/index versions. Do not automatically add RAT, BluesDriver or a model. Archive acquisition is roughly 903 MB even if only a few pairs are retained; extraction size remains unknown. If the project's next question strictly requires phrases or microphone/amp recordings, choose none of these rather than substitute pedal notes and broaden the claim.
+2. **Choose a metadata-only sentinel set before listening or scoring.** A proposed cap is 12 dry/wet note pairs: three fixed fret positions (0, 5, 12) on strings 1 and 6, under bridge and neck pickups. Confirm those exact labels exist in the public index before declaration; no audio-based substitution. This spans pitch and pickup configuration while keeping one device/setting. Treat it as development material. It cannot estimate population performance or chord/scale validity.
+3. **Declare pairing QC independently of the frozen model.** Verify header sample rates, channel counts, lengths and unique clean↔effect identity. Use the known replay provenance plus calibration attacks/transients to estimate one bounded delay/polarity model per recording chain; check it on distinct attacks and early/late notes for drift or segmentation mistakes. A nonlinear transfer can bias cross-correlation; require agreement between multiple pieces of timing evidence. Explicitly permit an “unidentifiable” result. Do not optimize delay, EQ or crop against neural predictions or their scores. Do not silently time-stretch, independently normalize windows, or search many offsets until a score improves.
+4. **Account for release edits.** Declare calibration/evaluation intervals, guard bands, activity/clipping/noise rules, and fade handling before numerical access. Five-second notes with two-second fades leave limited unaffected material. A conservative initial option is to exclude the nominal final two seconds, pending confirmation of exact fade placement; no valid three-second sustained interval is promised. Reserve distinct sentinel notes for validation of the timing rule. Future scoring/training notes must be different from notes consumed by pairing-rule development. If attacks, stable regions or independent validation are inadequate, stop with a feasibility failure; do not relax the criterion or cycle through the remaining pedals on the same decision.
+5. **Only after pairing passes, consider a separately declared frozen-model diagnostic.** Fix checkpoint identity, preprocessing coordinates, latency conventions, simple baselines and controls before execution. Keep recorded acquisition delay distinct from the network's training-render latency. A forward control or shared loopback can help establish processing/pairing; failure of a short linear inverse is inconclusive under distortion. Judge-free pairing checks precede recovery scores. Report every selected pair and exclusion, without replacing failures after seeing outcomes.
+
+**Why EGFxSet is the next feasibility source, not a training recommendation:** it provides actual hardware distortion with clear reusable audio permission, but limited content, unknown residual timing and reported recording artifacts. A failure would diagnose source suitability. A pass would establish usable edited pedal-note pairs under the declared tolerance, not micamp transfer. ToneTwist's 60 MB HT1 would be cheaper to acquire, but unresolved rights are a substantive admission failure, not a reason to lower the license requirement.
+
+## Exact fields required in a future manifest
+
+Unknown fields must be explicitly `null` with an `unknown_reason`; missing provenance must not default to “clean,” “aligned,” “independent,” or “permitted.” The declaration fixes which unknowns block admission.
+
+| Group | Required fields |
+| --- | --- |
+| Declaration identity | `study_id`, `purpose`, `development_only`, `declaration_commit`, `review_id`, `review_scope`, `protocol_version`, `selection_rule`, `pair_cap`, `acquisition_byte_cap`, `stop_rules`, `allowed_assets`, `forbidden_panels` |
+| Public origin | `dataset_name`, `record_id`, `record_version`, `doi`, `source_url`, `retrieved_at`, `paper_url`, `original_dataset`, `upstream_source_ids`, `repack_of`, `source_metadata_digest` |
+| Rights, separately | `audio_license_id`, `audio_license_url`, `upstream_license_ids`, `upstream_permission_evidence`, `code_license_id`, `code_revision`, `weights_license_id`, `weights_used`, `commercial_use_status`, `redistribution_status`, `training_use_status`, `attribution_text`, `rights_reviewer`, `rights_decision_reason` |
+| Asset identity | `archive_name`, `archive_url`, `published_bytes`, `published_checksum_algorithm`, `published_checksum`, `downloaded_sha256`, `archive_member`, `member_sha256`, `dry_path`, `wet_path`, `dry_sha256`, `wet_sha256`, `pair_id`, `pairing_evidence_url`, `source_take_id` |
+| Independence and splits | `performer_id`, `performer_identity_status`, `instrument_id`, `pickup`, `session_id`, `original_performance_id`, `content_type`, `string`, `fret`, `phrase_id`, `duplicate_group_id`, `source_group_id`, `train_overlap_status`, `train_overlap_evidence`, `protected_overlap_status`, `split`, `split_reason`, `all_reamp_variants_grouped` |
+| Signal chain | `device_make_model`, `physical_or_plugin`, `settings`, `settings_units`, `reamp_interface`, `input_level_calibration`, `capture_interface`, `capture_tap`, `load_or_cab`, `microphone`, `room`, `source_sample_rate`, `source_bit_depth`, `channels`, `normalization_history`, `fade_history`, `other_edits` |
+| Timing and QC | `dry_frames`, `wet_frames`, `dry_channel_rule`, `wet_channel_rule`, `delay_sign_convention`, `integer_delay_samples`, `fractional_delay_samples`, `polarity`, `drift_estimate`, `timing_method`, `timing_search_bound`, `timing_tolerance`, `calibration_intervals_frames`, `validation_intervals_frames`, `evaluation_intervals_frames`, `guard_frames`, `marker_exclusions`, `fade_exclusions`, `qc_rule_version`, `qc_status`, `qc_reason`, `pairing_confidence` |
+| Any later computation | `resampling_method`, `resampling_version`, `resampling_delay`, `target_transform_id`, `target_transform_sha256`, `normalization_rule`, `checkpoint_sha256`, `checkpoint_lineage_status`, `training_render_latency_samples`, `inference_latency_rule`, `baseline_spec`, `control_spec`, `metric_spec`, `decision_thresholds`, `execution_code_commit`, `execution_log_id` |
+
+Hashes and recorded recipes freeze the chosen identity; they do not retroactively prove a checkpoint's historical lineage. Keep calibration used to establish pairing separate from material used to claim model improvement, and keep source groups intact across train/validation/development evaluation.
+
+## Training versus another diagnostic
+
+Training becomes a reviewable proposal only when a legally admitted corpus has valid pairing on independent validation material, usable target bandwidth/noise, sufficient independent performances for grouped splits, and frozen-model controls localize a processing-domain deficit. The fixed broader Morgan control must make the transfer comparison interpretable. A later training declaration needs an untouched development evaluation group, budget, stopping rule, and a stated hypothesis about what new supervision fixes.
+
+Uncertain timing, a failing control, only isolated notes, too little independent content, normalization/fade ambiguity, or unresolved upstream rights supports **another source/QC diagnostic or rejection**, not a larger model or long training run. One successfully aligned sentinel set does not settle recoverability of heavily distorted DI. Short-FIR failure alone does not prove information loss; spectral improvement alone does not prove correct note attacks, phase, downstream preset ranking, or useful DI recovery.
+
+Pedal-domain evidence covers a physical nonlinear device at a line return. Reactive-load amp evidence covers another electrical capture chain. Neither proves microphone/cabinet/room transfer, song mixtures, separation robustness, multiple simultaneous guitars, unseen-player accuracy, original pickup/EQ/level recovery, or better product preset matching. Those need separately sourced and declared evidence; the closed P2 panel and reserved P3 cannot supply it.
+
+## Audit record
+
+Read the user-supplied AGENTS instructions and the four requested context documents. No on-disk AGENTS.md was found at the repository root or inspected ancestor paths; no additional nested AGENTS.md was discovered in the relevant documentation paths. Used primary public web pages, papers, repository source/license pages, release APIs and archive listings. One sandboxed metadata request failed DNS; two escalated public metadata shell operations succeeded. No usage-limit failure occurred during this resumed audit.
+
+Approval-efficiency observation: the two approved operations were (1) `curl -fsSL --max-time 25 https://zenodo.org/api/records/10455730` piped to a metadata-only `jq` projection, and (2) the same GET/projection in a loop over fixed IDs `7044411 10794425 10796864 10892012 7970723 10796378 10901426`. A blanket curl prefix would also permit asset downloads and other network requests. If recurring audits warrant it, a user-owned helper could instead accept numeric record IDs only, enforce HTTPS GET to exactly `zenodo.org/api/records/<id>`, reject redirects/file-content URLs, cap response size, and return only descriptive/license/file-list metadata. No allowlist or permission configuration was changed; adding that narrowly constrained operation requires the user's explicit approval.
+
+No audio, arrays, scientific assets, model/weight contents, local data manifests or score files were accessed; no repository scientific code, numerical study, download of study assets, contact, child agent, commit or branch operation was run. Public byte counts, publisher checksums and recording specifications above are metadata, not study measurements. Only this report was written.
+
+## Main source cross-check, 2026-10-09
+
+Main independently opened the [author site](https://egfxset.github.io/),
+[release record](https://zenodo.org/records/7044411) and
+[original paper](https://archives.ismir.net/ismir2022/latebreaking/000006.pdf).
+They support the hardware-replay provenance, one-guitar note-based scope,
+normalization and separately available clean/gain archives. This was a metadata
+cross-check only, not an audio-pairing check or independent numerical review.
+The publisher warns of normalization; future work must preserve that limitation
+rather than infer original physical input levels. No download or new study is
+authorized by this cross-check.
+
+### Loader metadata and input-length constraint
+
+Main also inspected the [official mirdata loader source](https://mirdata.readthedocs.io/en/stable/_modules/mirdata/datasets/egfxset.html).
+It identifies index version 1.0 at record 13930501, filename
+`egfxset_index_1.json`, published MD5 `c72222f93e03fce0f6135a60aefe5312`.
+The loader derives string, fret and pickup labels from identifiers and loads
+audio with automatic mono conversion. This is source-code evidence only: the
+actual index, metadata CSV and audio were not fetched or joined. A future
+declaration should inspect original channel headers and explicitly pin the index
+rather than accept a loader's default downmix or assume filenames prove pairing.
+
+There is also an unresolved model-input mismatch: these released notes last five
+seconds, while the existing frozen recovery procedure uses six-second inputs
+and a center three-second score. Padding, repeating notes or moving the score
+window changes that procedure and cannot be treated as neutral. Pairing
+feasibility can be assessed separately, but any later recovery test needs an
+explicitly reviewed short-input procedure and controls before new computation.
+This further limits the dataset's immediate value for the current model.
+
+### Follow-up after the processing attempt closed
+
+The [broader Morgan attempt](../di-morgan-processing-control-results.md) stopped
+at startup before audio and is independently verified INCONCLUSIVE. Its earlier
+baseline replays pass, but it supplies no broader processing or transfer result.
+It remains closed. A separate minimal infrastructure probe is under source review.
+The recommendations above remain source-audit proposals, not acquired/admitted
+data or training instructions. Any next source intake, pairing test or short-input
+model procedure must address the five-second constraint and receive its own
+fresh review and committed declaration. No index, CSV or audio was fetched.

@@ -1,0 +1,216 @@
+[
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/windows.npz",
+    "file_sha256": "a921d20cb9b0df5dcf3504f037c477d2f5a54ece26ab3e815b07238be379a322",
+    "members": {
+      "256": {
+        "dtype": "<f8",
+        "shape": [
+          256
+        ],
+        "byte_sha256": "42187fdc0f6f71f8d12764fc65779ce7b6482420bda95cb559109b612fcdd1c5",
+        "finite": true
+      },
+      "512": {
+        "dtype": "<f8",
+        "shape": [
+          512
+        ],
+        "byte_sha256": "527383374610d396d35ea3a9bc212694467ae6bc55ebf408ece0448159956c5d",
+        "finite": true
+      },
+      "1024": {
+        "dtype": "<f8",
+        "shape": [
+          1024
+        ],
+        "byte_sha256": "9d828dfb3db6aef66a32f1cff4b5a732fb34329c4b0a153a4302f7611b14e60c",
+        "finite": true
+      },
+      "2048": {
+        "dtype": "<f8",
+        "shape": [
+          2048
+        ],
+        "byte_sha256": "8b8d11d6ca2d18981a2c2c79a1bc2d3676f01b054f3879b79d95676cb44efbec",
+        "finite": true
+      },
+      "4096": {
+        "dtype": "<f8",
+        "shape": [
+          4096
+        ],
+        "byte_sha256": "fcd33bae50728a78a3bc7dba6dd58be554ecd103f9e95f74a9ddb8a1be8e7731",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-drop3-7-t098.prediction.npz",
+    "file_sha256": "92a884368cacab484bc308871c352ff5293e409a5eb46b275f47d010e237e0e6",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "a39b3183c13acdba3271cc4676914cca57a941970789f0e0bac6312f2aa1fa4e",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-drop3-m7b5-t098.prediction.npz",
+    "file_sha256": "749813098c9e2232094d489ddb09296b091cc965d3efb208261d17cb55a99c4f",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "3ba189a3f010c18000d1dd9aa131d555bf16f7b1ab31398b39735cd6ef06ff30",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-set1-7-t099.prediction.npz",
+    "file_sha256": "721ee8949f5f4c107484a2cbb3a5aced360534101da4524148b69dc6d0c2caeb",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "26240ee7c04f163a4d9fc011767ad2004f9b3e029eb12601c7671daaa8e83130",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-set1-dim-t072.prediction.npz",
+    "file_sha256": "ed9341b17962bcf86b59e39c596f7388b005ebd8225b1f3955b7a36cac10bd5c",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "2c33e6dcc997593a050433f3a2cfa5c322493f1e3204a8243cf0859179e967e3",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-set1-m7-t094.prediction.npz",
+    "file_sha256": "24285edefe8a74f31b890eb042ce2a9944cd97d2540db0797b773d25358f29f0",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "9b888ce7c0c7ef268708ee9b06f4ad246df2fef2f6d8bc111251e8dd4254d7ab",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-chords-set1-maj-t072.prediction.npz",
+    "file_sha256": "4d44ddc9cbc90589d0f545dbcf82938d7380bd1c457a0a4056d59cf52f8be85f",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "4e34c39951910461c56105b8aae2d641e102ed47b68ad2a28564644daea9d3a3",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-a-t075.prediction.npz",
+    "file_sha256": "fd145fdec899aea09a8eb2e26a25c099f5acf63fa32c6ecc0627f6b23fed1753",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "ed798f34e322b2e7ecc1bb892b603d0c12aeb3fc6cbdad2b3cf82abe39b1628b",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-bb-t076.prediction.npz",
+    "file_sha256": "4cb662996925d7289e26ab9bc7da136940d3674172376348eb9b867c35cfe125",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "e21c647f4b9e170017bd1ec2fbe11729954e9a36add63af7ecd027ad30db5c54",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-c-t075.prediction.npz",
+    "file_sha256": "1648228d8309f7a039878b6636d299f68a34951ce3138d4d6dfa4aaf9da6ff47",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "d2bd724afc594050d77d5b9a86d843cc7695d6a599e5ff96a7cb411b8af188fc",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-db-t076.prediction.npz",
+    "file_sha256": "d32c224fc7ac1d885ee5543a6b6aed1932da42279c551d1f1e1f0a82109c9733",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "d33024b0f657afb1b8a166aecdd2a74efdc66724a7c54f042b1dc02f49ba33a3",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-e-t076.prediction.npz",
+    "file_sha256": "b00b2833cd097b6e1e10b071a532761357f316fa06f55a4a5ea56717e4c98b4f",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "09b1e0ab4a706ac8128b0f736c18db467acce078e7d36118215e8df904276c3d",
+        "finite": true
+      }
+    }
+  },
+  {
+    "path": "tmp/di-morgan-processing-independent-arrays/p2-scales-g-t076.prediction.npz",
+    "file_sha256": "9a1e61553b0f43c2f53fcea6863e7f34e17324a3b180bd0d5b6bd411059e5aea",
+    "members": {
+      "raw_prediction": {
+        "dtype": "<f4",
+        "shape": [
+          288000
+        ],
+        "byte_sha256": "e327c4547b4364d3dc38633cd4820560ff91a101fa02b797ffd81c24a6c1007e",
+        "finite": true
+      }
+    }
+  }
+]

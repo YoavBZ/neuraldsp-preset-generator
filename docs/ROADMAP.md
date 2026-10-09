@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-07.
+lives in the linked documents. Last updated 2026-10-09.
 
 ## Where the product is
 
@@ -22,12 +22,65 @@ lives in the linked documents. Last updated 2026-10-07.
   ([re-check under the judge: void](no-di-rule-under-the-judge-results.md)). With the
   same take's DI it searches, but its figures come from a retired score.
 - **`edit`** changes a preset from a plain-English ask.
+- **Predicting a preset from the song** is active research, not yet in the product.
+  - **Best so far:** rebuild the guitar's DI from the recording with a trained network,
+    then let the judge pick a menu preset through it. Clean PR12 misses the declared
+    bar ([results](di-recovery-results.md)). On heavier development recordings SW50R
+    has a conditional pass against a fixed driven preset; PR12 and AC20 do not pass
+    ([set-3 results](di-recovery-set3-results.md)). The reserved confirmation has now
+    run: neither SW50R nor PR12 passes; independent numerical/audio checks agree
+    ([confirmation](set3-heldout-confirmation-results.md)). No learned path is ready
+    to ship.
+  - **Measure:** the average-guitar measure, which listening confirmed (23 of 24
+    trials, [results](avg-measure-listening-results.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
   ([listening validation](listening-validation-results.md)).
 
 ## Next, in order
+
+0. **Song-to-preset model** ([plan](di-recovery-plan.md); the Codex continuation is
+   reviewed in [codex-continuation-review.md](codex-continuation-review.md)).
+
+   **Where it stands:**
+   - Rebuilding the DI with a network, then letting the judge pick a menu preset, beats
+     the clean default and the training-free stand-in. On clean PR12 it is 8.5% (not
+     passed, [results](di-recovery-results.md)). On heavier tones it is large
+     ([set-3 development](di-recovery-set3-results.md)).
+   - **It has not beaten a fixed driven preset.** The one-time held-out confirmation
+     failed on SW50R and PR12 ([results](set3-heldout-confirmation-results.md), verified
+     twice). Against the same declared constant, development showed no robust edge
+     either.
+   - **With the true DI, the ranking works.** It beats the constant on all three amps.
+     The loss is in the rebuilt DI: about −0.16 (SW50R), −0.24 (PR12) and −0.22 (AC20) in
+     mean log ratio.
+   - **Ruled out as the main lever:** the activity mask, score re-weighting, pooling
+     amps, PANNs and log-mel rerankers, separator upgrades (+1 dB), and our tone encoder
+     (74.5% on renders, but it fails on real recordings).
+   - **Untested** (the earlier "native transfer" pilot was mis-specified and never
+     ran a model): real-amp-to-plugin transfer, full mixes, multi-guitar targets, and
+     heavy-tone listening.
+   - **Set 3's held-out split is spent.** A new confirmation needs fresh material.
+
+   **Next, in this order:**
+   1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
+      songs. It is the strongest thing shown so far.
+   2. **Split the rebuilt-DI gap cheaply** on development (no training): rebuilt DI at
+      the true level, with the true-DI activity mask, and with the true-DI alignment.
+      This says which part of the rebuild loses the preset choice.
+   3. **Adopt the reference-proxy fallback** for judge refusals.
+   4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
+      multi-amp training, stem-aware training (renders mixed and separated), and
+      room-and-mic augmentation.
+   5. **Search beyond the menu,** with a positive control first, so a song can beat a
+      single constant.
+   6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
+      multi-guitar target needs the user's decision.
+   7. **Fresh confirmation material,** and heavy-tone listening validation, before any
+      new claim.
+   8. **When the plugin is ready:** remove research and experiment records from the
+      repository.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
@@ -51,19 +104,23 @@ lives in the linked documents. Last updated 2026-10-07.
    better than a song-blind constant: regret 0.30 to 0.48 against 0.36 to 0.42,
    agreement with the judge at most 0.38. With the part's own notes, the masked spectra
    pick within the judge's near-tie range (0.04); through another player's notes they
-   fall to the constant (0.36): the performance moves them more than the preset. Next,
-   the candidates that need downloads or training:
-   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB to download, needs approval),
+   fall to the constant (0.36): the performance moves them more than the preset.
+   *2026-10-07, from step 0: log-mel statistics and PANNs CNN14, used as rerankers over
+   renders through other players' DIs, also failed ([rerank-plan.md](rerank-plan.md)).
+   Our own contrastive guitar encoder passed identification on renders but failed on
+   real recordings (step 0).* Remaining candidate, deferred while the development
+   chooser diagnostic runs:
+   - **Pretrained effect encoders** (AFx-Rep, about 1.2 GB; verify open licence before use),
      with CLAP as the floor. General audio models (CLAP, MERT, wav2vec2) are floors
      only: once the notes differ they score near chance, and they discard the input
      level that carries the drive.
-   - **Then our own contrastive encoder**
-     ([round 1](research/round-1-song-only-matching.md), approach 3c), trained with the
-     same settings through different playing as positives, so it learns the invariance
-     the hand-made features lack. The panels already hold every preset through 43
-     players' DIs; a full run is 2–3 weeks and 16k–100k renders per amp.
-3. **The derived-DI route** (experiment 5): does the judge's ranking survive an
-   imperfect DI? Only if it does is DI recovery worth tracking.
+   - **Own contrastive encoder: already tested, failed on real recordings** (step 0).
+     Another run needs a declared intervention addressing transfer from renders to
+     recordings and a cheap positive control; do not repeat the original training.
+3. **The derived-DI route** (experiment 5). *Done, 2026-10-06*
+   ([results](di-robustness-results.md)). It did not pass as declared. Under the
+   average-guitar measure, a realistic rebuilt DI loses little, so DI recovery was
+   built (step 0).
 4. **The judge's coverage.**
    - High-gain calibration needs high-gain references with a DI (a download).
    - The listening checks the judge's review asked for: whether hiss matters, and
@@ -83,7 +140,8 @@ lives in the linked documents. Last updated 2026-10-07.
 
 ## Parked
 
-- **Predicting settings from a recording** ([supervised-model-plan.md](supervised-model-plan.md)).
+- **Predicting settings from a recording: reopened 2026-10-06, now step 0 above.** The
+  history follows ([supervised-model-plan.md](supervised-model-plan.md)).
   - The kill tests did not pass on SW50R or clean PR12
     ([K1–K3](kill-test-results.md), [PR12](kill-tests-pr12-results.md)).
   - No cheap fix rescued recognition on real tracks ([quick checks](quick-checks-results.md)).
@@ -99,6 +157,24 @@ lives in the linked documents. Last updated 2026-10-07.
     - **The catch:** its gain over the template rests on two parts.
     - **Next:** learn the sound rather than the knobs, train on separated stems, and
       move to heavier tones.
+  - **Rebuilding the DI, 2026-10-07**
+    ([plan](di-recovery-plan.md) → [results on clean PR12](di-recovery-results.md)).
+    - **What ran:** a network rebuilds the guitar's DI from the recording, and the judge
+      picks a menu preset through it.
+    - **Result on clean PR12:** not passed. Picks were 8.5% closer than template+R (20 of
+      25 parts), 52–60% of the menu oracle's gain, and short of the declared margins over
+      the no-training stand-in.
+    - **Follow-up, 2026-10-08:** heavier-tone development and reserved confirmation
+      are complete ([confirmation](set3-heldout-confirmation-results.md)). Neither
+      tested amp passes confirmation; wider search is deferred pending a development
+      positive control (step 0).
+    - **DI-free reranker, 2026-10-07** ([rerank-plan.md](rerank-plan.md)): ranking the menu
+      by log-mel or PANNs CNN14 distance to renders through other folds' DIs did not pass.
+      Neither beats `flatref` paired; `net` stays the best chooser.
+    - **Tone encoder, 2026-10-08** ([tone-encoder-plan.md](tone-encoder-plan.md)): a
+      contrastive encoder trained on 16,800 crossed renders identifies presets across
+      players (74.5% vs 14%), but as a reranker on real recordings it is worse than
+      template+R. Not passed.
 
 ## Decisions
 
@@ -112,6 +188,14 @@ lives in the linked documents. Last updated 2026-10-07.
 | 2026-10-05 | Amp choice is a set of acceptable amps; AC20 reaches fewer of these clean parts | [amp reach](amp-reach-results.md), [quick checks](quick-checks-results.md) |
 | 2026-10-05 | Research not shown to beat the template or chance at picking presets; choosing among four helps with a perfect ear | [song-only shortlist](song-only-shortlist-results.md) |
 | 2026-10-05 | `generate` offers four presets on a listening page; riffs from Guitar-TECHS P1 (CC BY 4.0) ship in `samples/riffs/` | `skills/generate/SKILL.md` step 5b |
+| 2026-10-06 | Song-to-preset is judged on the product's question: does an average guitar, playing the recording's notes, through the preset sound like the record (the take's DI re-equalised to an average guitar's balance, then the judge). The judge's own question, recreating the original rig on its own guitar, is reported beside it. A short listening check confirms the measure first. | [DI robustness](di-robustness-results.md) |
 | 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
+| 2026-10-07 | The average-guitar measure is confirmed by listening (23 of 24 disagreement trials, 6/6 repeats, 6/6 swap) | [listening results](avg-measure-listening-results.md) |
+| 2026-10-07 | Rebuilt-DI preset choice not passed on clean PR12 (8.5% vs 10%); continue to heavier tones and a search beyond the menu | [results](di-recovery-results.md) |
+| 2026-10-07 | Open source only: no cloud APIs, commercial tools, or unlicensed or gated weights; published methods are reimplemented | [round 5](research/round-5-guitar-models.md) |
 | 2026-10-07 | No hand-made DI-free distance reproduces the judge's choices; next are learned ones | [di-free-distance-results.md](di-free-distance-results.md) |
+| 2026-10-08 | Rebuilding the DI works on heavier tones against the clean default and the stand-in. Against a constant driven preset: SW50R a conditional pass, PR12 not passed, AC20 failed. The constant's definition is to be declared before the held-out confirmation | [set-3 results](di-recovery-set3-results.md) |
+| 2026-10-08 | Reserved confirmation not passed on SW50R or PR12 under either declared timing. Independent numerical/audio checks agree. This learned method does not ship; diagnose on development data and use fresh reserved data for future confirmation | [confirmation results](set3-heldout-confirmation-results.md) |
+| 2026-10-08 | Known-DI development selection shows menu headroom on all three amps. Diagnose the rebuilt chooser's refusal on a fixed panel before more training; neither this diagnostic nor a proxy rescue is confirmation | [development diagnostic](set3-development-diagnostic-results.md), [proxy-check plan](set3-mask-diagnostic-plan.md) |
+| 2026-10-09 | Codex continuation reviewed: held-out failure confirmed; ranking works with the true DI, the loss is in the rebuilt DI; native-pilot "failure" was a mis-specified test; research stays in the repo until the plugin is ready | [review](codex-continuation-review.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

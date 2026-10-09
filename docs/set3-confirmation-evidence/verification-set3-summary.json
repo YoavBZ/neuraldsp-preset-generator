@@ -1,0 +1,416 @@
+{
+  "numerical_discrepancies": [],
+  "combined_verdict": {
+    "sw50r": {
+      "waveform_passed": false,
+      "onset_passed": false,
+      "verdict_changed": false,
+      "confirmed_amp_track_only": false
+    },
+    "pr12": {
+      "waveform_passed": false,
+      "onset_passed": false,
+      "verdict_changed": false,
+      "confirmed_amp_track_only": false
+    }
+  },
+  "cells": [
+    {
+      "analysis": "waveform",
+      "cell": "recording|sw50r",
+      "refusals": 0,
+      "template_log_effect": -0.4744012167090803,
+      "constant_log_effect": -0.1508840324545606,
+      "constant_sign_flip_p": 0.625,
+      "joint_win_share": 0.5707070707070707,
+      "failed_gates": [
+        "constant_sign_flip"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "waveform",
+      "cell": "recording|pr12",
+      "refusals": 0,
+      "template_log_effect": -0.30587152715972304,
+      "constant_log_effect": 0.0032929820211728966,
+      "constant_sign_flip_p": 0.625,
+      "joint_win_share": 0.3787878787878788,
+      "failed_gates": [
+        "constant_margin",
+        "constant_sign_flip",
+        "joint_win_share"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "waveform",
+      "cell": "union|sw50r",
+      "refusals": 0,
+      "template_log_effect": -0.47522746810058086,
+      "constant_log_effect": -0.16330207969598587,
+      "constant_sign_flip_p": 0.4375,
+      "joint_win_share": 0.5707070707070707,
+      "failed_gates": [
+        "constant_sign_flip"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "waveform",
+      "cell": "union|pr12",
+      "refusals": 0,
+      "template_log_effect": -0.17665118091560095,
+      "constant_log_effect": 0.017890750536729838,
+      "constant_sign_flip_p": 0.71875,
+      "joint_win_share": 0.4090909090909091,
+      "failed_gates": [
+        "constant_margin",
+        "constant_sign_flip",
+        "joint_win_share"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "onset",
+      "cell": "recording|sw50r",
+      "refusals": 0,
+      "template_log_effect": -0.4744012167090803,
+      "constant_log_effect": -0.1508840324545606,
+      "constant_sign_flip_p": 0.625,
+      "joint_win_share": 0.5707070707070707,
+      "failed_gates": [
+        "constant_sign_flip"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "onset",
+      "cell": "recording|pr12",
+      "refusals": 0,
+      "template_log_effect": -0.30587152715972304,
+      "constant_log_effect": 0.0032929820211728966,
+      "constant_sign_flip_p": 0.625,
+      "joint_win_share": 0.3787878787878788,
+      "failed_gates": [
+        "constant_margin",
+        "constant_sign_flip",
+        "joint_win_share"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "onset",
+      "cell": "union|sw50r",
+      "refusals": 0,
+      "template_log_effect": -0.47477503571696056,
+      "constant_log_effect": -0.16330207969598587,
+      "constant_sign_flip_p": 0.4375,
+      "joint_win_share": 0.5707070707070707,
+      "failed_gates": [
+        "constant_sign_flip"
+      ],
+      "refused_parts": []
+    },
+    {
+      "analysis": "onset",
+      "cell": "union|pr12",
+      "refusals": 0,
+      "template_log_effect": -0.17528937702464253,
+      "constant_log_effect": 0.017890750536729838,
+      "constant_sign_flip_p": 0.71875,
+      "joint_win_share": 0.4090909090909091,
+      "failed_gates": [
+        "constant_margin",
+        "constant_sign_flip",
+        "joint_win_share"
+      ],
+      "refused_parts": []
+    }
+  ],
+  "audio": {
+    "passed": true,
+    "comparison_count": 1586,
+    "unique_measurement_count": 1321,
+    "checks_by_half": {
+      "B": 626,
+      "A": 960
+    },
+    "unique_by_kind": {
+      "measure": 361,
+      "net": 960
+    },
+    "mismatches": [],
+    "maximum_distance_absolute_error": 0,
+    "storage_checks": 672,
+    "storage_failures": [],
+    "DI_checks": [
+      {
+        "part": "cambridge-aeternum-vale-elecgtr01",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.899999999999995,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -19.750721254020508,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.08001131450680803
+      },
+      {
+        "part": "cambridge-aeternum-vale-elecgtr01",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -24.283376210297952,
+        "inference": null,
+        "original_DI_rms": 0.06612550764336256,
+        "saved_DI_rms": 0.06612550764336256
+      },
+      {
+        "part": "cambridge-aureus-necrosis-elecgtr1",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.9,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -23.484030274816472,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.07777112652961554
+      },
+      {
+        "part": "cambridge-aureus-necrosis-elecgtr1",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -26.125022771852766,
+        "inference": null,
+        "original_DI_rms": 0.05565678621490012,
+        "saved_DI_rms": 0.055656786214900125
+      },
+      {
+        "part": "cambridge-endance-gtr4",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.900000000000002,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -24.500444130679494,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.0787089037197947
+      },
+      {
+        "part": "cambridge-endance-gtr4",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -17.211319571924843,
+        "inference": null,
+        "original_DI_rms": 0.1463257683658187,
+        "saved_DI_rms": 0.1463257683658187
+      },
+      {
+        "part": "cambridge-learning-how-to-fly-elecgtr4",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.900000000000016,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -28.456104006577846,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.06229965989776305
+      },
+      {
+        "part": "cambridge-learning-how-to-fly-elecgtr4",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -27.045883358017846,
+        "inference": null,
+        "original_DI_rms": 0.05105553896248457,
+        "saved_DI_rms": 0.051055538962484576
+      },
+      {
+        "part": "cambridge-the-forthcoming-turn-elecgtr2",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.9,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -16.128883224603786,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.07664011107852599
+      },
+      {
+        "part": "cambridge-the-forthcoming-turn-elecgtr2",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -27.90556266056134,
+        "inference": null,
+        "original_DI_rms": 0.044465143061028126,
+        "saved_DI_rms": 0.044465143061028126
+      },
+      {
+        "part": "telefunken-big-trouble-gtr",
+        "kind": "network",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -22.900000000000002,
+        "inference": {
+          "window_starts": [
+            0,
+            192000
+          ],
+          "window_samples": 288000,
+          "overlap_samples": 48000,
+          "unscaled_lufs": -19.811372686346456,
+          "target_lufs": -22.9,
+          "inference_device": "cpu"
+        },
+        "original_DI_rms": null,
+        "saved_DI_rms": 0.07498792163176632
+      },
+      {
+        "part": "telefunken-big-trouble-gtr",
+        "kind": "measure",
+        "shape_expected": [
+          480000
+        ],
+        "shape_saved": [
+          480000
+        ],
+        "matched": true,
+        "max_absolute_error": 0.0,
+        "rms_error": 0.0,
+        "saved_lufs": -13.857334787538948,
+        "inference": null,
+        "original_DI_rms": 0.208802678827761,
+        "saved_DI_rms": 0.20880267882776102
+      }
+    ],
+    "inputs_changed": []
+  },
+  "overall_verification_passed": true
+}

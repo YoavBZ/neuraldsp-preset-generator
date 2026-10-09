@@ -1,0 +1,371 @@
+{
+  "complete": true,
+  "valid": false,
+  "rows": [
+    {
+      "slug": "p2-chords-drop3-7-t098",
+      "content": "chords",
+      "take": "Drop3_7",
+      "excerpt_hashes": {
+        "di_float64_mono": "48c4a1dd50fd99c7057f2f14341a5c4325c43de4ae08a5254d266b77b192efbf",
+        "wet_float64_mono": "8f0d42015f0f61cad6e2b3f57ae911acff2161180099bd5e8bce821636450242"
+      },
+      "calibration": {
+        "lag": 38,
+        "polarity": 1,
+        "correlation": 0.8919728785673685,
+        "sharpness": 40.37969208134166,
+        "half_lags": [
+          38,
+          37
+        ],
+        "half_sharpness": [
+          46.74416806853333,
+          10.221083360628938
+        ],
+        "peak_separation": 2.9979253883094077,
+        "half_peak_separation": [
+          2.9073785685030837,
+          1.9444855134194057
+        ]
+      },
+      "qc": {
+        "valid": true,
+        "di": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.05163295868551078,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            },
+            "score": {
+              "rms": 0.028068069488416537,
+              "clipped_fraction": 0.0,
+              "active_fraction": 0.9883333333333333
+            }
+          }
+        },
+        "wet": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.05801369300816479,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            },
+            "score": {
+              "rms": 0.033042489802324077,
+              "clipped_fraction": 0.0,
+              "active_fraction": 0.9983333333333333
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "native_input_scores": {
+        "primary": 1.5855777117665684,
+        "canonical_waveform_l1": 0.04090962987260849,
+        "raw_lowband": 0.47630132453787927
+      },
+      "flatref_scores": {
+        "primary": 1.1287468680073545,
+        "canonical_waveform_l1": 0.04077627928122147,
+        "raw_lowband": 1.691416859108586
+      },
+      "fir_scores": {
+        "primary": 3.3326562702810643,
+        "canonical_waveform_l1": 0.013512505986191447,
+        "raw_lowband": 0.4551329818210039
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.1607457585823504
+      },
+      "oracle": 0.0
+    },
+    {
+      "slug": "p2-chords-drop3-m7b5-t098",
+      "content": "chords",
+      "take": "Drop3_m7b5",
+      "excerpt_hashes": {
+        "di_float64_mono": "389c9f50829fe23bcbcc7880087450ed8165a9dcd32d2201745acc49763d7aad",
+        "wet_float64_mono": "9924e09c5e97403946ef78f4d9bb04c566d31f10267da2c5430103ea00b74701"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-7-t099",
+      "content": "chords",
+      "take": "Set1_7",
+      "excerpt_hashes": {
+        "di_float64_mono": "9251b101e5a92865338c927368a12138e4c9ac74bc853d1337c9eda94414c2f5",
+        "wet_float64_mono": "43f5feb3046a31b5b18e6bfd517e30406b0611a9e9bccba5649a9adc71a92907"
+      },
+      "calibration": {
+        "lag": 39,
+        "polarity": 1,
+        "correlation": 0.9703592954600158,
+        "sharpness": 36.36655485908409,
+        "half_lags": [
+          39,
+          39
+        ],
+        "half_sharpness": [
+          33.28319039070121,
+          12.321140614011584
+        ],
+        "peak_separation": 3.7062894156759394,
+        "half_peak_separation": [
+          2.704607446608269,
+          1.810187821984439
+        ]
+      },
+      "qc": {
+        "valid": true,
+        "di": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.01645417708066213,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            },
+            "score": {
+              "rms": 0.008763778316001043,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            }
+          }
+        },
+        "wet": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.017612429362338214,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            },
+            "score": {
+              "rms": 0.009454759893873135,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "native_input_scores": {
+        "primary": 1.6713592803421484,
+        "canonical_waveform_l1": 0.033237088193411535,
+        "raw_lowband": 0.6576745979755593
+      },
+      "flatref_scores": {
+        "primary": 1.2767326158899586,
+        "canonical_waveform_l1": 0.03667920123589508,
+        "raw_lowband": 2.1863950021683793
+      },
+      "fir_scores": {
+        "primary": 2.5467698739926186,
+        "canonical_waveform_l1": 0.034756176863547976,
+        "raw_lowband": 0.5524997887579084
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.5677900475063724
+      },
+      "oracle": 0.0
+    },
+    {
+      "slug": "p2-chords-set1-dim-t072",
+      "content": "chords",
+      "take": "Set1_dim",
+      "excerpt_hashes": {
+        "di_float64_mono": "844a4072a29f3123f870293ce3ebfc6567191d262311af837f3559569ad915e1",
+        "wet_float64_mono": "378c308c4b557afafa4c8d4d3aede303c82335179f7bf6ba4b5758dbe1796a30"
+      },
+      "calibration": {
+        "lag": -46,
+        "polarity": 1,
+        "correlation": 0.9807140852386202,
+        "sharpness": 15.751114661076066,
+        "half_lags": [
+          -46,
+          -47
+        ],
+        "half_sharpness": [
+          12.851367989942762,
+          37.495218172075134
+        ],
+        "peak_separation": 2.242276463180347,
+        "half_peak_separation": [
+          2.951565132098271,
+          2.710437297072053
+        ]
+      },
+      "qc": {
+        "valid": true,
+        "di": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.005971599781369758,
+              "clipped_fraction": 0.0,
+              "active_fraction": 0.9975
+            },
+            "score": {
+              "rms": 0.008963337042841893,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            }
+          }
+        },
+        "wet": {
+          "valid": true,
+          "reasons": [],
+          "metrics": {
+            "calibration": {
+              "rms": 0.007371299065902689,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            },
+            "score": {
+              "rms": 0.01172263770634676,
+              "clipped_fraction": 0.0,
+              "active_fraction": 1.0
+            }
+          }
+        }
+      },
+      "qc_valid": true,
+      "native_input_scores": {
+        "primary": 2.068165491522893,
+        "canonical_waveform_l1": 0.023356771807402983,
+        "raw_lowband": 0.4277393858572305
+      },
+      "flatref_scores": {
+        "primary": 0.9102530409949733,
+        "canonical_waveform_l1": 0.021726876917267515,
+        "raw_lowband": 1.5500492757646325
+      },
+      "fir_scores": {
+        "primary": 3.1416016872059513,
+        "canonical_waveform_l1": 0.02057396502782988,
+        "raw_lowband": 0.47457379101311936
+      },
+      "oracle_scores": {
+        "primary": 0.0,
+        "canonical_waveform_l1": 0.0,
+        "raw_lowband": 1.4184545333860212
+      },
+      "oracle": 0.0
+    },
+    {
+      "slug": "p2-chords-set1-m7-t094",
+      "content": "chords",
+      "take": "Set1_m7",
+      "excerpt_hashes": {
+        "di_float64_mono": "57c908e08d44a03c5cc356337af18e7eb2354d84343992c7fa9e5c6c5f304a37",
+        "wet_float64_mono": "31efd17988048947b92c170be4d1ee5eafdc09a73f75e8f2818167e532b3d494"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-chords-set1-maj-t072",
+      "content": "chords",
+      "take": "Set1_maj",
+      "excerpt_hashes": {
+        "di_float64_mono": "c9c8494c8f2a1c78e56429d75e2d9379ccea86f6be87165fbfff04f1b56c3ac6",
+        "wet_float64_mono": "33108a06a2254ebc05e88e2f30ce143142ab95f5c8b74b98773b7f70dca3da93"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-a-t075",
+      "content": "scales",
+      "take": "A",
+      "excerpt_hashes": {
+        "di_float64_mono": "610354d87076c9fe4ef2f9e3a3e038ad028ac9d00e4ec935e6495ace63b3f5cb",
+        "wet_float64_mono": "65ad0127a9b3d75cfcad214b34e2c35dff08ce96941ce48bf3bc30b372bc4734"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-bb-t076",
+      "content": "scales",
+      "take": "Bb",
+      "excerpt_hashes": {
+        "di_float64_mono": "bae2f53dba11528bd937650f0108e7dc8a381197ea5ee3bb59176ec75b29c71b",
+        "wet_float64_mono": "50c068b5c2d03795ab2c6e40973961cebec61d1cc8fae0c6acbb22c2c4177789"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-c-t075",
+      "content": "scales",
+      "take": "C",
+      "excerpt_hashes": {
+        "di_float64_mono": "af8e55d2e3478c0a2d70f4d2c16c54a5f696fa940c9003c985519e1db9afb1c1",
+        "wet_float64_mono": "da3b77a7d7c991a270b82428afdeecc0139a6319a364849e35097983f456e363"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-db-t076",
+      "content": "scales",
+      "take": "Db",
+      "excerpt_hashes": {
+        "di_float64_mono": "e0c671a6d4930b9d21d6f8eaebbf95e6cc9de80a20174b45f649b0e7c2affb70",
+        "wet_float64_mono": "4937cff8c3bbcda4167d789d027945d519d1bbc51539a66410ada34d9b7540e8"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-e-t076",
+      "content": "scales",
+      "take": "E",
+      "excerpt_hashes": {
+        "di_float64_mono": "33a17041031852d4142a023602691ba6437079c7059498ed8fb1232a98c9b8bd",
+        "wet_float64_mono": "65e0921ea8c995c2663986f006d46b9eb7ff9675af3498527bc017c219dc71cb"
+      },
+      "error": "calibration GCC-PHAT peak sharpness must exceed 10",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    },
+    {
+      "slug": "p2-scales-g-t076",
+      "content": "scales",
+      "take": "G",
+      "excerpt_hashes": {
+        "di_float64_mono": "e05b11cb77cd2f48db149d1d5f1c95b5c9dc07d6657c878a0780696a4271f7c4",
+        "wet_float64_mono": "a681506a22dd5d41252653ad11c974b24194562432cd7e1b2d062334fcb85cdf"
+      },
+      "error": "calibration filtered correlation below 0.5",
+      "qc_valid": false,
+      "nonfinite_diagnostic_fields": []
+    }
+  ],
+  "attribution": "Pedroza et al., Guitar-TECHS, CC BY 4.0, https://zenodo.org/records/14963133",
+  "elapsed_seconds": 4.49967695819214
+}
