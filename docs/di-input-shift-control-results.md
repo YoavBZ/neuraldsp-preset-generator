@@ -58,7 +58,7 @@ derivations, selecting cases or relaxing tolerance.
 
 - [Independent verification report](research/di-input-shift-control-verification-2026-10-08.md),
   [implementation](research/di-input-shift-control-independent-2026-10-08.py),
-  [full numerical/check record](di-input-shift-control-verification.json.gz) and
+  [full numerical/check record](EVIDENCE-OUTSIDE-GIT.md) and
   [archive identities](di-input-shift-control-verification-archive.json).
 - The full original JSON and its lossless compressed copy remain locally in
   `tmp/di-input-shift-verification.json` and `.full.json.gz`. Only embedded prediction

@@ -6,7 +6,7 @@ execution. The score-only analysis completed successfully. Independent recomputa
 agrees on all 20,864 scalar fields with zero discrepancies (maximum rounding
 difference 1.11e-16), including constants, choices, fallbacks, comparisons, coverage,
 gates, provenance and commit-before-run timing. The archived report exactly matches
-production. Evidence: [complete output](set3-cross-amp-diagnostic.json) and
+production. Evidence: [complete output](EVIDENCE-OUTSIDE-GIT.md) and
 [independent verification](set3-cross-amp-diagnostic-verification.json).
 
 ## Findings

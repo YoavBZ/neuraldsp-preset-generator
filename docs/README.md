@@ -100,14 +100,16 @@ was declared, what was measured, and the research behind it.
   learned method does not ship. Full evidence is linked from the result.
 - [set3-development-diagnostic-plan.md](set3-development-diagnostic-plan.md) →
   [results](set3-development-diagnostic-results.md): known-DI selection shows menu
-  headroom on all three amps; independently verified. One rebuilt-DI refusal routes
-  the next check. No reserved-data reuse.
+  headroom on all three amps; independently verified. *Review: ranking works with the true
+  DI; by mean the rebuilt DI loses about 0.16 (SW50R) to 0.24 (PR12).* No reserved-data reuse.
 - [set3-mask-diagnostic-plan.md](set3-mask-diagnostic-plan.md) →
   [results](set3-mask-diagnostic-results.md): both alternative proxies rescue one
-  refusal but change none of 11 control choices. Independently verified; no expansion.
+  refusal but change none of 11 control choices. *Review: adopt the reference-proxy
+  fallback ([review](codex-continuation-review.md)).*
 - [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →
   [results](set3-rank-calibration-results.md): supervised prior/score blend misses
-  declared criteria versus the net chooser. Independently verified; fixed blend closed.
+  declared criteria versus the net chooser. *Review: rebuilt-DI scores carry about 0.2 of
+  song-specific information over the best song-blind prior; re-weighting adds nothing.*
 - [set3-cross-amp-diagnostic-plan.md](set3-cross-amp-diagnostic-plan.md) →
   [results](set3-cross-amp-diagnostic-results.md): pooling the three existing amp menus
   misses all declared routing conditions. Independently verified; no amp-selector or
@@ -123,8 +125,9 @@ was declared, what was measured, and the research behind it.
   unchanged 1e-8, independently verified; the separate pilot correction is complete below.
 - [Native-chain pilot attempt 2](di-domain-pilot-v2-plan.md) →
   [results](di-domain-pilot-v2-results.md): both runtime preflights pass; only 3/12
-  native pairs pass calibration, so no neural test followed. Independently verified,
-  scientific transfer screen inconclusive; closed without changing its rules.
+  native pairs pass calibration, so no neural test followed. *Review: the calibration
+  was mis-specified and the pairs are fine. Native transfer is untested, not
+  inconclusive ([review](codex-continuation-review.md)).*
 - [Known-DI Morgan control](di-morgan-control-plan.md) → [results](di-morgan-control-results.md):
   verified 72.18% median improvement over processed audio directly, all twelve wins;
   767 independent checks pass. No native/product claim.
@@ -148,7 +151,8 @@ was declared, what was measured, and the research behind it.
   before access. All replay/construction controls pass; [verified PASS](di-phase-control-results.md)
   has twelve wins and 57.56% median improvement. All 15,976 independent checks agree; this study is closed.
 - [Broader Morgan processing control](di-morgan-processing-control-plan.md): reviewed
-  and declared before execution. [Verified INCONCLUSIVE](di-morgan-processing-control-results.md),
+  and declared before execution. [result](di-morgan-processing-control-results.md): *review: void, because Codex's sandbox
+  cannot see AU components, so the study never ran;*
   all 235 independent checks agree. Replay controls pass; startup failed before
   audio, so no broader result exists. Closed with full failures and evidence.
 - [Next development steps](di-recovery-plan.md#next-development-steps-2026-10-09):

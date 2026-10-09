@@ -53,7 +53,7 @@ lives in the linked documents. Last updated 2026-10-09.
      twice). Against the same declared constant, development showed no robust edge
      either.
    - **With the true DI, the ranking works.** It beats the constant on all three amps.
-     The loss is in the rebuilt DI: about −0.16 (SW50R) and about −0.22 (PR12, AC20) in
+     The loss is in the rebuilt DI: about −0.16 (SW50R), −0.24 (PR12) and −0.22 (AC20) in
      mean log ratio.
    - **Ruled out as the main lever:** the activity mask, score re-weighting, pooling
      amps, PANNs and log-mel rerankers, separator upgrades (+1 dB), and our tone encoder

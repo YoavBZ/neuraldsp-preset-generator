@@ -13,7 +13,7 @@ code. Provenance, commit-before-run timing and exact archive decompression agree
 
 Evidence: [independent verification](set3-rank-calibration-verification.json).
 
-Full audit: [losslessly compressed output](set3-rank-calibration.json.gz), with the
+Full audit: [losslessly compressed output](EVIDENCE-OUTSIDE-GIT.md), with the
 original retained at `tmp/set3-rank-calibration-20261008.json`. Compression only changes
 storage; decompressing restores the exact experiment JSON. The log is
 `tmp/set3-rank-calibration-20261008.log`.

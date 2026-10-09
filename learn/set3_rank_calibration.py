@@ -1,3 +1,6 @@
+# NOTE (2026-10-09): the large evidence files this closed study reads were moved out of git to
+# ~/ndsp-presets/learn/codex-evidence/docs/ (docs/EVIDENCE-OUTSIDE-GIT.md). Copy them back
+# under docs/ before re-running. See docs/codex-continuation-review.md for the study's verdict.
 """Fixed development-only nested preset-rank calibration.
 
 See docs/set3-rank-calibration-plan.md. Review and commit precede actual execution.

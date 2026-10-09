@@ -51,7 +51,7 @@ concern; it does not establish native timing validity or explain earlier failure
 - [Source/environment provenance](di-timing-sensitivity-provenance.json).
 - [Artifact and loaded waveform identities](di-timing-sensitivity-inputs.json),
   [committed 48-file identity manifest](di-timing-sensitivity-inputs.sha256).
-- [Independent numerical verification](di-timing-sensitivity-verification.json),
+- [Independent numerical verification](EVIDENCE-OUTSIDE-GIT.md),
   [report](research/di-timing-sensitivity-verification-2026-10-08.md) and
   [implementation](research/di-timing-sensitivity-independent-2026-10-08.py).
 - Original output: `tmp/di-timing-sensitivity-20261008/`; log:

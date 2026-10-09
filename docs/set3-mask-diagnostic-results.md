@@ -9,8 +9,8 @@ scalar fields with zero discrepancies. All 22 fresh audio spot checks and 600
 selected-source storage checks agree. These are development findings, not a
 replacement reserved confirmation.
 
-Evidence: [complete output](set3-mask-diagnostic.json) and
-[independent verification](set3-mask-diagnostic-verification.json).
+Evidence: [complete output](EVIDENCE-OUTSIDE-GIT.md) and
+[independent verification](EVIDENCE-OUTSIDE-GIT.md).
 
 ## Execution
 

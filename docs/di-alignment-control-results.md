@@ -36,8 +36,8 @@ the result exactly, and captured stdout matches progress bytes.
 
 - [Frozen procedure](di-alignment-control-plan.md) and
   [independent design/code review](research/di-alignment-control-review-2026-10-08.md).
-- [Full result](di-alignment-control.json).
-- [Independent numerical verification](di-alignment-control-verification.json),
+- [Full result](EVIDENCE-OUTSIDE-GIT.md).
+- [Independent numerical verification](EVIDENCE-OUTSIDE-GIT.md),
   [report](research/di-alignment-control-verification-2026-10-08.md) and
   [implementation](research/di-alignment-control-independent-2026-10-08.py).
 - [Source/environment/case provenance](di-alignment-control-provenance.json).

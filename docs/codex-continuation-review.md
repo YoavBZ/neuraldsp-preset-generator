@@ -33,10 +33,14 @@ documents carry a short pointer to it.
   - the mean log ratio is +0.065;
   - the −0.15 band-median headline is an artefact of taking medians.
 - **Correction to our development reading:** against the *declared* all-33 constant
-  (Wall Of Doom), development also shows no robust edge. SW50R is −0.023 (p 0.09–0.11,
-  closer on 12 of 32); PR12 is 0.000 to +0.011. Our development figure of −0.17 to
-  −0.20 used a leave-band-out constant chosen after the run. So the held-out failure
-  is consistent with development, not a regression.
+  (Wall Of Doom), development shows no robust edge either.
+  - **SW50R:** the median of band medians is −0.023 (p 0.09–0.11). The per-part mean is
+    −0.076, with 12 closer, 10 tied and 10 further.
+  - **PR12:** about 0.
+  - Our development figure of −0.17 to −0.20 used a leave-band-out constant chosen
+    after the run.
+  - So development already showed at most a small, unreliable edge over this constant.
+    The held-out result (mean +0.065) is in line with that.
 
 ## The development diagnostics
 
@@ -45,7 +49,7 @@ documents carry a short pointer to it.
   p 0.001–0.004). That is a ceiling for this menu and measure: it is our earlier
   measure oracle.
   - Codex's "SW50R gap is zero" is a median artefact: 6 of 11 bands tie.
-  - **Rebuilt against true DI, by mean per part:** about −0.16 on SW50R, about −0.23
+  - **Rebuilt against true DI, by mean per part:** about −0.16 on SW50R, about −0.24
     on PR12, about −0.22 on AC20.
   - **So ranking is nearly perfect with the true DI, and the loss is in the rebuilt-DI
     path.**
