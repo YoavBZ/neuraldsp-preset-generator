@@ -1,5 +1,8 @@
 # Song to preset by rebuilding the DI: results on heavier tones (set 3, development)
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): the development edge over 'a constant' used a leave-band-out constant chosen after the run. Against the constant later declared for the held-out test (median raw distance over all development parts), SW50R is −0.023 (p 0.09–0.11, closer on 12 of 32) and PR12 is about 0. The held-out test failed consistently.
+
+
 **Current status, 2026-10-08:** this is the historical development result, with an
 ambiguous constant definition. The subsequent [reserved confirmation](set3-heldout-confirmation-results.md)
 fixed that definition before execution and failed on both SW50R and PR12. The

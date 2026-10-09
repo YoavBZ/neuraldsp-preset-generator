@@ -1,5 +1,8 @@
 # Set 3 held-out confirmation: not passed
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): verified independently; the failure is real. SW50R was closer than the constant on 10 parts, tied on 5 and further on 12, with a mean log ratio of +0.065. Against this declared constant, development showed no robust edge either.
+
+
 Run 2026-10-08 after the user's approval. Rendering and both scoring passes are
 complete. **Verified result: neither amp passes the declared gates.** Independent
 numerical and audio verification completed at 06:13:10 UTC with no discrepancies.

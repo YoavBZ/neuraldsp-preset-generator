@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-08.
+lives in the linked documents. Last updated 2026-10-09.
 
 ## Where the product is
 
@@ -40,137 +40,47 @@ lives in the linked documents. Last updated 2026-10-08.
 
 ## Next, in order
 
-0. **Song-to-preset model** ([plan and checkpoint](di-recovery-plan.md)), in this order:
-   - **Set 3, development:** done ([results](di-recovery-set3-results.md)).
-     - **Large gains over the clean default and the stand-in** (SW50R −0.70, PR12 −0.42).
-     - **Against a constant driven preset:** SW50R is a conditional pass, PR12 is not
-       passed (the result depends on the constant's undeclared definition), and AC20
-       fails.
-     - **Reserved confirmation:** the [approved declaration](set3-heldout-confirmation-plan.md)
-       and inputs were committed before execution. All 4,320 renders and both timing
-       analyses completed successfully. Neither amp passes; independent checks of
-       all selections/gates and 1,321 distinct audio measurements agree
-       ([results](set3-heldout-confirmation-results.md)). SW50R misses the consistency
-       test against the fixed driven preset; PR12 also misses the margin and joint-win
-       requirements. No required comparisons were refused.
-     - **Development diagnostic: independently verified**
-       ([results](set3-development-diagnostic-results.md)). Known-DI selection beats
-       the leave-band-out constant on all three amps under both band sets. All 14,067
-       independently recomputed fields agree. This establishes useful menu headroom
-       on development data; it does not isolate waveform recovery as the bottleneck.
-       Rebuilt-DI selection refuses every candidate on one recording, and SW50R's
-       recording-band median gap to known-DI selection is zero.
-     - **Activity-proxy check: complete, independently verified**
-       ([results](set3-mask-diagnostic-results.md)). Both alternative proxies rescue
-       the one refused recording, but all 11 control choices remain unchanged under
-       both band sets. It misses its declared improvement rule, so do not expand or
-       tune this heuristic. Original-score replay, all 42,054 recomputed fields and
-       22 fresh audio checks agree.
-     - **Nested preset-rank calibration: complete, criteria missed**
-       ([results](set3-rank-calibration-results.md)). Learning a blend of net scores and
-       a preset prior improves on the prior alone but has median zero gain over the
-       original chooser with the same fallback. Independent recomputation agrees on
-       651,209 fields. Close this blend without changing its grid/prior/features.
-     - **Cross-amp diagnostic: complete, criteria missed**
-       ([results](set3-cross-amp-diagnostic-results.md)). Pooling the existing three
-       menus shows median zero gain over SW50R for both known-DI and net choices.
-       Hindsight among the three fixed net picks also has median zero gain. Independent
-       recomputation agrees on 20,864 fields. No amp-selector training, pooled-score
-       tuning or knob expansion follows this procedure.
-     - **Training-domain audit and bounded recovery controls: independently checked.**
-       [Audit](research/di-domain-transfer-audit-2026-10-08.md): audited wet supervision
-       consists of Morgan renders, despite locally available licensed native DI/amp
-       pairs. The [small frozen-model pilot](di-domain-pilot-plan.md) compares twelve
-       P2 takes through the original recording chain and a fixed Morgan setting.
-       Independent review approved corrected timing, split caveats, controls and code;
-       105 synthetic checks pass, two Torch checks await the mandatory separate preflight.
-       The procedure was committed before execution. Its mandatory runtime metric
-       preflight failed on tiny NumPy/Torch differences
-       ([result](di-domain-pilot-results.md)); no recording, rendering or inference
-       followed. Independent source review supports a window-precision mismatch;
-       the [synthetic intervention probe](di-domain-metric-probe-results.md) passes
-       with shared coefficients at unchanged 1e-8, independently verified with zero
-       mismatches. The [separate attempt-2 correction](di-domain-pilot-v2-plan.md)
-       was independently reviewed, declared and committed before execution. Both
-       runtime preflights pass, but only 3/12 recording pairs pass native calibration;
-       [attempt-2 result](di-domain-pilot-v2-results.md) is independently verified,
-       with zero mismatches. No rendering or neural inference followed the failed
-       pairing control. The subsequent known-DI Morgan control used all
-       twelve dry recordings, without relying on microphone alignment. Its
-       [procedure](di-morgan-control-plan.md) is independently reviewed and declared;
-       178 synthetic checks pass. Its [verified result](di-morgan-control-results.md)
-       passes: all twelve performances improve, median 72.18% against processed audio directly.
-       All 767 independent checks pass, with byte-identical predictions. Its baseline
-       does not establish improvement over the simple tone-corrected stand-in or native transfer.
-       The [fixed-render stand-in comparison](di-morgan-flatref-plan.md) is implemented
-       and declared before computation. Its [verified result](di-morgan-flatref-results.md)
-       improves all twelve performances over the better simple baseline, median 57.83%;
-       all 1,215 independent checks agree. No rerender or training was required.
-       The separate [known-offset and mismatched-performance control](di-alignment-control-plan.md)
-       of the frozen timing-confidence method used saved dry arrays. It was independently
-       reviewed and committed before computation. Its [verified result](di-alignment-control-results.md)
-       passes exact-delay/polarity and mismatch controls but misses timing by two/three
-       samples on seven accepted distorted cases across three performances. All 856
-       independent checks agree. The reviewed and committed
-       [fixed-render score-sensitivity control](di-timing-sensitivity-plan.md) has an
-       [verified PASS](di-timing-sensitivity-results.md) at all thirteen offsets;
-       all 23,734 independent checks agree. The
-       [known input-shift control](di-input-shift-control-plan.md) is independently
-       reviewed and committed before access. Both replay controls pass, including
-       twelve exact original predictions. Its [verified PASS](di-input-shift-control-results.md)
-       at all four shifts has 21,246 agreeing final checks and exact prediction bytes.
-       The [fixed periodic phase challenge](di-phase-control-plan.md) was reviewed
-       and committed before access. All replay/construction controls pass;
-       [verified PASS](di-phase-control-results.md) has twelve wins and 57.56% median
-       improvement. All 15,976 independent checks agree; this study is closed. No threshold tuning or
-       reopening the stopped native screen.
-       This is not evidence against neural transfer.
-       Transfer failure remains a hypothesis. No long training run is justified yet.
-       The [broader Morgan processing attempt](di-morgan-processing-control-results.md)
-       was reviewed and committed before execution; it is now independently verified
-       INCONCLUSIVE. Both replay controls pass, but startup failed before any audio;
-       all 235 independent checks agree. No changed-chain result exists. Keep this
-       attempt closed; no path/settings/threshold rescue or missing-stage execution.
-       Separately reviewed [startup/version/shutdown readiness](morgan-au-startup-plan.md)
-       is now [READY](morgan-au-startup-results.md): Morgan 1.1.1, clean logs and
-       process exit0, with no audio/presets/model access. It cannot establish rendering
-       or reopen the failed study. Prioritize different-equipment pairing evidence
-       after infrastructure, with no further timing/phase microtests.
-       A [source-only direct-ranker proposal](research/direct-preset-ranker-proposal-2026-10-09.md)
-       offers a different route from song stems to preset risk. No experiment is
-       declared: first check metadata feasibility and complete guitar targets;
-       its equal-weight compromise objective is not adopted.
-       The parallel [data source audit](research/native-guitar-development-data-2026-10-09.md)
-       is complete: EGFxSet is a conditional real-pedal feasibility candidate, with
-       edited isolated notes and unverified timing/noise; no audio downloaded.
-       See the
-       [current next steps](di-recovery-plan.md#next-development-steps-2026-10-09).
-       This model's shipping path remains closed. Any later model needs fresh reserved
-       data; the spent split cannot be reused for tuning or confirmation. Wider search
-       is deferred while the existing menu shows development headroom.
-   - **Separator upgrade: run 2026-10-08, none replaces htdemucs_6s**
-     ([plan](separator-upgrade-plan.md), [results](separator-upgrade-results.md)).
-     - Mega-53 and X-LANCE add about 1 dB median SNR (2 dB was needed) and many more
-       usable parts (sets 1–2: 14 → 21 of 28; set 3: 12 → 21 of 33).
-     - The gain is on single-guitar parts (+4 dB); multi-guitar parts gain about
-       0.4 dB. Other guitars in the stem are the bottleneck.
-     - Pan isolation can't be tested here (the sessions have no pan). On a simulated
-       pan, a choice of side made by ear would help multi-guitar parts by about 1 dB; a
-       "loudest side" rule hurts.
-   - **Our own guitar tone encoder: run 2026-10-08, not passed as a reranker**
-     ([tone-encoder-plan.md](tone-encoder-plan.md)).
-     - It names a render's preset among 22 from other players' renders 74.5% of the
-       time, or 72% for presets it never trained on. Log-mel and PANNs manage 14%.
-     - On real recordings its picks are worse than template+R. Recordings land off the
-       render manifold, on one hub preset.
-     - Closing that domain gap comes before the encoder can rerank (for example,
-       training on recorded or room-and-mic augmented audio).
-   - **Search beyond the menu:** deferred until a development positive control
-     establishes that menu coverage is the bottleneck.
-   - **Candidates from the POC model.**
-   - **Stem-aware training of the DI network.**
-   - **A declared reference for multi-guitar stems.**
-   - **Open source only** ([round 5](research/round-5-guitar-models.md)).
+0. **Song-to-preset model** ([plan](di-recovery-plan.md); the Codex continuation is
+   reviewed in [codex-continuation-review.md](codex-continuation-review.md)).
+
+   **Where it stands:**
+   - Rebuilding the DI with a network, then letting the judge pick a menu preset, beats
+     the clean default and the training-free stand-in. On clean PR12 it is 8.5% (not
+     passed, [results](di-recovery-results.md)). On heavier tones it is large
+     ([set-3 development](di-recovery-set3-results.md)).
+   - **It has not beaten a fixed driven preset.** The one-time held-out confirmation
+     failed on SW50R and PR12 ([results](set3-heldout-confirmation-results.md), verified
+     twice). Against the same declared constant, development showed no robust edge
+     either.
+   - **With the true DI, the ranking works.** It beats the constant on all three amps.
+     The loss is in the rebuilt DI: about −0.16 (SW50R) and about −0.22 (PR12, AC20) in
+     mean log ratio.
+   - **Ruled out as the main lever:** the activity mask, score re-weighting, pooling
+     amps, PANNs and log-mel rerankers, separator upgrades (+1 dB), and our tone encoder
+     (74.5% on renders, but it fails on real recordings).
+   - **Untested** (the earlier "native transfer" pilot was mis-specified and never
+     ran a model): real-amp-to-plugin transfer, full mixes, multi-guitar targets, and
+     heavy-tone listening.
+   - **Set 3's held-out split is spent.** A new confirmation needs fresh material.
+
+   **Next, in this order:**
+   1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
+      songs. It is the strongest thing shown so far.
+   2. **Split the rebuilt-DI gap cheaply** on development (no training): rebuilt DI at
+      the true level, with the true-DI activity mask, and with the true-DI alignment.
+      This says which part of the rebuild loses the preset choice.
+   3. **Adopt the reference-proxy fallback** for judge refusals.
+   4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
+      multi-amp training, stem-aware training (renders mixed and separated), and
+      room-and-mic augmentation.
+   5. **Search beyond the menu,** with a positive control first, so a song can beat a
+      single constant.
+   6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
+      multi-guitar target needs the user's decision.
+   7. **Fresh confirmation material,** and heavy-tone listening validation, before any
+      new claim.
+   8. **When the plugin is ready:** remove research and experiment records from the
+      repository.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
@@ -287,4 +197,5 @@ lives in the linked documents. Last updated 2026-10-08.
 | 2026-10-08 | Rebuilding the DI works on heavier tones against the clean default and the stand-in. Against a constant driven preset: SW50R a conditional pass, PR12 not passed, AC20 failed. The constant's definition is to be declared before the held-out confirmation | [set-3 results](di-recovery-set3-results.md) |
 | 2026-10-08 | Reserved confirmation not passed on SW50R or PR12 under either declared timing. Independent numerical/audio checks agree. This learned method does not ship; diagnose on development data and use fresh reserved data for future confirmation | [confirmation results](set3-heldout-confirmation-results.md) |
 | 2026-10-08 | Known-DI development selection shows menu headroom on all three amps. Diagnose the rebuilt chooser's refusal on a fixed panel before more training; neither this diagnostic nor a proxy rescue is confirmation | [development diagnostic](set3-development-diagnostic-results.md), [proxy-check plan](set3-mask-diagnostic-plan.md) |
+| 2026-10-09 | Codex continuation reviewed: held-out failure confirmed; ranking works with the true DI, the loss is in the rebuilt DI; native-pilot "failure" was a mis-specified test; research stays in the repo until the plugin is ready | [review](codex-continuation-review.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

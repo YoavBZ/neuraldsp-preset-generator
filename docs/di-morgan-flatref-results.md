@@ -1,5 +1,8 @@
 # Fixed Morgan renders: learned recovery versus simple correction
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): sound but uninformative for choosing presets: it rebuilds a DI after one clean PR12 preset that the network was trained to undo.
+
+
 2026-10-08. **PASS, independently verified with zero mismatches.**
 Procedure, implementation, input hashes and review committed `c8c40ad` before
 computation. All twelve original saved performances were included. No rendering,

@@ -1,5 +1,8 @@
 # Frozen Morgan model: broader processing control
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): VOID, not inconclusive: invalidComponentID (-3000) came from Codex's sandbox, which cannot see AU components. The study never ran.
+
+
 2026-10-09. **Independently verified INCONCLUSIVE. Closed.**
 
 The procedure, reviewed sources and declaration were committed at `df68127`

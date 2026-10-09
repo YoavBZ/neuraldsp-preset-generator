@@ -1,5 +1,8 @@
 # Separate Morgan startup readiness
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): it duplicates the working renderer (match/renderer_au.py); drop it. The lesson is only: run AU work outside Codex's sandbox.
+
+
 2026-10-09. **READY for the declared instance/version/process-exit check. Closed.**
 
 The corrected source, tests, fresh independent approval and declaration were

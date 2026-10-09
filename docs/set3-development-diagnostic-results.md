@@ -1,5 +1,8 @@
 # Set 3 development diagnostic: independently verified
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): the numbers verify, but 'SW50R gap is zero' is a median artefact. By mean per part, rebuilt DI loses about 0.16 (SW50R) and about 0.22–0.23 (PR12, AC20) against the true DI. Ranking is nearly perfect with the true DI, so the loss is in the rebuilt-DI path.
+
+
 Computed 2026-10-08 after committing the reviewed declaration/code/menu inventory at
 `7c65d9e`. This is reused development data, not a new confirmation. Independent
 recomputation agrees on all 14,067 compared scalar fields, with no discrepancies

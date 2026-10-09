@@ -1,5 +1,8 @@
 # Development activity-proxy diagnostic: independently verified
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): the outcome is mislabelled. The reference-proxy fallback rescues the refused part and changes no control pick; adopt it. The rule 'at least 3 controls improved' could not sensibly be met by a refusal fix.
+
+
 Computed 2026-10-08 after the independently reviewed declaration and implementation
 were committed at `8739009`. Independent recomputation agrees on all 42,054 compared
 scalar fields with zero discrepancies. All 22 fresh audio spot checks and 600

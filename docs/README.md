@@ -177,6 +177,10 @@ was declared, what was measured, and the research behind it.
   isolation against htdemucs_6s. About +1 dB SNR; not passed.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
+- [codex-continuation-review.md](codex-continuation-review.md): what holds and what
+  doesn't in the Codex continuation (held-out confirmation, diagnostics, pilots). Read
+  this before any Codex results doc. Large evidence files are kept outside git
+  ([EVIDENCE-OUTSIDE-GIT.md](EVIDENCE-OUTSIDE-GIT.md)).
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.
 - [set3-heldout-use-ledger.json](set3-heldout-use-ledger.json): completed reserved-set
   use, recorded without altering the frozen metadata snapshot; the split is spent.

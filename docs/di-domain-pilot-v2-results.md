@@ -1,5 +1,8 @@
 # Native-chain pilot attempt 2 — stopped at pairing controls
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): WRONG AS A FINDING: the pairing calibration was mis-specified (2-s halves, ±512 lags, ≥0.5 correlation on a bass amp). The P2 pairs are fine; lags match the catalogue to within 1–3 samples. Native transfer is untested.
+
+
 2026-10-08. **Verified QC stop: incomplete valid coverage. Scientific screen
 inconclusive; no neural transfer test was run.** Procedure/review/code were committed
 at `e49950b` before computation.

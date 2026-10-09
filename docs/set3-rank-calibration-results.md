@@ -1,5 +1,8 @@
 # Development rank calibration: independently verified
 
+> **Review 2026-10-09** ([codex-continuation-review.md](codex-continuation-review.md)): the useful finding is that rebuilt-DI scores carry about 0.2 of song-specific information over the best song-blind prior (SW50R). Re-weighting adds nothing.
+
+
 Computed 2026-10-08 after the reviewed declaration/code were committed at `79136bf`.
 All 57 calibration synthetic checks passed before execution. Actual computation
 completed successfully through the approved helper. Independent recomputation agrees
