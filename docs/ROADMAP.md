@@ -76,13 +76,20 @@ lives in the linked documents. Last updated 2026-10-09.
       ([plan](set3-gap-split-plan.md)). The parts tested are level, mask, long-term
       balance and the rest. Alignment is left out: Codex's controls showed the judge
       ignores few-sample shifts.
-      - **Level is the first suspect:** the true DIs span −46.5 to −16.8 LUFS, while
-        the rebuilt DI is always played at −22.9.
+      *Done 2026-10-10 ([results](set3-gap-split-results.md)), independently
+      verified.* The rest of the waveform explains it, 87% of the gap.
+      - **Level:** 13%.
+      - **The activity mask:** 0.
+      - **Matching the long-term spectrum:** makes it worse, because above 3 kHz the
+        rebuilt DI is unrelated to the true one.
    3. **Adopt the reference-proxy fallback** for judge refusals. *Done 2026-10-09:
       `learn/rebuilt_judge.py`, for every new rebuilt-DI scoring.*
    4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
       multi-amp training, stem-aware training (renders mixed and separated), and
       room-and-mic augmentation.
+      - **Pilot running 2026-10-10** ([plan](di-network-v2-plan.md)): longer
+        training, and adding set 3's development guitars. The current network scores
+        7 on its training clips against 60 on new ones, a sign of memorising.
    5. **Search beyond the menu,** with a positive control first, so a song can beat a
       single constant.
    6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
