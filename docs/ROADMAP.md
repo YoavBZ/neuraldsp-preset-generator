@@ -128,10 +128,15 @@ lives in the linked documents. Last updated 2026-10-08.
        Transfer failure remains a hypothesis. No long training run is justified yet.
        Next: source preparation for a fixed PR12 processing panel (volume/drive1/
        drive2), with a new clean replay before experimental rendering and coherent
-       simple competitors per chain. In parallel, audit different-equipment paired
-       development recordings. Neither has run; fresh review and committed
+       simple competitors per chain. Five initial and two combined-error gaps were repaired;
+       76 synthetic checks pass and fresh review approved the corrected procedure. No new audio run has
+       started; fresh review and committed
        declaration precede new data/numbers. After this coverage control, prioritize
-       transfer evidence rather than further timing/phase microtests. See the
+       transfer evidence rather than further timing/phase microtests.
+       The parallel [data source audit](research/native-guitar-development-data-2026-10-09.md)
+       is complete: EGFxSet is a conditional real-pedal feasibility candidate, with
+       edited isolated notes and unverified timing/noise; no audio downloaded.
+       See the
        [current next steps](di-recovery-plan.md#next-development-steps-2026-10-09).
        This model's shipping path remains closed. Any later model needs fresh reserved
        data; the spent split cannot be reused for tuning or confirmation. Wider search

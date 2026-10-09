@@ -148,9 +148,14 @@ was declared, what was measured, and the research behind it.
   before access. All replay/construction controls pass; [verified PASS](di-phase-control-results.md)
   has twelve wins and 57.56% median improvement. All 15,976 independent checks agree; this study is closed.
 - [Next development steps](di-recovery-plan.md#next-development-steps-2026-10-09):
-  a small actual PR12 processing panel and an audit of different-equipment paired
-  recordings are in source preparation. Neither has run; review and committed
-  declaration precede new audio access or numerical work.
+  the small actual PR12 processing panel has fresh source approval. Its first
+  reviews found five initial and two combined-error gaps; repairs pass 76 synthetic tests; fresh review approved
+  the corrected procedure. No new audio run has started. The separate data audit is
+  complete; review and committed declaration precede acquisition or computation.
+- [Different-equipment development data audit](research/native-guitar-development-data-2026-10-09.md):
+  EGFxSet is a conditional hardware-pedal feasibility candidate; pairing and
+  recording quality remain unverified. ToneTwist external amp releases have
+  unresolved upstream/repack rights. No audio downloaded or new study declared.
 - [Transfer-method source follow-up](research/di-transfer-method-followup-2026-10-08.md):
   published recovery/search and augmentation choices, with explicit synthetic-data
   limits. Research hypotheses only; no new model or training run selected.

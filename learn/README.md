@@ -29,11 +29,15 @@ its [verified PASS](../docs/di-phase-control-results.md) has twelve wins and 57.
 median improvement, with all 15,976 independent checks agreeing. No native transfer result
 or case for long training follows from these controls.
 
-Next, prepare a fixed actual PR12 processing panel and audit different-equipment
-paired recordings. The panel will replay the original result and require a new
-clean control before driven rendering. Neither workstream has produced new audio
-results. See [next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09);
+Next, run the fixed actual PR12 processing panel under the approved source procedure.
+Five initial and two combined-error review gaps were repaired, with 76 synthetic checks passing. The
+panel will replay the original result and require a new clean control before
+driven rendering. The different-equipment source audit is complete. Neither
+workstream has produced new audio results. See [next steps](../docs/di-recovery-plan.md#next-development-steps-2026-10-09);
 fresh review and a committed procedure are required before computation.
+The [different-equipment source audit](../docs/research/native-guitar-development-data-2026-10-09.md)
+has identified a conditional hardware-pedal candidate, with unverified pairing
+and recording quality. No audio acquisition or training follows automatically.
 
 A song's guitar (the amp track, or a separated stem) goes through four steps:
 1. `direc.py` rebuilds its DI at an average guitar's balance.

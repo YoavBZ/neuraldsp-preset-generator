@@ -71,7 +71,7 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
 
 ## Next development steps, 2026-10-09
 
-1. **Broader Morgan processing control — source preparation.** Keep the frozen
+1. **Broader Morgan processing control — [declared procedure](di-morgan-processing-control-plan.md).** Keep the frozen
    model and all twelve existing development DIs. Compare the original clean PR12
    with three fixed changes: volume 0.85, drive 1 at 0.65, and drive 2 at 0.65.
    Each new processed signal gets its own simple tone-corrected competitor.
@@ -79,12 +79,21 @@ autonomous continuation on 2026-10-08, with consultation only for important deci
    control to pass before any experimental rendering. Preserve full renders,
    warmups, repeated renders and plugin requests/replies. Independent review and
    committed declaration are required before new audio-member access or numbers.
-   No new run has started. This asks about coverage within Morgan, not transfer.
+   No new run has started. The [first source review](research/di-morgan-processing-blocked-review-2026-10-09.md)
+   blocked five failure-path gaps. The [second review](research/di-morgan-processing-blocked-review-v2-2026-10-09.md)
+   confirmed those repairs and found two combined-error evidence gaps. These are
+   also repaired; 76 synthetic checks pass and fresh review approved the corrected procedure.
+   This asks about coverage within Morgan, not transfer.
 2. **Different development recordings — source and license audit.** Identify
    dry/processed guitar pairs from other equipment, with evidence for usable
    timing and licenses. Check overlap with training material. Source metadata
    alone can select a candidate; audio pairing and recovery still need their own
    reviewed procedure. The stopped P2 microphone panel stays closed.
+   The [source audit](research/native-guitar-development-data-2026-10-09.md)
+   is complete. EGFxSet Clean + TubeScreamer is a permissively licensed hardware
+   candidate, but contains edited isolated notes with unverified timing and
+   reported recording issues. No audio has been downloaded; this is a feasibility
+   candidate, not admitted training material or song-level evidence.
 3. **Decide whether training has a concrete target.** A verified processing
    weakness can motivate a small training-only experiment with separate
    development performances. If the broader Morgan control passes, move to
