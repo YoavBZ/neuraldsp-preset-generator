@@ -1,112 +1,149 @@
-# Predict the sound, not the knobs: plan for the first test (development)
+# Predict the sound, not the knobs: plan v2 for the first test (development)
 
-Declared 2026-10-10, before any data for it is generated. It is reviewed independently
-before it runs.
+Declared 2026-10-10.
+- **v1** (commit ec8ca48) was reviewed (`tmp/sound-desc-plan-review.md`, local), and its
+  required changes are folded in here.
+- **The reviewer's ceiling scripts** read the test parts' stored audio. That use is
+  recorded; it chose nothing.
+- **Nothing has been rendered for this plan.**
 
-## The idea
+## The idea (unchanged)
 
-Sound to knobs is ill-posed: many settings sound alike, and a record mixes the rig with
-the player, guitar, mic, room and mix. Knobs to sound is exact: the plugin computes it.
-So a model predicts a **sound description** instead of knobs, and presets are chosen by
-comparing it with descriptions the plugin computes.
+Sound to knobs is ill-posed: sound-alike settings, and a record that mixes the rig with
+the player, guitar, mic, room and mix. Knobs to sound is exact, because the plugin
+computes it. So a model predicts a **sound description**, and presets are chosen by
+comparing it with descriptions computed through the plugin.
 
-1. **A preset's description `T(p)`:** what an *average guitar* sounds like through preset
-   `p`. It is computed exactly, by rendering a fixed set of average-guitar DIs through `p`.
-2. **The translator** maps the description of a *recording* (a specific player and guitar
-   through some rig) to a predicted `T` for that rig. It is trained only on plugin
-   renders.
-3. **For a song:** describe its guitar, translate it, and pick the menu preset whose `T(p)`
-   is nearest. That is one model pass and a lookup, with no per-song rendering and no DI
-   rebuild.
+## What v1 got wrong, and the fix
 
-This first test asks the riskiest question: can a translator trained on plugin renders
-read **real recordings**? The large-scale model of every setting comes only after it
-passes.
+**The measure** plays the take's DI, re-equalised to an average balance and set to
+exactly −22.9 LUFS, into each preset. It asks which preset then sounds like the
+**record**. So the best preset reproduces the record's coloration: the guitar's
+brightness, the drive and the mic.
 
-## The sound description `D(x)` (fixed here)
+**v1's training pairs taught the translator to strip those out:** each guitar at its own
+balance, ±6 dB of level and EQ augmentation, all with the same label.
 
-On mono audio, level-normalised, using the frames where it plays (within 40 dB of the
-loudest frame):
-- **Tone:** the long-term log-mel spectrum, 64 bands from 50 Hz to 16 kHz (2,048-sample
-  frames, hop 512), mean-removed.
-- **Texture:** each band's frame-to-frame standard deviation (64).
-- **Dynamics:** crest factor, and the spread of frame RMS between the 90th and 10th
-  percentiles (2).
+**v2 trains on DIs treated the measure's way** (average balance, −22.9 LUFS exactly).
+The translator learns to remove only what the specific notes and playing contribute.
+Augmentation is noise only, 50–70 dB down. The v1 design (own balance, ±6 dB) can run as
+a secondary arm that doesn't gate.
 
-That is 130 numbers, each standardised by the training set's mean and spread.
+## Test parts (pinned)
 
-## The average guitar, and `T(p)`
+The development clean and crunch parts with fixed-level measure distances on both
+halves for every menu preset: **35 parts in 15 bands** (Honey's measure is refused).
+- clean: 22 parts in 10 bands;
+- crunch: 13 parts in 6 bands.
 
-- **The average guitar** `G`: 4 fixed DI windows from 4 different sets 1–2 development
-  bands, chosen by the rule below. Each is re-equalised to the pinned K3 fold-2 average
-  balance and set to −22.9 LUFS, as the measure does.
-  - **The rule:** in the pool's band order, the first window, by sorted path, of the first
-    4 bands that are not Guitar-TECHS.
-- **`T(p)`:** the mean of `D` over the renders of `G` through `p`, for every menu preset
-  of the three amps (111 presets, 444 renders). This uses the menu presets with the
-  effects off, as in every measurement.
+The slug list is committed in `docs/sound-desc-test-parts.json` before stage 0 runs.
+Band exclusion uses the **merged band name** across both window pools; Eat The Feeder is
+in both. It is asserted in code.
 
-## Training data (development only)
+## Stage 0: can any sound description track the judge? (no renders; runs first)
 
-- **DI windows** come from the existing development pools (`poc/di-windows.json`, 3,509
-  windows from sets 1–2; `direc/set3-di-windows.json`, 1,484 from set 3). None is held
-  out, as checked with `set3.is_held_out`.
-- **Up to 12 windows per band, 28 bands:** about 330 windows, chosen with seed 20261011.
-- **Each window is used as its own guitar** (its own balance), at −22.9 LUFS plus a
-  uniform ±6 dB, and rendered through all 111 menu presets: about 37,000 renders.
-  - Only the descriptors are stored, not the audio.
-  - Each render also gets one augmented copy, with a random ±3 dB tilt, a ±4 dB bell at
-    200 Hz–5 kHz, and noise 50–70 dB below, to stand in for mic and room.
-- **The pair:** input `X = D(render)`, target `Y = T(p)`.
+**The same-notes ceiling:**
+- For each test part and half, describe the real amp track, and describe the stored
+  measure render of every menu preset (the same take's DI, the measure's way).
+- Pick the preset whose description is nearest. Score it with the measure on the other
+  half.
+- This is what a **perfect** translator could reach with that description. The v1
+  descriptor's ceiling was about −0.028 against the shipped presets, and about 0 on clean.
 
-## Models (declared)
+**Candidate descriptions, declared here, each standardised by the stored renders'
+spread:**
+1. **`D130`,** v1's: the long-term log-mel tone (64), per-band frame standard deviation
+   (64), crest factor and RMS spread.
+2. **`Dlevel`,** level-conditioned: frames split into three loudness terciles, the
+   mean-removed log-mel per tercile (192). This captures how tone changes with how hard
+   the player digs in: drive and compression.
+3. **`Dpct`,** per-band 10th, 50th and 90th percentiles of the frame log-mel,
+   mean-removed (192).
+4. **`Dall`:** 2 and 3 together, plus the dynamics pair (386).
 
-- **No-learning baseline:** `Ŷ = X`. The recording's own description is compared
-  directly with `T(p)`. This is close to what failed before; the translator must beat it.
-- **Primary translator:** ridge regression from `X` to `Y`, with the penalty chosen by
-  leave-band-out cross-validation inside the training bands.
-- **Secondary translator:** a small MLP (130 → 256 → 256 → 130, early stopping on
-  training-band validation). It is reported, and doesn't gate.
+**The pick metric:** Euclidean distance on standardised dimensions, within each amp's
+menu. The activity gate is frames within 40 dB of the loudest; 25 and 30 dB are reported
+as a sensitivity check.
 
-## Evaluation (real recordings, leave-band-out)
+**Selection without forking the test:**
+- The test bands are split by sorted name, alternating, into design bands (8) and verify
+  bands (7).
+- The description with the best design-band ceiling, against the leave-band-out product
+  baseline, is chosen.
+- **It passes if,** on the verify bands, its ceiling against the leave-band-out product
+  baseline has a mean of −0.04 or lower and more part-amp wins than losses.
+- **If none passes:** stop. Report that descriptor matching doesn't track the judge well
+  enough for a translator to help, and propose a learned metric instead (a declared
+  alternative, not run tonight).
 
-**Test parts** (in scope: clean and crunch, each with fixed-level measure distances for
-every menu preset on both halves):
-- set 3's development clean and crunch parts (`rescore/distances.json`);
-- sets 1–2's development stem parts (`songs-check/distances.json`).
+**Also reported for each description:**
+- the no-learning pick: the nearest `T(p)` (below) to the real amp track's description;
+- a centroid baseline: the nearest average of the stored measure renders of other bands'
+  parts through `p`, which is what failed before.
 
-**For each test part:**
-- **Translator:** each test part's band is excluded from training, on both the DI side
-  and the window side. A K-fold over bands, with K equal to the number of test bands, is
-  acceptable if the folds exclude the part's band.
-- **Input:** the real amp track's description on one half (1.0–5.5 s, or 5.5–10 s).
-- **Pick:** the nearest `T(p)` within each amp's menu.
-- **Score:** the fixed-level measure on the other half. Both directions are averaged per
-  part-amp, as in the confirmation.
+## The average guitar `G` and `T(p)`
 
-**Comparisons** (band-clustered 90% intervals):
-1. translator against the no-learning baseline;
-2. translator against the product's starting presets (clean or crunch baseline). Those
-   were chosen on these parts, which biases the comparison against the translator;
-3. translator against the current rebuilt-DI chooser's picks (stored);
-4. the oracle, for headroom.
+- **`G`:** 4 DI windows from non-test bands: Ale Lak, John Morgan Kimock, Bernard Purdie
+  Tribute All-Stars and Cnoc An Tursa. Each is the first window by sorted path and start,
+  re-equalised to the pinned average and at −22.9 LUFS.
+- **`T(p)`:** the mean description over `G`'s renders through `p`: 111 presets, 444
+  renders.
 
-The separated stem as input is reported for the sets 1–2 parts, not gated.
+## Stage 1 (only if stage 0 passes): the translator
 
-## Decision rule (declared)
+**Data:**
+- **Windows:** up to 12 per band from both development pools (seed 20261011), dropping
+  windows below −40 LUFS. All test bands are excluded at training time, per fold.
+- **Each window,** re-equalised to the pinned average and at −22.9 LUFS, is rendered
+  through all 111 menu presets.
+- **The descriptor** is the chosen one, on 4.5-s segments to match the test halves (two
+  per render). A noise-only augmented copy is added.
+- **Audio is kept** for 5% of the renders, for review.
 
-**Phase B (the every-setting knobs-to-sound model, beyond the menu) is worth starting if
-both hold:**
-- the primary translator beats the no-learning baseline, with its 90% interval below 0;
-- its mean against the product's starting presets is below 0.
+**Models:**
+- **Primary: ridge,** from the render description to `T(p)`.
+  - Penalties: 0.1, 1, 10, 100, 1,000.
+  - Chosen by mean squared error under 5-fold leave-band-out cross-validation inside the
+    training bands.
+  - Standardisation is fitted inside each fold.
+- **Secondary:** an MLP (two hidden layers of 256), and a bias-only model. Both are
+  reported, and don't gate.
 
-Otherwise the approach stops at this stage, with the result reported. Phase B gets its
-own plan and review before it runs.
+**Positive control:** the translator on the test parts' own stored measure renders, where
+its picks should approach the same-notes ceiling.
+
+**Off-manifold check:** the distance of each real-recording description from its nearest
+training description, against renders' own distances. Also reported: a pick histogram per
+amp.
+
+**Gates (clean and crunch pooled, band-clustered 90% intervals, choosing on one half and
+scoring the other):**
+1. **The translator against the better of no-learning and centroid.**
+   - **Helps:** the interval lies below 0, and the share of the gap to the same-notes
+     ceiling that it closes is reported.
+   - **Futile:** the lower bound is above −0.02.
+   - **Inconclusive:** anything else.
+2. **The translator against the leave-band-out product baseline**, reported pooled and
+   for crunch, the stratum where a fixed preset left room.
+   - **Helps:** the interval lies below 0.
+   - **Futile:** the lower bound is above −0.03.
+   - **Inconclusive:** anything else.
+
+**Phase B** (the every-setting knobs-to-sound model, beyond the menu) gets its own plan
+if gate 1 helps and gate 2 is not futile.
+
+**Also reported:**
+- each stratum alone;
+- the stored rebuilt-DI chooser;
+- the oracle;
+- drive bias;
+- the judge's tonal and temporal parts.
 
 ## Cost and safety
 
-- **Rendering:** about 37,500 renders in 6 reused processes, about 3 hours. The licence
-  service is checked first (about 170k ports now).
-- **Storage:** descriptors only, a few MB.
-- **CPU training:** minutes.
-- **No held-out data is touched.**
+- **Stage 0:** CPU only, plus the 444 renders for `T(p)`.
+- **Stage 1:** about 330 windows × 111, about 37,000 renders in 6 reused processes,
+  about 2.5 hours, with the licence service checked first. It stores descriptors only,
+  plus 5% of the audio.
+- **No held-out data.**
+- **The reviewer re-checks this plan before stage 0 runs.**
