@@ -213,6 +213,14 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
+- [clean-baseline-plan.md](clean-baseline-plan.md) → [results](clean-baseline-results.md):
+  **confirmed.** Fixed clean factory presets per amp, chosen on development, land about
+  12% closer than the clean template on held-out clean parts. `generate` now starts
+  clean Morgan parts from them, and the chooser adds nothing on top of them on clean
+  parts (exploratory).
+- [songs-check-plan.md](songs-check-plan.md) → [results](songs-check-results.md): from a
+  separated stem the chooser keeps 75% of its amp-track gain (−0.114 against the starting
+  preset, development).
 - [set4-confirmation-plan.md](set4-confirmation-plan.md) →
   [results](set4-confirmation-results.md): **confirmed** on fresh bands. The rebuilt-DI
   chooser is about 8% closer than `generate`'s starting preset on clean and crunch parts
