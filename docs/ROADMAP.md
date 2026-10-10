@@ -97,9 +97,11 @@ lives in the linked documents. Last updated 2026-10-09.
      - The development data is over-used.
      - The binding constraints are the judge's validity on heavy tones (listening) and
        fresh data.
-     - **Next:** a declared, one-time [set-4 confirmation](set4-confirmation-plan.md) of
-       the cut chooser against fixed presets. It is drafted and awaits the listening
-       result and the user's approval.
+     - **Next:** a declared [confirmation](set4-confirmation-plan.md) (draft v2). The
+       chooser's development edge is all clean and crunch: −0.162 against the product's
+       own starting preset, every band negative. On high-gain it is none (+0.03). So the
+       test targets clean and crunch parts, on the held-out sessions of sets 1–2 plus
+       set 4. It awaits the user's approval.
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted

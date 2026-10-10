@@ -1,86 +1,139 @@
-# Set 4 confirmation: plan (DRAFT, not approved)
+# Confirming the rebuilt-DI chooser on fresh material: plan (DRAFT v2, not approved)
 
-Drafted 2026-10-10. **Nothing in it runs until the user approves.** Running it spends set
-4 ([validation-set4.md](validation-set4.md)), which nothing has used. It also waits for
-the heavy-tone listening check ([heavy-listening-plan.md](heavy-listening-plan.md)): if the
-listener does not back the judge on clear heavy pairs (block 2, 5 or fewer of 10), this
-test is postponed. A measure the ear doesn't support can't confirm anything.
+Drafted 2026-10-10, revised the same day after an independent review
+(`tmp/set4-confirmation-review.md`, local). **Nothing in it runs until the user
+approves.** It spends held-out material, and it is recorded in the held-out ledgers.
 
-## The claim under test
+## What changed from v1, and why
 
-On set 3's development parts, under the fixed-level measure, choosing a menu preset through
-the network's rebuilt DI, low-passed at 3 kHz, beat a fixed driven preset per amp: −0.143,
-90% interval −0.274 to −0.012 ([results](fixed-level-rescore-results.md)). That result had
-many forks; the reviewer expected about half the size on fresh material. This test
-checks it once on fresh bands.
+- **v1's claim no longer fits the evidence.** v1 tested "the 3 kHz cut chooser beats a
+  fixed driven preset" on set 4. On set 3 development that edge (−0.143) comes almost
+  entirely from clean parts, where a driven preset is the wrong baseline anyway.
+- **By gain class** (fixed-level measure, both halves, band-clustered 90% interval):
 
-## Frozen before any set-4 audio is used
+  | development parts | chooser vs the product's starting preset | oracle | W / T / L | bands |
+  |---|---|---|---|---|
+  | clean (vs the clean template) | −0.198 (−0.275 to −0.120) | −0.232 | 15 / 0 / 0 | 3 |
+  | crunch (vs the fixed driven preset) | −0.146 (−0.220 to −0.072) | | 28 / 1 / 4 | 5 |
+  | **clean and crunch together** | **−0.162 (−0.218 to −0.106)** | −0.215 | 43 / 1 / 4 | 7 |
+  | high-gain (vs the fixed driven preset) | +0.027 (−0.048 to +0.103) | −0.17 | 26 / 5 / 20 | 8 |
 
-- **Network:** `~/ndsp-presets/learn/direc/models-set3/fold2.pt` (the set-3 network,
-  unchanged; it never heard set 4). CPU inference; its rebuilt DI is low-passed at 3 kHz
-  (`learn/rebuilt_judge.lowpass`) and played at −22.9 LUFS.
-- **Choosing:** on each half (1.0–5.5 s and 5.5–10 s) against the amp track, at lag −52,
-  with the reference-proxy fallback (`learn/rebuilt_judge.rebuilt_distance`). The judge is
-  the validated one (`flat` weighting, `recording` bands).
-- **Menus:** the three amp menus of set 3 (factory presets plus template+R).
-- **Fixed presets,** chosen now by the declared rule. That is the lowest median, over all
-  33 set-3 development parts, of the mean of the half-A and half-B fixed-level distances,
-  factory presets only:
+  On clean and crunch parts the chooser reaches about 76% of the oracle's gain, and all
+  seven band means are negative (−0.04 to −0.25). On high-gain it has no edge, though
+  the oracle shows headroom of −0.17. That fits the finding that heavy distortion
+  destroys the detail the rebuild needs.
+- **So the product question is per gain class:** does the chooser beat what `generate`
+  would start from (the clean template for a clean part, the shipped driven preset for a
+  distorted one)? And it is tested where it should work. Set 4 (9 of 13 parts
+  high-gain) can't test that alone.
+- **The judge was validated by ear on clean-to-crunch PR12,** so the primary claim sits
+  in that regime and doesn't wait for the heavy-tone listening check. The high-gain
+  stratum is report only.
 
-  | amp | fixed preset | median distance |
-  |---|---|---|
-  | PR12 | Keyan Houshmand / Modern Metal (Pick Hard) | 4.596 |
-  | SW50R | Royce Whittaker / Wall Of Doom | 4.427 |
-  | AC20 | Danny Dela Cruz / Raw N Crunchy | 4.825 |
+## Material
 
-  (`generate` ships Vintage Metal and Dirty Coil Rhythm for PR12 and AC20, from the
-  earlier own-level rule. They are within 1.2% and 0.6% of these, so the product is
-  unchanged.)
-- **The measure:** the set-4 part's true DI, re-equalised to K3 fold 2's average balance,
-  at −22.9 LUFS, rendered through the chosen preset and judged against the amp track on the
-  other half, at the part's judge lag.
-- **Statistics** ([closeness review](closeness-review-2026-10-10.md)):
-  - the unit is the band, with amps pooled within it;
-  - each part-amp cell averages both scoring directions;
-  - the statistic is the part-weighted mean log ratio, with a band-clustered 90%
-    interval (t, bands − 1 degrees of freedom), plus wins/ties/losses and the exact band
-    sign flip.
+- **Sets 1–2 held-out sessions** ([validation-datasets.md](validation-datasets.md)):
+  - 17 sessions with 39 parts that have a DI, from about 11 bands, mostly clean to
+    crunch.
+  - Their rule allows a declared test, and a used session stays held out for the next
+    one.
+  - None was used by the network, the chooser, the measure's average balance or any
+    choice. The six used in the 2026-09-28 SW50R listening check stay eligible under
+    that rule.
+- **Set 4** ([validation-set4.md](validation-set4.md)): every part, with the declaration
+  hash pinned at approval. It is spent by this test.
+- **Gain class per part,** fixed before any scoring by set 3's catalogue rule: the
+  session-level class from the amp track (set 3's tools, `gainmeasure.py`; set 4 already
+  has it). It assigns each part to a stratum:
+  - **clean:** the baseline is the clean template with the effects off (template+R);
+  - **crunch:** the baseline is the shipped driven preset of that amp;
+  - **high-gain:** the same baseline as crunch, report only.
+- **Flagged parts** (set 4's Last Legacy and Lead Inc ElecGtr3 timing, Decypher's DI
+  touching full scale) are kept. A sensitivity run without them is reported.
 
-## Gates, in order
+## Frozen inputs
 
-1. **Positive control: the true-DI oracle vs the fixed presets.** Its 90% interval must
-   lie below 0. If not, the test is **uninformative** and stops: set 4 can't resolve even
-   the oracle's edge.
-2. **Primary: the cut chooser vs the fixed presets,** pooled over the three amps.
-   - **Confirmed:** the 90% interval lies below 0.
+- **Network:** `models-set3/fold2.pt` (sha256 `16b2b734…`, pinned in full at approval),
+  CPU inference, low-passed at 3 kHz and played at −22.9 LUFS.
+- **Measure:** the average balance `average-fold2.npy` (sha256 `9aa3c3bf…`), loaded from
+  file and never regenerated.
+- **Menus:** set 3's three amp menus.
+- **Choosing:** on each half against the amp track, at lag −52, with the reference-proxy
+  fallback. If every candidate is refused, the part takes its baseline (ratio 0).
+- **The judge:** `flat` weighting, `recording` bands. Judge v2 is reported as a
+  sensitivity check only, at the commit pinned at approval.
+- **Baselines:** the presets `generate` ships, made dry as in the measurement: SW50R
+  Wall Of Doom, PR12 Vintage Metal, AC20 Dirty Coil Rhythm. The fixed-level rule's
+  presets (Modern Metal, Raw N Crunchy, within 1.2%) are reported as a sensitivity check.
+- **Measure and scoring:**
+  - the true DI re-equalised to the average balance, at −22.9 LUFS, scored on the other
+    half at the part's judge lag;
+  - each part-amp cell averages both directions, over all three amps;
+  - a cell whose measure is refused is dropped from every comparison and reported.
+- **The harness reproduces development first.** Before freezing, the confirmation
+  harness must reproduce these development figures from the stored set-3 distances:
+  −0.162 (clean and crunch vs baseline), −0.143 (all vs the leave-band-out constant),
+  −0.260 (the oracle).
+
+## Statistics and gates
+
+**Statistics:**
+- **The unit is the band.** The primary estimate is the part-weighted mean log ratio.
+- **Interval:** a band-clustered 90% two-sided interval (t, bands − 1 degrees of
+  freedom). "Below 0" is a one-sided test at α = 0.05.
+- **Also reported:** the band-weighted mean, wins/ties/losses, the exact band sign flip,
+  and the range with each band left out.
+
+**Gates, on clean and crunch parts pooled, in this order:**
+1. **Positive control.** The oracle's interval against the baseline must lie below 0.
+   Otherwise the test is **uninformative**: the material can't resolve choosing at all.
+2. **Primary: the chooser vs the baseline.**
+   - **Confirmed:** its interval lies below 0, its mean stays negative with any one
+     band left out, and more than half the bands are negative.
    - **No meaningful edge:** the lower bound is above −0.05.
    - **Inconclusive:** anything else.
 
 **Reported, not gates:**
+- each stratum alone (clean, crunch, high-gain);
 - per amp;
-- the cut chooser vs the uncut rebuilt DI;
+- the uncut rebuilt DI;
 - the tonal and temporal parts;
-- each pick's gain-knob bias against the oracle;
-- the same comparisons under judge v2, as a sensitivity check only;
-- refusals.
+- the drive bias;
+- judge v2.
+
+## What each outcome does (declared)
+
+- **Confirmed:** `generate` gets the chooser as an option for clean and crunch songs.
+  It rebuilds the DI from a separated stem, renders the menu and offers the closest
+  presets on the audition page. Stems are untested, so the option ships labelled
+  experimental, and a stem check follows. High-gain songs keep the fixed driven preset.
+- **No meaningful edge:** the rebuilt-DI chooser is closed for the product. The fixed
+  baselines stay.
+- **Inconclusive:** nothing ships. The result routes the next round: more fresh bands,
+  or the stratum it points to.
+- **Uninformative:** nothing ships, and the material's limits are reported.
+
+**In every case,** the held-out sessions of sets 1–2 stay held out for a later declared
+test, under their rule. Set 4 is spent.
 
 ## Power
 
-Set 4 has 5 bands, and up to about 9 if the Internet Archive sessions pass their checks.
-From resampling set 3's bands:
-- **The oracle's edge** (about −0.26) is resolvable with 5 or 6 bands about 96% of the
-  time.
-- **The chooser's observed −0.143** has about 34% power with 6 bands and about 60–70%
-  with 9–11.
-- **The expected −0.07** has 15% or less.
+The expected size is the development result shrunk by half, for forking: about −0.08.
+From resampling development's clean and crunch band means, with 9 to 12 bands, a
+"confirmed" result has about 87–97% power at that size, and about 100% at the full
+development size.
 
-So a "confirmed" outcome would be strong evidence, while "inconclusive" is the likely
-outcome unless the effect is near its development size. The final band count and its
-power go in the approval request.
+- **These figures are optimistic.** Development has only 7 such bands, so the spread
+  between bands may be larger on new material.
+- **The final count is stated in the approval request,** with power re-estimated after
+  gain classing. Classing reads the amp tracks' level statistics only, not any method's
+  output.
 
 ## Before running
 
-- **Approval:** the user's approval, after the listening check.
-- **Freezing:** a committed manifest of the frozen inputs (network hash, menus, fixed
-  presets, set-4 declaration hash, code commit).
-- **Review:** an independent reviewer re-derives the result before it is reported.
+- the user's approval;
+- gain classing of the sets 1–2 held-out parts, with the counts per stratum and band;
+- a committed manifest of every frozen input and hash, including the harness's
+  reproduction of the development figures;
+- held-out ledger entries;
+- an independent reviewer, who re-derives the result before it is reported.
