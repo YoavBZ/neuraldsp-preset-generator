@@ -114,3 +114,45 @@ bright: the menu median there is about +31 dB.
   them.
 - **v3 replaces v2 as the candidate judge** (as the plan declared), since its
   stored-render checks pass.
+
+## Independent review (2026-10-10)
+
+`tmp/judge-v3-review.md`, local. **Verdict: correct as built, a fair candidate, not yet
+shown to be a better judge.** It stays an option, and the default is unchanged.
+
+**What checked out:**
+- every figure reproduces;
+- the default judge is unchanged (192 of 192 calls identical);
+- v3 is symmetric to within 2e-16 on real cells (the current judge differs by a median
+  12%);
+- there is no NaN in 21,978 values;
+- the spec tests catch most deliberately broken judges.
+
+**What it found:**
+- **The masking model does nothing on this data.** With it off, the picks are the same
+  on 33 of 33 parts. What floors cells is the 90 dB SPL threshold; the background applies
+  on 2 parts. In effect v3 is v2 with almost no floor.
+- **A new blind spot: extra hiss is rewarded where a window has rests.** The background
+  comes from the louder side, so a hissy render raises its own floor. On Colour Me Red 03,
+  −25 dB of hiss brings the median preset closer (7.78 → 5.81). Fix: take the background
+  from the recording only.
+- **Near-inaudible treble on dark parts counts in full.** ±12 dB at 5–10 kHz, 69–93 dB
+  under the loudest cell, costs 3–4 times a +3 dB octave at 1.6 kHz. The threshold
+  constant probably needs lowering (for example 70–75 dB SPL), which depends on the
+  listening level.
+- **Some spec properties are questionable by ear.** Peaks are more audible than notches
+  of the same size, and a dB change counts the same however far down it sits.
+- **The spec doesn't pin down the masking model.** Nothing requires extra hiss to cost
+  more as it grows, or content far below audibility to cost nothing.
+- **A correction:** "best and second-best differ by a median 0.043" is a log ratio. As a
+  plain difference it is 0.165.
+
+**What the listening calibration should include** (headphones at the listener's normal,
+fixed level; about 55 trials; the decision rule declared first):
+- about 30 pairs of the current judge's pick against v3's, where each prefers its own by
+  0.1 or more, stratified by gain class and amp;
+- 6–8 audibility trials of ±12 dB above 5 kHz on dark parts;
+- 6 pairs darker than the record;
+- about 6 trials of the 3 kHz cut against uncut, where the judges disagree;
+- 4 hiss trials, after fixing the background rule;
+- about 4 catch trials.
