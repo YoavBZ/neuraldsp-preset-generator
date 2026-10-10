@@ -88,7 +88,20 @@ lives in the linked documents. Last updated 2026-10-09.
        and the spectrum got worse. The complex-STFT term can't train on MPS. Making
        MR-STFT NaN-safe removed the old MPS glitches.
      - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
-       12–18 bands. Five are downloaded, unheard (`tmp/set4-download.md`).
+       12–18 bands. Set 4 is declared: 13 held-out parts from 5 bands, with 4 Internet
+       Archive sessions being added.
+   - **Rethink (2026-10-10):** no more chooser or judge tweaks on the 33 development
+     parts until the listening check is in.
+     - Rebuilding the DI's fine detail has failed every way tried: longer training, more
+       guitars, architecture repairs and a waveform loss.
+     - The development data is over-used.
+     - The binding constraints are the judge's validity on heavy tones (listening) and
+       fresh data.
+     - **Next:** a declared [confirmation](set4-confirmation-plan.md) (draft v2). The
+       chooser's development edge is all clean and crunch: −0.162 against the product's
+       own starting preset, every band negative. On high-gain it is none (+0.03). So the
+       test targets clean and crunch parts, on the held-out sessions of sets 1–2 plus
+       set 4. It awaits the user's approval.
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
@@ -131,15 +144,53 @@ lives in the linked documents. Last updated 2026-10-09.
         verified): not the lever. The network's rebuild is less coherent with the true
         DI than its own distorted input, on plugin renders too. The training loss
         (mostly spectral magnitude) doesn't keep the waveform, which a driven amp
-        responds to. Next: the loss.
-   5. **Search beyond the menu,** with a positive control first, so a song can beat a
-      single constant.
-   6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
-      multi-guitar target needs the user's decision.
-   7. **Fresh confirmation material,** and heavy-tone listening validation, before any
-      new claim.
-   8. **When the plugin is ready:** remove research and experiment records from the
-      repository.
+        responds to.
+      - **A waveform-keeping loss** ([plan and result](di-loss-plan.md)): failed too.
+      - **Closed, 2026-10-10:** five different attempts didn't move the rebuild's
+        detail. Heavy distortion appears to leave too little to recover it at this scale.
+
+   **Next, revised 2026-10-10 (evening), in this order:**
+   5. **The declared confirmation** ([plan](set4-confirmation-plan.md),
+      [results](set4-confirmation-results.md)). *Done 2026-10-10: confirmed, and
+      independently re-checked.*
+      - **Clean and crunch:** −0.087 (about 8% closer, 90% −0.157 to −0.017), carried
+        by clean parts.
+      - **High-gain:** the chooser is harmful (+0.318), so the fixed driven preset stays.
+      - **The 3 kHz cut** didn't help on fresh data.
+      - **The test:** the 3 kHz cut chooser against the product's own starting preset
+        (the clean template for clean parts, the shipped driven preset for crunch), on
+        fresh clean and crunch parts:
+        - 20 held-out parts from sets 1–2 (11 bands);
+        - set 4's crunch parts, with its high-gain parts report only.
+      - **Why this, now:**
+        - Development shows −0.162 there, negative in every band and 76% of the oracle.
+        - Development is over-used.
+        - Its regime is the one the judge was validated in by ear.
+   6. **The heavy-tone listening check** (the user). It decides judge v2, and whether
+      the high-gain verdict ("no edge over the fixed preset") stands.
+   7. **If the confirmation passes: songs, not amp tracks.** Rebuild from separated stems
+      and from mixes, first on development, under a declared rule. The product's input is
+      a song, and set 3 showed stems lose part of the gain.
+   8. **Then the product:** for clean and mild-crunch songs, `generate`'s audition page
+      offers the chooser's top picks, marked experimental. High-gain songs keep the fixed
+      driven preset.
+   8b. **A fixed clean starting preset,** chosen on development by rule. The clean
+      template is weak: against a reasonable fixed clean preset, the chooser's clean edge
+      shrinks to about −0.05.
+   9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
+      left are a cheap direct-ranker test, and recording a few guitarists (DI plus
+      mic'd amp) for data.
+   10. **When the plugin is ready:** remove research and experiment records from the
+       repository.
+
+   **Parked, with reasons:**
+   - **Network improvements:** closed, as above.
+   - **Judge v2:** half its gain was an artefact of the masking floor. It waits for the
+     listening check, and a symmetric floor.
+   - **Search beyond the menu:** on high-gain, the oracle's headroom (−0.17) is out of the
+     rebuilt DI's reach, so a search through it would hit the same wall.
+   - **The four Internet Archive sessions:** fresh material, kept unused for the next
+     declared test.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1

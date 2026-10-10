@@ -1,0 +1,350 @@
+{
+ "network_sha256": "16b2b734b49cc1cc2d7e547d96d3bb56208007c9cae0d0e33acb1c2a1cdd042b",
+ "average_sha256": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8",
+ "set4_declaration_sha256": "6aa7a8c337eb9a084609253c12ac8b971d72f42e41d8c0df8cb9b8db25e710ee",
+ "prep_sha256": "b7995af2b8893684e87ff6bb0677f0a18fe7b6aabfa139b62aeb97ff8176ce3a",
+ "code_commit": "684b790fae8d0f4f609cb1dd48e11af1bd59441c",
+ "parts": {
+  "cambridge-flames-elecgtr1": {
+   "band": "The Black Crown",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": 14,
+   "flags": [],
+   "reference_sha256": "7edc4c4cd6c6dcb4a73a5ef1c82d76a6b515848838baa985e7db853fbdea3f6f",
+   "di_sha256": "3882e1ffd19a722d10a39a876806714425fcceb53be3c7205186ff2c528b4dd5"
+  },
+  "cambridge-flames-elecgtr1dt": {
+   "band": "The Black Crown",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": 14,
+   "flags": [
+    "double of ElecGtr1: the two count as one tone"
+   ],
+   "reference_sha256": "e612e6164e6dfe400a6a9484283572e1c5aa9266569a90b3232d35dcc1a2b84f",
+   "di_sha256": "945d62aeff34edcacaa783ff068f85026c585294f8ae77d46acfa7c93b4ad65b"
+  },
+  "cambridge-such-fine-people-elecgtr03": {
+   "band": "Tholas P.",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": 122,
+   "flags": [],
+   "reference_sha256": "4487778c97717285a3af82eafbc3b9f01242b8f8f5e9b26fc0965b55f792d864",
+   "di_sha256": "477b4cc1027414bc39e3ef3a8c939cfd913aadaab5f9504ad8536571c53b75a0"
+  },
+  "cambridge-such-fine-people-elecgtr03dt": {
+   "band": "Tholas P.",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": 122,
+   "flags": [
+    "double of ElecGtr03: the two count as one tone"
+   ],
+   "reference_sha256": "d10bcef543ccbc3dc6d8c88efa94cde6d9e9b098175dc84c143f3028f1f314f7",
+   "di_sha256": "a7c483fb993aa84d7cef4bb54669d7d37fe5e98cf696a872b80dd1401fef2045"
+  },
+  "cambridge-the-inner-circle-elecgtr1": {
+   "band": "Lead Inc",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": -23,
+   "flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "reference_sha256": "2e982f251d335dc19297360488234a91ca6d4a6a7a1d6a837100fe6e3642e39f",
+   "di_sha256": "80a0f1f88ec45e70e2275c1e725d02c0ecbf4676dc955e3a3a11a4201ecb7093"
+  },
+  "cambridge-the-inner-circle-elecgtr2": {
+   "band": "Lead Inc",
+   "gain_class": "crunch",
+   "source": "set4",
+   "judge_lag": -19,
+   "flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "reference_sha256": "4a72ab92bccfded39e5d6d3d57c33798daa1d7a86ca8276fbcdd4f5daa489fbf",
+   "di_sha256": "9c745fbe159a368ba02c897a2a90f617a073334e892e7a95bb04bc2beb1b24f8"
+  },
+  "cambridge-the-inner-circle-elecgtr3": {
+   "band": "Lead Inc",
+   "gain_class": "crunch",
+   "source": "set4",
+   "judge_lag": 287,
+   "flags": [
+    "amp track 7.1 ms after the DI: far microphone, reamp or latent processing",
+    "late_amp_track"
+   ],
+   "reference_sha256": "f03c0364d11c7ccb68a2a60e9e05e3f70fcef68b4c957a5315b0ff6dcee957f9",
+   "di_sha256": "3fe18036f105b34ca3f4d542adfde4da905bbfbd988336ee58cecb1d9c5d0044"
+  },
+  "cambridge-unseen-elecgtr01": {
+   "band": "Decypher",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": -25,
+   "flags": [
+    "DI touches full scale (1 flat-topped runs)",
+    "di_touches_full_scale"
+   ],
+   "reference_sha256": "5ebf89f3316f27ab9d173a891e0bf2d4e65b3b6fab22ec6f996253b27887976a",
+   "di_sha256": "806206cfcbc674e9bd3c44c465d62bf52058090c2700b6aa00593569aa48796c"
+  },
+  "cambridge-unseen-elecgtr01dt": {
+   "band": "Decypher",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": -25,
+   "flags": [
+    "DI touches full scale (1 flat-topped runs)",
+    "di_touches_full_scale",
+    "double of ElecGtr01: the two count as one tone"
+   ],
+   "reference_sha256": "abe4e12643d1eff4bdcc5dabc8ef7cc4a98407f90420f585ee0bde96b2f18028",
+   "di_sha256": "0c3e0b853706c7e171c4db9f5095448259ab5e268cfb7d9ef8f07d177eb2ec53"
+  },
+  "cambridge-unseen-elecgtr02": {
+   "band": "Decypher",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": -25,
+   "flags": [
+    "DI touches full scale (5 flat-topped runs)",
+    "di_touches_full_scale"
+   ],
+   "reference_sha256": "32b8b025110410626f99eb5480c41d433b84dd9b2df9f774b4964ecd4771a553",
+   "di_sha256": "bc3e5eee99488bf6fbaeed63385c935211868032b06751b04852aec82d4b7a39"
+  },
+  "cambridge-unseen-elecgtr02dt": {
+   "band": "Decypher",
+   "gain_class": "high-gain",
+   "source": "set4",
+   "judge_lag": -25,
+   "flags": [
+    "DI touches full scale (6 flat-topped runs)",
+    "di_touches_full_scale",
+    "double of ElecGtr02: the two count as one tone"
+   ],
+   "reference_sha256": "e947eecf6ee6b3e275bc61e5547947dcbce803d515914bd04b4defd68f3f6b48",
+   "di_sha256": "9ab70c626dc2916b043298f96fafa75347533d30b49a98cec57539f1b73416eb"
+  },
+  "cambridge-who-s-who-in-hell-elecgtr01": {
+   "band": "Last Legacy",
+   "gain_class": "crunch",
+   "source": "set4",
+   "judge_lag": -53,
+   "flags": [
+    "amp track earlier than the DI: not a simultaneous acoustic capture (reamped with over-compensated latency, or a software amp)",
+    "amp track polarity inverted relative to the DI",
+    "amp_earlier_than_di"
+   ],
+   "reference_sha256": "0ed048148ce627529b110485e9ba18aa1a950d0c70bba9dc170aeea8a940cd4d",
+   "di_sha256": "ccda67bdb66876b0a12131b9ee30daf98efdab088c6e92d80733b9c1159532db"
+  },
+  "cambridge-who-s-who-in-hell-elecgtr02": {
+   "band": "Last Legacy",
+   "gain_class": "crunch",
+   "source": "set4",
+   "judge_lag": -53,
+   "flags": [
+    "amp track earlier than the DI: not a simultaneous acoustic capture (reamped with over-compensated latency, or a software amp)",
+    "amp track polarity inverted relative to the DI",
+    "amp_earlier_than_di"
+   ],
+   "reference_sha256": "39a4df428863eae42f0b1fe6aac7ff660401169f828c91578efb999ede4d5101",
+   "di_sha256": "50cc6945bdad9e1f80e5d803c69e11fcf43f812fbc974f4baeb4cb03f8b04a82"
+  },
+  "cambridge_All_The_Same_ElecGtr14": {
+   "band": "Lights Off Clarity",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -21,
+   "flags": [],
+   "reference_sha256": "542de6aafd14619cde28574ba8dab67703f6a978345e0d131b30f89bd9f2ba73",
+   "di_sha256": "bfe0ea97016ea6168e2a36a25abd6c3dbf43b8759333ba97aff6998d83df0606"
+  },
+  "cambridge_All_The_Same_ElecGtr15": {
+   "band": "Lights Off Clarity",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -21,
+   "flags": [],
+   "reference_sha256": "2cf1991f5c4145336217865d68ae1937e45fd27ee75451dffb619c53119248ad",
+   "di_sha256": "753b99dec9bb6944c11e4b295d00bfdc220043aa6e1083c73e929ae500456288"
+  },
+  "cambridge_It_s_My_Right_Gtr3": {
+   "band": "Boogie Snakes",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": 14,
+   "flags": [],
+   "reference_sha256": "4e98ec77aee07776f333ceba0c5fd5bfdf4bf1a7792e8ad9f617421293d37beb",
+   "di_sha256": "3b222644222a0339cd732f7b018263e1f85ac118bf55da0be4223f2ac673480e"
+  },
+  "cambridge_One_Flip_Flop_ElecGtr3": {
+   "band": "The Maybe Next Years",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": 5,
+   "flags": [],
+   "reference_sha256": "c996d7432dde55d81f0a74050e7f1c9dd1a27d8eb8c9865fdda3733c7cbc9b15",
+   "di_sha256": "ae759573409a3c0c41b25cfa8623d06768900c33e3082aad3fdb21604df9e961"
+  },
+  "cambridge_Stalker_ElecGtr01": {
+   "band": "Tim Taler",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -311,
+   "flags": [],
+   "reference_sha256": "fbd9d92be49687f8878e05479c1155ea2963454eab3a405ce6865030fad79c49",
+   "di_sha256": "58f8755bb40cc1f43ace807e8367aac48c7dc7f533484c9242d986e07629bce3"
+  },
+  "cambridge_Stalker_ElecGtr02": {
+   "band": "Tim Taler",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -193,
+   "flags": [],
+   "reference_sha256": "fa853ae7330d3f998c2def5e5b3b8506c89fcef08562977d077aae359e68c7fa",
+   "di_sha256": "9b0602998e8aba24bc5fe6d389be9ce109de6fa403eceea1ed0c5b5ef308d69e"
+  },
+  "cambridge_Sugar_Faith_ElecGtr1": {
+   "band": "Forkupines",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -24,
+   "flags": [],
+   "reference_sha256": "f4960556b1ae179a86af59181cedbd19f9bf0ff9796b563f698c4100bd18ca15",
+   "di_sha256": "8b9fd66d21b3648e25c37923de19b4dab9e2b904ce9fd36197288ad1142ee63a"
+  },
+  "cambridge_Sugar_Faith_ElecGtr3": {
+   "band": "Forkupines",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -24,
+   "flags": [],
+   "reference_sha256": "fc9f86f950bb6cd0aae7386a8804b1f0ce4503b8809b9f3a9cefb5a0b22aeb46",
+   "di_sha256": "aad5179ee677b18a281da8f171d3646c4aeb98db33aa5e753f738d66eca50c23"
+  },
+  "cambridge_Sugar_Faith_ElecGtr6": {
+   "band": "Forkupines",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -24,
+   "flags": [],
+   "reference_sha256": "15a1b00b7458c656e5e75d0745887e77585847af188c7cab2a4affeb47e8abeb",
+   "di_sha256": "9754fffb61a44d0e7f123100fbe85083bf58b42ef7b17a322bfd119a2e0f596d"
+  },
+  "cambridge_Sugar_Faith_ElecGtr9": {
+   "band": "Forkupines",
+   "gain_class": "crunch",
+   "source": "sets12",
+   "judge_lag": -18,
+   "flags": [],
+   "reference_sha256": "bc3657f141a56925be2e5a46b58c133d5ff761b73c316c114b205deca8d0629a",
+   "di_sha256": "a360da5fdb3761db85f5e5f2f7e1df4d7ca5d49a1ed7754c033d04ae4f6960c9"
+  },
+  "cambridge_That_s_How_I_Got_To_Memphis_ElecGtr3": {
+   "band": "Chris Coltraine",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -29,
+   "flags": [],
+   "reference_sha256": "d8dc03e516f5143fc78569d854f40c168f277879ca8af619b01112e0f8de3343",
+   "di_sha256": "80248a8be875d1167d7cfa302354a13ed4cb6a6bf611c90c1ca35af972b8aa3b"
+  },
+  "cambridge_That_s_How_I_Got_To_Memphis_ElecGtr3DT": {
+   "band": "Chris Coltraine",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -29,
+   "flags": [],
+   "reference_sha256": "e5c9fba7712a9de758ce2b2018f57ed8a4b20cb351f9e9bbd169f8c5bacdf7cf",
+   "di_sha256": "b45d5c3e51e796781203837bce6cd80fea452be7eae6b8b852e4f2ed8194469d"
+  },
+  "guitar_techs_P3_music_excerpt_10_10": {
+   "band": "Guitar-TECHS P3",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": 66,
+   "flags": [],
+   "reference_sha256": "6ea537776f1001bcab926cda1f969015bbc808688a23ad58f3c4814fee423388",
+   "di_sha256": "3fcef607ff3bd5747e47af8e198d5d91aeb4869f82e8ef54023f65e5f1445c9e"
+  },
+  "telefunken_57_Chevy_GTR_1": {
+   "band": "Rebecca Haviland",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -24,
+   "flags": [],
+   "reference_sha256": "23fd644f64a573aacb0953d75c40f19a9d17350f0267d52940c86f10dcf5a71f",
+   "di_sha256": "95457686da68962d787eaabefb3a620ce5122fefb39dcb90de2ba65dd4deb7c9"
+  },
+  "telefunken_57_Chevy_GTR_2": {
+   "band": "Rebecca Haviland",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": 40,
+   "flags": [],
+   "reference_sha256": "11004a73ddf1cd4a443576ce00756df3110055c27bc751d8047f46a6965b30bf",
+   "di_sha256": "34ddec88f9e998437aa1cc0203728ea472b5041666c324b2c94f2b30d34debe7"
+  },
+  "telefunken_Bad_Influence_Guitar": {
+   "band": "Catbite",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -18,
+   "flags": [],
+   "reference_sha256": "e683444eef3e8e82cb9e9378b413b173f27d9774beea835aafa72f4243ec9830",
+   "di_sha256": "8b094e87f99415ef9bb9b86df6c66a89e43b05c549326d9bbd5b2a6378f82faa"
+  },
+  "telefunken_Die_In_Denver_Guitar": {
+   "band": "Catbite",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -18,
+   "flags": [],
+   "reference_sha256": "f697babbfb12d0da76c260f5299f06a8714ae7d62668dde36bfe5610db4777dc",
+   "di_sha256": "4202b466570d3055fa970e853e357662e19142b4c01bd39fc90653db352881d0"
+  },
+  "telefunken_Past_Dues_GTR": {
+   "band": "Wild & Co",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -18,
+   "flags": [],
+   "reference_sha256": "479956f927df6a13d6a02e7a301ef70ef5120d707db5f339bc9457a731cfc3d8",
+   "di_sha256": "8c4608f3456f5728e6a92810118f750cf57b5ae772536d248e6de539fbd0fa1a"
+  },
+  "telefunken_Pretty_Peace_GTR": {
+   "band": "Briana Maia",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -19,
+   "flags": [],
+   "reference_sha256": "4431dce4b20386b750859e2807912d2552836daa6e956f7d9c18e359a71889e9",
+   "di_sha256": "ae922aca2b853c705713ca69cf454c9449f5ac1691a2d29572a887a767f87ff4"
+  },
+  "telefunken_Safety_GTR": {
+   "band": "Briana Maia",
+   "gain_class": "clean",
+   "source": "sets12",
+   "judge_lag": -19,
+   "flags": [],
+   "reference_sha256": "2a46e6d68b89b11ce463b79fb7b1a63d74d00338ed8e40dc3437e13d7fcbf8da",
+   "di_sha256": "be19114e23cacdbdf6e8e1c0f716bf51cc03482e6c8e7956bd51c0a8b6c7c7ae"
+  }
+ },
+ "shipped_presets": {
+  "pr12": "factory:Neural DSP/Vintage Metal",
+  "sw50r": "factory:Artists/Royce Whittaker/Wall Of Doom",
+  "ac20": "factory:Artists/Charlie Robbins/Dirty Coil Rhythm"
+ },
+ "rule_presets": {
+  "pr12": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+  "sw50r": "factory:Artists/Royce Whittaker/Wall Of Doom",
+  "ac20": "factory:Artists/Danny Dela Cruz/Raw N Crunchy"
+ },
+ "torch": "2.8.0"
+}

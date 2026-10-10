@@ -26,9 +26,11 @@ def _a_di():
 
 # --- the declaration ----------------------------------------------------------------
 
-def test_every_band_is_held_out_and_unused():
+def test_every_band_is_held_out_and_used_once():
     d = set4.load()
-    assert d["held_out_uses"] == []
+    # Spent by the one declared confirmation (docs/set4-confirmation-plan.md); no other use.
+    assert [u["test_id"] for u in d["held_out_uses"]] == ["confirm-rebuilt-di-chooser-2026-10-10"]
+    assert d["held_out_uses"][0]["spent"] is True
     assert d["held_out_bands"] == set4.bands()
     assert all(s["split"] == "held_out" and s["fold"] is None for s in d["sessions"])
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])

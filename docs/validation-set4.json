@@ -1069,5 +1069,16 @@
    ]
   }
  ],
- "held_out_uses": []
+ "held_out_uses": [
+  {
+   "declaration": "docs/set4-confirmation-plan.md",
+   "test_id": "confirm-rebuilt-di-chooser-2026-10-10",
+   "commit": "2804e38",
+   "parts": "all 13 declared parts",
+   "results": "docs/set4-confirmation-results.md",
+   "ran": "2026-10-10",
+   "spent": true,
+   "note": "Set 4's first five sessions are spent by this test; the Internet Archive additions are not part of it."
+  }
+ ]
 }
