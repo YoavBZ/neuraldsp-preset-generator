@@ -351,3 +351,28 @@ def test_every_recipe_declares_where_its_values_came_from(pack_id):
                 f"{evidence.get('class')!r} is not one of {sorted(EVIDENCE_CLASSES)}"
             )
             assert evidence.get("source"), f"{pack_id} {layer}/{name} names no source"
+
+
+# --- the dry recipes ---------------------------------------------------------
+# generate's factory baselines were measured dry; these recipes make them so.
+# Each must hold exactly the dry rule, and only the amps with a spring get one.
+
+DRY_COMMON = {
+    ("parameters", "transpose"): 0,
+    ("reverb", "reverbActive"): False,
+    ("delay", "delayActive"): False,
+    ("tremolo", "tremoloActive"): False,
+    ("parameters", "doublerActive"): False,
+    ("parameters", "gateActive"): False,
+}
+
+
+@pytest.mark.parametrize("amp, spring", [("pr12", True), ("sw50r", True), ("ac20", False)])
+def test_each_dry_recipe_is_exactly_the_dry_rule(amp, spring):
+    recipe = json.loads((PLUGIN_ROOT / "packs" / "morgan" / "recipes.json").read_text())
+    entries = {(e["module"], e["key"]): e["value"]
+               for e in recipe["layers"]["dry"][amp]["parameters"]}
+    expected = dict(DRY_COMMON)
+    if spring:
+        expected[(f"{amp}Amp", f"{amp}Reverb")] = 0
+    assert entries == expected

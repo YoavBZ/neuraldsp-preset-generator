@@ -41,6 +41,7 @@ import sys
 import pytest
 
 from packs.loader import detect_pack, list_packs, load_pack
+from packs.recipes import load_recipes
 from packs.timing import note_ms
 
 ROOT = pathlib.Path(__file__).parent.parent
@@ -207,10 +208,13 @@ def test_parameter_names_a_skill_mentions_are_real(doc):
     modules = {spec.module for spec in pack.parameters.values()}
     text = doc.read_text()
 
+    # A recipe reference (`dry/pr12`) has the same shape as a parameter path; it
+    # counts as real only if the pack has that recipe.
+    recipes = load_recipes(REFERENCE_PACK)
     unknown = [
         f"{module}/{key}"
         for module, key in PARAM_PATH.findall(text)
-        if pack.get(module, key) is None
+        if pack.get(module, key) is None and key not in recipes.get(module, {})
     ]
     # Bare camelCase names are written for a module the sentence already names
     # ("the live amp's own reverb knob"), so either half is a real reference.
@@ -639,7 +643,7 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         if not is_blind_verdict:
             text = text.replace("RUN_DIR", str(sandbox.verdict_run()))
         text = text.replace("LISTENER", "documentation-test")
-    for placeholder in ("PRESET.xml", "TEMPLATE.xml"):
+    for placeholder in ("PRESET.xml", "TEMPLATE.xml", "BASELINE.xml"):
         text = text.replace(placeholder, str(sandbox.template))
     text = text.replace("/tmp/spec.json", str(sandbox.spec))
     if ("REFERENCE.wav" in text or "PROBE.wav" in text
