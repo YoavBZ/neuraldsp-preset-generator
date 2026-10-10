@@ -80,3 +80,18 @@ gives 9.0M weights instead of 9.8M. Everything else is as in v3, including `--no
 - **Pre-check:** the same 15 minutes and the same two conditions. For the open bottom,
   "open" means the share of the level's GELU outputs above 1e-3 in size.
 - **The run and the decision rule:** unchanged.
+
+## v3b pre-check result (2026-10-10): fails; no long run
+
+- **Validation:** 61.7 at step 1,000, against 65.0.
+- **The open-bottom share:** 0.98 at step 500, then 0.39 at step 1,000, under the
+  declared 0.5.
+- **An ablation** (reported, not a declared gate): zeroing the deepest decoder level
+  changes the output by 4.6% in the old network (its constant bias), 12.6% in v3, and
+  0.1% in v3b.
+
+Even when the bottom cannot be gated off, training learns to ignore it. The dead bottom
+is a symptom: the shallow levels already give the loss what it rewards. Repairing the
+architecture is closed as a lever. The next check asks whether the gap comes from the
+network having trained only on plugin renders while being tested on real amps
+([sim-to-real plan](sim-real-gap-plan.md)).

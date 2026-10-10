@@ -118,7 +118,7 @@ was declared, what was measured, and the research behind it.
   had its bottom levels dead (a shut GLU gate, 86% of the weights).
 - [rebuilt-di-lowpass-plan.md](rebuilt-di-lowpass-plan.md) →
   [results](rebuilt-di-lowpass-results.md): cutting the rebuilt DI above 3 kHz misses
-  the bar by 0.0009 (−0.049, 23 better and 5 worse); not adopted.
+  the bar by 0.0009 (−0.049, 23 better and 5 worse); adopted by the user's decision.
 - [di-network-v3-plan.md](di-network-v3-plan.md): repairing the network's bottom levels
   (v3 pre-check failed; v3b with an ungated bottom level).
 - [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →

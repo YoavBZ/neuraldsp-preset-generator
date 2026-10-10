@@ -43,12 +43,9 @@ def lowpassed(slug, hz):
     """The stored rebuilt DI (`phase2-set3/net`), low-passed at `hz`, back at −22.9 LUFS."""
     import numpy as np
 
-    from learn.direc_check import to_lufs
+    from learn.rebuilt_judge import lowpass
 
-    x = np.load(SRC / "net" / slug / "di.npy")
-    f = np.fft.rfftfreq(len(x), 1 / P.SR)
-    gain = 1 / np.sqrt(1 + (f / hz) ** 8)                       # 4th-order Butterworth magnitude
-    return to_lufs(np.fft.irfft(np.fft.rfft(x) * gain, len(x)))
+    return lowpass(np.load(SRC / "net" / slug / "di.npy"), hz)
 
 
 def render(model, name, shard, folds, lowpass=None):

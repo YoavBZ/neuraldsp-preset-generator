@@ -52,7 +52,20 @@ failed".
   chosen with these parts in view.
 - **No held-out claim follows either way.**
 
-## Next
+## Decision (user, 2026-10-10): adopted
+
+The bar of −0.05 was a judgment call set when the test was declared. The user adopts
+the 3 kHz cut, as a near miss judged on its direction and its reason:
+- it is free;
+- 23 picks are better and 5 worse, and it is never clearly worse;
+- it removes content the network cannot rebuild.
+
+This is recorded as an adoption, not a pass: the bar is unchanged.
+- **Where:** future rebuilt DIs are low-passed by `learn/rebuilt_judge.lowpass`
+  (3 kHz).
+- **Claims:** any claim built on it still needs fresh material.
+
+## Next (as written before the decision)
 
 Low-passing stays out of the chooser. The network itself remains the lever: its bottom
 levels were dead in every run so far ([v2 results](di-network-v2-results.md)), and

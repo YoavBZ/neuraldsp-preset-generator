@@ -93,8 +93,9 @@ lives in the linked documents. Last updated 2026-10-09.
         - The review found every network's bottom levels dead: a GLU gate shut, cutting
           off 86% of the weights. So data and training length couldn't matter yet.
       - **Cutting the rebuilt DI above 3 kHz** ([results](rebuilt-di-lowpass-results.md),
-        verified): −0.049, 23 picks better and 5 worse, missing the bar by 0.0009. Not
-        adopted; it can be re-tested on top of a repaired network.
+        verified): −0.049, 23 picks better and 5 worse, missing the bar by 0.0009.
+        **Adopted by the user's decision** as a free, direction-consistent near miss
+        (`learn/rebuilt_judge.lowpass`). It is not counted as a pass.
       - **Repairing the bottom** ([v3 plan](di-network-v3-plan.md)): normalising the
         bottleneck improved early training, but the gate shut again (pre-check failed).
         v3b replaces that gate with a plain activation.
