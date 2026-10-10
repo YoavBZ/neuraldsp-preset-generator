@@ -216,9 +216,13 @@ The band is the session's artist, as set 2 records it, and the named artist for 
 being added are not part of this test, and stay unused.
 
 **Stratum counts across both sources:**
-- **clean:** 13 parts, 9 bands;
+- **clean:** 13 parts, 8 bands (a counting slip, "9", was corrected before rendering);
 - **crunch:** 7 parts from sets 1–2 plus set 4's crunch parts;
 - **high-gain:** set 4's 9 parts, report only.
 
 The run harness is `learn/confirm_run.py`. Its development reproduction is committed
 before any set-4 or sets 1–2 rendering.
+
+**The harness reproduces development** (`learn/confirm_run.py dev-check`, from the stored
+set-3 distances): −0.162, −0.1433 and −0.2599, matching the plan. The frozen manifest is
+`docs/set4-confirmation-manifest.json`, committed before any rendering.
