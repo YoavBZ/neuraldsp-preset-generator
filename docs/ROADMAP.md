@@ -63,6 +63,14 @@ lives in the linked documents. Last updated 2026-10-09.
      heavy-tone listening.
    - **Set 3's held-out split is spent.** A new confirmation needs fresh material.
 
+   **Measurement review (2026-10-10, [review](closeness-review-2026-10-10.md)).**
+   - **Several "fails" were undecidable,** including the held-out gate.
+   - **The judge is treble-deaf** on some heavy parts.
+   - **The network's picks are under-driven:** its rebuilt waveform makes presets sound
+     dirtier than they are.
+   - **The analysis protocol is updated.** The DI-level convention, a heavy-tone
+     listening check and judge fixes await the user's decision.
+
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
       songs. *Done 2026-10-09
