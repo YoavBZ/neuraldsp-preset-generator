@@ -36,7 +36,37 @@ def test_every_band_is_held_out_and_used_once():
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])
     assert d["counts"]["kept"] == len(d["parts"])
     assert d["counts"]["excluded"] == len(d["excluded"])
-    assert d["counts"]["declared_parts"] == 21
+    assert d["counts"]["declared_parts"] == 52               # 21 + amendment 1's 31
+
+
+AMENDMENT_1 = {"Umbriferous", "The Bright Star Alliance", "Sonnet & Alcohol", "The Laminar Flow"}
+
+
+def test_the_guard_knows_every_declared_session():
+    d = set4.load()
+    assert {s["key"]: (s["band"], s["path"]) for s in d["sessions"]} == set4.SESSIONS
+    assert len(set4.SESSIONS) == 9 and AMENDMENT_1 <= set(set4.bands())
+    assert [a["id"] for a in d["amendments"]] == [1]
+
+
+def test_amendment_1_sessions_come_from_the_wayback_machine():
+    for s in set4.load()["sessions"]:
+        if s["band"] in AMENDMENT_1:
+            assert s["route"] == "wayback" and s["wayback_capture"]
+            assert s["url"].startswith("https://web.archive.org/web/") and "id_/https://multitracks.cambridge-mt.com/" in s["url"]
+        else:
+            assert s["route"] == "direct" and s["url"].startswith("https://mtkdata.cambridgemusictechnology.co.uk/")
+
+
+def test_the_laminar_flow_keeps_only_crunch_or_high_gain():
+    d = set4.load()
+    assert d["rules"]["crunch_or_high_gain_only"]["sessions"] == ["cambridge/TheLaminarFlow_Headspace_Full"]
+    for p in d["parts"]:
+        if p["band"] == "The Laminar Flow":
+            assert p["gain_class"] in ("crunch", "high-gain")
+    for p in d["excluded"]:
+        if any("keeps only crunch or high-gain" in r for r in p["reasons"]):
+            assert p["band"] == "The Laminar Flow"
 
 
 def test_no_band_from_an_earlier_set():
@@ -55,6 +85,9 @@ def test_judge_lag_is_lag_less_52():
 
 def test_set4_names_and_paths_are_held_out():
     d = set4.load()
+    for key, (band, directory) in set4.SESSIONS.items():   # known without the declaration
+        assert key in set4._names() and band in set4._names()
+        assert set4.is_held_out(f"{directory}/01_Kick.wav")
     for s in d["sessions"]:
         assert set4.is_held_out(s["band"]) and set4.is_held_out(s["key"])
         for di in s["dis"]:                                   # kept or not
@@ -93,7 +126,7 @@ def test_set3_guards_know_set4():
     assert set3.is_held_out(set4.SET4_CROPS / set4.parts()[0]["slug"] / "di.wav")
 
 
-@pytest.mark.parametrize("band", ["Tholas P.", "Ale Lak"])     # a set-4 band, or a set-2 band's name
+@pytest.mark.parametrize("band", ["Tholas P.", "The Laminar Flow", "Ale Lak"])   # set-4 bands, or a set-2 band's name
 def test_training_dis_refuses_a_set4_file(monkeypatch, band):
     from learn import di_pool
     monkeypatch.setattr(di_pool, "tracks", lambda: [(band, _a_di())])

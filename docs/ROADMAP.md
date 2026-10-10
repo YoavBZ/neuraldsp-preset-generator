@@ -88,8 +88,10 @@ lives in the linked documents. Last updated 2026-10-09.
        and the spectrum got worse. The complex-STFT term can't train on MPS. Making
        MR-STFT NaN-safe removed the old MPS glitches.
      - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
-       12–18 bands. Set 4 is declared: 13 held-out parts from 5 bands, with 4 Internet
-       Archive sessions being added.
+       12–18 bands. All nine are set 4 ([declaration](validation-set4.md)): 35 kept parts
+       in 9 bands (21 high-gain, 12 crunch, 2 clean).
+       - **The first five sessions (13 parts) are spent** by the confirmation.
+       - **The four Internet Archive sessions (22 parts) are unused.**
    - **Rethink (2026-10-10):** no more chooser or judge tweaks on the 33 development
      parts until the listening check is in.
      - Rebuilding the DI's fine detail has failed every way tried: longer training, more

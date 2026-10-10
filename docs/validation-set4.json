@@ -1,10 +1,18 @@
 {
  "schema": "validation-set4-1",
  "declared": "2026-10-10",
+ "amendments": [
+  {
+   "date": "2026-10-10",
+   "id": 1,
+   "what": "four Wayback-only Cambridge sessions added (Umbriferous, The Bright Star Alliance, Sonnet & Alcohol, The Laminar Flow) under the same rules; The Laminar Flow keeps only crunch or high-gain parts",
+   "plan": "docs/validation-set4-plan.md, 'Amendment 1'"
+  }
+ ],
  "plan": "docs/validation-set4-plan.md",
  "catalog": {
   "path": "~/ndsp-presets/references/datasets-set4/catalog.json",
-  "sha256": "06164314debba46780e0c8ea750ec9419ea8717083c53949e2f58934d1ffefbf",
+  "sha256": "46bc3567a07f6c441b8126d3f32bd1efa7d85a6d2ff58c99361a7e7f1a72ab8e",
   "schema": "validation-datasets-set4-1"
  },
  "root": "~/ndsp-presets/references/datasets-set4",
@@ -17,14 +25,24 @@
   "split": "every band held out: no draw, no folds",
   "judge_lag": "lag_samples - 52 (48 kHz)",
   "lag_sign": "positive when the amp track is later than the DI",
+  "crunch_or_high_gain_only": {
+   "sessions": [
+    "cambridge/TheLaminarFlow_Headspace_Full"
+   ],
+   "rule": "session-level gain_class must be crunch or high-gain (amendment 1)"
+  },
   "band_weighting": "recommended as set 3's amendment (4): each band's parts weigh 1/n; a confirmation plan adopts or overrides it explicitly"
  },
  "held_out_bands": [
   "Decypher",
   "Last Legacy",
   "Lead Inc",
+  "Sonnet & Alcohol",
   "The Black Crown",
-  "Tholas P."
+  "The Bright Star Alliance",
+  "The Laminar Flow",
+  "Tholas P.",
+  "Umbriferous"
  ],
  "licences": {
   "cambridge": "Cambridge-MT 'Mixing Secrets' multitrack library: provided for educational purposes only; not to be used for any commercial purpose without the express permission of the copyright holders (each session's Readme.txt). https://cambridge-mt.com/ms/mtk/",
@@ -78,46 +96,79 @@
    "session": "cambridge/TheBlackCrown_Flames_Full",
    "track": "23_ElecGtr3.wav",
    "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TheLaminarFlow_Headspace_Full",
+   "track": "31_ElecGtr01DTMic1.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TheLaminarFlow_Headspace_Full",
+   "track": "32_ElecGtr01DTMic2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TheLaminarFlow_Headspace_Full",
+   "track": "33_ElecGtr01DTMic3.wav",
+   "reason": "guitar amp/microphone track with no DI"
   }
  ],
  "counts": {
-  "declared_parts": 21,
-  "excluded": 8,
-  "kept": 13,
-  "kept_tones": 9,
+  "declared_parts": 52,
+  "excluded": 17,
+  "kept": 35,
+  "kept_tones": 24,
   "by_band": {
    "Decypher": 4,
    "Last Legacy": 2,
    "Lead Inc": 3,
+   "Sonnet & Alcohol": 2,
    "The Black Crown": 2,
-   "Tholas P.": 2
+   "The Bright Star Alliance": 7,
+   "The Laminar Flow": 3,
+   "Tholas P.": 2,
+   "Umbriferous": 10
   },
   "by_band_tones": {
    "Decypher": 2,
    "Last Legacy": 2,
    "Lead Inc": 3,
+   "Sonnet & Alcohol": 2,
    "The Black Crown": 1,
-   "Tholas P.": 1
+   "The Bright Star Alliance": 5,
+   "The Laminar Flow": 3,
+   "Tholas P.": 1,
+   "Umbriferous": 5
   },
   "by_gain_class": {
-   "crunch": 4,
-   "high-gain": 9
+   "clean": 2,
+   "crunch": 12,
+   "high-gain": 21
   },
   "by_band_gain_class": {
    "Decypher/high-gain": 4,
    "Last Legacy/crunch": 2,
    "Lead Inc/crunch": 2,
    "Lead Inc/high-gain": 1,
+   "Sonnet & Alcohol/clean": 2,
    "The Black Crown/high-gain": 2,
-   "Tholas P./high-gain": 2
+   "The Bright Star Alliance/crunch": 1,
+   "The Bright Star Alliance/high-gain": 6,
+   "The Laminar Flow/crunch": 1,
+   "The Laminar Flow/high-gain": 2,
+   "Tholas P./high-gain": 2,
+   "Umbriferous/crunch": 6,
+   "Umbriferous/high-gain": 4
   },
   "by_gain_class_crop": {
-   "crunch": 1,
-   "high-gain": 12
+   "clean": 3,
+   "crunch": 9,
+   "high-gain": 23
   },
   "onset_check": {
-   "agrees": 11,
-   "unclear": 2
+   "agrees": 30,
+   "disagrees": 2,
+   "unclear": 3
   }
  },
  "sessions": [
@@ -128,6 +179,8 @@
    "source": "cambridge",
    "path": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK022/TholasP_SuchFinePeople_Full.zip",
+   "route": "direct",
+   "wayback_capture": null,
    "archive_sha256": "17965d3dabd94722b0a59193ad9d1e0ca4ab18d9b5a6740a4aa7fe1e28768ba5",
    "licence_extra": "Readme: 'Released digitally on Oct 30th, 2020 via CDBaby. All rights reserved.' Terms of use: 'You can upload your mix of the track outside of cambridge-mt.com if you include a streaming or buy link for the original release.' Also the Cambridge readme terms.",
    "split": "held_out",
@@ -203,6 +256,8 @@
    "source": "cambridge",
    "path": "Last Legacy - Who's Who In Hell/Lastlegacy_WhosWhoInHell_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/Lastlegacy_WhosWhoInHell_Full.zip",
+   "route": "direct",
+   "wayback_capture": null,
    "archive_sha256": "241406f72a38a5670a142b4864d8d67d61b79f5073e0ed765c57faef17b193b6",
    "licence_extra": null,
    "split": "held_out",
@@ -230,6 +285,8 @@
    "source": "cambridge",
    "path": "Decypher - Unseen/Decypher_Unseen_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/Decypher_Unseen_Full.zip",
+   "route": "direct",
+   "wayback_capture": null,
    "archive_sha256": "3226a6ad8a429e97a03f016d9129e2309727d4f520aed23330a99b49cf823b10",
    "licence_extra": null,
    "split": "held_out",
@@ -269,6 +326,8 @@
    "source": "cambridge",
    "path": "The Black Crown - Flames/TheBlackCrown_Flames_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/TheBlackCrown_Flames_Full.zip",
+   "route": "direct",
+   "wayback_capture": null,
    "archive_sha256": "a4259890f0b91904c1de4582b9de52b56bd68302797bb05c70ee5c401613de8c",
    "licence_extra": null,
    "split": "held_out",
@@ -296,6 +355,8 @@
    "source": "cambridge",
    "path": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full",
    "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK011/LeadInc_InnerCircle_Full.zip",
+   "route": "direct",
+   "wayback_capture": null,
    "archive_sha256": "2a7eebcdfb0ffefd8fa61682c723b16890d2b470c04d85315c92b2155db90b29",
    "licence_extra": "Lead Inc 'Tech Details and Lyrics.rtf': 'licensed and published with Creative Commons (CC BY-NC-SA 3.0) which allows you to remix and publish your own mixes non-commercially and with this same license only.' Also the Cambridge readme terms.",
    "split": "held_out",
@@ -317,6 +378,260 @@
     {
      "part": "ElecGtr3",
      "di": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full/37_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "source": "cambridge",
+   "path": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full",
+   "url": "https://web.archive.org/web/20220404030035id_/https://multitracks.cambridge-mt.com/Umbriferous_SandcastlesIllusion_Full.zip",
+   "route": "wayback",
+   "wayback_capture": "2022-04-04T03:00:35Z",
+   "archive_sha256": "527daafa53b988ee62edc747c81d3e19d226f550086ebb49a6e927f62b0feecc",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 10,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/16_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr1DT",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/18_ElecGtr1DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/20_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/22_ElecGtr2DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/24_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3DT",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/26_ElecGtr3DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/28_ElecGtr4DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4DT",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/30_ElecGtr4DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/32_ElecGtr5DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5DT",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/34_ElecGtr5DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr6",
+     "di": "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full/36_ElecGtr6DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "source": "cambridge",
+   "path": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full",
+   "url": "https://web.archive.org/web/20220403150701id_/https://multitracks.cambridge-mt.com/TheBrightStarAlliance_Error404_Full.zip",
+   "route": "wayback",
+   "wayback_capture": "2022-04-03T15:07:01Z",
+   "archive_sha256": "048cd8d9003241aed1b4da1e5760ee44d55e8fbb3c7eac4b36b8072abf9ddd9c",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 7,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/13_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/15_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/17_ElecGtr2DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/19_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/21_ElecGtr4DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/23_ElecGtr5DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5DT",
+     "di": "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full/25_ElecGtr5DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/SonnetAndAlcohol_BackToTheNineties_Full",
+   "band": "Sonnet & Alcohol",
+   "song": "Back To The Nineties",
+   "source": "cambridge",
+   "path": "Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full",
+   "url": "https://web.archive.org/web/20220403133148id_/https://multitracks.cambridge-mt.com/SonnetAndAlcohol_BackToTheNineties_Full.zip",
+   "route": "wayback",
+   "wayback_capture": "2022-04-03T13:31:48Z",
+   "archive_sha256": "0f5a8c98f0b27ab4ba92695486eb051d4c3831034a9c3e532269f2f3c4fe29cf",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/09_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/11_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "source": "cambridge",
+   "path": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full",
+   "url": "https://web.archive.org/web/20250610215848id_/https://multitracks.cambridge-mt.com/TheLaminarFlow_Headspace_Full.zip",
+   "route": "wayback",
+   "wayback_capture": "2025-06-10T21:58:48Z",
+   "archive_sha256": "42be6b17dfed2f0ede8b11fce4e7cc4807ad5c7eb81962e22a50489d6e9ccdd3",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/30_ElecGtr01DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/37_ElecGtr02DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/41_ElecGtr03DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/45_ElecGtr04DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/49_ElecGtr05DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr06",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/53_ElecGtr06DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr07",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/57_ElecGtr07DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr08",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/61_ElecGtr08DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr09",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/65_ElecGtr09DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr10",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/69_ElecGtr10DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr11",
+     "di": "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/73_ElecGtr11DI.wav",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -783,6 +1098,100 @@
    }
   },
   {
+   "slug": "cambridge-back-to-the-nineties-elecgtr1",
+   "band": "Sonnet & Alcohol",
+   "song": "Back To The Nineties",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/SonnetAndAlcohol_BackToTheNineties_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 1.233,
+   "nonlinear_to_linear_db": -19.93,
+   "lag_samples": 40,
+   "judge_lag_samples": -12,
+   "lag_samples_native": 37,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "08_ElecGtr1.wav",
+   "di": "09_ElecGtr1DI.wav",
+   "waveform": {
+    "windows": 27,
+    "passing_windows": 27,
+    "median_peak_to_sidelobe": 13.596,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.126
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 177.5,
+    "di_sha256": "50c3eea257946600f0971d2ac6561b81acfa175fffffb0c5e906dbe69f1220c9",
+    "reference_sha256": "c4216f8101f4e426c77d8544eee297ba3499c57edafadbba11b3627dc648f17b",
+    "record_sha256": "03353c6ccb97e1bcc90fbc4de91835fe1d1aedc8d8fdb40a6c4d5f78e22cbd6b"
+   }
+  },
+  {
+   "slug": "cambridge-back-to-the-nineties-elecgtr2",
+   "band": "Sonnet & Alcohol",
+   "song": "Back To The Nineties",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/SonnetAndAlcohol_BackToTheNineties_Full",
+   "source": "cambridge",
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.73,
+   "nonlinear_to_linear_db": -8.7,
+   "lag_samples": 24,
+   "judge_lag_samples": -28,
+   "lag_samples_native": 22,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "10_ElecGtr2.wav",
+   "di": "11_ElecGtr2DI.wav",
+   "waveform": {
+    "windows": 27,
+    "passing_windows": 27,
+    "median_peak_to_sidelobe": 7.006,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 20,
+    "runner_up": 0.293
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 241.5,
+    "di_sha256": "95ebb11a9b5c6409e619d2b721687a9c817092fa32b67ff2ad3e21c4b0925ab7",
+    "reference_sha256": "1653671216d891e3605f3362686f33ca41b6522a84b89a59e49769183b1fdecc",
+    "record_sha256": "9bb895d8bbe9fe8ec9e89b59961df9129914d4428ad503ba0e1947306ffb3f9c"
+   }
+  },
+  {
    "slug": "cambridge-flames-elecgtr1",
    "band": "The Black Crown",
    "song": "Flames",
@@ -874,6 +1283,496 @@
     "di_sha256": "945d62aeff34edcacaa783ff068f85026c585294f8ae77d46acfa7c93b4ad65b",
     "reference_sha256": "e612e6164e6dfe400a6a9484283572e1c5aa9266569a90b3232d35dcc1a2b84f",
     "record_sha256": "60728111db06136482ef7abe084dc39471c7fa096cdde89946e184a5a7d33735"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr1",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.04,
+   "nonlinear_to_linear_db": 4.68,
+   "lag_samples": 152,
+   "judge_lag_samples": 100,
+   "lag_samples_native": 140,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "12_ElecGtr1.wav",
+   "di": "13_ElecGtr1DI.wav",
+   "waveform": {
+    "windows": 10,
+    "passing_windows": 10,
+    "median_peak_to_sidelobe": 6.041,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 316,
+    "runner_up": 0.971
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 47.5,
+    "di_sha256": "dee2e72d8446a7f30ed5d87eb96c8eb1ad8c89186a5b5d04b0651c2cdb34dd75",
+    "reference_sha256": "4c188be398fa7b47ce9ca1dc81e4ae5c77bbb5d7394b43ebc8d1bd593ebb4510",
+    "record_sha256": "2466d7a20e4478fe5792725266e1c200bf58a87789397204cace8d9d422ba261"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr2",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.099,
+   "nonlinear_to_linear_db": 1.48,
+   "lag_samples": 98,
+   "judge_lag_samples": 46,
+   "lag_samples_native": 90,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "14_ElecGtr2.wav",
+   "di": "15_ElecGtr2DI.wav",
+   "waveform": {
+    "windows": 23,
+    "passing_windows": 23,
+    "median_peak_to_sidelobe": 4.757,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 100,
+    "runner_up": 0.663
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 267.0,
+    "di_sha256": "abdab9d141d4912ee519ca9fbea9f5b0eaebf55712d58244e9aa92689a80e742",
+    "reference_sha256": "2139f764e1bf339c9d15cd6f926ed052739a5ea159939077228c67886ec81447",
+    "record_sha256": "a99f49cd8b216debf5d1a627ad3f3700f21550ef6a4f54ab7b180b811d5009d5"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr2dt",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr2DT",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.058,
+   "nonlinear_to_linear_db": 1.31,
+   "lag_samples": 98,
+   "judge_lag_samples": 46,
+   "lag_samples_native": 90,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "16_ElecGtr2DT.wav",
+   "di": "17_ElecGtr2DTDI.wav",
+   "waveform": {
+    "windows": 23,
+    "passing_windows": 23,
+    "median_peak_to_sidelobe": 4.282,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 96,
+    "runner_up": 0.082
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr2: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 220.0,
+    "di_sha256": "a3c298344a822f7d1cd85d70a8c72a3d7cba7abd87a1ee5f1d9dab4ca7e26336",
+    "reference_sha256": "e8fa6bfe8e017aea14e870de586b449fcb3e3207472daef346102376f879bbce",
+    "record_sha256": "52644fe9e2bbff9754f752b9cbd4b03a5f16be7828c74ba41cd748d7c218cdcc"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr3",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.09,
+   "nonlinear_to_linear_db": 1.68,
+   "lag_samples": 114,
+   "judge_lag_samples": 62,
+   "lag_samples_native": 105,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "18_ElecGtr3.wav",
+   "di": "19_ElecGtr3DI.wav",
+   "waveform": {
+    "windows": 11,
+    "passing_windows": 11,
+    "median_peak_to_sidelobe": 4.959,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 76,
+    "runner_up": 0.843
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 101.0,
+    "di_sha256": "0ebd1daffef596ebeb25b5022160296ec7ebdbd6da1c394049f114a4efe5eac6",
+    "reference_sha256": "dff2e00dcc5078db5c0463fb95dbbe51b765af0d5164d6a4f81e897c3c675810",
+    "record_sha256": "e9a2f00f0cfce024ce3ad616f61d97b8d8f6901ada2e9f8bab9449e221fb7a76"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr4",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.134,
+   "nonlinear_to_linear_db": 4.07,
+   "lag_samples": 121,
+   "judge_lag_samples": 69,
+   "lag_samples_native": 111,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "20_ElecGtr4.wav",
+   "di": "21_ElecGtr4DI.wav",
+   "waveform": {
+    "windows": 7,
+    "passing_windows": 7,
+    "median_peak_to_sidelobe": 3.585,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 120,
+    "runner_up": 0.238
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 99.5,
+    "di_sha256": "b81cceddd7938b610be5939d67fc67c3ffe1f2ebdccc75a5ac65286df36a4222",
+    "reference_sha256": "09b731672427ce36de42b3ce0af3b21c696ba53b8e4d469b2ab1794ee64c57a9",
+    "record_sha256": "389fadb902222b1192dbae5b97fd0bed6928e362ac180c869559dc0e89139199"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr5",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr5",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.157,
+   "nonlinear_to_linear_db": 0.93,
+   "lag_samples": 100,
+   "judge_lag_samples": 48,
+   "lag_samples_native": 92,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "22_ElecGtr5.wav",
+   "di": "23_ElecGtr5DI.wav",
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 2.606,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 120,
+    "runner_up": 0.22
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 180.5,
+    "di_sha256": "ef6ea4b26734f1097a33557cae8a268b3615803b8d8c82366329d70bc93dcbf9",
+    "reference_sha256": "4acd003f5235afeb4cee4b708f1b4bf50829b90b6783e3af649d1e785895293d",
+    "record_sha256": "9234b90fa9b2d0e6d4f7b023dd24796340a17ecad44e9494d74997ca0bdbfbfe"
+   }
+  },
+  {
+   "slug": "cambridge-error-404-elecgtr5dt",
+   "band": "The Bright Star Alliance",
+   "song": "Error 404",
+   "part": "ElecGtr5DT",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBrightStarAlliance_Error404_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.139,
+   "nonlinear_to_linear_db": 1.3,
+   "lag_samples": 106,
+   "judge_lag_samples": 54,
+   "lag_samples_native": 97,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "24_ElecGtr5DT.wav",
+   "di": "25_ElecGtr5DTDI.wav",
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 2.549,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 116,
+    "runner_up": 0.09
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr5: the two count as one tone",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 169.5,
+    "di_sha256": "cbf0a0e0e51c15dec13f6aced5f8c205c432050a086a187641cae84162840d95",
+    "reference_sha256": "ecf576e6ce68b16e13423cd3c60b0d10cbf0c90248a65c6305d372c29f65ce9f",
+    "record_sha256": "44aee3ce0dff5451e143cca6fbea20b3490f7660a543ef1c4c3b39960be8062f"
+   }
+  },
+  {
+   "slug": "cambridge-headspace-elecgtr01",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.228,
+   "nonlinear_to_linear_db": -1.54,
+   "lag_samples": 29,
+   "judge_lag_samples": -23,
+   "lag_samples_native": 27,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "27_ElecGtr01Mic1.wav",
+   "di": "30_ElecGtr01DI.wav",
+   "waveform": {
+    "windows": 23,
+    "passing_windows": 23,
+    "median_peak_to_sidelobe": 5.349,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.352
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 139.0,
+    "di_sha256": "428e8f903543e7d366d9b6484d816ef35e8b030e6cb8cb999980bb5ab96d40f2",
+    "reference_sha256": "6d8d62c19dac58da94a0b13490cf938157dcf3ab036a0bb3ac9ebc9cb9553f54",
+    "record_sha256": "08a90b59260c9d9b4b5cf3ae55a97db479a44766266d29567538f1cfd54db969"
+   }
+  },
+  {
+   "slug": "cambridge-headspace-elecgtr07",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr07",
+   "tone": "ElecGtr07",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.068,
+   "nonlinear_to_linear_db": -1.62,
+   "lag_samples": 29,
+   "judge_lag_samples": -23,
+   "lag_samples_native": 27,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "54_ElecGtr07Mic1.wav",
+   "di": "57_ElecGtr07DI.wav",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 5.174,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.684
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 167.0,
+    "di_sha256": "1696b6269d3434c3a63652babc7b19b8e4e91efc4f530aa535e56ce6ec1ca6ff",
+    "reference_sha256": "fb0ddc6f5c256ff7cbe93a77370a48fa098def6d7d96660ebfab6c86fab3807b",
+    "record_sha256": "f6d83e1d170dc65c4bfa8603e1043331a5aa32531faa1b7623fffa145c5154c7"
+   }
+  },
+  {
+   "slug": "cambridge-headspace-elecgtr08",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr08",
+   "tone": "ElecGtr08",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.089,
+   "nonlinear_to_linear_db": -2.62,
+   "lag_samples": 26,
+   "judge_lag_samples": -26,
+   "lag_samples_native": 24,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "58_ElecGtr08Mic1.wav",
+   "di": "61_ElecGtr08DI.wav",
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 3.798,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.508
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 183.5,
+    "di_sha256": "43c3b2d2e295dd2db1142ed2a75989ffa093d0bb9d1d85f5c9ce61ec77daa951",
+    "reference_sha256": "428fc7027a918ae1290915fd1d6a932094ff44a7a69c429d47ae23d26fbd8f79",
+    "record_sha256": "505d7ff810b51b9b2802d6c93f5b3a4f7ec1de244292ebf2900d099d569930ba"
    }
   },
   {
@@ -969,9 +1868,575 @@
     "reference_sha256": "d10bcef543ccbc3dc6d8c88efa94cde6d9e9b098175dc84c143f3028f1f314f7",
     "record_sha256": "f34dc99170c275882936c4a6c9fe22993a651f74999c70bc492364126b827011"
    }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr1",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.247,
+   "nonlinear_to_linear_db": 2.0,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "15_ElecGtr1.wav",
+   "di": "16_ElecGtr1DI.wav",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 9.678,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.478
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 323.0,
+    "di_sha256": "8c758135f03571fd4390ce3bae28baba342c35b2ca8b91576a41e80ad8682dc5",
+    "reference_sha256": "24096787efd135c3ae99e1ab194cabd09180dd8e5c3ce5ae912d6eb4e126dfe4",
+    "record_sha256": "a0a0921f083fcab108aac951ce5a83608dd78bbdee1ded0e6fadde37deb66efa"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr1dt",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr1DT",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.255,
+   "nonlinear_to_linear_db": 1.99,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "17_ElecGtr1DT.wav",
+   "di": "18_ElecGtr1DTDI.wav",
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 9.41,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.221
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr1: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 243.0,
+    "di_sha256": "efa1986c1f3b6dbc593e8f3cd87e550d0928127848de0d648e80f6b99fc5fb69",
+    "reference_sha256": "40fa96597dc4172a069fc89f42666880d706a5f5070e168065a9c31f1270f66c",
+    "record_sha256": "8a7c1c3de8480d9267fe05c07661b34f3a2dfea01efbaee162dcb837430b1d68"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr2",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.232,
+   "nonlinear_to_linear_db": 1.71,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "19_ElecGtr2.wav",
+   "di": "20_ElecGtr2DI.wav",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 9.449,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.21
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 230.0,
+    "di_sha256": "47403f8403eeb2a953ad514038f4ccf0fdff782a2040404b92c82acab894abe6",
+    "reference_sha256": "368cc9e0f0999619add7efb9ca30f49254d570f157d18f32ae43c4bb179db842",
+    "record_sha256": "2fcf8db633cb52b76bdb954f6f20729f492deb15e6d273f46f71ea51ac4b3fe6"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr2dt",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr2DT",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.22,
+   "nonlinear_to_linear_db": 1.63,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "21_ElecGtr2DT.wav",
+   "di": "22_ElecGtr2DTDI.wav",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 9.648,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.265
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr2: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 215.0,
+    "di_sha256": "6789e94ca685fede88945015b32353fc110eb414e6abb2d947cddb69e12ec07f",
+    "reference_sha256": "4c079de6a7c2b500d9216ae40c78a2a431dc17ffcf6565a6690f115e6a64c86b",
+    "record_sha256": "98d5b6bc03d5b781851059abac3b6a807bb768ec9dabe7f679ba3922016acab9"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr3",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.196,
+   "nonlinear_to_linear_db": 2.49,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "23_ElecGtr3.wav",
+   "di": "24_ElecGtr3DI.wav",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 9.946,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.182
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 23.0,
+    "di_sha256": "3a69390f6dfd68a91ef24d4953dc1abb5348ba11cb772abbebe34fdfecfa1125",
+    "reference_sha256": "2b207c859eb19cc0df372e5eb2ad184113cbf674d592251bc957d1d5c068a6b8",
+    "record_sha256": "491417eeaacfcd614f8f13612b102e73f2a38d464b4d6715e5ea36844a74544a"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr3dt",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr3DT",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.195,
+   "nonlinear_to_linear_db": 2.44,
+   "lag_samples": 10,
+   "judge_lag_samples": -42,
+   "lag_samples_native": 9,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "25_ElecGtr3DT.wav",
+   "di": "26_ElecGtr3DTDI.wav",
+   "waveform": {
+    "windows": 12,
+    "passing_windows": 12,
+    "median_peak_to_sidelobe": 9.998,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.131
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr3: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 208.5,
+    "di_sha256": "dc3c1158e98762259a53790d9a054d2671c65c3400cc1569cef6215a45dbde83",
+    "reference_sha256": "2b2bfec98e5901ebd09a75f7d05266e71cfa2e37fd8e7af8e07424385cac17f5",
+    "record_sha256": "2339320edd6fb069520addbe7bbecd60732564efcc2834e67549b3e4b689bc5a"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr4",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.042,
+   "nonlinear_to_linear_db": 3.96,
+   "lag_samples": 20,
+   "judge_lag_samples": -32,
+   "lag_samples_native": 18,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "27_ElecGtr4.wav",
+   "di": "28_ElecGtr4DI.wav",
+   "waveform": {
+    "windows": 29,
+    "passing_windows": 29,
+    "median_peak_to_sidelobe": 4.883,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -28,
+    "runner_up": -0.304
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 329.0,
+    "di_sha256": "2d8dd48b791ff9c630f790a6f883168ac811a4aea2f43b4052260186095d2cec",
+    "reference_sha256": "f84338d2231060d9769547be7dcc3fd0f3570c8ba817846543a710bd54b3005c",
+    "record_sha256": "23f43ba8893117df00d88c2c0229609e9cf294fe0f06d4910f3bee58eda0acda"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr4dt",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr4DT",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.035,
+   "nonlinear_to_linear_db": 3.95,
+   "lag_samples": 20,
+   "judge_lag_samples": -32,
+   "lag_samples_native": 18,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "29_ElecGtr4DT.wav",
+   "di": "30_ElecGtr4DTDI.wav",
+   "waveform": {
+    "windows": 29,
+    "passing_windows": 29,
+    "median_peak_to_sidelobe": 5.048,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": 352,
+    "runner_up": -1.258
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr4: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 329.0,
+    "di_sha256": "b01bc166b42e5b38c389533bca06d91cd5b900cc17a92b53eaba65c735eb7a7e",
+    "reference_sha256": "9d9b974bc95e19971118e51fdd15216ce0603aac4363388108af9d903bebb3eb",
+    "record_sha256": "6b8c65b44f277c33a1a58d9955f8f2aedb1dbee6b6ef40f97155aa89d036fd97"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr5",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr5",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.006,
+   "nonlinear_to_linear_db": 3.36,
+   "lag_samples": 19,
+   "judge_lag_samples": -33,
+   "lag_samples_native": 17,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "31_ElecGtr5.wav",
+   "di": "32_ElecGtr5DI.wav",
+   "waveform": {
+    "windows": 21,
+    "passing_windows": 21,
+    "median_peak_to_sidelobe": 5.183,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -28,
+    "runner_up": 0.815
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 91.0,
+    "di_sha256": "ce74e9beef84972369e7eca582cdcda81610c5a5289fcd595cd28051dac60413",
+    "reference_sha256": "3ffded7c5d5173f6c45185eb608368279e481aa850bfc35e8509e92e63d338df",
+    "record_sha256": "f63056e77b684d1df704fd9029655c943d752f34e81b93eec3a8010472f9527b"
+   }
+  },
+  {
+   "slug": "cambridge-sandcastles-illusion-elecgtr5dt",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr5DT",
+   "tone": "ElecGtr5",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.009,
+   "nonlinear_to_linear_db": 3.25,
+   "lag_samples": 20,
+   "judge_lag_samples": -32,
+   "lag_samples_native": 18,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "33_ElecGtr5DT.wav",
+   "di": "34_ElecGtr5DTDI.wav",
+   "waveform": {
+    "windows": 21,
+    "passing_windows": 21,
+    "median_peak_to_sidelobe": 5.202,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "disagrees",
+    "onset_lag_samples": -80,
+    "runner_up": 0.87
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr5: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 308.5,
+    "di_sha256": "eb2e6c9e38c3f0b550592d6c40b746df0824c243fb21f736f8d9bbbee5d1e87c",
+    "reference_sha256": "16526bd2a6e9b156ff70d1c30364926cac1b7bc6ae39630ca5f0635c62107cd8",
+    "record_sha256": "ba2840ef7674f4d49f5cef6796e14315dcc5161beba510ca403fb1760ddcf1f5"
+   }
   }
  ],
  "excluded": [
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr02",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr02",
+   "crop_record_sha256": "59ea568d501b6b156b2e2d1eed9f31d61504a66498daf80c430f2a0399f112ff",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr03",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr03",
+   "crop_record_sha256": "37e36f2bed611c4570dd525f3e1bfcde7980cad549f41c04a11be0dabfc5d5a1",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr04",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr04",
+   "crop_record_sha256": "033ab3f4f6edac2506599bc3d59efbf8aaf82d7f8ee9e29086a6ec9056d843bf",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr05",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr05",
+   "crop_record_sha256": "3f23d656f903a00fe1b9b9d134bc46fd5be99b726ba9c4c6d8e7aaad99b52dee",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr06",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr06",
+   "crop_record_sha256": "299be3d0b16a434d5cf32c064ad472e833f9a01109e07803cd05563c2ef3c9e7",
+   "reasons": [
+    "fails the waveform same-take test"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr09",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr09",
+   "crop_record_sha256": "b1e5d7741be0bc365e305d51ba9b4b7d84d163de3d1fa4f2be411ed4296d8019",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr10",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr10",
+   "crop_record_sha256": "58f2cae0deda0d2df77a7400029a812a2526bfee256dfa9c5cf6336ee1e07cd7",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TheLaminarFlow_Headspace_Full",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "part": "ElecGtr11",
+   "source": "cambridge",
+   "slug": "cambridge-headspace-elecgtr11",
+   "crop_record_sha256": "e5c59991acb0975835584cc46d1d9f68a0c5a63fb65abe907a8b1a68e36d4f95",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
   {
    "session_key": "cambridge/TholasP_SuchFinePeople_Full",
    "band": "Tholas P.",
@@ -1064,6 +2529,18 @@
    "source": "cambridge",
    "slug": "cambridge-such-fine-people-elecgtr09",
    "crop_record_sha256": "cf4280a1f77fc7f17a7d5d00a815d2014446842d746b8eb73244178513fa4c21",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/Umbriferous_SandcastlesIllusion_Full",
+   "band": "Umbriferous",
+   "song": "Sandcastles (Illusion)",
+   "part": "ElecGtr6",
+   "source": "cambridge",
+   "slug": "cambridge-sandcastles-illusion-elecgtr6",
+   "crop_record_sha256": "973ce1f99c26fa02bf90072979c284df3917973138154358f68eccb6aed5ba27",
    "reasons": [
     "waveform same-take test passes on 1 window(s), fewer than 3"
    ]

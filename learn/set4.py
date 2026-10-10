@@ -27,6 +27,30 @@ REFERENCES = pathlib.Path(os.path.expanduser("~/ndsp-presets/references"))
 SET4_ROOT = REFERENCES / "datasets-set4"
 SET4_CROPS = REFERENCES / "validation-crops-set4"
 
+# Every set-4 session: the plan's five and amendment 1's four. Known here as well as from
+# the declaration, so the guard fails closed even on a declaration that lags behind;
+# tests check that the two agree. session key -> (band, directory under SET4_ROOT)
+SESSIONS = {
+    "cambridge/TholasP_SuchFinePeople_Full":
+        ("Tholas P.", "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full"),
+    "cambridge/Lastlegacy_WhosWhoInHell_Full":
+        ("Last Legacy", "Last Legacy - Who's Who In Hell/Lastlegacy_WhosWhoInHell_Full"),
+    "cambridge/Decypher_Unseen_Full": ("Decypher", "Decypher - Unseen/Decypher_Unseen_Full"),
+    "cambridge/TheBlackCrown_Flames_Full":
+        ("The Black Crown", "The Black Crown - Flames/TheBlackCrown_Flames_Full"),
+    "cambridge/LeadInc_InnerCircle_Full":
+        ("Lead Inc", "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full"),
+    # amendment 1 (2026-10-10): Internet Archive copies of the publisher's files
+    "cambridge/Umbriferous_SandcastlesIllusion_Full":
+        ("Umbriferous", "Umbriferous - Sandcastles (Illusion)/Umbriferous_SandcastlesIllusion_Full"),
+    "cambridge/TheBrightStarAlliance_Error404_Full":
+        ("The Bright Star Alliance", "The Bright Star Alliance - Error 404/TheBrightStarAlliance_Error404_Full"),
+    "cambridge/SonnetAndAlcohol_BackToTheNineties_Full":
+        ("Sonnet & Alcohol", "Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full"),
+    "cambridge/TheLaminarFlow_Headspace_Full":
+        ("The Laminar Flow", "The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full"),
+}
+
 
 @functools.lru_cache(maxsize=None)
 def _load(path: str) -> dict:
@@ -50,7 +74,7 @@ def bands(path=DECLARATION) -> list[str]:
 @functools.lru_cache(maxsize=None)
 def _names(path: str = str(DECLARATION)) -> frozenset:
     d = load(path)
-    out = set(d["held_out_bands"])
+    out = set(d["held_out_bands"]) | set(SESSIONS) | {band for band, _ in SESSIONS.values()}
     for s in d["sessions"]:
         out |= {s["band"], s["key"]}
     out |= {p["slug"] for p in [*d["parts"], *d["excluded"]] if p.get("slug")}
@@ -60,7 +84,8 @@ def _names(path: str = str(DECLARATION)) -> frozenset:
 @functools.lru_cache(maxsize=None)
 def _relative(path: str = str(DECLARATION)) -> tuple:
     """Session directories as written relative to the set-4 root."""
-    return tuple(pathlib.PurePosixPath(s["path"]).parts for s in load(path)["sessions"])
+    dirs = {s["path"] for s in load(path)["sessions"]} | {d for _, d in SESSIONS.values()}
+    return tuple(pathlib.PurePosixPath(d).parts for d in sorted(dirs))
 
 
 def _roots() -> list[tuple]:
