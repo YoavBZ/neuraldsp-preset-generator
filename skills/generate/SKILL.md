@@ -223,9 +223,11 @@ Tone King recipes use its verified sync-note selectors. See
   - **The evidence.** On reserved crunch and high-gain recordings, the dry SW50R and
     PR12 baselines were closer to the record than the clean template on the same amp on
     all 23 parts, and about half the distance on average. On clean parts they were
-    further on every part, so use the clean baseline for a clean part. Heavy-tone
-    listening has not been run yet; say so when you report
-    ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
+    further on every part, so use the clean baseline for a clean part. These baselines
+    are measured, not confirmed by ear: the one heavy-tone listening check tested the
+    measure itself and was inconclusive. Say so when you report
+    ([driven-baseline-results.md](../../docs/driven-baseline-results.md),
+    [heavy-listening-results.md](../../docs/heavy-listening-results.md)).
   - **Make it dry first, always,** with `--recipe dry/<amp>` (below), because the
     installed presets are not (Wall Of Doom is transposed down 5 semitones).
 
@@ -285,7 +287,7 @@ user decide.
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
-   crunch or driven, by the part), with transpose reset.
+   crunch or driven, by the part), made dry with `--recipe dry/<amp>`.
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:
@@ -301,6 +303,25 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    give the command a few minutes, or run it in the background; if it stops partway,
    the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
    listen for gain, brightness, body and space, not the notes.
+
+   **To compare starting points** (when the user is unsure how much gain the part
+   has, or asks), add the amp's other starting point from step 4 beside the one already
+   among the four: crunch if the four hold the clean one, clean if they hold crunch,
+   and for a heavier part, crunch beside the driven one. Write it dry, into the
+   audition folder under its own name; writing directly is fine for a listening copy,
+   but preview with `--dry-run` (step 4) if the user keeps it. Use the baseline's own
+   amp's recipe (`dry/pr12`, `dry/sw50r` or `dry/ac20`):
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+  --template BASELINE.xml --recipe dry/pr12 --out AUDITION_DIR/crunch-start.xml
+```
+
+   Then add it with a plain note, `audition.py --add AUDITION_DIR --preset
+   AUDITION_DIR/crunch-start.xml --note "crunch starting point (weaker evidence)"`.
+   Say how strong each starting point's evidence is, in step 4's words; none has been
+   confirmed by ear.
+
 3. **Refine.** The user picks one, or says what is off ("B, but darker"). Make the
    change on a copy with the edit skill's steps 1–4 (read, interpret, change only
    that, preview and write a new file; don't install yet), then add it to the page:
