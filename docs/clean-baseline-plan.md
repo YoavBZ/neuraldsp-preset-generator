@@ -45,3 +45,16 @@ the ledger. Set 4's two unused clean parts are left unused.
   only where that amp's own interval also lies below 0.
 
 An independent reviewer re-derives the result before adoption.
+
+## The choice (2026-10-10, committed before the check)
+
+The rule run on 22 clean development parts from 10 bands: 18 from sets 1–2 and 4 from
+set 3. Parts are those where every factory candidate has both halves scored; one of set
+3's 5 clean parts has a refused distance and drops out. The selection is in
+`docs/clean-baseline-choice.json`:
+
+| amp | clean starting preset | median distance | runner-up |
+|---|---|---|---|
+| PR12 | Mark Johnston / Royally Ambient | 4.291 | Jangly Combo Clean, 4.433 |
+| SW50R | Mark Johnston / Pedal Platform Clean | 4.274 | Big Tail Clean, 4.440 |
+| AC20 | Royce Whittaker / Low-Watt Americana | 4.176 | Gtr Lead FX, 4.619 |

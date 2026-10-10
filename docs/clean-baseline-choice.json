@@ -1,0 +1,13 @@
+{
+ "rule": "docs/clean-baseline-plan.md",
+ "parts_used": {
+  "pr12": 22,
+  "sw50r": 22,
+  "ac20": 22
+ },
+ "presets": {
+  "pr12": "factory:Artists/Mark Johnston/Royally Ambient",
+  "sw50r": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+  "ac20": "factory:Artists/Royce Whittaker/Low-Watt Americana"
+ }
+}
