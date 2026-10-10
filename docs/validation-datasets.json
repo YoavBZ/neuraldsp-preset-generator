@@ -5303,6 +5303,60 @@
    "results": "docs/set4-confirmation-results.md",
    "ran": "2026-10-10",
    "verdicts": "2026-10-10"
+  },
+  {
+   "declaration": "docs/crunch-baseline-plan.md",
+   "test_id": "crunch-baseline-2026-10-10",
+   "commit": "38358a5",
+   "sessions": [
+    "cambridge/Sugar - Faith",
+    "cambridge/All The Same",
+    "cambridge/One Flip Flop"
+   ],
+   "scored_sessions": [
+    "cambridge/Sugar - Faith",
+    "cambridge/All The Same",
+    "cambridge/One Flip Flop"
+   ],
+   "heard": [],
+   "results": "docs/crunch-baseline-results.md",
+   "ran": "2026-10-10",
+   "verdicts": "2026-10-10",
+   "note": "Second declared use of these crunch parts (first: confirm-rebuilt-di-chooser-2026-10-10). Existing scores only."
+  },
+  {
+   "declaration": "docs/clean-baseline-plan.md",
+   "test_id": "clean-baseline-2026-10-10",
+   "commit": "39ed0ff",
+   "sessions": [
+    "cambridge/It's My Right",
+    "cambridge/Stalker",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 10",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "scored_sessions": [
+    "cambridge/It's My Right",
+    "cambridge/Stalker",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 10",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "heard": [],
+   "results": "docs/clean-baseline-results.md",
+   "ran": "2026-10-10",
+   "verdicts": "2026-10-10",
+   "note": "Second declared use of these clean parts (first: confirm-rebuilt-di-chooser-2026-10-10). Existing scores only; recorded late, 2026-10-10."
   }
  ]
 }

@@ -1,0 +1,13 @@
+{
+ "rule": "docs/crunch-baseline-plan.md",
+ "parts_used": {
+  "pr12": 13,
+  "sw50r": 13,
+  "ac20": 13
+ },
+ "presets": {
+  "pr12": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+  "sw50r": "factory:Neural DSP/Hair Metal",
+  "ac20": "factory:Neural DSP/AC20 Mid-Gain Drive"
+ }
+}
