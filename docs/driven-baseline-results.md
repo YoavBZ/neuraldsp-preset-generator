@@ -60,15 +60,21 @@ Values are the mean log ratio, with parts closer shown in brackets.
 ## Limits
 
 - **Measured on isolated amp tracks of heavier set-3 sessions,** under the
-  average-guitar measure. Heavy-tone listening has not been run.
+  average-guitar measure. These baselines haven't been checked by ear. The one
+  heavy-tone listening check, on 2026-10-10 ([results](heavy-listening-results.md)),
+  tested the measure itself, and was inconclusive.
 - **Telling crunch from clean is left to the song research.** The gain classes here
   are the set's declared labels. The crop classifier disagrees with them on 6 of the 27
   reserved parts. Two parts declared crunch, which the classifier calls clean, were
   still closer.
-- **Shipping before heavy-tone listening is a deliberate exception.** The confirmation
-  plan asked for a listening check before product use; it hasn't run. The skill says
-  so when it reports. The evidence is a large, consistent measured gain on every
-  distorted part.
+- **Shipping without a listening check of these baselines is a deliberate exception.**
+  - **The confirmation plan** asked for one before product use. The heavy-tone check
+    that later ran tested the measure, not these baselines.
+  - **The skill says so** when it reports.
+  - **The evidence** is a large, consistent measured gain on every distorted part.
+  - **Scope:** heavy and high-gain material has since been ruled out of scope (roadmap
+    "Scope"). For crunch songs, `generate` now uses the lighter
+    [crunch baselines](crunch-baseline-results.md).
 - **The DI-rebuilding chooser has not beaten these constants**
   ([held-out](set3-heldout-confirmation-results.md)). They are what the learned route
   must now beat.
