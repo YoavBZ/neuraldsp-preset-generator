@@ -351,3 +351,71 @@ def test_every_recipe_declares_where_its_values_came_from(pack_id):
                 f"{evidence.get('class')!r} is not one of {sorted(EVIDENCE_CLASSES)}"
             )
             assert evidence.get("source"), f"{pack_id} {layer}/{name} names no source"
+
+
+# --- the dry recipes ---------------------------------------------------------
+# generate's factory baselines were measured dry; these recipes make them so.
+# Each must hold exactly the dry rule, and only the amps with a spring get one.
+
+DRY_COMMON = {
+    ("parameters", "transpose"): 0,
+    ("reverb", "reverbActive"): False,
+    ("delay", "delayActive"): False,
+    ("tremolo", "tremoloActive"): False,
+    ("parameters", "doublerActive"): False,
+    ("parameters", "gateActive"): False,
+    ("fxParameters", "sectionActive"): True,
+}
+
+
+@pytest.mark.parametrize("amp, spring", [("pr12", True), ("sw50r", True), ("ac20", False)])
+def test_each_dry_recipe_is_exactly_the_dry_rule(amp, spring):
+    recipe = json.loads((PLUGIN_ROOT / "packs" / "morgan" / "recipes.json").read_text())
+    entries = {(e["module"], e["key"]): e["value"]
+               for e in recipe["layers"]["dry"][amp]["parameters"]}
+    expected = dict(DRY_COMMON)
+    if spring:
+        expected[(f"{amp}Amp", f"{amp}Reverb")] = 0
+    assert entries == expected
+
+
+def _apply(tmp_path, *recipes):
+    import subprocess
+    import sys
+
+    cmd = [sys.executable, str(PLUGIN_ROOT / "scripts" / "apply_spec.py"),
+           "--template", str(PLUGIN_ROOT / "samples" / "Example_Clean_PR12.xml"),
+           "--out", str(tmp_path / "out.xml"), "--dry-run"]
+    for ref in recipes:
+        cmd += ["--recipe", ref]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def test_the_right_amps_dry_recipe_applies(tmp_path):
+    result = _apply(tmp_path, "dry/pr12")
+    assert result.returncode == 0, result.stderr
+    assert "pr12Amp/pr12Reverb" in result.stdout
+
+
+def test_another_amps_recipe_is_refused_not_silently_applied(tmp_path):
+    result = _apply(tmp_path, "dry/sw50r")          # a PR12 preset
+    assert result.returncode != 0
+    assert "dry/pr12" in result.stderr and "SW50R" in result.stderr
+
+
+def test_a_dry_recipe_without_an_amp_module_is_still_refused_on_another_amp(tmp_path):
+    result = _apply(tmp_path, "dry/ac20")           # writes no ac20Amp setting
+    assert result.returncode != 0
+    assert "AC20" in result.stderr and "dry/pr12" in result.stderr
+
+
+def test_an_amp_recipe_does_not_excuse_another_amps_dry_recipe(tmp_path):
+    result = _apply(tmp_path, "amp/pr12-clean", "dry/sw50r")     # no spec at all
+    assert result.returncode != 0
+    assert "warning" not in result.stderr
+
+
+def test_each_dry_recipe_is_tagged_with_its_amp():
+    recipe = json.loads((PLUGIN_ROOT / "packs" / "morgan" / "recipes.json").read_text())
+    assert {rid: r["for_amp"] for rid, r in recipe["layers"]["dry"].items()} == {
+        "pr12": "PR12", "sw50r": "SW50R", "ac20": "AC20"}

@@ -183,9 +183,8 @@ Tone King recipes use its verified sync-note selectors. See
     reserved clean parts. Dry, they landed closer to the record than the shipped
     template on every amp, about 12% on average, measured but not yet listened to
     ([clean-baseline-results.md](../../docs/clean-baseline-results.md)).
-  - **Make it dry first,** with the same spec entries as the driven baseline below:
-    transpose 0, the amp's spring reverb 0, and reverb, delay, tremolo, doubler and gate
-    off. Keep its compressor, amp, pedals, EQ and cab.
+  - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
+    its compressor, amp, pedals, EQ and cab.
   - **When the research turns an effect back on, set its parameters explicitly.** The
     factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
@@ -208,7 +207,7 @@ Tone King recipes use its verified sync-note selectors. See
     driven baselines below, and lighter in gain, but only just past the bar
     ([crunch-baseline-results.md](../../docs/crunch-baseline-results.md)). Say so when
     you report.
-  - **Make them dry the same way** as the driven baseline below, and keep their amp,
+  - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
     pedals, EQ and cab.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
   from the amp's driven baseline instead. On heavy material it beats the lighter crunch
@@ -227,12 +226,8 @@ Tone King recipes use its verified sync-note selectors. See
     further on every part, so use the clean baseline for a clean part. Heavy-tone
     listening has not been run yet; say so when you report
     ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
-  - **Make it dry first, always,** in the spec, because the installed presets are not
-    (Wall Of Doom is transposed down 5 semitones):
-    - `parameters/transpose` 0;
-    - the amp's spring reverb 0 (`sw50rAmp/sw50rReverb` or `pr12Amp/pr12Reverb`);
-    - `reverb/reverbActive`, `delay/delayActive`, `tremolo/tremoloActive`,
-      `parameters/doublerActive` and `parameters/gateActive` off.
+  - **Make it dry first, always,** with `--recipe dry/<amp>` (below), because the
+    installed presets are not (Wall Of Doom is transposed down 5 semitones).
 
     Then turn effects back on only where the research calls for them.
   - **Keep the baseline's amp, drive, pedals, EQ and cab.** Skip step 3's amp, drive,
@@ -241,6 +236,24 @@ Tone King recipes use its verified sync-note selectors. See
     not the "renamed factory preset" failure step 3 warns about.
   - **If the file is missing** (an older or trimmed install), say so and use the
     clean template.
+- **The dry recipe,** for every Morgan baseline above: `dry/pr12`, `dry/sw50r` or
+  `dry/ac20`, matching the baseline's amp. It sets transpose 0, the amp's spring reverb 0
+  (PR12 and SW50R; AC20 has none), and reverb, delay, tremolo, doubler and gate off,
+  with the FX section itself on, as the baselines were measured. Stack it first, so your other recipes and the spec
+  can turn an effect back on, with its parameters set explicitly. Preview it:
+
+  ```bash
+  python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+    --template BASELINE.xml --recipe dry/pr12 --out OUT.xml --dry-run
+  ```
+
+  with the baseline's full path, from the tables above, as the template.
+
+  On the nine baselines it changes 1 to 5 settings each: every one ships with the gate
+  on, Wall Of Doom also with transpose −5, and Modern Metal (Pick Hard) with its FX
+  section off, which the recipe turns on so an effect brought back is heard. The writer
+  refuses another amp's recipe (`dry/pr12` on an SW50R preset), since it would change
+  nothing you hear.
 - For Tone King, require one of the user's own Tone King presets. No Tone King
   preset content ships in the repository.
 - One of the user's own presets is a fine template too, especially if it already
