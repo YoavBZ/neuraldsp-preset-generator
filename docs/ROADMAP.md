@@ -38,6 +38,19 @@ lives in the linked documents. Last updated 2026-10-09.
   differences between clean-to-crunch PR12 renders
   ([listening validation](listening-validation-results.md)).
 
+## Scope (user decision, 2026-10-10)
+
+**Heavy metal and high-gain tones are out of scope.** Metal players would use a
+dedicated Neural DSP metal plugin, not Morgan Amps Suite or Tone King, and those plugins
+aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
+- Evaluation, gates and tuning use clean and crunch material; high-gain parts are
+  report only, at most.
+- Set 3 and set 4 are mostly heavy. Their clean and crunch parts stay useful; their
+  high-gain parts don't drive decisions.
+- **The driven baseline in `generate`** (Wall Of Doom, Vintage Metal, Dirty Coil Rhythm)
+  was chosen on heavy set-3 material. Whether it suits crunch songs is open: the next
+  candidate is a crunch starting preset chosen on crunch material, as the clean one was.
+
 ## Next, in order
 
 0. **Song-to-preset model** ([plan](di-recovery-plan.md); the Codex continuation is
