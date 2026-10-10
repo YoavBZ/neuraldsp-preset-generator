@@ -68,8 +68,16 @@ lives in the linked documents. Last updated 2026-10-09.
    - **The judge is treble-deaf** on some heavy parts.
    - **The network's picks are under-driven:** its rebuilt waveform makes presets sound
      dirtier than they are.
-   - **The analysis protocol is updated.** The DI-level convention, a heavy-tone
-     listening check and judge fixes await the user's decision.
+   - **The analysis protocol is updated.**
+   - **The user's decisions:**
+     - the measure plays the DI at a fixed −22.9 LUFS;
+     - a heavy-tone listening check (built, awaiting the listener);
+     - a hearing-weighted judge option, beside the current one.
+   - **Re-scored under them** ([results](fixed-level-rescore-results.md), verified):
+     - **The 3 kHz cut helps** (−0.070, 90% −0.109 to −0.030).
+     - **Against a fairly chosen fixed preset,** the cut chooser reaches −0.143, but on
+       two bands and many forks: a lead, not a claim.
+     - **A fresh confirmation needs 20 or more new bands.**
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
