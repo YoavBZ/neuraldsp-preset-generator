@@ -221,6 +221,8 @@ was declared, what was measured, and the research behind it.
 - [validation-set3.md](validation-set3.md): the heavier-tone set, declared.
 - [set3-heldout-use-ledger.json](set3-heldout-use-ledger.json): completed reserved-set
   use, recorded without altering the frozen metadata snapshot; the split is spent.
+- [validation-set4-plan.md](validation-set4-plan.md) → [validation-set4.md](validation-set4.md):
+  fresh held-out confirmation set, unused. 5 new bands, 13 parts, all held out.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
