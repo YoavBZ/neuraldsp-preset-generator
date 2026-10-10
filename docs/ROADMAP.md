@@ -98,7 +98,13 @@ lives in the linked documents. Last updated 2026-10-09.
         (`learn/rebuilt_judge.lowpass`). It is not counted as a pass.
       - **Repairing the bottom** ([v3 plan](di-network-v3-plan.md)): normalising the
         bottleneck improved early training, but the gate shut again (pre-check failed).
-        v3b replaces that gate with a plain activation.
+        v3b replaced that gate, and training still learned to ignore the bottom (0.1%
+        contribution). That route is closed.
+      - **Plugin renders against real amps** ([results](sim-real-gap-results.md),
+        verified): not the lever. The network's rebuild is less coherent with the true
+        DI than its own distorted input, on plugin renders too. The training loss
+        (mostly spectral magnitude) doesn't keep the waveform, which a driven amp
+        responds to. Next: the loss.
    5. **Search beyond the menu,** with a positive control first, so a song can beat a
       single constant.
    6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its

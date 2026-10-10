@@ -119,8 +119,11 @@ was declared, what was measured, and the research behind it.
 - [rebuilt-di-lowpass-plan.md](rebuilt-di-lowpass-plan.md) →
   [results](rebuilt-di-lowpass-results.md): cutting the rebuilt DI above 3 kHz misses
   the bar by 0.0009 (−0.049, 23 better and 5 worse); adopted by the user's decision.
-- [di-network-v3-plan.md](di-network-v3-plan.md): repairing the network's bottom levels
-  (v3 pre-check failed; v3b with an ungated bottom level).
+- [di-network-v3-plan.md](di-network-v3-plan.md): repairing the network's bottom levels.
+  Both pre-checks failed; training learns to ignore the bottom either way.
+- [sim-real-gap-plan.md](sim-real-gap-plan.md) → [results](sim-real-gap-results.md):
+  real rooms and mics are not the lever. The rebuild is less coherent with the true DI
+  than its own input, so the training loss is.
 - [set3-rank-calibration-plan.md](set3-rank-calibration-plan.md) →
   [results](set3-rank-calibration-results.md): supervised prior/score blend misses
   declared criteria versus the net chooser. *Review: rebuilt-DI scores carry about 0.2 of
