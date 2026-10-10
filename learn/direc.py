@@ -199,11 +199,13 @@ def complex_stft_loss(a, b, ffts=(512, 1024, 2048), power=0.3):
     total = 0.0
     for n in ffts:
         w = torch.hann_window(n, device=a.device)
-        A = torch.stft(a, n, n // 4, window=w, return_complex=True)
-        B = torch.stft(b, n, n // 4, window=w, return_complex=True)
-        ca = A / (A.abs() + 1e-7) * (A.abs() + 1e-7) ** power
-        cb = B / (B.abs() + 1e-7) * (B.abs() + 1e-7) ** power
-        total = total + (torch.view_as_real(ca) - torch.view_as_real(cb)).abs().mean()
+        A = torch.view_as_real(torch.stft(a, n, n // 4, window=w, return_complex=True))
+        B = torch.view_as_real(torch.stft(b, n, n // 4, window=w, return_complex=True))
+        # |z| from real parts with a floor: complex abs has an undefined gradient at 0,
+        # which silent stretches reach (non-finite from step 31 on MPS, 2026-10-10).
+        ma = torch.sqrt((A ** 2).sum(-1, keepdim=True) + 1e-10)
+        mb = torch.sqrt((B ** 2).sum(-1, keepdim=True) + 1e-10)
+        total = total + (A * ma ** (power - 1) - B * mb ** (power - 1)).abs().mean()
     return total / len(ffts)
 
 
@@ -214,7 +216,8 @@ def neg_si_sdr(a, b, eps=1e-8):
     a = a - a.mean(-1, keepdim=True)
     b = b - b.mean(-1, keepdim=True)
     s = (a * b).sum(-1, keepdim=True) / ((b * b).sum(-1, keepdim=True) + eps) * b
-    return -(10 * torch.log10((s * s).sum(-1) / (((a - s) ** 2).sum(-1) + eps) + eps)).mean()
+    sdr = 10 * torch.log10((s * s).sum(-1) / (((a - s) ** 2).sum(-1) + eps) + eps)
+    return -sdr.clamp(-50.0, 50.0).mean()           # a near-silent target can't blow it up
 
 
 def training_loss(p, y, kind="default"):

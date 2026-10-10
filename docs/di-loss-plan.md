@@ -52,3 +52,13 @@ If it fails, stop and report; no long run.
 
 The gain-knob bias and coherence are reported beside the result. An independent reviewer
 re-derives the numbers.
+
+## Amendment (2026-10-10, before any pre-check result)
+
+**The first pre-check launch stopped at step 31 with non-finite gradients.** Complex
+`abs` has an undefined gradient at 0, which silent stretches reach.
+
+The complex term now takes the magnitude from the real and imaginary parts with a
+1e-10 floor, and SI-SDR is clamped to ±50 dB. Gradients were verified finite on CPU, for
+noise, half-silent and silent targets. The loss is otherwise unchanged, and the
+pre-check restarts from scratch under the same rules.
