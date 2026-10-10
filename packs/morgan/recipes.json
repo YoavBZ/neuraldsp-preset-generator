@@ -343,7 +343,7 @@
       "song-tempo": {
         "title": "Song-tempo tremolo",
         "use_when": "tempo-locked rhythmic pulsing",
-        "note": "Uses a free-running rate computed from tempo: supply bpm and the rate resolves to one cycle per eighth note. The declared 0.15–15 Hz range covers ordinary song tempos; choose another division if the computed rate falls outside it.",
+        "note": "Uses a free-running rate computed from tempo: supply bpm and the rate resolves to one cycle per eighth note. The declared 0.15\u201315 Hz range covers ordinary song tempos; choose another division if the computed rate falls outside it.",
         "parameters": [
           {
             "module": "tremolo",
@@ -1552,9 +1552,14 @@
             "module": "parameters",
             "key": "gateActive",
             "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
           }
         ],
-        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off. Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
         "evidence": {
           "class": "measured",
           "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"
@@ -1598,9 +1603,14 @@
             "module": "parameters",
             "key": "gateActive",
             "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
           }
         ],
-        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off. Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
         "evidence": {
           "class": "measured",
           "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"
@@ -1639,9 +1649,14 @@
             "module": "parameters",
             "key": "gateActive",
             "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
           }
         ],
-        "note": "Transpose 0, reverb, delay, tremolo, doubler and gate off. Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "note": "Transpose 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
         "evidence": {
           "class": "measured",
           "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"

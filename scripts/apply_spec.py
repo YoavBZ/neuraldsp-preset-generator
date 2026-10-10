@@ -167,12 +167,10 @@ def run(args) -> None:
     # beats a recipe default.
     entries = list(spec.get("parameters", []))
     if args.recipe:
-        entries = stack(
-            args.recipe,
-            pack,
-            _amp_prefix(args, spec, pack, preset),
-            pack_id=pack.pack_id,
-        ) + entries
+        live = _amp_prefix(args, spec, pack, preset)
+        stacked = stack(args.recipe, pack, live, pack_id=pack.pack_id)
+        _refuse_other_amps(stacked, pack, live, args.recipe)
+        entries = stacked + entries
 
     # --- name -----------------------------------------------------------
     changes: list[tuple[str, str, str]] = []
@@ -277,6 +275,33 @@ def run(args) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     write_file(str(out), preset.tokens)
     print(f"\nWrote {out}")
+
+
+def _refuse_other_amps(entries, pack, live, refs) -> None:
+    """Stop when a recipe writes another amp's own modules (`pr12Amp`, `pr12EQ`).
+
+    Such a write lands on an amp the preset doesn't use, so it changes nothing you
+    hear: `dry/pr12` on an SW50R preset would zero the idle PR12's spring and leave
+    the live SW50R's spring wet, with no error.
+    """
+    if live is None:
+        return
+    others = {prefix for prefix in (pack.amp_modules or {}).values() if prefix != live}
+    stray = sorted({f"{e['module']}/{e['key']}" for e in entries
+                    if isinstance(e, dict) and any(
+                        e.get("module") in (f"{o}Amp", f"{o}EQ") for o in others)})
+    if not stray:
+        return
+    live_name = next((n for n, pre in pack.amp_modules.items() if pre == live), live)
+    if selected_amp_in(refs, pack.pack_id) is not None:
+        # The recipes chose an amp and the spec overrode it: their settings for the
+        # amp they chose are knowingly left behind, so say so, but go on.
+        print(f"warning: the spec's amp ({live_name}) overrides the recipes' amp; their "
+              f"settings for it ({', '.join(stray)}) won't be heard.", file=sys.stderr)
+        return
+    die(f"recipe {', '.join(refs)} writes another amp's settings ({', '.join(stray)}), "
+        f"but this preset's amp is {live_name}: use that amp's recipe "
+        f"(for the dry rule, dry/{live}).")
 
 
 def _amp_prefix(args, spec, pack, preset):

@@ -244,13 +244,16 @@ Tone King recipes use its verified sync-note selectors. See
 
   ```bash
   python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
-    --template BASELINE.xml --recipe dry/pr12 --spec /tmp/spec.json --out OUT.xml --dry-run
+    --template BASELINE.xml --recipe dry/pr12 --out OUT.xml --dry-run
   ```
 
   with the baseline's full path, from the tables above, as the template.
 
   On the nine baselines it changes 1 to 5 settings each: every one ships with the gate
-  on, and Wall Of Doom also with transpose −5.
+  on, Wall Of Doom also with transpose −5, and Modern Metal (Pick Hard) with its FX
+  section off, which the recipe turns on so an effect brought back is heard. The writer
+  refuses another amp's recipe (`dry/pr12` on an SW50R preset), since it would change
+  nothing you hear.
 - For Tone King, require one of the user's own Tone King presets. No Tone King
   preset content ships in the repository.
 - One of the user's own presets is a fine template too, especially if it already

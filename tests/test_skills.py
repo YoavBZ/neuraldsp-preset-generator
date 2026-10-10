@@ -214,7 +214,8 @@ def test_parameter_names_a_skill_mentions_are_real(doc):
     unknown = [
         f"{module}/{key}"
         for module, key in PARAM_PATH.findall(text)
-        if pack.get(module, key) is None and key not in recipes.get(module, {})
+        if pack.get(module, key) is None
+        and (module in modules or key not in recipes.get(module, {}))
     ]
     # Bare camelCase names are written for a module the sentence already names
     # ("the live amp's own reverb knob"), so either half is a real reference.

@@ -364,6 +364,7 @@ DRY_COMMON = {
     ("tremolo", "tremoloActive"): False,
     ("parameters", "doublerActive"): False,
     ("parameters", "gateActive"): False,
+    ("fxParameters", "sectionActive"): True,
 }
 
 
@@ -376,3 +377,27 @@ def test_each_dry_recipe_is_exactly_the_dry_rule(amp, spring):
     if spring:
         expected[(f"{amp}Amp", f"{amp}Reverb")] = 0
     assert entries == expected
+
+
+def _apply(tmp_path, *recipes):
+    import subprocess
+    import sys
+
+    cmd = [sys.executable, str(PLUGIN_ROOT / "scripts" / "apply_spec.py"),
+           "--template", str(PLUGIN_ROOT / "samples" / "Example_Clean_PR12.xml"),
+           "--out", str(tmp_path / "out.xml"), "--dry-run"]
+    for ref in recipes:
+        cmd += ["--recipe", ref]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def test_the_right_amps_dry_recipe_applies(tmp_path):
+    result = _apply(tmp_path, "dry/pr12")
+    assert result.returncode == 0, result.stderr
+    assert "pr12Amp/pr12Reverb" in result.stdout
+
+
+def test_another_amps_recipe_is_refused_not_silently_applied(tmp_path):
+    result = _apply(tmp_path, "dry/sw50r")          # a PR12 preset
+    assert result.returncode != 0
+    assert "dry/pr12" in result.stderr and "sw50rAmp/sw50rReverb" in result.stderr
