@@ -83,8 +83,9 @@ lives in the linked documents. Last updated 2026-10-09.
      - **Judge v2 with fixed bands** ([results](judge-v2-results.md)) strengthens the
        edge, but about half of that is an artefact of the masking floor; it needs a
        symmetric floor before any adoption.
-     - **A waveform-keeping loss** ([plan](di-loss-plan.md)): the complex-STFT term can't
-       train on MPS; SI-SDR with a normalised bottleneck is pre-checking on CPU. Making
+     - **A waveform-keeping loss** ([plan and result](di-loss-plan.md)): failed its
+       pre-check. SI-SDR kept no more waveform (1–3 kHz coherence 0.170 against 0.169),
+       and the spectrum got worse. The complex-STFT term can't train on MPS. Making
        MR-STFT NaN-safe removed the old MPS glitches.
      - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
        12–18 bands. Five are downloaded, unheard (`tmp/set4-download.md`).
