@@ -112,6 +112,24 @@ def _logmel(x, n_fft: int, sample_rate: int):
     return 10.0 * np.log10(spectrum @ matrix.T + 1e-12), centres
 
 
+def _hearing_db(n_fft: int, sample_rate: int):
+    """Per-band dB added before choosing bands and floors under `weighting="hearing"`:
+    A-weighting at each band's centre, less the band's filter area (wide treble bands
+    otherwise gain up to 13 dB from bandwidth alone). Differences are unaffected."""
+    import numpy as np
+
+    key = (n_fft, sample_rate, FMIN, FMAX, MEL_BANDS)
+    if key not in _MELS:
+        _MELS[key] = _mel_matrix(n_fft, sample_rate)
+    matrix, centres = _MELS[key]
+    f2 = np.asarray(centres) ** 2
+    ra = (12194.0 ** 2 * f2 ** 2) / ((f2 + 20.6 ** 2) * np.sqrt((f2 + 107.7 ** 2) * (f2 + 737.9 ** 2))
+                                     * (f2 + 12194.0 ** 2))
+    a = 20 * np.log10(ra) + 2.0
+    area = 10 * np.log10(matrix.sum(axis=1) + 1e-12)
+    return a - (area - area.mean()), np.asarray(centres)
+
+
 def _frame_db(x, n_fft: int):
     import numpy as np
 
@@ -220,7 +238,9 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
                      end_s: Optional[float] = None, tail_s: float = 1.5,
                      floor_db: float = 30.0, mask_db: float = 40.0,
                      di_floor_db: float = 40.0, min_frames: int = 8,
-                     max_pauses: float = 0.5, bands: str = "recording") -> AlignedDistance:
+                     max_pauses: float = 0.5, bands: str = "recording",
+                     weighting: str = "flat", min_bands: int = 16,
+                     max_band_hz: float = 10000.0) -> AlignedDistance:
     """Distance between `render` (the preset through `di`) and `recording` (the same
     performance through the real rig), over [start_s, end_s) of the recording.
 
@@ -228,6 +248,11 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
     recording). `render_latency`: samples the render lags the DI (the plugin's
     latency; 52 for Morgan, 51 for Tone King). Non-finite input is refused with a
     ValueError; a window that cannot be scored gives `distance=None` and a reason.
+
+    `weighting="hearing"` (judge v2, `docs/closeness-review-2026-10-10.md`) chooses bands
+    and floors on hearing-weighted levels (A-weighting, area-normalised bands), scores
+    bands up to `max_band_hz` only, and refuses a window scored on fewer than `min_bands`
+    bands at the middle frame size. The default, `"flat"`, is the judge as validated.
     """
     require("measuring aligned distance")
     import math
@@ -236,6 +261,8 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
 
     if bands not in ("recording", "union"):
         raise ValueError(f"bands must be 'recording' or 'union', not {bands!r}")
+    if weighting not in ("flat", "hearing"):
+        raise ValueError(f"weighting must be 'flat' or 'hearing', not {weighting!r}")
     recording = _signal(recording, "recording")
     render = _signal(render, "render")
     di = _signal(di, "DI")
@@ -267,6 +294,11 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         X, _ = _logmel(ren_n, n_fft, sample_rate)
         k = min(len(R), len(X))
         R, X = R[:k], X[:k]
+        if weighting == "hearing":
+            # The same per-band offset on both sides: differences are unchanged, only the
+            # band choice and the floors see hearing-weighted levels.
+            w, centres = _hearing_db(n_fft, sample_rate)
+            R, X = R + w, X + w
         # The DI's frames on the same grid, starting early enough that a note played
         # just before the window still has its tail scored.
         tail = int(round(tail_s * sample_rate / hop))
@@ -287,10 +319,17 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         audible = R >= floor
         ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor)[scored] / 10), axis=0))
         bins = ltas_r >= ltas_r.max() - floor_db
+        if weighting == "hearing":
+            bins &= centres <= max_band_hz
         if bands == "union":
             ltas_x = 10 * np.log10(np.mean(10 ** (np.maximum(X, R.max() - 70.0)[scored] / 10),
                                            axis=0))
             bins |= ltas_x >= ltas_x.max() - floor_db
+            if weighting == "hearing":
+                bins &= centres <= max_band_hz
+        if weighting == "hearing" and n_fft == 2048 and bins.sum() < min_bands:
+            return refuse(f"only {int(bins.sum())} bands are scored, under {min_bands}",
+                          int(playing.sum()))
         # Level before the floor, so a render that sits a few dB low is not clipped
         # unevenly by it: the median difference where the DI plays and the recording
         # is above its floor, which a silent stretch on one side cannot drag.
