@@ -12,6 +12,21 @@ from __future__ import annotations
 
 LATENCY = 52
 _ACTIVITY = ("pauses", "plays in too few frames")
+# Rebuilt DIs are low-passed here before rendering (docs/rebuilt-di-lowpass-results.md:
+# a near miss, −0.049 against a −0.05 bar, 23 picks better and 5 worse; adopted by the
+# user's decision on 2026-10-10 because it is free, consistent in direction, and removes
+# content the network cannot rebuild).
+LOWPASS_HZ = 3000
+
+
+def lowpass(di, hz=LOWPASS_HZ, sample_rate=48000):
+    """`di` through a zero-phase fourth-order Butterworth magnitude at `hz`, at −22.9 LUFS."""
+    import numpy as np
+
+    from learn.direc_check import to_lufs
+
+    f = np.fft.rfftfreq(len(di), 1 / sample_rate)
+    return to_lufs(np.fft.irfft(np.fft.rfft(di) / np.sqrt(1 + (f / hz) ** 8), len(di)))
 
 
 def rebuilt_distance(recording, render, di, *, start_s, end_s, bands="recording"):

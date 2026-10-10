@@ -131,7 +131,7 @@ def fold_average(cache: pathlib.Path, fold: int):
 
 # --- model --------------------------------------------------------------------------
 
-def build_model(channels=(32, 64, 128, 256, 512), lstm=256):
+def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False, open_bottom=False):
     import torch
     import torch.nn as nn
 
@@ -149,13 +149,25 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256):
                 cin = c
             # A dilated-conv bottleneck (about ±0.3 s at this depth). An LSTM here trained
             # stably on CPU but diverged on MPS (measured 2026-10-06).
-            self.mid = nn.ModuleList([nn.Sequential(nn.Conv1d(cin, cin, 3, padding=d, dilation=d),
+            # `norm` (v3, docs/di-network-v3-plan.md): without it the residual sum grew to
+            # thousands and saturated dec.0's GLU gate shut, killing the bottom levels (86% of
+            # the weights) in every network trained before 2026-10-10. Pre-norm keeps it bounded.
+            self.mid = nn.ModuleList([nn.Sequential(*([nn.GroupNorm(1, cin)] if norm else []),
+                                                    nn.Conv1d(cin, cin, 3, padding=d, dilation=d),
                                                     nn.GELU(), nn.Conv1d(cin, cin, 1))
                                       for d in (1, 3, 9, 27)])
+            if norm:
+                for block in self.mid:
+                    with torch.no_grad():
+                        block[-1].weight.mul_(0.1)
             outs = list(channels[:-1])[::-1] + [1]
-            for c, o in zip(channels[::-1], outs):
+            for k, (c, o) in enumerate(zip(channels[::-1], outs)):
                 last = o == 1
-                self.dec.append(nn.Sequential(nn.Conv1d(c, 2 * c, 3, padding=1), nn.GLU(dim=1),
+                # `open_bottom` (v3b): the deepest level's GLU gate shut in training even with
+                # `norm` (2% open by step 1,000); a GELU there cannot gate the path off.
+                gate = ([nn.Conv1d(c, c, 3, padding=1), nn.GELU()] if open_bottom and k == 0
+                        else [nn.Conv1d(c, 2 * c, 3, padding=1), nn.GLU(dim=1)])
+                self.dec.append(nn.Sequential(*gate,
                                               nn.ConvTranspose1d(c, o, 8, 4, padding=2),
                                               *( [] if last else [nn.GELU()])))
 
@@ -179,6 +191,34 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256):
     return Net()
 
 
+def load_model(path, device="cpu"):
+    """A saved network, with the architecture its weights imply."""
+    import torch
+
+    state = torch.load(path, map_location=device)
+    net = build_model(norm=state["mid.0.0.weight"].dim() == 1,
+                      open_bottom=state["dec.0.0.weight"].shape[0] == state["dec.0.0.weight"].shape[1])
+    net.load_state_dict(state)
+    return net
+
+
+def gate_open(net, x):
+    """Fraction of dec.0's gate above 1e-3 on `x` (0 means the bottom levels are dead); with
+    an open bottom, the fraction of its GELU outputs above 1e-3 in size."""
+    import torch
+
+    seen = {}
+    h = net.dec[0][0].register_forward_hook(lambda m, i, o: seen.update(o=o.detach()))
+    with torch.no_grad():
+        net(x)
+    h.remove()
+    o = seen["o"]
+    if not isinstance(net.dec[0][1], torch.nn.GLU):
+        return float((torch.nn.functional.gelu(o).abs() > 1e-3).float().mean())
+    c = o.shape[1] // 2
+    return float((torch.sigmoid(o[:, c:]) > 1e-3).float().mean())
+
+
 def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
     import torch
 
@@ -194,7 +234,7 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 # --- training -----------------------------------------------------------------------
 
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
-        extra=None):
+        extra=None, norm=False, open_bottom=False):
     import numpy as np
     import torch
 
@@ -270,7 +310,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         return (torch.tensor(np.stack(xs), device=dev).unsqueeze(1),
                 torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
 
-    net = build_model().to(dev)
+    net = build_model(norm=norm, open_bottom=open_bottom).to(dev)
     if resume:
         net.load_state_dict(torch.load(resume, map_location=dev))
         print(f"resumed from {resume}", flush=True)
@@ -345,10 +385,11 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                     vp = net(vx)
                     vl += float(100 * (vp - vy).abs().mean() + mrstft(vp.squeeze(1), vy.squeeze(1)))
                     base += float(100 * (vx - vy).abs().mean() + mrstft(vx.squeeze(1), vy.squeeze(1)))
+            gate = gate_open(net, vx)
             net.train()
             el = time.time() - t0
             print(f"fold {fold} step {step} {el / 60:.1f} min ({step / el:.2f} it/s) train {float(loss.detach()):.3f} "
-                  f"val {vl:.3f} (input-as-DI {base:.3f}) skipped {skipped}", flush=True)
+                  f"val {vl:.3f} (input-as-DI {base:.3f}) skipped {skipped} gate {gate:.2f}", flush=True)
             torch.save(net.state_dict(), out / f"fold{fold}.pt")
     torch.save(net.state_dict(), out / f"fold{fold}.pt")
 
@@ -406,6 +447,8 @@ def main():
     f.add_argument("--extra-cache", type=pathlib.Path, nargs="*", default=[])
     f.add_argument("--lr", type=float, default=3e-4)
     f.add_argument("--lr-end", type=float)
+    f.add_argument("--norm", action="store_true", help="v3: normalised bottleneck")
+    f.add_argument("--open-bottom", action="store_true", help="v3b: no GLU gate at the deepest level")
     args = ap.parse_args()
     if args.cmd == "cache-pairs":
         build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
@@ -414,7 +457,8 @@ def main():
     else:
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
             log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end,
-            extra=[c.expanduser() for c in args.extra_cache])
+            extra=[c.expanduser() for c in args.extra_cache], norm=args.norm,
+            open_bottom=args.open_bottom)
 
 
 if __name__ == "__main__":

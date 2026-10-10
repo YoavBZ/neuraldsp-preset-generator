@@ -7,6 +7,7 @@ the pick with the stored average-guitar measure (`phase2-set3/measure`, half B).
     $TORCH_PY -m learn.v2_eval render --model .../models-v2b/fold2.pt --name v2b --shard 0/3
     $TORCH_PY -m learn.v2_eval score --name v2b
     $TORCH_PY -m learn.v2_eval summary --name v2b [--folds 2]
+    $TORCH_PY -m learn.v2_eval render --name lp3k --lowpass 3000 --shard 0/3   # no network
 """
 
 from __future__ import annotations
@@ -38,7 +39,16 @@ def parts(folds=None):
     return {s: p for s, p in ps.items() if folds is None or set3.fold_for_band(p["band"]) in folds}
 
 
-def render(model, name, shard, folds):
+def lowpassed(slug, hz):
+    """The stored rebuilt DI (`phase2-set3/net`), low-passed at `hz`, back at −22.9 LUFS."""
+    import numpy as np
+
+    from learn.rebuilt_judge import lowpass
+
+    return lowpass(np.load(SRC / "net" / slug / "di.npy"), hz)
+
+
+def render(model, name, shard, folds, lowpass=None):
     import numpy as np
     import soundfile as sf
     import torch
@@ -49,9 +59,9 @@ def render(model, name, shard, folds):
     from match.renderer_au import AudioUnitRenderer
     from packs.loader import load_pack
 
-    net = D.build_model()
-    net.load_state_dict(torch.load(model, map_location="cpu"))
-    net.eval()
+    if lowpass is None:
+        net = D.load_model(model)
+        net.eval()
     pack = load_pack("morgan")
 
     class PanelRenderer(AudioUnitRenderer):
@@ -74,8 +84,12 @@ def render(model, name, shard, folds):
             if (base / "done").exists():
                 continue
             base.mkdir(parents=True, exist_ok=True)
-            rec = P.recording(slug, "ref", P.RunConfig())
-            di = to_lufs(D.rebuild(net, rec.astype(np.float32), device=torch.device("cpu")).astype(np.float64))
+            if lowpass is not None:
+                di = lowpassed(slug, lowpass)
+            else:
+                rec = P.recording(slug, "ref", P.RunConfig())
+                di = to_lufs(D.rebuild(net, rec.astype(np.float32),
+                                       device=torch.device("cpu")).astype(np.float64))
             np.save(base / "di.npy", di)
             d32 = di.astype(np.float32)
             for amp, m in M.items():
@@ -85,7 +99,7 @@ def render(model, name, shard, folds):
                     y = np.asarray(r.render(d32, {"panel": f"{amp}|{n}"}).audio, np.float64)
                     sf.write(base / amp / f"{RP._slug(n)}.flac",
                              y * (0.99 / max(np.abs(y).max(), 1e-12)), P.SR, subtype="PCM_24")
-            (base / "done").write_text(str(model))
+            (base / "done").write_text(f"lowpass {lowpass}" if lowpass is not None else str(model))
             print(slug, flush=True)
     finally:
         r.close()
@@ -182,10 +196,12 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--folds", type=int, nargs="*", help="set-3 folds to test (default: all)")
     ap.add_argument("--against", help="another tested network, on the same parts")
+    ap.add_argument("--lowpass", type=float, help="render the stored rebuilt DI low-passed here (Hz)")
     args = ap.parse_args(argv)
     folds = set(args.folds) if args.folds else None
     if args.cmd == "render":
-        render(args.model.expanduser(), args.name, tuple(int(v) for v in args.shard.split("/")), folds)
+        render(args.model.expanduser() if args.model else None, args.name,
+               tuple(int(v) for v in args.shard.split("/")), folds, args.lowpass)
     elif args.cmd == "score":
         score(args.name, args.workers, folds)
     else:

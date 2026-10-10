@@ -87,9 +87,24 @@ lives in the linked documents. Last updated 2026-10-09.
    4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
       multi-amp training, stem-aware training (renders mixed and separated), and
       room-and-mic augmentation.
-      - **Pilot running 2026-10-10** ([plan](di-network-v2-plan.md)): longer
-        training, and adding set 3's development guitars. The current network scores
-        7 on its training clips against 60 on new ones, a sign of memorising.
+      - **Pilot, 2026-10-10 ([results](di-network-v2-results.md), verified):** neither
+        longer training (−0.012) nor set 3's guitars (−0.015) moved the picks; the bar
+        was −0.05.
+        - The review found every network's bottom levels dead: a GLU gate shut, cutting
+          off 86% of the weights. So data and training length couldn't matter yet.
+      - **Cutting the rebuilt DI above 3 kHz** ([results](rebuilt-di-lowpass-results.md),
+        verified): −0.049, 23 picks better and 5 worse, missing the bar by 0.0009.
+        **Adopted by the user's decision** as a free, direction-consistent near miss
+        (`learn/rebuilt_judge.lowpass`). It is not counted as a pass.
+      - **Repairing the bottom** ([v3 plan](di-network-v3-plan.md)): normalising the
+        bottleneck improved early training, but the gate shut again (pre-check failed).
+        v3b replaced that gate, and training still learned to ignore the bottom (0.1%
+        contribution). That route is closed.
+      - **Plugin renders against real amps** ([results](sim-real-gap-results.md),
+        verified): not the lever. The network's rebuild is less coherent with the true
+        DI than its own distorted input, on plugin renders too. The training loss
+        (mostly spectral magnitude) doesn't keep the waveform, which a driven amp
+        responds to. Next: the loss.
    5. **Search beyond the menu,** with a positive control first, so a song can beat a
       single constant.
    6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
