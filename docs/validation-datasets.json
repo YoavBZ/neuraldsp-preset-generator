@@ -5260,6 +5260,49 @@
    "results": "docs/heldout-listening-sw50r-results.json",
    "ran": "2026-09-28",
    "verdicts": "2026-09-29"
+  },
+  {
+   "declaration": "docs/set4-confirmation-plan.md",
+   "test_id": "confirm-rebuilt-di-chooser-2026-10-10",
+   "commit": "2804e38",
+   "sessions": [
+    "cambridge/All The Same",
+    "cambridge/It's My Right",
+    "cambridge/One Flip Flop",
+    "cambridge/Semantics",
+    "cambridge/Stalker",
+    "cambridge/Sugar - Faith",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 02",
+    "guitar-techs/P3_music excerpt 06",
+    "guitar-techs/P3_music excerpt 10",
+    "guitar-techs/P3_music excerpt 11",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "scored_sessions": [
+    "cambridge/All The Same",
+    "cambridge/It's My Right",
+    "cambridge/One Flip Flop",
+    "cambridge/Stalker",
+    "cambridge/Sugar - Faith",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 10",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "heard": [],
+   "results": "docs/set4-confirmation-results.md",
+   "ran": "2026-10-10",
+   "verdicts": "2026-10-10"
   }
  ]
 }
