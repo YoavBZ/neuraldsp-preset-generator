@@ -62,3 +62,9 @@ The complex term now takes the magnitude from the real and imaginary parts with 
 1e-10 floor, and SI-SDR is clamped to ±50 dB. Gradients were verified finite on CPU, for
 noise, half-silent and silent targets. The loss is otherwise unchanged, and the
 pre-check restarts from scratch under the same rules.
+
+**Second launch** (also before any result): non-finite again at step 231 on MPS. The
+compression's gradient, magnitude^−1.7, overflows near a 1e-5 floor. The floor is now
+1e-2 in magnitude, about 40 dB under typical bins. On CPU, gradient norms are 1.4–1.9
+times the default loss's, on both a fresh and a trained network. The pre-check restarts
+from scratch again.

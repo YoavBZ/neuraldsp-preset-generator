@@ -203,8 +203,8 @@ def complex_stft_loss(a, b, ffts=(512, 1024, 2048), power=0.3):
         B = torch.view_as_real(torch.stft(b, n, n // 4, window=w, return_complex=True))
         # |z| from real parts with a floor: complex abs has an undefined gradient at 0,
         # which silent stretches reach (non-finite from step 31 on MPS, 2026-10-10).
-        ma = torch.sqrt((A ** 2).sum(-1, keepdim=True) + 1e-10)
-        mb = torch.sqrt((B ** 2).sum(-1, keepdim=True) + 1e-10)
+        ma = torch.sqrt((A ** 2).sum(-1, keepdim=True) + 1e-4)
+        mb = torch.sqrt((B ** 2).sum(-1, keepdim=True) + 1e-4)
         total = total + (A * ma ** (power - 1) - B * mb ** (power - 1)).abs().mean()
     return total / len(ffts)
 
