@@ -206,7 +206,8 @@ was declared, what was measured, and the research behind it.
   playing the rebuilt DI quieter halves the under-drive but doesn't improve picks; futile.
 - [judge-v2-plan.md](judge-v2-plan.md) → [results](judge-v2-results.md): a fixed band set
   for the judge; half of its stronger result is a masking-floor artefact.
-- [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss (pre-check running).
+- [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
+  (no gain in coherence, worse spectrum).
 - [closeness-review-2026-10-10.md](closeness-review-2026-10-10.md): a deep, four-part review
   of how closeness is measured. The judge is treble-deaf on parts with a dominant low end;
   the measure's DI level is a recording artefact; the "unbeaten fixed preset" verdict

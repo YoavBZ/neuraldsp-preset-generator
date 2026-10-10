@@ -103,3 +103,25 @@ MPS.
 - **The pass rules are unchanged.**
 - **A long run, if any,** also uses CPU, with its minutes scaled to match the original's
   steps.
+
+## Pre-check result (2026-10-10): fails; no long run
+
+`--loss sisdr --norm` on CPU, 5,000 steps in 95 minutes, with no non-finite step. Against
+`models-set3-1h` (same recipe, default loss, about 5,000 steps), on 96 held-out-fold
+pairs:
+
+| | coherence 80–1,000 Hz | 1–3 kHz | 3–8 kHz | validation (default loss) |
+|---|---|---|---|---|
+| the input itself | 0.577 | 0.300 | 0.166 | 111.8 |
+| default loss (1 h) | 0.543 | 0.169 | 0.026 | 61.5 |
+| **SI-SDR + normalised bottleneck** | 0.560 | **0.170** | 0.015 | **77.1** |
+
+Both conditions fail. Coherence is 0.170, under the 0.22 bar. Validation is 77.1, over
+the 63 bar.
+
+**Rewarding the waveform directly didn't make the network keep it,** and the spectrum
+got worse. Above 1 kHz the network keeps less of the true waveform than its own input
+does, under either loss. Heavy distortion appears to leave too little to rebuild that
+detail at this scale. The roadmap's remaining step-4 ideas (stem-aware training, room
+and mic augmentation) don't address this. The next lever is to make the preset choice
+robust to the detail the rebuild can't recover, rather than to rebuild it.
