@@ -223,9 +223,11 @@ Tone King recipes use its verified sync-note selectors. See
   - **The evidence.** On reserved crunch and high-gain recordings, the dry SW50R and
     PR12 baselines were closer to the record than the clean template on the same amp on
     all 23 parts, and about half the distance on average. On clean parts they were
-    further on every part, so use the clean baseline for a clean part. Heavy-tone
-    listening has not been run yet; say so when you report
-    ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
+    further on every part, so use the clean baseline for a clean part. These baselines
+    are measured, not confirmed by ear: the one heavy-tone listening check tested the
+    measure itself and was inconclusive. Say so when you report
+    ([driven-baseline-results.md](../../docs/driven-baseline-results.md),
+    [heavy-listening-results.md](../../docs/heavy-listening-results.md)).
   - **Make it dry first, always,** with `--recipe dry/<amp>` (below), because the
     installed presets are not (Wall Of Doom is transposed down 5 semitones).
 
