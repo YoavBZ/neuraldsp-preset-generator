@@ -19,7 +19,7 @@ For each amp (PR12, SW50R, AC20), the clean starting preset is the factory prese
 
 The clean development parts are those whose distances exist for every candidate:
 - set 3's 5 clean development parts (`rescore/distances.json`);
-- the 20 sets 1–2 development stem parts that classify clean
+- the sets 1–2 development stem parts that classify clean (18 of the 20 usable)
   (`songs-check/distances.json`, scored as part of the [songs check](songs-check-plan.md)).
 
 Ties are broken by name. The rule runs once, after the songs check is scored, and its
@@ -48,9 +48,13 @@ An independent reviewer re-derives the result before adoption.
 
 ## The choice (2026-10-10, committed before the check)
 
-The rule run on 22 clean development parts from 10 bands: 18 from sets 1–2 and 4 from
-set 3. Parts are those where every factory candidate has both halves scored; one of set
-3's 5 clean parts has a refused distance and drops out. The selection is in
+The rule run on 22 clean development parts from 10 bands: 17 from sets 1–2 and 5 from
+set 3. Parts are those where every factory candidate has both halves scored.
+- **Of the 20 usable sets 1–2 stem parts,** 18 classify clean.
+- **telefunken-Honey-GTR drops out:** its half B is refused for every preset.
+
+(Corrected after review: the first wording said "18 + 4, a set-3 part refused". The
+selection itself is unchanged.) The selection is in
 `docs/clean-baseline-choice.json`:
 
 | amp | clean starting preset | median distance | runner-up |

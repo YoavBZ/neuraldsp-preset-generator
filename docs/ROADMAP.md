@@ -176,9 +176,14 @@ lives in the linked documents. Last updated 2026-10-09.
    8. **Then the product:** for clean and mild-crunch songs, `generate`'s audition page
       offers the chooser's top picks, marked experimental. High-gain songs keep the fixed
       driven preset.
-   8b. **A fixed clean starting preset,** chosen on development by rule. The clean
-      template is weak: against a reasonable fixed clean preset, the chooser's clean edge
-      shrinks to about −0.05.
+   8b. **A fixed clean starting preset,** chosen on development by rule. *Done
+      2026-10-10: confirmed ([results](clean-baseline-results.md)).*
+      - **The presets:** Royally Ambient (PR12), Pedal Platform Clean (SW50R) and Low-Watt
+        Americana (AC20), made dry, are about 12% closer than the template on held-out
+        clean parts.
+      - **`generate` now starts clean Morgan parts from them.**
+      - **Exploratory:** the chooser adds nothing on top of them on clean parts (+0.009).
+        Its product value now rests on crunch songs, and is unproven there.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

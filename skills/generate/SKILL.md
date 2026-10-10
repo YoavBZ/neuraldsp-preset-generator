@@ -43,7 +43,7 @@ the differences that decide it are:
 
 | | Morgan Amps Suite | Tone King Imperial MKII |
 |---|---|---|
-| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; distorted parts start from a factory driven baseline (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
+| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; clean and distorted parts start from a factory baseline per amp (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
 | voices | PR12 blackface Princeton (12 W, breaks up), AC20 darkened Vox, SW50R Dumble-ish high headroom | Rhythm channel clean, Lead channel with Mid-Bite, attenuator, spring reverb, tremolo |
 | reach for it | jangle and chime, Dumble-style singing lead, anything needing three different amp characters | vintage Fender-flavoured cleans, edge of breakup, blues lead, real spring reverb |
 
@@ -153,7 +153,7 @@ it resolves `{amp}` and note divisions for you. Then put **what the song needs**
 in a `--spec`, which is applied last and overrides the recipes.
 
 Handing back an unmodified stack is a failure — it's a renamed factory preset.
-(The dry driven baseline of step 4 is the exception: it is a measured starting point.)
+(The dry clean and driven baselines of step 4 are the exception: they are measured starting points.)
 The research in step 2 is what should move the values.
 
 Select the amp or channel through the pack's `amp/*` recipe. Morgan uses
@@ -168,8 +168,29 @@ Tone King recipes use its verified sync-note selectors. See
 
 ## 4. Pick a template
 
-- For Morgan, default to `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
+- For Morgan, the fallback template is `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
   — IR-free, portable, and shipped with the repo.
+- **For a clean Morgan part, start from the amp's clean baseline.** These are factory
+  presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
+
+  | amp | clean baseline |
+  |---|---|
+  | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` |
+  | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` |
+  | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` |
+
+  - **The evidence.** Chosen by rule on development recordings, then checked on 13
+    reserved clean parts. Dry, they landed closer to the record than the shipped
+    template on every amp, about 12% on average, measured but not yet listened to
+    ([clean-baseline-results.md](../../docs/clean-baseline-results.md)).
+  - **Make it dry first,** with the same spec entries as the driven baseline below:
+    transpose 0, the amp's spring reverb 0, and reverb, delay, tremolo, doubler and gate
+    off. Keep its compressor, amp, pedals, EQ and cab.
+  - **When the research turns an effect back on, set its parameters explicitly.** The
+    factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
+    feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
+    Low-Watt Americana has its tremolo level at 100%.
+  - **If the file is missing,** say so and use the template.
 - **For a crunch or high-gain Morgan part, start from the amp's driven baseline
   instead.** These are factory presets the plugin installs, under
   `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
@@ -230,8 +251,9 @@ user decide.
    their own specs. Use at least two amps (on Tone King, both channels), and make them
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
-   one of the four. For a crunch or high-gain part, make the dry driven baseline of
-   the chosen amp (step 4, transpose reset) one of the four.
+   one of the four. Make the chosen amp's dry baseline from step 4 one of the four: the
+   clean baseline for a clean part, the driven one for crunch or high gain, with
+   transpose reset.
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:
