@@ -92,3 +92,14 @@ with 1 non-finite step in 200.
 negative SI-SDR, with the normalised bottleneck. That is two changes against the
 baseline, reported as one arm. The pre-check rules are unchanged: 1–3 kHz coherence of at
 least 0.22, and a default-loss validation figure of at most 63 at 60 minutes.
+
+**Fourth amendment** (before any pre-check result): `--loss sisdr --norm` also gave
+non-finite gradients on MPS in real training. They began at step 0 in `enc.0`, and the
+loss diverged by step 111. On CPU it trains cleanly at 0.84 it/s, against about 1.4 on
+MPS.
+- **The pre-check therefore runs on CPU** (`DIREC_DEVICE=cpu`) for 100 minutes. That is
+  about 5,000 steps, the number `models-set3-1h` took in its 60 minutes, so the
+  comparison is at equal steps rather than equal time.
+- **The pass rules are unchanged.**
+- **A long run, if any,** also uses CPU, with its minutes scaled to match the original's
+  steps.
