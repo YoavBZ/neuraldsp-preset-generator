@@ -88,7 +88,8 @@ lives in the linked documents. Last updated 2026-10-09.
        and the spectrum got worse. The complex-STFT term can't train on MPS. Making
        MR-STFT NaN-safe removed the old MPS glitches.
      - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
-       12–18 bands. Five are downloaded, unheard (`tmp/set4-download.md`).
+       12–18 bands. All nine are now set 4 ([declaration](validation-set4.md)): 35 kept
+       parts in 9 bands (21 high-gain, 12 crunch, 2 clean), held out and unused.
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted

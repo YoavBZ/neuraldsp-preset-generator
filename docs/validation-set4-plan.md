@@ -307,3 +307,30 @@ class is kept.
 
 As before, no plugin is run, no render made, no preset scored, no network inference run
 and nothing listened to.
+
+### Download record (added after the download, 2026-10-10)
+
+Each archive came on the first attempt, with no block or error from the archive. Each
+equals its archived length, passes `unzip -t`, and has the track list read earlier by
+range requests.
+
+| band – song | bytes | sha256 |
+|---|---|---|
+| Umbriferous – Sandcastles (Illusion) | 1,070,800,716 | `527daafa53b988ee62edc747c81d3e19d226f550086ebb49a6e927f62b0feecc` |
+| The Bright Star Alliance – Error 404 | 679,147,233 | `048cd8d9003241aed1b4da1e5760ee44d55e8fbb3c7eac4b36b8072abf9ddd9c` |
+| Sonnet & Alcohol – Back To The Nineties | 459,707,231 | `0f5a8c98f0b27ab4ba92695486eb051d4c3831034a9c3e532269f2f3c4fe29cf` |
+| The Laminar Flow – Headspace | 1,277,721,130 | `42be6b17dfed2f0ede8b11fce4e7cc4807ad5c7eb81962e22a50489d6e9ccdd3` |
+
+- **Licences.** All four readmes carry the standard Cambridge text (Umbriferous quoted):
+  "These files are provided for educational purposes only, and the material contained in
+  them should not be used for any commercial purpose without the express permission of
+  the copyright holders." None has another licence file. The Laminar Flow also has two
+  MIDI files.
+- **Archives deleted for disk space.** Other processes used about 10 GiB of the disk while
+  these downloaded. To keep 30 GB free, all nine set-4 zips were deleted after they were
+  verified, hashed and unzipped. The first five were re-hashed against the table above
+  first. Their sizes and hashes stay in this file and in
+  `datasets-set4/_tools/deleted_archives.json`; the unzipped audio is untouched.
+- **Nothing else changed in the build.** `make_manifest.py` takes a deleted archive's
+  hash from that record. `build_crops.py` keeps crops already made and their records
+  unchanged, and cuts only the new ones.

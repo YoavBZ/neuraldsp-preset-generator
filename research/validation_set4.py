@@ -9,7 +9,8 @@
 Reads only the catalogue and the crop records (JSON). It opens no audio, starts no
 plugin and scores nothing. `docs/validation-set4-plan.md` states the rules: set 3's
 (`research/validation_set3.py`, whose exclusion and mark functions are reused), with
-every band held out, so there is no draw and no folds.
+every band held out, so there is no draw and no folds. Amendment 1 adds four sessions under
+the same rules, and keeps only crunch or high-gain parts of The Laminar Flow.
 """
 
 from __future__ import annotations
@@ -25,6 +26,15 @@ import validation_set3 as vs3  # noqa: E402
 
 DECLARED = "2026-10-10"
 SPLIT = "held_out"
+# Amendment 1 (validation-set4-plan.md): The Laminar Flow ("classic rock, crunch likely") keeps
+# only parts whose session-level gain_class is crunch or high-gain.
+CRUNCH_OR_MORE_ONLY = {"cambridge/TheLaminarFlow_Headspace_Full"}
+DRIVEN_CLASSES = ("crunch", "high-gain")
+AMENDMENTS = [{"date": "2026-10-10", "id": 1,
+               "what": "four Wayback-only Cambridge sessions added (Umbriferous, The Bright Star Alliance, "
+                       "Sonnet & Alcohol, The Laminar Flow) under the same rules; The Laminar Flow keeps "
+                       "only crunch or high-gain parts",
+               "plan": "docs/validation-set4-plan.md, 'Amendment 1'"}]
 
 
 def _pairing_failure(p) -> str:
@@ -53,6 +63,9 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
                 continue
             crop = recs.get((s["key"], p["part"]))
             why = vs3.exclusion_reasons(p, crop[1] if crop else None)
+            if s["key"] in CRUNCH_OR_MORE_ONLY and p["gain_class"] not in DRIVEN_CLASSES:
+                why.append(f"classifies {p['gain_class']}: {s['group']} keeps only crunch or high-gain "
+                           "parts (amendment 1)")
             base = {"session_key": s["key"], "band": s["group"], "song": s["song"],
                     "part": p["part"], "source": s["source"]}
             if why:
@@ -97,7 +110,8 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
             })
 
     sessions = [{"key": s["key"], "band": s["group"], "song": s["song"], "source": s["source"],
-                 "path": s["path"], "url": s.get("url"), "archive_sha256": s["archive_sha256"],
+                 "path": s["path"], "url": s.get("url"), "route": s.get("route"),
+                 "wayback_capture": s.get("wayback_capture"), "archive_sha256": s["archive_sha256"],
                  "licence_extra": s.get("licence_extra"),
                  "split": SPLIT, "fold": None,
                  "kept_parts": sum(1 for p in kept if p["session_key"] == s["key"]),
@@ -115,6 +129,7 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
     return {
         "schema": "validation-set4-1",
         "declared": DECLARED,
+        "amendments": AMENDMENTS,
         "plan": "docs/validation-set4-plan.md",
         "catalog": {"path": "~/ndsp-presets/references/datasets-set4/catalog.json",
                     "sha256": vs3._sha(catalog_path), "schema": cat["schema"]},
@@ -128,6 +143,9 @@ def build(catalog_path: pathlib.Path, crops: pathlib.Path):
             "split": "every band held out: no draw, no folds",
             "judge_lag": f"lag_samples - {vs3.JUDGE_LATENCY} (48 kHz)",
             "lag_sign": cat["rules"]["lag_sign"],
+            "crunch_or_high_gain_only": {"sessions": sorted(CRUNCH_OR_MORE_ONLY),
+                                         "rule": "session-level gain_class must be crunch or high-gain "
+                                                 "(amendment 1)"},
             "band_weighting": "recommended as set 3's amendment (4): each band's parts weigh 1/n; "
                               "a confirmation plan adopts or overrides it explicitly",
         },
