@@ -229,24 +229,26 @@ def evaluate():
             r = comp(a, b, cls)
             if r:
                 res[f"{a}_vs_{b}|{cls or 'all'}"] = r
-    ctrl = comp("ridge", "centroid", None, control)
-    better = min(("none", "centroid"), key=lambda k: res[f"{k}_vs_base|all"]["mean"])
-    g1 = res[f"ridge_vs_{better}|all"]
+    ctrl = comp("ridge", "centroid", "crunch", control)
+    # Amendment (2026-10-11, before any result): gate 1 is decided on crunch.
+    better = min(("none", "centroid"), key=lambda k: res[f"{k}_vs_base|crunch"]["mean"])
+    g1 = res[f"ridge_vs_{better}|crunch"]
     g1_out = "helps" if g1["hi90"] < 0 else "futile" if g1["lo90"] > -0.02 else "inconclusive"
     if g1_out == "futile" and not (ctrl and ctrl["mean"] <= 0):
         g1_out = "inconclusive (positive control failed)"
     g2 = res["ridge_vs_base|crunch"]
     g2_out = "helps" if g2["hi90"] < 0 else "futile" if g2["lo90"] > -0.03 else "inconclusive"
-    ceil_gap = res[f"ceiling_vs_base|all"]["mean"] - res[f"{better}_vs_base|all"]["mean"]
+    ceil_gap = res["ceiling_vs_base|crunch"]["mean"] - res[f"{better}_vs_base|crunch"]["mean"]
     share = (g1["mean"] / ceil_gap) if ceil_gap < 0 else None
-    out = {"gate1": {"against": better, "result": g1, "outcome": g1_out, "gap_share_closed": share},
+    out = {"gate1_crunch": {"against": better, "result": g1, "outcome": g1_out, "gap_share_closed": share,
+                            "pooled": res.get(f"ridge_vs_{better}|all")},
            "gate2_crunch": {"result": g2, "outcome": g2_out},
            "phase_b": g1_out == "helps" and g2_out != "futile",
            "positive_control_ridge_vs_centroid": ctrl, "alphas": alphas,
            "windows": len({r[1] for r in rows}), "test_bands_in_windows": sorted(set(test_bands) & win_bands),
            "results": res}
     (S.OUT / "stage1-result.json").write_text(json.dumps(out, indent=1, default=float))
-    print("GATE 1:", g1_out, "vs", better, g1["mean"], g1["lo90"], g1["hi90"], "gap share", share)
+    print("GATE 1 (crunch):", g1_out, "vs", better, g1["mean"], g1["lo90"], g1["hi90"], "gap share", share)
     print("GATE 2 (crunch):", g2_out, g2["mean"], g2["lo90"], g2["hi90"])
     print("PHASE B:", out["phase_b"], "| positive control ridge vs centroid:", ctrl and ctrl["mean"])
     for k in sorted(res):

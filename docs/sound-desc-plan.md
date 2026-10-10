@@ -188,3 +188,23 @@ changes, all applied here. **They replace the matching v2 text above.**
 6. **Recommended, adopted:** `G` takes each band's first window with activity of at least
    0.9. Also reported: null inputs (raw DI, noise) in the off-manifold check, and the
    cross-amp pick.
+
+## Stage 0 result and a gate amendment (2026-10-11, before any stage-1 result)
+
+**Stage 0 passes**, independently reproduced (`tmp/sound-desc-stage0-review.md`, local).
+- **Crunch:** the leave-one-band-out ceiling is −0.129 (−0.177 to −0.080), 34 / 1 / 4.
+  D130 was chosen in all 15 folds.
+- **Clean:** +0.002, no headroom.
+- **No learning, on crunch:** −0.048. Centroid: −0.050.
+- **Predictable:** the reviewer notes the pass was predictable (the bar was set after
+  the v1 figures were seen), so stage 1 is the real test.
+
+**Amendment to gate 1:** it is decided on **crunch**, like gate 2; the pooled result is
+reported.
+- **Why:** clean parts, 66 of 105 cells, have no headroom even for a perfect translator.
+  A pooled gate would mostly measure noise.
+- **Timing:** this is declared while stage-1 training data is still rendering, before any
+  translator has been fitted or scored.
+
+**"The better of":** no-learning or centroid, whichever has the better crunch mean.
+`learn/sound_desc_eval.py` is updated to match.
