@@ -68,3 +68,27 @@ compression's gradient, magnitude^−1.7, overflows near a 1e-5 floor. The floor
 1e-2 in magnitude, about 40 dB under typical bins. On CPU, gradient norms are 1.4–1.9
 times the default loss's, on both a fresh and a trained network. The pre-check restarts
 from scratch again.
+
+**Third amendment** (still before any pre-check result).
+
+**The complex-STFT term can't train on MPS.** It produced non-finite gradients after one
+update in every form tried:
+- compressed, uncompressed, without the DC and Nyquist bins;
+- rebuilt from real cosine and sine projections.
+
+Some forms also failed MPS command buffers. All were finite on CPU.
+
+**A side finding: the default loss's MR-STFT term had the same weakness.** Complex `abs`
+has a NaN gradient at 0. It now uses `_magnitude` (values unchanged to ~1e-6), and the
+default loss ran 150 MPS steps with no non-finite gradient. This is the likely cause of
+the "MPS non-finite gradient" episodes since 2026-10-06.
+
+**SI-SDR alone diverged with the original architecture.** The loss reached 2e8: the
+unnormalised bottleneck, which the default loss had shut off, blew up. With the
+normalised bottleneck (`--norm`, from the [v3 plan](di-network-v3-plan.md)) it was stable,
+with 1 non-finite step in 200.
+
+**The pre-check arm is therefore `--loss sisdr --norm`:** the default loss plus 0.5 ×
+negative SI-SDR, with the normalised bottleneck. That is two changes against the
+baseline, reported as one arm. The pre-check rules are unchanged: 1–3 kHz coherence of at
+least 0.22, and a default-loss validation figure of at most 63 at 60 minutes.
