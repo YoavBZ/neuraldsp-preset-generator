@@ -96,7 +96,8 @@ As the average-guitar check:
   numbered trial files and the phone pages.
 - **The key** (`private/trials.json`) holds the pairs, the judge's three numbers, the
   blocks and the A/B sides. Nobody opens it before every answer is in. Its sha256 is
-  recorded here once built, and the scorer refuses any other key.
+  recorded here, and the scorer refuses any other key:
+  `0f0a5c3805f2e8721e372cd50f3286d9fc0fef65039771f2164211d09ffce061`
 - **The answer sheet** is the two phone answer lines as sent. `check --answers SHEET`
   confirms it answers every trial and prints its sha256. That hash is committed in
   `docs/heavy-listening-answers.sha256` before `score --answers SHEET` runs. The
@@ -158,3 +159,27 @@ As the average-guitar check:
 - **Order of work:** the builder's counts, and once its selected pairs with their log
   ratios, were looked at while it was written, before this plan; that is how the Ill
   Fate exclusion was noticed. No audio was built and no answer exists.
+
+## What was built (2026-10-10; counts only, no pair is named)
+
+- **Parts:** 25 of the 28 driven development parts (three dropped under 16 bands). Every
+  part's DI plays in all of half B, so exposure never decided.
+- **The judge's numbers:** recomputed for every menu preset; each distance equals the
+  stored `measfix_B` one.
+- **Qualifying pairs:**
+  - block 1 from the choosers' picks: 34 (PR12 17, SW50R 11, AC20 6), on 13 parts in 7
+    bands. All 16 block-1 trials came from these; no menu pair was needed;
+  - block 2: 7,848 menu pairs; block 3: 1,816.
+- **Trials by block and amp:**
+  - block 1: 16 (PR12 6, SW50R 6, AC20 4; AC20 had qualifying picks on few parts, and
+    the part and band caps bound);
+  - block 2: 10 (SW50R 5, AC20 5);
+  - block 3: 4 (PR12 1, SW50R 2, AC20 1);
+  - hidden references: 3 (one per amp); repeats: 3.
+- **Sittings:** 9 block-1, 5 block-2, 2 block-3 and 2 hidden references in sitting 1;
+  7, 5, 2, 1 and the 3 repeats in sitting 2.
+- **Audio:** every clip at −20.0 LUFS (no clip needed the target lowered), excerpts 4.5 s.
+- **Phone pages** (`listen/sitting-1-phone.html`, `sitting-2-phone.html`): 21.0 and
+  20.9 MB. Page sha256 as built: sitting 1
+  fa18fa5deb6e5e967f3382fbd2b25d444737cfffd9a90aaaa902723e4416b534, sitting 2
+  e0d081cbce9fb463cc4ab27a32dc2179698351d496500a5023f579f590648fa7.
