@@ -1,8 +1,9 @@
-# Confirming the rebuilt-DI chooser on fresh material: plan (DRAFT v2, not approved)
+# Confirming the rebuilt-DI chooser on fresh material: plan (v2, approved and run 2026-10-10)
 
 Drafted 2026-10-10, revised the same day after an independent review
-(`tmp/set4-confirmation-review.md`, local). **Nothing in it runs until the user
-approves.** It spends held-out material, and it is recorded in the held-out ledgers.
+(`tmp/set4-confirmation-review.md`, local). **Approved and run the same day:
+[results](set4-confirmation-results.md), outcome confirmed.** Originally: nothing in it
+runs until the user approves. It spends held-out material, and it is recorded in the held-out ledgers.
 
 ## What changed from v1, and why
 

@@ -151,7 +151,12 @@ lives in the linked documents. Last updated 2026-10-09.
 
    **Next, revised 2026-10-10 (evening), in this order:**
    5. **The declared confirmation** ([plan](set4-confirmation-plan.md),
-      [manifest](set4-confirmation-manifest.json)), approved and running.
+      [results](set4-confirmation-results.md)). *Done 2026-10-10: confirmed, and
+      independently re-checked.*
+      - **Clean and crunch:** −0.087 (about 8% closer, 90% −0.157 to −0.017), carried
+        by clean parts.
+      - **High-gain:** the chooser is harmful (+0.318), so the fixed driven preset stays.
+      - **The 3 kHz cut** didn't help on fresh data.
       - **The test:** the 3 kHz cut chooser against the product's own starting preset
         (the clean template for clean parts, the shipped driven preset for crunch), on
         fresh clean and crunch parts:
@@ -166,9 +171,12 @@ lives in the linked documents. Last updated 2026-10-09.
    7. **If the confirmation passes: songs, not amp tracks.** Rebuild from separated stems
       and from mixes, first on development, under a declared rule. The product's input is
       a song, and set 3 showed stems lose part of the gain.
-   8. **Then the product:** for clean and crunch songs, `generate`'s audition page offers
-      the chooser's top picks, marked experimental. High-gain songs keep the fixed driven
-      preset.
+   8. **Then the product:** for clean and mild-crunch songs, `generate`'s audition page
+      offers the chooser's top picks, marked experimental. High-gain songs keep the fixed
+      driven preset.
+   8b. **A fixed clean starting preset,** chosen on development by rule. The clean
+      template is weak: against a reasonable fixed clean preset, the chooser's clean edge
+      shrinks to about −0.05.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

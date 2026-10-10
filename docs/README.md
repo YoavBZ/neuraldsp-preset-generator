@@ -208,9 +208,10 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
-- [set4-confirmation-plan.md](set4-confirmation-plan.md): DRAFT v2. Confirming the cut
-  chooser where it helps (clean and crunch, against the product's starting preset), on
-  sets 1–2 held-out plus set 4; awaits approval.
+- [set4-confirmation-plan.md](set4-confirmation-plan.md) →
+  [results](set4-confirmation-results.md): **confirmed** on fresh bands. The rebuilt-DI
+  chooser is about 8% closer than `generate`'s starting preset on clean and crunch parts
+  (clean carries it), and harmful on high-gain.
 - [closeness-review-2026-10-10.md](closeness-review-2026-10-10.md): a deep, four-part review
   of how closeness is measured. The judge is treble-deaf on parts with a dominant low end;
   the measure's DI level is a recording artefact; the "unbeaten fixed preset" verdict
