@@ -64,3 +64,12 @@ On clean and crunch parts:
 **Also reported:** stem against amp, paired; each source alone; per stratum; the oracle.
 
 An independent reviewer re-derives the numbers.
+
+## Preparation (before any rendering)
+
+- **Sets 1–2 gain classes** (`learn/songs_check.py prep`): 18 clean, 2 crunch.
+- **Set 3 stem parts:** 2 clean, 3 crunch, 7 high-gain.
+- **In all:** 32 parts from 17 bands, with 25 clean or crunch parts in the decision.
+- **Lags:** `validation-lags.json` gives the amp track's delay behind its DI, so the
+  judge's lag is that minus the 52-sample plugin latency. This reproduces the clean-PR12
+  study's judge lags (966 → 914).
