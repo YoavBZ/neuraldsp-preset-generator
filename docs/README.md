@@ -213,6 +213,9 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
+- [crunch-baseline-plan.md](crunch-baseline-plan.md) → [results](crunch-baseline-results.md):
+  crunch starting presets per amp, lighter than the driven ones, are adopted on weak
+  evidence (7 parts, 3 bands). The ML chooser over them is not shown (−0.056).
 - [heavy-listening-plan.md](heavy-listening-plan.md) → [results](heavy-listening-results.md):
   a reliable listener (3/3 hidden references, 3/3 repeats). Tonal against temporal:
   neither. Clear heavy pairs: 5 of 6 with the judge, inconclusive. 9 trials were

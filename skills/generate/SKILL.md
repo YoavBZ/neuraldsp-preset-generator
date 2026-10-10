@@ -43,7 +43,7 @@ the differences that decide it are:
 
 | | Morgan Amps Suite | Tone King Imperial MKII |
 |---|---|---|
-| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; clean and distorted parts start from a factory baseline per amp (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
+| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; clean, crunch and heavy parts start from a factory baseline per amp (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
 | voices | PR12 blackface Princeton (12 W, breaks up), AC20 darkened Vox, SW50R Dumble-ish high headroom | Rhythm channel clean, Lead channel with Mid-Bite, attenuator, spring reverb, tremolo |
 | reach for it | jangle and chime, Dumble-style singing lead, anything needing three different amp characters | vintage Fender-flavoured cleans, edge of breakup, blues lead, real spring reverb |
 
@@ -191,8 +191,28 @@ Tone King recipes use its verified sync-note selectors. See
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
     Low-Watt Americana has its tremolo level at 100%.
   - **If the file is missing,** say so and use the template.
-- **For a crunch or high-gain Morgan part, start from the amp's driven baseline
-  instead.** These are factory presets the plugin installs, under
+- **For a crunch Morgan part (rock, blues, indie: clearly driven but not heavy), start
+  from the amp's crunch baseline.** These are factory presets, under
+  `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`. Present them to the user as
+  "the crunch starting point"; two of the factory names say "Metal", which these parts
+  aren't.
+
+  | amp | crunch baseline |
+  |---|---|
+  | PR12 | `Artists/Keyan Houshmand/Modern Metal (Pick Hard).xml` (the heaviest of the three: a pedal boost into a second drive) |
+  | SW50R | `Neural DSP/Hair Metal.xml` (bright and moderate) |
+  | AC20 | `Neural DSP/AC20 Mid-Gain Drive.xml` (amp-only crunch) |
+
+  - **The evidence is weak.** They were chosen by rule on development crunch parts.
+    On 7 reserved crunch parts from 3 bands, they landed about 7% closer than the
+    driven baselines below, and lighter in gain, but only just past the bar
+    ([crunch-baseline-results.md](../../docs/crunch-baseline-results.md)). Say so when
+    you report.
+  - **Make them dry the same way** as the driven baseline below, and keep their amp,
+    pedals, EQ and cab.
+- **For a heavier, high-gain part** (out of the project's focus, but it happens), start
+  from the amp's driven baseline instead. On heavy material it beats the lighter crunch
+  presets. These are factory presets the plugin installs, under
   `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 
   | amp | driven baseline | evidence |
@@ -204,7 +224,7 @@ Tone King recipes use its verified sync-note selectors. See
   - **The evidence.** On reserved crunch and high-gain recordings, the dry SW50R and
     PR12 baselines were closer to the record than the clean template on the same amp on
     all 23 parts, and about half the distance on average. On clean parts they were
-    further on every part, so keep the clean template for a clean part. Heavy-tone
+    further on every part, so use the clean baseline for a clean part. Heavy-tone
     listening has not been run yet; say so when you report
     ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
   - **Make it dry first, always,** in the spec, because the installed presets are not
@@ -251,9 +271,8 @@ user decide.
    their own specs. Use at least two amps (on Tone King, both channels), and make them
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
-   one of the four. Make the chosen amp's dry baseline from step 4 one of the four: the
-   clean baseline for a clean part, the driven one for crunch or high gain, with
-   transpose reset.
+   one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
+   crunch or driven, by the part), with transpose reset.
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:

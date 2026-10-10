@@ -50,6 +50,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 - **The driven baseline in `generate`** (Wall Of Doom, Vintage Metal, Dirty Coil Rhythm)
   was chosen on heavy set-3 material. Whether it suits crunch songs is open: the next
   candidate is a crunch starting preset chosen on crunch material, as the clean one was.
+  *Done 2026-10-10 ([results](crunch-baseline-results.md)): adopted on weak evidence. The
+  ML chooser over it is not shown.*
 
 ## Next, in order
 
