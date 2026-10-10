@@ -203,8 +203,9 @@ def targets():
 
 
 def choose_windows():
-    """Up to PER_BAND windows per band, seed SEED, from both development pools."""
-    rows = _pool()
+    """Plan v2: up to PER_BAND windows per band (seed SEED) from both development pools,
+    dropping windows below −40 LUFS. Bands are held out per fold at training time."""
+    rows = [w for w in _pool() if w.get("lufs", 0) >= -40]
     by = {}
     for w in rows:
         by.setdefault(w["band"], []).append(w)
@@ -215,19 +216,26 @@ def choose_windows():
         out += rng.sample(ws, min(PER_BAND, len(ws)))
     for i, w in enumerate(out):
         w["id"] = f"w{i:04d}"
-        w["gain_db"] = round(rng.uniform(-6, 6), 2)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "windows.json").write_text(json.dumps(out, indent=0))
     print(len(out), "windows from", len(by), "bands")
 
 
+SEGMENTS = ((0.0, 4.5), (1.5, 6.0))            # plan v2 amendment 4: overlapping 4.5-s segments
+
+
 def render(shard):
-    """For each declared window (its own balance, −22.9 LUFS + its gain) through every menu
-    preset: D(render) and D(augmented render). Descriptors only."""
+    """Plan v2: each window treated the measure's way (re-equalised to the pinned average,
+    exactly −22.9 LUFS) through every menu preset; D130 (40 dB gate) on two 4.5-s segments,
+    plus a noise-only augmented copy. Descriptors stored; audio kept for 5% of windows."""
     import numpy as np
+    import soundfile as sf
 
-    from learn.direc_check import to_lufs
+    from learn import sound_desc_stage0 as S0
+    from learn.di_robustness import smoothed_spectrum
+    from learn.direc_check import eq_to, to_lufs
 
+    avg = np.load(AVERAGE)
     ws = json.loads((OUT / "windows.json").read_text())[shard[0]::shard[1]]
     dest = OUT / "renders"
     dest.mkdir(parents=True, exist_ok=True)
@@ -238,17 +246,27 @@ def render(shard):
             if path.exists():
                 continue
             raw = load_window(w)
-            di = to_lufs(raw, -22.9 + w["gain_db"])
+            own = smoothed_spectrum(raw[int(PRE * SR):])
+            di = to_lufs(eq_to(raw, avg - (own - own.mean())))
             rng = np.random.default_rng(int(w["id"][1:]) + SEED)
+            keep_audio = int(w["id"][1:]) % 20 == 0
             keys, X, Xa = [], [], []
             for amp, m in M.items():
                 _render(r, di, f"{amp}|template+R")
                 for n in m:
                     y = _render(r, di, f"{amp}|{n}")[int(PRE * SR):]
-                    keys.append(f"{amp}|{n}")
-                    X.append(describe(y))
-                    Xa.append(describe(augment(y, rng)))
-            np.savez(path, keys=np.array(keys), X=np.array(X), Xa=np.array(Xa))
+                    if keep_audio:
+                        (dest / "audio" / w["id"]).mkdir(parents=True, exist_ok=True)
+                        sf.write(dest / "audio" / w["id"] / f"{amp}-{abs(hash(n)) % 10**8}.flac",
+                                 y / max(np.abs(y).max(), 1e-12) * 0.99, SR, subtype="PCM_24")
+                    for a, b in SEGMENTS:
+                        seg = y[int(a * SR):int(b * SR)]
+                        noisy = seg + rng.standard_normal(len(seg)) * np.sqrt(np.mean(seg ** 2)) \
+                            * 10 ** (-rng.uniform(50, 70) / 20)
+                        keys.append(f"{amp}|{n}")
+                        X.append(S0.descriptors(*S0.frames(seg), 40)["D130"])
+                        Xa.append(S0.descriptors(*S0.frames(noisy), 40)["D130"])
+            np.savez(path, keys=np.array(keys), X=np.array(X, np.float32), Xa=np.array(Xa, np.float32))
             print(w["id"], w["band"], flush=True)
     finally:
         r.close()
