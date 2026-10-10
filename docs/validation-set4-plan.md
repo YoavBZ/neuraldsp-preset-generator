@@ -199,3 +199,111 @@ zero, by resampling set 3's development bands:
 - **`learn.set3.training_dis`** raises if a set-4 file reaches the training list.
 - **`learn.set3.fold_for_band`** raises on a set-4 band.
 - **Tests** cover these and do not need the audio.
+
+## Amendment 1 (2026-10-10): four Internet Archive sessions
+
+Committed before any of these four archives is downloaded, opened or measured. What was
+read about them before this amendment: their track names and file sizes (from the zips'
+central directories by HTTP range requests, in
+[tmp/fresh-bands-research.md](../tmp/fresh-bands-research.md)) and the HTTP headers below.
+
+### What is added, and why
+
+Four more Cambridge-MT "Mixing Secrets" sessions, the "Wayback-only heavy" group of the
+fresh-bands research (its table A, rows 6–9). They are heavy by genre, have DI and amp
+tracks of the same part by name, and their bands are in no earlier set. The plan above
+foresaw them ("What so few bands can confirm"): with 5 bands only oracle-sized effects can
+be confirmed, and 9 bands give a band sign-flip test room to reach p < 0.1 without every
+band agreeing.
+
+**Nothing of set 4 has been used by any method.** No confirmation has been declared or
+run, `held_out_uses` in `docs/validation-set4.json` is empty, and no plugin, render,
+preset score, network inference or listening has touched any set-4 file. Adding bands now
+is allowed by the plan ("Additions must come before any confirmation reads set 4").
+
+### Route and provenance: the Internet Archive
+
+The publisher's own host for these files, `multitracks.cambridge-mt.com`, now answers
+with a Cloudflare challenge, and none of the four has a copy on the unchallenged direct
+host (`mtkdata.cambridgemusictechnology.co.uk`). Each is therefore taken from the
+Internet Archive's Wayback Machine capture of the publisher's file. The `id_` form of a
+Wayback URL serves the archived bytes as captured, without the archive's page rewriting.
+Nothing is bypassed: these are public captures, fetched one at a time with retries.
+
+| band – song | Wayback URL (capture timestamp, UTC) | archived length (bytes) | origin `Last-Modified` |
+|---|---|---|---|
+| Umbriferous – Sandcastles (Illusion) | `https://web.archive.org/web/20220404030035id_/https://multitracks.cambridge-mt.com/Umbriferous_SandcastlesIllusion_Full.zip` (2022-04-04 03:00:35) | 1,070,800,716 | Tue, 25 Jan 2022 19:25:59 GMT |
+| The Bright Star Alliance – Error 404 | `https://web.archive.org/web/20220403150701id_/https://multitracks.cambridge-mt.com/TheBrightStarAlliance_Error404_Full.zip` (2022-04-03 15:07:01) | 679,147,233 | Tue, 25 Jan 2022 19:22:54 GMT |
+| Sonnet & Alcohol – Back To The Nineties | `https://web.archive.org/web/20220403133148id_/https://multitracks.cambridge-mt.com/SonnetAndAlcohol_BackToTheNineties_Full.zip` (2022-04-03 13:31:48) | 459,707,231 | Tue, 10 Aug 2021 15:44:01 GMT |
+| The Laminar Flow – Headspace | `https://web.archive.org/web/20250610215848id_/https://multitracks.cambridge-mt.com/TheLaminarFlow_Headspace_Full.zip` (2025-06-10 21:58:48) | 1,277,721,130 | Thu, 21 Apr 2022 08:55:00 GMT |
+
+The lengths, `Last-Modified` and `Memento-Datetime` are the archive's response headers
+(`x-archive-orig-content-length`, `x-archive-orig-last-modified`) to a HEAD request on
+2026-10-10. The publisher gives no checksum. A download counts as complete when its length
+equals the archived length, `unzip -t` passes (every member's CRC) and its track list
+equals the one read by range requests. Its SHA-256, and the readme and licence lines
+verbatim, are recorded once downloaded, as for the first five
+([tmp/set4-download.md](../tmp/set4-download.md), local). They go to
+`~/ndsp-presets/references/datasets-set4/<Band - Song>/` like the others.
+
+These are the publisher's own files obtained through a third party. If a readme states a
+licence different from the Cambridge "educational purposes only" text, that is recorded.
+
+### Parts declared by name
+
+Read from the zips' track lists only, before any measurement. As before, a `DT` double
+and its original are one tone.
+
+| band | parts (DI → amp tracks) | parts | tones |
+|---|---|---|---|
+| Umbriferous | ElecGtr1, 1DT, 2, 2DT, 3, 3DT, 4, 4DT, 5, 5DT, 6: `NN_ElecGtrXDI` → `NN_ElecGtrX` | 11 | 6 |
+| The Bright Star Alliance | ElecGtr1, 2, 2DT, 3, 4, 5, 5DT: `NN_ElecGtrXDI` → `NN_ElecGtrX` | 7 | 5 |
+| Sonnet & Alcohol | ElecGtr1, 2: `NN_ElecGtrXDI` → `NN_ElecGtrX` | 2 | 2 |
+| The Laminar Flow | ElecGtr01–11: `NN_ElecGtrXXDI` → `NN_ElecGtrXXMic1`, `Mic2`, `Mic3` | 11 | 11 |
+
+That is 31 more parts (24 tones). With the first five, set 4 declares 52 parts in 9
+bands.
+
+- **The Laminar Flow has 11 parts, not 5.** The research summary listed ElecGtr01–05; its
+  stored track list shows DIs for ElecGtr01 to 11.
+- **Not parts (no DI):** The Laminar Flow `ElecGtr01DTMic1–3`. They stay in the mix.
+- **The Bright Star Alliance ElecGtr3:** its amp file is twice its DI's size, so probably
+  stereo. Stereo tracks are folded to mono by the same loader as every other session.
+
+### Rules: the same as the first five
+
+The rules above apply unchanged: the waveform same-take test and its thresholds, the
+reference choice in `AMP_PREFERENCE` order (Mic1 first for The Laminar Flow), the
+exclusions, the marks, the gain classes on set 3's thresholds, crop rule 2 (`di-activity`,
+10 s, 48 kHz), the mix rule, the lags and the leakage guards. The tools in
+`datasets-set4/_tools/` gain only the four sessions' entries, and the Wayback URLs in
+place of the direct-host ones. The first five sessions are not re-measured: their
+`measured.json` entries and crops are kept as they are.
+
+### One added rule, for The Laminar Flow only
+
+The research lists The Laminar Flow as "classic rock, crunch likely (unverified)". Set 4
+is heavy confirmation material, and every part kept so far is firm "driven". So:
+
+- **A Laminar Flow part is kept only if its session-level `gain_class` is `crunch` or
+  `high-gain`** (`classify.py`, set 3's thresholds, not recalibrated).
+- A part that passes every other rule but classifies `clean` is excluded with the reason
+  "classifies clean: The Laminar Flow keeps only crunch or high-gain parts (amendment 1)".
+- The crop class (`gain_class_crop`) does not decide it.
+- The rule is fixed here, before any Laminar Flow audio is downloaded or measured. It is
+  applied by `research/validation_set4.py` from the catalogue, with nothing else read.
+
+The other three new bands keep set 3's rule, as the first five do: a part of any gain
+class is kept.
+
+### Order of work for the addition
+
+1. This amendment is committed.
+2. The four archives are downloaded and verified, and their hashes and readmes recorded.
+3. They are added to `_tools/manifest.json`; `set4.py` measures only the new sessions;
+   `write_catalog.py` rewrites the catalogue; `build_crops.py` cuts only the new crops.
+4. `docs/validation-set4.json` and `docs/validation-set4.md` are regenerated and updated.
+5. `learn/set4.py` and its tests are extended to the new bands, sessions and slugs.
+
+As before, no plugin is run, no render made, no preset scored, no network inference run
+and nothing listened to.
