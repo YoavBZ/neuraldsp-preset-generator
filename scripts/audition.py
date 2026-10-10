@@ -56,8 +56,8 @@ def _sha(path) -> str:
 
 
 def render(preset: pathlib.Path, di):
-    """(mono float32 audio, pack id, amp or channel) for one preset through one DI, in
-    a fresh plugin process."""
+    """(float32 audio as the plugin returns it, usually two channels; pack id; amp or
+    channel) for one preset through one DI, in a fresh plugin process."""
     import numpy as np
 
     from format.parser import parse
@@ -128,20 +128,40 @@ def write_raw(path: pathlib.Path, audio, rate) -> None:
     sf.write(str(path), audio, rate, subtype="FLOAT")
 
 
+def as_played(samples):
+    """A clip as the page plays it: a browser plays a mono file at full level on both
+    speakers, so a one-channel clip is measured and written as two identical channels.
+    Without this a mono song meters about 3 dB quieter than it sounds, and every
+    two-channel render is then turned down about 3 dB against it. Two-channel clips are
+    unchanged, whether their channels match or not."""
+    import numpy as np
+
+    samples = np.asarray(samples)
+    if samples.ndim == 1:
+        samples = samples[:, None]
+    if samples.shape[1] == 1:
+        return np.repeat(samples, 2, axis=1)
+    if samples.shape[1] != 2:
+        raise ValueError(f"a clip has {samples.shape[1]} channels; the page plays one or two")
+    return samples
+
+
 def level_page(out: pathlib.Path, record: dict) -> None:
-    """Write every clip from its raw render at the page's one loudness."""
+    """Write every clip from its raw render at the page's one loudness, each as it will
+    play (`as_played`)."""
     from analysis import io
 
     raws = {"song.wav": out / "raw" / "song.wav"}
     raws.update({name: out / "raw" / name for c in record["candidates"]
                  for name in c["renders"].values()})
     loaded = {name: io.load(path) for name, path in raws.items()}
-    level = page_level([measure(a.samples, a.sample_rate) for a in loaded.values()])
+    played = {name: as_played(a.samples) for name, a in loaded.items()}
+    level = page_level([measure(played[n], a.sample_rate) for n, a in loaded.items()])
     record["loudness_lufs"], record["gain_db"] = round(level, 2), {}
     for name, audio in loaded.items():
-        loudness, _ = measure(audio.samples, audio.sample_rate)
+        loudness, _ = measure(played[name], audio.sample_rate)
         gain = level - loudness
-        write_clip(out / name, audio.samples * 10 ** (gain / 20), audio.sample_rate)
+        write_clip(out / name, played[name] * 10 ** (gain / 20), audio.sample_rate)
         record["gain_db"][name] = round(gain, 2)
 
 
@@ -369,6 +389,9 @@ def main():
             die(f"{out} is not empty; use --add to extend an audition")
         song_path = args.song.expanduser().resolve()
         song = io.load(song_path)
+        if song.samples.ndim > 1 and song.samples.shape[1] > 2:
+            die(f"{song_path.name} has {song.samples.shape[1]} channels; give a mono or "
+                "stereo mix of the song")
         first = round(args.start * song.sample_rate)
         last = first + round(args.seconds * song.sample_rate)
         if args.start < 0 or args.seconds <= 0 or last > song.frames:

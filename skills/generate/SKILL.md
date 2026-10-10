@@ -183,9 +183,8 @@ Tone King recipes use its verified sync-note selectors. See
     reserved clean parts. Dry, they landed closer to the record than the shipped
     template on every amp, about 12% on average, measured but not yet listened to
     ([clean-baseline-results.md](../../docs/clean-baseline-results.md)).
-  - **Make it dry first,** with the same spec entries as the driven baseline below:
-    transpose 0, the amp's spring reverb 0, and reverb, delay, tremolo, doubler and gate
-    off. Keep its compressor, amp, pedals, EQ and cab.
+  - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
+    its compressor, amp, pedals, EQ and cab.
   - **When the research turns an effect back on, set its parameters explicitly.** The
     factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
@@ -208,7 +207,7 @@ Tone King recipes use its verified sync-note selectors. See
     driven baselines below, and lighter in gain, but only just past the bar
     ([crunch-baseline-results.md](../../docs/crunch-baseline-results.md)). Say so when
     you report.
-  - **Make them dry the same way** as the driven baseline below, and keep their amp,
+  - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
     pedals, EQ and cab.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
   from the amp's driven baseline instead. On heavy material it beats the lighter crunch
@@ -224,15 +223,13 @@ Tone King recipes use its verified sync-note selectors. See
   - **The evidence.** On reserved crunch and high-gain recordings, the dry SW50R and
     PR12 baselines were closer to the record than the clean template on the same amp on
     all 23 parts, and about half the distance on average. On clean parts they were
-    further on every part, so use the clean baseline for a clean part. Heavy-tone
-    listening has not been run yet; say so when you report
-    ([driven-baseline-results.md](../../docs/driven-baseline-results.md)).
-  - **Make it dry first, always,** in the spec, because the installed presets are not
-    (Wall Of Doom is transposed down 5 semitones):
-    - `parameters/transpose` 0;
-    - the amp's spring reverb 0 (`sw50rAmp/sw50rReverb` or `pr12Amp/pr12Reverb`);
-    - `reverb/reverbActive`, `delay/delayActive`, `tremolo/tremoloActive`,
-      `parameters/doublerActive` and `parameters/gateActive` off.
+    further on every part, so use the clean baseline for a clean part. These baselines
+    are measured, not confirmed by ear: the one heavy-tone listening check tested the
+    measure itself and was inconclusive. Say so when you report
+    ([driven-baseline-results.md](../../docs/driven-baseline-results.md),
+    [heavy-listening-results.md](../../docs/heavy-listening-results.md)).
+  - **Make it dry first, always,** with `--recipe dry/<amp>` (below), because the
+    installed presets are not (Wall Of Doom is transposed down 5 semitones).
 
     Then turn effects back on only where the research calls for them.
   - **Keep the baseline's amp, drive, pedals, EQ and cab.** Skip step 3's amp, drive,
@@ -241,6 +238,24 @@ Tone King recipes use its verified sync-note selectors. See
     not the "renamed factory preset" failure step 3 warns about.
   - **If the file is missing** (an older or trimmed install), say so and use the
     clean template.
+- **The dry recipe,** for every Morgan baseline above: `dry/pr12`, `dry/sw50r` or
+  `dry/ac20`, matching the baseline's amp. It sets transpose 0, the amp's spring reverb 0
+  (PR12 and SW50R; AC20 has none), and reverb, delay, tremolo, doubler and gate off,
+  with the FX section itself on, as the baselines were measured. Stack it first, so your other recipes and the spec
+  can turn an effect back on, with its parameters set explicitly. Preview it:
+
+  ```bash
+  python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+    --template BASELINE.xml --recipe dry/pr12 --out OUT.xml --dry-run
+  ```
+
+  with the baseline's full path, from the tables above, as the template.
+
+  On the nine baselines it changes 1 to 5 settings each: every one ships with the gate
+  on, Wall Of Doom also with transpose −5, and Modern Metal (Pick Hard) with its FX
+  section off, which the recipe turns on so an effect brought back is heard. The writer
+  refuses another amp's recipe (`dry/pr12` on an SW50R preset), since it would change
+  nothing you hear.
 - For Tone King, require one of the user's own Tone King presets. No Tone King
   preset content ships in the repository.
 - One of the user's own presets is a fine template too, especially if it already
@@ -272,7 +287,7 @@ user decide.
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
-   crunch or driven, by the part), with transpose reset.
+   crunch or driven, by the part), made dry with `--recipe dry/<amp>`.
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:
@@ -288,6 +303,25 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    give the command a few minutes, or run it in the background; if it stops partway,
    the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
    listen for gain, brightness, body and space, not the notes.
+
+   **To compare starting points** (when the user is unsure how much gain the part
+   has, or asks), add the amp's other starting point from step 4 beside the one already
+   among the four: crunch if the four hold the clean one, clean if they hold crunch,
+   and for a heavier part, crunch beside the driven one. Write it dry, into the
+   audition folder under its own name; writing directly is fine for a listening copy,
+   but preview with `--dry-run` (step 4) if the user keeps it. Use the baseline's own
+   amp's recipe (`dry/pr12`, `dry/sw50r` or `dry/ac20`):
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
+  --template BASELINE.xml --recipe dry/pr12 --out AUDITION_DIR/crunch-start.xml
+```
+
+   Then add it with a plain note, `audition.py --add AUDITION_DIR --preset
+   AUDITION_DIR/crunch-start.xml --note "crunch starting point (weaker evidence)"`.
+   Say how strong each starting point's evidence is, in step 4's words; none has been
+   confirmed by ear.
+
 3. **Refine.** The user picks one, or says what is off ("B, but darker"). Make the
    change on a copy with the edit skill's steps 1–4 (read, interpret, change only
    that, preview and write a new file; don't install yet), then add it to the page:
