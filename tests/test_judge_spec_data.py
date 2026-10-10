@@ -43,6 +43,11 @@ KNOWN = {
     ("v2", "ill_fate_treble"):
         "all bands are scored, but the per-frame floor, 40 dB under the fundamental, still "
         "clamps the recording above about 700 Hz: +3 dB at 1.6 kHz costs 0.03 against 0.81",
+    ("default", "every_recording"):
+        "deaf above 400 Hz on the Ill Fate parts: +3 dB at 1.6 kHz costs 0.000",
+    ("v2", "every_recording"):
+        "the recording-derived floor forgives darkness: +12 dB above 5 kHz costs a median "
+        "1.54 times what -12 dB does, and Ill Fate 2 is near-deaf at 1.6 kHz (0.03)",
 }
 
 
@@ -150,3 +155,28 @@ def test_treble_changes_count_on_ill_fate(judge):
     for name, change in changes.items():
         heavy, balanced = cost(ILL_FATE, change), cost("cambridge-the-well-elecgtr01", change)
         assert heavy >= 0.5 * balanced, (name, heavy, balanced)
+
+
+@pytest.mark.parametrize("judge", judges("every_recording"))
+def test_eq_changes_count_alike_on_every_development_recording(judge):
+    """On each of the 33 development recordings (half B), a change applied to the
+    recording itself: a +3 dB octave at 1.6 kHz costs at least 0.4, and a ±12 dB shelf
+    above 5 kHz costs alike either way (median ratio at most 1.2 over the parts).
+    Catches a judge deaf on some parts, or one forgiving darkness."""
+    octave = lambda f: 3 * np.exp(-0.5 * (np.log2(np.maximum(f, 1) / 1600) / 0.5) ** 2)  # noqa: E731
+    lags, worst, ratios = _lags(), {}, []
+    for slug in sorted(lags):
+        x = _mono(CROPS / slug / "reference.wav")
+        di = np.load(MEASFIX / slug / "di.npy")
+
+        def cost(fn):
+            a, b = HALVES["B"]
+            return aligned_distance(x, _fgain(x, fn), di, lag=0, render_latency=lags[slug] + LATENCY,
+                                    start_s=a, end_s=b, **JUDGES[judge][0]).distance
+        worst[slug] = cost(octave)
+        up = cost(lambda f: 12 / (1 + np.exp(-6 * np.log2(np.maximum(f, 1) / 5000))))
+        down = cost(lambda f: -12 / (1 + np.exp(-6 * np.log2(np.maximum(f, 1) / 5000))))
+        ratios.append(max(up, down) / max(min(up, down), 1e-9))
+    assert len(worst) == 33
+    assert min(worst.values()) >= 0.4, min(worst.items(), key=lambda kv: kv[1])
+    assert np.median(ratios) <= 1.2, np.median(ratios)

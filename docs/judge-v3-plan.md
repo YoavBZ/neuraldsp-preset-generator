@@ -111,3 +111,37 @@ Nothing here adopts v3. It is reported, and adoption waits for the user's listen
 calibration, as for v2. Once its stored-render checks pass, v3 replaces v2 as the
 candidate judge, because it holds the properties v2 breaks. If a stored-render check
 fails, that is reported and v3 is not a candidate until it is fixed.
+
+## Amendment (2026-10-10, after the first stored-render check, before any re-scoring)
+
+**What was seen.** Ill Fate's treble check passed, but only because the balanced part it
+compares against had gone near-deaf. On The Well 1 (dense high gain), a +3 dB octave at
+1.6 kHz applied to the recording cost 0.23 under v3, against 0.88 under the current
+judge; a +12 dB shelf above 5 kHz cost 0.17, against 1.98.
+
+**The cause** was the background term: the median over the quietest tenth of the scored
+frames. On a dense, compressed part those frames are guitar, so the "background" sat at
+the guitar's own level. Taken from the louder side, it rose with a boost and clamped the
+whole band.
+
+**The fix.** The background is now each band's 10th percentile over the frames where the
+DI rests, under which tails have faded. Where the DI rests in fewer than 8 frames, there
+is no background term. The rest of the design is unchanged. A re-score started before
+this was seen was stopped before it finished. Nothing was written and no comparison was
+read.
+
+**After the fix:**
+- The Well 1 costs 0.83 and 3.82; Ill Fate 1 costs 0.82 and 3.44. All 16 synthetic
+  properties still hold, and the default path still recomputes bit for bit.
+- A new stored-render check, added to the specification as property 18, would have
+  caught it. On every development recording, a +3 dB octave at 1.6 kHz costs at least
+  0.4, and ±12 dB above 5 kHz costs alike (median ratio at most 1.2).
+- Under that check, over the 33 recordings, v3 gives at least 0.57 (median 0.83), with
+  a median ±12 dB ratio of 1.00 (worst 1.90). The current judge gives 0.000 on the three
+  Ill Fate parts. v2 has a median ratio of 1.54 (worst 15.7): its darkness artefact,
+  measured directly.
+- Hiss on the synthetic signals: with −50 dB of hiss on a dark recording, a render
+  without it scores 1.46 (the current judge: 0.07), and matching hiss brings it 0.48
+  closer. With tails, against the recording's −35 dB hiss, matching it brings v3 0.23
+  closer and the current judge 3.32 closer.
+

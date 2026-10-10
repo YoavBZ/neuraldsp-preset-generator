@@ -65,8 +65,8 @@ SPREAD_UP_DB, SPREAD_DOWN_DB = 10.0, 25.0
 # ...nothing is heard under the threshold in quiet (Terhardt 1979), placed as if the
 # loudest cell played at 90 dB SPL...
 LOUDEST_SPL = 90.0
-# ...nor under the louder side's steady background (hiss, hum): its median level in each
-# band over the quietest tenth of the scored frames.
+# ...nor under the louder side's steady background (hiss, hum, bleed): its level in each
+# band where the DI rests, at this percentile.
 BACKGROUND_PERCENTILE = 10.0
 # Judge v3 (docs/judge-v3-plan.md): fixed bands and that floor, from both sides. Not the
 # default until the listening calibration agrees.
@@ -193,7 +193,7 @@ def _symmetric_difference(R, X, n_fft, sample_rate, playing, scored, bins, mask_
         return None, None
 
     def background(S):
-        return _background(S, scored)
+        return _background(S, playing, min_frames)
 
     def heard(S):
         return S >= np.maximum(_masked_floor(S, centres, mask_db), background(S))
@@ -213,15 +213,16 @@ def _symmetric_difference(R, X, n_fft, sample_rate, playing, scored, bins, mask_
     return X[scored][:, bins] - R[scored][:, bins], level
 
 
-def _background(S, scored):
-    """The steady floor in each band (hiss, hum): its level in the quietest scored
-    frames (the `BACKGROUND_PERCENTILE`-th by total level), their median per band."""
+def _background(S, playing, min_frames):
+    """The steady floor in each band (hiss, hum, bleed): its level where the DI is not
+    playing, at the `BACKGROUND_PERCENTILE`-th percentile, under which tails have
+    faded. No floor where the DI rests in fewer than `min_frames` frames."""
     import numpy as np
 
-    S = S[scored]
-    total = 10 * np.log10(np.sum(10 ** (S / 10), axis=1))
-    quiet = total <= np.percentile(total, BACKGROUND_PERCENTILE)
-    return np.median(S[quiet], axis=0)[None, :]
+    rest = ~playing
+    if rest.sum() < min_frames:
+        return np.full((1, S.shape[1]), -np.inf)
+    return np.percentile(S[rest], BACKGROUND_PERCENTILE, axis=0)[None, :]
 
 
 def _frame_db(x, n_fft: int):

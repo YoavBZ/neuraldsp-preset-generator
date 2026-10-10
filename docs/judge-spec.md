@@ -83,6 +83,12 @@ held to it.
     lose it.
 17. **The stored distances reproduce from the audio** (to 1e-12), so the judge as coded is
     the judge whose numbers the docs quote.
+18. **EQ changes count, alike, on every development recording** (added 2026-10-10 with
+    judge v3's amendment). On each of the 33, a +3 dB octave at 1.6 kHz applied to the
+    recording costs at least 0.4, and ±12 dB above 5 kHz costs alike (median ratio at
+    most 1.2).
+    - This catches a judge that goes deaf on some kind of part, or one that forgives
+      darkness, on real recordings rather than synthetic ones.
 
 ## Where the current judge stands
 
@@ -104,6 +110,9 @@ and breaks three:
   under the fundamental) still clamps the recording above about 700 Hz. There, +3 dB at
   1.6 kHz costs 0.03, against 0.81 on The Well 1. The synthetic bass-heavy rig is less
   extreme frame by frame than Ill Fate, so only the stored-render check catches it.
+
+Property 18 is broken by the current judge (0.000 on the Ill Fate parts) and by v2
+(median ±12 dB ratio 1.54).
 
 Judge v3 ([plan](judge-v3-plan.md)) holds all 16 synthetic properties; its stored-render
 checks are reported in its results.
