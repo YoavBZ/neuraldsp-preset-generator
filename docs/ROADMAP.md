@@ -170,7 +170,9 @@ lives in the linked documents. Last updated 2026-10-09.
         - Its regime is the one the judge was validated in by ear.
    6. **The heavy-tone listening check** (the user). It decides judge v2, and whether
       the high-gain verdict ("no edge over the fixed preset") stands.
-   7. **If the confirmation passes: songs, not amp tracks.** Rebuild from separated stems
+   7. **If the confirmation passes: songs, not amp tracks.** *Done 2026-10-10
+      ([results](songs-check-results.md)): from a separated stem the chooser keeps 75% of
+      the amp-track gain (−0.114, development).* Rebuild from separated stems
       and from mixes, first on development, under a declared rule. The product's input is
       a song, and set 3 showed stems lose part of the gain.
    8. **Then the product:** for clean and mild-crunch songs, `generate`'s audition page

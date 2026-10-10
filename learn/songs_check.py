@@ -175,6 +175,9 @@ def _score_part(job):
 
     slug, part, names = job
     ref = CR.mono(part["crop"] / "reference.wav")
+    # A product given only a song can judge only against what it has: the stem kind picks
+    # against the stem itself (corrected after review; the first scoring used the amp track).
+    stem_ref = CR.mono(part["stem"])
     res = {}
     for kind in KINDS:
         d = kind_dir(kind, slug, part)
@@ -187,7 +190,8 @@ def _score_part(job):
                         x = aligned_distance(ref, y, di, lag=part["judge_lag"], render_latency=P.LATENCY,
                                              start_s=a, end_s=b)
                     else:
-                        x, _ = rebuilt_distance(ref, y, di, start_s=a, end_s=b)
+                        x, _ = rebuilt_distance(stem_ref if kind == "stem" else ref, y, di,
+                                                start_s=a, end_s=b)
                     res.setdefault(f"flat|{amp}|{kind}_{h}", {})[n] = (x.distance, x.tonal, x.temporal)
     print(slug, flush=True)
     return slug, res
