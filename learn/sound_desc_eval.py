@@ -245,7 +245,7 @@ def evaluate():
            "gate2_crunch": {"result": g2, "outcome": g2_out},
            "phase_b": g1_out == "helps" and g2_out != "futile",
            "positive_control_ridge_vs_centroid": ctrl, "alphas": alphas,
-           "windows": len({r[1] for r in rows}), "test_bands_in_windows": sorted(set(test_bands) & win_bands),
+           "presets": len({r[1] for r in rows}), "test_bands_in_windows": sorted(set(test_bands) & win_bands),
            "results": res}
     (S.OUT / "stage1-result.json").write_text(json.dumps(out, indent=1, default=float))
     print("GATE 1 (crunch):", g1_out, "vs", better, g1["mean"], g1["lo90"], g1["hi90"], "gap share", share)

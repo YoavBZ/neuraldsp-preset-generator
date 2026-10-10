@@ -1,5 +1,8 @@
 # Predict the sound, not the knobs: plan v2 for the first test (development)
 
+*Ran 2026-10-11: [results](sound-desc-results.md). Stage 0 passed; stage 1 not shown to
+help.*
+
 Declared 2026-10-10.
 - **v1** (commit ec8ca48) was reviewed (`tmp/sound-desc-plan-review.md`, local), and its
   required changes are folded in here.

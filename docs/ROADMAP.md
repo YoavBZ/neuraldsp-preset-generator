@@ -207,6 +207,21 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **`generate` now starts clean Morgan parts from them.**
       - **Exploratory:** the chooser adds nothing on top of them on clean parts (+0.009).
         Its product value now rests on crunch songs, and is unproven there.
+   8c. **Predict the sound, not the knobs** ([plan](sound-desc-plan.md),
+      [results](sound-desc-results.md)). *Run 2026-10-11, independently reviewed: not
+      shown to help.*
+      - **The idea:** the plugin computes knobs to sound exactly, so a model predicts a
+        sound description from the record, and the nearest preset description wins.
+      - **Stage 0 passed:** with the same notes, a simple description picks crunch
+        presets well (−0.124 against the fixed crunch preset).
+      - **Stage 1, a translator trained on 36,000 plugin renders:** no better than the
+        cheap untrained baselines on crunch (gates inconclusive), worse than the fixed
+        preset on clean, and below the rebuilt-DI chooser everywhere. Phase B (a model of
+        every setting) doesn't start.
+      - **Why:** real records sit twice as far from the renders as renders do from each
+        other, each in its own direction. Learning on renders alone can't close that.
+      - **What would be needed:** record-like training inputs or a metric learned on
+        records, and more crunch bands than development has (6).
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.
