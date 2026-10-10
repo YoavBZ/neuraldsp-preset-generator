@@ -1,0 +1,163 @@
+{
+ "parts": {
+  "cambridge-colour-me-red-elecgtr01": {
+   "band": "Diesel13",
+   "gain_class": "crunch"
+  },
+  "cambridge-colour-me-red-elecgtr02": {
+   "band": "Diesel13",
+   "gain_class": "clean"
+  },
+  "cambridge-colour-me-red-elecgtr03": {
+   "band": "Diesel13",
+   "gain_class": "clean"
+  },
+  "cambridge-wickerman-elecgtr1": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch"
+  },
+  "cambridge-wickerman-elecgtr2": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch"
+  },
+  "cambridge-wickerman-elecgtr3": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch"
+  },
+  "cambridge-wickerman-elecgtr7": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch"
+  },
+  "cambridge-get-out-of-bed-elecgtr1": {
+   "band": "Magician's Nephew",
+   "gain_class": "crunch"
+  },
+  "cambridge-get-out-of-bed-elecgtr2": {
+   "band": "Magician's Nephew",
+   "gain_class": "crunch"
+  },
+  "cambridge-let-s-dance-elecgtr3": {
+   "band": "Szymon Skiba",
+   "gain_class": "crunch"
+  },
+  "cambridge-let-s-dance-elecgtr4": {
+   "band": "Szymon Skiba",
+   "gain_class": "crunch"
+  },
+  "cambridge-just-don-t-talk-elecgtr3": {
+   "band": "Timo And The Timezone",
+   "gain_class": "clean"
+  },
+  "cambridge-magilla-elecgtr1": {
+   "band": "Turbosauro",
+   "gain_class": "clean"
+  },
+  "cambridge-magilla-elecgtr1dt": {
+   "band": "Turbosauro",
+   "gain_class": "clean"
+  },
+  "cambridge-femme-elecgtr3": {
+   "band": "Wall Of Death",
+   "gain_class": "crunch"
+  },
+  "cambridge-femme-elecgtr5": {
+   "band": "Wall Of Death",
+   "gain_class": "crunch"
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "band": "Adam Buckley",
+   "gain_class": "clean"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "band": "Atlantis Bound",
+   "gain_class": "clean"
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "band": "Atlantis Bound",
+   "gain_class": "clean"
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "band": "The Travelling Band",
+   "gain_class": "clean"
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "band": "Starnes And Shah",
+   "gain_class": "crunch"
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "band": "The Travelling Band",
+   "gain_class": "clean"
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "band": "Zeno",
+   "gain_class": "clean"
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch"
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "band": "Doom Flamingo",
+   "gain_class": "clean"
+  },
+  "telefunken-Bloomlight-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean"
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean"
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  },
+  "telefunken-Fragments-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean"
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "band": "Doom Flamingo",
+   "gain_class": "clean"
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean"
+  }
+ },
+ "design_bands": [
+  "Adam Buckley",
+  "Diesel13",
+  "Doom Flamingo",
+  "Eggy",
+  "Starnes And Shah",
+  "The Travelling Band",
+  "Turbosauro",
+  "Zeno"
+ ],
+ "verify_bands": [
+  "Atlantis Bound",
+  "Dom McLennon",
+  "Eat The Feeder",
+  "Magician's Nephew",
+  "Szymon Skiba",
+  "Timo And The Timezone",
+  "Wall Of Death"
+ ]
+}

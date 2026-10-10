@@ -213,6 +213,10 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
+- [sound-desc-plan.md](sound-desc-plan.md) → [results](sound-desc-results.md): predict
+  the sound, not the knobs. With the same notes a sound description picks crunch presets
+  well, but a translator trained on plugin renders is no better than untrained baselines
+  on real records (not shown; records sit far from the renders).
 - [crunch-baseline-plan.md](crunch-baseline-plan.md) → [results](crunch-baseline-results.md):
   crunch starting presets per amp, lighter than the driven ones, are adopted on weak
   evidence (7 parts, 3 bands). The ML chooser over them is not shown (−0.056).
