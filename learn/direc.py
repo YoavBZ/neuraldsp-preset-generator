@@ -131,7 +131,7 @@ def fold_average(cache: pathlib.Path, fold: int):
 
 # --- model --------------------------------------------------------------------------
 
-def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False):
+def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False, open_bottom=False):
     import torch
     import torch.nn as nn
 
@@ -161,9 +161,13 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False):
                     with torch.no_grad():
                         block[-1].weight.mul_(0.1)
             outs = list(channels[:-1])[::-1] + [1]
-            for c, o in zip(channels[::-1], outs):
+            for k, (c, o) in enumerate(zip(channels[::-1], outs)):
                 last = o == 1
-                self.dec.append(nn.Sequential(nn.Conv1d(c, 2 * c, 3, padding=1), nn.GLU(dim=1),
+                # `open_bottom` (v3b): the deepest level's GLU gate shut in training even with
+                # `norm` (2% open by step 1,000); a GELU there cannot gate the path off.
+                gate = ([nn.Conv1d(c, c, 3, padding=1), nn.GELU()] if open_bottom and k == 0
+                        else [nn.Conv1d(c, 2 * c, 3, padding=1), nn.GLU(dim=1)])
+                self.dec.append(nn.Sequential(*gate,
                                               nn.ConvTranspose1d(c, o, 8, 4, padding=2),
                                               *( [] if last else [nn.GELU()])))
 
@@ -192,13 +196,15 @@ def load_model(path, device="cpu"):
     import torch
 
     state = torch.load(path, map_location=device)
-    net = build_model(norm=state["mid.0.0.weight"].dim() == 1)
+    net = build_model(norm=state["mid.0.0.weight"].dim() == 1,
+                      open_bottom=state["dec.0.0.weight"].shape[0] == state["dec.0.0.weight"].shape[1])
     net.load_state_dict(state)
     return net
 
 
 def gate_open(net, x):
-    """Fraction of dec.0's GLU gate above 1e-3 on `x` (0 means the bottom levels are dead)."""
+    """Fraction of dec.0's gate above 1e-3 on `x` (0 means the bottom levels are dead); with
+    an open bottom, the fraction of its GELU outputs above 1e-3 in size."""
     import torch
 
     seen = {}
@@ -206,8 +212,11 @@ def gate_open(net, x):
     with torch.no_grad():
         net(x)
     h.remove()
-    c = seen["o"].shape[1] // 2
-    return float((torch.sigmoid(seen["o"][:, c:]) > 1e-3).float().mean())
+    o = seen["o"]
+    if not isinstance(net.dec[0][1], torch.nn.GLU):
+        return float((torch.nn.functional.gelu(o).abs() > 1e-3).float().mean())
+    c = o.shape[1] // 2
+    return float((torch.sigmoid(o[:, c:]) > 1e-3).float().mean())
 
 
 def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
@@ -225,7 +234,7 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 # --- training -----------------------------------------------------------------------
 
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
-        extra=None, norm=False):
+        extra=None, norm=False, open_bottom=False):
     import numpy as np
     import torch
 
@@ -301,7 +310,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         return (torch.tensor(np.stack(xs), device=dev).unsqueeze(1),
                 torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
 
-    net = build_model(norm=norm).to(dev)
+    net = build_model(norm=norm, open_bottom=open_bottom).to(dev)
     if resume:
         net.load_state_dict(torch.load(resume, map_location=dev))
         print(f"resumed from {resume}", flush=True)
@@ -439,6 +448,7 @@ def main():
     f.add_argument("--lr", type=float, default=3e-4)
     f.add_argument("--lr-end", type=float)
     f.add_argument("--norm", action="store_true", help="v3: normalised bottleneck")
+    f.add_argument("--open-bottom", action="store_true", help="v3b: no GLU gate at the deepest level")
     args = ap.parse_args()
     if args.cmd == "cache-pairs":
         build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
@@ -447,7 +457,8 @@ def main():
     else:
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
             log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end,
-            extra=[c.expanduser() for c in args.extra_cache], norm=args.norm)
+            extra=[c.expanduser() for c in args.extra_cache], norm=args.norm,
+            open_bottom=args.open_bottom)
 
 
 if __name__ == "__main__":

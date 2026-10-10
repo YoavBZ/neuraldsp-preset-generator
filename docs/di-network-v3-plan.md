@@ -64,3 +64,19 @@ the template and the oracle. An independent reviewer re-derives them.
   the fixed preset on fresh material.
 - **If not:** the working bottom isn't the lever either. Then go to stem-aware training,
   and room and mic augmentation.
+
+## Pre-check result, and amendment (2026-10-10, before the v3b run)
+
+**v3 fails its pre-check.**
+- **Validation improved:** 62.5 at step 1,000, against the original's 65.0.
+- **But dec.0's gate closed again:** 100% open at step 500, 2% at step 1,000. Its
+  input is about 16 times the skip's size, with a gate pre-activation mean of −18.7.
+  Normalising the bottleneck slowed the closing; it didn't stop it. As declared, no
+  long run follows from v3.
+
+**Amendment: v3b.** Add `open_bottom` (`--open-bottom`): the deepest decoder level uses
+a convolution and a GELU instead of the GLU gate, so it can't gate the path off. That
+gives 9.0M weights instead of 9.8M. Everything else is as in v3, including `--norm`.
+- **Pre-check:** the same 15 minutes and the same two conditions. For the open bottom,
+  "open" means the share of the level's GELU outputs above 1e-3 in size.
+- **The run and the decision rule:** unchanged.
