@@ -203,6 +203,9 @@ was declared, what was measured, and the research behind it.
   of how closeness is measured. The judge is treble-deaf on parts with a dominant low end;
   the measure's DI level is a recording artefact; the "unbeaten fixed preset" verdict
   depends on the judge's weighting; the pooled p-values were overconfident.
+- [heavy-listening-plan.md](heavy-listening-plan.md): listening check H, declared: on
+  heavy tones, does the ear follow the judge's tonal or temporal part, and does the
+  judge hold on SW50R and AC20.
 - [codex-continuation-review.md](codex-continuation-review.md): what holds and what
   doesn't in the Codex continuation (held-out confirmation, diagnostics, pilots). Read
   this before any Codex results doc. Large evidence files are kept outside git
