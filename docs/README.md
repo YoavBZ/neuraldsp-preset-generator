@@ -199,6 +199,16 @@ was declared, what was measured, and the research behind it.
   isolation against htdemucs_6s. About +1 dB SNR; not passed.
 - [avg-measure-listening-plan.md](avg-measure-listening-plan.md) →
   [results](avg-measure-listening-results.md): the average-guitar measure, passed 23 of 24.
+- [fixed-level-rescore-results.md](fixed-level-rescore-results.md): past choices re-scored
+  under the fixed-level measure and band-clustered statistics. The 3 kHz cut helps
+  (−0.07); the edge over a fixed preset (−0.14) is a forked development lead.
+- [closeness-review-2026-10-10.md](closeness-review-2026-10-10.md): a deep, four-part review
+  of how closeness is measured. The judge is treble-deaf on parts with a dominant low end;
+  the measure's DI level is a recording artefact; the "unbeaten fixed preset" verdict
+  depends on the judge's weighting; the pooled p-values were overconfident.
+- [heavy-listening-plan.md](heavy-listening-plan.md): listening check H, declared: on
+  heavy tones, does the ear follow the judge's tonal or temporal part, and does the
+  judge hold on SW50R and AC20.
 - [codex-continuation-review.md](codex-continuation-review.md): what holds and what
   doesn't in the Codex continuation (held-out confirmation, diagnostics, pilots). Read
   this before any Codex results doc. Large evidence files are kept outside git

@@ -317,3 +317,40 @@ def test_the_union_band_set_sees_treble_the_recording_lacks():
     with pytest.raises(ValueError, match="bands"):
         aligned_distance(recording, fizzy, di, render_latency=0, lag=0, bands="both")
 
+
+
+def test_hearing_weighting_keeps_zero_level_blindness_and_the_flat_default():
+    di = _performance()
+    render = _amp(di)
+    kw = dict(render_latency=0, lag=0, weighting="hearing")
+    assert aligned_distance(render, render, di, **kw).distance == pytest.approx(0.0, abs=1e-6)
+    assert aligned_distance(render, render * 4.0, di, **kw).distance == pytest.approx(0.0, abs=1e-3)
+    flat = aligned_distance(render, _shelf(render, 2000, 6), di, render_latency=0, lag=0)
+    default = aligned_distance(render, _shelf(render, 2000, 6), di, render_latency=0, lag=0,
+                               weighting="flat")
+    assert flat.distance == default.distance
+
+
+def test_hearing_weighting_hears_treble_a_bass_heavy_recording_buries():
+    """A recording with a dominant low end: flat weighting scores only the bass and is
+    blind to a treble boost; hearing weighting scores more bands and hears it."""
+    di = _performance(seed=3)
+    rig = _amp(di, tone=(60, 6000))
+    b, a = scipy_signal.butter(2, 150, btype="lowpass", fs=SR)
+    recording = rig + 10 * scipy_signal.lfilter(b, a, rig)
+    bright = _shelf(recording, 4000, 12)
+    kw = dict(render_latency=0, lag=0)
+    flat = aligned_distance(recording, bright, di, **kw)
+    hearing = aligned_distance(recording, bright, di, weighting="hearing", **kw)
+    assert hearing.bands > flat.bands
+    assert hearing.distance > flat.distance
+
+
+def test_hearing_weighting_refuses_a_window_scored_on_too_few_bands():
+    di = _performance()
+    render = _amp(di)
+    d = aligned_distance(render, render, di, render_latency=0, lag=0, weighting="hearing",
+                         min_bands=200)
+    assert d.distance is None and "bands are scored" in d.reason
+    with pytest.raises(ValueError):
+        aligned_distance(render, render, di, render_latency=0, lag=0, weighting="loud")

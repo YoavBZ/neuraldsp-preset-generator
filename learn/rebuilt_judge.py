@@ -29,11 +29,13 @@ def lowpass(di, hz=LOWPASS_HZ, sample_rate=48000):
     return to_lufs(np.fft.irfft(np.fft.rfft(di) / np.sqrt(1 + (f / hz) ** 8), len(di)))
 
 
-def rebuilt_distance(recording, render, di, *, start_s, end_s, bands="recording"):
-    """(AlignedDistance, used_proxy) for `render` (a preset through the rebuilt `di`)."""
+def rebuilt_distance(recording, render, di, *, start_s, end_s, bands="recording", **judge):
+    """(AlignedDistance, used_proxy) for `render` (a preset through the rebuilt `di`);
+    `judge` passes further options (e.g. `weighting`) to the judge."""
     from analysis.aligned import aligned_distance
 
-    kw = dict(lag=-LATENCY, render_latency=LATENCY, start_s=start_s, end_s=end_s, bands=bands)
+    kw = dict(lag=-LATENCY, render_latency=LATENCY, start_s=start_s, end_s=end_s, bands=bands,
+              **judge)
     d = aligned_distance(recording, render, di, **kw)
     if d.distance is None and any(s in (d.reason or "") for s in _ACTIVITY):
         return aligned_distance(recording, render, recording, **kw), True
