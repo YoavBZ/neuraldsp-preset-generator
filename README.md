@@ -91,8 +91,9 @@ You don't have to use the slash commands — just describing what you want
     [crunch](docs/crunch-baseline-results.md), [driven](docs/driven-baseline-results.md)).
   - **Tone King** starts from one of your own Tone King presets.
   - **Given a song,** it puts four candidates on a local listening page beside the
-    song, including the plain dry starting preset on Morgan, and refines the one you
-    pick.
+    song, including the plain dry starting preset on Morgan (and, if you're unsure how
+    much gain the part has, the amp's other starting point beside it), and refines the
+    one you pick.
   - Heavy metal and high-gain tones are out of scope: a heavier part still starts from
     the driven preset, but it isn't what the project is tuned for.
 - **`match`** — supply reference audio, a DI of that performance and a starting
