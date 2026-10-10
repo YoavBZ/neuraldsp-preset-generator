@@ -735,7 +735,9 @@ def test_protocol_complete_pipe_lines_no_read_ahead(tmp_path):
     stream = os.fdopen(read_fd, "r")
     os.write(write_fd, b'{"ready":true}\n{"ok":true}\n')
     host = FakeProtocol()
-    host.transcript, host.started, host.reply_timeout_s = tmp_path / "protocol.jsonl", time.monotonic(), .1
+    # The point is no read-ahead, not timing: a generous deadline keeps loaded CI runners
+    # from failing it (0.1 s flaked on CI, 2026-10-11).
+    host.transcript, host.started, host.reply_timeout_s = tmp_path / "protocol.jsonl", time.monotonic(), 5.0
     host._process = SimpleNamespace(stdout=stream, poll=lambda: None)
     try:
         assert host._readline() == {"ready": True}
