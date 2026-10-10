@@ -91,11 +91,11 @@ The default judge (`bands="recording"`, `weighting="flat"`) holds properties 1�
 
 | Property | Measured | Why |
 |---|---|---|
-| 6. Boost and cut alike | ±12 dB above 4 kHz: 2.20 against 1.79; quiet region: 0.78 against 0.38 | The floor comes from the recording alone, so a cut into it is clamped while the boost counts in full. |
+| 6. Boost and cut alike | ±12 dB above 4 kHz: 2.20 against 1.79; a quiet region ±12 dB: 0.28 against 0.08 | The floor comes from the recording alone, so a cut into it is clamped while the boost counts in full. |
 | 8. Fizz | Clean part: −10 dB of fizz costs 0.40, under a +3 dB octave (0.59); bass-heavy: 0.06 | The scored bands stop below the treble on dark parts. |
 | 11. Treble on bass-heavy parts | +6 dB at 2.5 kHz: 0.36 against 1.42 on the balanced part; Ill Fate: +3 dB at 1.6 kHz costs 0.0002 against 0.88 | Bands and floor sit 30/40 dB under the loudest band, the fundamental. |
 | 12. Missing against excess | Fizz at −20 dB: 0.51 one way, 1.64 the other | Bands and floor come from the recording only. |
-| 13. Band width | A 12 dB cut of a quiet region: 0.38 low, 0.85 high | The mel filters aren't area-normalised: a wide treble band reads up to 13 dB louder. |
+| 13. Band width | A 12 dB cut of a quiet region: 0.08 low, 2.19 high | The mel filters aren't area-normalised: a wide treble band reads up to 13 dB louder. |
 
 Judge v2 (`bands="fixed"`) is also tested. It holds 8, 12 and the synthetic part of 11,
 and breaks three:
@@ -104,3 +104,16 @@ and breaks three:
   under the fundamental) still clamps the recording above about 700 Hz. There, +3 dB at
   1.6 kHz costs 0.03, against 0.81 on The Well 1. The synthetic bass-heavy rig is less
   extreme frame by frame than Ill Fate, so only the stored-render check catches it.
+
+Judge v3 ([plan](judge-v3-plan.md)) holds all 16 synthetic properties; its stored-render
+checks are reported in its results.
+
+## Amendment (2026-10-10, before judge v3 was declared)
+
+The region checks in 6 and 13 first used a 5-band region at 450–700 Hz, in noise that
+decayed with each note. Window leakage fills a 37 dB dip that narrow, whatever the judge,
+so every judge failed for a reason unrelated to band width. They now use 10-band regions
+(835–1774 Hz against 5.1–8.7 kHz), 25 dB down, in noise gated by the DI. The current
+judge and v2 still fail them: a 12 dB cut of the low region costs 0.08 (current) and
+1.11 (v2), against 2.19 and 2.29 for the high one.
+

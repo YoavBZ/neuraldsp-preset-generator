@@ -55,6 +55,8 @@ was declared, what was measured, and the research behind it.
   unconfirmed.
 - [judge-spec.md](judge-spec.md): the properties any judge version must have, each tested
   (`tests/test_judge_spec*.py`); the current judge breaks five, v2 three.
+- [judge-v3-plan.md](judge-v3-plan.md): judge v3, a floor from both sides in hearing's
+  units (masking spread, threshold in quiet, background); holds every synthetic property.
 
 **Validation data** (current)
 - [validation-datasets.md](validation-datasets.md): the development and held-out sets,

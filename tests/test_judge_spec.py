@@ -27,7 +27,7 @@ from analysis.aligned import aligned_distance, estimate_lag  # noqa: E402
 SR = 48000
 
 # Judge name -> keyword options for `aligned_distance`.
-JUDGES = {"default": {}, "v2": {"bands": "fixed"}}
+JUDGES = {"default": {}, "v2": {"bands": "fixed"}, "v3": A.JUDGE_V3}
 _V2_FLOOR = ("v2 keeps the default's floor, from the recording alone, under a fixed band set "
              "with unnormalised mel bands")
 
@@ -237,11 +237,22 @@ def test_a_tilt_costs_more_as_it_grows_either_way(judge):
 
 # 5. Boosts and cuts alike ---------------------------------------------------------
 
+# Mel bands 14–24 (835–1774 Hz) and 42–52 (5.1–8.7 kHz): equal mel width, and wide
+# enough that the analysis windows resolve a 37 dB dip (a 5-band region at 450–700 Hz
+# is filled in by window leakage, whatever the judge).
+REGIONS = ((14, 24), (42, 52))
+
+
 def _white_with_region(lo_band, hi_band, level_db, change_db, seed=0):
     """Noise of flat density (80 Hz–11 kHz) that follows the DI's envelope, with mel
     bands `lo_band`..`hi_band` at `level_db`, then changed by `change_db`."""
     di = performance()
-    env = np.sqrt(np.clip(sps.filtfilt(*sps.butter(2, 20, fs=SR), di ** 2), 0, None))
+    # Steady while the DI plays (gated, 5 ms edges): no decays, so the floors at work are
+    # the ones that compare bands, not the threshold a fading note sinks under.
+    gate = (np.sqrt(np.clip(sps.filtfilt(*sps.butter(2, 20, fs=SR), di ** 2), 0, None))
+            > 0.01).astype(float)
+    env = np.convolve(gate, np.hanning(int(0.005 * SR)) / np.hanning(int(0.005 * SR)).sum(),
+                      mode="same")
     white = np.random.default_rng(seed).standard_normal(len(di))
     mel = lambda f: 2595.0 * np.log10(1.0 + f / 700.0)          # noqa: E731
     edges = 700.0 * (10 ** (np.linspace(mel(A.FMIN), mel(A.FMAX), A.MEL_BANDS + 2) / 2595) - 1)
@@ -251,7 +262,7 @@ def _white_with_region(lo_band, hi_band, level_db, change_db, seed=0):
         inside = (f >= lo) & (f <= hi)
         out = np.where((f < 80) | (f > 11000), -80.0, 0.0)
         return out + np.where(inside, level_db + change_db, 0.0)
-    return fgain(white, shape) * env
+    return fgain(white * env, shape)          # shaped after the envelope: no leakage
 
 
 @pytest.mark.parametrize("judge", judges("plus_minus"))
@@ -269,11 +280,11 @@ def test_a_boost_and_the_same_cut_cost_alike(judge):
             up = dist(judge, recording, fgain(recording, shelf(fc, 12)), di)
             down = dist(judge, recording, fgain(recording, shelf(fc, -12)), di)
             assert ratio(up, down) <= 1.2, (kind, fc, up, down)
-    # A quieter region of an even spectrum (20 dB down), raised or lowered 12 dB.
-    for bands in ((8, 12), (48, 52)):
-        recording = _white_with_region(*bands, -20, 0)
-        up = dist(judge, recording, _white_with_region(*bands, -20, 12), di)
-        down = dist(judge, recording, _white_with_region(*bands, -20, -12), di)
+    # A quieter region of an even spectrum (25 dB down), raised or lowered 12 dB.
+    for bands in REGIONS:
+        recording = _white_with_region(*bands, -25, 0)
+        up = dist(judge, recording, _white_with_region(*bands, -25, 12), di)
+        down = dist(judge, recording, _white_with_region(*bands, -25, -12), di)
         assert ratio(up, down) <= 1.2, (bands, up, down)
 
 
@@ -370,9 +381,9 @@ def test_the_same_change_costs_the_same_in_a_narrow_or_a_wide_band(judge):
     """On an even spectrum, the same change to a region of equal mel width and equal
     density costs the same low (narrow mel bands) as high (wide ones)."""
     di = performance()
-    for level, change in ((-20, -12), (-20, 12), (0, -6)):
+    for level, change in ((-25, -12), (-25, 12), (0, -6)):
         cost = []
-        for bands in ((8, 12), (48, 52)):
+        for bands in REGIONS:
             recording = _white_with_region(*bands, level, 0)
             cost.append(dist(judge, recording, _white_with_region(*bands, level, change), di))
         assert ratio(*cost) <= 1.25, (level, change, cost)

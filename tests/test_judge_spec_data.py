@@ -35,7 +35,8 @@ ILL_FATE = "cambridge-ill-fate-elecgtr1"
 WALL_OF_DOOM = "factory:Artists/Royce Whittaker/Wall Of Doom"
 
 # Judge name -> (aligned_distance options, distances file tag, judge key in that file).
-JUDGES = {"default": ({}, "", "flat"), "v2": ({"bands": "fixed"}, "fixed", "fixed")}
+JUDGES = {"default": ({}, "", "flat"), "v2": ({"bands": "fixed"}, "fixed", "fixed"),
+          "v3": ({"bands": "fixed", "floor": "symmetric"}, "v3", "v3")}
 KNOWN = {
     ("default", "ill_fate_treble"):
         "Ill Fate 1 scores 8 of 64 bands, none above 400 Hz: treble changes cost 0",
