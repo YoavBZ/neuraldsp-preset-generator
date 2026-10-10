@@ -40,6 +40,9 @@ class Recipe:
     use_when: str
     parameters: List[Dict[str, Any]]
     note: Optional[str] = None
+    # A recipe made for one amp's presets (the dry recipes): the writer refuses it
+    # on another amp, since its settings would change nothing you hear.
+    for_amp: Optional[str] = None
 
     @property
     def ref(self) -> str:
@@ -61,6 +64,7 @@ def load_recipes(pack_id: str = "morgan") -> Dict[str, Dict[str, Recipe]]:
                 use_when=entry["use_when"],
                 parameters=entry["parameters"],
                 note=entry.get("note"),
+                for_amp=entry.get("for_amp"),
             )
             for rid, entry in group.items()
         }

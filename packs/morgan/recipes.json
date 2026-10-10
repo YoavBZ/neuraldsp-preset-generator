@@ -1512,6 +1512,159 @@
           "source": "docs/morgan-config-reference.md §20.3, removed in de53205: git show de53205^:docs/morgan-config-reference.md"
         }
       }
+    },
+    "dry": {
+      "pr12": {
+        "title": "Dry PR12 factory baseline",
+        "use_when": "starting from one of generate's PR12 factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "PR12",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "transpose",
+            "value": 0
+          },
+          {
+            "module": "pr12Amp",
+            "key": "pr12Reverb",
+            "value": 0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "doublerActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "gateActive",
+            "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
+          }
+        ],
+        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "evidence": {
+          "class": "measured",
+          "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"
+        }
+      },
+      "sw50r": {
+        "title": "Dry SW50R factory baseline",
+        "use_when": "starting from one of generate's SW50R factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "SW50R",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "transpose",
+            "value": 0
+          },
+          {
+            "module": "sw50rAmp",
+            "key": "sw50rReverb",
+            "value": 0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "doublerActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "gateActive",
+            "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
+          }
+        ],
+        "note": "Transpose 0, the amp's spring reverb 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "evidence": {
+          "class": "measured",
+          "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"
+        }
+      },
+      "ac20": {
+        "title": "Dry AC20 factory baseline",
+        "use_when": "starting from one of generate's AC20 factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "AC20",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "transpose",
+            "value": 0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          },
+          {
+            "module": "tremolo",
+            "key": "tremoloActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "doublerActive",
+            "value": false
+          },
+          {
+            "module": "parameters",
+            "key": "gateActive",
+            "value": false
+          },
+          {
+            "module": "fxParameters",
+            "key": "sectionActive",
+            "value": true
+          }
+        ],
+        "note": "Transpose 0, reverb, delay, tremolo, doubler and gate off, with the FX section itself on (so an effect turned back on is heard). Stack it first; turn an effect back on afterwards only with its parameters set explicitly, since the factory leftovers are extreme.",
+        "evidence": {
+          "class": "measured",
+          "source": "docs/clean-baseline-results.md, docs/crunch-baseline-results.md and docs/driven-baseline-results.md: the factory baselines were measured dry (render_preset_panel RULE_SET)"
+        }
+      }
     }
   }
 }
