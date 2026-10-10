@@ -137,17 +137,16 @@ def _pool():
     return rows
 
 
+G_BANDS = ("Ale Lak", "John Morgan Kimock", "Bernard Purdie Tribute All-Stars", "Cnoc An Tursa")
+
+
 def average_windows():
-    """G: in the sets 1–2 pool's band order, the first window (by sorted path, then start)
-    of the first 4 bands that are not Guitar-TECHS."""
-    w = json.loads(POOLS[0].read_text())["windows"]
-    order, out = [], []
-    for x in w:
-        if x["band"] != GT and x["band"] not in order:
-            order.append(x["band"])
-    for band in order[:4]:
-        out.append(min((x for x in w if x["band"] == band), key=lambda x: (x["file"], x["start_s"])))
-    return out
+    """G (plan v2): for each of 4 non-test bands, its first window by sorted path, then
+    start, from either development pool."""
+    pool = _pool()
+    # amendment 6: the first window with activity of at least 0.9
+    return [min((x for x in pool if x["band"] == b and x.get("active", 1.0) >= 0.9),
+                key=lambda x: (x["file"], x["start_s"])) for b in G_BANDS]
 
 
 def load_window(w):
@@ -174,20 +173,33 @@ def targets():
         own = smoothed_spectrum(di[int(PRE * SR):])
         G.append(to_lufs(eq_to(di, avg - (own - own.mean()))))
     r, M = renderer()
-    T = {}
+    T, TF = {}, {}
     try:
         for amp, m in M.items():
             for n in m:
-                ds = []
+                ds, frs = [], []
                 for g in G:
                     _render(r, g, f"{amp}|template+R")        # flush the reused instance
-                    ds.append(describe(_render(r, g, f"{amp}|{n}")[int(PRE * SR):]))
+                    y = _render(r, g, f"{amp}|{n}")[int(PRE * SR):]
+                    ds.append(describe(y))
+                    frs.append(y)
                 T[f"{amp}|{n}"] = np.mean(ds, axis=0).tolist()
+                # Stage 0 (plan v2): every declared description and gate, on 4.5-s segments.
+                from learn import sound_desc_stage0 as S0
+                for gate in S0.GATES:
+                    per = []
+                    for y in frs:
+                        for a in (0, int(1.5 * SR)):
+                            per.append(S0.descriptors(*S0.frames(y[a:a + int(4.5 * SR)]), gate))
+                    for name in S0.NAMES:
+                        TF.setdefault(name, {}).setdefault(gate, {})[f"{amp}|{n}"] = \
+                            np.mean([d[name] for d in per], axis=0).tolist()
                 print(amp, n, flush=True)
     finally:
         r.close()
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "targets.json").write_text(json.dumps({"windows": average_windows(), "T": T}))
+    (OUT / "targets-frames.json").write_text(json.dumps(TF))
 
 
 def choose_windows():

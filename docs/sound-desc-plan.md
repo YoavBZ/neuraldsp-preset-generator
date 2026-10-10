@@ -147,3 +147,44 @@ if gate 1 helps and gate 2 is not futile.
   plus 5% of the audio.
 - **No held-out data.**
 - **The reviewer re-checks this plan before stage 0 runs.**
+
+## Amendments after the v2 review (2026-10-10, before stage 0 runs)
+
+Review: `tmp/sound-desc-plan-v2-review.md`, local. Verdict: approve with these required
+changes, all applied here. **They replace the matching v2 text above.**
+
+1. **Selection and the bar (replaces the design/verify split).** The split was lopsided:
+   crunch was almost all in the verify bands, which pre-passed the bar, and the choice
+   rested on clean parts, where every ceiling is near 0.
+   - **Leave-one-band-out over all 15 test bands:** for each band, the description with
+     the best ceiling mean on the other 14 bands (standardised on those bands' renders
+     only) is applied to that band's parts.
+   - **Crunch decides:** the result on crunch parts must have a mean of −0.04 or lower,
+     with more wins than losses. Clean is reported separately. If clean misses and crunch
+     passes, any product claim is crunch-only.
+   - **If the chosen procedure fails on crunch, stop.** Other descriptions cannot rescue
+     it.
+   - **Note for the ledger:** the −0.04 bar was set after the v1 per-stratum ceiling
+     figures were seen.
+   - The description carried into stage 1 is the one with the best ceiling over all 15
+     bands.
+2. **Stage-0 definitions.**
+   - **Means** are part-weighted over part-amp cells, each averaged over both scoring
+     directions.
+   - **Wins and losses** count cells below or above 0; |x| ≤ 1e-9 is a tie.
+   - **Standardisation** is fitted on the selecting bands' renders only.
+   - **The centroid baseline** is the mean description over every other band's test
+     parts (any class) of the stored render through `p`.
+3. **Gate 2's baseline:** per amp and gain class, the factory preset with the lowest
+   median (over both halves) over other bands' parts of the same class. **Crunch decides
+   gate 2** and Phase B's "not futile" condition; the pooled result is reported. In gate
+   1, "the better of" no-learning and centroid means the one with the better pooled mean.
+4. **Folds:** 15 folds, each holding out one test band and training on the windows of the
+   other bands. Each 6-s window gives two overlapping 4.5-s segments (0–4.5 s and
+   1.5–6.0 s). `T(p)` also uses 4.5-s segments.
+5. **The positive control's minimum:** on the test parts' own stored renders, the
+   translator must be at least as good as the centroid baseline. If it isn't, a "futile"
+   gate-1 result is reported as inconclusive.
+6. **Recommended, adopted:** `G` takes each band's first window with activity of at least
+   0.9. Also reported: null inputs (raw DI, noise) in the off-manifold check, and the
+   cross-amp pick.
