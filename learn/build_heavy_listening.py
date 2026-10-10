@@ -581,6 +581,47 @@ def declared_key_sha256() -> str:
     return found[0]
 
 
+def score_rows_partial(rows, answers) -> dict:
+    """The amended outcomes (plan, "Amendment: unanswered trials"): unanswered trials are
+    left out, and each rule uses the exact one-sided binomial p of its original threshold."""
+    answered = [r for r in rows if answers.get(r["trial"])]
+    by_id = {r["id"]: r for r in rows}
+    chosen = {r["trial"]: r[answers[r["trial"]]] for r in answered}
+    of = {k: [r for r in answered if r["block"] == k] for k in
+          ("texture", "clear", "small", "hidden", "repeat")}
+
+    def agree(rs, field):
+        return sum(answers[r["trial"]] == r[field] for r in rs)
+
+    missed = sum(answers[r["trial"]] != r["copy"] for r in of["hidden"])
+    pairs = [r for r in of["repeat"] if by_id[r["of"]]["trial"] in chosen]
+    consistent = sum(chosen[r["trial"]] == chosen[by_id[r["of"]]["trial"]] for r in pairs)
+    tonal, n_tex = agree(of["texture"], "tonal_pick"), len(of["texture"])
+    judge, n_clear = agree(of["clear"], "judge_pick"), len(of["clear"])
+    reliability = ("unassessed" if len(pairs) < 2 else "ok")
+    void = missed >= 2 or (len(pairs) >= 2 and consistent < 2 * len(pairs) / 3)
+    p_t, p_m = L.binomial_p(tonal, n_tex), L.binomial_p(n_tex - tonal, n_tex)
+    p_j = L.binomial_p(judge, n_clear)
+    outcome = {"void": void} if void else {
+        "void": False,
+        "texture": "tonal" if p_t <= 0.038 else "temporal" if p_m <= 0.038 else "neither",
+        "clear": ("judge extends" if p_j <= 0.055 else
+                  "judge not ground truth" if judge <= n_clear / 2 else "inconclusive")}
+    return {"outcome": outcome, "amended": True,
+            "unanswered": sorted(r["trial"] for r in rows if not answers.get(r["trial"])),
+            "unanswered_by_block": {k: sum(1 for r in rows if r["block"] == k and not answers.get(r["trial"]))
+                                    for k in ("texture", "clear", "small", "hidden", "repeat")},
+            "reliability": {"hidden_missed": missed, "hidden_answered": len(of["hidden"]),
+                            "repeat_pairs_answered": len(pairs), "repeats_consistent": consistent,
+                            "status": reliability},
+            "texture": {"tonal_side": tonal, "temporal_side": n_tex - tonal, "of": n_tex,
+                        "p_one_sided_tonal": p_t, "p_one_sided_temporal": p_m,
+                        "agree_with_judge": agree(of["texture"], "judge_pick")},
+            "clear": {"agree_with_judge": judge, "of": n_clear, "p_one_sided": p_j},
+            "small": {"agree_with_judge": agree(of["small"], "judge_pick"), "of": len(of["small"])},
+            "answered_A": sum(a == "A" for a in answers.values() if a)}
+
+
 def score_rows(rows, answers) -> dict:
     """The declared outcomes from the key's rows and {trial: "A" | "B"}."""
     chosen = {r["trial"]: r[answers[r["trial"]]] for r in rows}
@@ -638,10 +679,16 @@ def score(args):
     sheet = args.answers.expanduser()
     raw = sheet.read_bytes()
     answers = L.read_sheet(sheet)
-    if not answers or not all(answers.values()):
-        die("every trial needs an answer, A or B")
-    if set(answers) != set(L.public_trials(OUT / "listen")):
-        die("the sheet does not answer exactly the built trials (run `check` first)")
+    built = set(L.public_trials(OUT / "listen"))
+    if args.allow_unanswered:
+        if not answers or set(answers) - built:
+            die("the sheet answers trials that were not built")
+        answers = {t: answers.get(t) for t in built}
+    else:
+        if not answers or not all(answers.values()):
+            die("every trial needs an answer, A or B")
+        if set(answers) != built:
+            die("the sheet does not answer exactly the built trials (run `check` first)")
     answers_sha = hashlib.sha256(raw).hexdigest()
     if not ANSWERS_SHA.exists() or answers_sha not in ANSWERS_SHA.read_text():
         die(f"commit this sheet's sha256 in {ANSWERS_SHA.name} first")
@@ -656,7 +703,9 @@ def score(args):
     key = json.loads(text)
     if set(answers) != {r["trial"] for r in key["trials"]}:
         die("the sheet's trials are not the built trials")
-    out = {"answers_sha256": answers_sha, **score_rows(key["trials"], answers)}
+    rows = score_rows_partial(key["trials"], answers) if args.allow_unanswered \
+        else score_rows(key["trials"], answers)
+    out = {"answers_sha256": answers_sha, **rows}
     text = json.dumps(out, indent=1) + "\n"
     print(text)
     args.json.expanduser().write_text(text)
@@ -677,6 +726,8 @@ def main():
     s = sub.add_parser("score")
     s.add_argument("--answers", type=pathlib.Path, required=True)
     s.add_argument("--json", type=pathlib.Path, default=OUT / "score.json")
+    s.add_argument("--allow-unanswered", action="store_true",
+                   help="the plan's amendment: score answered trials only")
     args = ap.parse_args()
     if args.cmd in ("count", "build"):
         from analysis import require
