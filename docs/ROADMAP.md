@@ -88,7 +88,18 @@ lives in the linked documents. Last updated 2026-10-09.
        and the spectrum got worse. The complex-STFT term can't train on MPS. Making
        MR-STFT NaN-safe removed the old MPS glitches.
      - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
-       12–18 bands. Five are downloaded, unheard (`tmp/set4-download.md`).
+       12–18 bands. Set 4 is declared: 13 held-out parts from 5 bands, with 4 Internet
+       Archive sessions being added.
+   - **Rethink (2026-10-10):** no more chooser or judge tweaks on the 33 development
+     parts until the listening check is in.
+     - Rebuilding the DI's fine detail has failed every way tried: longer training, more
+       guitars, architecture repairs and a waveform loss.
+     - The development data is over-used.
+     - The binding constraints are the judge's validity on heavy tones (listening) and
+       fresh data.
+     - **Next:** a declared, one-time [set-4 confirmation](set4-confirmation-plan.md) of
+       the cut chooser against fixed presets. It is drafted and awaits the listening
+       result and the user's approval.
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
