@@ -1,0 +1,52 @@
+{
+ "answers_sha256": "67c19268d5cfa066b5f0ec07e63ab82a8c44ed349f0172147d5b8de8a805d163",
+ "outcome": {
+  "void": false,
+  "texture": "neither",
+  "clear": "inconclusive"
+ },
+ "amended": true,
+ "unanswered": [
+  3,
+  8,
+  15,
+  22,
+  23,
+  25,
+  26,
+  32,
+  35
+ ],
+ "unanswered_by_block": {
+  "texture": 3,
+  "clear": 4,
+  "small": 2,
+  "hidden": 0,
+  "repeat": 0
+ },
+ "reliability": {
+  "hidden_missed": 0,
+  "hidden_answered": 3,
+  "repeat_pairs_answered": 3,
+  "repeats_consistent": 3,
+  "status": "ok"
+ },
+ "texture": {
+  "tonal_side": 5,
+  "temporal_side": 8,
+  "of": 13,
+  "p_one_sided_tonal": 0.8665771484375,
+  "p_one_sided_temporal": 0.29052734375,
+  "agree_with_judge": 7
+ },
+ "clear": {
+  "agree_with_judge": 5,
+  "of": 6,
+  "p_one_sided": 0.109375
+ },
+ "small": {
+  "agree_with_judge": 1,
+  "of": 2
+ },
+ "answered_A": 16
+}

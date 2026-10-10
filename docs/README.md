@@ -213,6 +213,10 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
+- [heavy-listening-plan.md](heavy-listening-plan.md) → [results](heavy-listening-results.md):
+  a reliable listener (3/3 hidden references, 3/3 repeats). Tonal against temporal:
+  neither. Clear heavy pairs: 5 of 6 with the judge, inconclusive. 9 trials were
+  unanswerable: low-tuned guitars' low notes broke up in both menu presets.
 - [clean-baseline-plan.md](clean-baseline-plan.md) → [results](clean-baseline-results.md):
   **confirmed.** Fixed clean factory presets per amp, chosen on development, land about
   12% closer than the clean template on held-out clean parts. `generate` now starts
