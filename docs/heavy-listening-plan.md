@@ -183,3 +183,33 @@ As the average-guitar check:
   20.9 MB. Page sha256 as built: sitting 1
   fa18fa5deb6e5e967f3382fbd2b25d444737cfffd9a90aaaa902723e4416b534, sitting 2
   e0d081cbce9fb463cc4ab27a32dc2179698351d496500a5023f579f590648fa7.
+
+## Amendment: unanswered trials (2026-10-10, after both sittings, before the key is read)
+
+**What happened:** the listener left 9 of 36 trials unanswered (3, 8, 15, 22, 23, 25, 26,
+32 and 35). The report: "A & B sounded bad, almost only lower notes, which affected the
+comparison" (sitting 1: "clipping?").
+- The clips have no digital clipping: peaks are −4.5 to −13.5 dBFS, and the same after
+  AAC encoding.
+- The reported sitting-1 trials are the three most bass-heavy references (about 70–75% of
+  their energy below 250 Hz).
+
+The plan is forced choice and never said how to treat unanswered trials. It is amended
+here, before the key is read:
+- **Unanswered trials are left out** and listed, with the listener's notes
+  (`answers/NOTES.md`). The answers-only sheet is hash-locked.
+- **Void rules,** on answered trials only:
+  - void if 2 or more answered hidden references are missed;
+  - void if fewer than two-thirds of the fully answered repeat pairs agree;
+  - with fewer than 2 such pairs, reliability is reported as unassessed.
+- **Block 1:** "tonal" or "temporal" if that side's exact one-sided binomial p on the
+  answered trials is at most 0.038 (the level of the original 12 of 16). Otherwise
+  "neither".
+- **Block 2:**
+  - "judge extends" if the one-sided p is at most 0.055 (the level of the original 8 of
+    10);
+  - "judge not ground truth" if agreement is at most half;
+  - otherwise inconclusive.
+- **The listener's "broken low notes" report is itself a finding,** investigated
+  separately. A likely cause: the fixed-level measure plays a low-tuned, bass-heavy DI at
+  −22.9 LUFS. Loudness weighting discounts bass, so it drives the amp much harder.
