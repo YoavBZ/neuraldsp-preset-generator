@@ -137,3 +137,53 @@ development size.
   reproduction of the development figures;
 - held-out ledger entries;
 - an independent reviewer, who re-derives the result before it is reported.
+
+
+## Approval and authorization (2026-10-10)
+
+**Approved by the user on 2026-10-10** (draft v2, as written above).
+
+**The sets 1–2 held-out parts this test may use:** the 27 usable parts with a DI, from
+17 sessions. The block below is what `research/build_validation_crops.py`
+checks. Crops follow crop rule 2 (`di-activity`), into
+`~/ndsp-presets/references/validation-crops-confirm/`.
+
+**Before any rendering,** each part's lag is measured with set 3's waveform same-take
+test (`gcc.py`), and its gain class with set 3's `gainmeasure.py` on the whole session's
+amp track. Neither reads any method's output.
+
+```json
+{
+ "schema": "held-out-listening-test-v1",
+ "test_id": "confirm-rebuilt-di-chooser-2026-10-10",
+ "parts": [
+  "telefunken/57 Chevy/GTR 1",
+  "telefunken/57 Chevy/GTR 2",
+  "cambridge/That's How I Got To Memphis/ElecGtr3",
+  "cambridge/That's How I Got To Memphis/ElecGtr3DT",
+  "guitar-techs/P3_music excerpt 02/02",
+  "guitar-techs/P3_music excerpt 06/06",
+  "guitar-techs/P3_music excerpt 10/10",
+  "guitar-techs/P3_music excerpt 11/11",
+  "cambridge/It's My Right/Gtr3",
+  "cambridge/Semantics/ElecGtr08",
+  "cambridge/Semantics/ElecGtr09",
+  "cambridge/Sugar - Faith/ElecGtr1",
+  "cambridge/Sugar - Faith/ElecGtr3",
+  "cambridge/Sugar - Faith/ElecGtr6",
+  "cambridge/Sugar - Faith/ElecGtr9",
+  "cambridge/All The Same/ElecGtr12",
+  "cambridge/All The Same/ElecGtr13",
+  "cambridge/All The Same/ElecGtr14",
+  "cambridge/All The Same/ElecGtr15",
+  "cambridge/One Flip Flop/ElecGtr3",
+  "cambridge/Stalker/ElecGtr01",
+  "cambridge/Stalker/ElecGtr02",
+  "telefunken/Pretty Peace/GTR",
+  "telefunken/Safety/GTR",
+  "telefunken/Bad Influence/Guitar",
+  "telefunken/Die In Denver/Guitar",
+  "telefunken/Past Dues/GTR"
+ ]
+}
+```
