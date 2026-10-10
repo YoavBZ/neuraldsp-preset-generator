@@ -239,7 +239,7 @@ Tone King recipes use its verified sync-note selectors. See
 - **The dry recipe,** for every Morgan baseline above: `dry/pr12`, `dry/sw50r` or
   `dry/ac20`, matching the baseline's amp. It sets transpose 0, the amp's spring reverb 0
   (PR12 and SW50R; AC20 has none), and reverb, delay, tremolo, doubler and gate off,
-  as the baselines were measured. Stack it first, so your other recipes and the spec
+  with the FX section itself on, as the baselines were measured. Stack it first, so your other recipes and the spec
   can turn an effect back on, with its parameters set explicitly. Preview it:
 
   ```bash

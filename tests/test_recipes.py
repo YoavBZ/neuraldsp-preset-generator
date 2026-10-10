@@ -400,4 +400,22 @@ def test_the_right_amps_dry_recipe_applies(tmp_path):
 def test_another_amps_recipe_is_refused_not_silently_applied(tmp_path):
     result = _apply(tmp_path, "dry/sw50r")          # a PR12 preset
     assert result.returncode != 0
-    assert "dry/pr12" in result.stderr and "sw50rAmp/sw50rReverb" in result.stderr
+    assert "dry/pr12" in result.stderr and "SW50R" in result.stderr
+
+
+def test_a_dry_recipe_without_an_amp_module_is_still_refused_on_another_amp(tmp_path):
+    result = _apply(tmp_path, "dry/ac20")           # writes no ac20Amp setting
+    assert result.returncode != 0
+    assert "AC20" in result.stderr and "dry/pr12" in result.stderr
+
+
+def test_an_amp_recipe_does_not_excuse_another_amps_dry_recipe(tmp_path):
+    result = _apply(tmp_path, "amp/pr12-clean", "dry/sw50r")     # no spec at all
+    assert result.returncode != 0
+    assert "warning" not in result.stderr
+
+
+def test_each_dry_recipe_is_tagged_with_its_amp():
+    recipe = json.loads((PLUGIN_ROOT / "packs" / "morgan" / "recipes.json").read_text())
+    assert {rid: r["for_amp"] for rid, r in recipe["layers"]["dry"].items()} == {
+        "pr12": "PR12", "sw50r": "SW50R", "ac20": "AC20"}

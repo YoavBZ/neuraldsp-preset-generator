@@ -1517,6 +1517,7 @@
       "pr12": {
         "title": "Dry PR12 factory baseline",
         "use_when": "starting from one of generate's PR12 factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "PR12",
         "parameters": [
           {
             "module": "parameters",
@@ -1568,6 +1569,7 @@
       "sw50r": {
         "title": "Dry SW50R factory baseline",
         "use_when": "starting from one of generate's SW50R factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "SW50R",
         "parameters": [
           {
             "module": "parameters",
@@ -1619,6 +1621,7 @@
       "ac20": {
         "title": "Dry AC20 factory baseline",
         "use_when": "starting from one of generate's AC20 factory baselines (clean, crunch or driven): makes it dry, as it was measured",
+        "for_amp": "AC20",
         "parameters": [
           {
             "module": "parameters",
