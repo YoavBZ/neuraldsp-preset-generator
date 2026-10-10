@@ -114,8 +114,7 @@ and breaks three:
 Property 18 is broken by the current judge (0.000 on the Ill Fate parts) and by v2
 (median ±12 dB ratio 1.54).
 
-Judge v3 ([plan](judge-v3-plan.md)) holds all 16 synthetic properties; its stored-render
-checks are reported in its results.
+Judge v3 ([plan](judge-v3-plan.md), [results](judge-v3-results.md)) holds all 18.
 
 ## Amendment (2026-10-10, before judge v3 was declared)
 
