@@ -79,6 +79,18 @@ You don't have to use the slash commands — just describing what you want
   the tone was recorded, measures supplied audio when present, maps both to the
   plugin's amps and effects, writes a preset, and puts it where the plugin will
   find it.
+  - **Where a Morgan preset starts.** From a factory preset the plugin installs,
+    picked by how much gain the part has: clean, crunch, or driven for a heavier
+    part. It is made dry first (the pack's `dry/<amp>` recipe: effects, the amp's
+    spring reverb and transpose off), then the research adds back what the song
+    needs. These starting presets were chosen and checked by measurement, not by ear:
+    the clean ones held up on reserved recordings, the crunch ones only weakly
+    ([clean](docs/clean-baseline-results.md), [crunch](docs/crunch-baseline-results.md),
+    [driven](docs/driven-baseline-results.md)).
+  - **Tone King** starts from one of your own Tone King presets.
+  - **Given a song,** it can put four candidates, the starting preset among them, on
+    a local listening page beside the song, and refine the one you pick.
+  - Heavy metal and high-gain tones are outside this project's focus.
 - **`match`** — supply reference audio, a DI of that performance and a starting
   preset; the skill measures the recording, calculates what can be inverted,
   searches the remaining controls, and presents a measured shortlist before
