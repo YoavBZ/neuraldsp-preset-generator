@@ -371,3 +371,23 @@ def test_fixed_bands_hear_treble_a_bass_heavy_recording_buries():
     assert fixed.distance > chosen.distance
     same = aligned_distance(recording, recording * 3.0, di, bands="fixed", **kw)
     assert same.distance == pytest.approx(0.0, abs=1e-3)
+
+
+def test_judge_v3_is_an_option_that_leaves_the_default_alone():
+    from analysis.aligned import JUDGE_V3
+
+    di = _performance(seed=27)
+    recording, render = _amp(di), _shelf(_amp(di, drive=8.0), 3000, 6)
+    kw = dict(render_latency=0, lag=0)
+    assert (aligned_distance(recording, render, di, **kw).as_dict()
+            == aligned_distance(recording, render, di, floor="recording", **kw).as_dict())
+    v3 = aligned_distance(recording, render, di, **JUDGE_V3, **kw)
+    assert v3.bands == aligned_distance(recording, render, di, bands="fixed", **kw).bands
+    # One floor from both sides: swapping recording and render changes nothing.
+    assert aligned_distance(render, recording, di, **JUDGE_V3, **kw).distance == pytest.approx(
+        v3.distance, rel=1e-9)
+    for bad in (dict(floor="both"), dict(floor="symmetric"),
+                dict(JUDGE_V3, weighting="hearing")):
+        with pytest.raises(ValueError):
+            aligned_distance(recording, render, di, **kw, **bad)
+

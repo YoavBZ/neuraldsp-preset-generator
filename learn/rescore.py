@@ -12,6 +12,9 @@ No renders: every option is a stored render.
     # a further variant, scored into its own file and compared against the stored ones:
     $TORCH_PY -m learn.rescore score --kinds lp3k_m6 --judges flat --tag trim
     $TORCH_PY -m learn.rescore report --tag trim --judges flat --compare lp3k_m6:lp3k lp3k_m6:lbo_constant
+    # judge v3 (docs/judge-v3-plan.md), every kind:
+    $TORCH_PY -m learn.rescore score --judges v3 --tag v3
+    $TORCH_PY -m learn.rescore report --tag v3 --judges v3
 """
 
 from __future__ import annotations
@@ -26,13 +29,15 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(PLUGIN_ROOT / "research"))
 
+from analysis.aligned import JUDGE_V3  # noqa: E402
 from learn import phase2_set3 as P  # noqa: E402
 from learn import set3_gap_split as G  # noqa: E402
 
 DIRS = {"measfix": G.OUT / "measfix", "net": P.OUT / "net", "lp3k": P.OUT.with_name("v2-eval") / "lp3k"}
 EXTRA = P.OUT.with_name("v2-eval")             # further rebuilt-DI kinds, by name (`--kinds`)
 OUT = P.OUT.with_name("rescore")
-JUDGE_OPTIONS = {"flat": {}, "hearing": {"weighting": "hearing"}, "fixed": {"bands": "fixed"}}
+JUDGE_OPTIONS = {"flat": {}, "hearing": {"weighting": "hearing"}, "fixed": {"bands": "fixed"},
+                 "v3": JUDGE_V3}
 JUDGES = ("flat", "hearing")
 COMPARE = (("lp3k", "net"), ("net", "lbo_constant"), ("lp3k", "lbo_constant"),
            ("measfix", "lbo_constant"), ("measfix", "net"), ("net", "constant"),

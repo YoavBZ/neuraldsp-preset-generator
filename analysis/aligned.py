@@ -31,6 +31,11 @@ sizes) of the loudness-normalised render and recording, after:
   recording's loudest band in that frame, a rough stand-in for masking (40 dB is a
   judgement call between measured alternatives, `docs/measuring-closeness.md`).
 
+Judge v3 (`JUDGE_V3`, `docs/judge-v3-plan.md`) is an option beside it, held to
+`docs/judge-spec.md`: the same bands for every part, and a floor taken from both sides on
+levels per Bark (masking spread over frequency, the threshold in quiet, the louder
+background).
+
 Windows where more than `max_pauses` of the scored frames are pauses (tails where
 the DI is silent) are refused: there the ranking of candidates depends on hiss and
 on bleed from other instruments, which this distance does not handle. A silent
@@ -53,6 +58,19 @@ FRAME_SIZES = (1024, 2048, 4096)
 MEL_BANDS = 64
 FMIN, FMAX = 50.0, 16000.0
 FIXED_LOW_HZ = 80.0
+# Judge v3's floor (`floor="symmetric"`), on levels per Bark. Masking spreads over
+# frequency, further up than down (dB per Bark: the slopes of Schroeder et al. 1979, as
+# in the MPEG psychoacoustic models)...
+SPREAD_UP_DB, SPREAD_DOWN_DB = 10.0, 25.0
+# ...nothing is heard under the threshold in quiet (Terhardt 1979), placed as if the
+# loudest cell played at 90 dB SPL...
+LOUDEST_SPL = 90.0
+# ...nor under the louder side's steady background (hiss, hum, bleed): its level in each
+# band where the DI rests, at this percentile.
+BACKGROUND_PERCENTILE = 10.0
+# Judge v3 (docs/judge-v3-plan.md): fixed bands and that floor, from both sides. Not the
+# default until the listening calibration agrees.
+JUDGE_V3 = {"bands": "fixed", "floor": "symmetric"}
 
 
 @dataclass
@@ -70,7 +88,7 @@ class AlignedDistance:
         return dict(self.__dict__)
 
 
-def _mel_matrix(n_fft: int, sample_rate: int):
+def _mel_matrix(n_fft: int, sample_rate: int, bark: bool = False):
     import numpy as np
 
     def hz_to_mel(f):
@@ -87,10 +105,20 @@ def _mel_matrix(n_fft: int, sample_rate: int):
         rise = (freqs - lo) / max(centre - lo, 1e-9)
         fall = (hi - freqs) / max(hi - centre, 1e-9)
         matrix[b] = np.clip(np.minimum(rise, fall), 0.0, None)
+    if bark:
+        # Each band as power per Bark: the mean power of the bins it covers (a density),
+        # times the critical bandwidth at its centre. Otherwise a band's level depends on
+        # its filter's width: a wide treble band reads up to 13 dB louder than a narrow
+        # low one of the same density, a width hearing does not share.
+        gain = (1960.0 + edges[1:-1]) ** 2 / (26.81 * 1960.0)               # Hz per Bark
+        gain = gain / np.maximum(matrix.sum(axis=1), 1e-12)
+        matrix *= gain[:, None]
+        _BARK_DB[(n_fft, sample_rate)] = 10.0 * np.log10(gain)
     return matrix, edges[1:-1]
 
 
 _MELS: Dict = {}
+_BARK_DB: Dict = {}            # per band, dB added by reading it per Bark
 
 
 def _frames(x, n_fft: int):
@@ -102,12 +130,12 @@ def _frames(x, n_fft: int):
     return x[np.minimum(index, len(x) - 1)]
 
 
-def _logmel(x, n_fft: int, sample_rate: int):
+def _logmel(x, n_fft: int, sample_rate: int, bark: bool = False):
     import numpy as np
 
-    key = (n_fft, sample_rate, FMIN, FMAX, MEL_BANDS)
+    key = (n_fft, sample_rate, FMIN, FMAX, MEL_BANDS) + (("bark",) if bark else ())
     if key not in _MELS:
-        _MELS[key] = _mel_matrix(n_fft, sample_rate)
+        _MELS[key] = _mel_matrix(n_fft, sample_rate, bark)
     matrix, centres = _MELS[key]
     spectrum = np.abs(np.fft.rfft(_frames(x, n_fft) * np.hanning(n_fft), axis=1)) ** 2
     return 10.0 * np.log10(spectrum @ matrix.T + 1e-12), centres
@@ -129,6 +157,72 @@ def _hearing_db(n_fft: int, sample_rate: int):
     a = 20 * np.log10(ra) + 2.0
     area = 10 * np.log10(matrix.sum(axis=1) + 1e-12)
     return a - (area - area.mean()), np.asarray(centres)
+
+
+def _masked_floor(S, centres, mask_db: float):
+    """Per cell (`S`: frames × bands, power per Bark in dB), the level under which it is
+    not heard: `mask_db` under the strongest masker in its frame once spread over
+    frequency, or the threshold in quiet, whichever is higher."""
+    import numpy as np
+
+    f = np.asarray(centres, dtype=np.float64)
+    z = 26.81 * f / (1960.0 + f) - 0.53                    # Bark (Traunmüller 1990)
+    floor = np.full(S.shape, -np.inf)
+    for b in range(S.shape[1]):                            # band b as the masker
+        dz = z - z[b]
+        spread = np.where(dz >= 0, SPREAD_UP_DB * dz, -SPREAD_DOWN_DB * dz)
+        np.maximum(floor, S[:, b: b + 1] - spread[None, :], out=floor)
+    k = f / 1000.0
+    quiet = 3.64 * k ** -0.8 - 6.5 * np.exp(-0.6 * (k - 3.3) ** 2) + 1e-3 * k ** 4
+    return np.maximum(floor - mask_db, S.max() - LOUDEST_SPL + quiet[None, :])
+
+
+def _symmetric_difference(R, X, n_fft, sample_rate, playing, scored, bins, mask_db,
+                          min_frames):
+    """Judge v3's cell differences (frames × bands, render − recording, before the mean
+    offset) and the level taken out, or (None, None) when the recording is inaudible
+    where the DI plays. `R` and `X` are levels per Bark."""
+    import numpy as np
+
+    centres = _MELS[(n_fft, sample_rate, FMIN, FMAX, MEL_BANDS, "bark")][1]
+    # Refused as the default judge refuses: on band powers, `mask_db` under the
+    # recording's loudest band in the frame, 70 dB under its loudest cell at most.
+    rp = R - _BARK_DB[(n_fft, sample_rate)]
+    audible = rp >= np.maximum(rp.max() - 70.0, rp.max(axis=1, keepdims=True) - mask_db)
+    if audible[playing][:, bins].sum() < min_frames * bins.sum():
+        return None, None
+
+    def background(S):
+        return _background(S, playing, min_frames)
+
+    def heard(S):
+        return S >= np.maximum(_masked_floor(S, centres, mask_db), background(S))
+
+    # The level from the cells both sides hold above their own floors (either, where
+    # those are too few), so swapping the two only flips its sign.
+    cells = (heard(R) & heard(X))[playing][:, bins]
+    if cells.sum() < min_frames * bins.sum():
+        cells = (heard(R) | heard(X))[playing][:, bins]
+    level = float(np.median((X[playing][:, bins] - R[playing][:, bins])[cells]))
+    X = X - level
+    # One floor for both: what the louder side masks, the threshold in quiet, and the
+    # louder of the two backgrounds, so hiss under the recording's own is not compared.
+    shared = np.maximum(_masked_floor(np.maximum(R, X), centres, mask_db),
+                        np.maximum(background(R), background(X)))
+    R, X = np.maximum(R, shared), np.maximum(X, shared)
+    return X[scored][:, bins] - R[scored][:, bins], level
+
+
+def _background(S, playing, min_frames):
+    """The steady floor in each band (hiss, hum, bleed): its level where the DI is not
+    playing, at the `BACKGROUND_PERCENTILE`-th percentile, under which tails have
+    faded. No floor where the DI rests in fewer than `min_frames` frames."""
+    import numpy as np
+
+    rest = ~playing
+    if rest.sum() < min_frames:
+        return np.full((1, S.shape[1]), -np.inf)
+    return np.percentile(S[rest], BACKGROUND_PERCENTILE, axis=0)[None, :]
 
 
 def _frame_db(x, n_fft: int):
@@ -241,7 +335,8 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
                      di_floor_db: float = 40.0, min_frames: int = 8,
                      max_pauses: float = 0.5, bands: str = "recording",
                      weighting: str = "flat", min_bands: int = 16,
-                     max_band_hz: float = 10000.0) -> AlignedDistance:
+                     max_band_hz: float = 10000.0,
+                     floor: str = "recording") -> AlignedDistance:
     """Distance between `render` (the preset through `di`) and `recording` (the same
     performance through the real rig), over [start_s, end_s) of the recording.
 
@@ -257,6 +352,13 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
     and floors on hearing-weighted levels (A-weighting, area-normalised bands), scores
     bands up to `max_band_hz` only, and refuses a window scored on fewer than `min_bands`
     bands at the middle frame size. The default, `"flat"`, is the judge as validated.
+
+    `floor="symmetric"` (judge v3, `docs/judge-v3-plan.md`) floors each cell from both
+    sides, on levels per Bark: `mask_db` under the louder of recording and level-matched
+    render once spread over frequency like masking, or the threshold in quiet. A loud low
+    end then does not floor the treble, missing and excess content are judged alike, and
+    no level depends on a mel filter's width. The level is the median difference over
+    the cells both sides hold above their own floors. `JUDGE_V3` is judge v3's options.
     """
     require("measuring aligned distance")
     import math
@@ -267,6 +369,11 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         raise ValueError(f"bands must be 'recording', 'union' or 'fixed', not {bands!r}")
     if weighting not in ("flat", "hearing"):
         raise ValueError(f"weighting must be 'flat' or 'hearing', not {weighting!r}")
+    if floor not in ("recording", "symmetric"):
+        raise ValueError(f"floor must be 'recording' or 'symmetric', not {floor!r}")
+    if floor == "symmetric" and (bands != "fixed" or weighting != "flat"):
+        raise ValueError("floor='symmetric' goes with bands='fixed' and weighting='flat'")
+    bark = floor == "symmetric"
     recording = _signal(recording, "recording")
     render = _signal(render, "render")
     di = _signal(di, "DI")
@@ -292,10 +399,23 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         return refuse("no measurable loudness on one side")
 
     totals, tonals, temporals, offsets, kept = [], [], [], [], {}
+
+    def _add(D, level, scored, bins, n_fft):
+        offset = float(D.mean())
+        D = D - offset
+        offset += level
+        per_band = D.mean(axis=0)
+        totals.append(float(np.mean(np.abs(D))))
+        tonals.append(float(np.mean(np.abs(per_band))))
+        temporals.append(float(np.mean(np.abs(D - per_band))))
+        offsets.append(offset)
+        if n_fft == 2048:
+            kept.update(frames=int(scored.sum()), bands=int(bins.sum()))
+
     for n_fft in FRAME_SIZES:
         hop = n_fft // 4
-        R, _ = _logmel(ref_n, n_fft, sample_rate)
-        X, _ = _logmel(ren_n, n_fft, sample_rate)
+        R, centres = _logmel(ref_n, n_fft, sample_rate, bark)
+        X, _ = _logmel(ren_n, n_fft, sample_rate, bark)
         k = min(len(R), len(X))
         R, X = R[:k], X[:k]
         if weighting == "hearing":
@@ -317,17 +437,25 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         if pauses > max_pauses:
             return refuse(f"{pauses:.0%} of the scored frames are pauses, over "
                           f"{max_pauses:.0%}", int(playing.sum()))
+        if floor == "symmetric":
+            bins = (centres >= FIXED_LOW_HZ) & (centres <= max_band_hz)
+            D, level = _symmetric_difference(R, X, n_fft, sample_rate, playing, scored, bins,
+                                             mask_db, min_frames)
+            if D is None:
+                return refuse("the recording is inaudible where the DI plays",
+                              int(playing.sum()))
+            _add(D, level, scored, bins, n_fft)
+            continue
         # One floor for both sides, from the recording alone: `mask_db` under its
         # loudest band in each frame (70 dB under its loudest cell at most).
-        floor = np.maximum(R.max() - 70.0, R.max(axis=1, keepdims=True) - mask_db)
-        audible = R >= floor
-        ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor)[scored] / 10), axis=0))
+        floor_r = np.maximum(R.max() - 70.0, R.max(axis=1, keepdims=True) - mask_db)
+        audible = R >= floor_r
+        ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor_r)[scored] / 10), axis=0))
         bins = ltas_r >= ltas_r.max() - floor_db
         if bands == "fixed":
             # Judge v2 as decided (docs/closeness-review-2026-10-10.md): the same bands for
             # every part and candidate, 80 Hz to `max_band_hz`, whatever the recording's
             # balance, so a dominant low end can't drop the treble from scoring.
-            centres = _MELS[(n_fft, sample_rate, FMIN, FMAX, MEL_BANDS)][1]
             bins = (centres >= FIXED_LOW_HZ) & (centres <= max_band_hz)
         if weighting == "hearing":
             bins &= centres <= max_band_hz
@@ -347,18 +475,9 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         if cells.sum() < min_frames * bins.sum():
             return refuse("the recording is inaudible where the DI plays", int(playing.sum()))
         level = float(np.median((X[playing][:, bins] - R[playing][:, bins])[cells]))
-        R, X = np.maximum(R, floor), np.maximum(X - level, floor)
+        R, X = np.maximum(R, floor_r), np.maximum(X - level, floor_r)
         D = X[scored][:, bins] - R[scored][:, bins]
-        offset = float(D.mean())
-        D = D - offset
-        offset += level
-        per_band = D.mean(axis=0)
-        totals.append(float(np.mean(np.abs(D))))
-        tonals.append(float(np.mean(np.abs(per_band))))
-        temporals.append(float(np.mean(np.abs(D - per_band))))
-        offsets.append(offset)
-        if n_fft == 2048:
-            kept = {"frames": int(scored.sum()), "bands": int(bins.sum())}
+        _add(D, level, scored, bins, n_fft)
     return AlignedDistance(
         distance=float(np.mean(totals)), tonal=float(np.mean(tonals)),
         temporal=float(np.mean(temporals)), offset_db=float(np.mean(offsets)),

@@ -83,6 +83,11 @@ lives in the linked documents. Last updated 2026-10-09.
      - **Judge v2 with fixed bands** ([results](judge-v2-results.md)) strengthens the
        edge, but about half of that is an artefact of the masking floor; it needs a
        symmetric floor before any adoption.
+     - **Judge v3** ([spec](judge-spec.md), [results](judge-v3-results.md)) is that
+       floor, from both sides and in hearing's units. It holds every property of the new
+       judge specification, keeps every standing comparison's sign, and changes about
+       half the picks. The cut's edge over the uncut DI shrinks to −0.027 (inconclusive).
+       It replaces v2 as the candidate judge.
      - **A waveform-keeping loss** ([plan and result](di-loss-plan.md)): failed its
        pre-check. SI-SDR kept no more waveform (1–3 kHz coherence 0.170 against 0.169),
        and the spectrum got worse. The complex-STFT term can't train on MPS. Making
@@ -168,7 +173,8 @@ lives in the linked documents. Last updated 2026-10-09.
         - Development shows −0.162 there, negative in every band and 76% of the oracle.
         - Development is over-used.
         - Its regime is the one the judge was validated in by ear.
-   6. **The heavy-tone listening check** (the user). It decides judge v2, and whether
+   6. **The heavy-tone listening check** (the user). It decides the candidate judge (now
+      v3, which needs pairs where its picks differ from the current judge's), and whether
       the high-gain verdict ("no edge over the fixed preset") stands.
    7. **If the confirmation passes: songs, not amp tracks.** *Done 2026-10-10
       ([results](songs-check-results.md)): from a separated stem the chooser keeps 75% of
@@ -194,8 +200,8 @@ lives in the linked documents. Last updated 2026-10-09.
 
    **Parked, with reasons:**
    - **Network improvements:** closed, as above.
-   - **Judge v2:** half its gain was an artefact of the masking floor. It waits for the
-     listening check, and a symmetric floor.
+   - **Judge v2:** half its gain was an artefact of the masking floor; superseded as the
+     candidate by judge v3, which waits for the listening calibration.
    - **Search beyond the menu:** on high-gain, the oracle's headroom (−0.17) is out of the
      rebuilt DI's reach, so a search through it would hit the same wall.
    - **The four Internet Archive sessions:** fresh material, kept unused for the next
