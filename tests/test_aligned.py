@@ -354,3 +354,20 @@ def test_hearing_weighting_refuses_a_window_scored_on_too_few_bands():
     assert d.distance is None and "bands are scored" in d.reason
     with pytest.raises(ValueError):
         aligned_distance(render, render, di, render_latency=0, lag=0, weighting="loud")
+
+
+def test_fixed_bands_hear_treble_a_bass_heavy_recording_buries():
+    """With a dominant low end the recording's band choice scores only the bass and
+    misses a treble boost; the fixed band set keeps scoring the treble."""
+    di = _performance(seed=3)
+    rig = _amp(di, tone=(60, 6000))
+    b, a = scipy_signal.butter(2, 150, btype="lowpass", fs=SR)
+    recording = rig + 30 * scipy_signal.lfilter(b, a, rig)
+    bright = _shelf(recording, 4000, 12)
+    kw = dict(render_latency=0, lag=0)
+    chosen = aligned_distance(recording, bright, di, **kw)
+    fixed = aligned_distance(recording, bright, di, bands="fixed", **kw)
+    assert fixed.bands > chosen.bands
+    assert fixed.distance > chosen.distance
+    same = aligned_distance(recording, recording * 3.0, di, bands="fixed", **kw)
+    assert same.distance == pytest.approx(0.0, abs=1e-3)

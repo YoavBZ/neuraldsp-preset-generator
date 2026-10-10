@@ -1,0 +1,1073 @@
+{
+ "schema": "validation-set4-1",
+ "declared": "2026-10-10",
+ "plan": "docs/validation-set4-plan.md",
+ "catalog": {
+  "path": "~/ndsp-presets/references/datasets-set4/catalog.json",
+  "sha256": "06164314debba46780e0c8ea750ec9419ea8717083c53949e2f58934d1ffefbf",
+  "schema": "validation-datasets-set4-1"
+ },
+ "root": "~/ndsp-presets/references/datasets-set4",
+ "crops_root": "~/ndsp-presets/references/validation-crops-set4",
+ "rules": {
+  "same_take": "waveform test (catalog rules.supplementary_pairing), as set 3",
+  "min_passing_waveform_windows": 3,
+  "clipped_di_runs": 10,
+  "two_lag_clusters": "catalogue flag 'lag ambiguous'",
+  "split": "every band held out: no draw, no folds",
+  "judge_lag": "lag_samples - 52 (48 kHz)",
+  "lag_sign": "positive when the amp track is later than the DI",
+  "band_weighting": "recommended as set 3's amendment (4): each band's parts weigh 1/n; a confirmation plan adopts or overrides it explicitly"
+ },
+ "held_out_bands": [
+  "Decypher",
+  "Last Legacy",
+  "Lead Inc",
+  "The Black Crown",
+  "Tholas P."
+ ],
+ "licences": {
+  "cambridge": "Cambridge-MT 'Mixing Secrets' multitrack library: provided for educational purposes only; not to be used for any commercial purpose without the express permission of the copyright holders (each session's Readme.txt). https://cambridge-mt.com/ms/mtk/",
+  "extra": {
+   "cambridge/TholasP_SuchFinePeople_Full": "Readme: 'Released digitally on Oct 30th, 2020 via CDBaby. All rights reserved.' Terms of use: 'You can upload your mix of the track outside of cambridge-mt.com if you include a streaming or buy link for the original release.' Also the Cambridge readme terms.",
+   "cambridge/LeadInc_InnerCircle_Full": "Lead Inc 'Tech Details and Lyrics.rtf': 'licensed and published with Creative Commons (CC BY-NC-SA 3.0) which allows you to remix and publish your own mixes non-commercially and with this same license only.' Also the Cambridge readme terms."
+  }
+ },
+ "unpaired": [
+  {
+   "session": "cambridge/TholasP_SuchFinePeople_Full",
+   "track": "27_ElecGtr02.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TholasP_SuchFinePeople_Full",
+   "track": "28_ElecGtr02DT.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "track": "19_ElecGtr03.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "track": "20_ElecGtr04.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "track": "21_ElecGtr05.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "track": "22_ElecGtr06.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "track": "23_ElecGtr07.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TheBlackCrown_Flames_Full",
+   "track": "22_ElecGtr2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/TheBlackCrown_Flames_Full",
+   "track": "23_ElecGtr3.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  }
+ ],
+ "counts": {
+  "declared_parts": 21,
+  "excluded": 8,
+  "kept": 13,
+  "kept_tones": 9,
+  "by_band": {
+   "Decypher": 4,
+   "Last Legacy": 2,
+   "Lead Inc": 3,
+   "The Black Crown": 2,
+   "Tholas P.": 2
+  },
+  "by_band_tones": {
+   "Decypher": 2,
+   "Last Legacy": 2,
+   "Lead Inc": 3,
+   "The Black Crown": 1,
+   "Tholas P.": 1
+  },
+  "by_gain_class": {
+   "crunch": 4,
+   "high-gain": 9
+  },
+  "by_band_gain_class": {
+   "Decypher/high-gain": 4,
+   "Last Legacy/crunch": 2,
+   "Lead Inc/crunch": 2,
+   "Lead Inc/high-gain": 1,
+   "The Black Crown/high-gain": 2,
+   "Tholas P./high-gain": 2
+  },
+  "by_gain_class_crop": {
+   "crunch": 1,
+   "high-gain": 12
+  },
+  "onset_check": {
+   "agrees": 11,
+   "unclear": 2
+  }
+ },
+ "sessions": [
+  {
+   "key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "source": "cambridge",
+   "path": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK022/TholasP_SuchFinePeople_Full.zip",
+   "archive_sha256": "17965d3dabd94722b0a59193ad9d1e0ca4ab18d9b5a6740a4aa7fe1e28768ba5",
+   "licence_extra": "Readme: 'Released digitally on Oct 30th, 2020 via CDBaby. All rights reserved.' Terms of use: 'You can upload your mix of the track outside of cambridge-mt.com if you include a streaming or buy link for the original release.' Also the Cambridge readme terms.",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/24_ElecGtr01DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr01DT",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/26_ElecGtr01DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/30_ElecGtr03DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03DT",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/32_ElecGtr03DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/34_ElecGtr04DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/36_ElecGtr05DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr06",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/38_ElecGtr06DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr07",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/40_ElecGtr07DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr08",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/42_ElecGtr08DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr09",
+     "di": "Tholas P. - Such Fine People/TholasP_SuchFinePeople_Full/44_ElecGtr09DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "band": "Last Legacy",
+   "song": "Who's Who In Hell",
+   "source": "cambridge",
+   "path": "Last Legacy - Who's Who In Hell/Lastlegacy_WhosWhoInHell_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/Lastlegacy_WhosWhoInHell_Full.zip",
+   "archive_sha256": "241406f72a38a5670a142b4864d8d67d61b79f5073e0ed765c57faef17b193b6",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Last Legacy - Who's Who In Hell/Lastlegacy_WhosWhoInHell_Full/16_ElecGtr01DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "Last Legacy - Who's Who In Hell/Lastlegacy_WhosWhoInHell_Full/18_ElecGtr02DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/Decypher_Unseen_Full",
+   "band": "Decypher",
+   "song": "Unseen",
+   "source": "cambridge",
+   "path": "Decypher - Unseen/Decypher_Unseen_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/Decypher_Unseen_Full.zip",
+   "archive_sha256": "3226a6ad8a429e97a03f016d9129e2309727d4f520aed23330a99b49cf823b10",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 4,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Decypher - Unseen/Decypher_Unseen_Full/16_ElecGtr01DI.wav",
+     "di_clip_runs": 1,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr01DT",
+     "di": "Decypher - Unseen/Decypher_Unseen_Full/19_ElecGtr01DTDI.wav",
+     "di_clip_runs": 1,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "Decypher - Unseen/Decypher_Unseen_Full/22_ElecGtr02DI.wav",
+     "di_clip_runs": 5,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02DT",
+     "di": "Decypher - Unseen/Decypher_Unseen_Full/25_ElecGtr02DTDI.wav",
+     "di_clip_runs": 6,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/TheBlackCrown_Flames_Full",
+   "band": "The Black Crown",
+   "song": "Flames",
+   "source": "cambridge",
+   "path": "The Black Crown - Flames/TheBlackCrown_Flames_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK013/TheBlackCrown_Flames_Full.zip",
+   "archive_sha256": "a4259890f0b91904c1de4582b9de52b56bd68302797bb05c70ee5c401613de8c",
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "The Black Crown - Flames/TheBlackCrown_Flames_Full/19_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr1DT",
+     "di": "The Black Crown - Flames/TheBlackCrown_Flames_Full/21_ElecGtr1DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/LeadInc_InnerCircle_Full",
+   "band": "Lead Inc",
+   "song": "The Inner Circle",
+   "source": "cambridge",
+   "path": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full",
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK011/LeadInc_InnerCircle_Full.zip",
+   "archive_sha256": "2a7eebcdfb0ffefd8fa61682c723b16890d2b470c04d85315c92b2155db90b29",
+   "licence_extra": "Lead Inc 'Tech Details and Lyrics.rtf': 'licensed and published with Creative Commons (CC BY-NC-SA 3.0) which allows you to remix and publish your own mixes non-commercially and with this same license only.' Also the Cambridge readme terms.",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full/27_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full/32_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "Lead Inc - The Inner Circle/LeadInc_InnerCircle_Full/37_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  }
+ ],
+ "parts": [
+  {
+   "slug": "cambridge-unseen-elecgtr01",
+   "band": "Decypher",
+   "song": "Unseen",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Decypher_Unseen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.022,
+   "nonlinear_to_linear_db": 3.16,
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "17_ElecGtr01Mic1.wav",
+   "di": "16_ElecGtr01DI.wav",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 3.677,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.271
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (1 flat-topped runs)"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 257.5,
+    "di_sha256": "806206cfcbc674e9bd3c44c465d62bf52058090c2700b6aa00593569aa48796c",
+    "reference_sha256": "5ebf89f3316f27ab9d173a891e0bf2d4e65b3b6fab22ec6f996253b27887976a",
+    "record_sha256": "37241875ff3e676485cb4794de136ed92cdf854e9719851770b15595b434427a"
+   }
+  },
+  {
+   "slug": "cambridge-unseen-elecgtr01dt",
+   "band": "Decypher",
+   "song": "Unseen",
+   "part": "ElecGtr01DT",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Decypher_Unseen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.059,
+   "nonlinear_to_linear_db": 3.12,
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "20_ElecGtr01DTMic1.wav",
+   "di": "19_ElecGtr01DTDI.wav",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 3.891,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 52,
+    "runner_up": 0.91
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (1 flat-topped runs)",
+    "double of ElecGtr01: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 260.0,
+    "di_sha256": "0c3e0b853706c7e171c4db9f5095448259ab5e268cfb7d9ef8f07d177eb2ec53",
+    "reference_sha256": "abe4e12643d1eff4bdcc5dabc8ef7cc4a98407f90420f585ee0bde96b2f18028",
+    "record_sha256": "f8be64140adb2a9ac261978dd9a179a49aae6a6f42227dbdb83d93f67e38dd35"
+   }
+  },
+  {
+   "slug": "cambridge-unseen-elecgtr02",
+   "band": "Decypher",
+   "song": "Unseen",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Decypher_Unseen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.077,
+   "nonlinear_to_linear_db": 3.64,
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "23_ElecGtr02DIMic1.wav",
+   "di": "22_ElecGtr02DI.wav",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 3.069,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.664
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (5 flat-topped runs)"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 151.5,
+    "di_sha256": "bc3e5eee99488bf6fbaeed63385c935211868032b06751b04852aec82d4b7a39",
+    "reference_sha256": "32b8b025110410626f99eb5480c41d433b84dd9b2df9f774b4964ecd4771a553",
+    "record_sha256": "c16c34f0580b93fa8e65afbb95d98d716aa3fcec5f723786b84397c441428a2d"
+   }
+  },
+  {
+   "slug": "cambridge-unseen-elecgtr02dt",
+   "band": "Decypher",
+   "song": "Unseen",
+   "part": "ElecGtr02DT",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Decypher_Unseen_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.087,
+   "nonlinear_to_linear_db": 3.82,
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "26_ElecGtr02DTMic1.wav",
+   "di": "25_ElecGtr02DTDI.wav",
+   "waveform": {
+    "windows": 26,
+    "passing_windows": 26,
+    "median_peak_to_sidelobe": 3.252,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.703
+   },
+   "marks": [
+    "di_touches_full_scale"
+   ],
+   "catalog_flags": [
+    "DI touches full scale (6 flat-topped runs)",
+    "double of ElecGtr02: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 151.5,
+    "di_sha256": "9ab70c626dc2916b043298f96fafa75347533d30b49a98cec57539f1b73416eb",
+    "reference_sha256": "e947eecf6ee6b3e275bc61e5547947dcbce803d515914bd04b4defd68f3f6b48",
+    "record_sha256": "88b39f71b3ee73509df06c5e2dd160f8067dc5a25ee0a120009958719753c4e9"
+   }
+  },
+  {
+   "slug": "cambridge-who-s-who-in-hell-elecgtr01",
+   "band": "Last Legacy",
+   "song": "Who's Who In Hell",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.126,
+   "nonlinear_to_linear_db": 6.03,
+   "lag_samples": -1,
+   "judge_lag_samples": -53,
+   "lag_samples_native": -1,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "15_ElecGtr01.wav",
+   "di": "16_ElecGtr01DI.wav",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 6.66,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 20,
+    "runner_up": 0.896
+   },
+   "marks": [
+    "amp_earlier_than_di"
+   ],
+   "catalog_flags": [
+    "amp track earlier than the DI: not a simultaneous acoustic capture (reamped with over-compensated latency, or a software amp)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 49.5,
+    "di_sha256": "ccda67bdb66876b0a12131b9ee30daf98efdab088c6e92d80733b9c1159532db",
+    "reference_sha256": "0ed048148ce627529b110485e9ba18aa1a950d0c70bba9dc170aeea8a940cd4d",
+    "record_sha256": "865812068f6a404eb3a5de98cd34b7f80737b5b370441061bb9b8c6f338bf212"
+   }
+  },
+  {
+   "slug": "cambridge-who-s-who-in-hell-elecgtr02",
+   "band": "Last Legacy",
+   "song": "Who's Who In Hell",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/Lastlegacy_WhosWhoInHell_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.133,
+   "nonlinear_to_linear_db": 6.1,
+   "lag_samples": -1,
+   "judge_lag_samples": -53,
+   "lag_samples_native": -1,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "17_ElecGtr02.wav",
+   "di": "18_ElecGtr02DI.wav",
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 6.841,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -44,
+    "runner_up": 0.448
+   },
+   "marks": [
+    "amp_earlier_than_di"
+   ],
+   "catalog_flags": [
+    "amp track earlier than the DI: not a simultaneous acoustic capture (reamped with over-compensated latency, or a software amp)",
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 66.0,
+    "di_sha256": "50cc6945bdad9e1f80e5d803c69e11fcf43f812fbc974f4baeb4cb03f8b04a82",
+    "reference_sha256": "39a4df428863eae42f0b1fe6aac7ff660401169f828c91578efb999ede4d5101",
+    "record_sha256": "178dceafb7e0b1696efd00f46a0e489d7b5475eb481ec39b2591907822e6b846"
+   }
+  },
+  {
+   "slug": "cambridge-the-inner-circle-elecgtr1",
+   "band": "Lead Inc",
+   "song": "The Inner Circle",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/LeadInc_InnerCircle_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.083,
+   "nonlinear_to_linear_db": 7.24,
+   "lag_samples": 29,
+   "judge_lag_samples": -23,
+   "lag_samples_native": 27,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "23_ElecGtr1Mic1.wav",
+   "di": "27_ElecGtr1DI.wav",
+   "waveform": {
+    "windows": 31,
+    "passing_windows": 31,
+    "median_peak_to_sidelobe": 5.823,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 24,
+    "runner_up": 0.244
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 0.5,
+    "di_sha256": "80a0f1f88ec45e70e2275c1e725d02c0ecbf4676dc955e3a3a11a4201ecb7093",
+    "reference_sha256": "2e982f251d335dc19297360488234a91ca6d4a6a7a1d6a837100fe6e3642e39f",
+    "record_sha256": "e6798cd8e4f09fb1df2ec6f68932a23340e15be5f133f9fd862d06e07307e8e9"
+   }
+  },
+  {
+   "slug": "cambridge-the-inner-circle-elecgtr2",
+   "band": "Lead Inc",
+   "song": "The Inner Circle",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/LeadInc_InnerCircle_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.115,
+   "nonlinear_to_linear_db": 8.61,
+   "lag_samples": 33,
+   "judge_lag_samples": -19,
+   "lag_samples_native": 30,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "28_ElecGtr2Mic1.wav",
+   "di": "32_ElecGtr2DI.wav",
+   "waveform": {
+    "windows": 31,
+    "passing_windows": 31,
+    "median_peak_to_sidelobe": 3.652,
+    "precise_fraction": 0.935
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 20,
+    "runner_up": 0.391
+   },
+   "marks": [],
+   "catalog_flags": [
+    "amp track polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 289.0,
+    "di_sha256": "9c745fbe159a368ba02c897a2a90f617a073334e892e7a95bb04bc2beb1b24f8",
+    "reference_sha256": "4a72ab92bccfded39e5d6d3d57c33798daa1d7a86ca8276fbcdd4f5daa489fbf",
+    "record_sha256": "1952d4363f6d90925d1bd0f019bba37cdb0d9070933bdca462ad4de7002c9ae8"
+   }
+  },
+  {
+   "slug": "cambridge-the-inner-circle-elecgtr3",
+   "band": "Lead Inc",
+   "song": "The Inner Circle",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/LeadInc_InnerCircle_Full",
+   "source": "cambridge",
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.116,
+   "nonlinear_to_linear_db": 9.17,
+   "lag_samples": 339,
+   "judge_lag_samples": 287,
+   "lag_samples_native": 311,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "33_ElecGtr3Mic1.wav",
+   "di": "37_ElecGtr3DI.wav",
+   "waveform": {
+    "windows": 23,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 2.76,
+    "precise_fraction": 0.826
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 256,
+    "runner_up": 0.998
+   },
+   "marks": [
+    "late_amp_track"
+   ],
+   "catalog_flags": [
+    "amp track 7.1 ms after the DI: far microphone, reamp or latent processing"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 206.5,
+    "di_sha256": "3fe18036f105b34ca3f4d542adfde4da905bbfbd988336ee58cecb1d9c5d0044",
+    "reference_sha256": "f03c0364d11c7ccb68a2a60e9e05e3f70fcef68b4c957a5315b0ff6dcee957f9",
+    "record_sha256": "401ce420b92a999b356302b87eb4d591e7dc87704738edd6ad7094c7f40f58da"
+   }
+  },
+  {
+   "slug": "cambridge-flames-elecgtr1",
+   "band": "The Black Crown",
+   "song": "Flames",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBlackCrown_Flames_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.191,
+   "nonlinear_to_linear_db": 2.87,
+   "lag_samples": 66,
+   "judge_lag_samples": 14,
+   "lag_samples_native": 61,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "18_ElecGtr1Amp.wav",
+   "di": "19_ElecGtr1DI.wav",
+   "waveform": {
+    "windows": 30,
+    "passing_windows": 30,
+    "median_peak_to_sidelobe": 6.015,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 64,
+    "runner_up": -0.0
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 235.5,
+    "di_sha256": "3882e1ffd19a722d10a39a876806714425fcceb53be3c7205186ff2c528b4dd5",
+    "reference_sha256": "7edc4c4cd6c6dcb4a73a5ef1c82d76a6b515848838baa985e7db853fbdea3f6f",
+    "record_sha256": "b7736a027dc22927baa225945c047ace224e9722996ca71e9cdfa85dbceb3912"
+   }
+  },
+  {
+   "slug": "cambridge-flames-elecgtr1dt",
+   "band": "The Black Crown",
+   "song": "Flames",
+   "part": "ElecGtr1DT",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TheBlackCrown_Flames_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.189,
+   "nonlinear_to_linear_db": 2.89,
+   "lag_samples": 66,
+   "judge_lag_samples": 14,
+   "lag_samples_native": 61,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "20_ElecGtr1DTAmp.wav",
+   "di": "21_ElecGtr1DTDI.wav",
+   "waveform": {
+    "windows": 30,
+    "passing_windows": 30,
+    "median_peak_to_sidelobe": 5.681,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 68,
+    "runner_up": 0.16
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr1: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 226.5,
+    "di_sha256": "945d62aeff34edcacaa783ff068f85026c585294f8ae77d46acfa7c93b4ad65b",
+    "reference_sha256": "e612e6164e6dfe400a6a9484283572e1c5aa9266569a90b3232d35dcc1a2b84f",
+    "record_sha256": "60728111db06136482ef7abe084dc39471c7fa096cdde89946e184a5a7d33735"
+   }
+  },
+  {
+   "slug": "cambridge-such-fine-people-elecgtr03",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr03",
+   "tone": "ElecGtr03",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.143,
+   "nonlinear_to_linear_db": 5.15,
+   "lag_samples": 174,
+   "judge_lag_samples": 122,
+   "lag_samples_native": 160,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "29_ElecGtr03.wav",
+   "di": "30_ElecGtr03DI.wav",
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 8.162,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 140,
+    "runner_up": -0.015
+   },
+   "marks": [],
+   "catalog_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 148.5,
+    "di_sha256": "477b4cc1027414bc39e3ef3a8c939cfd913aadaab5f9504ad8536571c53b75a0",
+    "reference_sha256": "4487778c97717285a3af82eafbc3b9f01242b8f8f5e9b26fc0965b55f792d864",
+    "record_sha256": "6aa8f80b54710c1a5b149d4a24c38253877f3be80f93018bd6bf66edce3f2ad6"
+   }
+  },
+  {
+   "slug": "cambridge-such-fine-people-elecgtr03dt",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr03DT",
+   "tone": "ElecGtr03",
+   "split": "held_out",
+   "fold": null,
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "source": "cambridge",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.134,
+   "nonlinear_to_linear_db": 5.17,
+   "lag_samples": 174,
+   "judge_lag_samples": 122,
+   "lag_samples_native": 160,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "31_ElecGtr03DT.wav",
+   "di": "32_ElecGtr03DTDI.wav",
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 7.869,
+    "precise_fraction": 1.0
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 140,
+    "runner_up": 0.092
+   },
+   "marks": [],
+   "catalog_flags": [
+    "double of ElecGtr03: the two count as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 204.0,
+    "di_sha256": "a7c483fb993aa84d7cef4bb54669d7d37fe5e98cf696a872b80dd1401fef2045",
+    "reference_sha256": "d10bcef543ccbc3dc6d8c88efa94cde6d9e9b098175dc84c143f3028f1f314f7",
+    "record_sha256": "f34dc99170c275882936c4a6c9fe22993a651f74999c70bc492364126b827011"
+   }
+  }
+ ],
+ "excluded": [
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr01",
+   "source": "cambridge",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "fails both same-take tests: waveform test 33% of 3 windows in step, median peak-to-sidelobe 1.028"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr01DT",
+   "source": "cambridge",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "passes the envelope tests but the waveform test is at null over 3 windows: not the same take"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr04",
+   "source": "cambridge",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "fails both same-take tests: no 20-s window where both tracks play (the DI is 139.72 s long)"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr05",
+   "source": "cambridge",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "fails both same-take tests: no 20-s window where both tracks play (the DI is 139.72 s long)"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr06",
+   "source": "cambridge",
+   "slug": "cambridge-such-fine-people-elecgtr06",
+   "crop_record_sha256": "24abefdf60a1a4074e0a2b8ac79611afc44e21d682bccdf7338be06c01e60265",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr07",
+   "source": "cambridge",
+   "slug": "cambridge-such-fine-people-elecgtr07",
+   "crop_record_sha256": "86355ee8e7e93fbec43ce544871d583abd1a2a6381c0201905cbbede46d2e43e",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr08",
+   "source": "cambridge",
+   "slug": "cambridge-such-fine-people-elecgtr08",
+   "crop_record_sha256": "ce071e3168aa2c5cf1db9a736e5c298c2dfa93150ab2b6acefab76a0ca4fb14d",
+   "reasons": [
+    "waveform same-take test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/TholasP_SuchFinePeople_Full",
+   "band": "Tholas P.",
+   "song": "Such Fine People",
+   "part": "ElecGtr09",
+   "source": "cambridge",
+   "slug": "cambridge-such-fine-people-elecgtr09",
+   "crop_record_sha256": "cf4280a1f77fc7f17a7d5d00a815d2014446842d746b8eb73244178513fa4c21",
+   "reasons": [
+    "waveform same-take test passes on 1 window(s), fewer than 3"
+   ]
+  }
+ ],
+ "held_out_uses": []
+}

@@ -9,6 +9,9 @@ No renders: every option is a stored render.
 
     $TORCH_PY -m learn.rescore score      # distances.json
     $TORCH_PY -m learn.rescore report     # summary.json and the printed table
+    # a further variant, scored into its own file and compared against the stored ones:
+    $TORCH_PY -m learn.rescore score --kinds lp3k_m6 --judges flat --tag trim
+    $TORCH_PY -m learn.rescore report --tag trim --judges flat --compare lp3k_m6:lp3k lp3k_m6:lbo_constant
 """
 
 from __future__ import annotations
@@ -27,8 +30,13 @@ from learn import phase2_set3 as P  # noqa: E402
 from learn import set3_gap_split as G  # noqa: E402
 
 DIRS = {"measfix": G.OUT / "measfix", "net": P.OUT / "net", "lp3k": P.OUT.with_name("v2-eval") / "lp3k"}
+EXTRA = P.OUT.with_name("v2-eval")             # further rebuilt-DI kinds, by name (`--kinds`)
 OUT = P.OUT.with_name("rescore")
+JUDGE_OPTIONS = {"flat": {}, "hearing": {"weighting": "hearing"}, "fixed": {"bands": "fixed"}}
 JUDGES = ("flat", "hearing")
+COMPARE = (("lp3k", "net"), ("net", "lbo_constant"), ("lp3k", "lbo_constant"),
+           ("measfix", "lbo_constant"), ("measfix", "net"), ("net", "constant"),
+           ("lp3k", "constant"), ("lbo_constant", "template"))
 HALVES = {"A": P.HALF_A, "B": P.HALF_B}
 CONSTANT = {"pr12": "factory:Neural DSP/Vintage Metal",
             "sw50r": "factory:Artists/Royce Whittaker/Wall Of Doom",
@@ -42,36 +50,51 @@ def _score_part(job):
     from analysis.aligned import aligned_distance
     from learn.rebuilt_judge import rebuilt_distance
 
-    slug, lag, names = job
+    slug, lag, names, kinds, judges = job
     ref = P.recording(slug, "ref", P.RunConfig())
     res = {}
-    for kind, root in DIRS.items():
-        d = root / slug
+    for kind in kinds:
+        d = DIRS.get(kind, EXTRA / kind) / slug
         di = np.load(d / "di.npy")
         for amp, ns in names.items():
             for n in ns:
                 y = P.mono(d / amp / f"{RP._slug(n)}.wav")
-                for judge in JUDGES:
+                for judge in judges:
+                    kw = JUDGE_OPTIONS[judge]
                     for h, (a, b) in HALVES.items():
                         if kind == "measfix":
                             x = aligned_distance(ref, y, di, lag=lag, render_latency=P.LATENCY,
-                                                 start_s=a, end_s=b, weighting=judge)
+                                                 start_s=a, end_s=b, **kw)
                         else:
-                            x, _ = rebuilt_distance(ref, y, di, start_s=a, end_s=b, weighting=judge)
+                            x, _ = rebuilt_distance(ref, y, di, start_s=a, end_s=b, **kw)
                         res.setdefault(f"{judge}|{amp}|{kind}_{h}", {})[n] = (
                             x.distance, x.tonal, x.temporal)
     print(slug, flush=True)
     return slug, res
 
 
-def score(workers=7):
+def _path(tag):
+    return OUT / ("distances.json" if not tag else f"distances-{tag}.json")
+
+
+def score(kinds=tuple(DIRS), judges=JUDGES, tag="", workers=7):
     from concurrent.futures import ProcessPoolExecutor
 
     ps, names = G.parts(), G.menu_names()
+    jobs = [(s, ps[s]["judge_lag_samples"], names, tuple(kinds), tuple(judges)) for s in sorted(ps)]
     with ProcessPoolExecutor(workers) as ex:
-        D = dict(ex.map(_score_part, [(s, ps[s]["judge_lag_samples"], names) for s in sorted(ps)]))
+        D = dict(ex.map(_score_part, jobs))
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "distances.json").write_text(json.dumps(D))
+    _path(tag).write_text(json.dumps(D))
+
+
+def load(tags):
+    """Every scored file merged per part (the base file first)."""
+    D = json.loads(_path("").read_text())
+    for tag in tags:
+        for slug, rows in json.loads(_path(tag).read_text()).items():
+            D[slug].update(rows)
+    return D
 
 
 def clustered(rows):
@@ -99,8 +122,8 @@ def clustered(rows):
             "n": n, "bands": g}
 
 
-def report():
-    D = json.loads((OUT / "distances.json").read_text())
+def report(tags=(), judges=JUDGES, compare=COMPARE):
+    D = load(tags)
     ps = G.parts()
     out = {}
 
@@ -108,7 +131,7 @@ def report():
         row = {n: v[0] for n, v in row.items() if v[0]}
         return min(row, key=lambda n: (row[n], n)) if row else None
 
-    for judge in JUDGES:
+    for judge in judges:
         comps = {}
         for amp in P.AMPS:
             # The leave-band-out constant: lowest median choosing-half measfix distance over
@@ -126,15 +149,14 @@ def report():
                         if v:
                             meds[n] = statistics.median(v)
                     lbo = min(meds, key=lambda n: (meds[n], n))
-                    picks = {k: pick(D[slug][f"{judge}|{amp}|{k}_{choose}"]) for k in ("measfix", "net", "lp3k")}
+                    kinds = {k for pair in compare for k in pair} - {"constant", "lbo_constant", "template"}
+                    picks = {k: pick(D[slug][f"{judge}|{amp}|{k}_{choose}"]) for k in kinds}
                     picks.update(constant=CONSTANT[amp], lbo_constant=lbo, template="template+R")
                     lB = {k: (math.log(meas[n][0]) if n and meas.get(n) and meas[n][0] else None)
                           for k, n in picks.items()}
                     tB = {k: (meas[n][1], meas[n][2]) if n and meas.get(n) and meas[n][0] else None
                           for k, n in picks.items()}
-                    for a, b in (("lp3k", "net"), ("net", "lbo_constant"), ("lp3k", "lbo_constant"),
-                                 ("measfix", "lbo_constant"), ("measfix", "net"), ("net", "constant"),
-                                 ("lp3k", "constant"), ("lbo_constant", "template")):
+                    for a, b in compare:
                         if lB[a] is None or lB[b] is None:
                             continue
                         key = f"{a}_vs_{b}"
@@ -150,7 +172,8 @@ def report():
             rows = [(ps[s]["band"], statistics.fmean(v)) for (s, a), v in cells.items()]
             res[key] = clustered(rows)
         out[judge] = res
-    (OUT / "summary.json").write_text(json.dumps(out, indent=1))
+    (OUT / ("summary.json" if not tags else f"summary-{'-'.join(tags)}.json")).write_text(
+        json.dumps(out, indent=1))
     for judge, res in out.items():
         print(f"== judge {judge} (fixed-level measure, both halves averaged)")
         for k, v in res.items():
@@ -158,5 +181,24 @@ def report():
                   f"p {v['p_band_flip']:.3f} W/T/L {v['wins']}/{v['ties']}/{v['losses']}")
 
 
+def main(argv=None):
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("cmd", choices=("score", "report"))
+    ap.add_argument("--kinds", nargs="+", default=list(DIRS))
+    ap.add_argument("--judges", nargs="+", default=list(JUDGES), choices=list(JUDGE_OPTIONS))
+    ap.add_argument("--tag", default="", help="score into / also read distances-TAG.json")
+    ap.add_argument("--compare", nargs="+", help="A:B pairs (default: the standing set)")
+    ap.add_argument("--workers", type=int, default=7)
+    a = ap.parse_args(argv)
+    if a.cmd == "score":
+        score(a.kinds, a.judges, a.tag, a.workers)
+    else:
+        pairs = tuple(tuple(c.split(":")) for c in a.compare) if a.compare else COMPARE
+        report((a.tag,) if a.tag else (), a.judges, pairs)
+
+
 if __name__ == "__main__":
-    {"score": score, "report": report}[sys.argv[1]]()
+    main()

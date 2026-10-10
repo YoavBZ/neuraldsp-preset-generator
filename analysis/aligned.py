@@ -52,6 +52,7 @@ SAMPLE_RATE = 48000
 FRAME_SIZES = (1024, 2048, 4096)
 MEL_BANDS = 64
 FMIN, FMAX = 50.0, 16000.0
+FIXED_LOW_HZ = 80.0
 
 
 @dataclass
@@ -249,7 +250,10 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
     latency; 52 for Morgan, 51 for Tone King). Non-finite input is refused with a
     ValueError; a window that cannot be scored gives `distance=None` and a reason.
 
-    `weighting="hearing"` (judge v2, `docs/closeness-review-2026-10-10.md`) chooses bands
+    `bands="fixed"` (judge v2 as decided, `docs/judge-v2-plan.md`) scores the same mel bands
+    for every part and candidate, 80 Hz to `max_band_hz`.
+
+    `weighting="hearing"` (an earlier v2 attempt, `docs/closeness-review-2026-10-10.md`) chooses bands
     and floors on hearing-weighted levels (A-weighting, area-normalised bands), scores
     bands up to `max_band_hz` only, and refuses a window scored on fewer than `min_bands`
     bands at the middle frame size. The default, `"flat"`, is the judge as validated.
@@ -259,8 +263,8 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
 
     import numpy as np
 
-    if bands not in ("recording", "union"):
-        raise ValueError(f"bands must be 'recording' or 'union', not {bands!r}")
+    if bands not in ("recording", "union", "fixed"):
+        raise ValueError(f"bands must be 'recording', 'union' or 'fixed', not {bands!r}")
     if weighting not in ("flat", "hearing"):
         raise ValueError(f"weighting must be 'flat' or 'hearing', not {weighting!r}")
     recording = _signal(recording, "recording")
@@ -319,6 +323,12 @@ def aligned_distance(recording, render, di, *, lag: int, render_latency: int = 5
         audible = R >= floor
         ltas_r = 10 * np.log10(np.mean(10 ** (np.maximum(R, floor)[scored] / 10), axis=0))
         bins = ltas_r >= ltas_r.max() - floor_db
+        if bands == "fixed":
+            # Judge v2 as decided (docs/closeness-review-2026-10-10.md): the same bands for
+            # every part and candidate, 80 Hz to `max_band_hz`, whatever the recording's
+            # balance, so a dominant low end can't drop the treble from scoring.
+            centres = _MELS[(n_fft, sample_rate, FMIN, FMAX, MEL_BANDS)][1]
+            bins = (centres >= FIXED_LOW_HZ) & (centres <= max_band_hz)
         if weighting == "hearing":
             bins &= centres <= max_band_hz
         if bands == "union":

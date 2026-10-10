@@ -191,6 +191,64 @@ def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False, open_bot
     return Net()
 
 
+_KERNELS: dict = {}
+
+
+def _real_stft(x, n):
+    """Windowed cosine and sine projections (an STFT's real and imaginary parts) as real
+    matrix products with hop n/4: x (batch, samples) -> (batch, 2·bins, frames)."""
+    import math
+
+    import torch
+
+    key = (n, str(x.device))
+    if key not in _KERNELS:
+        t = torch.arange(n, dtype=torch.float32)
+        k = torch.arange(1, n // 2, dtype=torch.float32)[:, None]   # no DC, no Nyquist
+        w = torch.hann_window(n)
+        ang = 2 * math.pi * k * t / n
+        _KERNELS[key] = torch.cat([w * torch.cos(ang), -w * torch.sin(ang)]).T.contiguous().to(x.device)
+    # Frames then a matrix product: a conv1d with 2,048-tap kernels failed on MPS.
+    return (x.unfold(-1, n, n // 4) @ _KERNELS[key]).transpose(1, 2)
+
+
+def complex_stft_loss(a, b, ffts=(512, 1024, 2048)):
+    """Phase-aware: L1 between the real and imaginary parts of the STFTs, averaged over
+    resolutions. Plain magnitude losses ignore phase. Computed with real matrix products:
+    gradients through torch.stft's complex output were non-finite on MPS (2026-10-10)."""
+    total = 0.0
+    for n in ffts:
+        total = total + (_real_stft(a, n) - _real_stft(b, n)).abs().mean()
+    return total / len(ffts)
+
+
+def neg_si_sdr(a, b, eps=1e-8):
+    """Negative scale-invariant SDR (dB), averaged over the batch."""
+    import torch
+
+    a = a - a.mean(-1, keepdim=True)
+    b = b - b.mean(-1, keepdim=True)
+    s = (a * b).sum(-1, keepdim=True) / ((b * b).sum(-1, keepdim=True) + eps) * b
+    sdr = 10 * torch.log10((s * s).sum(-1) / (((a - s) ** 2).sum(-1) + eps) + eps)
+    return -sdr.clamp(-50.0, 50.0).mean()           # a near-silent target can't blow it up
+
+
+def training_loss(p, y, kind="default"):
+    """`default`: 100·L1 + MR-STFT magnitude, as trained so far. `phase`
+    (docs/di-loss-plan.md): plus a compressed complex-STFT term and SI-SDR, which keep
+    the waveform the default loss lets drift."""
+    loss = 100 * (p - y).abs().mean() + mrstft(p.squeeze(1), y.squeeze(1))
+    if kind == "phase":
+        loss = loss + PHASE_WEIGHTS[0] * complex_stft_loss(p.squeeze(1), y.squeeze(1)) \
+            + PHASE_WEIGHTS[1] * neg_si_sdr(p.squeeze(1), y.squeeze(1))
+    elif kind == "sisdr":
+        loss = loss + PHASE_WEIGHTS[1] * neg_si_sdr(p.squeeze(1), y.squeeze(1))
+    return loss
+
+
+PHASE_WEIGHTS = (10.0, 0.5)              # set so each term is about 2 of a ~8 total (measured)
+
+
 def load_model(path, device="cpu"):
     """A saved network, with the architecture its weights imply."""
     import torch
@@ -219,14 +277,24 @@ def gate_open(net, x):
     return float((torch.sigmoid(o[:, c:]) > 1e-3).float().mean())
 
 
+def _magnitude(z):
+    """|z| with a finite gradient everywhere. Complex `abs` has a NaN gradient at 0, and on
+    MPS near it too: the likely cause of the 'MPS non-finite gradient' episodes since
+    2026-10-06 (found 2026-10-10, docs/di-loss-plan.md). Same values to ~1e-6."""
+    import torch
+
+    r = torch.view_as_real(z)
+    return torch.sqrt((r ** 2).sum(-1) + 1e-12)
+
+
 def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
     import torch
 
     loss = 0.0
     for n in ffts:
         w = torch.hann_window(n, device=a.device)
-        A = torch.stft(a, n, n // 4, window=w, return_complex=True).abs() + 1e-6
-        B = torch.stft(b, n, n // 4, window=w, return_complex=True).abs() + 1e-6
+        A = _magnitude(torch.stft(a, n, n // 4, window=w, return_complex=True)) + 1e-6
+        B = _magnitude(torch.stft(b, n, n // 4, window=w, return_complex=True)) + 1e-6
         loss = loss + (A - B).norm() / (B.norm() + 1e-6) + (A.log() - B.log()).abs().mean()
     return loss / len(ffts)
 
@@ -234,7 +302,7 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 # --- training -----------------------------------------------------------------------
 
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
-        extra=None, norm=False, open_bottom=False):
+        extra=None, norm=False, open_bottom=False, loss_kind="default"):
     import numpy as np
     import torch
 
@@ -328,7 +396,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         idx = rng.choice(tr, batch, replace=False)
         x, y = make(idx, True)
         p = net(x)
-        loss = 100 * (p - y).abs().mean() + mrstft(p.squeeze(1), y.squeeze(1))
+        loss = training_loss(p, y, loss_kind)
         opt.zero_grad()
         loss.backward()
         # torch's clip_grad_norm_ produces NaN on MPS (2.8 and 2.14, measured); clip by hand
@@ -449,6 +517,7 @@ def main():
     f.add_argument("--lr-end", type=float)
     f.add_argument("--norm", action="store_true", help="v3: normalised bottleneck")
     f.add_argument("--open-bottom", action="store_true", help="v3b: no GLU gate at the deepest level")
+    f.add_argument("--loss", choices=("default", "phase", "sisdr"), default="default")
     args = ap.parse_args()
     if args.cmd == "cache-pairs":
         build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
@@ -458,7 +527,7 @@ def main():
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
             log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end,
             extra=[c.expanduser() for c in args.extra_cache], norm=args.norm,
-            open_bottom=args.open_bottom)
+            open_bottom=args.open_bottom, loss_kind=args.loss)
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@ def lowpassed(slug, hz):
     return lowpass(np.load(SRC / "net" / slug / "di.npy"), hz)
 
 
-def render(model, name, shard, folds, lowpass=None):
+def render(model, name, shard, folds, lowpass=None, trim_db=0.0):
     import numpy as np
     import soundfile as sf
     import torch
@@ -85,7 +85,7 @@ def render(model, name, shard, folds, lowpass=None):
                 continue
             base.mkdir(parents=True, exist_ok=True)
             if lowpass is not None:
-                di = lowpassed(slug, lowpass)
+                di = lowpassed(slug, lowpass) * 10 ** (trim_db / 20)
             else:
                 rec = P.recording(slug, "ref", P.RunConfig())
                 di = to_lufs(D.rebuild(net, rec.astype(np.float32),
@@ -99,7 +99,8 @@ def render(model, name, shard, folds, lowpass=None):
                     y = np.asarray(r.render(d32, {"panel": f"{amp}|{n}"}).audio, np.float64)
                     sf.write(base / amp / f"{RP._slug(n)}.flac",
                              y * (0.99 / max(np.abs(y).max(), 1e-12)), P.SR, subtype="PCM_24")
-            (base / "done").write_text(f"lowpass {lowpass}" if lowpass is not None else str(model))
+            (base / "done").write_text(f"lowpass {lowpass} trim {trim_db}" if lowpass is not None
+                                       else str(model))
             print(slug, flush=True)
     finally:
         r.close()
@@ -197,11 +198,12 @@ def main(argv=None):
     ap.add_argument("--folds", type=int, nargs="*", help="set-3 folds to test (default: all)")
     ap.add_argument("--against", help="another tested network, on the same parts")
     ap.add_argument("--lowpass", type=float, help="render the stored rebuilt DI low-passed here (Hz)")
+    ap.add_argument("--trim-db", type=float, default=0.0, help="with --lowpass: play it this much louder")
     args = ap.parse_args(argv)
     folds = set(args.folds) if args.folds else None
     if args.cmd == "render":
         render(args.model.expanduser() if args.model else None, args.name,
-               tuple(int(v) for v in args.shard.split("/")), folds, args.lowpass)
+               tuple(int(v) for v in args.shard.split("/")), folds, args.lowpass, args.trim_db)
     elif args.cmd == "score":
         score(args.name, args.workers, folds)
     else:

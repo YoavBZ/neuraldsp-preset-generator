@@ -78,6 +78,16 @@ lives in the linked documents. Last updated 2026-10-09.
      - **Against a fairly chosen fixed preset,** the cut chooser reaches −0.143, but on
        two bands and many forks: a lead, not a claim.
      - **A fresh confirmation needs 20 or more new bands.**
+   - **Follow-ups, 2026-10-10:**
+     - **Playing the rebuilt DI quieter is futile** ([results](underdrive-trim-results.md)).
+     - **Judge v2 with fixed bands** ([results](judge-v2-results.md)) strengthens the
+       edge, but about half of that is an artefact of the masking floor; it needs a
+       symmetric floor before any adoption.
+     - **A waveform-keeping loss** ([plan](di-loss-plan.md)): the complex-STFT term can't
+       train on MPS; SI-SDR with a normalised bottleneck is pre-checking on CPU. Making
+       MR-STFT NaN-safe removed the old MPS glitches.
+     - **Fresh bands:** 9 confirmed open sessions (about 46 parts), a ceiling of about
+       12–18 bands. Five are downloaded, unheard (`tmp/set4-download.md`).
 
    **Next, in this order:**
    1. **Ship a per-amp fixed driven preset** as `generate`'s baseline for distorted
