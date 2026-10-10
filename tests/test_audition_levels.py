@@ -70,3 +70,27 @@ def test_a_decorrelated_stereo_render_keeps_its_channels(tmp_path):
     gain = np.sqrt((render[:, 0] ** 2).mean() / (left ** 2).mean())
     assert np.allclose(render[:, 0], left * gain, atol=2e-4)       # PCM_16 rounding
     assert np.allclose(render[:, 1], right * gain, atol=2e-4)
+
+
+def test_re_levelling_a_page_with_a_mono_raw_song_is_stable(tmp_path):
+    x = _tone()
+    _page(tmp_path, x, np.stack([x, x], axis=1))
+    record = {"candidates": [{"renders": {"riff-1": "A-riff-1.wav"}}]}
+    A.level_page(tmp_path, record)                  # as --add does, from the raw files
+    first = dict(record["gain_db"])
+    A.level_page(tmp_path, record)
+    assert record["gain_db"] == first
+    assert sf.info(str(tmp_path / "raw" / "song.wav")).channels == 1     # raw kept as is
+
+
+def test_a_song_with_more_than_two_channels_is_refused_before_anything_is_written(
+        tmp_path, monkeypatch):
+    song = tmp_path / "surround.wav"
+    sf.write(str(song), np.zeros((RATE * 12, 3), dtype=np.float32), RATE)
+    out = tmp_path / "page"
+    monkeypatch.setattr(sys, "argv", ["audition.py", "--song", str(song), "--start", "0",
+                                      "--out-dir", str(out), "--preset",
+                                      str(ROOT / "samples" / "Example_Clean_PR12.xml")])
+    with pytest.raises(SystemExit):
+        A.main()
+    assert not out.exists() or not any(out.iterdir())
