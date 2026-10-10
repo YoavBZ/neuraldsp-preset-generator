@@ -202,6 +202,11 @@ was declared, what was measured, and the research behind it.
 - [fixed-level-rescore-results.md](fixed-level-rescore-results.md): past choices re-scored
   under the fixed-level measure and band-clustered statistics. The 3 kHz cut helps
   (−0.07); the edge over a fixed preset (−0.14) is a forked development lead.
+- [underdrive-trim-plan.md](underdrive-trim-plan.md) → [results](underdrive-trim-results.md):
+  playing the rebuilt DI quieter halves the under-drive but doesn't improve picks; futile.
+- [judge-v2-plan.md](judge-v2-plan.md) → [results](judge-v2-results.md): a fixed band set
+  for the judge; half of its stronger result is a masking-floor artefact.
+- [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss (pre-check running).
 - [closeness-review-2026-10-10.md](closeness-review-2026-10-10.md): a deep, four-part review
   of how closeness is measured. The judge is treble-deaf on parts with a dominant low end;
   the measure's DI level is a recording artefact; the "unbeaten fixed preset" verdict
