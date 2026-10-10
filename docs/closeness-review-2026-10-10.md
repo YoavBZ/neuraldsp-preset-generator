@@ -138,3 +138,11 @@ The key claims below were re-checked in this session.
   - a refusal when too few bands are scored.
 
   These change what "closer" means, so they go together with the listening check.
+
+## Decisions (user, 2026-10-10)
+
+- **The measure plays the DI at a fixed −22.9 LUFS** (`measfix`), not the session's
+  level. Past results are re-reported under it.
+- **Build the heavy-tone listening check.** The user will take it on the phone.
+- **Add a hearing-weighted judge version beside the current one.** It is re-run on the
+  key comparisons, and adopted only if the listening check agrees.
