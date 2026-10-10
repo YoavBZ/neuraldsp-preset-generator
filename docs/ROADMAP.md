@@ -87,10 +87,17 @@ lives in the linked documents. Last updated 2026-10-09.
    4. **Improve the DI network where the gap is,** PR12 and AC20 first: longer
       multi-amp training, stem-aware training (renders mixed and separated), and
       room-and-mic augmentation.
-      - **Pilot running 2026-10-10** ([plan](di-network-v2-plan.md)): longer
-        training, and adding set 3's development guitars. Neither moved the picks. The
-        review found the network's bottom levels dead (86% of its weights), so the
-        [v3 plan](di-network-v3-plan.md) repairs that first.
+      - **Pilot, 2026-10-10 ([results](di-network-v2-results.md), verified):** neither
+        longer training (−0.012) nor set 3's guitars (−0.015) moved the picks; the bar
+        was −0.05.
+        - The review found every network's bottom levels dead: a GLU gate shut, cutting
+          off 86% of the weights. So data and training length couldn't matter yet.
+      - **Cutting the rebuilt DI above 3 kHz** ([results](rebuilt-di-lowpass-results.md),
+        verified): −0.049, 23 picks better and 5 worse, missing the bar by 0.0009. Not
+        adopted; it can be re-tested on top of a repaired network.
+      - **Repairing the bottom** ([v3 plan](di-network-v3-plan.md)): normalising the
+        bottleneck improved early training, but the gate shut again (pre-check failed).
+        v3b replaces that gate with a plain activation.
    5. **Search beyond the menu,** with a positive control first, so a song can beat a
       single constant.
    6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its
