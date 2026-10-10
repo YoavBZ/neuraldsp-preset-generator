@@ -7,9 +7,8 @@ Roadmap step 0, next step 4. Declared 2026-10-10, before any training or result 
 - **The gap is in the waveform's detail.** The [gap split](set3-gap-split-plan.md)
   found that what the rebuilt DI loses is neither its level, its long-term balance nor
   the activity mask. It is the rest: the fine waveform detail.
-- **The current network memorises.** At the end of its training (`fit-set3.log`), loss
-  was 7 on training clips but 60 on validation clips (110 with the input used as the
-  DI). It learned its training guitars far better than new ones.
+- *(Corrected 2026-10-10: the validation figure is summed over 8 batches, about 7.3 per
+  batch, so the network was not memorising. See [v3 plan](di-network-v3-plan.md).)*
 - **Its training guitars are few, and clean-leaning.**
   - Sources: set 2's 13 development bands and one Guitar-TECHS player.
   - It never heard a set-3 guitar.

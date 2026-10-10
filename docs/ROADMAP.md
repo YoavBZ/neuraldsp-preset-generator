@@ -88,8 +88,9 @@ lives in the linked documents. Last updated 2026-10-09.
       multi-amp training, stem-aware training (renders mixed and separated), and
       room-and-mic augmentation.
       - **Pilot running 2026-10-10** ([plan](di-network-v2-plan.md)): longer
-        training, and adding set 3's development guitars. The current network scores
-        7 on its training clips against 60 on new ones, a sign of memorising.
+        training, and adding set 3's development guitars. Neither moved the picks. The
+        review found the network's bottom levels dead (86% of its weights), so the
+        [v3 plan](di-network-v3-plan.md) repairs that first.
    5. **Search beyond the menu,** with a positive control first, so a song can beat a
       single constant.
    6. **The direct preset ranker** (song-only, no DI): a quick, cheap test. Its

@@ -63,8 +63,7 @@ def render(model, name, shard, folds, lowpass=None):
     from packs.loader import load_pack
 
     if lowpass is None:
-        net = D.build_model()
-        net.load_state_dict(torch.load(model, map_location="cpu"))
+        net = D.load_model(model)
         net.eval()
     pack = load_pack("morgan")
 
