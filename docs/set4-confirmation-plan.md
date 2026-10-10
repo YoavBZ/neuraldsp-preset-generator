@@ -187,3 +187,38 @@ amp track. Neither reads any method's output.
  ]
 }
 ```
+
+## Preparation (2026-10-10, before any rendering or scoring)
+
+**Crops:** all 27 authorized parts, under crop rule 2, in
+`~/ndsp-presets/references/validation-crops-confirm/`.
+
+**Lags and gain classes:** `learn/confirm_prep.py` (`prep.json` beside the crops).
+
+**Exclusions, by set 3's waveform rule** (at least 3 windows, at least 80% in step,
+peak-to-sidelobe at least 2), applied as set 3 applied it. 7 parts fail and are
+excluded:
+- Guitar-TECHS P3 excerpts 02, 06 and 11, and Forkupines Semantics ElecGtr09: their lags
+  are consistent, but on 1–2 windows only;
+- Semantics ElecGtr08: peak-to-sidelobe 1.38;
+- Lights Off Clarity All The Same ElecGtr12 and 13: in step on 31–38% of windows only,
+  probably different takes.
+
+**What remains from sets 1–2:** 20 parts (13 clean, 7 crunch) from 11 bands:
+- Rebecca Haviland, Chris Coltraine, Guitar-TECHS P3 (set 1);
+- Boogie Snakes, Forkupines, Lights Off Clarity, The Maybe Next Years, Tim Taler, Briana
+  Maia, Catbite, Wild & Co (set 2).
+
+The band is the session's artist, as set 2 records it, and the named artist for set 1.
+
+**Set 4 is pinned** at the declaration on main: `docs/validation-set4.json`, sha256
+`6aa7a8c3…25e710ee`, with 13 parts from 5 bands. The four Internet Archive sessions now
+being added are not part of this test, and stay unused.
+
+**Stratum counts across both sources:**
+- **clean:** 13 parts, 9 bands;
+- **crunch:** 7 parts from sets 1–2 plus set 4's crunch parts;
+- **high-gain:** set 4's 9 parts, report only.
+
+The run harness is `learn/confirm_run.py`. Its development reproduction is committed
+before any set-4 or sets 1–2 rendering.
