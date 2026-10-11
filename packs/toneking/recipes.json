@@ -1787,6 +1787,59 @@
           "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
         }
       }
+    },
+    "dry": {
+      "toneking": {
+        "title": "Dry Tone King factory baseline",
+        "use_when": "starting from one of generate's Tone King factory baselines (clean or crunch): makes it dry, as it was measured",
+        "parameters": [
+          {
+            "module": "",
+            "key": "reverbActive",
+            "value": false
+          },
+          {
+            "module": "",
+            "key": "delayActive",
+            "value": false
+          },
+          {
+            "module": "",
+            "key": "chorusActive",
+            "value": false
+          },
+          {
+            "module": "",
+            "key": "ampReverb",
+            "value": 0
+          },
+          {
+            "module": "",
+            "key": "ampTremoloDepth",
+            "value": 0
+          },
+          {
+            "module": "",
+            "key": "gateThreshold",
+            "value": -96
+          },
+          {
+            "module": "",
+            "key": "wahActive",
+            "value": false
+          },
+          {
+            "module": "",
+            "key": "timeSectionActive",
+            "value": true
+          }
+        ],
+        "note": "Reverb, delay, chorus and wah off, the amp's own reverb and tremolo depth at 0, the gate fully open (-96 dB), with the time-effects section itself on (so an effect turned back on is heard). The channel, amp, pedals, compressor, EQ, cab and rooms are kept. Stack it first; turn an effect back on afterwards only with its parameters set explicitly.",
+        "evidence": {
+          "class": "measured",
+          "source": "docs/toneking-baseline-results.md: the Tone King factory baselines were measured dry"
+        }
+      }
     }
   }
 }

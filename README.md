@@ -89,9 +89,12 @@ You don't have to use the slash commands — just describing what you want
     ones only weakly, and the driven ones on two of the three amps (AC20's only on
     development recordings) ([clean](docs/clean-baseline-results.md),
     [crunch](docs/crunch-baseline-results.md), [driven](docs/driven-baseline-results.md)).
-  - **Tone King** starts from one of your own Tone King presets.
+  - **Tone King** clean and crunch parts start the same way, from a factory preset on
+    the Rhythm channel made dry (`dry/toneking`); the crunch one rests on thin
+    evidence ([Tone King](docs/toneking-baseline-results.md)). A heavier Tone King
+    part needs one of your own presets.
   - **Given a song,** it puts four candidates on a local listening page beside the
-    song, including the plain dry starting preset on Morgan (and, if you're unsure how
+    song, including the plain dry starting preset (and, if you're unsure how
     much gain the part has, the amp's other starting point beside it), and refines the
     one you pick.
   - Heavy metal and high-gain tones are out of scope: a heavier part still starts from

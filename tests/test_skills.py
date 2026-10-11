@@ -210,7 +210,13 @@ def test_parameter_names_a_skill_mentions_are_real(doc):
 
     # A recipe reference (`dry/pr12`) has the same shape as a parameter path; it
     # counts as real only if the pack has that recipe.
-    recipes = load_recipes(REFERENCE_PACK)
+    recipes = {}
+    for pack_id in list_packs():
+        try:
+            for layer, group in load_recipes(pack_id).items():
+                recipes.setdefault(layer, {}).update(group)
+        except Exception:
+            continue                       # a pack without recipes
     unknown = [
         f"{module}/{key}"
         for module, key in PARAM_PATH.findall(text)
