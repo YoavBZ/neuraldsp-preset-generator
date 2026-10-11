@@ -139,9 +139,10 @@ calculated on by the inversion. The report lists what it calculated; if it turne
 one on, rerun with fresh. For a recording (a stem or a mix) the inversion leaves
 the tremolo as the template has it: it read ordinary playing as a tremolo on about
 half the development amp tracks (audit D-M7). If research says the part has a
-tremolo, switch `tremolo/tremoloActive` on in the template yourself, or let
-`--enumerate` try it. Not the amp's own spring reverb: its carry-over is a short
-tail, at most 0.15 in the same measurements. Both carry state from one
+tremolo, switch `tremolo/tremoloActive` on in the template yourself and set its rate
+and depth by research (`--enumerate` would switch it on without searching either,
+D-M17), and pass `--process-policy fresh`. Not the amp's own spring reverb: its
+carry-over is a short tail, at most 0.15 in the same measurements. Both carry state from one
 render to the next on a reused instance, likely a modulation oscillator, so the
 same settings come out differently each time and the search ranks noise:
 - the tremolo's renders of one setting came out several dB apart, measured

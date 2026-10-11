@@ -73,6 +73,8 @@ RT60_REGIMES = ("probe",)
 # The regimes that are recordings of played material, where the tremolo is left
 # as the template has it (see `tremolo_settings`).
 RECORDING_REGIMES = ("isolated_stem", "separated_stem", "mix")
+_RECORDING_WORDS = {"isolated_stem": "an isolated stem",
+                    "separated_stem": "a separated stem", "mix": "a mix"}
 
 
 class InversionError(ValueError):
@@ -1044,8 +1046,9 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
         return Inversion(
             values={},
             caveats=[
-                f"the tremolo is left as the template has it: on {regime} material "
-                f"the rhythm of the playing reads as a tremolo too often to set one "
+                f"the tremolo is left as the template has it: in "
+                f"{_RECORDING_WORDS[regime]} the rhythm of the playing reads as a "
+                f"tremolo too often to set one "
                 f"from the measurement (audit D-M7). If the part really has a "
                 f"tremolo, turn tremolo/tremoloActive on in the template."
             ],
