@@ -22,8 +22,7 @@ The raw renders are kept in `raw/`, so a page re-levels itself when a candidate 
 added. Nothing is installed and no preset is changed. Beside the page, `phone.html`
 holds the same page with every clip inside it (AAC), so it can be sent to a phone and
 played there as one file; on macOS it is rewritten whenever the page is. The page, the
-clips and
-`audition.json` (which binds every clip to the preset, DI and song it came from, and
+clips and `audition.json` (which binds every clip to the preset, DI and song it came from, and
 is saved after each candidate) are written to DIR.
 
 The renders play another performance than the song's: the DI is not the song's
@@ -169,17 +168,20 @@ def level_page(out: pathlib.Path, record: dict) -> None:
 
 
 PHONE_KBPS = 160               # AAC: transparent enough to compare tones on a phone
-PHONE_LIMIT_MIB = 30
+PHONE_LIMIT_MIB = 20            # email refuses much more (Gmail: 25 MB with encoding)
 
 
 def write_phone_page(out: pathlib.Path):
     """`phone.html`: the page with every clip embedded as AAC, so it plays as one file
-    on a phone. Needs macOS's afconvert; elsewhere it says so and returns None."""
+    on a phone. A bonus, never a failure: without macOS's afconvert, or if a clip will
+    not convert, it says so and returns None, and no stale phone page is left behind."""
     import base64
     import re
     import shutil
     import tempfile
 
+    phone = out / "phone.html"
+    phone.unlink(missing_ok=True)
     if shutil.which("afconvert") is None:
         print("note: no phone page (it needs macOS's afconvert)", file=sys.stderr)
         return None
@@ -195,8 +197,18 @@ def write_phone_page(out: pathlib.Path):
             data = base64.b64encode(aac.read_bytes()).decode()
         return f'src="data:audio/mp4;base64,{data}"'
 
-    phone = out / "phone.html"
-    phone.write_text(re.sub(r'src="([^"/]+\.wav)"', embed, text))
+    try:
+        result = re.sub(r'src="([^"]+\.wav)"', embed, text)
+    except (subprocess.CalledProcessError, OSError) as e:
+        print(f"note: no phone page: a clip would not convert ({e})", file=sys.stderr)
+        return None
+    if re.search(r'\.wav"', result):
+        print("note: no phone page: the page refers to a clip it could not embed",
+              file=sys.stderr)
+        return None
+    partial = out / "phone.html.tmp"
+    partial.write_text(result)
+    partial.replace(phone)
     return phone
 
 
@@ -272,7 +284,8 @@ kbd {{ border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size
 <p class="sub">Every candidate plays the same guitar riff, not the song's own part, and
 every clip plays at one loudness. Listen for the tone (gain, brightness, body, space),
 not the notes. Keys: <kbd>0</kbd> the song, <kbd>1</kbd>–<kbd>9</kbd> the candidates
-of the riff you last played, switching at the same moment; <kbd>space</kbd> pause.</p>
+of the riff you last played, switching at the same moment; <kbd>space</kbd> pause. On a
+phone, tap a player: it picks up where the last one of that riff was.</p>
 <h2>The song</h2>
 <div class="row" data-group="song" data-index="0"><div class="key">0</div>
 <div class="what"><span class="amp">The song</span> <span class="note">{song_name}</span></div>
@@ -292,6 +305,13 @@ function play(row, at) {{
 rows.forEach(row => {{
   const audio = row.querySelector('audio');
   audio.addEventListener('play', () => {{
+    // A tap on a phone has no key to carry the moment across: pick up where the last
+    // clip of the same riff was, so A/B stays at the same place in the part.
+    const prev = rows.find(r => r !== row && r.classList.contains('playing'));
+    if (prev && prev.dataset.group === row.dataset.group) {{
+      const t = prev.querySelector('audio').currentTime;
+      if (isFinite(t) && Math.abs(audio.currentTime - t) > 0.05) {{ try {{ audio.currentTime = t; }} catch (e) {{}} }}
+    }}
     rows.forEach(r => {{ if (r !== row) {{ r.classList.remove('playing'); r.querySelector('audio').pause(); }} }});
     row.classList.add('playing');
     if (row.dataset.group !== 'song') group = row.dataset.group;
@@ -454,8 +474,8 @@ def main():
         size = phone.stat().st_size / 2 ** 20
         print(f"phone page: {phone} ({size:.1f} MiB, one file with the audio inside)")
         if size > PHONE_LIMIT_MIB:
-            print(f"warning: the phone page is over {PHONE_LIMIT_MIB} MiB; some apps won't "
-                  "send a file that large", file=sys.stderr)
+            print(f"warning: the phone page is over {PHONE_LIMIT_MIB} MiB; email may refuse "
+                  "it, so send it by a messaging app or AirDrop", file=sys.stderr)
     if args.open:
         subprocess.run(["open", str(out / "index.html")], check=False)
 
