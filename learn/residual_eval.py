@@ -28,7 +28,9 @@ from learn import sound_desc_eval as E  # noqa: E402
 D3 = CR.HOME / "learn/direc"
 OUT = D3 / "residual"
 PINNED = PLUGIN_ROOT / "docs/sound-desc-test-parts.json"
-NETS = {"R": D3 / "models-resid/fold2.pt", "C": D3 / "models-set3/fold2.pt", "L": D3 / "models-linear/fold2.pt"}
+NETS = {"R": D3 / "models-resid/fold2.pt", "Cp": D3 / "models-cprime/fold2.pt",
+        "C": D3 / "models-set3/fold2.pt", "L": D3 / "models-linear/fold2.pt"}
+GATES = (("Cp", "C"), ("R", "Cp"))          # amended plan: a correct gradient; then pass-through
 BANDS_HZ = ((80, 1000), (1000, 3000), (3000, 8000))
 
 
@@ -282,25 +284,28 @@ def report():
     res = {}
     for cls in (None, "clean", "crunch"):
         tag = cls or "all"
-        for a, b in (("R", "C"), ("L", "C"), ("R", "L"), ("R", "base"), ("C", "base"), ("L", "base"),
-                     ("oracle", "base")):
+        for a, b in (("Cp", "C"), ("R", "Cp"), ("R", "C"), ("L", "Cp"), ("R", "L"), ("R", "base"),
+                     ("Cp", "base"), ("C", "base"), ("L", "base"), ("oracle", "base")):
             res[f"{a}_vs_{b}|{tag}"] = compare(a, b, cls)
-    # The gate (after review): a t-interval on the 8 band means (7 df), and most bands negative.
-    g = res["R_vs_C|all"]
-    bm = list(g["per_band"].values())
-    mu = statistics.fmean(bm)
-    se = statistics.stdev(bm) / math.sqrt(len(bm))
-    t = 1.895                                    # t(0.95, 7)
-    gate = {"band_mean": round(mu, 4), "lo90": round(mu - t * se, 4), "hi90": round(mu + t * se, 4),
-            "bands_negative": sum(x < 0 for x in bm), "bands": len(bm),
-            "smallest_detectable": round(-t * se, 4)}
-    outcome = ("helps" if gate["hi90"] < 0 and gate["bands_negative"] > len(bm) / 2 else
-               "futile" if gate["lo90"] > -0.02 else "inconclusive")
-    g = gate
+    def gate(a, b):
+        """The band-mean rule (plan, "After review" item 4): t-interval on the 8 band means."""
+        g = res[f"{a}_vs_{b}|all"]
+        bm = list(g["per_band"].values())
+        mu = statistics.fmean(bm)
+        se = statistics.stdev(bm) / math.sqrt(len(bm))
+        t = 1.895                                # t(0.95, 7)
+        out = {"band_mean": round(mu, 4), "lo90": round(mu - t * se, 4), "hi90": round(mu + t * se, 4),
+               "bands_negative": sum(x < 0 for x in bm), "bands": len(bm), "smallest_detectable": round(-t * se, 4)}
+        out["outcome"] = ("helps" if out["hi90"] < 0 and out["bands_negative"] > len(bm) / 2 else
+                          "futile" if out["lo90"] > -0.02 else "inconclusive")
+        return out
+
+    gates = {f"{a}_vs_{b}": gate(a, b) for a, b in GATES}
     coh = json.loads((OUT / "coherence.json").read_text()) if (OUT / "coherence.json").exists() else None
-    out = {"gate": {"result": g, "outcome": outcome}, "proxy_uses": proxies, "coherence": coh, "results": res}
+    out = {"gates": gates, "proxy_uses": proxies, "coherence": coh, "results": res}
     (OUT / "result.json").write_text(json.dumps(out, indent=1, default=float))
-    print("GATE (R vs C, band means):", outcome, g)
+    for k, g in gates.items():
+        print("GATE", k, g)
     for k, s_ in res.items():
         print(f"  {k:22s} mean {s_['mean']:+.3f} [{s_['lo90']:+.3f}, {s_['hi90']:+.3f}] band-wtd "
               f"{s_['band_weighted_mean']:+.3f} W/T/L {s_['wins']}/{s_['ties']}/{s_['losses']} "
