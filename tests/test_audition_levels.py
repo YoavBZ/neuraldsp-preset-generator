@@ -94,3 +94,51 @@ def test_a_song_with_more_than_two_channels_is_refused_before_anything_is_writte
     with pytest.raises(SystemExit):
         A.main()
     assert not out.exists() or not any(out.iterdir())
+
+
+def _real_page(tmp_path):
+    """The page `audition.py` itself writes, for a record of two candidates."""
+    record = {"song": {"path": "/x/song.mp3", "start_s": 0.0, "seconds": 4.0,
+                       "file": "song.wav"},
+              "dis": [{"id": "riff-1", "name": "line"}],
+              "candidates": [{"id": x, "amp": "PR12", "note": "n",
+                              "renders": {"riff-1": f"{x}-riff-1.wav"}} for x in "AB"]}
+    for name in ("song.wav", "A-riff-1.wav", "B-riff-1.wav"):
+        sf.write(str(tmp_path / name), np.stack([_tone()] * 2, axis=1), RATE,
+                 subtype="PCM_16")
+    (tmp_path / "index.html").write_text(A.page(record))
+    return record
+
+
+def test_the_phone_page_holds_every_clip_of_the_real_page(tmp_path):
+    import shutil
+
+    if shutil.which("afconvert") is None:
+        pytest.skip("the phone page needs macOS's afconvert")
+    _real_page(tmp_path)
+    text = A.write_phone_page(tmp_path).read_text()
+    assert text.count('src="data:audio/mp4;base64,') == 3       # the song and A, B
+    assert '.wav"' not in text and "On a\nphone, tap a player" in text
+
+
+def test_a_clip_that_will_not_convert_leaves_no_phone_page(tmp_path, capsys):
+    import shutil
+
+    if shutil.which("afconvert") is None:
+        pytest.skip("the phone page needs macOS's afconvert")
+    _real_page(tmp_path)
+    (tmp_path / "phone.html").write_text("stale")
+    (tmp_path / "B-riff-1.wav").write_bytes(b"not audio")
+    assert A.write_phone_page(tmp_path) is None
+    assert not (tmp_path / "phone.html").exists()                # the stale one is gone
+    assert "would not convert" in capsys.readouterr().err
+
+
+def test_without_afconvert_there_is_no_phone_page_and_no_error(tmp_path, monkeypatch, capsys):
+    import shutil
+
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    (tmp_path / "index.html").write_text('<audio src="song.wav"></audio>')
+    assert A.write_phone_page(tmp_path) is None
+    assert not (tmp_path / "phone.html").exists()
+    assert "afconvert" in capsys.readouterr().err
