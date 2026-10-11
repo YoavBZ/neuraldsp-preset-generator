@@ -256,6 +256,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **Retraining:** the current network's design with correct gradients (C′), and a
         residual design (R). The conclusions about earlier networks are undecided until
         then.
+   8g. **A correct gradient, and a residual DI network** ([plan](residual-di-plan.md),
+      [results](residual-di-results.md)). *Done 2026-10-11, independently re-derived.*
+      - **The gradient fix helps, marginally:** −0.036 band mean, all on crunch, where the
+        corrected network gets −0.171 against the fixed preset (the oracle −0.186). It
+        isn't robust to leaving out one band, so a second seed is training.
+      - **Passing the recording through (residual) is futile:** +0.059, worse on crunch.
+        The rebuilt DI keeps the recording's brightness.
+      - **Earlier crunch conclusions about the network are open again.**
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

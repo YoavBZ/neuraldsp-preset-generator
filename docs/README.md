@@ -217,6 +217,10 @@ was declared, what was measured, and the research behind it.
   [results](toneking-baseline-results.md): **adopted.** Fixed Tone King factory presets
   per gain class, made dry: Vintage Trem for clean (about 12% closer than the plugin's
   Default on held-out parts) and Squishy Lead for crunch (thin evidence, 3 bands).
+- [residual-di-plan.md](residual-di-plan.md) → [results](residual-di-results.md): the MPS
+  gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
+  corrected network picks better, marginally and on crunch only (a second seed is
+  running). A residual pass-through network is futile.
 - [audit-2026-10-11.md](audit-2026-10-11.md): an adversarial audit of the ML negatives.
   No calculation errors; the sound translator and the DI-network route are undecided,
   not failed; the 3 kHz cut hurts on clean and is off there.
