@@ -183,3 +183,27 @@ The declared consequences for an inconclusive result apply to each.
 
 **The 2,049-tap timing and the "C's minutes" arguments are superseded:** the arms are
 matched in steps.
+
+### Corrections after the bug review (`tmp/mps-bug-review.md`, local)
+
+- **The bug depends on signal length, not FFT size.** torch.stft's gradient on MPS is
+  wrong for signals longer than 65,536 samples (81–100% off), and its forward is right.
+  Training crops are 144,000 samples.
+- **Unfold-then-matmul is right on MPS once made contiguous.** The "gradient still wrong"
+  above did not reproduce.
+- **`complex_stft_loss` is wrong on MPS even in the forward pass,** and is now routed to the
+  CPU too.
+- **The test** now uses the training crop length (at 48,000 samples it couldn't fail) and
+  asserts finite gradients.
+- **Which networks:** every DI network was trained on MPS except the SI-SDR loss pilot
+  (CPU).
+  - That pilot, with a correct gradient, reached the same 1–3 kHz coherence as
+    MPS-trained C (0.170 against 0.169).
+  - This is weak evidence that the bug isn't the main reason the networks lose
+    coherence, so gate 1 (C′ against C) is a real question.
+- **L runs by steps (2,000),** not minutes, so CPU contention can't shorten it.
+- **One seed per arm.** If a gate lands near the −0.03 carry-forward rule, a second C′
+  seed calibrates run-to-run noise before anything is carried forward.
+- **Earlier DI-network conclusions are flagged,** in the roadmap and the audit, as trained
+  with a corrupted spectral gradient: the confirmation, the clean and crunch checks, v2,
+  v3 and the 3 kHz cut. Their measured numbers stand as measurements of those networks.

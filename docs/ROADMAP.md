@@ -248,6 +248,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       parts; next, a translator description that discounts reverb tails, and a residual
       DI network trained on clean and crunch. Fresh clean and crunch sessions with DIs
       are still needed for any firm answer.
+   8f. **The MPS gradient bug** (2026-10-11, [plan amendment](residual-di-plan.md)).
+      - **Every DI network was trained on MPS** (all but one CPU pilot), where torch.stft's
+        gradient is wrong for signals longer than 65,536 samples. Training crops are
+        144,000, so the spectral loss trained from a corrupted gradient.
+      - **Fixed:** the loss is computed on the CPU, and a test guards it.
+      - **Retraining:** the current network's design with correct gradients (C′), and a
+        residual design (R). The conclusions about earlier networks are undecided until
+        then.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

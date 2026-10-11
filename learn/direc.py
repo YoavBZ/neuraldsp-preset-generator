@@ -246,6 +246,9 @@ def complex_stft_loss(a, b, ffts=(512, 1024, 2048)):
     """Phase-aware: L1 between the real and imaginary parts of the STFTs, averaged over
     resolutions. Plain magnitude losses ignore phase. Computed with real matrix products:
     gradients through torch.stft's complex output were non-finite on MPS (2026-10-10)."""
+    if a.device.type == "mps":
+        # MPS matmul on the unfolded (overlapping) frames is wrong even in the forward pass.
+        return complex_stft_loss(a.cpu(), b.cpu(), ffts).to(a.device)
     total = 0.0
     for n in ffts:
         total = total + (_real_stft(a, n) - _real_stft(b, n)).abs().mean()
@@ -332,10 +335,11 @@ def _magnitude(z):
 
 def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
     """Multi-resolution STFT magnitude loss. On MPS it is computed on the CPU and the
-    gradient flows back: torch.stft's gradient on MPS is wrong (34–100% off the CPU's at
-    every FFT size, torch 2.8 and 2.14, measured 2026-10-11; MPS matmul on an unfolded,
-    overlapping view is wrong too). Every DI network trained on MPS before that date
-    learned from a wrong spectral gradient (docs/residual-di-plan.md)."""
+    gradient flows back: torch.stft's gradient on MPS is wrong for signals longer than
+    65,536 samples (81–100% off the CPU's; the forward is right; torch 2.8 and 2.14,
+    measured 2026-10-11). Training crops are 144,000 samples, so every DI network trained
+    on MPS before that date learned from a wrong spectral gradient
+    (docs/residual-di-plan.md)."""
     import torch
 
     if a.device.type == "mps":
