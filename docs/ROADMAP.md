@@ -334,7 +334,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    results were reported (D-H2, D-M5).
    - **Renders:** Tone King's start-up mute (D-M1); Morgan's reused-instance history
      (D-M13).
-   - **Search controls:** `--enumerate` (D-M17); the screen's false premise (D-M18).
+   - **Search controls:** `--enumerate` (D-M17) and the screen's false premise
+     (D-M18): their help and report texts are corrected by #171. Parked: screening
+     each enumerated variant's own active controls, and a midpoint probe.
    - **Inversion:** the mix regime (D-M8) is fixed for the calculated start by #169
      (a mix's or separated stem's bands below 250 Hz are left alone); the search
      and its loss can still move them, parked with the search objective below. A
