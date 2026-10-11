@@ -117,3 +117,57 @@ def test_only_tone_king_match_renders_are_prerolled(monkeypatch):
     assert isinstance(match_preset._renderer("swift", "morgan"), Fake)
     assert not isinstance(match_preset._renderer("synthetic", "toneking"),
                           PrerolledRenderer)
+
+
+def test_tone_kings_measured_eq_basis_still_loads_through_the_wrapper():
+    """The pre-roll is in the render's identity, but not in the basis check's: the
+    committed basis was measured without it and still describes the backend.
+    Without `basis_metadata` every Tone King match that inverts crashed here."""
+    import json
+    import pathlib
+
+    from analysis import io, refchain
+    from analysis.fingerprint import fingerprint
+    from match import invert
+
+    root = pathlib.Path(invert.__file__).resolve().parents[1]
+    recorded = json.loads((root / "packs" / "toneking" / "eq_basis.json")
+                          .read_text())["renderer"]
+
+    class ToneKingBackend(MutedAtStart):
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id=recorded.get("renderer_id", "swift"),
+                sample_rate=recorded.get("sample_rate", SR),
+                block_size=recorded.get("block_size", 512),
+                plugin_version=recorded.get("plugin_version", "1.0.3"),
+                renderer_build=recorded["renderer_build"],
+                quality_mode=recorded["quality_mode"])
+
+        def eq_basis(self, signal_path, analysis_centres):
+            return invert.measured_basis(
+                "toneking", signal_path, analysis_centres,
+                expected_plugin_version=self.metadata().plugin_version)
+
+    def measure(settings=None):
+        audio = refchain.render(_di(4.0), settings)
+        return fingerprint(io.from_samples(audio, SR), regime="probe", excerpt_s=None)
+
+    wrapped = PrerolledRenderer(ToneKingBackend())
+    assert wrapped.metadata().quality_mode != recorded["quality_mode"]
+    calculated = invert.invert(measure({"sw50rEQ/sw50rEQBand4": 6.0}), measure(),
+                               amp="Lead Channel", pack_id="toneking",
+                               renderer=wrapped)
+    assert calculated.detail.get("eq_basis"), calculated.detail
+
+
+def test_a_run_from_before_the_preroll_is_named_as_such():
+    from match.preroll import predates_preroll
+
+    old = {"renderer_id": "swift", "plugin_version": "1.0.3", "renderer_build": "b",
+           "sample_rate": 48000, "block_size": 512, "quality_mode": "standard"}
+    new = dict(old, quality_mode="standard;preroll_s=1.5")
+    assert predates_preroll(old, new)
+    assert not predates_preroll(new, new)
+    assert not predates_preroll(dict(old, plugin_version="1.0.2"), new)
+    assert not predates_preroll(old, old)

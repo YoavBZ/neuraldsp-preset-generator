@@ -1190,6 +1190,12 @@ def _paired_reference(args, reference_samples, probe_samples, metadata, document
         die("--paired-provenance was rendered with a different plugin pack")
     recorded_renderer = document.get("renderer") or {}
     if not same_renderer(recorded_renderer, metadata.as_dict()):
+        from match.preroll import predates_preroll
+
+        if predates_preroll(recorded_renderer, metadata.as_dict()):
+            die("--paired-provenance was rendered before Tone King renders started "
+                "with a silent pre-roll (its opening was muted); render the paired "
+                "reference again")
         die("the current renderer/plugin build differs from --paired-provenance")
     return {
         "schema": "paired-di-reference-1",

@@ -53,6 +53,14 @@ class PrerolledRenderer(Renderer):
         base = self.inner.metadata()
         return replace(base, quality_mode=f"{base.quality_mode};preroll_s={self.seconds:g}")
 
+    def basis_metadata(self):
+        """The backend's own identity, for `invert._validate_basis_provenance`.
+
+        An EQ basis measured without the pre-roll still describes this backend:
+        the pre-roll is cut off and does not change what the equaliser does.
+        """
+        return self.inner.metadata()
+
     def _render(self, di, settings: Optional[Mapping]):
         import numpy as np
 
@@ -85,3 +93,20 @@ class PrerolledRenderer(Renderer):
         if name == "inner":
             raise AttributeError(name)
         return getattr(self.inner, name)
+
+
+def predates_preroll(recorded, current) -> bool:
+    """Whether two render identities differ only by this pre-roll.
+
+    A run recorded before Tone King renders were pre-rolled is refused like any
+    other renderer change, but the refusal should say why.
+    """
+    recorded, current = dict(recorded or {}), dict(current or {})
+    mode = str(current.get("quality_mode") or "")
+    if ";preroll_s=" not in mode or ";preroll_s=" in str(recorded.get("quality_mode")):
+        return False
+    current["quality_mode"] = mode.split(";preroll_s=")[0]
+    keys = set(recorded) & set(current)
+    return bool(keys) and all(recorded[k] == current[k] for k in keys
+                              if k in ("renderer_id", "plugin_version", "renderer_build",
+                                       "sample_rate", "block_size", "quality_mode"))

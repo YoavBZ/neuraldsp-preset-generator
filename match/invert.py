@@ -1526,7 +1526,10 @@ def _validate_basis_provenance(found, renderer) -> None:
             "the measured EQ basis has missing or unsupported provenance schema "
             f"{schema!r}. Re-run scripts/measure_eq_basis.py with this renderer."
         )
-    metadata = renderer.metadata()
+    # A wrapper that changes only what surrounds the DI (`match.preroll`) answers
+    # with its backend's identity here: a cropped pre-roll does not change what
+    # the equaliser does to a held tone, which is all a basis measures.
+    metadata = getattr(renderer, "basis_metadata", renderer.metadata)()
     identity = (
         ("renderer id", "renderer_id"),
         ("plugin version", "plugin_version"),
