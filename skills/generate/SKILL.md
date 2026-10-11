@@ -58,7 +58,8 @@ Two traps worth naming out loud when you present the choice:
 - **Choose Morgan or Tone King by voice, not by closeness.** Their clean and crunch
   starting presets landed about even against each other
   ([Tone King baselines](../../docs/toneking-baseline-results.md)), so the pack is a
-  question of character.
+  question of character. A heavier Tone King part has no starting preset: it needs one
+  of the user's own, and if they have none, say so; it is the deciding constraint.
 
 Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` for the voices before
 recommending one. Where a pack has no `tone.md`, say so rather than guessing at
@@ -255,7 +256,8 @@ Tone King recipes use its verified sync-note selectors. See
 
   with the baseline's full path, from the tables above, as the template.
 
-  On the nine baselines it changes 1 to 5 settings each: every one ships with the gate
+  On the nine Morgan baselines it changes 1 to 5 settings each (on the two Tone King
+  ones, 3 and 4): every one ships with the gate
   on, Wall Of Doom also with transpose −5, and Modern Metal (Pick Hard) with its FX
   section off, which the recipe turns on so an effect brought back is heard. The writer
   refuses another amp's recipe (`dry/pr12` on an SW50R preset), since it would change
@@ -276,18 +278,22 @@ Tone King recipes use its verified sync-note selectors. See
     about 12% closer than the plugin's Default made dry, on 12 of 13 parts from 8
     bands. Crunch: about 29% closer than a typical Rhythm-channel preset, on 7 of 7
     parts but only 3 bands, so say the evidence is thin. Each tied its runner-up (Spring
-    Clean, Let 'er Rip): good starting points, not unique bests.
+    Clean; Let 'er Rip and Rough Blues Lead): good starting points, not unique bests.
   - **Made dry, the names no longer describe them.** Vintage Trem becomes a lean,
     near-clean Rhythm tone (its tremolo, chorus and reverb are removed). Squishy Lead
     becomes a crunch rhythm sound: the Rhythm channel at full volume, the second
     overdrive pushing it, the compressor off. Present them as "the clean starting
     point" and "the crunch starting point".
-  - **Make them dry first** with `--recipe dry/toneking`, and **keep their channel**:
-    don't switch to the Lead channel with an amp recipe, since that was not measured.
+  - **Make them dry first** with `--recipe dry/toneking`, and **keep the baseline's
+    channel, amp settings, drives, compressor, EQ and cab**: skip step 3's amp, drive1,
+    drive2, compressor, eq and cab layers unless the research contradicts the baseline.
+    Above all, don't apply an `amp/*` recipe: every one sets the channel and the amp's
+    controls, which undoes what was measured (on Squishy Lead it removes the crunch).
   - **If the file is missing,** say so and ask for one of the user's own Tone King
     presets.
 - For a heavier Tone King part, there is no measured baseline: use one of the user's
-  own presets.
+  own presets, and if they have none, say so rather than stretching a clean or crunch
+  one.
 - One of the user's own presets is a fine template too, especially if it already
   uses the amp you want. Run `show.py` on it first.
 - Either way, select the intended amp or channel explicitly through an amp
@@ -314,7 +320,8 @@ Whether an ear does as well is still being checked, so offer the page, then let 
 user decide.
 
 1. **Write three alternatives** beside the preset from step 5, as copies of it with
-   their own specs. Use at least two amps (on Tone King, both channels), and make them
+   their own specs. Use at least two amps (on Tone King, both channels: the dry baseline
+   stays on Rhythm, so at least one of the other three uses the Lead channel), and make them
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
