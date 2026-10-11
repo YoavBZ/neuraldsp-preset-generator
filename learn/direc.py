@@ -131,9 +131,39 @@ def fold_average(cache: pathlib.Path, fold: int):
 
 # --- model --------------------------------------------------------------------------
 
-def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False, open_bottom=False):
+FIR_TAPS = 513                           # the residual path's linear filter, centred (±5 ms)
+
+
+def build_model(channels=(32, 64, 128, 256, 512), lstm=256, norm=False, open_bottom=False,
+                residual=False, linear_only=False):
+    """`residual` (docs/residual-di-plan.md): FIR(x) + U-Net(x), starting as the input, so the
+    output cannot begin less coherent with the true DI than the recording. `linear_only`:
+    the FIR alone (the plan's control L)."""
     import torch
     import torch.nn as nn
+
+    if residual or linear_only:
+        unet = None if linear_only else build_model(channels, lstm, norm=norm, open_bottom=open_bottom)
+
+        class Residual(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.fir = nn.Conv1d(1, 1, FIR_TAPS, padding=FIR_TAPS // 2, bias=False)
+                with torch.no_grad():
+                    self.fir.weight.zero_()
+                    self.fir.weight[0, 0, FIR_TAPS // 2] = 1.0
+                self.unet = unet
+                if unet is not None:
+                    last = unet.dec[-1][-1]          # the final ConvTranspose1d
+                    with torch.no_grad():
+                        last.weight.mul_(0.01)
+                        last.bias.mul_(0.01)
+
+            def forward(self, x):
+                y = self.fir(x)
+                return y if self.unet is None else y + self.unet(x)
+
+        return Residual()
 
     class Net(nn.Module):
         """Wave U-Net in the style of Demucs v2: kernel 8, stride 4, GLU, a BLSTM at the
@@ -254,6 +284,15 @@ def load_model(path, device="cpu"):
     import torch
 
     state = torch.load(path, map_location=device)
+    if "fir.weight" in state:
+        if "unet.mid.0.0.weight" not in state:
+            net = build_model(linear_only=True)
+        else:
+            net = build_model(norm=state["unet.mid.0.0.weight"].dim() == 1, residual=True,
+                              open_bottom=state["unet.dec.0.0.weight"].shape[0]
+                              == state["unet.dec.0.0.weight"].shape[1])
+        net.load_state_dict(state)
+        return net
     net = build_model(norm=state["mid.0.0.weight"].dim() == 1,
                       open_bottom=state["dec.0.0.weight"].shape[0] == state["dec.0.0.weight"].shape[1])
     net.load_state_dict(state)
@@ -265,6 +304,10 @@ def gate_open(net, x):
     an open bottom, the fraction of its GELU outputs above 1e-3 in size."""
     import torch
 
+    if hasattr(net, "fir"):
+        if net.unet is None:
+            return 1.0
+        net = net.unet
     seen = {}
     h = net.dec[0][0].register_forward_hook(lambda m, i, o: seen.update(o=o.detach()))
     with torch.no_grad():
@@ -302,7 +345,10 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
 # --- training -----------------------------------------------------------------------
 
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
-        extra=None, norm=False, open_bottom=False, loss_kind="default"):
+        extra=None, norm=False, open_bottom=False, loss_kind="default", residual=False, linear_only=False,
+        steps=None, fir_lr_scale=0.1):
+    """`steps` (residual-di-plan.md): stop after this many optimiser steps instead of
+    `minutes`, with any cosine decay by step, so a slower model gets the same updates."""
     import numpy as np
     import torch
 
@@ -378,21 +424,32 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         return (torch.tensor(np.stack(xs), device=dev).unsqueeze(1),
                 torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
 
-    net = build_model(norm=norm, open_bottom=open_bottom).to(dev)
+    net = build_model(norm=norm, open_bottom=open_bottom, residual=residual, linear_only=linear_only).to(dev)
     if resume:
         net.load_state_dict(torch.load(resume, map_location=dev))
         print(f"resumed from {resume}", flush=True)
     print(f"parameters {sum(p.numel() for p in net.parameters()) / 1e6:.1f}M", flush=True)
-    opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
+    def optimiser():
+        # The residual path's FIR learns at a lower rate: Adam moves every tap at about the
+        # learning rate, and a smeared tail would reach the presets unseen by coherence.
+        fir = [q for n_, q in net.named_parameters() if n_.startswith("fir.")]
+        rest = [q for n_, q in net.named_parameters() if not n_.startswith("fir.")]
+        groups = ([{"params": rest, "scale": 1.0}] if rest else []) + \
+                 ([{"params": fir, "scale": fir_lr_scale}] if fir else [])
+        for g in groups:
+            g["lr"] = lr * g["scale"]
+        return torch.optim.AdamW(groups, lr=lr, weight_decay=1e-5)
+
+    opt = optimiser()
     out.mkdir(parents=True, exist_ok=True)
     t0, step, skipped, streak, recoveries = time.time(), 0, 0, 0, 0
     window = []
     vidx = rng.choice(va, min(96, len(va)), replace=False)
-    while time.time() - t0 < minutes * 60:
-        if lr_end is not None:          # cosine decay over the run's wall-clock budget
-            frac = min(1.0, (time.time() - t0) / (minutes * 60))
+    while (step < steps) if steps else (time.time() - t0 < minutes * 60):
+        if lr_end is not None:          # cosine decay over the run's budget (steps, or wall clock)
+            frac = min(1.0, step / steps if steps else (time.time() - t0) / (minutes * 60))
             for g in opt.param_groups:
-                g["lr"] = lr_end + 0.5 * (lr - lr_end) * (1 + math.cos(math.pi * frac))
+                g["lr"] = (lr_end + 0.5 * (lr - lr_end) * (1 + math.cos(math.pi * frac))) * g.get("scale", 1.0)
         idx = rng.choice(tr, batch, replace=False)
         x, y = make(idx, True)
         p = net(x)
@@ -431,7 +488,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                     torch.load(resume, map_location=dev) if resume else None)
                 if state is not None:
                     net.load_state_dict(state)
-                opt = torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
+                opt = optimiser()
                 recoveries += 1
                 streak = 0
                 print(f"fold {fold} recovery {recoveries} at step {step}", flush=True)
@@ -460,6 +517,12 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                   f"val {vl:.3f} (input-as-DI {base:.3f}) skipped {skipped} gate {gate:.2f}", flush=True)
             torch.save(net.state_dict(), out / f"fold{fold}.pt")
     torch.save(net.state_dict(), out / f"fold{fold}.pt")
+    if hasattr(net, "fir"):             # the learned linear path, for the record
+        w = net.fir.weight.detach().cpu().numpy()[0, 0]
+        np.save(out / f"fold{fold}-fir.npy", w)
+        mag = 20 * np.log10(np.abs(np.fft.rfft(w, 8192)) + 1e-12)
+        print(f"FIR peak tap {int(np.argmax(np.abs(w))) - FIR_TAPS // 2:+d}, magnitude dB at "
+              f"100 Hz/1 kHz/5 kHz: {mag[17]:.1f}/{mag[171]:.1f}/{mag[853]:.1f}", flush=True)
 
 
 def rebuild(net, x, device=None, window=6 * SR, hop=5 * SR):
@@ -518,6 +581,10 @@ def main():
     f.add_argument("--norm", action="store_true", help="v3: normalised bottleneck")
     f.add_argument("--open-bottom", action="store_true", help="v3b: no GLU gate at the deepest level")
     f.add_argument("--loss", choices=("default", "phase", "sisdr"), default="default")
+    f.add_argument("--residual", action="store_true", help="FIR(x) + U-Net(x) (residual-di-plan.md)")
+    f.add_argument("--linear-only", action="store_true", help="the FIR alone (control L)")
+    f.add_argument("--steps", type=int, help="stop after this many steps (cosine by step)")
+    f.add_argument("--fir-lr-scale", type=float, default=0.1)
     args = ap.parse_args()
     if args.cmd == "cache-pairs":
         build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
@@ -527,7 +594,8 @@ def main():
         fit(args.cache.expanduser(), args.fold, args.out.expanduser(), args.minutes, args.seed,
             log_every=args.log_every, resume=args.resume, lr=args.lr, lr_end=args.lr_end,
             extra=[c.expanduser() for c in args.extra_cache], norm=args.norm,
-            open_bottom=args.open_bottom, loss_kind=args.loss)
+            open_bottom=args.open_bottom, loss_kind=args.loss, residual=args.residual,
+            linear_only=args.linear_only, steps=args.steps, fir_lr_scale=args.fir_lr_scale)
 
 
 if __name__ == "__main__":
