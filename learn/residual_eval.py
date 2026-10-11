@@ -29,8 +29,9 @@ D3 = CR.HOME / "learn/direc"
 OUT = D3 / "residual"
 PINNED = PLUGIN_ROOT / "docs/sound-desc-test-parts.json"
 NETS = {"R": D3 / "models-resid/fold2.pt", "Cp": D3 / "models-cprime/fold2.pt",
-        "C": D3 / "models-set3/fold2.pt", "L": D3 / "models-linear/fold2.pt"}
-GATES = (("Cp", "C"), ("R", "Cp"))          # amended plan: a correct gradient; then pass-through
+        "C": D3 / "models-set3/fold2.pt", "L": D3 / "models-linear/fold2.pt",
+        "Cp1": D3 / "models-cprime-s1/fold2.pt"}    # the second C′ seed (gate 1 near the rule)
+GATES = (("Cp", "C"), ("R", "Cp"), ("Cp1", "C"))          # amended plan: a correct gradient; then pass-through
 BANDS_HZ = ((80, 1000), (1000, 3000), (3000, 8000))
 
 
@@ -284,7 +285,7 @@ def report():
     res = {}
     for cls in (None, "clean", "crunch"):
         tag = cls or "all"
-        for a, b in (("Cp", "C"), ("R", "Cp"), ("R", "C"), ("L", "Cp"), ("R", "L"), ("R", "base"),
+        for a, b in (("Cp1", "C"), ("Cp1", "Cp"), ("Cp1", "base"), ("Cp", "C"), ("R", "Cp"), ("R", "C"), ("L", "Cp"), ("R", "L"), ("R", "base"),
                      ("Cp", "base"), ("C", "base"), ("L", "base"), ("oracle", "base")):
             res[f"{a}_vs_{b}|{tag}"] = compare(a, b, cls)
     def gate(a, b):
