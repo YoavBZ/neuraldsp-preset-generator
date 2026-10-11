@@ -43,7 +43,7 @@ the differences that decide it are:
 
 | | Morgan Amps Suite | Tone King Imperial MKII |
 |---|---|---|
-| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; clean, crunch and heavy parts start from a factory baseline per amp (step 4) | **requires one of the user's own presets**; no Tone King content ships here |
+| template | ships one — `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`, IR-free and portable; clean, crunch and heavy parts start from a factory baseline per amp (step 4) | none ships here; clean and crunch parts start from a factory baseline the plugin installs (step 4), or from one of the user's own presets |
 | voices | PR12 blackface Princeton (12 W, breaks up), AC20 darkened Vox, SW50R Dumble-ish high headroom | Rhythm channel clean, Lead channel with Mid-Bite, attenuator, spring reverb, tremolo |
 | reach for it | jangle and chime, Dumble-style singing lead, anything needing three different amp characters | vintage Fender-flavoured cleans, edge of breakup, blues lead, real spring reverb |
 
@@ -55,9 +55,10 @@ Two traps worth naming out loud when you present the choice:
   usually works: on 25 mostly clean recordings, PR12 and SW50R each suited most, and
   AC20 fewer though still more than half
   ([quick checks](../../docs/quick-checks-results.md); provisional).
-- **A pack with no template is not a choice you can make for the user.** If Tone
-  King is the better voice but they own no Tone King preset, say that — it is the
-  deciding constraint, not a detail.
+- **Choose Morgan or Tone King by voice, not by closeness.** Their clean and crunch
+  starting presets landed about even against each other
+  ([Tone King baselines](../../docs/toneking-baseline-results.md)), so the pack is a
+  question of character.
 
 Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` for the voices before
 recommending one. Where a pack has no `tone.md`, say so rather than guessing at
@@ -238,11 +239,14 @@ Tone King recipes use its verified sync-note selectors. See
     not the "renamed factory preset" failure step 3 warns about.
   - **If the file is missing** (an older or trimmed install), say so and use the
     clean template.
-- **The dry recipe,** for every Morgan baseline above: `dry/pr12`, `dry/sw50r` or
-  `dry/ac20`, matching the baseline's amp. It sets transpose 0, the amp's spring reverb 0
-  (PR12 and SW50R; AC20 has none), and reverb, delay, tremolo, doubler and gate off,
-  with the FX section itself on, as the baselines were measured. Stack it first, so your other recipes and the spec
-  can turn an effect back on, with its parameters set explicitly. Preview it:
+- **The dry recipe,** for every baseline in this step: `dry/pr12`, `dry/sw50r` or
+  `dry/ac20` on Morgan, matching the baseline's amp, and `dry/toneking` on Tone King.
+  On Morgan it sets transpose 0, the amp's spring reverb 0 (PR12 and SW50R; AC20 has
+  none), and reverb, delay, tremolo, doubler and gate off, with the FX section itself
+  on. On Tone King it turns reverb, delay, chorus and wah off, sets the amp's reverb
+  and tremolo depth to 0 and opens the gate fully, with the time-effects section on.
+  Both are as the baselines were measured. Stack it first, so your other recipes and
+  the spec can turn an effect back on, with its parameters set explicitly. Preview it:
 
   ```bash
   python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
@@ -256,12 +260,39 @@ Tone King recipes use its verified sync-note selectors. See
   section off, which the recipe turns on so an effect brought back is heard. The writer
   refuses another amp's recipe (`dry/pr12` on an SW50R preset), since it would change
   nothing you hear.
-- For Tone King, require one of the user's own Tone King presets. No Tone King
-  preset content ships in the repository.
+- **For a clean or crunch Tone King part, start from its factory baseline.** These are
+  factory presets every owner has, under
+  `/Library/Audio/Presets/Neural DSP/Tone King Imperial MKII/`, both on the Rhythm
+  channel:
+
+  | part | Tone King baseline |
+  |---|---|
+  | clean | `Artists/Richard Henshall/Vintage Trem.xml` |
+  | crunch | `Artists/Adam Christianson/Squishy Lead.xml` |
+
+  - **The evidence.** Chosen by rule on development recordings, then checked on
+    reserved ones, measured, not heard
+    ([toneking-baseline-results.md](../../docs/toneking-baseline-results.md)). Clean:
+    about 12% closer than the plugin's Default made dry, on 12 of 13 parts from 8
+    bands. Crunch: about 29% closer than a typical Rhythm-channel preset, on 7 of 7
+    parts but only 3 bands, so say the evidence is thin. Each tied its runner-up (Spring
+    Clean, Let 'er Rip): good starting points, not unique bests.
+  - **Made dry, the names no longer describe them.** Vintage Trem becomes a lean,
+    near-clean Rhythm tone (its tremolo, chorus and reverb are removed). Squishy Lead
+    becomes a crunch rhythm sound: the Rhythm channel at full volume, the second
+    overdrive pushing it, the compressor off. Present them as "the clean starting
+    point" and "the crunch starting point".
+  - **Make them dry first** with `--recipe dry/toneking`, and **keep their channel**:
+    don't switch to the Lead channel with an amp recipe, since that was not measured.
+  - **If the file is missing,** say so and ask for one of the user's own Tone King
+    presets.
+- For a heavier Tone King part, there is no measured baseline: use one of the user's
+  own presets.
 - One of the user's own presets is a fine template too, especially if it already
   uses the amp you want. Run `show.py` on it first.
 - Either way, select the intended amp or channel explicitly through an amp
-  recipe unless the inspected template already has the required value.
+  recipe unless the inspected template already has the required value; a Tone King
+  baseline keeps its Rhythm channel.
 
 ## 5. Write the spec, preview, apply
 
@@ -287,7 +318,8 @@ user decide.
    differ in amp, gain, drive, EQ or cab, not only in reverb or delay: the measured
    lists were too alike to gain much. On Morgan, the shipped template as it is can be
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
-   crunch or driven, by the part), made dry with `--recipe dry/<amp>`.
+   crunch or driven, by the part), made dry with `--recipe dry/<amp>`
+   (`dry/toneking` on Tone King).
 2. **Render them beside the song.** The page plays every preset through two shipped
    guitar riffs (strummed chords and a single-note line), at one loudness, under the
    song excerpt:
@@ -310,7 +342,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    and for a heavier part, crunch beside the driven one. Write it dry, into the
    audition folder under its own name; writing directly is fine for a listening copy,
    but preview with `--dry-run` (step 4) if the user keeps it. Use the baseline's own
-   amp's recipe (`dry/pr12`, `dry/sw50r` or `dry/ac20`):
+   amp's recipe (`dry/pr12`, `dry/sw50r`, `dry/ac20` or `dry/toneking`):
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \

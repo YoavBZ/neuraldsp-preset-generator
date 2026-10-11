@@ -95,3 +95,19 @@ def test_tone_guide_only_cites_existing_recipe_references(recipes):
     tone = (PACK_DIR / "tone.md").read_text()
     cited = set(re.findall(r"`([a-z0-9]+/[a-z0-9-]+)`", tone))
     assert cited <= known, f"unknown Tone King recipes: {sorted(cited - known)}"
+
+
+def test_the_tone_king_dry_recipe_is_exactly_what_was_measured():
+    import json
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    recipes = json.loads((root / "packs" / "toneking" / "recipes.json").read_text())
+    entries = {(e["module"], e["key"]): e["value"]
+               for e in recipes["layers"]["dry"]["toneking"]["parameters"]}
+    assert entries == {
+        ("", "reverbActive"): False, ("", "delayActive"): False,
+        ("", "chorusActive"): False, ("", "ampReverb"): 0,
+        ("", "ampTremoloDepth"): 0, ("", "gateThreshold"): -96,
+        ("", "wahActive"): False, ("", "timeSectionActive"): True,
+    }
