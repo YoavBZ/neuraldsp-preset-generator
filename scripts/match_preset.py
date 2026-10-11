@@ -191,8 +191,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "amp, an effect on or off. Repeatable, and a product: two "
                          "two-state switches is four searches sharing the budget. "
                          "Without it every discrete control stays where the template "
-                         "had it, which is what the run's caveat says. Use "
-                         "--list-enumerable to see the paths")
+                         "had it, which is what the run's caveat says. A variant "
+                         "only searches the controls the template already had "
+                         "active: what a switch turns on (a delay's time, another "
+                         "amp's tone stack) keeps the template's values, so set "
+                         "those in the template and run it as its own match "
+                         "instead. Use --list-enumerable to see the paths")
     ap.add_argument("--list-enumerable", action="store_true",
                     help="print the switches and selectors --enumerate accepts for "
                          "this pack and amp, with how many positions each has, and "

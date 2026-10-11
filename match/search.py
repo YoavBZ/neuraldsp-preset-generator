@@ -744,10 +744,11 @@ def screen(evaluator: Evaluator, seed: Mapping,
     whole CMA-ES stage found nothing better than 0.694. Discarding them was throwing
     away a fifth of the budget and, on that run, the best answer in it.
 
-    The extremes are the right probe *because* they are extreme. This measures the
-    largest effect a control can have on this material; a parameter that cannot
-    move the objective from one end of its range to the other cannot matter at any
-    setting in between, whatever the interactions.
+    The extremes are the probe because they are cheap, not because they are
+    sufficient. They show how far a control moves the objective between its two
+    ends, which misses an interior optimum: a control whose ends score alike can
+    still matter in between. In known-answer sweeps this froze the only wrong
+    control in 34 of 96 cases (audit D-M18); a midpoint probe is the parked fix.
 
     Two things it deliberately does not do. It does not screen switches: turning an
     effect off changes what is reachable rather than shifting a value, so the
@@ -1610,8 +1611,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                 f"{int(100 * SENSITIVITY_QUANTILE)}% that did, so "
                 f"they were left at the seed to spend the budget on the rest — the "
                 f"most any of them moved it was "
-                f"{max(frozen[p] for p in weakest):.3f}. A larger budget would "
-                f"search them."
+                f"{max(frozen[p] for p in weakest):.3f}. The cut is a fixed "
+                f"share, so a larger budget would not search them either; set any "
+                f"of them in the template if research says it matters."
             )
         unknown = [p for p in unknown if p not in silences]
         if unknown:
