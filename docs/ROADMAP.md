@@ -222,6 +222,15 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         other, each in its own direction. Learning on renders alone can't close that.
       - **What would be needed:** record-like training inputs or a metric learned on
         records, and more crunch bands than development has (6).
+   8d. **Tone King starting presets** ([plan](toneking-baseline-plan.md),
+      [results](toneking-baseline-results.md)). *Done 2026-10-11, independently re-derived:
+      adopted.*
+      - **Clean:** Vintage Trem (Richard Henshall), made dry, about 12% closer than the
+        plugin's Default made dry on held-out clean parts (12 of 13, 8 bands).
+      - **Crunch:** Squishy Lead (Adam Christianson), made dry, about 29% closer than a
+        typical preset on its channel (7 of 7, but 3 bands): thin evidence.
+      - **Both on the Rhythm channel,** and about even with the Morgan starting presets.
+      - **For the product session:** a `dry/toneking` recipe and `generate` step 4.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

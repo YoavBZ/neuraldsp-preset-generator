@@ -5357,6 +5357,46 @@
    "ran": "2026-10-10",
    "verdicts": "2026-10-10",
    "note": "Second declared use of these clean parts (first: confirm-rebuilt-di-chooser-2026-10-10). Existing scores only; recorded late, 2026-10-10."
+  },
+  {
+   "declaration": "docs/toneking-baseline-plan.md",
+   "test_id": "toneking-baseline-2026-10-11",
+   "commit": "3c02a59",
+   "sessions": [
+    "cambridge/All The Same",
+    "cambridge/It's My Right",
+    "cambridge/One Flip Flop",
+    "cambridge/Stalker",
+    "cambridge/Sugar - Faith",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 10",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "scored_sessions": [
+    "cambridge/All The Same",
+    "cambridge/It's My Right",
+    "cambridge/One Flip Flop",
+    "cambridge/Stalker",
+    "cambridge/Sugar - Faith",
+    "cambridge/That's How I Got To Memphis",
+    "guitar-techs/P3_music excerpt 10",
+    "telefunken/57 Chevy",
+    "telefunken/Bad Influence",
+    "telefunken/Die In Denver",
+    "telefunken/Past Dues",
+    "telefunken/Pretty Peace",
+    "telefunken/Safety"
+   ],
+   "heard": [],
+   "results": "docs/toneking-baseline-results.md",
+   "ran": "2026-10-11",
+   "verdicts": "2026-10-11",
+   "note": "Third declared use of these clean and crunch parts (first: confirm-rebuilt-di-chooser-2026-10-10; second: clean-baseline and crunch-baseline-2026-10-10). New Tone King renders; recorded before any held-out render, with the choice committed."
   }
  ]
 }
