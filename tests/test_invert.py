@@ -1687,17 +1687,68 @@ def _low_eq_values(result):
 def test_a_mix_or_separated_stems_low_end_does_not_move_the_eq():
     """Audit D-M8: a mix reference set the 65 Hz band to +12 dB on 40 of 57
     development parts, from the bass and the kick. For a mix or a separated stem
-    the bands below 250 Hz are left alone; an isolated stem, whose low end is the
-    guitar's, still moves them."""
+    the bands below 250 Hz are left alone while the rest still fits; an isolated
+    stem, whose low end is the guitar's, still moves them."""
+    shaped = {f"{AMP}EQ/{AMP}EQBand4": 6.0, f"{AMP}EQ/{AMP}EQBand8": 5.0}
     candidate = measure()
     for regime in ("mix", "separated_stem"):
-        result = invert.invert(_with_boosted_lows(candidate, regime), candidate, amp=AMP)
-        assert all(abs(float(v)) < 1.0 for v in _low_eq_values(result).values()), (
-            regime, _low_eq_values(result))
-        assert any("audit D-M8" in caveat for caveat in result.caveats), regime
+        result = invert.invert(_with_boosted_lows(measure(shaped), regime), candidate,
+                               amp=AMP)
+        lows = _low_eq_values(result)
+        assert len(lows) == 2, result.values
+        assert all(abs(float(v)) < 1.0 for v in lows.values()), (regime, lows)
+        assert result.values[f"{AMP}EQ/{AMP}EQBand4"] > 2.0, result.values
+        assert any("left as the template has them" in caveat
+                   for caveat in result.caveats), regime
     stem = invert.invert(_with_boosted_lows(candidate, "isolated_stem"), candidate,
                          amp=AMP)
     assert max(float(v) for v in _low_eq_values(stem).values()) > 6.0, stem.values
+
+
+def test_a_moved_corner_does_not_cut_the_held_lows():
+    """A low-pass has a negative mean. Taken out of the bands' target, that mean
+    used to land on the zeroed lows as a 4-5 dB cut nobody measured."""
+    target = measure({f"{AMP}EQ/{AMP}EQLpf": 4000.0, f"{AMP}EQ/{AMP}EQActive": True})
+    target.source["regime"] = "mix"
+    result = invert.invert(target, measure(), amp=AMP)
+    assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(4000.0)
+    lows = _low_eq_values(result)
+    assert len(lows) == 2 and all(abs(float(v)) < 1.0 for v in lows.values()), lows
+
+
+def test_a_mix_still_loads_a_measured_basis():
+    """The held bands keep their place, so a measured basis still lines up."""
+    from match.renderer import RenderMetadata
+    from packs.loader import load_pack
+
+    import json
+    import pathlib
+
+    pack = load_pack("toneking")
+    basis_path = (pathlib.Path(invert.__file__).resolve().parents[1] / "packs"
+                  / "toneking" / "eq_basis.json")
+    measured_with = json.loads(basis_path.read_text())["renderer"]
+
+    class ToneKingBasis:
+        def metadata(self):
+            return RenderMetadata(
+                renderer_id="swift", sample_rate=48000, block_size=512,
+                plugin_version="1.0.3", reproducible=False,
+                band_noise_db=pack.calibration["reused_instance_band_noise_db"],
+                renderer_build=measured_with["renderer_build"],
+                quality_mode=measured_with["quality_mode"])
+
+        def eq_basis(self, signal_path, analysis_centres):
+            return invert.measured_basis("toneking", signal_path, analysis_centres,
+                                         expected_plugin_version="1.0.3")
+
+    target = _with_boosted_lows(measure({f"{AMP}EQ/{AMP}EQBand4": 6.0}), "mix")
+    calculated = invert.invert(target, measure(), amp="Lead Channel",
+                               pack_id="toneking", renderer=ToneKingBasis())
+    assert calculated.detail.get("eq_basis"), calculated.detail
+    assert abs(calculated.values["/eqBand1"]) < 1.0
+    assert abs(calculated.values["/eqBand2"]) < 1.0
+    assert calculated.values["/eqBand4"] > 2.0, calculated.values
 
 
 def test_the_low_band_rule_keeps_the_rest_mean_free():

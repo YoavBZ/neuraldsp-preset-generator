@@ -437,7 +437,8 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
                    module: str = "", pack_id: Optional[str] = None,
                    accounted_for=None,
                    band_controls: Optional[Sequence[str]] = None,
-                   band_noise_db: Any = BAND_NOISE_FLOOR_DB) -> Inversion:
+                   band_noise_db: Any = BAND_NOISE_FLOOR_DB,
+                   held_hz: Sequence[float] = ()) -> Inversion:
     """Solve the nine band gains that best flatten a measured band difference.
 
     `band_delta_db` is what `analysis.compare.band_delta()` produces: signed dB
@@ -488,6 +489,13 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
     # closed. `measured` arrives mean-free by `band_delta`'s own contract, so this
     # leaves it that way.
     target = measured - (already - already.mean())
+    # Frequencies the reference cannot speak for (a mix's or a separated stem's low
+    # end, `_without_untrusted_lows`) are asked to stay as they are. Zeroed after
+    # the corners are taken out: a moved corner's mean would otherwise land on
+    # them as a cut the measurement never asked for.
+    held = {float(f) for f in held_hz}
+    if held:
+        target[np.array([float(f) in held for f in frequencies])] = 0.0
 
     caveats: List[str] = []
     supplied_basis = basis is not None
@@ -1222,11 +1230,12 @@ def _without_untrusted_lows(delta: Mapping[float, float], regime: Optional[str],
     offset = sum(kept.values()) / len(kept)
     dropped = sorted(c for c in delta if c < LOW_TRUST_HZ)
     if dropped:
+        what = {"mix": "a mix", "separated_stem": "a separated stem"}[regime]
         result.caveats.append(
-            f"on {regime} material the bands below {LOW_TRUST_HZ:.0f} Hz "
-            f"({', '.join(f'{c:.0f}' for c in dropped)} Hz) are the rhythm section "
-            f"or the separator, not the amp, so the equaliser was not moved there "
-            f"(audit D-M8)"
+            f"in {what} the bands below {LOW_TRUST_HZ:.0f} Hz are the bass, the "
+            f"kick or the separator, not the amp, so the equaliser and high-pass "
+            f"were left as the template has them there; the search can still "
+            f"move them"
         )
     return {c: (d - offset if c >= LOW_TRUST_HZ else 0.0) for c, d in delta.items()}
 
@@ -1292,7 +1301,10 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     spectral_moves: Optional[List[str]] = None
     rows = band_delta(target, candidate)
     delta = {float(row["centre_hz"]): float(row["delta_db"]) for row in rows}
-    delta = _without_untrusted_lows(delta, getattr(target, "regime", None), result)
+    regime = getattr(target, "regime", None)
+    delta = _without_untrusted_lows(delta, regime, result)
+    held_lows = (sorted(c for c in delta if c < LOW_TRUST_HZ)
+                 if regime in LOW_UNTRUSTED_REGIMES else [])
 
     centres = _band_centres(pack_id, amp)
     if not delta:
@@ -1395,6 +1407,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             module=amp, pack_id=pack_id,
             accounted_for=filters.detail.get("filter_response_db"),
             band_controls=signal_path.eq_band_controls,
+            held_hz=held_lows,
             band_noise_db=_renderer_band_noise(
                 renderer, measured=basis_noise
             ))
