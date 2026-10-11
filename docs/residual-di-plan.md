@@ -207,3 +207,26 @@ matched in steps.
 - **Earlier DI-network conclusions are flagged,** in the roadmap and the audit, as trained
   with a corrupted spectral gradient: the confirmation, the clean and crunch checks, v2,
   v3 and the 3 kHz cut. Their measured numbers stand as measurements of those networks.
+
+## Amendment: how the second C′ seed is read (2026-10-12, declared before its result)
+
+Gate 1 passed by 0.001, and on a single seed. A second C′ (seed 1, same recipe and data,
+`models-cprime-s1`) is scored the same way.
+
+- **Decision:**
+  - C′ is carried forward as the candidate network only if seed 1 also passes gate 1
+    against C: the band-mean interval lies below 0, and more than half of the bands are
+    negative.
+  - Otherwise the correct-gradient gain is **unconfirmed**: C′ is not carried forward, and
+    the crunch question stays open.
+- **The weighting is not changed after the fact.** The two seeds are not pooled to rescue
+  a failing seed.
+- **Reported:**
+  - seed 1 against seed 0 (band means and per-band spread), as the run-to-run noise
+    estimate;
+  - the gap between seeds, set against gate 1's −0.036;
+  - each seed against the fixed preset, by class;
+  - leave-one-band-out for seed 1's gate;
+  - its coherence.
+- **An adversarial audit** re-derives the result and looks for reasons it might be wrong,
+  in either direction, before it is reported.
