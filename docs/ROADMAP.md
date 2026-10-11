@@ -328,25 +328,31 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - The listening checks the judge's review asked for: whether hiss matters, and
      whether drive with a matched spectrum is heard as the judge weights it.
    - Any search scored by the judge needs a positive control first.
-5. **Open defects in the DI path** ([ground-truth audit](ground-truth-audit-2026-10-03.md)).
-   The others are fixed (D-H1 by #107, D-M6 by #119, D-M9 by #114, D-M15 by #113),
-   moot now that a match without a DI doesn't search (D-M2, D-M14), or were about how
-   results were reported (D-H2, D-M5).
-   - **Renders:** Tone King's start-up mute (D-M1); Morgan's reused-instance history
-     (D-M13).
+5. **Defects in the DI path** ([ground-truth audit](ground-truth-audit-2026-10-03.md)).
+   Only a match with a DI (`--probe-di`) or `--search-without-di` reaches these;
+   song-only `generate` never does. Fixed: D-H1 (#107), D-M6 (#119), D-M9 (#114),
+   D-M15 (#113), and on 2026-10-12 D-M1 (#170), D-M7 (#168) and D-M8's calculated
+   start (#169). Moot now that a match without a DI doesn't search: D-M2, D-M14.
+   About how results were reported: D-H2, D-M5. What is left, parked:
+   - **Tone King's start-up mute (D-M1)** is fixed in the product match path: its
+     renders now start with 1.5 s of silence, cut off afterwards. The research
+     benchmark's Tone King re-scoring is the ML session's.
+   - **Morgan's reused-instance history (D-M13):** the renderer's warm-up is shared
+     with research renders; coordinate with the ML session first.
    - **Search controls:** `--enumerate` (D-M17) and the screen's false premise
      (D-M18): their help and report texts are corrected by #171. Parked: screening
      each enumerated variant's own active controls, and a midpoint probe.
-   - **Inversion:** the mix regime (D-M8) is fixed for the calculated start by #169
-     (a mix's or separated stem's bands below 250 Hz are left alone); the search
-     and its loss can still move them, parked with the search objective below. A
-     false tremolo (D-M7) is fixed for
-     recordings by #168; parked: the finer `tremoloRate` step, and whether a reamp
-     of the user's own DI (`paired_di`) also fires falsely (measure on the 43
+   - **Inversion:** a mix's or separated stem's bands below 250 Hz are left alone
+     (D-M8, #169), but the search and its loss can still move them, parked with the
+     search objective below. A false tremolo (D-M7) is no longer set from a
+     recording (#168); parked: the finer `tremoloRate` step, and whether a reamp of
+     the user's own DI (`paired_di`) also fires falsely (measure on the 43
      development DIs through a tremolo-off template before changing it).
    - **The search objective,** which still steers the DI path though it no longer
      judges: spectral extremes (D-H3), level handling (D-M3, D-M4), ambience, decay
-     and renormalising (D-M10–D-M12), and an untested stereo term (D-M16).
+     and renormalising (D-M10–D-M12), and an untested stereo term (D-M16). These are
+     loss and feature questions, the ML session's area, with no listening evidence
+     yet that they change a preset.
 
 ## Parked
 
@@ -401,6 +407,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-06 | Song-to-preset is judged on the product's question: does an average guitar, playing the recording's notes, through the preset sound like the record (the take's DI re-equalised to an average guitar's balance, then the judge). The judge's own question, recreating the original rig on its own guitar, is reported beside it. A short listening check confirms the measure first. | [DI robustness](di-robustness-results.md) |
 | 2026-10-06 | The audition page stays an option, not generate's main path (check inconclusive) | [listening-check-results.md](listening-check-results.md) |
 | 2026-10-12 | `generate` asks before building the listening page; the user can decline (user decision) | `skills/generate/SKILL.md` step 5b |
+| 2026-10-12 | A mix's top-end roll-off is a reason to check, not to darken (one song, mixed evidence) | `reference/reading-a-reference.md`, #167 |
+| 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), honest screen and `--enumerate` texts (D-M17, D-M18); the rest parked | step 5 above; #168–#171 |
 | 2026-10-07 | The average-guitar measure is confirmed by listening (23 of 24 disagreement trials, 6/6 repeats, 6/6 swap) | [listening results](avg-measure-listening-results.md) |
 | 2026-10-07 | Rebuilt-DI preset choice not passed on clean PR12 (8.5% vs 10%); continue to heavier tones and a search beyond the menu | [results](di-recovery-results.md) |
 | 2026-10-07 | Open source only: no cloud APIs, commercial tools, or unlicensed or gated weights; published methods are reimplemented | [round 5](research/round-5-guitar-models.md) |
