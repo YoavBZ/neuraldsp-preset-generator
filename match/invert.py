@@ -76,6 +76,12 @@ RT60_REGIMES = ("probe",)
 LOW_UNTRUSTED_REGIMES = ("mix", "separated_stem")
 LOW_TRUST_HZ = 250.0
 
+# The regimes that are recordings of played material, where the tremolo is left
+# as the template has it (see `tremolo_settings`).
+RECORDING_REGIMES = ("isolated_stem", "separated_stem", "mix")
+_RECORDING_WORDS = {"isolated_stem": "an isolated stem",
+                    "separated_stem": "a separated stem", "mix": "a mix"}
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -1039,8 +1045,29 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     When the target was rendered from that DI too (`SAME_DI_REGIMES`), a
     modulation the render already carries at the target's rate cannot be told
     apart from the DI's own rhythm or the template's tremolo, so the tremolo is
-    left exactly as the template has it. For a recording the render is ignored.
+    left exactly as the template has it.
+
+    A recording (`RECORDING_REGIMES`: an isolated or separated stem, or a mix)
+    never sets the tremolo: it is left exactly as the template has it. On played
+    material the confidence gate does not separate a tremolo from the rhythm of
+    the playing. The audit (D-M7) found it fired on 27 of 43 development amp
+    tracks, about 23 of them false, on 12 of 30 synthetic strums with no tremolo,
+    and on 6 of 43 mixes, 5 of them false. The cost is a real tremolo on a
+    recorded part: it has to be switched on in the template by hand.
     """
+    regime = getattr(fingerprint, "regime", None)
+    if regime in RECORDING_REGIMES:
+        return Inversion(
+            values={},
+            caveats=[
+                f"the tremolo is left as the template has it: in "
+                f"{_RECORDING_WORDS[regime]} the rhythm of the playing reads as a "
+                f"tremolo too often to set one "
+                f"from the measurement (audit D-M7). If the part really has a "
+                f"tremolo, turn tremolo/tremoloActive on in the template."
+            ],
+        )
+
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rate = modulation.get("am_rate_hz")
@@ -1230,7 +1257,7 @@ def _without_untrusted_lows(delta: Mapping[float, float], regime: Optional[str],
     offset = sum(kept.values()) / len(kept)
     dropped = sorted(c for c in delta if c < LOW_TRUST_HZ)
     if dropped:
-        what = {"mix": "a mix", "separated_stem": "a separated stem"}[regime]
+        what = _RECORDING_WORDS[regime]
         result.caveats.append(
             f"in {what} the bands below {LOW_TRUST_HZ:.0f} Hz are the bass, the "
             f"kick or the separator, not the amp, so the equaliser and high-pass "
