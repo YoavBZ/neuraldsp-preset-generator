@@ -335,7 +335,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - **Renders:** Tone King's start-up mute (D-M1); Morgan's reused-instance history
      (D-M13).
    - **Search controls:** `--enumerate` (D-M17); the screen's false premise (D-M18).
-   - **Inversion:** the mix regime (D-M8). A false tremolo (D-M7) is fixed for
+   - **Inversion:** the mix regime (D-M8) is fixed for the calculated start by #169
+     (a mix's or separated stem's bands below 250 Hz are left alone); the search
+     and its loss can still move them, parked with the search objective below. A
+     false tremolo (D-M7) is fixed for
      recordings by #168; parked: the finer `tremoloRate` step, and whether a reamp
      of the user's own DI (`paired_di`) also fires falsely (measure on the 43
      development DIs through a tremolo-off template before changing it).
