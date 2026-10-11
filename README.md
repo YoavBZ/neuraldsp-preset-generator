@@ -93,10 +93,10 @@ You don't have to use the slash commands — just describing what you want
     the Rhythm channel made dry (`dry/toneking`); the crunch one rests on thin
     evidence ([Tone King](docs/toneking-baseline-results.md)). A heavier Tone King
     part needs one of your own presets.
-  - **Given a song,** it puts four candidates on a local listening page beside the
-    song, including the plain dry starting preset (and, if you're unsure how
-    much gain the part has, the amp's other starting point beside it), and refines the
-    one you pick.
+  - **Given a song,** it offers to put four candidates on a local listening page
+    beside the song, including the plain dry starting preset (and, if you're unsure
+    how much gain the part has, the amp's other starting point beside it), and
+    refines the one you pick. It asks first; you can skip it.
   - Heavy metal and high-gain tones are out of scope: a heavier part still starts from
     the driven preset, but it isn't what the project is tuned for.
 - **`match`** — supply reference audio, a DI of that performance and a starting
