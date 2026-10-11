@@ -70,6 +70,10 @@ SAME_DI_REGIMES = ("probe", "paired_di")
 # the user's playing leaves the reverb as the template has it.
 RT60_REGIMES = ("probe",)
 
+# The regimes that are recordings of played material, where the tremolo is left
+# as the template has it (see `tremolo_settings`).
+RECORDING_REGIMES = ("isolated_stem", "separated_stem", "mix")
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -1025,8 +1029,28 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     When the target was rendered from that DI too (`SAME_DI_REGIMES`), a
     modulation the render already carries at the target's rate cannot be told
     apart from the DI's own rhythm or the template's tremolo, so the tremolo is
-    left exactly as the template has it. For a recording the render is ignored.
+    left exactly as the template has it.
+
+    A recording (`RECORDING_REGIMES`: an isolated or separated stem, or a mix)
+    never sets the tremolo: it is left exactly as the template has it. On played
+    material the confidence gate does not separate a tremolo from the rhythm of
+    the playing. The audit (D-M7) found it fired on 27 of 43 development amp
+    tracks, about 23 of them false, on 12 of 30 synthetic strums with no tremolo,
+    and on 6 of 43 mixes, 5 of them false. The cost is a real tremolo on a
+    recorded part: it has to be switched on in the template by hand.
     """
+    regime = getattr(fingerprint, "regime", None)
+    if regime in RECORDING_REGIMES:
+        return Inversion(
+            values={},
+            caveats=[
+                f"the tremolo is left as the template has it: on {regime} material "
+                f"the rhythm of the playing reads as a tremolo too often to set one "
+                f"from the measurement (audit D-M7). If the part really has a "
+                f"tremolo, turn tremolo/tremoloActive on in the template."
+            ],
+        )
+
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rate = modulation.get("am_rate_hz")

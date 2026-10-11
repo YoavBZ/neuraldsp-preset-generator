@@ -663,22 +663,48 @@ def test_a_modulation_the_render_already_carries_is_not_a_missing_tremolo():
     assert "tremolo/tremoloActive" not in whole.values
 
 
-def test_a_recording_never_shares_the_renders_rhythm():
-    """Only a target rendered from the same DI carries its rhythm. Matching a
-    stem or a mix, the render is the probe through the template and the target is
-    a recording that never went near it — so a real tremolo at the probe's rate
-    must still be set. Before this was gated, a real 2 Hz tremolo on an
-    isolated stem was silently dropped."""
+def test_a_recording_leaves_the_tremolo_as_the_template_has_it():
+    """On played material the confidence gate does not tell a tremolo from the
+    rhythm of the playing (audit D-M7: about 23 of 43 amp tracks read as one
+    falsely), so a recording never sets the tremolo, on or off, whatever the
+    render carries. The trade-off, stated on purpose: a real tremolo on a stem
+    or a mix is no longer set either, and has to be switched on in the template."""
     render = {"am_rate_hz": 2.17, "am_depth": 1.0, "am_confidence": 0.64}
     tremolo = {"am_rate_hz": 2.0, "am_depth": 0.6, "am_confidence": 0.97}
+    murky = {"am_rate_hz": 2.0, "am_depth": 0.6, "am_confidence": 0.3}
     for regime in ("isolated_stem", "separated_stem", "mix"):
-        stem = synthetic(source={"regime": regime}, modulation=tremolo)
-        result = invert.tremolo_settings(stem, rendered=synthetic(modulation=render))
-        assert result.values["tremolo/tremoloActive"] is True, regime
+        for modulation in (tremolo, murky, {}):
+            stem = synthetic(source={"regime": regime}, modulation=modulation)
+            for rendered in (None, synthetic(modulation=render)):
+                result = invert.tremolo_settings(stem, rendered=rendered)
+                assert result.values == {}, (regime, modulation)
+                assert any("left as the template has it" in caveat
+                           for caveat in result.caveats), result.caveats
+        whole = invert.invert(synthetic(source={"regime": regime}, modulation=tremolo),
+                              synthetic(modulation=render), amp=AMP)
+        assert not any(name.startswith("tremolo/") for name in whole.values), regime
     for regime in ("probe", "paired_di"):
         shared = synthetic(source={"regime": regime}, modulation=tremolo)
         assert invert.tremolo_settings(
             shared, rendered=synthetic(modulation=render)).values == {}, regime
+        assert invert.tremolo_settings(
+            shared).values["tremolo/tremoloActive"] is True, regime
+
+
+def test_a_synthetic_strum_without_a_tremolo_sets_none_from_a_recording():
+    """The failing case itself: a chord strummed three times a second, with no
+    tremolo anywhere, whose envelope still reads as a clean modulation. As a
+    probe it would switch a tremolo on; as a recording it sets nothing."""
+    t = np.arange(int(SR * 8)) / SR
+    chord = sum(np.sin(2 * np.pi * f * t)
+                for f in (110.0, 138.6, 164.8, 220.0, 277.2, 329.6)) / 6
+    audio = (np.exp(-np.mod(t, 0.33) / 1.2) * chord * 0.3).astype(np.float32)
+    as_probe = fingerprint(io.from_samples(audio, SR), regime="probe", excerpt_s=None)
+    # The fixture has to pass the gate, or the assertions below prove nothing.
+    assert invert.tremolo_settings(as_probe).values["tremolo/tremoloActive"] is True
+    for regime in ("isolated_stem", "separated_stem", "mix"):
+        target = fingerprint(io.from_samples(audio, SR), regime=regime, excerpt_s=None)
+        assert invert.tremolo_settings(target).values == {}, regime
 
 
 def test_a_tremolo_at_another_rate_than_the_render_is_still_set():
