@@ -110,15 +110,19 @@ Practical consequences:
 - **A mix's high end is inflated** by cymbals and air, so a mix that is still dark at
   4–6 kHz suggests a dark guitar. But a mastered mix's top end is also shaped by the
   master and the recording chain, so treat it as a reason to check the research, not
-  as a reason to darken the preset; keep the starting preset's top end unless a stem
-  or the research says otherwise. One case (2026-10-11, one song, one listener): a
+  as a reason to darken the preset; keep the step-4 baseline's top end (generate
+  skill), or the template's when there is no baseline, unless an isolated stem or
+  the research says otherwise. One case (2026-10-11/12, one song, one listener): a
   lead darkened to match a mix that fell away above 3 kHz (−9 dB at 4 kHz, −17 at
-  6.3 kHz) was further from the record by ear than the same starting preset left as
-  it was, each time the presets played the song's own part, rebuilt as a DI from the
-  song (four comparisons, one with the rebuilds blind). But through a real DI riff in
-  the part's register the darkened one won, and the rebuilt DI may itself carry the
-  mix's roll-off, so a darkened preset may have rolled it off twice. Mixed evidence,
-  not a rule.
+  6.3 kHz; Bright off, Treble 65, a 7 kHz low-pass, plus more mid and drive), A,
+  lost to B, the starting preset left as it was. B was closer to the record by ear each
+  time both played the song's own part, rebuilt from the song as a DI (three
+  listening sessions, seven rebuild versions; the presets were labelled A and B
+  each time, and only in the last were the rebuilds unlabelled). The extra mid and
+  drive changed too, so this does not isolate the top end. And through a real DI
+  riff in the part's register the darkened one won, and the rebuilt DI may itself
+  carry the mix's roll-off, so a darkened preset may have rolled it off twice.
+  Mixed evidence, not a rule.
 - **On a stem, distrust the low end and the time effects.** A search fitting a
   stem will spend its budget on frequencies the separator removed, and will
   switch delay and reverb off because the tail was stripped.
