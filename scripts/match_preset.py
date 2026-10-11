@@ -1223,6 +1223,12 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
             die(f"{e}\n"
                 f"  This backend needs macOS with the plugin licensed and "
                 f"installed, and swiftc from the Xcode command line tools.")
+        if pack_id == "toneking":
+            # A fresh Tone King process is muted for its first ~0.4-0.9 s (audit
+            # D-M1), which would cut the opening of every scoring render.
+            from match.preroll import PrerolledRenderer
+
+            return PrerolledRenderer(renderer)
         return renderer
     die(f"unknown renderer {name!r}: use swift for the real plugin, or synthetic, "
         f"a Python approximation of the chain's topology")
