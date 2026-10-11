@@ -60,8 +60,10 @@ By amp (clean and crunch): PR12 −0.107, SW50R −0.121, AC20 −0.033.
   high-gain songs keep the fixed driven preset.
 - **The 3 kHz cut didn't help on fresh clean and crunch parts:** +0.013 against the
   uncut rebuild, not significant. It helps only on high-gain, where the chooser isn't
-  used. The development "adoption" doesn't carry over; the cut can stay or go without
-  consequence.
+  used. The development "adoption" doesn't carry over.
+  - **Corrected by the [2026-10-11 audit](audit-2026-10-11.md):** that +0.013 pools clean
+    with crunch. On clean parts alone the cut hurts (+0.044, 90% +0.013 to +0.075), so it
+    is off for clean parts.
 
 ## Limits
 

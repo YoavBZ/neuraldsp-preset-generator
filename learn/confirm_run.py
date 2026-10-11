@@ -330,7 +330,8 @@ def manifest():
 
 def report():
     D = json.loads((OUT / "distances.json").read_text())
-    ps = parts()
+    # Set 4's declaration later grew by sessions this test never scored.
+    ps = {s: p for s, p in parts().items() if s in D}
     out = {"primary": summarise(D, ps),
            "sensitivity": {"rule_presets": summarise(D, ps, constants=RULE),
                            "without_flagged": summarise(D, ps, exclude_flagged=True),

@@ -4,6 +4,14 @@ Run 2026-10-11 under [plan v2 and its amendments](sound-desc-plan.md). Independe
 reviewed: every headline figure was reproduced with the reviewer's own code
 (`tmp/sound-desc-stage1-review.md`, local).
 
+> **Corrected by the [2026-10-11 audit](audit-2026-10-11.md).** The gates stay
+> inconclusive, but "no better than untrained baselines" and "below the chooser" were
+> part-weighted readings driven by one song (Eat The Feeder's Wickerman, 12 of 39 crunch
+> cells). Counting each band once, the translator is −0.147 against the fixed crunch
+> preset, level with the chooser (−0.145) and near the ceiling (−0.163); without that
+> band it matches the ceiling. The sim-to-real explanation holds for the MLP, not for
+> ridge. **Verdict: undecided, not failed.** The text below is kept as first written.
+
 ## In short
 
 - **Stage 0 passed:** with the same notes, matching a simple sound description picks

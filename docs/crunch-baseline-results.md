@@ -69,3 +69,6 @@ use, recorded in the ledger.
   DIs, and ideally a short listening A/B.
 - **The ML question moves to a different approach:**
   [sound-description prediction](ROADMAP.md) instead of rebuilding the DI.
+- **Corrected by the [2026-10-11 audit](audit-2026-10-11.md):** with 3 bands this test
+  could not pass (2 degrees of freedom, about 40% power), and all 3 bands lean the
+  chooser's way. It is uninformative, not evidence against the network.
