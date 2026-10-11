@@ -142,3 +142,44 @@ parts are development and have been seen many times.
    used for the pre-check. The band-weighted reading comes first. It tests pass-through
    under the same magnitude-heavy loss only, so a null result does not rule out
    pass-through with a phase-aware loss.
+
+## Amendment: the MPS gradient bug (2026-10-11, before any comparison run)
+
+**The reproduction check failed,** and the cause is a bug that affects every DI network.
+- **`torch.stft`'s gradient on MPS is wrong:** 34–100% off the CPU's at every FFT size,
+  under torch 2.8 and 2.14.
+- **The MPS matrix product on an unfolded, overlapping view is wrong too:** in the forward
+  pass, and in the gradient even when made contiguous.
+- **So every DI network trained on MPS** (all of them, C included) learned from a wrong
+  spectral-loss gradient. Only the L1 term's gradient was right.
+- **The original code still reproduces C** (64.94 at step 500, against 64.84). Current
+  code with the NaN-safe magnitude diverges on MPS. Either way the spectral gradient is
+  wrong.
+- **The fix:** `mrstft` computes on the CPU when given MPS tensors, and the gradient flows
+  back. The training-loss gradient on MPS now matches the CPU's to 0.04%, and a step takes
+  about 0.62 s (C's took 0.69 s). A test guards it (`tests/test_direc_mps_gradient.py`,
+  run where MPS exists).
+
+**What this changes:**
+- **The comparison with C is no longer fair:** C trained on broken gradients.
+- **So two networks are trained with correct gradients, side by side on MPS,** each with
+  C's recipe in steps (5,150 at 3e-4, then 23,100 with cosine decay to 2e-5), seed 0,
+  `demucs-venv`, no normalised bottleneck:
+  - **C′:** C's architecture;
+  - **R:** the residual design (513-tap FIR at a tenth of the learning rate).
+- **L** is unchanged (FIR alone, 30 minutes).
+
+**The pre-check is now at step 5,150, R against C′.**
+- **Stop** if R's 1–3 kHz coherence is below 0.20.
+- **R's validation loss** must be at most C′'s at that step plus 0.5.
+- **The mechanism counts as shown** at 0.228 or more.
+- **C′ and C** are both reported (validation loss and coherence).
+
+**Two gates,** each the band-mean rule from "After review" item 4:
+1. **C′ against C:** does a correct gradient help the chooser?
+2. **R against C′:** does pass-through help, given a correct gradient?
+
+The declared consequences for an inconclusive result apply to each.
+
+**The 2,049-tap timing and the "C's minutes" arguments are superseded:** the arms are
+matched in steps.

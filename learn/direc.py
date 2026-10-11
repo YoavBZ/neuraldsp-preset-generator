@@ -331,8 +331,15 @@ def _magnitude(z):
 
 
 def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
+    """Multi-resolution STFT magnitude loss. On MPS it is computed on the CPU and the
+    gradient flows back: torch.stft's gradient on MPS is wrong (34–100% off the CPU's at
+    every FFT size, torch 2.8 and 2.14, measured 2026-10-11; MPS matmul on an unfolded,
+    overlapping view is wrong too). Every DI network trained on MPS before that date
+    learned from a wrong spectral gradient (docs/residual-di-plan.md)."""
     import torch
 
+    if a.device.type == "mps":
+        return mrstft(a.cpu(), b.cpu(), ffts).to(a.device)
     loss = 0.0
     for n in ffts:
         w = torch.hann_window(n, device=a.device)
@@ -438,6 +445,8 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                  ([{"params": fir, "scale": fir_lr_scale}] if fir else [])
         for g in groups:
             g["lr"] = lr * g["scale"]
+        if not fir:                      # no FIR: exactly the original optimiser
+            return torch.optim.AdamW(net.parameters(), lr=lr, weight_decay=1e-5)
         return torch.optim.AdamW(groups, lr=lr, weight_decay=1e-5)
 
     opt = optimiser()
