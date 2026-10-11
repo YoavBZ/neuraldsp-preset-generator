@@ -15,7 +15,9 @@ _ACTIVITY = ("pauses", "plays in too few frames")
 # Rebuilt DIs are low-passed here before rendering (docs/rebuilt-di-lowpass-results.md:
 # a near miss, −0.049 against a −0.05 bar, 23 picks better and 5 worse; adopted by the
 # user's decision on 2026-10-10 because it is free, consistent in direction, and removes
-# content the network cannot rebuild).
+# content the network cannot rebuild). RETIRED 2026-10-11 by the user's decision: it helped
+# only on high-gain (now out of scope), hurts on clean and is neutral on crunch
+# (docs/audit-2026-10-11.md). Rebuilt DIs are used uncut; kept only to re-run old results.
 LOWPASS_HZ = 3000
 
 
