@@ -33,7 +33,8 @@ The user speaks in plain language, not flags. Extract:
 
 Ask at most **one** clarifying question about the tone, and only if the answer
 would change the amp choice. Otherwise pick sensible defaults and say what you
-assumed. (Asking where in a full song the guitar plays, step 2, is separate.)
+assumed. (Asking where in a full song the guitar plays, step 2, and offering the
+listening page, step 5b, are separate.)
 
 ### Which pack, when you have to ask
 
@@ -315,8 +316,8 @@ preset: tell the user rather than calling the result portable.
 When the user gave a song (a file, and where in it the guitar plays), **ask once**
 whether they want to hear the preset beside three alternatives before choosing. Say in
 a line what that is: a local page, ready in a few minutes, that plays four presets
-through a short guitar riff under the song excerpt, so they can pick one or ask for a
-change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
+through two short guitar riffs under the song excerpt, so they can pick one or ask for
+a change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
 
 Why it is worth offering, and why it is not the default: choosing the best of four by
 measurement landed about 18% closer than the template on 25 recordings

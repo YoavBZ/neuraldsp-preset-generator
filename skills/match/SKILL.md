@@ -185,7 +185,7 @@ result.
 So without a DI, choose the starting preset with the generate skill's research
 about the song, and deliver it as it is, or follow the generate skill's step 5b:
 ask whether the user wants to hear it beside three alternatives on the audition
-page and pick by ear. Use `fingerprint.py` on the reference
+page, and if so let them pick by ear. Use `fingerprint.py` on the reference
 only to describe it and its caveats, not to change settings, and do not ask the
 user to record a DI to make up for it. `--search-without-di` runs the old
 noise-probe search, with its guitar check and level trim, for benchmarks; do not
