@@ -158,6 +158,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         verified): −0.049, 23 picks better and 5 worse, missing the bar by 0.0009.
         **Adopted by the user's decision** as a free, direction-consistent near miss
         (`learn/rebuilt_judge.lowpass`). It is not counted as a pass.
+        *Retired 2026-10-11 (the user's decision):*
+        - it helped only on high-gain, now out of scope;
+        - it hurts on held-out clean parts (+0.044) and does nothing on crunch;
+        - the corrected network (C′) is measured without it.
+        Rebuilt DIs are used uncut from now on.
       - **Repairing the bottom** ([v3 plan](di-network-v3-plan.md)): normalising the
         bottleneck improved early training, but the gate shut again (pre-check failed).
         v3b replaced that gate, and training still learned to ignore the bottom (0.1%
