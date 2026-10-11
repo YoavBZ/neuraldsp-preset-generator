@@ -185,7 +185,6 @@ def write_phone_page(out: pathlib.Path):
     if shutil.which("afconvert") is None:
         print("note: no phone page (it needs macOS's afconvert)", file=sys.stderr)
         return None
-    text = (out / "index.html").read_text()
 
     def embed(match):
         clip = out / match.group(1)
@@ -198,7 +197,7 @@ def write_phone_page(out: pathlib.Path):
         return f'src="data:audio/mp4;base64,{data}"'
 
     try:
-        result = re.sub(r'src="([^"]+\.wav)"', embed, text)
+        result = re.sub(r'src="([^"]+\.wav)"', embed, (out / "index.html").read_text())
     except (subprocess.CalledProcessError, OSError) as e:
         print(f"note: no phone page: a clip would not convert ({e})", file=sys.stderr)
         return None
@@ -207,8 +206,13 @@ def write_phone_page(out: pathlib.Path):
               file=sys.stderr)
         return None
     partial = out / "phone.html.tmp"
-    partial.write_text(result)
-    partial.replace(phone)
+    try:
+        partial.write_text(result)
+        partial.replace(phone)
+    except OSError as e:
+        partial.unlink(missing_ok=True)
+        print(f"note: no phone page: could not write it ({e})", file=sys.stderr)
+        return None
     return phone
 
 
@@ -295,6 +299,7 @@ phone, tap a player: it picks up where the last one of that riff was.</p>
 <script>
 const rows = [...document.querySelectorAll('.row')];
 let group = rows.find(r => r.dataset.group !== 'song')?.dataset.group;
+const last = {{}};       // where each riff was last paused, for a tap after a pause
 function play(row, at) {{
   const now = rows.find(r => r.classList.contains('playing'));
   const audio = row.querySelector('audio');
@@ -308,15 +313,19 @@ rows.forEach(row => {{
     // A tap on a phone has no key to carry the moment across: pick up where the last
     // clip of the same riff was, so A/B stays at the same place in the part.
     const prev = rows.find(r => r !== row && r.classList.contains('playing'));
-    if (prev && prev.dataset.group === row.dataset.group) {{
-      const t = prev.querySelector('audio').currentTime;
-      if (isFinite(t) && Math.abs(audio.currentTime - t) > 0.05) {{ try {{ audio.currentTime = t; }} catch (e) {{}} }}
-    }}
+    const t = prev && prev.dataset.group === row.dataset.group
+      ? prev.querySelector('audio').currentTime
+      : (prev ? undefined : last[row.dataset.group]);
+    if (t !== undefined && isFinite(t) && row.dataset.group !== 'song'
+        && Math.abs(audio.currentTime - t) > 0.05) {{ try {{ audio.currentTime = t; }} catch (e) {{}} }}
     rows.forEach(r => {{ if (r !== row) {{ r.classList.remove('playing'); r.querySelector('audio').pause(); }} }});
     row.classList.add('playing');
     if (row.dataset.group !== 'song') group = row.dataset.group;
   }});
-  audio.addEventListener('pause', () => row.classList.remove('playing'));
+  audio.addEventListener('pause', () => {{
+    row.classList.remove('playing');
+    last[row.dataset.group] = audio.currentTime;
+  }});
 }});
 document.addEventListener('keydown', e => {{
   if (e.metaKey || e.ctrlKey || e.altKey) return;
