@@ -496,12 +496,16 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
     # leaves it that way.
     target = measured - (already - already.mean())
     # Frequencies the reference cannot speak for (a mix's or a separated stem's low
-    # end, `_without_untrusted_lows`) are asked to stay as they are. Zeroed after
-    # the corners are taken out: a moved corner's mean would otherwise land on
-    # them as a cut the measurement never asked for.
+    # end, `_without_untrusted_lows`) are asked to stay as they are. The corners'
+    # shape is centred on the bands that were kept, as their difference was, and
+    # the held ones are zeroed after: otherwise a moved corner's mean lands on one
+    # side or the other as a tilt the measurement never asked for.
     held = {float(f) for f in held_hz}
     if held:
-        target[np.array([float(f) in held for f in frequencies])] = 0.0
+        mask = np.array([float(f) in held for f in frequencies])
+        if np.any(~mask):
+            target = measured - (already - already[~mask].mean())
+        target[mask] = 0.0
 
     caveats: List[str] = []
     supplied_basis = basis is not None
@@ -653,7 +657,8 @@ def filter_response_db(frequencies, hpf_hz: Optional[float] = None,
 
 def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
                 pack_id: str = "morgan", filter_controls=None,
-                current_filters=(None, None)) -> Inversion:
+                current_filters=(None, None),
+                held_hz: Sequence[float] = ()) -> Inversion:
     """Corner frequencies for the HPF and LPF, fitted to the measured roll-off.
 
     Only moves a corner when the evidence is one-sided: the target being short of
@@ -706,6 +711,11 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
     # The same weighting `fit_graphic_eq` uses, for the same reason: a third-octave
     # curve's extremes are the source's own filtering, not the amp's.
     weights = np.where((frequencies >= 50.0) & (frequencies <= 16000.0), 1.0, 0.15)
+    # Frequencies the reference cannot speak for do not vote on a corner: their
+    # zeroed difference does not share the offset of the bands that were kept.
+    held = {float(f) for f in held_hz}
+    if held:
+        weights = np.where([float(f) in held for f in frequencies], 0.0, weights)
 
     short = delta < -FILTER_MIN_DEFICIT_DB
     long = delta > FILTER_MIN_DEFICIT_DB
@@ -1387,6 +1397,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             current_filters=_current_filter_values(
                 signal_path, current_settings, pack_id
             ),
+            held_hz=held_lows,
         )
         result.merge(filters)
 

@@ -1731,15 +1731,22 @@ def test_a_mix_or_separated_stems_low_end_does_not_move_the_eq():
     assert max(float(v) for v in _low_eq_values(stem).values()) > 6.0, stem.values
 
 
-def test_a_moved_corner_does_not_cut_the_held_lows():
-    """A low-pass has a negative mean. Taken out of the bands' target, that mean
-    used to land on the zeroed lows as a 4-5 dB cut nobody measured."""
-    target = measure({f"{AMP}EQ/{AMP}EQLpf": 4000.0, f"{AMP}EQ/{AMP}EQActive": True})
-    target.source["regime"] = "mix"
-    result = invert.invert(target, measure(), amp=AMP)
-    assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(4000.0)
-    lows = _low_eq_values(result)
-    assert len(lows) == 2 and all(abs(float(v)) < 1.0 for v in lows.values()), lows
+def test_a_moved_corner_does_not_tilt_the_eq_on_a_mix():
+    """A low-pass has a negative mean. Taken out of the bands' target over every
+    frequency, that mean first landed on the held lows as a 4-5 dB cut, then, once
+    they were held, on the mids as a 2-5 dB boost; and it pulled a 2 kHz corner to
+    the next grid step. Only the low-pass changed, so the bands stay near flat."""
+    for corner in (4000.0, 2000.0):
+        target = measure({f"{AMP}EQ/{AMP}EQLpf": corner,
+                          f"{AMP}EQ/{AMP}EQActive": True})
+        target.source["regime"] = "mix"
+        result = invert.invert(target, measure(), amp=AMP)
+        assert result.values[f"{AMP}EQ/{AMP}EQLpf"] == pytest.approx(corner)
+        lows = _low_eq_values(result)
+        assert len(lows) == 2 and all(abs(float(v)) < 1.0 for v in lows.values()), lows
+        mids = [float(result.values[f"{AMP}EQ/{AMP}EQBand{index}"])
+                for index in range(3, 9)]
+        assert all(abs(v) < 1.5 for v in mids), (corner, mids)
 
 
 def test_a_mix_still_loads_a_measured_basis():
