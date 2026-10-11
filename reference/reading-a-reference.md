@@ -102,11 +102,12 @@ Measured on one track, stem against mix, as deviation from each source's own pea
 Practical consequences:
 
 - **Never take amp bass or a high-pass from a mix.** Below roughly 250 Hz you are
-  looking at the bass guitar and the kick. The match's calculation doesn't know
-  this: given a DI and a mix, it set the amp EQ's 65 Hz band (`EQBand1`) to about
-  +12 dB on most development mixes, and the search kept most of it (the
-  ground-truth audit's D-M8). Check the low EQ bands and the high-pass in the chosen
-  spec, and put them back.
+  looking at the bass guitar and the kick. Given a DI and a mix, the match's
+  calculation used to set the amp EQ's 65 Hz band (`EQBand1`) to about +12 dB on
+  most development mixes, and the search kept most of it (the ground-truth audit's
+  D-M8). It now leaves the bands below 250 Hz alone for a mix or a separated stem,
+  but the search can still move them: check the low EQ bands and the high-pass in
+  the chosen spec, and put them back.
 - **A mix's high end is inflated** by cymbals and air, so a mix that is still dark at
   4–6 kHz suggests a dark guitar. But a mastered mix's top end is also shaped by the
   master and the recording chain, so treat it as a reason to check the research, not
@@ -115,8 +116,8 @@ Practical consequences:
   the research says otherwise. One case (2026-10-11/12, one song, one listener): a
   lead darkened to match a mix that fell away above 3 kHz (−9 dB at 4 kHz, −17 at
   6.3 kHz; Bright off, Treble 65, a 7 kHz low-pass, plus more mid and drive), A,
-  lost to B, the starting preset left as it was. B was closer to the record by ear each
-  time both played the song's own part, rebuilt from the song as a DI (three
+  lost to B, the starting preset left as it was. B was closer to the record by ear
+  each time both played the song's own part, rebuilt from the song as a DI (three
   listening sessions, seven rebuild versions; the presets were labelled A and B
   each time, and only in the last were the rebuilds unlabelled). The extra mid and
   drive changed too, so this does not isolate the top end. And through a real DI
