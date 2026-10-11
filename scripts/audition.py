@@ -19,7 +19,10 @@ fresh Tone King process starts muted. The song excerpt and every render play at 
 loudness, so the page compares tone, not level: -20 LUFS, or lower when a clip could
 not reach it without peaking above -1 dBFS, since every clip moves to the same level.
 The raw renders are kept in `raw/`, so a page re-levels itself when a candidate is
-added. Nothing is installed and no preset is changed. The page, the clips and
+added. Nothing is installed and no preset is changed. Beside the page, `phone.html`
+holds the same page with every clip inside it (AAC), so it can be sent to a phone and
+played there as one file; on macOS it is rewritten whenever the page is. The page, the
+clips and
 `audition.json` (which binds every clip to the preset, DI and song it came from, and
 is saved after each candidate) are written to DIR.
 
@@ -163,6 +166,38 @@ def level_page(out: pathlib.Path, record: dict) -> None:
         gain = level - loudness
         write_clip(out / name, played[name] * 10 ** (gain / 20), audio.sample_rate)
         record["gain_db"][name] = round(gain, 2)
+
+
+PHONE_KBPS = 160               # AAC: transparent enough to compare tones on a phone
+PHONE_LIMIT_MIB = 30
+
+
+def write_phone_page(out: pathlib.Path):
+    """`phone.html`: the page with every clip embedded as AAC, so it plays as one file
+    on a phone. Needs macOS's afconvert; elsewhere it says so and returns None."""
+    import base64
+    import re
+    import shutil
+    import tempfile
+
+    if shutil.which("afconvert") is None:
+        print("note: no phone page (it needs macOS's afconvert)", file=sys.stderr)
+        return None
+    text = (out / "index.html").read_text()
+
+    def embed(match):
+        clip = out / match.group(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            aac = pathlib.Path(tmp) / "clip.m4a"
+            subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b",
+                            str(PHONE_KBPS * 1000), str(clip), str(aac)],
+                           check=True, capture_output=True)
+            data = base64.b64encode(aac.read_bytes()).decode()
+        return f'src="data:audio/mp4;base64,{data}"'
+
+    phone = out / "phone.html"
+    phone.write_text(re.sub(r'src="([^"/]+\.wav)"', embed, text))
+    return phone
 
 
 def save(out: pathlib.Path, record: dict) -> None:
@@ -414,6 +449,13 @@ def main():
     save(out, record)
     (out / "index.html").write_text(page(record))
     print(f"page: {out / 'index.html'}")
+    phone = write_phone_page(out)
+    if phone:
+        size = phone.stat().st_size / 2 ** 20
+        print(f"phone page: {phone} ({size:.1f} MiB, one file with the audio inside)")
+        if size > PHONE_LIMIT_MIB:
+            print(f"warning: the phone page is over {PHONE_LIMIT_MIB} MiB; some apps won't "
+                  "send a file that large", file=sys.stderr)
     if args.open:
         subprocess.run(["open", str(out / "index.html")], check=False)
 

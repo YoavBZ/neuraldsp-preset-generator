@@ -94,3 +94,29 @@ def test_a_song_with_more_than_two_channels_is_refused_before_anything_is_writte
     with pytest.raises(SystemExit):
         A.main()
     assert not out.exists() or not any(out.iterdir())
+
+
+def test_the_phone_page_holds_every_clip_inside_it(tmp_path):
+    import shutil
+
+    if shutil.which("afconvert") is None:
+        pytest.skip("the phone page needs macOS's afconvert")
+    sf.write(str(tmp_path / "song.wav"), np.stack([_tone()] * 2, axis=1), RATE, subtype="PCM_16")
+    sf.write(str(tmp_path / "A-riff-1.wav"), np.stack([_tone(seed=1)] * 2, axis=1), RATE,
+             subtype="PCM_16")
+    (tmp_path / "index.html").write_text(
+        '<audio src="song.wav"></audio><audio src="A-riff-1.wav"></audio><p>keep me</p>')
+    phone = A.write_phone_page(tmp_path)
+    text = phone.read_text()
+    assert text.count('src="data:audio/mp4;base64,') == 2
+    assert ".wav" not in text and "<p>keep me</p>" in text
+
+
+def test_without_afconvert_there_is_no_phone_page_and_no_error(tmp_path, monkeypatch, capsys):
+    import shutil
+
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    (tmp_path / "index.html").write_text('<audio src="song.wav"></audio>')
+    assert A.write_phone_page(tmp_path) is None
+    assert not (tmp_path / "phone.html").exists()
+    assert "afconvert" in capsys.readouterr().err

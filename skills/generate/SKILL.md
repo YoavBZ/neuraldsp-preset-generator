@@ -338,7 +338,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
 ```
 
    Use a folder under the data root for `AUDITION_DIR` (`auditions/<song>`), and add
-   `--open` to open the page. Rendering takes about 10 seconds a preset per riff, so
+   `--open` to open the page. To listen on a phone, send the user `phone.html` from
+   that folder: the same page with the audio inside, as one file. Rendering takes about 10 seconds a preset per riff, so
    give the command a few minutes, or run it in the background; if it stops partway,
    the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
    listen for gain, brightness, body and space, not the notes.
