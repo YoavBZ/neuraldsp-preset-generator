@@ -102,11 +102,12 @@ Measured on one track, stem against mix, as deviation from each source's own pea
 Practical consequences:
 
 - **Never take amp bass or a high-pass from a mix.** Below roughly 250 Hz you are
-  looking at the bass guitar and the kick. The match's calculation doesn't know
-  this: given a DI and a mix, it set the amp EQ's 65 Hz band (`EQBand1`) to about
-  +12 dB on most development mixes, and the search kept most of it (the
-  ground-truth audit's D-M8). Check the low EQ bands and the high-pass in the chosen
-  spec, and put them back.
+  looking at the bass guitar and the kick. Given a DI and a mix, the match's
+  calculation used to set the amp EQ's 65 Hz band (`EQBand1`) to about +12 dB on
+  most development mixes, and the search kept most of it (the ground-truth audit's
+  D-M8). It now leaves the bands below 250 Hz alone for a mix or a separated stem,
+  but the search can still move them: check the low EQ bands and the high-pass in
+  the chosen spec, and put them back.
 - **A mix's high end is inflated** by cymbals and air. So if the *mix* is still
   20+ dB down at 4–6 kHz, the guitar alone is at least that dark. That is a sound
   check on the research, firmer than the same reading on a stem, but not a value to

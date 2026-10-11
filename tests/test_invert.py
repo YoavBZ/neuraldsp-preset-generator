@@ -1663,3 +1663,51 @@ def test_a_whole_inversion_of_a_recording_does_not_touch_the_reverb():
                          regime="isolated_stem", excerpt_s=None)
     inverted = invert.invert(target, measure(), amp=AMP)
     assert not any(key.startswith("reverb/") for key in inverted.values)
+
+
+def _with_boosted_lows(fp, regime: str, boost_db: float = 15.0):
+    """`fp` as a recording of `regime` whose bands below 250 Hz read `boost_db`
+    louder: what a mix's bass and kick do to the guitar's low end."""
+    import copy
+
+    out = copy.deepcopy(fp)
+    out.source["regime"] = regime
+    out.spectrum["band_db"] = [
+        db + (boost_db if centre < 250 else 0.0)
+        for centre, db in zip(out.spectrum["band_centres_hz"], out.spectrum["band_db"])
+    ]
+    return out
+
+
+def _low_eq_values(result):
+    return {k: v for k, v in result.values.items()
+            if k in (f"{AMP}EQ/{AMP}EQBand1", f"{AMP}EQ/{AMP}EQBand2")}
+
+
+def test_a_mix_or_separated_stems_low_end_does_not_move_the_eq():
+    """Audit D-M8: a mix reference set the 65 Hz band to +12 dB on 40 of 57
+    development parts, from the bass and the kick. For a mix or a separated stem
+    the bands below 250 Hz are left alone; an isolated stem, whose low end is the
+    guitar's, still moves them."""
+    candidate = measure()
+    for regime in ("mix", "separated_stem"):
+        result = invert.invert(_with_boosted_lows(candidate, regime), candidate, amp=AMP)
+        assert all(abs(float(v)) < 1.0 for v in _low_eq_values(result).values()), (
+            regime, _low_eq_values(result))
+        assert any("audit D-M8" in caveat for caveat in result.caveats), regime
+    stem = invert.invert(_with_boosted_lows(candidate, "isolated_stem"), candidate,
+                         amp=AMP)
+    assert max(float(v) for v in _low_eq_values(stem).values()) > 6.0, stem.values
+
+
+def test_the_low_band_rule_keeps_the_rest_mean_free():
+    """The bands it keeps are made mean-free again, so a level offset does not
+    leak into the equaliser; zeroed bands keep their place for a measured basis."""
+    result = invert.Inversion()
+    delta = {65.0: 12.0, 125.0: 8.0, 250.0: 3.0, 1000.0: 1.0, 4000.0: -1.0}
+    out = invert._without_untrusted_lows(delta, "mix", result)
+    assert sorted(out) == sorted(delta)
+    assert out[65.0] == out[125.0] == 0.0
+    assert abs(sum(out[c] for c in (250.0, 1000.0, 4000.0))) < 1e-9
+    assert out[250.0] - out[4000.0] == 4.0
+    assert invert._without_untrusted_lows(delta, "isolated_stem", result) == delta
