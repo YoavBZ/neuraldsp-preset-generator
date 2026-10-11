@@ -124,3 +124,15 @@ all folded in below.
 - **Set 4 and the Internet Archive sessions stay unused.** They are the only fresh
   material left.
 - **An independent reviewer** re-derives the result before adoption.
+
+## Amendment during the development render (2026-10-11, before any distance is computed)
+
+- **Tempo:** the plugin replaces a preset's stored tempo with the host's (120) when the
+  state is set, and the renderer's state check refused the 39 presets stored at another
+  tempo. Their dry copies now store 120. Tempo only moves synced effects, which are off in
+  a dry preset, so the sound is unchanged. The other 87 dry copies are byte-identical.
+- **The start-up mute check** now tests the exact-zero run, as the review asked. The first
+  version tested a level threshold, which a quiet DI opening tripped on two presets. On
+  those, the mute measured about 0.44 s, inside the 1 s preroll.
+- **The measure DIs** are built once before the parallel renders. The first launch had a
+  write race on them; it rendered nothing that was kept.

@@ -2,6 +2,7 @@
 
     $TORCH_PY -m learn.tk_baseline dry                 # dry copies of the menu (regenerated)
     $TORCH_PY -m learn.tk_baseline repeat              # repeatability, in log distance
+    $TORCH_PY -m learn.tk_baseline dis dev             # the measure DIs, once
     $TORCH_PY -m learn.tk_baseline render dev 0 6      # shard 0 of 6, by preset
     $TORCH_PY -m learn.tk_baseline score dev
     $TORCH_PY -m learn.tk_baseline choose              # writes docs/toneking-baseline-choice.json
@@ -15,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import pathlib
 import shutil
 import statistics
@@ -101,11 +103,26 @@ def dry():
         out = OUT / "dry" / f"{_slug(name)}.xml"
         subprocess.run([sys.executable, str(PLUGIN_ROOT / "scripts/apply_spec.py"), "--template", m["source"],
                         "--spec", str(spec), "--out", str(out)], check=True, capture_output=True)
+        _host_tempo(out)
         st = _state(out)
         m.update(dry=str(out), sha256=_sha(out),
                  rooms=st.get("cab1RoomActive") == "1" or st.get("cab2RoomActive") == "1")
     (OUT / "menu.json").write_text(json.dumps({"menu": ok, "left_out": left_out}, indent=1))
     print(len(ok) - 1, "presets +Default;", "left out:", left_out)
+
+
+def _host_tempo(path):
+    """Store tempo 120: the plugin takes the host's tempo when a state is set, and the
+    renderer's state check refuses a preset whose stored tempo it changed. Tempo only
+    moves synced effects, which are off in a dry preset."""
+    from format.parser import parse_file
+    from format.structured import build, set_parameter
+    from format.writer import write_file
+
+    preset = build(parse_file(str(path)))
+    if preset.by_path[("", "tempo")].value != "120":
+        set_parameter(preset, "", "tempo", "120")
+        write_file(str(path), preset.tokens)
 
 
 def load_menu(with_default=False):
@@ -138,8 +155,18 @@ def _di(slug, part):
     path = OUT / "di" / f"{slug}.npy"
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        np.save(path, CR.build_di("measfix", part))
+        tmp = path.with_suffix(f".{os.getpid()}.npy")
+        np.save(tmp, CR.build_di("measfix", part))
+        os.replace(tmp, path)
     return np.load(path)
+
+
+def dis(split):
+    """Build every part's measure DI once, before the parallel renders."""
+    ps = parts(split)
+    for s in sorted(ps):
+        _di(s, ps[s])
+    print(len(ps), "DIs")
 
 
 def _committed():
@@ -164,10 +191,10 @@ def _render_one(r, di):
     x = np.concatenate([np.zeros(PREROLL, np.float32), di])
     y = np.asarray(r.render(x, {}, di_sha256=_hash_audio(x)).audio, np.float64)
     y = y.mean(1) if y.ndim > 1 else y
-    first_in = PREROLL + int(np.argmax(np.abs(di) > 1e-4))
-    first_out = int(np.argmax(np.abs(y) > 1e-6))
-    if not np.abs(y).max() > 1e-6 or first_out > first_in + LATENCY + 480:
-        raise SystemExit(f"output starts at {first_out}, input at {first_in}: muted past the preroll")
+    # The start-up mute is exact zeros; it must end inside the preroll.
+    first_out = int(np.argmax(y != 0))
+    if not np.any(y != 0) or first_out >= PREROLL:
+        raise SystemExit(f"output starts at {first_out}: muted past the preroll")
     y = y[PREROLL:]
     if not len(y) or np.abs(y).max() < 1e-4:
         raise SystemExit("silent render")
@@ -408,5 +435,7 @@ if __name__ == "__main__":
         render(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
     elif cmd == "score":
         score(sys.argv[2])
+    elif cmd == "dis":
+        dis(sys.argv[2])
     else:
         {"dry": dry, "repeat": repeat, "choose": choose, "check": check}[cmd]()
