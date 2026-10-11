@@ -64,8 +64,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      passed, [results](di-recovery-results.md)). On heavier tones it is large
      ([set-3 development](di-recovery-set3-results.md)).
    - **It has not beaten a fixed driven preset.** The one-time held-out confirmation
-     failed on SW50R and PR12 ([results](set3-heldout-confirmation-results.md), verified
-     twice). Against the same declared constant, development showed no robust edge
+     did not pass on SW50R and PR12 ([results](set3-heldout-confirmation-results.md),
+     verified twice); the measurement review later found that gate undecidable. Against the same declared constant, development showed no robust edge
      either.
    - **With the true DI, the ranking works.** It beats the constant on all three amps.
      The loss is in the rebuilt DI: about −0.16 (SW50R), −0.24 (PR12) and −0.22 (AC20) in
@@ -168,8 +168,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         (mostly spectral magnitude) doesn't keep the waveform, which a driven amp
         responds to.
       - **A waveform-keeping loss** ([plan and result](di-loss-plan.md)): failed too.
-      - **Closed, 2026-10-10:** five different attempts didn't move the rebuild's
-        detail. Heavy distortion appears to leave too little to recover it at this scale.
+      - **Paused, 2026-10-10:** five different attempts didn't move the rebuild's detail.
+        *The [2026-10-11 audit](audit-2026-10-11.md) found the closure not established:*
+        every network discards detail its own input carries (clean, 1–3 kHz: recording
+        0.72, networks 0.44–0.50), so it is a limit of the model and loss, not of
+        distortion. All five shared a magnitude loss, no pass-through path and a high-gain
+        training mix. A residual network is the next try.
 
    **Next, revised 2026-10-10 (evening), in this order:**
    5. **The declared confirmation** ([plan](set4-confirmation-plan.md),
@@ -205,11 +209,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         Americana (AC20), made dry, are about 12% closer than the template on held-out
         clean parts.
       - **`generate` now starts clean Morgan parts from them.**
-      - **Exploratory:** the chooser adds nothing on top of them on clean parts (+0.009).
-        Its product value now rests on crunch songs, and is unproven there.
+      - **Exploratory:** the chooser is not shown to add to them on clean parts.
+        *Corrected by the audit:* the +0.009 used the 3 kHz cut, which hurts on clean;
+        uncut it leans better (−0.035, 6 of 8 bands, about 20% power). From a stem there
+        is no edge, so it still doesn't run on clean songs. On crunch it leans better on
+        all 3 bands, a test too small to decide.
    8c. **Predict the sound, not the knobs** ([plan](sound-desc-plan.md),
       [results](sound-desc-results.md)). *Run 2026-10-11, independently reviewed: not
-      shown to help.*
+      shown to help.* *The [2026-10-11 audit](audit-2026-10-11.md) corrects the reading:
+      undecided, not failed.* Counting each band once, it is −0.147 on crunch, level
+      with the chooser and near the ceiling; one song (Eat The Feeder) pulls it down, where
+      it picks wet presets.
       - **The idea:** the plugin computes knobs to sound exactly, so a model predicts a
         sound description from the record, and the nearest preset description wins.
       - **Stage 0 passed:** with the same notes, a simple description picks crunch
@@ -218,8 +228,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         cheap untrained baselines on crunch (gates inconclusive), worse than the fixed
         preset on clean, and below the rebuilt-DI chooser everywhere. Phase B (a model of
         every setting) doesn't start.
-      - **Why:** real records sit twice as far from the renders as renders do from each
-        other, each in its own direction. Learning on renders alone can't close that.
+      - **Why (first reading):** records sit far from the renders. The audit found this
+        explains the MLP's collapse, not ridge's: ridge does as well on records as on
+        renders in 5 of 6 crunch bands.
       - **What would be needed:** record-like training inputs or a metric learned on
         records, and more crunch bands than development has (6).
    8d. **Tone King starting presets** ([plan](toneking-baseline-plan.md),
@@ -231,6 +242,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         typical preset on its channel (7 of 7, but 3 bands): thin evidence.
       - **Both on the Rhythm channel,** and about even with the Morgan starting presets.
       - **For the product session:** a `dry/toneking` recipe and `generate` step 4.
+   8e. **Audit of the negatives** ([audit](audit-2026-10-11.md)). *Done 2026-10-11.*
+      No calculation errors; several "failed" readings were undecided. Decisions: report
+      band-weighted results beside part-weighted ones; the 3 kHz cut is off for clean
+      parts; next, a translator description that discounts reverb tails, and a residual
+      DI network trained on clean and crunch. Fresh clean and crunch sessions with DIs
+      are still needed for any firm answer.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.

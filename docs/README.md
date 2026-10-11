@@ -217,10 +217,13 @@ was declared, what was measured, and the research behind it.
   [results](toneking-baseline-results.md): **adopted.** Fixed Tone King factory presets
   per gain class, made dry: Vintage Trem for clean (about 12% closer than the plugin's
   Default on held-out parts) and Squishy Lead for crunch (thin evidence, 3 bands).
+- [audit-2026-10-11.md](audit-2026-10-11.md): an adversarial audit of the ML negatives.
+  No calculation errors; the sound translator and the DI-network route are undecided,
+  not failed; the 3 kHz cut hurts on clean and is off there.
 - [sound-desc-plan.md](sound-desc-plan.md) → [results](sound-desc-results.md): predict
   the sound, not the knobs. With the same notes a sound description picks crunch presets
-  well, but a translator trained on plugin renders is no better than untrained baselines
-  on real records (not shown; records sit far from the renders).
+  well. A translator trained on plugin renders is undecided on real records: level with
+  the DI chooser counting each band once, pulled down by one song (see the audit).
 - [crunch-baseline-plan.md](crunch-baseline-plan.md) → [results](crunch-baseline-results.md):
   crunch starting presets per amp, lighter than the driven ones, are adopted on weak
   evidence (7 parts, 3 bands). The ML chooser over them is not shown (−0.056).
@@ -231,7 +234,7 @@ was declared, what was measured, and the research behind it.
 - [clean-baseline-plan.md](clean-baseline-plan.md) → [results](clean-baseline-results.md):
   **confirmed.** Fixed clean factory presets per amp, chosen on development, land about
   12% closer than the clean template on held-out clean parts. `generate` now starts
-  clean Morgan parts from them, and the chooser adds nothing on top of them on clean
+  clean Morgan parts from them, and the chooser is not shown to add to them on clean
   parts (exploratory).
 - [songs-check-plan.md](songs-check-plan.md) → [results](songs-check-results.md): from a
   separated stem the chooser keeps 75% of its amp-track gain (−0.114 against the starting

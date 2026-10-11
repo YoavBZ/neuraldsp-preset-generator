@@ -43,9 +43,13 @@ On the same held-out clean parts:
 | uncut rebuilt DI | −0.035 (−0.085 to +0.016) |
 | oracle (true DI) | −0.131 (8 of 8 bands) |
 
-- **Essentially all of the chooser's clean edge was the template being a weak start.**
-  The edge was −0.123 against the template. A fixed preset captures it without a
-  network, and the rebuilt-DI chooser adds nothing on top.
+- **Most of the chooser's clean edge was the template being a weak start.** The edge
+  was −0.123 against the template, and a fixed preset captures most of it without a
+  network.
+- **Corrected by the [2026-10-11 audit](audit-2026-10-11.md):** "adds nothing on top" is
+  not established. The +0.009 uses the 3 kHz cut, which hurts on clean (+0.044 against
+  the uncut DI). Uncut, the chooser leans better (−0.035, 6 of 8 bands), and the test had
+  about 20% power for that size. From a separated stem there is no edge on development.
 - **Per-song headroom exists** (the oracle is about 12% better still). It is out of the
   rebuilt DI's reach.
 - **The chooser shouldn't run on clean parts for now.** This is post hoc, on viewed data
