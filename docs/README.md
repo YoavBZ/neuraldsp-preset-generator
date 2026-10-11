@@ -213,6 +213,10 @@ was declared, what was measured, and the research behind it.
   for the judge; half of its stronger result is a masking-floor artefact.
 - [di-loss-plan.md](di-loss-plan.md): a waveform-keeping training loss; the pre-check failed
   (no gain in coherence, worse spectrum).
+- [toneking-baseline-plan.md](toneking-baseline-plan.md) →
+  [results](toneking-baseline-results.md): **adopted.** Fixed Tone King factory presets
+  per gain class, made dry: Vintage Trem for clean (about 12% closer than the plugin's
+  Default on held-out parts) and Squishy Lead for crunch (thin evidence, 3 bands).
 - [sound-desc-plan.md](sound-desc-plan.md) → [results](sound-desc-results.md): predict
   the sound, not the knobs. With the same notes a sound description picks crunch presets
   well, but a translator trained on plugin renders is no better than untrained baselines

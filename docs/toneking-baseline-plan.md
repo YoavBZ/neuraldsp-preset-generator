@@ -136,3 +136,12 @@ all folded in below.
   those, the mute measured about 0.44 s, inside the 1 s preroll.
 - **The measure DIs** are built once before the parallel renders. The first launch had a
   write race on them; it rendered nothing that was kept.
+- **Kept from before the fixes (recorded after the result review):** 20 presets,
+  Squishy Lead among them, finished before the dry copies were regenerated and the check
+  changed, and their renders were kept.
+  - All 20 were already at tempo 120, and their hashes match the current dry copies.
+  - They passed the old level check, which guarantees output within about 10 ms of the
+    DI's start. Two (Instagram Guitarist and Smooth Coil Riffage) started 51 samples
+    after the preroll, which the exact-zero check would refuse.
+  - Scoring starts 1 s into the DI, so this doesn't touch any distance.
+  - Every stored DI is bit-identical to a fresh rebuild.
