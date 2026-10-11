@@ -45,11 +45,11 @@ sys.path.insert(0, str(PLUGIN_ROOT))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from _cli import die, guarded
+from match.preroll import TONEKING_PREROLL_S  # shared with the match path (D-M1)
 
 SCHEMA = "audition-v1"
 TARGET_LUFS = -20.0
 CEILING_DB = -1.0            # no clip peaks above this, after the loudness match
-TONEKING_PREROLL_S = 1.0     # a fresh Tone King process is muted for up to 0.87 s
 LETTERS = string.ascii_uppercase
 
 

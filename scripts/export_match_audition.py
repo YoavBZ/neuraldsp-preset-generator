@@ -295,6 +295,12 @@ def main() -> None:
         metadata = renderer.metadata()
         recorded = summary.get("renderer") or {}
         if not same_renderer(recorded, metadata.as_dict()):
+            from match.preroll import predates_preroll
+
+            if predates_preroll(recorded, metadata.as_dict()):
+                die("the completed run was scored before Tone King renders started "
+                    "with a silent pre-roll (its renders' openings were muted); "
+                    "rerun the match before collecting a listening verdict")
             die("the available renderer/plugin build does not match the completed "
                 "run; rerun the match before collecting a listening verdict")
         probe = io.load(str(probe_path), target_rate=metadata.sample_rate)
