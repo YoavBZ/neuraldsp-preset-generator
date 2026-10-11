@@ -861,6 +861,8 @@ def _screen(searched: Sequence[str], frozen: Mapping[str, float],
     """
     if not searched and not frozen:
         return ""
+    from match.search import SENSITIVITY_QUANTILE
+
     movement = dict(movement or {})
     silences = dict(silences or {})
     rows = []
@@ -879,7 +881,7 @@ def _screen(searched: Sequence[str], frozen: Mapping[str, float],
             shown, why = "not measured", "could not be rendered"
         else:
             shown = f"{moved:.4f}"
-            why = ("too small to matter" if moved < floor
+            why = ("its two ends barely differ" if moved < floor
                    else "weakest of those that did")
         rows.append(f"<tr><td><code>{html.escape(path)}</code></td>"
                     f"<td>frozen — {html.escape(why)}</td>"
@@ -889,12 +891,15 @@ def _screen(searched: Sequence[str], frozen: Mapping[str, float],
                  f" The threshold here was {floor:g}.")
     return ("<h2>Sensitivity screen</h2>"
             "<p>Each parameter was rendered at both ends of its range with "
-            "everything else at the starting point, and the number is how far that "
-            "moved the distance to the reference. A parameter that barely moves it "
-            "across its whole range cannot matter at any setting in between, "
-            "<em>on this material</em> — but a parameter frozen as one of the "
-            "weakest that <em>did</em> move it would be searched on a larger "
-            f"budget.{threshold}</p>"
+            "everything else at the starting point, and the number is how far apart "
+            "the two ends scored against the reference. Only the ends are tried, so "
+            "a frozen parameter can still matter somewhere in between, <em>on this "
+            "material</em>: in tests where one control was set wrong on purpose, "
+            "the screen froze that control about a third of the time (though those "
+            "runs ended no worse for it). The weakest "
+            f"{int(100 * SENSITIVITY_QUANTILE)}% of those that did move it are "
+            "frozen whatever the budget. If research says a frozen parameter "
+            f"matters, set it in the template.{threshold}</p>"
             "<table><tr><th>parameter</th><th>decision</th>"
             "<th class='n'>distance moved</th></tr>"
             + "".join(rows) + "</table>")

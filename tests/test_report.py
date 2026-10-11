@@ -356,7 +356,7 @@ def test_the_screen_table_shows_the_movement_for_searched_parameters_too():
     assert "1.8531" in table and "0.4952" in table
     assert "0.0040" in table
     # And the two reasons for freezing are told apart in the table itself.
-    assert "too small to matter" in table
+    assert "its two ends barely differ" in table
 
 
 def test_the_control_that_silences_the_signal_is_not_called_too_small_to_matter():
@@ -376,7 +376,7 @@ def test_the_control_that_silences_the_signal_is_not_called_too_small_to_matter(
     gate = [row for row in table.split("<tr>") if "gateThreshold" in row][0]
 
     assert "silences the signal" in gate, gate
-    assert "too small to matter" not in gate, (
+    assert "its two ends barely differ" not in gate, (
         "it moved the score by 0.0413, four times the floor; its size is not the reason"
     )
     # The real movement is still shown, because a reader checking the freeze decision
@@ -384,7 +384,7 @@ def test_the_control_that_silences_the_signal_is_not_called_too_small_to_matter(
     assert "0.0413" in gate
     # And the genuinely inert one still gets the size reason.
     inert = [row for row in table.split("<tr>") if "delayMix" in row][0]
-    assert "too small to matter" in inert
+    assert "its two ends barely differ" in inert
 
 
 def test_the_screen_names_the_floor_it_actually_used():
@@ -399,7 +399,7 @@ def test_the_screen_names_the_floor_it_actually_used():
     section = html.split("Sensitivity screen")[1]
     assert "0.0767" in section, "the threshold the decision was made against"
     row = [r for r in section.split("<tr>") if "EQBand8" in r][0]
-    assert "too small to matter" in row, (
+    assert "its two ends barely differ" in row, (
         "0.0208 is under the floor this run used, however far over the constant it is"
     )
 
