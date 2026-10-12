@@ -169,3 +169,38 @@ continues to E1.**
 This shows only that DAC's codes keep what the picker needs from a true DI. It does not show
 that a mapper can recover those codes from a recording; that is E1's question. The E0 renders
 were deleted after scoring.
+
+## E1: a mapper in DAC's latent space (declared 2026-10-13, after E0 and before any E1 code)
+
+**The question:** E0 showed that DAC's code of the true DI keeps what the picker needs (−0.129
+against the oracle's −0.131). Can a network map the recording's DAC latent to the DI's latent?
+
+- **Model:** DAC 44 kHz encoder and decoder, frozen.
+  - **The mapper:** a 1-D convolution front end plus a small Transformer, about 10–20 M
+    parameters, working on DAC's continuous pre-quantisation latent (about 86 frames a second).
+  - **Its output:** the DI's latent. It is quantised by DAC's own codebooks before decoding.
+- **Loss:** L1 plus cosine on the latents. Nothing STFT-based, so the MPS gradient bug doesn't
+  apply; a gradient check on MPS against CPU still runs at crop length before training.
+- **Data:** C′'s own pairs and target, for a fair comparison.
+  - **The pairs:** `cache` (PR12), and the SW50R and AC20 pair caches rebuilt from their stored
+    renders.
+  - **The split:** K3 fold 2 is held out as validation; set 3 is never seen.
+  - **The target:** the DI at the average balance, as C′'s.
+  - **Augmentation:** C′'s, applied before encoding (EQ tilt and bell, bleed, noise).
+  - **Encoding:** a fixed subset of at most 20,000 clips of 6 s is encoded once into stored
+    latents, at 48 kHz → 44.1 kHz (`resample_poly`).
+- **Budget:** the same order as C′ (about 28k steps), on MPS, seed 0.
+- **Pre-checks, at the end, on the 18 development parts:**
+  1. **Latent L1 on fold-2 validation** is below the identity baseline (the recording's latent
+     taken as the DI's).
+  2. **Coherence at 1–3 kHz** is at least C′'s 0.207. E0 showed a DAC-decoded DI can reach
+     about 0.49.
+  - If either fails: stop, and report.
+- **The test:** rebuild the 18 parts' DIs (recording → DAC encoder → mapper → DAC decoder →
+  48 kHz → −22.9 LUFS), then render, judge with `rebuilt_distance` and pick, exactly as for C′.
+- **The gate, E1 against C′** (the mean of three seeds), on the band-mean rule with 7 degrees of
+  freedom: "helps", "futile" or "inconclusive". It is read as a harm and non-inferiority check;
+  the gap to the oracle is reported.
+- **What it earns:** "helps", or "inconclusive" with no harm (band mean ≤ 0), takes E1 to set 5's
+  held-out crunch test, declared as a further use of set 5. "Futile", or harm, sends us to E2.
+- **Reviews:** independent reviews of this section, the code, and the result.
