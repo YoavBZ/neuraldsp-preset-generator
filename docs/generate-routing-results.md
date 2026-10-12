@@ -11,9 +11,18 @@ in `generate-routing-runs.json`, numbers in `generate-routing-results.json`, cod
 By the declared rule, `generate`'s class choice costs: its regret, paired against a
 router that knows each part's label, is +0.114 (90% band bootstrap +0.060 to +0.173,
 15 bands, 34 clean and crunch parts), above the 0.05 bar with a lower bound above 0.
-The declared action follows: when `generate` routes a part away from clean, the
-listening page also offers the neighbouring class's starting preset. Offering two
-would have cut the regret to 0.009 (0 to 0.028).
+The declared action ("when the class is unclear, offer both neighbouring classes'
+starting presets") is applied in the form this data supports: when `generate` routes
+a part to crunch it also writes the clean start, and when it routes heavier, the
+crunch start (it cannot know when it is unclear: the misrouted agents were sure).
+Offering two would have cut the regret to 0.009 (0 to 0.028), an upper bound that
+assumes the better of the two is then picked by ear.
+
+**Scope (a deviation from the plan).** The plan (R7) declared user-style part
+descriptions from track names and arrangement. What the agents got was only the song,
+the artist and the time ("the electric guitar in the excerpt starting at 2:26"), while
+each mix sums every guitar in the session. So the verdict is about a user who gives
+only the song and a time, and agents often routed the song rather than the part.
 
 ## Part 2, research edits: undecided
 
@@ -21,7 +30,8 @@ The research's tonal edits (gain, drive, EQ, bright, cab) against the same start
 alone, on every scored clean and crunch part whatever its route, through the part's
 own DI. Each agent's recorded `apply_spec.py` command was replayed with only the start
 swapped to the leave-band-out preset. The renders reproduced the stored scores first
-(worst |Δ log| 0.00012 against the declared 0.005).
+(worst |Δ log| 0.00012 against the declared 0.005), and every part's dry arm
+reproduced the stored score of its start (0.00014 at most).
 
 | reading | mean log ratio | 90% interval | parts better / worse |
 |---|---|---|---|
@@ -30,12 +40,17 @@ swapped to the leave-band-out preset. The renders reproduced the stored scores f
 | tonal, rows whose start is the shipped one (sensitivity) | −0.002 | −0.023 to +0.018 | |
 | tonal, correctly routed rows only (secondary) | +0.040 | +0.007 to +0.078 | |
 
-- **Undecided by the declared rule:** no change to `generate` step 4. The edits lean
-  slightly worse than leaving the start alone, and help on about a third of parts.
+- **Undecided by the declared rule:** no change to `generate` step 4. The lean
+  towards worse comes from the 12 parts whose start was swapped to the leave-band-out
+  preset; where the start is the one the agent wrote its edits against, they are
+  neutral (−0.002). Edits help on about a third of parts.
 - **The secondary reading excludes 0,** but it selects rows on the same halves, which
   the plan declared would favour the dry arm; it does not decide.
-- **Effects** (reverb, delay) barely move the judge against a dry amp track, as the
-  plan expected; whether they suit the song is a question for the ear.
+- **Effects** (reverb, delay) barely moved the judge (+0.001), against the plan's
+  expectation that a dry amp track would charge them as error; on 4 parts the agent
+  added none. Whether they suit the song is a question for the ear.
+- Tonal edits here include gain, drive, EQ, bright, cab and compressor recipes. The
+  plan's by-edit-type reading is not reported: specs bundle several edits.
 
 ## Part 1 numbers
 
@@ -51,17 +66,24 @@ averaged over the three amps, band-weighted.
 | the one-question proxy | 0.110 | 0.055 to 0.172 | 26 |
 | `generate`, plus the neighbouring class | 0.009 | 0 to 0.028 | |
 
-- **`generate` did no better than always choosing clean** (0.135 against 0.105; the
-  intervals overlap, so not shown to be worse either).
+- **`generate` did no better than always choosing clean:** paired, +0.030 (−0.085 to
+  +0.142); part-weighted −0.004. Always clean is no fix: it costs 0.25 on crunch parts.
 - **The error is one-sided: clean parts sent to crunch.** Of 22 scored clean parts, 12
-  were routed clean and 9 crunch (one heavier). Each of those costs about 0.3 by the
-  judge, in the clean-to-crunch range listening validated. Crunch parts were routed
+  were routed clean and 9 crunch (one heavier). The 10 cost a mean of 0.33
+  (0 to 0.73; 8 of 10 above 0.15), in the clean-to-crunch range listening validated. Crunch parts were routed
   crunch (5) or heavier (7); crunch against heavier is report only.
-- **Why, from the agents' reasons:** they read the excerpt's measurement (noise-like
-  1–4 kHz, low harmonic-to-noise ratio) as drive. On an unmastered sum of a band's
-  tracks that measures the whole mix, cymbals and distorted bass included, not the
-  guitar ([reading a reference](../reference/reading-a-reference.md) already warns that
-  a mix's extremes are not the guitar).
+- **Why, from the agents' reasons (all 10 misrouted clean parts read):** about 8
+  followed the song's genre, the band or a write-up about the whole song (mix-contest
+  critiques, "Mix Rescue" articles) rather than the part; about 2 led with the
+  measurement, reading the mix's density or loudness as drive. On these excerpts the
+  mix measurements barely separate clean from crunch parts (harmonic-to-noise ratio
+  and fizz near chance, AUC 0.43 and 0.48; crest weakly, 0.79).
+- **Run to run, agents are unstable:** two near-identical Magilla excerpts 1 s apart
+  were routed clean and heavier. Each part had one run. Two runs researched the wrong
+  artist of the same name (no cost here).
+- **Near-ties** (the declared reading): 1 of 31 misrouted rows; it changes nothing.
+- **Robust:** dropping any one band leaves the mean at 0.094 or more and the lower
+  bound at 0.043 or more; per amp +0.15, +0.10, +0.09, each excluding 0.
 - **The cheap proxy** (title, artist, the measurement, web search, one word) agreed
   with the full skill on 38 of 50 parts and did about as well. A later re-check can use
   it.
@@ -87,5 +109,9 @@ playing at once with different labels were not routable from the input.
 - The judge is validated by ear for clear clean-to-crunch differences, which is what
   decided here; crunch against heavier is not decided.
 - Development parts, used many times before; a description, not a confirmation.
+- The sandbox that enforced the blinding broke some shell tools in every run (1 to 5
+  recovered errors each).
+- The plan expected 29 songs and 11 clean bands, counting the unscored Honey part;
+  the scored set is 28 songs and 10 clean bands.
 - The plan's reviewer saw summary figures of the truth before the runs (declared in
   the plan); the agents could not.
