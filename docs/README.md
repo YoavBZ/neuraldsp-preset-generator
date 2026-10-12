@@ -75,6 +75,11 @@ was declared, what was measured, and the research behind it.
   → [results](generate-routing-results.md): **routing costs** (clean parts sent to
   crunch by genre or song-level write-ups; `generate` now installs the neighbouring
   starting point too); research edits undecided.
+- [generate-routing-recheck-plan.md](generate-routing-recheck-plan.md) →
+  [results](generate-routing-recheck-results.md): **the new routing rule helps**
+  (−0.081 against the old skill, in-sample).
+- [starting-preset-listening-plan.md](starting-preset-listening-plan.md), with its
+  part list: built, awaiting the listener.
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
@@ -226,6 +231,11 @@ was declared, what was measured, and the research behind it.
   matches `generate`'s crunch start.
 - [validation-set5.md](validation-set5.md): set 5, a fresh held-out set (7 new bands; first
   use by the set-5 test).
+- [validation-set6.md](validation-set6.md): set 6, MedleyDB, held out and unused, with **no
+  DI part**. MedleyDB names no DI. A DI-role rule calibrated on development data could not
+  reject two-mic and two-amp pairs (≤ 10% false accepts) while keeping most real DIs, so
+  set 6 is unusable for DI-based tests (song-only use at most). 35 of its 73 songs are in
+  MUSDB18's train subset (HTDemucs's training data) and are marked.
 - [residual-di-plan.md](residual-di-plan.md) → [results](residual-di-results.md): the MPS
   gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
   corrected network picks better, marginally and on crunch only (a second seed is
@@ -276,6 +286,9 @@ was declared, what was measured, and the research behind it.
 - [validation-set5.md](validation-set5.md): fresh held-out set, unused. 7 new bands
   with kept parts (14 sessions tested), 31 parts, all held out. 26 clean or crunch parts
   are in scope; 5 high-gain parts are report-only.
+- [validation-set6.md](validation-set6.md): MedleyDB, held out and unused. 73 songs
+  tested. Amendment 1: no DI-role rule passed its development calibration, so no part is
+  kept and set 6 is unusable for DI-based tests. 35 songs are marked as in MUSDB18 (train).
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
