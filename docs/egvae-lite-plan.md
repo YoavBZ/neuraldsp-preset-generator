@@ -112,3 +112,12 @@ replace the design above.
    held-out test on set 5's crunch parts, where the room is larger.
 5. **MPS:** every STFT or mel loss runs on the CPU, guarded by per-module, per-loss gradient
    checks at the real crop length, before training and after 200 steps.
+
+### E0's bar (declared before E0 runs)
+
+- **What's compared:** on the 18 development parts, picks from DAC-round-tripped true DIs
+  against the fixed preset, as a band mean, alongside the oracle (−0.131) and C′ seed 0
+  (−0.099), from `residual-di-results.md`.
+- **The bar:** the DAC route continues only if the round-tripped picks keep at least half the
+  oracle's edge over C′, a band mean of −0.115 or lower.
+- **Reported, not gating:** mel distance, the coherence bar for later checks, and the lag.
