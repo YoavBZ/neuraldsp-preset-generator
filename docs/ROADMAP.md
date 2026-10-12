@@ -402,9 +402,13 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      on top of the dry starting preset help or hurt (one case, Cut It Out, was mixed:
      the darkened preset lost through the rebuilt DI but won through a real DI riff;
      see [reading a reference](../reference/reading-a-reference.md)).
-   - **A short listening check of the starting presets** against the template, through
-     the part's own notes: development parts with a DI where the guitar is exposed (the
-     user, about 15 minutes).
+     *Re-checked 2026-10-12 ([results](generate-routing-recheck-results.md)): the new
+     routing rule helps* (−0.081 against the old skill rerun, 90% −0.134 to −0.033;
+     regret 0.059 against 0.140), and every new run wrote a second start.
+   - **A short listening check of the starting presets** against what they replaced,
+     through the part's own notes ([plan](starting-preset-listening-plan.md)): *built
+     2026-10-12, 28 trials in two sittings (about 15 minutes each); awaiting the
+     listener.*
    - **Another end-to-end run** of `generate` on a clean or Tone King song (Cut It Out
      is the one case recorded so far).
 
@@ -471,5 +475,6 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | `generate` asks before building the listening page; the user can decline (user decision) | `skills/generate/SKILL.md` step 5b |
 | 2026-10-12 | A mix's top-end roll-off is a reason to check, not to darken (one song, mixed evidence) | `reference/reading-a-reference.md`, #167 |
 | 2026-10-12 | `generate` installs a second starting point when the part is not clean (measured), and routes by the part's documented sound, not the song's genre (a rule, not yet re-checked) | `generate-routing-results.md` |
+| 2026-10-12 | The new routing rule is kept: it routes better than the old skill on the same parts (in-sample) | `generate-routing-recheck-results.md` |
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | step 5 above; #168–#171 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

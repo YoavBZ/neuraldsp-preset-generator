@@ -13,6 +13,9 @@
               apply_spec command on the leave-band-out start, render them through the
               part's own measfix DI and score them with the flat judge. --check runs
               only the declared reproduction check first.
+    recheck-prepare / recheck-route / recheck-analyze
+              the re-check (docs/generate-routing-recheck-plan.md): the old and new
+              skill on the same inputs, one prompt, interleaved, then the readings.
     proxy     the cheap router: one short fixed question per run (title, artist, part,
               the excerpt's fingerprint text), web search only, one word back.
 
@@ -702,9 +705,326 @@ def edits_analyze():
     print(json.dumps(out, indent=1))
 
 
+RECHECK_MAP = ROOT / "docs" / "generate-routing-recheck-runs.json"
+RECHECK_RESULTS = ROOT / "docs" / "generate-routing-recheck-results.json"
+NEW_COMMIT = "1d2ae4c"
+RECHECK_MODEL = "claude-opus-5-5"
+NON_ANSWER = "I can't say; decide yourself."
+# Neutral names: an agent sees its plugin's path, which must not say which arm it is.
+# plugin-m is a byte copy of run 1's plugin (0.7.105); plugin-k is main at NEW_COMMIT.
+ARM_PLUGIN = {"old": WORK / "plugin-m", "new": WORK / "plugin-k"}
+
+
+def _recheck_prompt(old_prompt: str) -> str:
+    a = """install the preset or save notes."""
+    b = """Write the preset to ./out/ instead of installing it."""
+    if a not in old_prompt or b not in old_prompt:
+        raise SystemExit("run 1's prompt changed; refusing")
+    text = old_prompt.replace(a, "install anything or save notes.")
+    text = text.replace(b, "Write whatever you would install to ./out/ instead of installing it.")
+    key = """  "reasons": two or three sentences on why this class and amp.\n"""
+    if key not in text:
+        raise SystemExit("run 1's result keys changed; refusing")
+    return text.replace(key, key + """  "outputs": each file you wrote to ./out/ and the starting preset it was built from.\n""")
+
+
+def recheck_prepare():
+    """As committed, this wrote `[arm, nn]` jobs into runs-old/ and runs-new/ and the new
+    plugin into plugin-new/. Before any run, by hand (the arm was visible in those
+    paths): every run folder was moved to runs2/<random tag> with its prompt's data path
+    rewritten, the map's jobs became `[arm, nn, tag]` and gained a "plugins" key,
+    plugin-new/ was renamed plugin-k/, and run 1's plugin/ was copied byte for byte to
+    plugin-m/. `recheck_route` and `recheck_analyze` read that map."""
+    import random
+    import shutil
+    import subprocess
+
+    if RECHECK_MAP.exists():
+        raise SystemExit(f"{RECHECK_MAP} exists; the re-check is prepared once")
+    new = WORK / "plugin-new"                 # renamed to plugin-k after preparing
+    if new.exists() or ARM_PLUGIN["new"].exists():
+        raise SystemExit(f"{new} exists")
+    new.mkdir(parents=True)
+    archive = subprocess.run(
+        ["git", "archive", NEW_COMMIT, "skills", "scripts", "packs", "reference", "analysis",
+         "format", "match", "samples", ".claude-plugin", "pyproject.toml", "LICENSE",
+         "NOTICE.md"], cwd=ROOT, capture_output=True, check=True)
+    subprocess.run(["tar", "-x", "-C", str(new)], input=archive.stdout, check=True)
+    runs = json.loads(MAP.read_text())["runs"]
+    labels = {r["slug"]: r["label"] for r in json.loads(PARTS.read_text())["parts"]}
+    jobs = []
+    for nn, slugs in sorted(runs.items()):
+        has_cc = any(labels[s] in ("clean", "crunch") for s in slugs)
+        for arm in ("old", "new"):
+            if arm == "old" and not has_cc:
+                continue
+            folder = WORK / f"runs-{arm}" / nn
+            (folder / "out").mkdir(parents=True)
+            (folder / "data").mkdir()
+            src = WORK / "runs" / nn
+            shutil.copy2(src / f"song-{nn}.wav", folder / f"song-{nn}.wav")
+            prompt = _recheck_prompt((src / "prompt.txt").read_text())
+            prompt = prompt.replace(str(src / "data"), str(folder / "data"))
+            (folder / "prompt.txt").write_text(prompt)
+            jobs.append([arm, nn])
+    random.Random(20261013).shuffle(jobs)
+    version = json.loads((new / ".claude-plugin" / "plugin.json").read_text())["version"]
+    RECHECK_MAP.write_text(json.dumps({"plan": "docs/generate-routing-recheck-plan.md",
+                                       "new_commit": NEW_COMMIT, "new_version": version,
+                                       "model": RECHECK_MODEL, "order": jobs}, indent=1) + "\n")
+    prompts = {(WORK / f"runs-{a}" / n / "prompt.txt").read_text() for a, n in jobs if n == "01"}
+    print(f"{len(jobs)} runs prepared; new plugin {version}; prompts identical across arms: "
+          f"{len(prompts) == 1}")
+
+
+def _claude(folder, plugin, prompt, log, resume=None):
+    import subprocess
+
+    argv = ["claude", "-p", prompt, "--model", RECHECK_MODEL,
+            "--settings", str(WORK / "settings.json"), "--setting-sources", "",
+            "--plugin-dir", str(plugin), "--add-dir", str(plugin),
+            "--add-dir", str(WORK / "venv"),
+            "--allowedTools", "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill",
+            "--disallowedTools", "SendMessage,ListAgents,Task,Agent,Workflow,"
+            "Artifact,ArtifactComments,ArtifactData,CronCreate,RemoteTrigger",
+            "--permission-mode", "acceptEdits", "--output-format", "stream-json", "--verbose"]
+    if resume:
+        argv += ["--resume", resume]
+    return subprocess.run(argv, cwd=folder, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
+
+
+def _session_id(transcript: pathlib.Path):
+    for line in transcript.read_text().splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("type") == "system" and event.get("subtype") == "init":
+            return event.get("session_id"), event.get("plugins"), event.get("model")
+    return None, None, None
+
+
+def recheck_route(workers=3):
+    from concurrent.futures import ThreadPoolExecutor
+
+    doc = json.loads(RECHECK_MAP.read_text())
+
+    def one(job):
+        arm, nn, tag = job                    # neutral folder names: the arm is not in any path
+        folder = WORK / "runs2" / tag
+        transcript = folder / "transcript.jsonl"
+        if transcript.exists():
+            return arm, nn, "skipped"
+        with open(transcript, "w") as log:
+            _claude(folder, ARM_PLUGIN[arm], (folder / "prompt.txt").read_text(), log)
+        asked = False
+        if not (folder / "result.json").exists():
+            session, _, _ = _session_id(transcript)
+            if session:
+                asked = True
+                with open(transcript, "a") as log:
+                    _claude(folder, ARM_PLUGIN[arm], NON_ANSWER, log, resume=session)
+        (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
+        return arm, nn + "/" + tag, ("result" if (folder / "result.json").exists() else "NO RESULT") + (
+            ", resumed" if asked else "")
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for arm, nn, status in pool.map(one, [tuple(j) for j in doc["order"]]):
+            print(arm, nn, status, flush=True)
+
+
+def _preset_values(path):
+    from format.parser import parse
+    from format.structured import build
+
+    preset = build(parse(pathlib.Path(path).read_bytes()))
+    return {(q.module_path, q.key): str(q.value) for q in preset.parameters}
+
+
+def _dry_baselines(folder: pathlib.Path):
+    """(class, amp) -> values of each starting preset made dry, as step 4 writes it."""
+    folder.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for cls, by_amp in BASELINES.items():
+        for amp, preset in by_amp.items():
+            xml = folder / f"{cls}-{amp}.xml"
+            if not xml.exists():
+                _apply(["--template", str(_factory_file(preset)), "--recipe", f"dry/{amp}",
+                        "--strip-irs", "--out", str(xml)], folder)
+            out[(cls, amp)] = _preset_values(xml)
+    return out
+
+
+def _starts_written(out_dir: pathlib.Path, dry):
+    """The starting-point classes among the files the agent wrote: a file counts as a
+    class's start when at least 95% of the dry baseline's values match it."""
+    found = set()
+    for xml in sorted(out_dir.glob("*.xml")):
+        try:
+            values = _preset_values(xml)
+        except Exception:
+            continue
+        for (cls, _amp), base in dry.items():
+            same = sum(values.get(k) == v for k, v in base.items())
+            if base and same / len(base) >= 0.95:
+                found.add(cls)
+    return found
+
+
+def recheck_analyze():
+    import math
+    from functools import lru_cache
+
+    doc = json.loads(RECHECK_MAP.read_text())
+    runs = json.loads(MAP.read_text())["runs"]
+    entries = _distances()
+    parts_doc = json.loads(PARTS.read_text())
+    scored = [p for p in parts_doc["parts"]
+              if all(_raw(entries, p["slug"], a, BASELINES[c][a], h)
+                     for a in AMPS for c in BASELINES for h in "AB")]
+    choose = lru_cache(None)(lambda amp, label, band: _choose(entries, scored, amp, label, band))
+    dry = _dry_baselines(WORK / "dry-baselines")
+    norm = {"high-gain": "heavier"}
+
+    arms = {"old": {}, "new": {}}
+    status = {}
+    for arm, nn, tag in doc["order"]:
+        folder = WORK / "runs2" / tag
+        transcript = folder / "transcript.jsonl"
+        text = transcript.read_text() if transcript.exists() else ""
+        _, plugins, model = _session_id(transcript) if transcript.exists() else (None, None, None)
+        version = next((p.get("version") for p in plugins or []
+                        if p["name"] == "neuraldsp-preset-generator"), None)
+        calls = []
+        for line in text.splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("type") == "assistant":
+                calls += [json.dumps(c.get("input")) for c in event["message"]["content"]
+                          if c.get("type") == "tool_use"]
+        leaks = sorted({m for m in ("ndsp-presets", "/Users/yoavbz/projects", "YoavBZ",
+                                    "neuraldsp-preset-generator/docs", "validation-",
+                                    "generate-routing")
+                        for call in calls if m in call})
+        want = "0.7.105" if arm == "old" else doc["new_version"]
+        excluded = (leaks or version != want or model != RECHECK_MODEL)
+        result = None
+        if (folder / "result.json").exists():
+            try:
+                result = json.loads((folder / "result.json").read_text())
+            except ValueError:
+                result = None
+        route = norm.get(result.get("gain_class"), result.get("gain_class")) if result else None
+        written = _starts_written(folder / "out", dry)
+        asked = (folder / "asked.txt").read_text().strip() == "yes" if (
+            folder / "asked.txt").exists() else False
+        status[f"{arm}/{nn}"] = {"route": route, "starts_written": sorted(written),
+                                 "asked": asked, "excluded": bool(excluded),
+                                 "why_excluded": leaks or ([f"version {version}"] if version != want else [])
+                                 + ([f"model {model}"] if model != RECHECK_MODEL else [])}
+        for slug in runs[nn]:
+            arms[arm][slug] = None if excluded or route not in CLASSES else (
+                route, written | {route})
+    run1 = {}
+    for nn, slugs in runs.items():
+        r = json.loads((WORK / "runs" / nn / "result.json").read_text())
+        for slug in slugs:
+            run1[slug] = norm.get(r["gain_class"], r["gain_class"])
+
+    def regret(m, best, cls):
+        if GROUP[cls] == GROUP[best]:
+            return 0.0
+        return m[cls] - m[best]
+
+    per = {}
+    guards = {"old": {}, "new": {}}
+    for p in scored:
+        if not p["routable"]:
+            continue
+        rows = []
+        for amp in AMPS:
+            presets = {"clean": choose(amp, "clean", p["band"]),
+                       "crunch": choose(amp, "crunch", p["band"]),
+                       "heavier": BASELINES["heavier"][amp]}
+            m = {c: sum(math.log(_raw(entries, p["slug"], amp, presets[c], h))
+                        for h in "AB") / 2 for c in CLASSES}
+            rows.append((m, min(CLASSES, key=m.get)))
+        def avg(cls_or_set):
+            if cls_or_set is None:
+                return None
+            if isinstance(cls_or_set, str):
+                return sum(regret(m, b, cls_or_set) for m, b in rows) / len(rows)
+            return sum(min(regret(m, b, c) for c in cls_or_set) for m, b in rows) / len(rows)
+        entry = {"band": p["band"], "label": p["label"]}
+        for arm in ("old", "new"):
+            got = arms[arm].get(p["slug"])
+            entry[arm] = avg(got[0]) if got else None
+            entry[f"{arm}_two"] = avg(got[1]) if got else None
+            if got:
+                key = f"{p['label']} -> {got[0]}"
+                guards[arm][key] = guards[arm].get(key, 0) + 1
+        entry["run1"] = avg(run1.get(p["slug"]))
+        entry["label_route"] = avg(LABEL_CLASS[p["label"]])
+        per[p["slug"]] = entry
+
+    decide = {s: e for s, e in per.items() if e["label"] in ("clean", "crunch")}
+
+    def boot(key):
+        vals = [(e["band"], e[key]) for e in decide.values() if e[key] is not None]
+        return _band_boot(vals) if vals else None
+
+    def paired(a, b):
+        vals = [(e["band"], e[a] - e[b]) for e in decide.values()
+                if e[a] is not None and e[b] is not None]
+        return _band_boot(vals) if vals else None
+
+    diff = paired("new", "old")
+    if diff is None:
+        verdict = "no routes"
+    elif diff["hi"] < 0:
+        verdict = "the rule helps"
+    elif diff["lo"] > 0:
+        verdict = "the rule hurts"
+    else:
+        verdict = "undecided"
+    asked_runs = [k for k, v in status.items() if v["asked"]]
+    # Report only: the product with the question, if asked runs had been told the label.
+    answered = {s: dict(e) for s, e in decide.items()}
+    asked_slugs = {slug for k in asked_runs if k.startswith("new/")
+                   for slug in runs[k.split("/")[1]]}
+    for s, e in answered.items():
+        if s in asked_slugs:
+            e["new"] = e["label_route"]
+    out = {"plan": "docs/generate-routing-recheck-plan.md", "decision": verdict,
+           "new_minus_old": diff, "old_minus_run1_noise": paired("old", "run1"),
+           "regret": {k: boot(k) for k in ("new", "old", "run1", "label_route",
+                                           "new_two", "old_two")},
+           "if_the_question_were_answered_new": _band_boot(
+               [(e["band"], e["new"]) for e in answered.values() if e["new"] is not None]),
+           "asked_runs": asked_runs,
+           # A second start: a dry baseline of a class other than the route among the files.
+           "second_start_written": {arm: sum(any(c != v["route"] for c in v["starts_written"])
+                                             for k, v in status.items() if k.startswith(arm))
+                                    for arm in ("old", "new")},
+           "guards_routes_by_label_parts": guards,
+           "excluded_runs": {k: v["why_excluded"] for k, v in status.items() if v["excluded"]},
+           "failed_routes": [k for k, v in status.items() if v["route"] not in CLASSES],
+           "runs": status, "parts": per}
+    RECHECK_RESULTS.write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps({k: out[k] for k in ("decision", "new_minus_old", "old_minus_run1_noise",
+                                          "regret", "if_the_question_were_answered_new",
+                                          "asked_runs", "second_start_written",
+                                          "guards_routes_by_label_parts", "excluded_runs",
+                                          "failed_routes")}, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze"])
+    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze",
+                                       "recheck-prepare", "recheck-route",
+                                       "recheck-analyze"])
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--workers", type=int, default=3)
@@ -713,6 +1033,12 @@ def main():
         return prepare()
     if args.step == "route":
         return route(args.only, args.workers)
+    if args.step == "recheck-prepare":
+        return recheck_prepare()
+    if args.step == "recheck-analyze":
+        return recheck_analyze()
+    if args.step == "recheck-route":
+        return recheck_route(args.workers)
     if args.step == "edits-analyze":
         return edits_analyze()
     if args.step == "edits":

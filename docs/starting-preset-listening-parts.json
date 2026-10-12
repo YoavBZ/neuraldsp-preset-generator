@@ -1,0 +1,294 @@
+{
+ "plan": "starting-preset-listening-plan.md",
+ "screen": {
+  "active_share": 0.9,
+  "low_share": 0.25,
+  "active_db": -40.0
+ },
+ "C": [
+  {
+   "slug": "cambridge-Drag_Me_Down-ElecGtr4",
+   "band": "Adam Buckley",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.057,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "band": "Atlantis Bound",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.15,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-Passing_Ships-ElecGtr6",
+   "band": "The Travelling Band",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.184,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr02",
+   "band": "Diesel13",
+   "label": "clean",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.109,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1",
+   "band": "Turbosauro",
+   "label": "clean",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.064,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-Blind_Spots-GTR",
+   "band": "Doom Flamingo",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.173,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-Bloomlight-GTR",
+   "band": "Eggy",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.097,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_1",
+   "band": "Dom McLennon",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.067,
+   "passes": true,
+   "block": "C",
+   "amp": "pr12"
+  }
+ ],
+ "X": [
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "band": "Atlantis Bound",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.141,
+   "passes": true,
+   "block": "X",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-Quicksand-ElecGtr1",
+   "band": "The Travelling Band",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.126,
+   "passes": true,
+   "block": "X",
+   "amp": "sw50r"
+  },
+  {
+   "slug": "telefunken-Long_Way_Home-GTR",
+   "band": "Doom Flamingo",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.101,
+   "passes": true,
+   "block": "X",
+   "amp": "ac20"
+  },
+  {
+   "slug": "telefunken-Farthest_Step-GTR",
+   "band": "Eggy",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.101,
+   "passes": true,
+   "block": "X",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_2",
+   "band": "Dom McLennon",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.173,
+   "passes": true,
+   "block": "X",
+   "amp": "sw50r"
+  }
+ ],
+ "K": [
+  {
+   "slug": "cambridge-Prodigal-ElecGtr5",
+   "band": "Starnes And Shah",
+   "label": "crunch",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.028,
+   "passes": true,
+   "block": "K",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-Today's_The_Day-ElecGtr10",
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.212,
+   "passes": true,
+   "block": "K",
+   "amp": "sw50r"
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr1",
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.102,
+   "passes": true,
+   "block": "K",
+   "amp": "ac20"
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr01",
+   "band": "Diesel13",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.187,
+   "passes": true,
+   "block": "K",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-femme-elecgtr3",
+   "band": "Wall Of Death",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.167,
+   "passes": true,
+   "block": "K",
+   "amp": "sw50r"
+  },
+  {
+   "slug": "cambridge-femme-elecgtr5",
+   "band": "Wall Of Death",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.197,
+   "passes": true,
+   "block": "K",
+   "amp": "ac20"
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr1",
+   "band": "Magician's Nephew",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.127,
+   "passes": true,
+   "block": "K",
+   "amp": "pr12"
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr2",
+   "band": "Magician's Nephew",
+   "label": "crunch",
+   "set": 3,
+   "active": 1.0,
+   "low": 0.112,
+   "passes": true,
+   "block": "K",
+   "amp": "sw50r"
+  }
+ ],
+ "controls": [
+  {
+   "slug": "telefunken-Fragments-GTR",
+   "band": "Eggy",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.1,
+   "passes": true,
+   "block": "practice",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-Russian_Cream-GTR_2",
+   "band": "Dom McLennon",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.181,
+   "passes": true,
+   "block": "hidden",
+   "amp": "pr12"
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_1",
+   "band": "Dom McLennon",
+   "label": "clean",
+   "set": 12,
+   "active": 1.0,
+   "low": 0.103,
+   "passes": true,
+   "block": "hidden",
+   "amp": "pr12"
+  }
+ ],
+ "spare_crunch": [
+  "cambridge-wickerman-elecgtr2",
+  "cambridge-wickerman-elecgtr3"
+ ],
+ "k_report_only": false,
+ "screened_out": [
+  "cambridge-Signs-ElecGtr2",
+  "cambridge-colour-me-red-elecgtr03",
+  "cambridge-just-don-t-talk-elecgtr3",
+  "cambridge-let-s-dance-elecgtr3",
+  "cambridge-let-s-dance-elecgtr4",
+  "cambridge-wickerman-elecgtr7",
+  "telefunken-Gym_Hours-GTR_1"
+ ]
+}
