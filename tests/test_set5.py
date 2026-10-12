@@ -83,7 +83,7 @@ def test_kept_parts_meet_the_set4_rules():
 def test_the_guard_knows_every_declared_session():
     d = set5.load()
     assert {s["key"]: (s["band"], s["path"]) for s in d["sessions"]} == set5.SESSIONS
-    assert [a for a in d["amendments"]] == []
+    assert [a.get("band_merge") for a in d["amendments"]] == [{"Fytakyte": "BKS"}]   # the 2026-10-12 amendment
 
 
 def test_no_band_from_an_earlier_set():
@@ -185,4 +185,6 @@ def test_json_rebuilds_from_the_inventory():
     committed = json.loads((ROOT / "docs" / "validation-set5.json").read_text())
     rebuilt.pop("held_out_uses")
     committed.pop("held_out_uses")
+    rebuilt.pop("amendments")                # hand-recorded after declaration, like the ledger
+    committed.pop("amendments")
     assert rebuilt == committed
