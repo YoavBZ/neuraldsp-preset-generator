@@ -78,3 +78,37 @@ labelled). Development has been used many times, so a helps here is a lead, not 
 - Disk stays ≥ 33 GB free.
 - Reviews: an independent reviewer checks this plan, the code (including the MPS gradient check)
   before training, and the result.
+
+## Amendment after review (2026-10-13, before any code or training)
+
+The review (`tmp/egvae-lite-plan-review.md`, local) approved the plan with major changes. They
+replace the design above.
+
+1. **A correction:** the paper's 1.10 against 1.21 (mel) and 3.42 against 2.36 (dryness) are on
+   tones it trained on. On unseen Morgan tones it only ties the distortion-recovery baseline
+   objectively (mel 1.19 against 1.22, STFT 1.87 against 1.86). Its wins there are in listening:
+   quality 3.69 against 2.06, dryness 3.50 against 2.11. So expectations are modest.
+2. **Start from DAC 44 kHz,** the Descript Audio Codec, with MIT-licensed code and weights. It is
+   EG-VAE's own backbone. Training from scratch is dropped: the Mac manages about 3% of the
+   paper's training audio, with no adversarial training.
+3. **Staged; each stage runs only if the one before shows room:**
+   - **E0, no training:** round-trip the 18 parts' true measure DIs through DAC, at 44.1 kHz with
+     offline resampling.
+     - Measured: mel distance, coherence and lag against the true DI.
+     - Then the menu renders and picks, scored like the oracle: picks by the measure on the
+       round-tripped DI, scored on the other half with the stored true-DI measure.
+     - If the round-trip loses most of the oracle's edge over C′ (the oracle at −0.131 against
+       the fixed preset, C′ at about −0.09), the DAC route is dropped.
+     - E0 also sets pre-check 2's coherence bar.
+   - **E1:** DAC frozen at both ends, a small mapper from the recording's codes to the DI's
+     codes, trained on C′'s own data and target (the average-balance DI, C′'s augmentations),
+     then compared with C′. Its own plan section precedes training.
+   - **E2:** the full content/tone model on DAC, with the paper's pitch and tone-class
+     supervision and the conversion task. It runs with a control, C″: C′'s recipe on the same
+     new renders. Tones come from a fixed bank, about 45% clean, 45% crunch and 10% high-gain,
+     with 6–8 tones per window over 5–7k windows. It starts only if E0 or E1 shows room.
+4. **Development tests are read as harm and non-inferiority checks.** The gap to the oracle is
+   about 0.03–0.04, so "inconclusive" is the likely result. What a positive reading earns is a
+   held-out test on set 5's crunch parts, where the room is larger.
+5. **MPS:** every STFT or mel loss runs on the CPU, guarded by per-module, per-loss gradient
+   checks at the real crop length, before training and after 200 steps.
