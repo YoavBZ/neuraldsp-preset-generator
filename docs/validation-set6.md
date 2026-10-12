@@ -8,6 +8,122 @@ same-take pair is the DI.
 it, and nobody may listen to it, until a confirmation is declared in a committed file.
 That use is then added to `held_out_uses`, which is empty.
 
+## Amendment 1 (2026-10-13): the DI-role rule, calibrated on development data
+
+The declaration below (commit f1918cc) was rejected in review: its DI-role rule had never
+been tested on known pairs. This amendment calibrates a DI-role rule on **development data
+only**, and fixes the outcome **before anything is applied to MedleyDB**. It is committed on
+its own, ahead of the commit that applies it.
+
+**What was measured.** `research/set6_di_role_calibration.py` takes every development
+session of sets 1–2 and set 3 (Cambridge, Telefunken, Guitar-TECHS P3; no held-out session
+or part is opened). Within each session it tests every pair of the catalogued guitar tracks
+(the DIs and every amp track of each part). It applies set 4's waveform same-take test,
+unchanged, as MedleyDB's pairs had it. The roles come from the session track names.
+
+- **Positives:** a DI against an amp track. There are 177 same-take pairs: 95 clean, 39
+  crunch, 43 high-gain (set 3's classifier, DI → amp).
+- **Negatives:** two amp tracks of one part (two microphones on one cab, close/far,
+  Amp1/Amp2), amp tracks of two parts, and DI against DI. There are 66 same-take pairs:
+  54 from one part, 7 from two parts, 5 DI–DI.
+- **Bands:** 30 in all, 18 of them with negatives.
+
+The cues, measured on each orientation of each pair (x as the DI candidate) over the frames
+where both tracks play:
+
+- the coherence at 0.2–2 kHz;
+- the linear transfer x → y (H1), as roll-off: 6–10 kHz against 0.5–2 kHz;
+- the power ratio over the same bands;
+- set 3's gain measures: the 1-s crest drop and the level slope;
+- the per-track 5–10 kHz share (the first declaration's clean cue).
+
+The lag is not used to orient a pair.
+
+**What separates, and what does not:**
+
+- **Two microphones close on one cab are near-linear.** 34 of the 54 one-part pairs have a
+  coherence of 0.967–0.997. The rest are lower:
+  - distant or differently placed mics, and two of Renesans' amp pairs, read 0.68–0.89;
+  - two amps on one DI (Ale Lak, Eat The Feeder, Renesans) read 0.38–0.58.
+- **Driven DI → amp pairs are not.** Crunch pairs read 0.13–0.67 (median 0.40), and
+  high-gain pairs 0.04–0.54 (median 0.34).
+- **Clean DI → amp pairs overlap the mic pairs.** They read 0.37–0.99 (median 0.78).
+  - The DI is often the **darker** track. The median per-track 5–10 kHz share is −41 dB
+    for DIs and −28 dB for amp tracks. "A DI has no speaker roll-off, so it is brighter"
+    is false on development data.
+  - No single cue finds more than 45% of clean DIs at a 10% clean false-accept rate.
+- **Two amps fed from one DI** (Eat The Feeder's Amp1/Amp2, and its cross-part amp
+  tracks) are non-linear to each other, so they look like a DI → amp pair.
+
+**Rule families and their development results.** Thresholds were fitted by a grid,
+maximising right-DI accepts with false accepts at most 10%. Each figure is leave-one-band-out:
+each band is scored with thresholds fitted on the other 29.
+
+| rule | clean | crunch | high-gain | all DIs | false accepts (all negatives) | of which two-mic, one part |
+|---|---|---|---|---|---|---|
+| as first declared (lag orientation, crest ≥ 3 dB / HF advantage ≥ 6 dB; not fitted) | 18/95 (19%) | 22/39 (56%) | 16/43 (37%) | 56/177 (32%) | 3/66 (5%) | 3/54 |
+| driven: coherence 0.05–0.7 and crest drop ≥ 1 dB, DI = the larger crest drop | 13/95 (14%) | 34/39 (87%) | 37/43 (86%) | 84/177 (47%) | **8/66 (12%)** | 4/54 (7%) |
+| two-branch: the driven rule, plus a clean branch (coherence ≤ c or H1 roll-off ≤ t, DI = lower level slope) | 65/95 (68%) | 37/39 | 40/43 | 142/177 (80%) | **27/66 (41%)** | 23/54 (43%) |
+
+Notes on the table:
+
+- **The two-branch row's thresholds** are those fitted by the grid. No clean branch passes
+  the bar together with the driven rule. The lowest-false-accept clean branch finds only
+  27/95 clean DIs, and even that (fitted on all bands) has 8/66 false accepts.
+- **The driven rule** chose the same thresholds in 27 of 30 folds: coherence 0.05–0.7,
+  crest drop ≥ 1 dB.
+  - 6 of its 8 false accepts are Eat The Feeder's two-amp rig. The others are one DI–DI
+    pair (Hikikomori) and one close/far mic pair (The Travelling Band).
+  - 12 positives were accepted with the wrong track as the DI.
+- **The first declaration's rule** on whole development tracks keeps 32% of real DIs. The
+  review measured 14% on the 10-s crops.
+
+**The bar, and the verdict.**
+
+- **The bar:** a DI-role rule may establish set-6 DIs only if two things hold, both
+  leave-one-band-out on development data:
+  - it false-accepts at most 10% of all development negatives (two microphones, two amps,
+    DI–DI, since MedleyDB holds all three kinds);
+  - it keeps most real DIs of the class it is used for.
+- **The verdict: no rule above meets it.**
+  - Clean DIs cannot be established at all.
+  - The driven rule keeps 87% of crunch DIs and 86% of high-gain DIs. But its false-accept
+    rate is 12%, over the bar, and a two-amp rig passes it wholesale.
+  - The rule as first declared has a low false-accept rate. But it keeps only a third of
+    real DIs, and it is not principled: its lag premise is contradicted by labelled DIs.
+
+**So set 6 is declared unusable for DI-based tests.** It holds no DI part.
+
+- **What the next commit does:**
+  - every previously kept or excluded part is excluded, with this amendment as the reason;
+  - the 7 crops already cut stay on disk, held out and superseded;
+  - MedleyDB stays held out and unused;
+  - at most a song-only use (the released mixes, no DI) can be declared later, with its
+    own crop rule.
+- **The failed rules are not applied to MedleyDB.** A future rule (for example a driven-only
+  rule, calibrated on more development negatives) can then still be tested on it with no
+  look at its output.
+- **Steven Clark – Bounty, RAW_01_04 → 01_02:** MedleyDB labels both tracks "electric bass".
+  It is excluded on that ground as well.
+
+**Disclosure.**
+
+- **Set-6 role statistics have been seen** by both the building agent and the reviewer:
+  every same-take pair's lags, crests, 5–10 kHz shares and gain classes, the first rule's
+  outcomes, and the fact that the first rule's thresholds were fixed after 4 songs.
+  BigTroubles_Phantom is among those 4, and it later gave a kept part.
+- **No tone information was seen.** Nothing was rendered, scored, separated or listened
+  to, on any set.
+- **The development calibration** (cues, rule families, grid) was designed by the building
+  agent after that viewing. The 10% bar was set after the development table was seen. Of
+  the two readings (two-mic pairs only, 7%; all negatives, 12%), the stricter one was
+  taken.
+
+The calibration summary is `docs/validation-set6-di-calibration.json`, built by
+`research/set6_di_role_calibration.py evaluate`. The per-pair evidence is in
+`~/ndsp-presets/references/datasets-medleydb/_tools/di_role_calibration/`
+(`dev_pairs.json`, `dev_tracks.json`).
+
 **Scope.** As in set 5:
 
 - clean and crunch parts are in scope;
