@@ -803,8 +803,8 @@ def recheck_route(workers=3):
     doc = json.loads(RECHECK_MAP.read_text())
 
     def one(job):
-        arm, nn = job
-        folder = WORK / f"runs-{arm}" / nn
+        arm, nn, tag = job                    # neutral folder names: the arm is not in any path
+        folder = WORK / "runs2" / tag
         transcript = folder / "transcript.jsonl"
         if transcript.exists():
             return arm, nn, "skipped"
@@ -818,7 +818,7 @@ def recheck_route(workers=3):
                 with open(transcript, "a") as log:
                     _claude(folder, ARM_PLUGIN[arm], NON_ANSWER, log, resume=session)
         (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
-        return arm, nn, ("result" if (folder / "result.json").exists() else "NO RESULT") + (
+        return arm, nn + "/" + tag, ("result" if (folder / "result.json").exists() else "NO RESULT") + (
             ", resumed" if asked else "")
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
