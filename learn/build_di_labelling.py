@@ -629,7 +629,17 @@ def score_rows(rows, answers) -> dict:
                           "counts": bool(partners) and usable,
                           "reason": ("labels unusable: hidden checks failed" if not usable else
                                      "" if partners else "no same-take partner in the group")})
+        entry["subset_of"] = r.get("subset_of")
         labels.append(entry)
+    # A split group (plan amendment 4): if both halves name a DI, the group is flagged and left out.
+    halves = {}
+    for e in labels:
+        if e["subset_of"]:
+            halves.setdefault(tuple(e["subset_of"]), []).append(e)
+    for es in halves.values():
+        if sum(e["di"] is not None for e in es) > 1:
+            for e in es:
+                e.update(counts=False, reason="split group: a DI was named in both halves")
     return {"hidden_checks": {"right": right, "of": len(controls), "min_correct": MIN_CORRECT,
                               "per_check": [{"question": r["question"], "answer": answers[r["question"]],
                                              "di": r["answer"], "gain_class": r["gain_class"]}
