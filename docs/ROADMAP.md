@@ -279,8 +279,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        repository.
 
    **Parked, with reasons:**
-   - **Network improvements:** closed for the old networks; reopened by 8f–8g for the
-     corrected-gradient network (C′).
+   - **Network improvements:** closed, as above.
    - **Judge v2:** half its gain was an artefact of the masking floor; superseded as the
      candidate by judge v3, which waits for the listening calibration.
    - **Search beyond the menu:** on high-gain, the oracle's headroom (−0.17) is out of the
