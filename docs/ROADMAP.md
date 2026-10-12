@@ -308,6 +308,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           rig passes it).
       - **So MedleyDB adds nothing to the combined stem test.** At most a song-only use can
         be declared, and it must exclude or report the 35 songs in MUSDB18's train subset.
+   8j. **The deciding song-level test: no power** ([note](stem-test-power.md)). MedleyDB gives no
+      usable DI parts, and set 5 has 3 crunch bands with a mix: about 9–18% power. Proposed: close
+      the chooser for the product (step 9), keep C′ for research, and reopen with 8–12 new crunch
+      bands recorded with a DI. The user decides.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.
