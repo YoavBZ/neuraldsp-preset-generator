@@ -1,0 +1,1320 @@
+{
+ "plan": "docs/generate-routing-recheck-plan.md",
+ "decision": "the rule helps",
+ "new_minus_old": {
+  "band_mean": -0.0807,
+  "lo": -0.1336,
+  "hi": -0.0331,
+  "part_mean": -0.0665,
+  "n": 34,
+  "bands": 15
+ },
+ "old_minus_run1_noise": {
+  "band_mean": 0.0051,
+  "lo": -0.0261,
+  "hi": 0.0386,
+  "part_mean": 0.0108,
+  "n": 34,
+  "bands": 15
+ },
+ "regret": {
+  "new": {
+   "band_mean": 0.059,
+   "lo": 0.0165,
+   "hi": 0.1107,
+   "part_mean": 0.0494,
+   "n": 34,
+   "bands": 15
+  },
+  "old": {
+   "band_mean": 0.1397,
+   "lo": 0.0777,
+   "hi": 0.2066,
+   "part_mean": 0.1159,
+   "n": 34,
+   "bands": 15
+  },
+  "run1": {
+   "band_mean": 0.1346,
+   "lo": 0.0816,
+   "hi": 0.1912,
+   "part_mean": 0.1051,
+   "n": 34,
+   "bands": 15
+  },
+  "label_route": {
+   "band_mean": 0.0203,
+   "lo": 0.0016,
+   "hi": 0.0437,
+   "part_mean": 0.0132,
+   "n": 34,
+   "bands": 15
+  },
+  "new_two": {
+   "band_mean": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "part_mean": 0.0,
+   "n": 34,
+   "bands": 15
+  },
+  "old_two": {
+   "band_mean": 0.1397,
+   "lo": 0.0777,
+   "hi": 0.2066,
+   "part_mean": 0.1159,
+   "n": 34,
+   "bands": 15
+  }
+ },
+ "if_the_question_were_answered_new": {
+  "band_mean": 0.059,
+  "lo": 0.0165,
+  "hi": 0.1107,
+  "part_mean": 0.0494,
+  "n": 34,
+  "bands": 15
+ },
+ "asked_runs": [],
+ "second_start_written": {
+  "old": 0,
+  "new": 49
+ },
+ "guards_routes_by_label_parts": {
+  "old": {
+   "clean -> crunch": 10,
+   "clean -> clean": 12,
+   "crunch -> crunch": 7,
+   "crunch -> heavier": 5
+  },
+  "new": {
+   "clean -> clean": 16,
+   "clean -> crunch": 6,
+   "crunch -> clean": 2,
+   "crunch -> heavier": 7,
+   "high-gain -> heavier": 13,
+   "crunch -> crunch": 3,
+   "high-gain -> crunch": 3
+  }
+ },
+ "excluded_runs": {},
+ "failed_routes": [],
+ "runs": {
+  "new/22": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/49": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/07": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/37": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/23": {
+   "route": "heavier",
+   "starts_written": [
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/46": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/15": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/26": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/05": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/15": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/39": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/12": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/04": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/02": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/41": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/42": {
+   "route": "clean",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/42": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/30": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/40": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/03": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/34": {
+   "route": "clean",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/11": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/22": {
+   "route": "heavier",
+   "starts_written": [
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/39": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/31": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/49": {
+   "route": "crunch",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/25": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/01": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/48": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/45": {
+   "route": "clean",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/24": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/45": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/28": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/31": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/44": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/01": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/38": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/10": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/32": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/20": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/18": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/27": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/33": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/23": {
+   "route": "crunch",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/34": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/47": {
+   "route": "clean",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/28": {
+   "route": "clean",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/29": {
+   "route": "clean",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/14": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/36": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/30": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/18": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/40": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/13": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/29": {
+   "route": "clean",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/25": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/24": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/08": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/09": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/46": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/27": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/06": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/43": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/12": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/38": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/35": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/17": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch",
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/11": {
+   "route": "crunch",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/21": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/09": {
+   "route": "heavier",
+   "starts_written": [
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/19": {
+   "route": "heavier",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/02": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/06": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/21": {
+   "route": "heavier",
+   "starts_written": [
+    "heavier"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/04": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/33": {
+   "route": "clean",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/08": {
+   "route": "clean",
+   "starts_written": [
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/37": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/26": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/44": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/16": {
+   "route": "crunch",
+   "starts_written": [
+    "clean",
+    "crunch"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "new/35": {
+   "route": "crunch",
+   "starts_written": [
+    "clean"
+   ],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  },
+  "old/47": {
+   "route": "crunch",
+   "starts_written": [],
+   "asked": false,
+   "excluded": false,
+   "why_excluded": []
+  }
+ },
+ "parts": {
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "band": "Adam Buckley",
+   "label": "clean",
+   "old": 0.3990076149402811,
+   "old_two": 0.3990076149402811,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.3990076149402811,
+   "label_route": 0.0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "band": "Atlantis Bound",
+   "label": "clean",
+   "old": 0.17240260754190703,
+   "old_two": 0.17240260754190703,
+   "new": 0.07081528859361219,
+   "new_two": 0.0,
+   "run1": 0.17240260754190703,
+   "label_route": 0.07081528859361219
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "band": "Atlantis Bound",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.11870145280563078
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "band": "The Travelling Band",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.13477919588235668,
+   "label_route": 0.0
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "band": "Starnes And Shah",
+   "label": "crunch",
+   "old": 0.18566291459765574,
+   "old_two": 0.18566291459765574,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.18566291459765574,
+   "label_route": 0.18566291459765574
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "band": "The Travelling Band",
+   "label": "clean",
+   "old": 0.2977175717792088,
+   "old_two": 0.2977175717792088,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.2977175717792088,
+   "label_route": 0.0
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "band": "Zeno",
+   "label": "clean",
+   "old": 0.32462291515412,
+   "old_two": 0.32462291515412,
+   "new": 0.32462291515412,
+   "new_two": 0.0,
+   "run1": 0.32462291515412,
+   "label_route": 0.0
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-burial-of-silence-elecgtr3": {
+   "band": "Rebuild The Evil",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-burial-of-silence-elecgtr4": {
+   "band": "Rebuild The Evil",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-colour-me-red-elecgtr01": {
+   "band": "Diesel13",
+   "label": "crunch",
+   "old": 0.07255825583029922,
+   "old_two": 0.07255825583029922,
+   "new": 0.023073316855773962,
+   "new_two": 0.0,
+   "run1": 0.07255825583029922,
+   "label_route": 0.07255825583029922
+  },
+  "cambridge-colour-me-red-elecgtr02": {
+   "band": "Diesel13",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-colour-me-red-elecgtr03": {
+   "band": "Diesel13",
+   "label": "clean",
+   "old": 0.7304301374890562,
+   "old_two": 0.7304301374890562,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.7304301374890562,
+   "label_route": 0.0
+  },
+  "cambridge-femme-elecgtr3": {
+   "band": "Wall Of Death",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-femme-elecgtr4": {
+   "band": "Wall Of Death",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-femme-elecgtr5": {
+   "band": "Wall Of Death",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-get-out-of-bed-elecgtr1": {
+   "band": "Magician's Nephew",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-get-out-of-bed-elecgtr2": {
+   "band": "Magician's Nephew",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-get-out-of-bed-elecgtr7": {
+   "band": "Magician's Nephew",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-ill-fate-elecgtr1": {
+   "band": "Hollow Ground",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.14297095848428035,
+   "new_two": 0.14196194922316008,
+   "run1": 0.14297095848428035,
+   "label_route": 0.14297095848428035
+  },
+  "cambridge-ill-fate-elecgtr2": {
+   "band": "Hollow Ground",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.05079152788062413,
+   "new_two": 0.03703859119432673,
+   "run1": 0.05079152788062413,
+   "label_route": 0.05079152788062413
+  },
+  "cambridge-ill-fate-elecgtr3": {
+   "band": "Hollow Ground",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-just-don-t-talk-elecgtr3": {
+   "band": "Timo And The Timezone",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-let-s-dance-elecgtr3": {
+   "band": "Szymon Skiba",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-let-s-dance-elecgtr4": {
+   "band": "Szymon Skiba",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-magilla-elecgtr1": {
+   "band": "Turbosauro",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-magilla-elecgtr1dt": {
+   "band": "Turbosauro",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.3577031358086536,
+   "label_route": 0.0
+  },
+  "cambridge-magilla-elecgtr2": {
+   "band": "Turbosauro",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-magilla-elecgtr2dt": {
+   "band": "Turbosauro",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-the-well-elecgtr01": {
+   "band": "Death Of A Romantic",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-the-well-elecgtr02": {
+   "band": "Death Of A Romantic",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-the-well-elecgtr03": {
+   "band": "Death Of A Romantic",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-the-well-elecgtr04": {
+   "band": "Death Of A Romantic",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-wickerman-elecgtr2": {
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-wickerman-elecgtr3": {
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-wickerman-elecgtr4": {
+   "band": "Eat The Feeder",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "cambridge-wickerman-elecgtr7": {
+   "band": "Eat The Feeder",
+   "label": "crunch",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "band": "Doom Flamingo",
+   "label": "clean",
+   "old": 0.22055865004673025,
+   "old_two": 0.22055865004673025,
+   "new": 0.22055865004673025,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Bloomlight-GTR": {
+   "band": "Eggy",
+   "label": "clean",
+   "old": 0.5336382570985763,
+   "old_two": 0.5336382570985763,
+   "new": 0.5336382570985763,
+   "new_two": 0.0,
+   "run1": 0.5336382570985763,
+   "label_route": 0.0
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "band": "Eggy",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.14101973695871597,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Fragments-GTR": {
+   "band": "Eggy",
+   "label": "clean",
+   "old": 0.6376397086724708,
+   "old_two": 0.6376397086724708,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "band": "Doom Flamingo",
+   "label": "clean",
+   "old": 0.3651734973781519,
+   "old_two": 0.3651734973781519,
+   "new": 0.3651734973781519,
+   "new_two": 0.0,
+   "run1": 0.3651734973781519,
+   "label_route": 0.0
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "band": "Dom McLennon",
+   "label": "clean",
+   "old": 0.0,
+   "old_two": 0.0,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-less-than-nothing-gtr-1": {
+   "band": "Renesans",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  },
+  "telefunken-split-brow-gtr-1": {
+   "band": "Renesans",
+   "label": "high-gain",
+   "old": null,
+   "old_two": null,
+   "new": 0.0,
+   "new_two": 0.0,
+   "run1": 0.0,
+   "label_route": 0.0
+  }
+ }
+}

@@ -999,9 +999,8 @@ def recheck_analyze():
            "if_the_question_were_answered_new": _band_boot(
                [(e["band"], e["new"]) for e in answered.values() if e["new"] is not None]),
            "asked_runs": asked_runs,
-           "second_start_written": {arm: sum(len(v["starts_written"]) > 1
-                                             or (v["route"] and v["starts_written"]
-                                                 and v["route"] not in v["starts_written"])
+           # A second start: a dry baseline of a class other than the route among the files.
+           "second_start_written": {arm: sum(any(c != v["route"] for c in v["starts_written"])
                                              for k, v in status.items() if k.startswith(arm))
                                     for arm in ("old", "new")},
            "guards_routes_by_label_parts": guards,
