@@ -710,7 +710,9 @@ RECHECK_RESULTS = ROOT / "docs" / "generate-routing-recheck-results.json"
 NEW_COMMIT = "1d2ae4c"
 RECHECK_MODEL = "claude-opus-5-5"
 NON_ANSWER = "I can't say; decide yourself."
-ARM_PLUGIN = {"old": WORK / "plugin", "new": WORK / "plugin-new"}
+# Neutral names: an agent sees its plugin's path, which must not say which arm it is.
+# plugin-m is a byte copy of run 1's plugin (0.7.105); plugin-k is main at NEW_COMMIT.
+ARM_PLUGIN = {"old": WORK / "plugin-m", "new": WORK / "plugin-k"}
 ARM_VERSION = {"old": "0.7.105", "new": None}         # new: read from its copy
 
 
@@ -734,8 +736,8 @@ def recheck_prepare():
 
     if RECHECK_MAP.exists():
         raise SystemExit(f"{RECHECK_MAP} exists; the re-check is prepared once")
-    new = ARM_PLUGIN["new"]
-    if new.exists():
+    new = WORK / "plugin-new"                 # renamed to plugin-k after preparing
+    if new.exists() or ARM_PLUGIN["new"].exists():
         raise SystemExit(f"{new} exists")
     new.mkdir(parents=True)
     archive = subprocess.run(

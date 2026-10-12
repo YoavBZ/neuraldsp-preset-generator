@@ -419,5 +419,9 @@
    "47",
    "hakyb"
   ]
- ]
+ ],
+ "plugins": {
+  "old": "~/gtr-session/plugin-m (copy of run 1 plugin, 0.7.105)",
+  "new": "~/gtr-session/plugin-k (1d2ae4c)"
+ }
 }
