@@ -20,6 +20,14 @@ own loader: FLAC re-host files are not accepted by `build_validation_crops.build
 six Cambridge sessions were unpacked guitar-only, so their crops are DI and reference
 only (no mix or backing). It never re-measures a lag: the declared lag is the
 inventory's waveform lag. It writes nothing over an existing crop.
+
+`mixes` (amendment 2) gives those guitar-only crops their mix files: it re-downloads
+nothing itself, but takes the publisher archives from `datasets-set5/_redownload/`,
+checks each SHA-256 against `_tools/archives.json`, unpacks in full, applies the same
+mix code as `crops` over each record's unchanged window, then deletes the archive and
+the extra tracks. It measures nothing:
+
+    .venv/bin/python research/validation_set5.py mixes
 """
 
 from __future__ import annotations
@@ -138,13 +146,14 @@ def _source_check(inv_session, rel: str, path: pathlib.Path, archives, hf_files)
     return {"sha256": sha, "checked_against": "archive member length (archive SHA-256 in the inventory)"}
 
 
-def _mix_plan(s, parts_to_crop):
+def _mix_plan(s, parts_to_crop, full_on_disk: bool = False):
     """Set 4's mix rule, for a session unpacked in full: every session WAV but the guitar
     DIs, the cropped parts' alternate amp tracks, rendered mixes and click tracks, and
-    other DI-named guitar tracks. None when the session was unpacked guitar-only."""
+    other DI-named guitar tracks. None when the session was unpacked guitar-only (unless
+    `full_on_disk`: the archive was re-downloaded and unpacked in full, `add_mixes`)."""
     import validation_datasets as vd
 
-    if source_of(s) != "cambridge" or s.get("unpacked") != "all":
+    if source_of(s) != "cambridge" or not (s.get("unpacked") == "all" or full_on_disk):
         return None
     d = ROOT / session_dir(s)
     wavs = sorted(f.name for f in d.glob("*.wav") if not f.name.startswith("._"))
@@ -156,6 +165,35 @@ def _mix_plan(s, parts_to_crop):
            and not (w not in amps and vd.GUITAR_DI.search(pathlib.PurePosixPath(w).stem))]
     vocals = [w for w in mix if vd.VOCAL_TRACK.search(pathlib.PurePosixPath(w).stem)]
     return mix, vocals
+
+
+def _mix_outputs(p, plan, reference, load, length, start, end):
+    """Set 4's unity sum over the crop window: mix, backing (mix less the part's own amp
+    tracks) and, when the session has vocals, their instrumental versions."""
+    import numpy as np
+
+    import build_validation_crops as bvc
+
+    mix_names, vocals = plan
+    own = {_base(p["reference"]), *(_base(a) for a in p.get("alternates", []))}
+    mix = np.zeros(end - start, dtype=np.float64)
+    own_amps, singing = np.zeros_like(mix), np.zeros_like(mix)
+    included = []
+    for name in mix_names:
+        x = reference if name == _base(p["reference"]) else bvc._fit(load(name), length)
+        c = x[start:end].astype(np.float64)
+        mix += c
+        if name in own:
+            own_amps += c
+        if name in vocals:
+            singing += c
+        included.append(name)
+    backing = mix - own_amps
+    outputs = {"mix": mix.astype(np.float32), "backing": backing.astype(np.float32)}
+    if vocals:
+        outputs["mix_instrumental"] = (mix - singing).astype(np.float32)
+        outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
+    return outputs, included
 
 
 def _finite(x):
@@ -219,24 +257,9 @@ def cut(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS) -> lis
             outputs = {"di": di[start:end], "reference": reference[start:end]}
             included, vocals = [], []
             if plan is not None:
-                mix_names, vocals = plan
-                own = {_base(p["reference"]), *(_base(a) for a in p.get("alternates", []))}
-                mix = np.zeros(end - start, dtype=np.float64)
-                own_amps, singing = np.zeros_like(mix), np.zeros_like(mix)
-                for name in mix_names:
-                    x = reference if name == _base(p["reference"]) else bvc._fit(load(name), length)
-                    c = x[start:end].astype(np.float64)
-                    mix += c
-                    if name in own:
-                        own_amps += c
-                    if name in vocals:
-                        singing += c
-                    included.append(name)
-                backing = mix - own_amps
-                outputs.update(mix=mix.astype(np.float32), backing=backing.astype(np.float32))
-                if vocals:
-                    outputs["mix_instrumental"] = (mix - singing).astype(np.float32)
-                    outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
+                vocals = plan[1]
+                mixed, included = _mix_outputs(p, plan, reference, load, length, start, end)
+                outputs.update(mixed)
 
             pair = _passing_pair(p)
             sr_native = p["sample_rate"]
@@ -323,6 +346,140 @@ def cut(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS) -> lis
         crops.mkdir(parents=True, exist_ok=True)
         failed_path.write_text(json.dumps(failed, indent=1, sort_keys=True) + "\n")
     return made
+
+
+# --- mixes for crops cut without one (audio: download, verify, sum, cut) -------------
+
+REDOWNLOAD = ROOT / "_redownload"
+MIX_ROLES = ("mix", "backing", "mix_instrumental", "backing_instrumental")
+
+
+def add_mixes(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS,
+              zips: pathlib.Path = REDOWNLOAD, keep_tracks: bool = False) -> dict:
+    """Give the existing crops of guitar-only-unpacked Cambridge sessions their mix files.
+
+    For each such session whose publisher archive is in `zips`: check the archive's
+    SHA-256 against `_tools/archives.json`, unpack the members not on disk, apply set 4's
+    mix rule (`_mix_plan`, `_mix_outputs`, the same code path as `cut`) over each crop's
+    recorded window, and add the files to its record. The window is not moved: the DI and
+    reference are re-cut from the archive and must equal di.wav and reference.wav sample
+    for sample. Nothing is measured (no loudness, no gain measure). Afterwards the
+    unpacked non-guitar members and the archive are deleted unless `keep_tracks`.
+    Returns {slug: "mix added" | reason}."""
+    import os
+    import shutil
+    import tempfile
+    import zipfile
+
+    import numpy as np
+    import soundfile as sf
+
+    sys.path[:0] = [str(REPO)]
+    import build_validation_crops as bvc
+    from analysis import io
+
+    inv = json.loads(inventory.read_text())
+    archives = json.loads((ROOT / "_tools" / "archives.json").read_text())
+    hf_files = json.loads((ROOT / "_tools" / "hf_files.json").read_text())
+    recs = {}
+    for rp in sorted(crops.glob("*/record.json")):
+        r = json.loads(rp.read_text())
+        recs[(r["session_key"], r["part"])] = (rp.parent, r)
+    done = {}
+    for s in inv["sessions"]:
+        mine = [(p, *recs[(session_key(s), p["part"])]) for p in s["parts"]
+                if (session_key(s), p["part"]) in recs and recs[(session_key(s), p["part"])][1]["mix_absent"]]
+        if not mine:
+            continue
+        if source_of(s) != "cambridge":
+            for p, out, r in mine:
+                done[out.name] = "mix unavailable: re-host stems are not on a common timeline"
+            continue
+        a = archives[s["folder"]]
+        zp = zips / a["zip"]
+        if not zp.exists():
+            for p, out, r in mine:
+                done[out.name] = "archive not downloaded"
+            continue
+        sha = _sha(zp)
+        if sha != a["sha256"] or sha != s["archive_sha256"]:
+            raise ValueError(f"{zp}: SHA-256 {sha} differs from the recorded {a['sha256']}")
+        dest = ROOT / s["folder"]
+        extracted = []
+        with zipfile.ZipFile(zp) as z:
+            for m in z.infolist():
+                if m.is_dir() or "__MACOSX" in m.filename:
+                    continue
+                target = dest / m.filename
+                if target.exists():
+                    continue
+                z.extract(m, dest)
+                extracted.append(target)
+        try:
+            plan = _mix_plan(s, [p for p in s["parts"] if p["status"] == "passes"], full_on_disk=True)
+            sdir = session_dir(s)
+            cache = {}
+            for p, out, r in mine:
+                checked = {}
+
+                def load(name: str):
+                    rel = f"{pathlib.PurePosixPath(p['di']).parent}/{name}"
+                    path = ROOT / sdir / name
+                    checked[name] = _source_check(s, rel, path, archives, hf_files)["sha256"]
+                    if name not in cache:
+                        cache[name] = io.load(path).mono().astype(np.float32)
+                    return cache[name]
+
+                start, end = r["excerpt_start_frame"], r["excerpt_end_frame"]
+                di = load(_base(p["di"]))
+                length = len(di)
+                assert length == r["session_frames"], (out.name, length, r["session_frames"])
+                reference = bvc._fit(load(_base(p["reference"])), length)
+                for role, x in (("di", di), ("reference", reference)):
+                    on_disk, _ = sf.read(out / f"{role}.wav", dtype="float32")
+                    if not np.array_equal(on_disk, x[start:end]):
+                        raise ValueError(f"{out.name}: {role}.wav differs from the archive's cut")
+                outputs, included = _mix_outputs(p, plan, reference, load, length, start, end)
+                for role in outputs:
+                    if (out / f"{role}.wav").exists():
+                        raise FileExistsError(out / f"{role}.wav")
+                r = dict(r)
+                r["outputs"] = dict(r["outputs"])
+                with tempfile.TemporaryDirectory(prefix="set5-mix-", dir=crops) as staged:
+                    for role, x in outputs.items():
+                        f = pathlib.Path(staged) / f"{role}.wav"
+                        sf.write(f, x, SAMPLE_RATE, subtype="FLOAT")
+                        r["outputs"][role] = {"path": str(out / f.name), "sha256": _sha(f), "frames": len(x)}
+                    r.update(
+                        mix_rule="set 4's: every session WAV but the guitar DIs, kept parts' alternate amp "
+                                 "tracks, rendered mixes, click tracks and other DI-named guitar tracks",
+                        mix_absent=False, included_mix_tracks=included, vocal_tracks=sorted(plan[1]),
+                        verified_source_sha256={**r["verified_source_sha256"], **checked},
+                        mix_amendment={
+                            "date": "2026-10-12",
+                            "built_with": "research/validation_set5.py mixes (_mix_plan, _mix_outputs)",
+                            "archive": {"url": a["url"], "sha256": sha, "checked_against": "_tools/archives.json"},
+                            "window": "the record's excerpt_start_frame/excerpt_end_frame, unchanged; di.wav and "
+                                      "reference.wav re-cut from the archive equal the files sample for sample",
+                            "not_measured": "no loudness or gain measure of the new files (held-out hygiene); "
+                                            "'lufs' still covers di and reference only",
+                            "tracks_after": "kept" if keep_tracks else "non-guitar members and the archive deleted",
+                        })
+                    for role in outputs:
+                        os.rename(pathlib.Path(staged) / f"{role}.wav", out / f"{role}.wav")
+                    tmp = pathlib.Path(staged) / "record.json"
+                    tmp.write_text(json.dumps(_finite(r), indent=2, allow_nan=False) + "\n")
+                    os.replace(tmp, out / "record.json")
+                done[out.name] = "mix added"
+                print(out.name, "mix added", len(included), "tracks", flush=True)
+        finally:
+            cache = None
+            if not keep_tracks:
+                for f in extracted:
+                    f.unlink()
+        if not keep_tracks:
+            zp.unlink()
+    return done
 
 
 # --- the declaration (JSON only) -----------------------------------------------------
@@ -428,8 +585,11 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
             row.update(hf_repo=s["hf_repo"], revision=s["revision"], song_dir=s["song_dir"],
                        files_fetched=[{"file": f["file"], "sha256": f["sha256"]} for f in s["files_fetched"]],
                        mix_on_disk=False)
+        mine = [p for p in kept if p["session_key"] == key]
         row.update(licence_extra=s.get("licence_flag"), split=SPLIT, fold=None,
-                   kept_parts=sum(1 for p in kept if p["session_key"] == key),
+                   kept_parts=len(mine),
+                   # amendment 2: crops of guitar-only sessions gained a mix from a re-downloaded archive
+                   mix_in_crops=bool(mine) and not any(p["crop"]["mix_absent"] for p in mine),
                    dis=[{"part": p["part"], "di": f"{s['folder']}/{p['di']}",
                          "di_clip_runs": (p.get("di_clip") or {}).get("runs_ge3"),
                          "clipped": ((p.get("di_clip") or {}).get("runs_ge3") or 0) >= vs3.CLIP_RUNS}
@@ -519,6 +679,11 @@ def main():
     c = sub.add_parser("crops")
     c.add_argument("--inventory", type=pathlib.Path, default=INVENTORY)
     c.add_argument("--crops", type=pathlib.Path, default=CROPS)
+    m = sub.add_parser("mixes")
+    m.add_argument("--inventory", type=pathlib.Path, default=INVENTORY)
+    m.add_argument("--crops", type=pathlib.Path, default=CROPS)
+    m.add_argument("--zips", type=pathlib.Path, default=REDOWNLOAD)
+    m.add_argument("--keep-tracks", action="store_true")
     d = sub.add_parser("declare")
     d.add_argument("--inventory", type=pathlib.Path, default=INVENTORY)
     d.add_argument("--crops", type=pathlib.Path, default=CROPS)
@@ -527,6 +692,11 @@ def main():
     if args.cmd == "crops":
         made = cut(args.inventory.expanduser(), args.crops.expanduser())
         print(f"{len(made)} crops cut")
+        return
+    if args.cmd == "mixes":
+        done = add_mixes(args.inventory.expanduser(), args.crops.expanduser(), args.zips.expanduser(),
+                         args.keep_tracks)
+        print(json.dumps(done, indent=1))
         return
     out = build(args.inventory.expanduser(), args.crops.expanduser())
     args.json.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
