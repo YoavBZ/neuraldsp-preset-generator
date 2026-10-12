@@ -1,6 +1,6 @@
 # Do the starting presets sound closer by ear? Listening plan
 
-Declared 2026-10-13, before any trial is built; revised after an independent review.
+Declared 2026-10-12 (night), before any trial is built; revised after an independent review.
 Roadmap step 6: the starting presets `generate` ships were chosen and checked by the
 judge only; none has been heard against what `generate` used before, or against each
 other on the choice that costs most (a clean part given the crunch start).

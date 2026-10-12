@@ -75,6 +75,11 @@ was declared, what was measured, and the research behind it.
   → [results](generate-routing-results.md): **routing costs** (clean parts sent to
   crunch by genre or song-level write-ups; `generate` now installs the neighbouring
   starting point too); research edits undecided.
+- [generate-routing-recheck-plan.md](generate-routing-recheck-plan.md) →
+  [results](generate-routing-recheck-results.md): **the new routing rule helps**
+  (−0.081 against the old skill, in-sample).
+- [starting-preset-listening-plan.md](starting-preset-listening-plan.md), with its
+  part list: built, awaiting the listener.
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
