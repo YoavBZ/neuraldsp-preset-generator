@@ -5,6 +5,10 @@ review re-derived every number with its own code (`tmp/residual-di-result-review
 local). These are development parts seen many times, with one seed per network: not a
 held-out or product claim.
 
+> **Update 2026-10-12: the second C′ seed did not confirm gate 1.** The correct-gradient
+> gain is **unconfirmed**, and C′ is not carried forward (the declared rule; see "Second seed"
+> below, adversarially audited in `tmp/seed2-audit.md`, local). Gate 2 is unaffected.
+
 ## In short
 
 - **The bug:** `torch.stft`'s gradient on Apple's GPU is wrong for signals longer than
@@ -34,8 +38,9 @@ held-out or product claim.
 | L (linear only) against the fixed preset | +0.250 | +0.067 | +0.364 |
 | oracle (true DI) against the fixed preset | −0.131 (−0.147) | −0.087 | −0.186 |
 
-**On crunch, the corrected network reaches −0.171 against the fixed preset; the oracle
-gets −0.186.** Before the fix, C got −0.101.
+**On crunch, the corrected network gets −0.12 to −0.17 against the fixed preset over its
+two seeds (seed 0 −0.171, seed 1 −0.124); the oracle gets −0.186.** Before the fix, C got
+−0.101.
 
 **Coherence with the true DI** (median over the 18 parts):
 
@@ -78,22 +83,56 @@ gets −0.186.** Before the fix, C got −0.101.
 - **Gate 1 changes more than the gradient:** C′ also uses the newer training code and the
   rebuilt caches.
 
-## Listening (one listener, unblinded, one song)
+## Second seed (2026-10-12)
+
+**The rule,** declared before the result: C′ is carried forward only if seed 1 also passes
+gate 1 against C.
+
+**The result:**
+- **Seed 1 against C:** −0.020 (90% −0.054 to +0.013), with 4 of 8 bands better. Every
+  leave-one-band-out version is also inconclusive.
+- **So the correct-gradient gain is unconfirmed,** and C′ is not carried forward.
+- **Seed 1 against seed 0:** +0.016, about the gate's own standard error (0.018).
+- **Seed 1 against the fixed preset:** −0.084 band-weighted (crunch −0.124).
+- **Coherence (1–3 kHz):** 0.198, against seed 0's 0.207 and C's 0.150.
+
+**The audit:**
+- **Integrity:** the rule was committed before any seed-1 output. The recipe was the same
+  apart from the seed, the re-scoring reproduced seed 0's numbers byte for byte, and no
+  errors were found.
+- **The per-band pattern doesn't replicate across seeds** (correlation 0.15). Most of the
+  band-to-band variation is seed noise, about 0.05 per band.
+- **"Unconfirmed" means under-powered, not "no gain".**
+  - The two seeds together, as a description only and not a rescue, give −0.028 (−0.054
+    to −0.002).
+  - At an effect that size, both seeds pass only about 15–25% of the time.
+- **C is itself one draw.** The two C′ seeds pick the same preset 75% of the time, but agree
+  with C only 56–58%.
+- **C′ differs from C in more than the gradient:** the code and the caches changed too.
+
+**Next:** a fresh held-out test (set 5 and MedleyDB), with a mean over two or three C′ seeds
+declared before any result, rather than more seeds on this development set.
+
+## Listening (one listener, one song)
 
 - **What was played:** "Cut It Out" (Gary Moore, 0:35–1:00) through the old rebuild and
   through interim C′ and R rebuilds.
 - **What the listener heard:** the residual rebuild was the cleanest. Through all three
   rebuilds, the same preset (the dry SW50R crunch start) stayed closest to the record.
 - **The measured test prefers C′'s picks.** "Cleaner to the ear" and "better at picking
-  presets" are not the same, and a blinded re-run with the final rebuilds was requested.
+  presets" are not the same, so a blinded re-run with the final rebuilds was requested.
+- **Blinded re-run (2026-10-11):**
+  - Labels hidden as X, Y and Z: C′ was cleanest, the residual next and the old rebuild
+    least clean. The C′-against-residual difference was "very subtle".
+  - Presets A and B were still labelled, and B was closest to the record again.
 
 ## What this means
 
 - **Earlier crunch conclusions about the network are open again.** "The network chooser
   doesn't beat the fixed preset on crunch" came from networks trained with the bug.
-  Corrected, C′ is close to the oracle on development crunch.
+  Corrected, both C′ seeds beat the fixed crunch preset on development (−0.12 to −0.17).
 - **Earlier clean conclusions probably hold:** clean picks barely move.
 - **Next:**
-  1. The second C′ seed. If it holds, C′ becomes the candidate network.
+  1. The second C′ seed: done, unconfirmed (above).
   2. A fresh held-out test on set 5 (7 new bands) and MedleyDB, once approved and
      declared.
