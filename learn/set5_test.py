@@ -192,29 +192,36 @@ def _band_gate(rows):
     return out
 
 
-def report():
-    ps = parts()
-    R = json.loads((OUT / "distances.json").read_text())
+BAND_MERGE = {"Fytakyte": "BKS"}            # the declaration's amendment (likely one recording)
+CROP_HIGH_GAIN = {"cambridge-bulldozer-elecgtr5a", "cambridge-never-leave-the-night-alone-elecgtr3"}
+
+
+def evaluate(R, ps, seeds, out_path=None):
+    """The plan's comparisons on distances R (slug -> "kind|amp|half" -> {preset: (d, proxy)}),
+    parts ps (slug -> band, gain_class, scope, publisher_original); `seeds` the C′ kinds."""
     starts = {c: json.loads(p.read_text())["presets"] for c, p in STARTS.items()}
-    cells = {}                                   # (slug, amp) -> {who: [score per direction]}
-    proxies = {k: 0 for k in NETS}
+    nets = ("C",) + tuple(seeds)
+    cells, proxy_by_part = {}, {}
     for s in ps:
         for amp in P.AMPS:
-            per = {}
+            per, ok = {}, True
             for h, other in (("A", "B"), ("B", "A")):
                 M = R[s][f"measfix|{amp}|{other}"]
-                picks = {k: _pick(R[s][f"{k}|{amp}|{h}"]) for k in NETS}
-                for k in NETS:
-                    proxies[k] += sum(v[1] for v in R[s][f"{k}|{amp}|{h}"].values())
+                picks = {k: _pick(R[s][f"{k}|{amp}|{h}"]) for k in nets}
+                for k in nets:
+                    proxy_by_part[s] = proxy_by_part.get(s, 0) + sum(bool(v[1]) for v in R[s][f"{k}|{amp}|{h}"].values())
                 picks["oracle"] = _pick(R[s][f"measfix|{amp}|{h}"])
                 cls = ps[s]["gain_class"]
                 picks["start"] = starts[cls][amp] if cls in starts else None
                 for k, n in picks.items():
-                    per.setdefault(k, []).append(M[n][0] if n and M.get(n) and M[n][0] else None)
-            cells[(s, amp)] = per
+                    v = M[n][0] if n and M.get(n) and M[n][0] else None
+                    if v is None and k != "start":
+                        ok = False
+                    per.setdefault(k, []).append(v)
+            if ok:                                   # one common set of cells (plan, after review)
+                cells[(s, amp)] = per
 
     def ratio(per, a, b):
-        """The mean over directions of log(a/b); a may be a tuple of seeds (their mean)."""
         vals = []
         for i in range(2):
             num = [per[k][i] for k in (a if isinstance(a, tuple) else (a,))]
@@ -224,35 +231,73 @@ def report():
             vals.append(statistics.fmean(math.log(x / den) for x in num))
         return statistics.fmean(vals)
 
-    def rows(a, b, cls=None, scope="in_scope", originals=False):
+    def rows(a, b, cls=None, scope="in_scope", originals=False, drop=()):
         out = []
         for (s, amp), per in cells.items():
             p = ps[s]
-            if p["scope"] != scope or (cls and p["gain_class"] != cls) or (originals and not p["publisher_original"]):
+            if p["scope"] != scope or (cls and p["gain_class"] != cls) or (originals and not p["publisher_original"]) \
+                    or s in drop:
                 continue
             x = ratio(per, a, b)
             if x is not None:
-                out.append((p["band"], x))
+                out.append((BAND_MERGE.get(p["band"], p["band"]), x))
         return out
 
+    seeds = tuple(seeds)
     res = {}
     for tag, cls in (("all", None), ("clean", "clean"), ("crunch", "crunch")):
-        for name, a, b in (("gate1_Cp_vs_C", SEEDS, "C"), ("gate2_Cp_vs_start", SEEDS, "start"),
+        for name, a, b in (("gate1_Cp_vs_C", seeds, "C"), ("gate2_Cp_vs_start", seeds, "start"),
                            ("C_vs_start", "C", "start"), ("oracle_vs_start", "oracle", "start"),
-                           *((f"{k}_vs_C", k, "C") for k in SEEDS), *((f"{k}_vs_start", k, "start") for k in SEEDS)):
+                           *((f"{k}_vs_C", k, "C") for k in seeds), *((f"{k}_vs_start", k, "start") for k in seeds)):
             res[f"{name}|{tag}"] = _band_gate(rows(a, b, cls))
             res[f"{name}|{tag}|originals"] = _band_gate(rows(a, b, cls, originals=True))
-    res["high_gain_report_only|Cp_vs_C"] = _band_gate(rows(SEEDS, "C", scope="report_only"))
-    out = {"gate1": res["gate1_Cp_vs_C|all"], "gate2_crunch": res["gate2_Cp_vs_start|crunch"],
-           "gate2_pooled": res["gate2_Cp_vs_start|all"], "proxy_uses": proxies, "results": res}
-    (OUT / "result.json").write_text(json.dumps(out, indent=1, default=float))
-    print("GATE 1 (C′ vs C, pooled):", out["gate1"].get("outcome"), {k: out["gate1"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")})
-    print("GATE 2 (C′ vs start, crunch):", out["gate2_crunch"].get("outcome"), {k: out["gate2_crunch"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")})
+    res["gate2_Cp_vs_start|crunch|no_crop_high_gain"] = _band_gate(rows(seeds, "start", "crunch", drop=CROP_HIGH_GAIN))
+    res["high_gain_report_only|Cp_vs_C"] = _band_gate(rows(seeds, "C", scope="report_only"))
+    ship_ok = all(res[f"{k}_vs_start|crunch"].get("band_mean", 1) < 0 for k in seeds)
+    out = {"seeds": list(seeds), "cells": len(cells), "gate1": res["gate1_Cp_vs_C|all"],
+           "gate2_crunch": res["gate2_Cp_vs_start|crunch"], "gate2_pooled": res["gate2_Cp_vs_start|all"],
+           "every_seed_crunch_below_0": ship_ok, "proxy_uses_by_part": proxy_by_part, "results": res}
+    if out_path:
+        out_path.write_text(json.dumps(out, indent=1, default=float))
+    print("cells", len(cells), "| seeds", seeds)
+    print("GATE 1 (C′ vs C, pooled):", out["gate1"].get("outcome"),
+          {k: out["gate1"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")})
+    print("GATE 2 (C′ vs start, crunch):", out["gate2_crunch"].get("outcome"),
+          {k: out["gate2_crunch"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")},
+          "| every seed below 0:", ship_ok)
     for k, v in res.items():
         if "band_mean" in v:
-            print(f"  {k:40s} band {v['band_mean']:+.3f} [{v['lo90']:+.3f}, {v['hi90']:+.3f}] part {v['part_weighted']:+.3f} "
+            print(f"  {k:48s} band {v['band_mean']:+.4f} [{v['lo90']:+.4f}, {v['hi90']:+.4f}] part {v['part_weighted']:+.4f} "
                   f"neg {v['bands_negative']}/{v['bands']} {v['outcome']}")
     return out
+
+
+def report():
+    ps = parts()
+    R = json.loads((OUT / "distances.json").read_text())
+    seeds = tuple(k for k in SEEDS if all(f"{k}|pr12|A" in R[s] for s in R))
+    return evaluate(R, ps, seeds, OUT / "result.json")
+
+
+def dev_check():
+    """The plan's pre-render check: the same code on the 18 development parts must reproduce
+    residual_eval's per-seed C′-against-C band means, and reports C′ against generate's start."""
+    from learn import residual_eval as RE
+    from learn import sound_desc_eval as E
+
+    Rres = json.loads((RE.OUT / "distances.json").read_text())
+    tp = E.test_parts()
+    rename = {"C": "C", "Cp": "Cp0", "Cp1": "Cp1"}
+    R, ps = {}, {}
+    for s, p in RE.parts().items():
+        ps[s] = dict(band=p["band"], gain_class=p["gain_class"], scope="in_scope", publisher_original=True)
+        R[s] = {}
+        for amp in P.AMPS:
+            for h in ("A", "B"):
+                R[s][f"measfix|{amp}|{h}"] = {n: (v[0], False) for n, v in tp[s]["D"][f"flat|{amp}|measfix_{h}"].items()}
+                for old, new in rename.items():
+                    R[s][f"{new}|{amp}|{h}"] = {n: tuple(v) for n, v in Rres[s][f"{old}|{amp}|{h}"].items()}
+    return evaluate(R, ps, ("Cp0", "Cp1"), OUT.parent / "set5-test-devcheck.json")
 
 
 if __name__ == "__main__":
@@ -260,4 +305,4 @@ if __name__ == "__main__":
     if cmd == "render":
         render((int(sys.argv[2]), int(sys.argv[3])))
     else:
-        {"score": score, "report": report}[cmd]()
+        {"score": score, "report": report, "dev_check": dev_check}[cmd]()
