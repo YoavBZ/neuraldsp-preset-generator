@@ -141,3 +141,34 @@ of its cells. The 90% interval is over the band means.
   about an hour.
 - **Independent reviews:** one checks this plan before any render, and an adversarial audit
   re-derives the result before it is reported.
+
+## Amendment after an outside review of the roadmap (2026-10-12, before any set-5 render)
+
+Relayed from the product session: an independent reviewer judged the line "partly on
+track". The product's input is a mixed song, but this test runs on isolated amp tracks,
+and every test is under-powered. Its points are adopted as follows:
+
+1. **Gate 2 on set 5 becomes report-only,** together with its shipping consequence.
+   - Most set-5 crops have no mix, so they can't be tested from a separated stem.
+   - The product decision moves to the combined set-5 + MedleyDB test below.
+   - Gate 1 (C′ against C, a question about the network) stays as declared, on amp tracks.
+2. **The combined test (declared now; its own plan follows once MedleyDB arrives):**
+   - **It decides from a separated stem of the real mix,** with no SNR filter: the product
+     can't apply one. Amp tracks are report-only.
+   - **The comparator is `generate`'s shipped dry starting preset for the class.** Crunch
+     decides; clean is known to have no edge from a stem.
+   - **The networks are frozen** by the hashes pinned in this test's ledger entry, and
+     averaged over seeds. There is no new training after its declaration.
+   - **Power comes first.** It is computed up front from the development effect, halved
+     (C′ against `generate`'s crunch start, −0.0985 on development, so about −0.05).
+     - If crunch power is below about 60%, that is stated.
+     - Then the combined test is the last check before roadmap step 9: close the chooser
+       for the product, and reopen it only with new crunch sessions recorded with a DI.
+   - **Fresh crunch data also re-checks the thin crunch starting presets** (Morgan and Tone
+     King, 3 bands each), as a declared arm.
+3. **The two-seed −0.028 on development stays descriptive.** Rules added after results (the
+   retired 3 kHz cut, and the second-seed rule) are marked as such in the results docs, and
+   no combined number is read as a rescue.
+4. **MedleyDB caveats:**
+   - it is CC BY-NC-SA, non-commercial research only;
+   - its guitar DIs are unverified until each passes the same-take test.
