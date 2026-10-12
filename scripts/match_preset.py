@@ -191,8 +191,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "amp, an effect on or off. Repeatable, and a product: two "
                          "two-state switches is four searches sharing the budget. "
                          "Without it every discrete control stays where the template "
-                         "had it, which is what the run's caveat says. Use "
-                         "--list-enumerable to see the paths")
+                         "had it, which is what the run's caveat says. A variant "
+                         "only searches the controls the template already had "
+                         "active: what a switch turns on (a delay's time, another "
+                         "amp's tone stack) keeps the template's values, so set "
+                         "those in the template and run it as its own match "
+                         "instead. Use --list-enumerable to see the paths")
     ap.add_argument("--list-enumerable", action="store_true",
                     help="print the switches and selectors --enumerate accepts for "
                          "this pack and amp, with how many positions each has, and "
@@ -1190,6 +1194,12 @@ def _paired_reference(args, reference_samples, probe_samples, metadata, document
         die("--paired-provenance was rendered with a different plugin pack")
     recorded_renderer = document.get("renderer") or {}
     if not same_renderer(recorded_renderer, metadata.as_dict()):
+        from match.preroll import predates_preroll
+
+        if predates_preroll(recorded_renderer, metadata.as_dict()):
+            die("--paired-provenance was rendered before Tone King renders started "
+                "with a silent pre-roll (its opening was muted); render the paired "
+                "reference again")
         die("the current renderer/plugin build differs from --paired-provenance")
     return {
         "schema": "paired-di-reference-1",
@@ -1223,6 +1233,12 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
             die(f"{e}\n"
                 f"  This backend needs macOS with the plugin licensed and "
                 f"installed, and swiftc from the Xcode command line tools.")
+        if pack_id == "toneking":
+            # A fresh Tone King process is muted for its first ~0.4-0.9 s (audit
+            # D-M1), which would cut the opening of every scoring render.
+            from match.preroll import PrerolledRenderer
+
+            return PrerolledRenderer(renderer)
         return renderer
     die(f"unknown renderer {name!r}: use swift for the real plugin, or synthetic, "
         f"a Python approximation of the chain's topology")

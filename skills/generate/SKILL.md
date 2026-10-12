@@ -33,7 +33,8 @@ The user speaks in plain language, not flags. Extract:
 
 Ask at most **one** clarifying question about the tone, and only if the answer
 would change the amp choice. Otherwise pick sensible defaults and say what you
-assumed. (Asking where in a full song the guitar plays, step 2, is separate.)
+assumed. (Asking where in a full song the guitar plays, step 2, and offering the
+listening page, step 5b, are separate.)
 
 ### Which pack, when you have to ask
 
@@ -310,14 +311,21 @@ Pass `--strip-irs` so the result is portable — see
 nothing (Tone King declares no IR mapping), the listed paths are still in the
 preset: tell the user rather than calling the result portable.
 
-## 5b. From a song: let the user hear four
+## 5b. From a song: offer to let the user hear four
 
-When the user gave a song (a file, and where in it the guitar plays), don't stop at
-one preset. On 25 recordings, a researched preset was not shown to beat the shipped
-template, but choosing the best of four did land closer: about 18% closer than the
-template, picked by measurement ([the measurement](../../docs/song-only-shortlist-results.md)).
-Whether an ear does as well is still being checked, so offer the page, then let the
-user decide.
+When the user gave a song (a file, and where in it the guitar plays), **ask once**
+whether they want to hear the preset beside three alternatives before choosing. Say in
+a line what that is: a local page, ready in a few minutes, that plays four presets
+through two short guitar riffs under the song excerpt, so they can pick one or ask for
+a change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
+
+Why it is worth offering, and why it is not the default: choosing the best of four by
+measurement landed about 18% closer than the template on 25 recordings
+([the measurement](../../docs/song-only-shortlist-results.md)), but a listening check
+of whether an ear does as well was inconclusive
+([the check](../../docs/listening-check-results.md)).
+
+If they say yes:
 
 1. **Write three alternatives** beside the preset from step 5, as copies of it with
    their own specs. Use at least two amps (on Tone King, both channels: the dry baseline

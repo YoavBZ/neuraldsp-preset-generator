@@ -45,8 +45,9 @@ from match.store import Store, Trial
 
 # How much of the objective's range a parameter has to move before it is worth
 # searching over. Not a tolerance on the objective itself: the screen renders at a
-# parameter's extremes, which is the largest effect it can have, so anything under
-# this is a control that cannot matter however it is set.
+# parameter's two extremes, and a control whose ends score within this of each other
+# is frozen. That is not proof it cannot matter: an interior optimum is invisible to
+# the ends (audit D-M18).
 #
 # A *floor* on the floor. On a backend that does not repeat itself the real limit is
 # whatever that backend's own variation is, and `screen` raises this to match — see
@@ -744,10 +745,11 @@ def screen(evaluator: Evaluator, seed: Mapping,
     whole CMA-ES stage found nothing better than 0.694. Discarding them was throwing
     away a fifth of the budget and, on that run, the best answer in it.
 
-    The extremes are the right probe *because* they are extreme. This measures the
-    largest effect a control can have on this material; a parameter that cannot
-    move the objective from one end of its range to the other cannot matter at any
-    setting in between, whatever the interactions.
+    The extremes are the probe because they are cheap, not because they are
+    sufficient. They show how far a control moves the objective between its two
+    ends, which misses an interior optimum: a control whose ends score alike can
+    still matter in between. In known-answer sweeps this froze the only wrong
+    control in 34 of 96 cases (audit D-M18); a midpoint probe is the parked fix.
 
     Two things it deliberately does not do. It does not screen switches: turning an
     effect off changes what is reachable rather than shifting a value, so the
@@ -837,9 +839,9 @@ def screen(evaluator: Evaluator, seed: Mapping,
             # control the caveat block calls the commonest way a preset sounds broken.
             #
             # It stays frozen, and that is now said in `silences` rather than implied by
-            # a zero that no floor could clear. The screen's premise is that the extremes
-            # bound the largest effect a control can have; when one extreme cannot be
-            # scored at all there is no such bound, so handing the control to an
+            # a zero that no floor could clear. The screen reads a control by its two
+            # extremes (which miss an interior optimum, D-M18); when one extreme cannot
+            # be scored at all there is not even that reading, so handing the control to an
             # optimiser means handing it a region where half the renders come back
             # silent. Frozen on the honest ground that it could not be screened, with
             # its real movement on the record.
@@ -1590,10 +1592,11 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
             # terminal. `report._screen` had already found the plain wording for the
             # same number and this had not borrowed it.
             result.caveats.append(
-                f"{len(inert)} of {total} parameters changed the distance to the "
-                f"reference by less than {floor:g} across their whole range "
-                f"on this material, so they were left at the seed. On different "
-                f"material they might matter."
+                f"{len(inert)} of {total} parameters scored within {floor:g} of "
+                f"each other at the two ends of their range on this material, so "
+                f"they were left at the seed. Only the ends were tried, so one may "
+                f"still matter in between, or on different material; set it in the "
+                f"template if research says it does."
             )
         if muting:
             named = ", ".join(f"{p} at {silences[p]:g}" for p in sorted(muting))
@@ -1610,8 +1613,9 @@ def search(renderer, target, probe_di, space: Space, seed: Mapping,
                 f"{int(100 * SENSITIVITY_QUANTILE)}% that did, so "
                 f"they were left at the seed to spend the budget on the rest — the "
                 f"most any of them moved it was "
-                f"{max(frozen[p] for p in weakest):.3f}. A larger budget would "
-                f"search them."
+                f"{max(frozen[p] for p in weakest):.3f}. The cut is a fixed "
+                f"share, so a larger budget would not search them either; set any "
+                f"of them in the template if research says it matters."
             )
         unknown = [p for p in unknown if p not in silences]
         if unknown:

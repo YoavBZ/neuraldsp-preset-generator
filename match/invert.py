@@ -70,6 +70,18 @@ SAME_DI_REGIMES = ("probe", "paired_di")
 # the user's playing leaves the reverb as the template has it.
 RT60_REGIMES = ("probe",)
 
+# The regimes whose low end does not describe the amp: a mix's is the bass and the
+# kick, a separated stem's is what the separator stripped. Their band differences
+# below LOW_TRUST_HZ are not inverted (see `_without_untrusted_lows`).
+LOW_UNTRUSTED_REGIMES = ("mix", "separated_stem")
+LOW_TRUST_HZ = 250.0
+
+# The regimes that are recordings of played material, where the tremolo is left
+# as the template has it (see `tremolo_settings`).
+RECORDING_REGIMES = ("isolated_stem", "separated_stem", "mix")
+_RECORDING_WORDS = {"isolated_stem": "an isolated stem",
+                    "separated_stem": "a separated stem", "mix": "a mix"}
+
 
 class InversionError(ValueError):
     """An inversion that cannot be performed at all — a missing band curve, or a
@@ -431,7 +443,8 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
                    module: str = "", pack_id: Optional[str] = None,
                    accounted_for=None,
                    band_controls: Optional[Sequence[str]] = None,
-                   band_noise_db: Any = BAND_NOISE_FLOOR_DB) -> Inversion:
+                   band_noise_db: Any = BAND_NOISE_FLOOR_DB,
+                   held_hz: Sequence[float] = ()) -> Inversion:
     """Solve the nine band gains that best flatten a measured band difference.
 
     `band_delta_db` is what `analysis.compare.band_delta()` produces: signed dB
@@ -482,6 +495,17 @@ def fit_graphic_eq(band_delta_db: Mapping[float, float], centres: Sequence[float
     # closed. `measured` arrives mean-free by `band_delta`'s own contract, so this
     # leaves it that way.
     target = measured - (already - already.mean())
+    # Frequencies the reference cannot speak for (a mix's or a separated stem's low
+    # end, `_without_untrusted_lows`) are asked to stay as they are. The corners'
+    # shape is centred on the bands that were kept, as their difference was, and
+    # the held ones are zeroed after: otherwise a moved corner's mean lands on one
+    # side or the other as a tilt the measurement never asked for.
+    held = {float(f) for f in held_hz}
+    if held:
+        mask = np.array([float(f) in held for f in frequencies])
+        if np.any(~mask):
+            target = measured - (already - already[~mask].mean())
+        target[mask] = 0.0
 
     caveats: List[str] = []
     supplied_basis = basis is not None
@@ -633,7 +657,8 @@ def filter_response_db(frequencies, hpf_hz: Optional[float] = None,
 
 def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
                 pack_id: str = "morgan", filter_controls=None,
-                current_filters=(None, None)) -> Inversion:
+                current_filters=(None, None),
+                held_hz: Sequence[float] = ()) -> Inversion:
     """Corner frequencies for the HPF and LPF, fitted to the measured roll-off.
 
     Only moves a corner when the evidence is one-sided: the target being short of
@@ -686,6 +711,11 @@ def fit_filters(band_delta_db: Mapping[float, float], module: str = "",
     # The same weighting `fit_graphic_eq` uses, for the same reason: a third-octave
     # curve's extremes are the source's own filtering, not the amp's.
     weights = np.where((frequencies >= 50.0) & (frequencies <= 16000.0), 1.0, 0.15)
+    # Frequencies the reference cannot speak for do not vote on a corner: their
+    # zeroed difference does not share the offset of the bands that were kept.
+    held = {float(f) for f in held_hz}
+    if held:
+        weights = np.where([float(f) in held for f in frequencies], 0.0, weights)
 
     short = delta < -FILTER_MIN_DEFICIT_DB
     long = delta > FILTER_MIN_DEFICIT_DB
@@ -1025,8 +1055,29 @@ def tremolo_settings(fingerprint, pack_id: str = "morgan",
     When the target was rendered from that DI too (`SAME_DI_REGIMES`), a
     modulation the render already carries at the target's rate cannot be told
     apart from the DI's own rhythm or the template's tremolo, so the tremolo is
-    left exactly as the template has it. For a recording the render is ignored.
+    left exactly as the template has it.
+
+    A recording (`RECORDING_REGIMES`: an isolated or separated stem, or a mix)
+    never sets the tremolo: it is left exactly as the template has it. On played
+    material the confidence gate does not separate a tremolo from the rhythm of
+    the playing. The audit (D-M7) found it fired on 27 of 43 development amp
+    tracks, about 23 of them false, on 12 of 30 synthetic strums with no tremolo,
+    and on 6 of 43 mixes, 5 of them false. The cost is a real tremolo on a
+    recorded part: it has to be switched on in the template by hand.
     """
+    regime = getattr(fingerprint, "regime", None)
+    if regime in RECORDING_REGIMES:
+        return Inversion(
+            values={},
+            caveats=[
+                f"the tremolo is left as the template has it: in "
+                f"{_RECORDING_WORDS[regime]} the rhythm of the playing reads as a "
+                f"tremolo too often to set one "
+                f"from the measurement (audit D-M7). If the part really has a "
+                f"tremolo, turn tremolo/tremoloActive on in the template."
+            ],
+        )
+
     modulation = getattr(fingerprint, "modulation", {}) or {}
     time_fx = getattr(fingerprint, "time_fx", {}) or {}
     rate = modulation.get("am_rate_hz")
@@ -1197,6 +1248,35 @@ def output_level(target, candidate, pack_id: str = "morgan",
 # --- the whole pass ---------------------------------------------------------
 
 
+def _without_untrusted_lows(delta: Mapping[float, float], regime: Optional[str],
+                            result: "Inversion") -> Dict[float, float]:
+    """Zero the band differences below `LOW_TRUST_HZ` for a mix or a separated stem.
+
+    A mix's low end is the bass and the kick, and a separator strips the guitar's
+    low end, so neither says what the amp's bass should be. Before this, a mix
+    reference set the 65 Hz band to +12 dB on 40 of 57 development parts, against
+    0 of 57 from the same parts' amp tracks (audit D-M8). The bands stay, at no
+    change, so the fit leaves the low EQ and the high-pass as the template has
+    them; the remaining bands are made mean-free again, as `band_delta` promises.
+    """
+    if regime not in LOW_UNTRUSTED_REGIMES or not delta:
+        return dict(delta)
+    kept = {c: d for c, d in delta.items() if c >= LOW_TRUST_HZ}
+    if not kept:
+        return dict(delta)
+    offset = sum(kept.values()) / len(kept)
+    dropped = sorted(c for c in delta if c < LOW_TRUST_HZ)
+    if dropped:
+        what = _RECORDING_WORDS[regime]
+        result.caveats.append(
+            f"in {what} the bands below {LOW_TRUST_HZ:.0f} Hz are the bass, the "
+            f"kick or the separator, not the amp, so the equaliser and high-pass "
+            f"were left as the template has them there; the search can still "
+            f"move them"
+        )
+    return {c: (d - offset if c >= LOW_TRUST_HZ else 0.0) for c, d in delta.items()}
+
+
 def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
            basis=None, basis_note: Optional[str] = None, renderer=None,
            current_settings: Optional[Mapping] = None) -> Inversion:
@@ -1258,6 +1338,10 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
     spectral_moves: Optional[List[str]] = None
     rows = band_delta(target, candidate)
     delta = {float(row["centre_hz"]): float(row["delta_db"]) for row in rows}
+    regime = getattr(target, "regime", None)
+    delta = _without_untrusted_lows(delta, regime, result)
+    held_lows = (sorted(c for c in delta if c < LOW_TRUST_HZ)
+                 if regime in LOW_UNTRUSTED_REGIMES else [])
 
     centres = _band_centres(pack_id, amp)
     if not delta:
@@ -1313,6 +1397,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             current_filters=_current_filter_values(
                 signal_path, current_settings, pack_id
             ),
+            held_hz=held_lows,
         )
         result.merge(filters)
 
@@ -1360,6 +1445,7 @@ def invert(target, candidate, amp: str = "sw50r", pack_id: str = "morgan",
             module=amp, pack_id=pack_id,
             accounted_for=filters.detail.get("filter_response_db"),
             band_controls=signal_path.eq_band_controls,
+            held_hz=held_lows,
             band_noise_db=_renderer_band_noise(
                 renderer, measured=basis_noise
             ))
@@ -1526,7 +1612,10 @@ def _validate_basis_provenance(found, renderer) -> None:
             "the measured EQ basis has missing or unsupported provenance schema "
             f"{schema!r}. Re-run scripts/measure_eq_basis.py with this renderer."
         )
-    metadata = renderer.metadata()
+    # A wrapper that changes only what surrounds the DI (`match.preroll`) answers
+    # with its backend's identity here: a cropped pre-roll does not change what
+    # the equaliser does to a held tone, which is all a basis measures.
+    metadata = getattr(renderer, "basis_metadata", renderer.metadata)()
     identity = (
         ("renderer id", "renderer_id"),
         ("plugin version", "plugin_version"),

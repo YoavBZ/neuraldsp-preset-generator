@@ -136,14 +136,13 @@ the replicated shortlist scoring already handles.
 **Pass it too when Morgan's tremolo or rack reverb is on** — `tremolo/tremoloActive`
 or `reverb/reverbActive` true in the template, switched on by `--enumerate`, or
 calculated on by the inversion. The report lists what it calculated; if it turned
-one on, rerun with fresh. The inversion can switch the tremolo on for any
-recording, not only a probe: it read ordinary playing as a tremolo on about half
-the development amp tracks (audit D-M7). Unless research says the part has one,
-treat a calculated tremolo as a mistake: write the preset from a copy of the chosen
-spec with `tremolo/tremoloActive` off, leaving the run's own spec untouched for step 6,
-and tell the user that every candidate was searched, scored and auditioned with the
-tremolo on. Not the amp's own spring reverb: its carry-over is a
-short tail, at most 0.15 in the same measurements. Both carry state from one
+one on, rerun with fresh. For a recording (a stem or a mix) the inversion leaves
+the tremolo as the template has it: it read ordinary playing as a tremolo on about
+half the development amp tracks (audit D-M7). If research says the part has a
+tremolo, switch `tremolo/tremoloActive` on in the template yourself and set its rate
+and depth by research (`--enumerate` would switch it on without searching either,
+D-M17), and pass `--process-policy fresh`. Not the amp's own spring reverb: its
+carry-over is a short tail, at most 0.15 in the same measurements. Both carry state from one
 render to the next on a reused instance, likely a modulation oscillator, so the
 same settings come out differently each time and the search ranks noise:
 - the tremolo's renders of one setting came out several dB apart, measured
@@ -183,9 +182,9 @@ significantly. The rule stands, as the re-check's plan declares for an inconclus
 result.
 
 So without a DI, choose the starting preset with the generate skill's research
-about the song, and deliver it as it is, or, better, follow the generate skill's
-step 5b: offer it with three alternatives on the audition page and let the user
-pick by ear. Use `fingerprint.py` on the reference
+about the song, and deliver it as it is, or follow the generate skill's step 5b:
+ask whether the user wants to hear it beside three alternatives on the audition
+page, and if so let them pick by ear. Use `fingerprint.py` on the reference
 only to describe it and its caveats, not to change settings, and do not ask the
 user to record a DI to make up for it. `--search-without-di` runs the old
 noise-probe search, with its guitar check and level trim, for benchmarks; do not

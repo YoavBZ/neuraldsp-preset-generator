@@ -328,17 +328,34 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - The listening checks the judge's review asked for: whether hiss matters, and
      whether drive with a matched spectrum is heard as the judge weights it.
    - Any search scored by the judge needs a positive control first.
-5. **Open defects in the DI path** ([ground-truth audit](ground-truth-audit-2026-10-03.md)).
-   The others are fixed (D-H1 by #107, D-M6 by #119, D-M9 by #114, D-M15 by #113),
-   moot now that a match without a DI doesn't search (D-M2, D-M14), or were about how
-   results were reported (D-H2, D-M5).
-   - **Renders:** Tone King's start-up mute (D-M1); Morgan's reused-instance history
-     (D-M13).
-   - **Search controls:** `--enumerate` (D-M17); the screen's false premise (D-M18).
-   - **Inversion:** the mix regime (D-M8); a false tremolo (D-M7).
+5. **Defects in the DI path** ([ground-truth audit](ground-truth-audit-2026-10-03.md)).
+   In the product, only `match_preset.py`'s search reaches these (with `--probe-di`,
+   `--search-without-di` or `--reference-mode probe`); song-only `generate` never
+   does. Research benchmarks reach them too.
+
+   Fixed: D-H1 (#107), D-M6 (#119), D-M9 (#114), D-M15 (#113), and on 2026-10-12
+   D-M1 (#170), D-M7 (#168) and D-M8's calculated start (#169). Moot: D-M2 (the
+   level trim now runs only for a paired reamp) and D-M14 (research E1). About how
+   results were reported: D-H2, D-M5. Parked:
+   - **Tone King re-scoring (rest of D-M1):** the research benchmark's Tone King
+     scoring renders still have no pre-roll; that is the ML session's.
+   - **Morgan's reused-instance history (D-M13):** the renderer's warm-up is shared
+     with research renders; coordinate with the ML session first.
+   - **Search controls:** `--enumerate` (D-M17) and the screen's false premise
+     (D-M18): their help and report texts are corrected by #171. Parked: screening
+     each enumerated variant's own active controls, and a midpoint probe.
+   - **Inversion:** a mix's or separated stem's bands below 250 Hz are left alone
+     (D-M8, #169), but the search and its loss can still move them, parked with the
+     search objective below. A false tremolo (D-M7) is no longer set from a
+     recording (#168); parked: the finer `tremoloRate` step, and whether a reamp of
+     the user's own DI (`paired_di`) also fires falsely (measure on the 43
+     development DIs through a tremolo-off template before changing it), and
+     offering `--enumerate` for the tremolo.
    - **The search objective,** which still steers the DI path though it no longer
      judges: spectral extremes (D-H3), level handling (D-M3, D-M4), ambience, decay
-     and renormalising (D-M10–D-M12), and an untested stereo term (D-M16).
+     and renormalising (D-M10–D-M12), and an untested stereo term (D-M16). These are
+     loss questions (the ML session's); none has been shown by listening to change
+     a preset.
 
 ## Parked
 
@@ -400,4 +417,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-08 | Reserved confirmation not passed on SW50R or PR12 under either declared timing. Independent numerical/audio checks agree. This learned method does not ship; diagnose on development data and use fresh reserved data for future confirmation | [confirmation results](set3-heldout-confirmation-results.md) |
 | 2026-10-08 | Known-DI development selection shows menu headroom on all three amps. Diagnose the rebuilt chooser's refusal on a fixed panel before more training; neither this diagnostic nor a proxy rescue is confirmation | [development diagnostic](set3-development-diagnostic-results.md), [proxy-check plan](set3-mask-diagnostic-plan.md) |
 | 2026-10-09 | Codex continuation reviewed: held-out failure confirmed; ranking works with the true DI, the loss is in the rebuilt DI; native-pilot "failure" was a mis-specified test; research stays in the repo until the plugin is ready | [review](codex-continuation-review.md) |
+| 2026-10-12 | `generate` asks before building the listening page; the user can decline (user decision) | `skills/generate/SKILL.md` step 5b |
+| 2026-10-12 | A mix's top-end roll-off is a reason to check, not to darken (one song, mixed evidence) | `reference/reading-a-reference.md`, #167 |
+| 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | step 5 above; #168–#171 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
