@@ -32,7 +32,9 @@ The user speaks in plain language, not flags. Extract:
   detect from, ask rather than picking.
 
 Ask at most **one** clarifying question about the tone, and only if the answer
-would change the amp choice. Otherwise pick sensible defaults and say what you
+would change the amp choice or the gain class. When nothing documents whether the
+part is clean or clearly driven, that is the question worth asking: the class is the
+step most often wrong from a song (step 4). Otherwise pick sensible defaults and say what you
 assumed. (Asking where in a full song the guitar plays, step 2, and offering the
 listening page, step 5b, are separate.)
 
@@ -176,13 +178,14 @@ Tone King recipes use its verified sync-note selectors. See
 - **Choose the class from the part's own documented sound,** not the song's genre, the
   band, or a write-up about the whole song. A song called rock, a metal band or a mix
   review praising "crunchy guitars" says nothing about which guitar is clean. And the
-  measured excerpt of a full mix is not evidence of guitar drive: its harmonic-to-noise
-  ratio, fizz, odd/even, flatness, loudness and loudness range measure every
-  instrument at once. When nothing documents the part, say the class is a guess. On
-  34 development parts, routing this way sent 9 of 22 clean parts to crunch, about
-  12% further from the record on average than choosing by the part's real class
-  ([generate-routing-results.md](../../docs/generate-routing-results.md)); hence the
-  second starting point in step 6.
+  measured excerpt of a full mix is not evidence of guitar drive: it measures every
+  instrument at once, and its harmonic-to-noise ratio and fizz did not tell clean
+  parts from crunch ones. When nothing documents the part, say the class is a guess
+  (and it may be your one question, step 1). Routing by the song instead, as
+  `generate` did before, sent 10 of 22 development clean parts to crunch or heavier,
+  about 12% further from the record on average than choosing by the part's real
+  class ([generate-routing-results.md](../../docs/generate-routing-results.md)); hence
+  the second starting point in step 6. This rule itself is not yet re-checked.
 - **For a clean Morgan part, start from the amp's clean baseline.** These are factory
   presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 
@@ -393,10 +396,13 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
 Write the preset into the user's preset folder and tell them how to load it —
 see [installing.md](../../reference/installing.md).
 
-**When the part is not clean, install a second starting point beside it,** with or
-without the listening page: the amp's clean starting point (step 4) for a crunch
-part, or its crunch starting point for a heavier one, made dry, named "… (clean
-start)" or "… (crunch start)". Tell the user to try both: the gain class is the
+**When the part is not clean, or its class is a guess, install a second starting
+point beside it,** with or without the listening page, unless the user already chose
+between the two starting points there: the amp's clean starting point (step 4) for
+a crunch part, its crunch starting point for a heavier one or a guessed clean one,
+made dry, named "… (clean start)" or "… (crunch start)". On Tone King, a heavier part
+built on the user's own preset gets the crunch baseline beside it. The evidence comes
+from the three Morgan amps. Tell the user to try both: the gain class is the
 step most often wrong from a song, and a wrong class costs far more than any edit
 ([generate-routing-results.md](../../docs/generate-routing-results.md)).
 

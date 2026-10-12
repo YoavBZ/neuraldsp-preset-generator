@@ -124,11 +124,11 @@ Practical consequences:
   riff in the part's register the darkened one won, and the rebuilt DI may itself
   carry the mix's roll-off, so a darkened preset may have rolled it off twice.
   Mixed evidence, not a rule.
-- **A mix's measurements are not the guitar's drive.** Harmonic-to-noise ratio, fizz,
-  odd/even, spectral flatness, loudness and loudness range of a mix measure every
-  instrument at once; on 49 development excerpts they barely told clean parts from
-  crunch ones. A 10-second excerpt's loudness range is small whatever the playing, so
-  it is not a sign of compression. Decide the gain class from what documents the part
+- **A mix's measurements are not the guitar's drive.** They measure every instrument
+  at once: on the development excerpts of the routing check, a mix's
+  harmonic-to-noise ratio and fizz did not tell clean parts from crunch ones, and
+  agents that read the mix's density or loudness as drive misrouted. Decide the gain
+  class from what documents the part
   ([generate-routing-results.md](../docs/generate-routing-results.md)).
 - **On a stem, distrust the low end and the time effects.** A search fitting a
   stem will spend its budget on frequencies the separator removed, and will

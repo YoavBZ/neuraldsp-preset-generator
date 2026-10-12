@@ -16,7 +16,9 @@ starting presets") is applied in the form this data supports: when `generate` ro
 a part to crunch it also writes the clean start, and when it routes heavier, the
 crunch start (it cannot know when it is unclear: the misrouted agents were sure).
 Offering two would have cut the regret to 0.009 (0 to 0.028), an upper bound that
-assumes the better of the two is then picked by ear.
+assumes the better of the two is then picked by ear. The bound gives clean routes a
+crunch neighbour too; the skill does that only when the class is a guess, which makes
+no difference here (no crunch part was routed clean).
 
 **Scope (a deviation from the plan).** The plan (R7) declared user-style part
 descriptions from track names and arrangement. What the agents got was only the song,
@@ -77,7 +79,8 @@ averaged over the three amps, band-weighted.
   critiques, "Mix Rescue" articles) rather than the part; about 2 led with the
   measurement, reading the mix's density or loudness as drive. On these excerpts the
   mix measurements barely separate clean from crunch parts (harmonic-to-noise ratio
-  and fizz near chance, AUC 0.43 and 0.48; crest weakly, 0.79).
+  and fizz near chance, AUC 0.43 and 0.48; crest weakly, 0.79; computed in the
+  independent re-derivation from the runs' fingerprints, not by the script).
 - **Run to run, agents are unstable:** two near-identical Magilla excerpts 1 s apart
   were routed clean and heavier. Each part had one run. Two runs researched the wrong
   artist of the same name (no cost here).

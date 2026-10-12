@@ -343,11 +343,13 @@ def analyze():
     route_of, proxy_of, audit = {}, {}, {}
     for nn, slugs in runs.items():
         folder = WORK / "runs" / nn
+        if not (folder / "result.json").exists():
+            raise SystemExit(f"{folder}: no result.json; refusing to overwrite the results")
         try:
             result = json.loads((folder / "result.json").read_text())
             route = {"heavier": "heavier", "high-gain": "heavier"}.get(
                 result["gain_class"], result["gain_class"])
-        except (OSError, ValueError, KeyError):
+        except (ValueError, KeyError):
             route = None
         # A leak is something the agent *asked for*: a tool call naming the project's
         # data, its repository or its GitHub page. Text the plugin prints (its --help
