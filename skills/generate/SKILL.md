@@ -366,7 +366,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
    listen for gain, brightness, body and space, not the notes.
 
-   **To compare starting points** (always when the part is not clean, and whenever
+   **To compare starting points** (always when the part is not clean or its class is a guess, and whenever
    the user is unsure how much gain it has), add the amp's other starting point from
    step 4 beside the one already among the four: crunch if the four hold the clean
    one, clean if they hold crunch, and for a heavier part, crunch beside the driven
