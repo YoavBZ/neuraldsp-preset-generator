@@ -355,7 +355,7 @@ def phone():
                      ("Which of A and B is closer to the Reference?",
                       "Which of A and B is closer <b>in tone</b> to the Reference? Ignore "
                       "loudness: every clip is at the same level. If a clip sounds broken or "
-                      "silent, stop and say which trial. Trial 1 is practice."),
+                      "silent, stop and say which trial.{practice}"),
                      ("Tap A or B;\nyou must choose one.",
                       "Tap A, B, or ? if you\nreally can't tell.")):
         if old not in page_t:
@@ -376,13 +376,15 @@ def phone():
                          f'</audio></div>' for x in "RAB"]
                 buttons = "".join(f'<button type="button" data-value="{x}">{x}</button>'
                                   for x in ("A", "B", "?"))
-                sections.append(f'<section><h2>Trial {n}</h2><p class="cue"></p>'
+                title = f"Trial {n} (practice)" if n == 1 else f"Trial {n}"
+                sections.append(f'<section><h2>{title}</h2><p class="cue"></p>'
                                 f'{"".join(rows)}<div class="pick" data-trial="{n}">'
                                 f'{buttons}</div></section>')
         page = page_t.format(sitting=sitting, first=numbers[0], last=numbers[-1],
                              count=len(numbers), build=build_id, gap=L.GAP_S,
                              cycle=L.CYCLE_GAP_S,
                              brk=", with a break between the sittings" if sitting == 1 else "",
+                             practice=" Trial 1 is practice." if sitting == 1 else "",
                              trials="\n".join(sections))
         import re
 

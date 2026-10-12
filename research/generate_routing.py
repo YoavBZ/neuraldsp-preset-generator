@@ -828,10 +828,199 @@ def recheck_route(workers=3):
             print(arm, nn, status, flush=True)
 
 
+def _preset_values(path):
+    from format.parser import parse
+    from format.structured import build
+
+    preset = build(parse(pathlib.Path(path).read_bytes()))
+    return {(q.module_path, q.key): str(q.value) for q in preset.parameters}
+
+
+def _dry_baselines(folder: pathlib.Path):
+    """(class, amp) -> values of each starting preset made dry, as step 4 writes it."""
+    folder.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for cls, by_amp in BASELINES.items():
+        for amp, preset in by_amp.items():
+            xml = folder / f"{cls}-{amp}.xml"
+            if not xml.exists():
+                _apply(["--template", str(_factory_file(preset)), "--recipe", f"dry/{amp}",
+                        "--strip-irs", "--out", str(xml)], folder)
+            out[(cls, amp)] = _preset_values(xml)
+    return out
+
+
+def _starts_written(out_dir: pathlib.Path, dry):
+    """The starting-point classes among the files the agent wrote: a file counts as a
+    class's start when at least 95% of the dry baseline's values match it."""
+    found = set()
+    for xml in sorted(out_dir.glob("*.xml")):
+        try:
+            values = _preset_values(xml)
+        except Exception:
+            continue
+        for (cls, _amp), base in dry.items():
+            same = sum(values.get(k) == v for k, v in base.items())
+            if base and same / len(base) >= 0.95:
+                found.add(cls)
+    return found
+
+
+def recheck_analyze():
+    import math
+    from functools import lru_cache
+
+    doc = json.loads(RECHECK_MAP.read_text())
+    runs = json.loads(MAP.read_text())["runs"]
+    entries = _distances()
+    parts_doc = json.loads(PARTS.read_text())
+    scored = [p for p in parts_doc["parts"]
+              if all(_raw(entries, p["slug"], a, BASELINES[c][a], h)
+                     for a in AMPS for c in BASELINES for h in "AB")]
+    choose = lru_cache(None)(lambda amp, label, band: _choose(entries, scored, amp, label, band))
+    dry = _dry_baselines(WORK / "dry-baselines")
+    norm = {"high-gain": "heavier"}
+
+    arms = {"old": {}, "new": {}}
+    status = {}
+    for arm, nn, tag in doc["order"]:
+        folder = WORK / "runs2" / tag
+        transcript = folder / "transcript.jsonl"
+        text = transcript.read_text() if transcript.exists() else ""
+        _, plugins, model = _session_id(transcript) if transcript.exists() else (None, None, None)
+        version = next((p.get("version") for p in plugins or []
+                        if p["name"] == "neuraldsp-preset-generator"), None)
+        calls = []
+        for line in text.splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("type") == "assistant":
+                calls += [json.dumps(c.get("input")) for c in event["message"]["content"]
+                          if c.get("type") == "tool_use"]
+        leaks = sorted({m for m in ("ndsp-presets", "/Users/yoavbz/projects", "YoavBZ",
+                                    "neuraldsp-preset-generator/docs", "validation-",
+                                    "generate-routing")
+                        for call in calls if m in call})
+        want = "0.7.105" if arm == "old" else doc["new_version"]
+        excluded = (leaks or version != want or model != RECHECK_MODEL)
+        result = None
+        if (folder / "result.json").exists():
+            try:
+                result = json.loads((folder / "result.json").read_text())
+            except ValueError:
+                result = None
+        route = norm.get(result.get("gain_class"), result.get("gain_class")) if result else None
+        written = _starts_written(folder / "out", dry)
+        asked = (folder / "asked.txt").read_text().strip() == "yes" if (
+            folder / "asked.txt").exists() else False
+        status[f"{arm}/{nn}"] = {"route": route, "starts_written": sorted(written),
+                                 "asked": asked, "excluded": bool(excluded),
+                                 "why_excluded": leaks or ([f"version {version}"] if version != want else [])
+                                 + ([f"model {model}"] if model != RECHECK_MODEL else [])}
+        for slug in runs[nn]:
+            arms[arm][slug] = None if excluded or route not in CLASSES else (
+                route, written | {route})
+    run1 = {}
+    for nn, slugs in runs.items():
+        r = json.loads((WORK / "runs" / nn / "result.json").read_text())
+        for slug in slugs:
+            run1[slug] = norm.get(r["gain_class"], r["gain_class"])
+
+    def regret(m, best, cls):
+        if GROUP[cls] == GROUP[best]:
+            return 0.0
+        return m[cls] - m[best]
+
+    per = {}
+    guards = {"old": {}, "new": {}}
+    for p in scored:
+        if not p["routable"]:
+            continue
+        rows = []
+        for amp in AMPS:
+            presets = {"clean": choose(amp, "clean", p["band"]),
+                       "crunch": choose(amp, "crunch", p["band"]),
+                       "heavier": BASELINES["heavier"][amp]}
+            m = {c: sum(math.log(_raw(entries, p["slug"], amp, presets[c], h))
+                        for h in "AB") / 2 for c in CLASSES}
+            rows.append((m, min(CLASSES, key=m.get)))
+        def avg(cls_or_set):
+            if cls_or_set is None:
+                return None
+            if isinstance(cls_or_set, str):
+                return sum(regret(m, b, cls_or_set) for m, b in rows) / len(rows)
+            return sum(min(regret(m, b, c) for c in cls_or_set) for m, b in rows) / len(rows)
+        entry = {"band": p["band"], "label": p["label"]}
+        for arm in ("old", "new"):
+            got = arms[arm].get(p["slug"])
+            entry[arm] = avg(got[0]) if got else None
+            entry[f"{arm}_two"] = avg(got[1]) if got else None
+            if got:
+                key = f"{p['label']} -> {got[0]}"
+                guards[arm][key] = guards[arm].get(key, 0) + 1
+        entry["run1"] = avg(run1.get(p["slug"]))
+        entry["label_route"] = avg(LABEL_CLASS[p["label"]])
+        per[p["slug"]] = entry
+
+    decide = {s: e for s, e in per.items() if e["label"] in ("clean", "crunch")}
+
+    def boot(key):
+        vals = [(e["band"], e[key]) for e in decide.values() if e[key] is not None]
+        return _band_boot(vals) if vals else None
+
+    def paired(a, b):
+        vals = [(e["band"], e[a] - e[b]) for e in decide.values()
+                if e[a] is not None and e[b] is not None]
+        return _band_boot(vals) if vals else None
+
+    diff = paired("new", "old")
+    if diff is None:
+        verdict = "no routes"
+    elif diff["hi"] < 0:
+        verdict = "the rule helps"
+    elif diff["lo"] > 0:
+        verdict = "the rule hurts"
+    else:
+        verdict = "undecided"
+    asked_runs = [k for k, v in status.items() if v["asked"]]
+    # Report only: the product with the question, if asked runs had been told the label.
+    answered = {s: dict(e) for s, e in decide.items()}
+    asked_slugs = {slug for k in asked_runs if k.startswith("new/")
+                   for slug in runs[k.split("/")[1]]}
+    for s, e in answered.items():
+        if s in asked_slugs:
+            e["new"] = e["label_route"]
+    out = {"plan": "docs/generate-routing-recheck-plan.md", "decision": verdict,
+           "new_minus_old": diff, "old_minus_run1_noise": paired("old", "run1"),
+           "regret": {k: boot(k) for k in ("new", "old", "run1", "label_route",
+                                           "new_two", "old_two")},
+           "if_the_question_were_answered_new": _band_boot(
+               [(e["band"], e["new"]) for e in answered.values() if e["new"] is not None]),
+           "asked_runs": asked_runs,
+           "second_start_written": {arm: sum(len(v["starts_written"]) > 1
+                                             or (v["route"] and v["starts_written"]
+                                                 and v["route"] not in v["starts_written"])
+                                             for k, v in status.items() if k.startswith(arm))
+                                    for arm in ("old", "new")},
+           "guards_routes_by_label_parts": guards,
+           "excluded_runs": {k: v["why_excluded"] for k, v in status.items() if v["excluded"]},
+           "failed_routes": [k for k, v in status.items() if v["route"] not in CLASSES],
+           "runs": status, "parts": per}
+    RECHECK_RESULTS.write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps({k: out[k] for k in ("decision", "new_minus_old", "old_minus_run1_noise",
+                                          "regret", "if_the_question_were_answered_new",
+                                          "asked_runs", "second_start_written",
+                                          "guards_routes_by_label_parts", "excluded_runs",
+                                          "failed_routes")}, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze",
-                                       "recheck-prepare", "recheck-route"])
+                                       "recheck-prepare", "recheck-route",
+                                       "recheck-analyze"])
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--workers", type=int, default=3)
@@ -842,6 +1031,8 @@ def main():
         return route(args.only, args.workers)
     if args.step == "recheck-prepare":
         return recheck_prepare()
+    if args.step == "recheck-analyze":
+        return recheck_analyze()
     if args.step == "recheck-route":
         return recheck_route(args.workers)
     if args.step == "edits-analyze":
