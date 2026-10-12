@@ -97,3 +97,12 @@ declarable at this size.
 The starting presets were chosen by the judge on some of these development parts, so
 this asks whether the ear agrees with the judge where the judge chose, not whether the
 presets generalise. Block C covers PR12 only. One listener.
+
+## Built (2026-10-12, before any sitting)
+
+28 trials (21 main: C 8, X 5, K 8 after the screen; 3 repeats, 2 hidden references,
+1 reversed-taste control, 1 practice), renders reproduced the stored scores (worst
+|Δ log| 0.00007). Key SHA-256:
+`6bacfd75e2a03f04e53c9837b10b37cc98c6569afa78c79b04bc2a47dd018cbc`. With 21 main
+trials the power is lower than planned: "heard" needs 16 of 21 decided (p 0.013) or
+15 of 20 (p 0.021), about 40% at 70% agreement.
