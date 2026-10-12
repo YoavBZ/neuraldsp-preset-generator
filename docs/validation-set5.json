@@ -1,7 +1,15 @@
 {
  "schema": "validation-set5-1",
  "declared": "2026-10-12",
- "amendments": [],
+ "amendments": [
+  {
+   "date": "2026-10-12",
+   "band_merge": {
+    "Fytakyte": "BKS"
+   },
+   "reason": "Fytakyte 'Too Much' DI ElecGtr2 matches BKS 'Too Much' ElecGtr4a by playing envelope (0.72 vs 0.21-0.45 for other BKS DIs); likely the same recording re-released under a new name. Band-clustered statistics merge them."
+  }
+ ],
  "precedent": "docs/validation-set4.md (rules, crop rule 2, judge lag); the inventory (tmp/set5-inventory.md on the main checkout) came first, as set 4's plan did",
  "inventory": {
   "path": "~/ndsp-presets/references/datasets-set5/inventory.json",

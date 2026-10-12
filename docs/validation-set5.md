@@ -298,3 +298,13 @@ Resampling 44.1 → 48 kHz is as in sets 3 and 4. Gain thresholds were not recal
 
 **Earlier sets.** Nova-One Studio appears in set 3's `not_obtained` list. It was never
 fetched or used there. No set-5 band is in sets 1–4.
+
+## Amendment (2026-10-12, before any set-5 scoring)
+
+**Fytakyte and BKS are treated as one band.** Both sessions are songs called "Too Much"
+from the same library. BKS has left the library page, and Fytakyte is still listed.
+- Fytakyte's ElecGtr2 DI matches BKS's ElecGtr4a DI by its playing envelope (correlation
+  0.72; 0.21–0.45 against the other BKS DIs). That is the likely mark of the same
+  recording re-released under a new band name.
+- Band-clustered statistics merge them under "BKS". The parts are unchanged.
+- Found by the set-5 test plan's review (`tmp/set5-review.md`, local).
