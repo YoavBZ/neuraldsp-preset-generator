@@ -285,6 +285,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **Passing the recording through (residual) is futile:** +0.059, worse on crunch.
         The rebuilt DI keeps the recording's brightness.
       - **Earlier crunch conclusions about the network are open again.**
+   8h. **Held-out test on set 5** ([plan](set5-test-plan.md), [results](set5-test-results.md)).
+      *Done 2026-10-12, adversarially audited.*
+      - **On fresh bands the corrected network (C′) picks better than the old one:** −0.124
+        band-weighted (−0.059 by part), 5 of 5 bands, passing by 0.003.
+      - **It is a crunch effect, carried by two small bands,** and fragile to leaving one out.
+      - **C′ replaces C as the research network.**
+      - **Product question (report only):** C′ only matches `generate`'s crunch start
+        (−0.023). It goes to the combined set-5 + MedleyDB stem test.
+      - **A song-level class predictor from the rebuilt DI** failed its positive control
+        twice and is closed ([results](class-predictor-results.md), on
+        `ml/class-predictor`).
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.
@@ -292,13 +303,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        repository.
 
    **Parked, with reasons:**
-   - **Network improvements:** closed, as above.
+   - **Network improvements:** reopened by the MPS gradient bug (8f, 8g). The residual design is futile, and the corrected network is under test (set 5).
    - **Judge v2:** half its gain was an artefact of the masking floor; superseded as the
      candidate by judge v3, which waits for the listening calibration.
    - **Search beyond the menu:** on high-gain, the oracle's headroom (−0.17) is out of the
      rebuilt DI's reach, so a search through it would hit the same wall.
    - **The four Internet Archive sessions:** fresh material, kept unused for the next
      declared test.
+   - **Set 5** ([declaration](validation-set5.md), 2026-10-12): fresh held-out material,
+     unused. 31 parts from 7 new bands. 26 are in scope: 16 clean (Ronnie Jones, Hazael,
+     BKS) and 10 crunch (BKS, Saturn Syndicate, The Ferryboat Men, Fytakyte). Nova-One's
+     high-gain parts are report-only. Kept for the next declared test.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1

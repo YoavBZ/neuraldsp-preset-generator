@@ -221,6 +221,11 @@ was declared, what was measured, and the research behind it.
   [results](toneking-baseline-results.md): **adopted.** Fixed Tone King factory presets
   per gain class, made dry: Vintage Trem for clean (about 12% closer than the plugin's
   Default on held-out parts) and Squishy Lead for crunch (thin evidence, 3 bands).
+- [set5-test-plan.md](set5-test-plan.md) → [results](set5-test-results.md): on fresh set-5
+  bands the corrected network picks better than the old one (crunch, fragile); it only
+  matches `generate`'s crunch start.
+- [validation-set5.md](validation-set5.md): set 5, a fresh held-out set (7 new bands; first
+  use by the set-5 test).
 - [residual-di-plan.md](residual-di-plan.md) → [results](residual-di-results.md): the MPS
   gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
   corrected network picks better, marginally and on crunch only (a second seed is
@@ -268,6 +273,9 @@ was declared, what was measured, and the research behind it.
 - [validation-set4-plan.md](validation-set4-plan.md) → [validation-set4.md](validation-set4.md):
   fresh held-out confirmation set, unused. 9 new bands (4 via the Internet Archive,
   amendment 1), 35 parts, all held out.
+- [validation-set5.md](validation-set5.md): fresh held-out set, unused. 7 new bands
+  with kept parts (14 sessions tested), 31 parts, all held out. 26 clean or crunch parts
+  are in scope; 5 high-gain parts are report-only.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests
