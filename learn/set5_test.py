@@ -293,7 +293,7 @@ def evaluate(R, ps, seeds, out_path=None):
     print("cells", len(cells), "| seeds", seeds)
     print("GATE 1 (C′ vs C, pooled):", out["gate1"].get("outcome"),
           {k: out["gate1"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")})
-    print("GATE 2 (C′ vs start, crunch):", out["gate2_crunch"].get("outcome"),
+    print("REPORT ONLY (product question on amp tracks; decided by the combined stem test) C′ vs start, crunch:", out["gate2_crunch"].get("outcome"),
           {k: out["gate2_crunch"].get(k) for k in ("band_mean", "lo90", "hi90", "bands_negative", "bands")},
           "| every seed below 0:", ship_ok)
     for k, v in res.items():
