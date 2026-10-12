@@ -4,6 +4,22 @@ Declared 2026-10-12, under set 5's rules ([validation-set5.md](validation-set5.m
 one addition. MedleyDB names no DI, so a declared **DI-role rule** says which track of a
 same-take pair is the DI.
 
+**Status after amendment 1 (2026-10-13): set 6 is unusable for DI-based tests.**
+
+- **It holds no DI part.** No DI-role rule kept most real DIs with at most 10% false
+  accepts on development data (amendment 1, below).
+- **All 7 parts of the first declaration are excluded.** Their crops stay on disk, held
+  out and superseded.
+- **Steven Clark – Bounty** is excluded on a second ground too: MedleyDB labels both its
+  tracks "electric bass".
+- **At most a song-only use** (the released mixes, with no DI) can be declared later. It
+  needs its own crop rule.
+- **35 of the 73 songs are in MUSDB18's train subset** (section "MUSDB18 overlap"). HTDemucs
+  was trained on that subset, so a stem-based test must exclude or report those songs.
+
+The sections after the amendment describe the first declaration. Where they speak of kept
+parts, those parts are now excluded.
+
 **Every band is held out, and the set is unused.** Nothing may train, tune or choose on
 it, and nobody may listen to it, until a confirmation is declared in a committed file.
 That use is then added to `held_out_uses`, which is empty.
@@ -124,33 +140,35 @@ The calibration summary is `docs/validation-set6-di-calibration.json`, built by
 `~/ndsp-presets/references/datasets-medleydb/_tools/di_role_calibration/`
 (`dev_pairs.json`, `dev_tracks.json`).
 
-**Scope.** As in set 5:
+**Scope** (first declaration). As in set 5:
 
 - clean and crunch parts are in scope;
 - high-gain parts are report-only, set by each part's session-level gain class.
 
-That makes Big Troubles and Purling Hiss report-only.
-
-**The headline: MedleyDB gives few parts.** Only 5 of its 73 songs on disk give a kept
-part, from 5 bands. In scope are **3 clean parts from 3 bands, and no crunch part**.
+**The first headline (superseded): MedleyDB gave few parts.** Only 5 of its 73 songs on
+disk gave a kept part, from 5 bands: 3 clean parts from 3 bands, and no crunch part.
+Amendment 1 excludes all of them.
 
 - Most same-take pairs in MedleyDB are not a DI and its amp track. They are two
   microphones on one amp, or duplicate files.
-- **So set 6 adds nothing to the crunch side of the combined set-5 + MedleyDB stem test**
-  ([set5-test-plan.md](set5-test-plan.md)). That test's plan should say so before any
-  power calculation.
+- **So set 6 adds nothing to the combined set-5 + MedleyDB stem test, on either the clean
+  or the crunch side** ([set5-test-plan.md](set5-test-plan.md)). That test's plan should
+  say so before any power calculation.
 
-`docs/validation-set6.json` is the machine-readable declaration. It holds:
+`docs/validation-set6.json` (schema `validation-set6-2`) is the machine-readable
+declaration. It holds:
 
 - the inventory's SHA-256;
-- every song, with its provenance;
-- every kept part, with its evidence pointers and crop hashes;
-- every excluded part, and every same-take pair that did not establish a DI, with
-  reasons.
+- every song, with its provenance and its MUSDB18 mark;
+- the amendment;
+- every part of the first declaration, now excluded, with its reasons and its superseded
+  crop's hash;
+- every same-take pair that did not establish a DI, with reasons.
 
-`research/validation_set6.py declare` rebuilds the JSON from two sources alone: the
-inventory (`~/ndsp-presets/references/datasets-medleydb/inventory.json`) and the crop
-records (`~/ndsp-presets/references/validation-crops-set6/<slug>/record.json`).
+`research/validation_set6.py declare` rebuilds the JSON from the inventory
+(`~/ndsp-presets/references/datasets-medleydb/inventory.json`), the crop records
+(`~/ndsp-presets/references/validation-crops-set6/<slug>/record.json`), and the MUSDB18
+lists (`datasets-medleydb/_tools/musdb18/`).
 `research/validation_set6.py crops` cut the crops.
 
 The pairing and inventory scripts are in `tmp/set6/` on the main checkout (`pair.py`,
@@ -181,8 +199,16 @@ The pairing and inventory scripts are in `tmp/set6/` on the main checkout (`pair
   restricted and was granted to the user for non-commercial research.
   - Metadata comes from `github.com/marl/medleydb` at commit `537bb7b`
     (`Metadata/*.yaml`, `ERRATA.md`).
-- **Licence:** Creative Commons BY-NC-SA 4.0 (`LICENSE-V1.txt` in the dataset root).
-  - Non-commercial research only.
+- **Licence:** Creative Commons BY-NC-SA 4.0, the same text for both records.
+  - V1's `LICENSE.txt` is captured as `LICENSE-V1.txt` in the dataset root (MD5
+    `071086fd72dc543a4a680a747874bd16`).
+  - V2's `LICENSE.txt` has the same MD5 in Zenodo's file listing, recorded when the
+    archive was fetched. That listing is restricted now (403), so V2's copy was not
+    captured.
+  - Both record pages state CC BY-NC-SA 4.0 (checked 2026-10-13). The JSON records this in
+    `licence_texts`.
+  - Non-commercial research only. Validating an openly distributed, non-commercial plugin
+    is non-commercial research, and no MedleyDB audio or derived audio is distributed.
   - Nothing is republished, and no audio is in git.
 - **Archives:** each archive was streamed from Zenodo.
   - Its whole-file SHA-256 and MD5 are in `MedleyDB_V*.tar.gz.checksums`. The MD5 was
@@ -218,7 +244,43 @@ The pairing and inventory scripts are in `tmp/set6/` on the main checkout (`pair
   `~/ndsp-presets/references` catalogues and inventories, and the crop folders. There is
   no match. `tests/test_set6.py` checks the bands.
 
-## The DI-role rule (new in set 6)
+## MUSDB18 overlap (separator training data)
+
+MUSDB18 (and MUSDB18-HQ) takes 46 of its 150 songs from MedleyDB, all of them in its
+**train** subset. HTDemucs, the separator used across `learn/`, was trained on MUSDB18-HQ's
+train subset. A separated stem of such a song is therefore an optimistic test.
+
+**Which songs.** 35 of set 6's 73 songs are in MUSDB18. Each one carries a
+`separator_trained_on` block in the JSON (the MUSDB18 name, its subset, and whether it is
+on MUSDB's validation list). Every one of the 35 is in **train**.
+
+- AClassicEducation_NightOwl, AimeeNorwich_Child, AlexanderRoss_GoodbyeBolero (on the
+  validation list), AlexanderRoss_VelvetCurtain, Auctioneer_OurFutureFaces,
+  AvaLuna_Waterduct, BigTroubles_Phantom, CelestialShore_DieForUs,
+  ClaraBerryAndWooldog_AirTraffic, Creepoid_OldTree, FacesOnFilm_WaitingForGa,
+  HopAlong_SisterCities, InvisibleFamiliars_DisturbingWildlife, Lushlife_ToynbeeSuite;
+- Meaxic_TakeAStep (on the validation list), Meaxic_YouListen;
+- 12 Music Delta songs: 80sRock, Beatles, Britpop, Country2, Disco, Gospel, Grunge,
+  Hendrix, Punk, Reggae, Rock, Rockabilly;
+- PortStWillow_StayEven, SecretMountains_HighHorse, Snowmine_Curfews, StevenClark_Bounty,
+  TheDistricts_Vermont, TheScarletBrand_LesFleursDuMal, TheSoSoGlos_Emergency.
+
+None of the V2 songs is in MUSDB18. That includes Dahka Band, the SWEAT songs and Dead
+Milkmen.
+
+**Sources.** Copies are in `datasets-medleydb/_tools/musdb18/`, with SHA-256 in the JSON:
+
+- sigsep's `tracklist.csv`, the 150 songs and their source;
+- `musdb/configs/mus.yaml`, with the validation list;
+- the test subset, read as the 50 track names under `submissions/*/test/` of
+  `sigsep/sigsep-mus-2018`. Train is the other 100.
+
+**MUSDB18's test subset holds Cambridge songs used by earlier sets.** It includes BKS, Forkupines and
+Hollow Ground (Cambridge sessions in sets 1–5). Those songs are not set 6's, and are not
+marked here. A stem-based test on them is not trained-on, but they are public benchmark
+songs.
+
+## The DI-role rule (first declaration; failed calibration, amendment 1)
 
 MedleyDB's raw tracks are labelled only by instrument ("clean electric guitar",
 "distorted electric guitar"), never as DI or microphone. A same-take pair can be:
@@ -293,17 +355,26 @@ The rules are set 5's, unchanged (`rules` in the JSON), plus the DI-role rule:
   3's amendment (4) is recommended (each band's parts weigh 1/n). Here each band has one
   part.
 
-## Kept
+## Kept (first declaration; all excluded by amendment 1)
 
 | part (song, DI → reference) | class | scope | branch | lag (48 kHz) | windows | notes |
 |---|---|---|---|---|---|---|
 | Aimee Norwich – Flying, RAW_05_02 → 05_01 | clean | in | clean | 26 | 19 | polarity −1 |
 | Dahka Band – Soldier Man, RAW_04_01 → 04_02 | clean | in | clean | 23 | 31 | has_bleed |
-| Steven Clark – Bounty, RAW_01_04 → 01_02 | clean | in | clean | 25 | 3 | thinnest evidence; DI plays in 80% of the crop |
+| Steven Clark – Bounty, RAW_01_04 → 01_02 | clean | in | clean | 25 | 3 | both tracks labelled electric bass by MedleyDB; thinnest evidence |
 | Big Troubles – Phantom, RAW_05_01 → 05_02 | high-gain | report-only | driven | 67 | 13 | DI crest 19 dB against 11 dB; onset unclear |
 | Purling Hiss – Lolita, RAW_03_06 → 03_05 | high-gain | report-only | driven | 32 | 24 | polarity −1; has_bleed; DI labelled clean, amp distorted |
 
-- **Counts:**
+Corrections from the review, recorded although every part above is now excluded:
+
+- **Steven Clark:** both of its tracks are labelled "electric bass". The first declaration
+  did not disclose this.
+- **Dahka Band:** its HF advantage was 6.21 dB against the 6.0 threshold, a 0.2-dB margin.
+  Its per-track 1-s crest is lower on the "DI" (14.95 dB against 17.08 dB). It belongs
+  with Steven Clark and Aimee Norwich among the parts whose DI crest is not above the amp
+  track's.
+
+- **Counts** (first declaration):
   - 7 parts declared (one per established DI): 5 kept and 2 excluded;
   - in scope: 3 clean parts from 3 bands (Aimee Norwich, Dahka Band, Steven Clark);
   - no crunch part;

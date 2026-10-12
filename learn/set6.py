@@ -8,7 +8,7 @@ on it before a declared confirmation. The guard fails closed, as sets 4 and 5's 
     set6.is_held_out("Meaxic")                 # True: a band, session key or crop slug
     set6.is_held_out("~/ndsp-presets/references/datasets-medleydb/...")  # True: any path under it
     set6.refuse(path)                          # raises if `path` is set-6 material
-    set6.parts(scope="in_scope")               # the clean and crunch parts
+    set6.parts(scope="in_scope")               # clean and crunch parts (none: amendment 1)
 
 Anything under the MedleyDB root or the set-6 crop root is held out, listed or not (songs
 with no passing pair, single-track songs, metadata, the mixes). `covers` says whether a

@@ -55,6 +55,21 @@ ONSET_SPAN = int(0.015 * SAMPLE_RATE)
 ZENODO = {"V1": {"record": "1649325", "doi": "10.5281/zenodo.1649325", "archive": "MedleyDB_V1.tar.gz"},
           "V2": {"record": "1715175", "doi": "10.5281/zenodo.1715175", "archive": "MedleyDB_V2.tar.gz"}}
 METADATA_COMMIT = "537bb7bad0601fc58e4fff8404f71658b86ef60e"   # github.com/marl/medleydb
+AMENDED = "2026-10-13"
+# Amendment 1 (docs/validation-set6.md): no DI-role rule met its development bar, so no
+# set-6 DI is established and every part is excluded. Set 6 is unusable for DI-based tests.
+DI_ROLE_ESTABLISHED = False
+NO_DI_ROLE = ("DI role not established: no DI-role rule met its development calibration bar "
+              "(amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests")
+NOT_GUITAR = "MedleyDB labels the track 'electric bass', not guitar"
+LICENCE_MD5 = "071086fd72dc543a4a680a747874bd16"   # LICENSE.txt of both Zenodo records
+MUSDB = ROOT / "_tools" / "musdb18"
+MUSDB_SOURCES = {
+    "tracklist.csv": "https://raw.githubusercontent.com/sigsep/website/master/content/datasets/assets/tracklist.csv",
+    "musdb_mus.yaml": "https://raw.githubusercontent.com/sigsep/sigsep-mus-db/master/musdb/configs/mus.yaml",
+    "musdb_splits.json": "test = the 50 track names under submissions/*/test/ in github.com/sigsep/sigsep-mus-2018 "
+                         "(SiSEC 2018 results); train = tracklist.csv less test",
+}
 
 
 # --- names ---------------------------------------------------------------------------
@@ -233,6 +248,22 @@ def cut(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS) -> lis
 
 # --- the declaration (JSON only) -----------------------------------------------------
 
+def _norm(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def musdb18_overlap(musdb: pathlib.Path = MUSDB) -> dict:
+    """{MedleyDB song: {musdb18_track, musdb18_subset, musdb18_validation}} for every song in
+    MUSDB18 (and so MUSDB18-HQ), matched on the normalised "Artist - Title" / "Artist_Title"."""
+    import csv
+    tracks = [r["Track Name"] for r in csv.DictReader((musdb / "tracklist.csv").open())]
+    test = set(json.loads((musdb / "musdb_splits.json").read_text())["test"])
+    import yaml
+    valid = set(yaml.safe_load((musdb / "musdb_mus.yaml").read_text())["validation_tracks"])
+    return {_norm(t): {"musdb18_track": t, "musdb18_subset": "test" if t in test else "train",
+                       "musdb18_validation": t in valid} for t in tracks}
+
+
 def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
     inv = json.loads(inventory.read_text())
     recs = vs3.crop_records(crops) if crops.exists() else {}
@@ -245,10 +276,14 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
         for p in s.get("parts", []):
             used |= {_base(p["di"]), _base(p["reference"]), *(_base(a) for a in p["alternates"])}
             crop = recs.get((key, p["part"]))
-            if p["status"] != "passes":
+            extra = ([] if DI_ROLE_ESTABLISHED else [NO_DI_ROLE]) + (
+                [NOT_GUITAR] if "electric bass" in (p["di_label"], p["reference_label"]) else [])
+            if p["status"] != "passes" or extra:
                 excluded.append({**base, "part": p["part"], "slug": crop[0] if crop else None,
                                  "crop_record_sha256": crop[2] if crop else None,
-                                 "reasons": list(p["reasons"])})
+                                 "crop_status": "superseded (amendment 1): held out, not a part" if crop else None,
+                                 "di_label": p["di_label"], "reference_label": p["reference_label"],
+                                 "reasons": list(p["reasons"]) + extra})
                 continue
             why = vs3.exclusion_reasons(_vs3_part(p), crop[1] if crop else None)
             fail = failed.get(f"{key}/{p['part']}")
@@ -325,17 +360,26 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
                                  "reason": "electric-guitar raw track that is neither an established DI nor "
                                            "its amp track"})
 
+    musdb = musdb18_overlap()
     sessions = []
     for s in inv["sessions"]:
         key = session_key(s)
+        m = musdb.get(_norm(s["song"]))
         sessions.append({
             "key": key, "band": s["band"], "artist_metadata": s["artist_metadata"], "song": s["song"],
             "title": s["title"], "source": SOURCE, "path": s["dir"], "medleydb_version_dir": s["version_dir"],
             "zenodo": ZENODO[s["version_dir"]], "genre": s["genre"], "origin": s["origin"],
             "producer": s["producer"], "has_bleed": s["has_bleed"], "mix": _base(s["mix"]),
             "mix_on_disk": s["song"] != "AimeeNorwich_Child",
-            "status": s["status"], "eg_raw_tracks": len(s.get("tracks", {})),
+            "status": (s["status"] if DI_ROLE_ESTABLISHED or s["status"] != "has parts" else
+                       "DI candidates under the first DI-role rule; none established (amendment 1)"),
+            "eg_raw_tracks": len(s.get("tracks", {})),
             "split": SPLIT, "fold": None,
+            "separator_trained_on": (None if m is None else
+                                     {"dataset": "MUSDB18 / MUSDB18-HQ", **m,
+                                      "note": "HTDemucs (learn/, the repo's separator) was trained on "
+                                              "MUSDB18-HQ's train subset; a stem-based test excludes or "
+                                              "reports this song"}),
             "kept_parts": sum(1 for p in kept if p["session_key"] == key),
             "dis": [{"part": p["part"], "di": f"{s['dir']}/{p['di']}",
                      "di_clip_runs": p["di_clip"]["runs_ge3"],
@@ -356,9 +400,22 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
             in_scope_bands[p["gain_class"]].add(p["band"])
     tools = {f: _sha(GAIN_TOOLS / f) for f in ("classify.py", "gainmeasure.py") if (GAIN_TOOLS / f).exists()}
     return {
-        "schema": "validation-set6-1",
+        "schema": "validation-set6-2",
         "declared": DECLARED,
-        "amendments": [],
+        "amendments": [{
+            "number": 1, "date": AMENDED,
+            "summary": "DI-role rule calibrated on development data only (sets 1-2 and set 3 development: "
+                       "177 DI->amp and 66 two-mic/two-amp/DI-DI same-take pairs, 30 bands, leave-one-band-"
+                       "out). No rule kept most real DIs with <= 10% false accepts on all development "
+                       "negatives (first rule: 32% of DIs, 5%; driven rule: crunch 87%, high-gain 86%, "
+                       "clean 14%, 12%; any clean branch: >= 41% to keep most clean DIs). Set 6 is "
+                       "unusable for DI-based tests; every part is excluded; the failed rules are not "
+                       "applied to MedleyDB. Steven Clark RAW_01_04 -> 01_02 is labelled electric bass.",
+            "calibration": "docs/validation-set6-di-calibration.json",
+            "script": "research/set6_di_role_calibration.py",
+            "committed_before_application": True}],
+        "use": "unusable for DI-based tests (amendment 1); a song-only use (released mixes, no DI) needs its "
+               "own declaration and crop rule",
         "precedent": "docs/validation-set5.md (rules, crop rule 2, judge lag, scope); the inventory came "
                      "first, as set 5's did; MedleyDB names no DI, so a DI-role rule is added",
         "inventory": {"path": "~/ndsp-presets/references/datasets-medleydb/inventory.json",
@@ -369,7 +426,9 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
         "rules": {
             "same_take": "waveform test (>= 80% of 20-s windows in step, median peak-to-sidelobe >= 2.0), "
                          "as sets 3-5; every pair of electric-guitar raw tracks of a song tested",
-            "di_role": inv["di_role_rule"],
+            "di_role": {"status": "no DI-role rule established (amendment 1); no set-6 DI part",
+                        "first_declared": inv["di_role_rule"],
+                        "calibration": "docs/validation-set6-di-calibration.json"},
             "min_passing_waveform_windows": vs3.MIN_WAVEFORM_WINDOWS,
             "clipped_di_runs": vs3.CLIP_RUNS,
             "two_lag_clusters": "inventory flag 'lag ambiguous'",
@@ -394,6 +453,18 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
                     "Licence: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (LICENSE-V1.txt in "
                     "the dataset root). Non-commercial research only; not republished; no audio in git.",
         },
+        "licence_texts": {
+            "V1": {"file": "LICENSE-V1.txt (dataset root)", "md5": LICENCE_MD5,
+                   "checked": "md5 of the captured file"},
+            "V2": {"file": "LICENSE.txt of Zenodo record 1715175 (not captured)", "md5": LICENCE_MD5,
+                   "checked": "md5 from Zenodo's file listing, recorded while the archive was fetched; the "
+                              "listing is restricted now (403)"},
+            "identical": True,
+            "statement": "both records ship the same CC BY-NC-SA 4.0 licence text (same md5); both record "
+                         "pages state CC BY-NC-SA 4.0 (checked 2026-10-13)",
+            "non_commercial_use": "validating an openly distributed, non-commercial plugin is non-commercial "
+                                  "research; no MedleyDB audio or derived audio is distributed",
+        },
         "provenance": {
             "archives": {v: {**z, "checksums_file": f"{z['archive']}.checksums"} for v, z in ZENODO.items()},
             "archive_checks": "each archive streamed from Zenodo, its whole-file SHA-256 and MD5 recorded "
@@ -404,6 +475,8 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
             "metadata": f"github.com/marl/medleydb at {METADATA_COMMIT} (Metadata/*.yaml, ERRATA.md)",
             "selection": "eguitar_songs.json: songs whose metadata lists an electric-guitar raw track; 73 of "
                          "its 166 songs are in the V1/V2 audio releases",
+            "musdb18_lists": {f: {"source": u, "sha256": _sha(MUSDB / f), "fetched": "2026-10-13",
+                                  "copy": f"_tools/musdb18/{f}"} for f, u in MUSDB_SOURCES.items()},
         },
         "unpaired": unpaired,
         "role_failures": role_failures,
@@ -419,6 +492,7 @@ def build(inventory: pathlib.Path = INVENTORY, crops: pathlib.Path = CROPS):
             "onset_check": count(kept, lambda p: p["onset_check"]["result"]),
             "sessions_by_status": count(sessions, lambda s: s["status"]),
             "role_failures": len(role_failures),
+            "separator_trained_on": sum(1 for s in sessions if s["separator_trained_on"]),
         },
         "sessions": sessions,
         "parts": kept,

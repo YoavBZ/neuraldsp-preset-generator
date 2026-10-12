@@ -28,7 +28,7 @@ def _a_di():
 
 def test_schema():
     d = set6.load()
-    assert d["schema"] == "validation-set6-1"
+    assert d["schema"] == "validation-set6-2"
     for k in ("declared", "inventory", "root", "crops_root", "rules", "held_out_bands", "band_strata",
               "licences", "provenance", "unpaired", "role_failures", "counts", "sessions", "parts",
               "excluded", "held_out_uses"):
@@ -63,24 +63,50 @@ def test_scope_clean_and_crunch_in_high_gain_report_only():
         set6.parts(scope="high-gain")
 
 
-def test_kept_parts_meet_the_rules():
-    rule = set6.load()["rules"]["di_role"]
-    assert "orientation" in rule and "clean_branch" in rule and "driven_branch" in rule
-    for p in set6.parts():
-        assert p["waveform"]["passing_windows"] >= 3
-        assert p["waveform"]["median_peak_to_sidelobe"] >= 2.0
-        assert p["waveform"]["precise_fraction"] >= 0.8
-        assert p["polarity"] in (1, -1)
-        assert p["di_inferred"] is True
-        assert 3 <= p["lag_samples_native"] <= 0.005 * p["native_rate"]   # an acoustic path, <= 5 ms
-        r = p["di_role"]
-        if p["gain_class"] == "clean":
-            assert r["hf_advantage_db"] >= 6.0
-        else:
-            assert r["crest1s_drop_db"] >= 3.0
-        assert p["crop"]["di_sha256"] and p["crop"]["reference_sha256"] and p["crop"]["mix_sha256"]
-        assert p["crop"]["mix_absent"] is False
-        assert p["evidence"]["pairs"].startswith("_tools/pairs/")
+def test_amendment_1_no_di_part():
+    """Amendment 1: no DI-role rule met its development bar, so set 6 has no DI part."""
+    d = set6.load()
+    a = {x["number"]: x for x in d["amendments"]}[1]
+    assert a["committed_before_application"] is True
+    assert (ROOT / a["calibration"]).exists() and (ROOT / a["script"]).exists()
+    assert "unusable for DI-based tests" in d["use"]
+    assert d["parts"] == [] and set6.parts() == [] and d["counts"]["kept"] == 0
+    assert d["in_scope_bands_by_class"] == {}
+    assert "orientation" in d["rules"]["di_role"]["first_declared"]      # the rule that failed, kept
+    for p in d["excluded"]:
+        assert vs6.NO_DI_ROLE in p["reasons"], p["part"]
+    clark = next(p for p in d["excluded"] if p["song"] == "StevenClark_Bounty")
+    assert vs6.NOT_GUITAR in clark["reasons"] and clark["di_label"] == "electric bass"
+
+
+def test_the_calibration_fails_its_bar():
+    c = json.loads((ROOT / "docs" / "validation-set6-di-calibration.json").read_text())
+    bar = c["fa_bar"]
+    for name, fam in c["families"].items():
+        lbo = fam["leave_band_out"]
+        fa, n = lbo["false_accepts"]
+        kept, total = lbo["recall_all"]
+        assert fa > bar * n or kept <= total / 2, name     # neither family passes
+    fa, n = c["declared_rule"]["false_accepts"]
+    kept, total = c["declared_rule"]["recall_all"]
+    assert kept <= total / 2
+
+
+def test_musdb18_overlap_marked():
+    d = set6.load()
+    marked = {s["song"]: s["separator_trained_on"] for s in d["sessions"] if s["separator_trained_on"]}
+    assert len(marked) == d["counts"]["separator_trained_on"] == 35
+    assert marked["StevenClark_Bounty"]["musdb18_subset"] == "train"
+    assert marked["AlexanderRoss_GoodbyeBolero"]["musdb18_validation"] is True
+    assert marked["Meaxic_TakeAStep"]["musdb18_validation"] is True
+    assert "DahkaBand_SoldierMan" not in marked and "Sweat_Elegy" not in marked
+    lists = d["provenance"]["musdb18_lists"]
+    assert set(lists) == {"tracklist.csv", "musdb_mus.yaml", "musdb_splits.json"}
+
+
+def test_licence_texts_identical():
+    lt = set6.load()["licence_texts"]
+    assert lt["identical"] is True and lt["V1"]["md5"] == lt["V2"]["md5"] == "071086fd72dc543a4a680a747874bd16"
 
 
 def test_the_guard_knows_every_declared_session():
@@ -168,6 +194,10 @@ def test_training_dis_holds_no_set6_file():
 def test_crops_exist_and_match_the_declaration():
     import hashlib
 
+    for p in set6.load()["excluded"]:             # superseded crops: still on disk, unchanged
+        if p.get("crop_record_sha256"):
+            rec = CROPS / p["slug"] / "record.json"
+            assert hashlib.sha256(rec.read_bytes()).hexdigest() == p["crop_record_sha256"], p["slug"]
     for p in set6.parts():
         d = CROPS / p["slug"]
         rec = d / "record.json"

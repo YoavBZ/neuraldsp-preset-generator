@@ -1,7 +1,17 @@
 {
- "schema": "validation-set6-1",
+ "schema": "validation-set6-2",
  "declared": "2026-10-12",
- "amendments": [],
+ "amendments": [
+  {
+   "number": 1,
+   "date": "2026-10-13",
+   "summary": "DI-role rule calibrated on development data only (sets 1-2 and set 3 development: 177 DI->amp and 66 two-mic/two-amp/DI-DI same-take pairs, 30 bands, leave-one-band-out). No rule kept most real DIs with <= 10% false accepts on all development negatives (first rule: 32% of DIs, 5%; driven rule: crunch 87%, high-gain 86%, clean 14%, 12%; any clean branch: >= 41% to keep most clean DIs). Set 6 is unusable for DI-based tests; every part is excluded; the failed rules are not applied to MedleyDB. Steven Clark RAW_01_04 -> 01_02 is labelled electric bass.",
+   "calibration": "docs/validation-set6-di-calibration.json",
+   "script": "research/set6_di_role_calibration.py",
+   "committed_before_application": true
+  }
+ ],
+ "use": "unusable for DI-based tests (amendment 1); a song-only use (released mixes, no DI) needs its own declaration and crop rule",
  "precedent": "docs/validation-set5.md (rules, crop rule 2, judge lag, scope); the inventory came first, as set 5's did; MedleyDB names no DI, so a DI-role rule is added",
  "inventory": {
   "path": "~/ndsp-presets/references/datasets-medleydb/inventory.json",
@@ -17,12 +27,16 @@
  "rules": {
   "same_take": "waveform test (>= 80% of 20-s windows in step, median peak-to-sidelobe >= 2.0), as sets 3-5; every pair of electric-guitar raw tracks of a song tested",
   "di_role": {
-   "fixed": "2026-10-12, after the pairing statistics of 4 songs (AlexanderRoss_GoodbyeBolero, BigTroubles_Phantom, MusicDelta_Rock, Snowmine_Curfews) were seen; before any crop",
-   "orientation": "the earlier track of a same-take pair is the DI candidate; the later track its amp track",
-   "acoustic_path": "the amp track is 3 samples to 5 ms later than the DI (<= 2 samples: no acoustic path, DI and microphone cannot be told apart; > 5 ms: a distant microphone)",
-   "driven_branch": "the pair reads crunch or high-gain (set 3's classify.py, DI -> amp) and the DI's 1-s crest is >= 3 dB above the amp track's",
-   "clean_branch": "the pair reads clean, the DI's 5-10 kHz share (against 0.2-4 kHz) is >= 6 dB above the amp track's, and the pair is not on a stem labelled 'distorted electric guitar' only (a linear pair there is two microphones)",
-   "reference": "among a DI's role-passing amp tracks: the closest (smallest lag), then the higher peak-to-sidelobe ratio; the others are alternates (set 4's 'Close' preference, by lag)"
+   "status": "no DI-role rule established (amendment 1); no set-6 DI part",
+   "first_declared": {
+    "fixed": "2026-10-12, after the pairing statistics of 4 songs (AlexanderRoss_GoodbyeBolero, BigTroubles_Phantom, MusicDelta_Rock, Snowmine_Curfews) were seen; before any crop",
+    "orientation": "the earlier track of a same-take pair is the DI candidate; the later track its amp track",
+    "acoustic_path": "the amp track is 3 samples to 5 ms later than the DI (<= 2 samples: no acoustic path, DI and microphone cannot be told apart; > 5 ms: a distant microphone)",
+    "driven_branch": "the pair reads crunch or high-gain (set 3's classify.py, DI -> amp) and the DI's 1-s crest is >= 3 dB above the amp track's",
+    "clean_branch": "the pair reads clean, the DI's 5-10 kHz share (against 0.2-4 kHz) is >= 6 dB above the amp track's, and the pair is not on a stem labelled 'distorted electric guitar' only (a linear pair there is two microphones)",
+    "reference": "among a DI's role-passing amp tracks: the closest (smallest lag), then the higher peak-to-sidelobe ratio; the others are alternates (set 4's 'Close' preference, by lag)"
+   },
+   "calibration": "docs/validation-set6-di-calibration.json"
   },
   "min_passing_waveform_windows": 3,
   "clipped_di_runs": 10,
@@ -90,22 +104,25 @@
   "Torres",
   "Trevor and the Soundwaves"
  ],
- "band_strata": {
-  "Aimee Norwich": "clean",
-  "Big Troubles": "high-gain",
-  "Dahka Band": "clean",
-  "Purling Hiss": "high-gain",
-  "Steven Clark": "clean"
- },
- "in_scope_bands_by_class": {
-  "clean": [
-   "Aimee Norwich",
-   "Dahka Band",
-   "Steven Clark"
-  ]
- },
+ "band_strata": {},
+ "in_scope_bands_by_class": {},
  "licences": {
   "medleydb": "MedleyDB (Bittner et al., ISMIR 2014; MedleyDB 2.0, 2016): audio on Zenodo, restricted access granted to the user for non-commercial research (records 1649325 and 1715175). Licence: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (LICENSE-V1.txt in the dataset root). Non-commercial research only; not republished; no audio in git."
+ },
+ "licence_texts": {
+  "V1": {
+   "file": "LICENSE-V1.txt (dataset root)",
+   "md5": "071086fd72dc543a4a680a747874bd16",
+   "checked": "md5 of the captured file"
+  },
+  "V2": {
+   "file": "LICENSE.txt of Zenodo record 1715175 (not captured)",
+   "md5": "071086fd72dc543a4a680a747874bd16",
+   "checked": "md5 from Zenodo's file listing, recorded while the archive was fetched; the listing is restricted now (403)"
+  },
+  "identical": true,
+  "statement": "both records ship the same CC BY-NC-SA 4.0 licence text (same md5); both record pages state CC BY-NC-SA 4.0 (checked 2026-10-13)",
+  "non_commercial_use": "validating an openly distributed, non-commercial plugin is non-commercial research; no MedleyDB audio or derived audio is distributed"
  },
  "provenance": {
   "archives": {
@@ -125,7 +142,27 @@
   "archive_checks": "each archive streamed from Zenodo, its whole-file SHA-256 and MD5 recorded (MedleyDB_V*.tar.gz.checksums) and the MD5 checked against Zenodo's by the user; only the mix and electric-guitar raw tracks were extracted; the archive was not kept",
   "extracted_files": "_tools/files.json: SHA-256 of every extracted file; each crop source is checked against it",
   "metadata": "github.com/marl/medleydb at 537bb7bad0601fc58e4fff8404f71658b86ef60e (Metadata/*.yaml, ERRATA.md)",
-  "selection": "eguitar_songs.json: songs whose metadata lists an electric-guitar raw track; 73 of its 166 songs are in the V1/V2 audio releases"
+  "selection": "eguitar_songs.json: songs whose metadata lists an electric-guitar raw track; 73 of its 166 songs are in the V1/V2 audio releases",
+  "musdb18_lists": {
+   "tracklist.csv": {
+    "source": "https://raw.githubusercontent.com/sigsep/website/master/content/datasets/assets/tracklist.csv",
+    "sha256": "5e0a9252774412be23971ebfb7d384c0b2f29842eed2fa16aab69cf825b332b1",
+    "fetched": "2026-10-13",
+    "copy": "_tools/musdb18/tracklist.csv"
+   },
+   "musdb_mus.yaml": {
+    "source": "https://raw.githubusercontent.com/sigsep/sigsep-mus-db/master/musdb/configs/mus.yaml",
+    "sha256": "72bb09409ea5087638ebe5917bc5640d57f5bc95b6c696217b59ecd0dfff879d",
+    "fetched": "2026-10-13",
+    "copy": "_tools/musdb18/musdb_mus.yaml"
+   },
+   "musdb_splits.json": {
+    "source": "test = the 50 track names under submissions/*/test/ in github.com/sigsep/sigsep-mus-2018 (SiSEC 2018 results); train = tracklist.csv less test",
+    "sha256": "ca700d8350d6ff0c8b04572b6fba306523f3b26e777cb1c6202a928437aa4d89",
+    "fetched": "2026-10-13",
+    "copy": "_tools/musdb18/musdb_splits.json"
+   }
+  }
  },
  "unpaired": [
   {
@@ -4964,43 +5001,23 @@
  "counts": {
   "songs": 73,
   "declared_parts": 7,
-  "excluded": 2,
-  "kept": 5,
-  "in_scope": 3,
-  "report_only": 2,
-  "by_band": {
-   "Aimee Norwich": 1,
-   "Big Troubles": 1,
-   "Dahka Band": 1,
-   "Purling Hiss": 1,
-   "Steven Clark": 1
-  },
-  "by_gain_class": {
-   "clean": 3,
-   "high-gain": 2
-  },
-  "by_band_gain_class": {
-   "Aimee Norwich/clean": 1,
-   "Big Troubles/high-gain": 1,
-   "Dahka Band/clean": 1,
-   "Purling Hiss/high-gain": 1,
-   "Steven Clark/clean": 1
-  },
-  "by_gain_class_crop": {
-   "clean": 3,
-   "high-gain": 2
-  },
-  "onset_check": {
-   "agrees": 4,
-   "unclear": 1
-  },
+  "excluded": 7,
+  "kept": 0,
+  "in_scope": 0,
+  "report_only": 0,
+  "by_band": {},
+  "by_gain_class": {},
+  "by_band_gain_class": {},
+  "by_gain_class_crop": {},
+  "onset_check": {},
   "sessions_by_status": {
-   "has parts": 6,
+   "DI candidates under the first DI-role rule; none established (amendment 1)": 6,
    "no pair establishes a DI": 34,
    "no same-take pair": 16,
    "one electric-guitar raw track: no pair to test": 17
   },
-  "role_failures": 232
+  "role_failures": 232,
+  "separator_trained_on": 35
  },
  "sessions": [
   {
@@ -5029,6 +5046,13 @@
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "A Classic Education - NightOwl",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5058,6 +5082,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Aimee Norwich - Child",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5083,11 +5114,12 @@
    "has_bleed": "no",
    "mix": "AimeeNorwich_Flying_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
-   "kept_parts": 1,
+   "separator_trained_on": null,
+   "kept_parts": 0,
    "dis": [
     {
      "part": "RAW_05_02",
@@ -5123,6 +5155,13 @@
    "eg_raw_tracks": 4,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Alexander Ross - Goodbye Bolero",
+    "musdb18_subset": "train",
+    "musdb18_validation": true,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5152,6 +5191,13 @@
    "eg_raw_tracks": 3,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Alexander Ross - Velvet Curtain",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5181,6 +5227,7 @@
    "eg_raw_tracks": 4,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5211,6 +5258,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Auctioneer - Our Future Faces",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5240,6 +5294,13 @@
    "eg_raw_tracks": 10,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "AvaLuna - Waterduct",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5265,11 +5326,18 @@
    "has_bleed": "no",
    "mix": "BigTroubles_Phantom_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 21,
    "split": "held_out",
    "fold": null,
-   "kept_parts": 1,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "BigTroubles - Phantom",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
+   "kept_parts": 0,
    "dis": [
     {
      "part": "RAW_03_08",
@@ -5312,6 +5380,13 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Celestial Shore - Die For Us",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5341,6 +5416,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5370,6 +5446,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Clara Berry And Wooldog - Air Traffic",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5399,6 +5482,13 @@
    "eg_raw_tracks": 7,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Creepoid - OldTree",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5428,6 +5518,7 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5457,6 +5548,7 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5486,6 +5578,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5515,6 +5608,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Faces On Film - Waiting For Ga",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5545,6 +5645,7 @@
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5574,6 +5675,13 @@
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Hop Along - Sister Cities",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5604,6 +5712,13 @@
    "eg_raw_tracks": 3,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Invisible Familiars - Disturbing Wildlife",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5633,6 +5748,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -5663,6 +5779,13 @@
    "eg_raw_tracks": 7,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Lushlife - Toynbee Suite",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5692,6 +5815,13 @@
    "eg_raw_tracks": 8,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Meaxic - Take A Step",
+    "musdb18_subset": "train",
+    "musdb18_validation": true,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5721,6 +5851,13 @@
    "eg_raw_tracks": 14,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Meaxic - You Listen",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5750,6 +5887,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - 80s Rock",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5779,6 +5923,13 @@
    "eg_raw_tracks": 3,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Beatles",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5808,6 +5959,13 @@
    "eg_raw_tracks": 4,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Britpop",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5837,6 +5995,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Country2",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5866,6 +6031,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Disco",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5895,6 +6067,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Gospel",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5924,6 +6103,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Grunge",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5953,6 +6139,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Hendrix",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -5982,6 +6175,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Punk",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6011,6 +6211,13 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Reggae",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6040,6 +6247,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Rock",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6069,6 +6283,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Music Delta - Rockabilly",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6098,6 +6319,7 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6127,6 +6349,7 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6156,6 +6379,7 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6185,6 +6409,13 @@
    "eg_raw_tracks": 9,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Port St Willow - Stay Even",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6210,11 +6441,12 @@
    "has_bleed": "yes",
    "mix": "PurlingHiss_Lolita_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 9,
    "split": "held_out",
    "fold": null,
-   "kept_parts": 1,
+   "separator_trained_on": null,
+   "kept_parts": 0,
    "dis": [
     {
      "part": "RAW_03_06",
@@ -6250,6 +6482,13 @@
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Secret Mountains - High Horse",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6279,6 +6518,13 @@
    "eg_raw_tracks": 17,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Snowmine - Curfews",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6304,11 +6550,18 @@
    "has_bleed": "no",
    "mix": "StevenClark_Bounty_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 4,
    "split": "held_out",
    "fold": null,
-   "kept_parts": 1,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "Steven Clark - Bounty",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
+   "kept_parts": 0,
    "dis": [
     {
      "part": "RAW_01_04",
@@ -6344,6 +6597,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6373,6 +6627,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6402,6 +6657,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6432,6 +6688,13 @@
    "eg_raw_tracks": 8,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "The Districts - Vermont",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6461,6 +6724,13 @@
    "eg_raw_tracks": 4,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "The Scarlet Brand - Les Fleurs Du Mal",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6490,6 +6760,13 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": {
+    "dataset": "MUSDB18 / MUSDB18-HQ",
+    "musdb18_track": "The So So Glos - Emergency",
+    "musdb18_subset": "train",
+    "musdb18_validation": false,
+    "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
+   },
    "kept_parts": 0,
    "dis": []
   },
@@ -6517,6 +6794,7 @@
    "eg_raw_tracks": 10,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6540,11 +6818,12 @@
    "has_bleed": "yes",
    "mix": "DahkaBand_SoldierMan_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 2,
    "split": "held_out",
    "fold": null,
-   "kept_parts": 1,
+   "separator_trained_on": null,
+   "kept_parts": 0,
    "dis": [
     {
      "part": "RAW_04_01",
@@ -6574,10 +6853,11 @@
    "has_bleed": "no",
    "mix": "DeadMilkmen_PrisonersCinema_MIX.wav",
    "mix_on_disk": true,
-   "status": "has parts",
+   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": [
     {
@@ -6612,6 +6892,7 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6639,6 +6920,7 @@
    "eg_raw_tracks": 14,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6666,6 +6948,7 @@
    "eg_raw_tracks": 10,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6693,6 +6976,7 @@
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6720,6 +7004,7 @@
    "eg_raw_tracks": 3,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6747,6 +7032,7 @@
    "eg_raw_tracks": 14,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6774,6 +7060,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6801,6 +7088,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6828,6 +7116,7 @@
    "eg_raw_tracks": 5,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6855,6 +7144,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6882,6 +7172,7 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6909,6 +7200,7 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6936,6 +7228,7 @@
    "eg_raw_tracks": 8,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6963,6 +7256,7 @@
    "eg_raw_tracks": 6,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -6990,6 +7284,7 @@
    "eg_raw_tracks": 12,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -7017,6 +7312,7 @@
    "eg_raw_tracks": 8,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -7044,6 +7340,7 @@
    "eg_raw_tracks": 1,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -7071,6 +7368,7 @@
    "eg_raw_tracks": 20,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -7098,6 +7396,7 @@
    "eg_raw_tracks": 10,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   },
@@ -7125,369 +7424,28 @@
    "eg_raw_tracks": 12,
    "split": "held_out",
    "fold": null,
+   "separator_trained_on": null,
    "kept_parts": 0,
    "dis": []
   }
  ],
- "parts": [
+ "parts": [],
+ "excluded": [
   {
-   "slug": "medleydb-aimeenorwich-flying-raw-05-02",
+   "session_key": "medleydb/AimeeNorwich_Flying",
    "band": "Aimee Norwich",
    "song": "AimeeNorwich_Flying",
+   "source": "medleydb",
    "part": "RAW_05_02",
-   "tone": "RAW_05_02",
-   "split": "held_out",
-   "fold": null,
-   "scope": "in_scope",
-   "session_key": "medleydb/AimeeNorwich_Flying",
-   "source": "medleydb",
-   "medleydb_version_dir": "V1",
-   "origin": "Independent Artist",
-   "has_bleed": "no",
-   "gain_class": "clean",
-   "gain_class_crop": "clean",
-   "gain_confidence": "normal",
-   "gain_confidence_reasons": [],
-   "clean_vs_driven": "clean",
-   "level_slope": 0.558,
-   "nonlinear_to_linear_db": -10.01,
-   "lag_samples": 26,
-   "judge_lag_samples": -26,
-   "lag_samples_native": 24,
-   "native_rate": 44100,
-   "polarity": -1,
-   "pairing_test": "envelope+waveform",
-   "reference": "AimeeNorwich_Flying_RAW_05_01.wav",
-   "alternates": [],
-   "di": "AimeeNorwich_Flying_RAW_05_02.wav",
-   "di_inferred": true,
+   "slug": "medleydb-aimeenorwich-flying-raw-05-02",
+   "crop_record_sha256": "9cf7bfe3c82e586855a397518edee66aeb701f48b1ffce7000e90afe04c23c50",
+   "crop_status": "superseded (amendment 1): held out, not a part",
    "di_label": "clean electric guitar",
    "reference_label": "clean electric guitar",
-   "di_role": {
-    "di_crest1s_db": 11.34,
-    "amp_crest1s_db": 11.41,
-    "crest1s_drop_db": 0.1,
-    "hf_advantage_db": 9.97,
-    "branch": "clean"
-   },
-   "waveform": {
-    "windows": 19,
-    "passing_windows": 19,
-    "median_peak_to_sidelobe": 7.073,
-    "precise_fraction": 1.0
-   },
-   "evidence": {
-    "pairs": "_tools/pairs/AimeeNorwich_Flying.json",
-    "inventory": "inventory.json: sessions[song='AimeeNorwich_Flying'].parts[part='RAW_05_02']"
-   },
-   "onset_check": {
-    "result": "agrees",
-    "onset_lag_samples": 24,
-    "runner_up": 0.636
-   },
-   "marks": [
-    "polarity_inverted"
-   ],
-   "inventory_flags": [
-    "amp polarity inverted relative to the DI"
-   ],
-   "licence": "medleydb",
-   "crop": {
-    "excerpt_start_s": 176.5,
-    "di_activity": 1.0,
-    "mix_absent": false,
-    "di_sha256": "7511e6970305815fda059b2c7a87ae1b4c14885d90182cb3e1d7290afce2ccdb",
-    "reference_sha256": "01754c04067cd6818b0ce35062921798aee4d3c3b95103b2d3e8029d0a90bd31",
-    "mix_sha256": "bf5373b8675361f4460351f8c37d1808e1f0abe433e5c5792da29d1f3afb88c6",
-    "record_sha256": "9cf7bfe3c82e586855a397518edee66aeb701f48b1ffce7000e90afe04c23c50"
-   }
+   "reasons": [
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+   ]
   },
-  {
-   "slug": "medleydb-bigtroubles-phantom-raw-05-01",
-   "band": "Big Troubles",
-   "song": "BigTroubles_Phantom",
-   "part": "RAW_05_01",
-   "tone": "RAW_05_01",
-   "split": "held_out",
-   "fold": null,
-   "scope": "report_only",
-   "session_key": "medleydb/BigTroubles_Phantom",
-   "source": "medleydb",
-   "medleydb_version_dir": "V1",
-   "origin": "Weathervane Music",
-   "has_bleed": "no",
-   "gain_class": "high-gain",
-   "gain_class_crop": "high-gain",
-   "gain_confidence": "normal",
-   "gain_confidence_reasons": [],
-   "clean_vs_driven": "driven",
-   "level_slope": -0.049,
-   "nonlinear_to_linear_db": 2.35,
-   "lag_samples": 67,
-   "judge_lag_samples": 15,
-   "lag_samples_native": 62,
-   "native_rate": 44100,
-   "polarity": 1,
-   "pairing_test": "waveform",
-   "reference": "BigTroubles_Phantom_RAW_05_02.wav",
-   "alternates": [
-    "BigTroubles_Phantom_RAW_05_04.wav"
-   ],
-   "di": "BigTroubles_Phantom_RAW_05_01.wav",
-   "di_inferred": true,
-   "di_label": "distorted electric guitar",
-   "reference_label": "distorted electric guitar",
-   "di_role": {
-    "di_crest1s_db": 19.03,
-    "amp_crest1s_db": 10.96,
-    "crest1s_drop_db": 8.1,
-    "hf_advantage_db": -6.38,
-    "branch": "driven"
-   },
-   "waveform": {
-    "windows": 13,
-    "passing_windows": 13,
-    "median_peak_to_sidelobe": 6.79,
-    "precise_fraction": 1.0
-   },
-   "evidence": {
-    "pairs": "_tools/pairs/BigTroubles_Phantom.json",
-    "inventory": "inventory.json: sessions[song='BigTroubles_Phantom'].parts[part='RAW_05_01']"
-   },
-   "onset_check": {
-    "result": "unclear",
-    "onset_lag_samples": 452,
-    "runner_up": 0.995
-   },
-   "marks": [],
-   "inventory_flags": [],
-   "licence": "medleydb",
-   "crop": {
-    "excerpt_start_s": 14.5,
-    "di_activity": 1.0,
-    "mix_absent": false,
-    "di_sha256": "87cbe0621558f2664ace41c9434be531c124d416e0112b25918c7056891cd210",
-    "reference_sha256": "6b9cbf324f17883fc32f4d634e7a11d8213d71b62bdb5892bf97dc1a0a6172d3",
-    "mix_sha256": "cb5fa0f49d916200754ea574e674c6ddc5d1adb4fd1e330269a04748ea30ff7e",
-    "record_sha256": "27aef86a1fcf42f9cba56876457d944ac237bd7c6fbb6454d13b1cfdb5828989"
-   }
-  },
-  {
-   "slug": "medleydb-dahkaband-soldierman-raw-04-01",
-   "band": "Dahka Band",
-   "song": "DahkaBand_SoldierMan",
-   "part": "RAW_04_01",
-   "tone": "RAW_04_01",
-   "split": "held_out",
-   "fold": null,
-   "scope": "in_scope",
-   "session_key": "medleydb/DahkaBand_SoldierMan",
-   "source": "medleydb",
-   "medleydb_version_dir": "V2",
-   "origin": "Dolan Studio",
-   "has_bleed": "yes",
-   "gain_class": "clean",
-   "gain_class_crop": "clean",
-   "gain_confidence": "normal",
-   "gain_confidence_reasons": [],
-   "clean_vs_driven": "clean",
-   "level_slope": 0.917,
-   "nonlinear_to_linear_db": -22.18,
-   "lag_samples": 23,
-   "judge_lag_samples": -29,
-   "lag_samples_native": 21,
-   "native_rate": 44100,
-   "polarity": 1,
-   "pairing_test": "envelope+waveform",
-   "reference": "DahkaBand_SoldierMan_RAW_04_02.wav",
-   "alternates": [],
-   "di": "DahkaBand_SoldierMan_RAW_04_01.wav",
-   "di_inferred": true,
-   "di_label": "clean electric guitar",
-   "reference_label": "clean electric guitar",
-   "di_role": {
-    "di_crest1s_db": 14.95,
-    "amp_crest1s_db": 17.08,
-    "crest1s_drop_db": 0.52,
-    "hf_advantage_db": 6.21,
-    "branch": "clean"
-   },
-   "waveform": {
-    "windows": 31,
-    "passing_windows": 31,
-    "median_peak_to_sidelobe": 7.955,
-    "precise_fraction": 1.0
-   },
-   "evidence": {
-    "pairs": "_tools/pairs/DahkaBand_SoldierMan.json",
-    "inventory": "inventory.json: sessions[song='DahkaBand_SoldierMan'].parts[part='RAW_04_01']"
-   },
-   "onset_check": {
-    "result": "agrees",
-    "onset_lag_samples": 24,
-    "runner_up": 0.408
-   },
-   "marks": [
-    "has_bleed"
-   ],
-   "inventory_flags": [
-    "song tagged has_bleed by MedleyDB"
-   ],
-   "licence": "medleydb",
-   "crop": {
-    "excerpt_start_s": 307.0,
-    "di_activity": 1.0,
-    "mix_absent": false,
-    "di_sha256": "485a1a0b555d792a29f60505d9bb2d8c82f33acb8220b57146e34ea30dbd3f6d",
-    "reference_sha256": "e592dadc42a4c035ac66651c670818280626b634fad4eb3ee4f77fe43845a7d3",
-    "mix_sha256": "fa487956fd24041c7ae07d51c74a54ffe82df5f6b78b517838f262761dbae17f",
-    "record_sha256": "60d9a47a14c860850a6f6e459ddc8ff712f3d549cfa7f26ff4291b6e31b1999b"
-   }
-  },
-  {
-   "slug": "medleydb-purlinghiss-lolita-raw-03-06",
-   "band": "Purling Hiss",
-   "song": "PurlingHiss_Lolita",
-   "part": "RAW_03_06",
-   "tone": "RAW_03_06",
-   "split": "held_out",
-   "fold": null,
-   "scope": "report_only",
-   "session_key": "medleydb/PurlingHiss_Lolita",
-   "source": "medleydb",
-   "medleydb_version_dir": "V1",
-   "origin": "Weathervane Music",
-   "has_bleed": "yes",
-   "gain_class": "high-gain",
-   "gain_class_crop": "high-gain",
-   "gain_confidence": "normal",
-   "gain_confidence_reasons": [],
-   "clean_vs_driven": "driven",
-   "level_slope": 0.022,
-   "nonlinear_to_linear_db": 6.1,
-   "lag_samples": 32,
-   "judge_lag_samples": -20,
-   "lag_samples_native": 29,
-   "native_rate": 44100,
-   "polarity": -1,
-   "pairing_test": "waveform",
-   "reference": "PurlingHiss_Lolita_RAW_03_05.wav",
-   "alternates": [],
-   "di": "PurlingHiss_Lolita_RAW_03_06.wav",
-   "di_inferred": true,
-   "di_label": "clean electric guitar",
-   "reference_label": "distorted electric guitar",
-   "di_role": {
-    "di_crest1s_db": 15.98,
-    "amp_crest1s_db": 12.16,
-    "crest1s_drop_db": 3.85,
-    "hf_advantage_db": -21.33,
-    "branch": "driven"
-   },
-   "waveform": {
-    "windows": 24,
-    "passing_windows": 24,
-    "median_peak_to_sidelobe": 3.209,
-    "precise_fraction": 1.0
-   },
-   "evidence": {
-    "pairs": "_tools/pairs/PurlingHiss_Lolita.json",
-    "inventory": "inventory.json: sessions[song='PurlingHiss_Lolita'].parts[part='RAW_03_06']"
-   },
-   "onset_check": {
-    "result": "agrees",
-    "onset_lag_samples": 76,
-    "runner_up": 0.463
-   },
-   "marks": [
-    "polarity_inverted",
-    "has_bleed"
-   ],
-   "inventory_flags": [
-    "amp polarity inverted relative to the DI",
-    "song tagged has_bleed by MedleyDB"
-   ],
-   "licence": "medleydb",
-   "crop": {
-    "excerpt_start_s": 203.5,
-    "di_activity": 1.0,
-    "mix_absent": false,
-    "di_sha256": "ac9fc637ab537d6c173c308d05fbe5c2a881fe605322766fa2a1295ffb3f8e8f",
-    "reference_sha256": "5b5030d621e8809cf9d3ca46eeb242c7b2d07e05c674626e90b91e553f8897cb",
-    "mix_sha256": "fb0e04c796aaa3e038793d8fbdaa92fb122496eb662330b5381da11af41ab9b1",
-    "record_sha256": "61cf50a6bc918cb3db0d0b93d3b98057f8a7d46b9419285318a51ddd02d28956"
-   }
-  },
-  {
-   "slug": "medleydb-stevenclark-bounty-raw-01-04",
-   "band": "Steven Clark",
-   "song": "StevenClark_Bounty",
-   "part": "RAW_01_04",
-   "tone": "RAW_01_04",
-   "split": "held_out",
-   "fold": null,
-   "scope": "in_scope",
-   "session_key": "medleydb/StevenClark_Bounty",
-   "source": "medleydb",
-   "medleydb_version_dir": "V1",
-   "origin": "Weathervane Music",
-   "has_bleed": "no",
-   "gain_class": "clean",
-   "gain_class_crop": "clean",
-   "gain_confidence": "normal",
-   "gain_confidence_reasons": [],
-   "clean_vs_driven": "clean",
-   "level_slope": 1.013,
-   "nonlinear_to_linear_db": -14.44,
-   "lag_samples": 25,
-   "judge_lag_samples": -27,
-   "lag_samples_native": 23,
-   "native_rate": 44100,
-   "polarity": 1,
-   "pairing_test": "envelope+waveform",
-   "reference": "StevenClark_Bounty_RAW_01_02.wav",
-   "alternates": [],
-   "di": "StevenClark_Bounty_RAW_01_04.wav",
-   "di_inferred": true,
-   "di_label": "electric bass",
-   "reference_label": "electric bass",
-   "di_role": {
-    "di_crest1s_db": 7.65,
-    "amp_crest1s_db": 10.05,
-    "crest1s_drop_db": -2.4,
-    "hf_advantage_db": 10.98,
-    "branch": "clean"
-   },
-   "waveform": {
-    "windows": 3,
-    "passing_windows": 3,
-    "median_peak_to_sidelobe": 3.627,
-    "precise_fraction": 1.0
-   },
-   "evidence": {
-    "pairs": "_tools/pairs/StevenClark_Bounty.json",
-    "inventory": "inventory.json: sessions[song='StevenClark_Bounty'].parts[part='RAW_01_04']"
-   },
-   "onset_check": {
-    "result": "agrees",
-    "onset_lag_samples": 28,
-    "runner_up": 0.506
-   },
-   "marks": [],
-   "inventory_flags": [],
-   "licence": "medleydb",
-   "crop": {
-    "excerpt_start_s": 193.5,
-    "di_activity": 0.7991,
-    "mix_absent": false,
-    "di_sha256": "187f372d830725d138c1aa20219ebb271e8bfe87a33d0f000bbbe3e1c761e2c7",
-    "reference_sha256": "33a452d6f41905d66fb03f3dfe36b8781bb36ce83bf2f2e92106f825459b77ab",
-    "mix_sha256": "5b180a92f4fa36ebee5c11e036fac8d9771ef882234516607ebe9a993ca7aee3",
-    "record_sha256": "b92ec6d45c3e8a5fa86224be29779504a49d1ed35f37a9ae97a256070d8c244e"
-   }
-  }
- ],
- "excluded": [
   {
    "session_key": "medleydb/BigTroubles_Phantom",
    "band": "Big Troubles",
@@ -7496,8 +7454,42 @@
    "part": "RAW_03_08",
    "slug": "medleydb-bigtroubles-phantom-raw-03-08",
    "crop_record_sha256": "cae941795b7d067e8261e902d8a0ddceb6ee9bbd474998f8a3fb339e4a6d8410",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "clean electric guitar",
+   "reference_label": "clean electric guitar",
    "reasons": [
-    "two lag clusters"
+    "two lag clusters",
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+   ]
+  },
+  {
+   "session_key": "medleydb/BigTroubles_Phantom",
+   "band": "Big Troubles",
+   "song": "BigTroubles_Phantom",
+   "source": "medleydb",
+   "part": "RAW_05_01",
+   "slug": "medleydb-bigtroubles-phantom-raw-05-01",
+   "crop_record_sha256": "27aef86a1fcf42f9cba56876457d944ac237bd7c6fbb6454d13b1cfdb5828989",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "distorted electric guitar",
+   "reference_label": "distorted electric guitar",
+   "reasons": [
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+   ]
+  },
+  {
+   "session_key": "medleydb/DahkaBand_SoldierMan",
+   "band": "Dahka Band",
+   "song": "DahkaBand_SoldierMan",
+   "source": "medleydb",
+   "part": "RAW_04_01",
+   "slug": "medleydb-dahkaband-soldierman-raw-04-01",
+   "crop_record_sha256": "60d9a47a14c860850a6f6e459ddc8ff712f3d549cfa7f26ff4291b6e31b1999b",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "clean electric guitar",
+   "reference_label": "clean electric guitar",
+   "reasons": [
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
    ]
   },
   {
@@ -7508,8 +7500,43 @@
    "part": "RAW_09_02",
    "slug": "medleydb-deadmilkmen-prisonerscinema-raw-09-02",
    "crop_record_sha256": "d842cb7ec560c265c0f5bf797cdac76018f1bfa6e1fa39a5a2499542c3f585e1",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "clean electric guitar",
+   "reference_label": "distorted electric guitar",
    "reasons": [
-    "two lag clusters"
+    "two lag clusters",
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+   ]
+  },
+  {
+   "session_key": "medleydb/PurlingHiss_Lolita",
+   "band": "Purling Hiss",
+   "song": "PurlingHiss_Lolita",
+   "source": "medleydb",
+   "part": "RAW_03_06",
+   "slug": "medleydb-purlinghiss-lolita-raw-03-06",
+   "crop_record_sha256": "61cf50a6bc918cb3db0d0b93d3b98057f8a7d46b9419285318a51ddd02d28956",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "clean electric guitar",
+   "reference_label": "distorted electric guitar",
+   "reasons": [
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+   ]
+  },
+  {
+   "session_key": "medleydb/StevenClark_Bounty",
+   "band": "Steven Clark",
+   "song": "StevenClark_Bounty",
+   "source": "medleydb",
+   "part": "RAW_01_04",
+   "slug": "medleydb-stevenclark-bounty-raw-01-04",
+   "crop_record_sha256": "b92ec6d45c3e8a5fa86224be29779504a49d1ed35f37a9ae97a256070d8c244e",
+   "crop_status": "superseded (amendment 1): held out, not a part",
+   "di_label": "electric bass",
+   "reference_label": "electric bass",
+   "reasons": [
+    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests",
+    "MedleyDB labels the track 'electric bass', not guitar"
    ]
   }
  ],
