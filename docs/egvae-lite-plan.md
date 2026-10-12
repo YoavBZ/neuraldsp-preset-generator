@@ -204,3 +204,41 @@ against the oracle's −0.131). Can a network map the recording's DAC latent to 
 - **What it earns:** "helps", or "inconclusive" with no harm (band mean ≤ 0), takes E1 to set 5's
   held-out crunch test, declared as a further use of set 5. "Futile", or harm, sends us to E2.
 - **Reviews:** independent reviews of this section, the code, and the result.
+
+### E1 after review (2026-10-13, before any E1 code; replaces the E1 text above where they differ)
+
+Review: `tmp/egvae-e1-review.md`, local. It found three things: DAC's pre-quantisation latent is
+not what the decoder uses; averaging latents ruins the sound; and recordings and DIs share
+1–3% of codes.
+
+1. **Codes to codes.** The input is the recording's DAC codes (9 codebooks), and the output is
+   the DI's codes, predicted per frame and codebook with cross-entropy. Decoding uses the
+   argmax, so the output is always a valid DAC latent, with no averaging. Nothing STFT-based is
+   in training.
+2. **Data:** every C′ training and validation clip.
+   - **Sources:** PR12 from `cache`; SW50R and AC20 encoded straight from the pairs FLACs.
+     Filtering to lufs ≥ −40 and sorting by id reproduces each cache's `meta.json` row for row,
+     so the stored DI spectra line up with the average-balance target.
+   - **Augmentation:** C′'s own `make()` (factored out, with a test that it matches C′
+     exactly), applied once per clip. A second augmented pass is added if time allows.
+   - **Inputs:** set to −16 LUFS before encoding, as E0 did.
+   - **Storage:** codes only.
+3. **Batch size:** declared in the code. Training runs to a validation plateau, with seed 0.
+4. **Pre-checks, replacing the earlier ones:**
+   - (1) decoded mel on fold-2 validation, at or below C′'s;
+   - (2) 80 Hz–1 kHz coherence on the 18 parts, at or above C′'s 0.472 (DAC's ceiling there is
+     0.92). Coherence at 1–3 kHz is reported only.
+5. **Inference:** windowed over the 10-s crops. There is no alignment to the true DI at test
+   time; the lag is reported.
+6. **The comparison:** against C′ as the mean of seeds 0 and 1, averaged per cell as in
+   `set5_test.evaluate`. Those are the seeds with development picks. Disclosed: E1 carries a
+   pretrained 76 M-parameter codec, so a gain can't be credited to the mapper alone.
+7. **The set-5 rule, replacing the earlier one:** E1 earns a held-out test only with a
+   development band mean of −0.015 or lower against C′, and a 90% upper bound below +0.03. That
+   test is declared, with its ledger entry recorded as set 5's second use, before any render.
+
+### E0b (declared before it runs; report only)
+
+E0 repeated with DAC decoding only the first 4 of 9 codebooks. If those picks keep most of E0's
+edge, E1 may predict 4 codebooks (an easier task). That would be declared before E1 training,
+or else all 9 are kept.
