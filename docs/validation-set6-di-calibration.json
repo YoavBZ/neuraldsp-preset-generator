@@ -1,0 +1,192 @@
+{
+ "pairs": {
+  "positives": 177,
+  "negatives": 66,
+  "negatives_by_label": {
+   "amp_amp_same_part": 54,
+   "di_di": 5,
+   "amp_amp_other_part": 7
+  },
+  "positives_by_class": {
+   "clean": 95,
+   "high-gain": 43,
+   "crunch": 39
+  },
+  "bands": 30,
+  "negative_bands": 18
+ },
+ "fa_bar": 0.1,
+ "declared_rule": {
+  "recall": {
+   "clean": [
+    18,
+    95
+   ],
+   "crunch": [
+    22,
+    39
+   ],
+   "high-gain": [
+    16,
+    43
+   ]
+  },
+  "recall_all": [
+   56,
+   177
+  ],
+  "accepted_wrong_orientation": 2,
+  "false_accepts": [
+   3,
+   66
+  ],
+  "false_accepts_by_label": {
+   "amp_amp_same_part": 3
+  }
+ },
+ "families": {
+  "driven": {
+   "parameters_all_bands": [
+    0.05,
+    0.7,
+    1.0
+   ],
+   "in_sample": {
+    "recall": {
+     "clean": [
+      13,
+      95
+     ],
+     "crunch": [
+      33,
+      39
+     ],
+     "high-gain": [
+      37,
+      43
+     ]
+    },
+    "recall_all": [
+     83,
+     177
+    ],
+    "accepted_wrong_orientation": 15,
+    "false_accepts": [
+     6,
+     66
+    ],
+    "false_accepts_by_label": {
+     "amp_amp_same_part": 3,
+     "amp_amp_other_part": 3
+    }
+   },
+   "leave_band_out": {
+    "recall": {
+     "clean": [
+      13,
+      95
+     ],
+     "crunch": [
+      34,
+      39
+     ],
+     "high-gain": [
+      37,
+      43
+     ]
+    },
+    "recall_all": [
+     84,
+     177
+    ],
+    "accepted_wrong_orientation": 12,
+    "false_accepts": [
+     8,
+     66
+    ],
+    "false_accepts_by_label": {
+     "amp_amp_other_part": 3,
+     "amp_amp_same_part": 4,
+     "di_di": 1
+    },
+    "parameters_chosen": {
+     "[0.05, 0.7, 1.0]": 27,
+     "[0.05, 0.6, 1.0]": 1,
+     "[0.05, 0.7, -1.0]": 1
+    }
+   }
+  },
+  "two_branch": {
+   "parameters_all_bands": [
+    0.05,
+    0.7,
+    1.0,
+    0.95,
+    -15.0
+   ],
+   "in_sample": {
+    "recall": {
+     "clean": [
+      66,
+      95
+     ],
+     "crunch": [
+      37,
+      39
+     ],
+     "high-gain": [
+      40,
+      43
+     ]
+    },
+    "recall_all": [
+     143,
+     177
+    ],
+    "accepted_wrong_orientation": 20,
+    "false_accepts": [
+     27,
+     66
+    ],
+    "false_accepts_by_label": {
+     "amp_amp_same_part": 23,
+     "amp_amp_other_part": 4
+    }
+   },
+   "leave_band_out": {
+    "recall": {
+     "clean": [
+      65,
+      95
+     ],
+     "crunch": [
+      37,
+      39
+     ],
+     "high-gain": [
+      40,
+      43
+     ]
+    },
+    "recall_all": [
+     142,
+     177
+    ],
+    "accepted_wrong_orientation": 20,
+    "false_accepts": [
+     27,
+     66
+    ],
+    "false_accepts_by_label": {
+     "amp_amp_same_part": 23,
+     "amp_amp_other_part": 4
+    },
+    "parameters_chosen": {
+     "[0.05, 0.7, 1.0, 0.95, -15.0]": 28,
+     "[0.05, 0.6, 1.5, 0.7, -22.0]": 1,
+     "[0.05, 0.7, 1.0, 0.95, -18.0]": 1
+    }
+   }
+  }
+ }
+}

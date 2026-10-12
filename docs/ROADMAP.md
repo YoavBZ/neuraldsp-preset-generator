@@ -296,6 +296,18 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **A song-level class predictor from the rebuilt DI** failed its positive control
         twice and is closed ([results](class-predictor-results.md), on
         `ml/class-predictor`).
+   8i. **Set 6 (MedleyDB): no DI part, unusable for DI-based tests**
+      ([validation-set6.md](validation-set6.md)). *Declared 2026-10-12, amended 2026-10-13,
+      unused.*
+      - **MedleyDB names no DI.** The first DI-role rule was rejected in review, so a rule was
+        calibrated on development pairs (177 DI → amp pairs, 66 two-mic, two-amp or DI–DI
+        pairs; leave-one-band-out).
+      - **No rule passed the bar** (≤ 10% false accepts while keeping most real DIs).
+        - Clean DIs cannot be told from two microphones.
+        - The best driven rule keeps 87% of crunch DIs, but false-accepts 12% (a two-amp
+          rig passes it).
+      - **So MedleyDB adds nothing to the combined stem test.** At most a song-only use can
+        be declared, and it must exclude or report the 35 songs in MUSDB18's train subset.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.
