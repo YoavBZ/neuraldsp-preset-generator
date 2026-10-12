@@ -121,3 +121,51 @@ replace the design above.
 - **The bar:** the DAC route continues only if the round-tripped picks keep at least half the
   oracle's edge over C′, a band mean of −0.115 or lower.
 - **Reported, not gating:** mel distance, the coherence bar for later checks, and the lag.
+
+## E0 result (2026-10-13)
+
+Code: `learn/egvae_e0.py` (with `learn/egvae_e0_dac.py` for the DAC venv). Numbers:
+`docs/egvae-e0-result.json`. DAC 44 kHz (descript-audio-codec 1.0.0, MIT weights), on the CPU,
+unchunked `compress`/`decompress` with all 9 codebooks. The true measure DI
+(`confirm_run.build_di('measfix')`) goes 48 → 44.1 kHz (`resample_poly` 147/160), through
+DAC, and back, then to −22.9 LUFS. The menu renders and picks are done as for the oracle, with
+the round-tripped DI in place of the true one.
+
+**Picks, against the leave-band-out fixed preset.** Band-weighted first, part-weighted second:
+
+| chooser | band-weighted | part-weighted | bands negative |
+|---|---|---|---|
+| DAC round trip (E0) | **−0.129** | −0.147 | 7 of 8 |
+| oracle, the true DI (check: −0.131) | −0.131 | −0.148 | 8 of 8 |
+| C′ seed 0 (check: −0.099) | −0.099 | −0.114 | 7 of 8 |
+
+- The round trip keeps **91% of the oracle's edge over C′**. Its picks match the oracle's in
+  94% of part-amp-half cells.
+- E0 against C′: −0.029 band mean, 90% interval [−0.054, −0.005].
+- E0 against the oracle: +0.003. The gap comes almost entirely from Zeno (+0.031), with a little
+  from Diesel13 (−0.009).
+- By class, E0 against the fixed preset is −0.079 on clean (oracle −0.087) and −0.191 on crunch
+  (oracle −0.186).
+- **Pipeline check.** Two parts' true DIs were put through the same render and score code. They
+  reproduce the stored measure: median |log ratio| 0, at most 0.009, over 444 values.
+
+**The round trip against the true DI** (reported, not gating):
+
+- **Mel distance** (DAC's multi-scale L1 log-mel): median 0.91, band-weighted 0.89. For scale,
+  the paper's mel distances are 1.10–1.22.
+- **Coherence** (median, 80 Hz–1 kHz / 1–3 kHz / 3–8 kHz): 0.92 / 0.49 / 0.06. Band-weighted it
+  is 0.93 / 0.49 / 0.06.
+  - DAC keeps the waveform below 1 kHz. Above 1 kHz it rebuilds the sound, not the waveform.
+  - A resample-only round trip gives about 1.00 in all three bands, so the loss is DAC's.
+  - So for any DAC-decoded DI, 1–3 kHz coherence has a ceiling of about 0.49. Pre-check 2's bar
+    stays C′'s 0.207, and 0.49 is the most a DAC route can reach.
+  - 3–8 kHz coherence means nothing for DAC outputs. The picks show the measure does not need
+    it.
+- **Lag:** 0 samples on all 18 parts.
+
+**Decision.** E0's band mean is −0.129, which beats the bar of −0.115. **The DAC route
+continues to E1.**
+
+This shows only that DAC's codes keep what the picker needs from a true DI. It does not show
+that a mapper can recover those codes from a recording; that is E1's question. The E0 renders
+were deleted after scoring.

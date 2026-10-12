@@ -1,0 +1,621 @@
+{
+ "experiment": "EG-VAE-lite E0: DAC 44 kHz round trip of the true measure DI (docs/egvae-lite-plan.md)",
+ "parts": 18,
+ "bands": 8,
+ "bar": -0.115,
+ "e0_vs_base_band_weighted": -0.1286,
+ "e0_vs_base_part_weighted": -0.1473,
+ "oracle_vs_base_band_weighted": -0.1314,
+ "Cp_seed0_vs_base_band_weighted": -0.0993,
+ "edge_kept": 0.913,
+ "picks_same_as_oracle": 0.944,
+ "decision": "continue (E1)",
+ "roundtrip": {
+  "mel_distance": {
+   "median": 0.9076,
+   "mean": 0.9016,
+   "band_weighted": 0.891,
+   "per_part": {
+    "cambridge-Signs-ElecGtr2": 0.8115,
+    "cambridge-Today's_The_Day-ElecGtr10": 1.0937,
+    "cambridge-colour-me-red-elecgtr01": 0.867,
+    "cambridge-colour-me-red-elecgtr02": 0.9092,
+    "cambridge-colour-me-red-elecgtr03": 0.745,
+    "cambridge-femme-elecgtr3": 0.9172,
+    "cambridge-femme-elecgtr5": 0.9687,
+    "cambridge-get-out-of-bed-elecgtr1": 0.838,
+    "cambridge-get-out-of-bed-elecgtr2": 0.8785,
+    "cambridge-just-don-t-talk-elecgtr3": 0.8569,
+    "cambridge-let-s-dance-elecgtr3": 0.9374,
+    "cambridge-let-s-dance-elecgtr4": 0.906,
+    "cambridge-magilla-elecgtr1": 0.9596,
+    "cambridge-magilla-elecgtr1dt": 0.9652,
+    "cambridge-wickerman-elecgtr1": 0.8973,
+    "cambridge-wickerman-elecgtr2": 0.9371,
+    "cambridge-wickerman-elecgtr3": 0.9361,
+    "cambridge-wickerman-elecgtr7": 0.8042
+   }
+  },
+  "coherence_80_1k_1_3k_3_8k": {
+   "median": [
+    0.9249,
+    0.4875,
+    0.0605
+   ],
+   "band_weighted": [
+    0.9254,
+    0.4937,
+    0.0617
+   ],
+   "min": [
+    0.8616,
+    0.3978,
+    0.0289
+   ]
+  },
+  "lag_samples": {
+   "cambridge-Signs-ElecGtr2": 0,
+   "cambridge-Today's_The_Day-ElecGtr10": 0,
+   "cambridge-colour-me-red-elecgtr01": 0,
+   "cambridge-colour-me-red-elecgtr02": 0,
+   "cambridge-colour-me-red-elecgtr03": 0,
+   "cambridge-femme-elecgtr3": 0,
+   "cambridge-femme-elecgtr5": 0,
+   "cambridge-get-out-of-bed-elecgtr1": 0,
+   "cambridge-get-out-of-bed-elecgtr2": 0,
+   "cambridge-just-don-t-talk-elecgtr3": 0,
+   "cambridge-let-s-dance-elecgtr3": 0,
+   "cambridge-let-s-dance-elecgtr4": 0,
+   "cambridge-magilla-elecgtr1": 0,
+   "cambridge-magilla-elecgtr1dt": 0,
+   "cambridge-wickerman-elecgtr1": 0,
+   "cambridge-wickerman-elecgtr2": 0,
+   "cambridge-wickerman-elecgtr3": 0,
+   "cambridge-wickerman-elecgtr7": 0
+  },
+  "lag_after_alignment": [
+   0
+  ]
+ },
+ "truecheck": {
+  "parts": [
+   "cambridge-Signs-ElecGtr2",
+   "cambridge-colour-me-red-elecgtr02"
+  ],
+  "n": 444,
+  "median_abs_log": 0.0,
+  "max_abs_log": 0.009284012604870266
+ },
+ "results": {
+  "e0_vs_base|all": {
+   "mean": -0.1473,
+   "lo90": -0.176,
+   "hi90": -0.1186,
+   "p_band_flip": 0.0156,
+   "wins": 49,
+   "ties": 1,
+   "losses": 4,
+   "n": 54,
+   "bands": 8,
+   "band_weighted_mean": -0.1286,
+   "bands_negative": 7,
+   "leave_one_band_out": [
+    -0.1391,
+    -0.1482,
+    -0.1464,
+    -0.1411,
+    -0.1525,
+    -0.1465,
+    -0.1455,
+    -0.1577
+   ],
+   "per_band": {
+    "Diesel13": -0.1884,
+    "Eat The Feeder": -0.1449,
+    "Magician's Nephew": -0.1542,
+    "Szymon Skiba": -0.1965,
+    "Timo And The Timezone": -0.0586,
+    "Turbosauro": -0.154,
+    "Wall Of Death": -0.1614,
+    "Zeno": 0.029
+   },
+   "band_mean_interval": {
+    "band_mean": -0.1286,
+    "lo90": -0.1796,
+    "hi90": -0.0776,
+    "bands_negative": 7,
+    "bands": 8
+   }
+  },
+  "oracle_vs_base|all": {
+   "mean": -0.1475,
+   "lo90": -0.1725,
+   "hi90": -0.1226,
+   "p_band_flip": 0.0078,
+   "wins": 50,
+   "ties": 1,
+   "losses": 3,
+   "n": 54,
+   "bands": 8,
+   "band_weighted_mean": -0.1314,
+   "bands_negative": 8,
+   "leave_one_band_out": [
+    -0.1411,
+    -0.1486,
+    -0.1467,
+    -0.1414,
+    -0.1528,
+    -0.1467,
+    -0.1459,
+    -0.1561
+   ],
+   "per_band": {
+    "Diesel13": -0.1797,
+    "Eat The Feeder": -0.1449,
+    "Magician's Nephew": -0.1542,
+    "Szymon Skiba": -0.1965,
+    "Timo And The Timezone": -0.0586,
+    "Turbosauro": -0.154,
+    "Wall Of Death": -0.1609,
+    "Zeno": -0.0024
+   },
+   "band_mean_interval": {
+    "band_mean": -0.1314,
+    "lo90": -0.1757,
+    "hi90": -0.0871,
+    "bands_negative": 8,
+    "bands": 8
+   }
+  },
+  "Cp_vs_base|all": {
+   "mean": -0.1144,
+   "lo90": -0.1387,
+   "hi90": -0.0902,
+   "p_band_flip": 0.0156,
+   "wins": 41,
+   "ties": 1,
+   "losses": 12,
+   "n": 54,
+   "bands": 8,
+   "band_weighted_mean": -0.0993,
+   "bands_negative": 7,
+   "leave_one_band_out": [
+    -0.1084,
+    -0.1124,
+    -0.1124,
+    -0.1156,
+    -0.1152,
+    -0.1135,
+    -0.1113,
+    -0.1252
+   ],
+   "per_band": {
+    "Diesel13": -0.1446,
+    "Eat The Feeder": -0.1196,
+    "Magician's Nephew": -0.1306,
+    "Szymon Skiba": -0.1051,
+    "Timo And The Timezone": -0.1012,
+    "Turbosauro": -0.1218,
+    "Wall Of Death": -0.1397,
+    "Zeno": 0.068
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0993,
+    "lo90": -0.1457,
+    "hi90": -0.0529,
+    "bands_negative": 7,
+    "bands": 8
+   }
+  },
+  "e0_vs_oracle|all": {
+   "mean": 0.0002,
+   "lo90": -0.0044,
+   "hi90": 0.0049,
+   "p_band_flip": 1.0,
+   "wins": 4,
+   "ties": 48,
+   "losses": 2,
+   "n": 54,
+   "bands": 8,
+   "band_weighted_mean": 0.0028,
+   "bands_negative": 2,
+   "leave_one_band_out": [
+    0.002,
+    0.0003,
+    0.0003,
+    0.0003,
+    0.0003,
+    0.0003,
+    0.0003,
+    -0.0016
+   ],
+   "per_band": {
+    "Diesel13": -0.0087,
+    "Eat The Feeder": 0.0,
+    "Magician's Nephew": 0.0,
+    "Szymon Skiba": 0.0,
+    "Timo And The Timezone": 0.0,
+    "Turbosauro": 0.0,
+    "Wall Of Death": -0.0004,
+    "Zeno": 0.0314
+   },
+   "band_mean_interval": {
+    "band_mean": 0.0028,
+    "lo90": -0.0052,
+    "hi90": 0.0108,
+    "bands_negative": 2,
+    "bands": 8
+   }
+  },
+  "e0_vs_Cp|all": {
+   "mean": -0.0329,
+   "lo90": -0.0499,
+   "hi90": -0.0159,
+   "p_band_flip": 0.0234,
+   "wins": 25,
+   "ties": 22,
+   "losses": 7,
+   "n": 54,
+   "bands": 8,
+   "band_weighted_mean": -0.0293,
+   "bands_negative": 7,
+   "leave_one_band_out": [
+    -0.0307,
+    -0.0358,
+    -0.034,
+    -0.0256,
+    -0.0373,
+    -0.033,
+    -0.0343,
+    -0.0325
+   ],
+   "per_band": {
+    "Diesel13": -0.0438,
+    "Eat The Feeder": -0.0253,
+    "Magician's Nephew": -0.0235,
+    "Szymon Skiba": -0.0914,
+    "Timo And The Timezone": 0.0426,
+    "Turbosauro": -0.0322,
+    "Wall Of Death": -0.0216,
+    "Zeno": -0.0391
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0293,
+    "lo90": -0.0539,
+    "hi90": -0.0047,
+    "bands_negative": 7,
+    "bands": 8
+   }
+  },
+  "e0_vs_base|clean": {
+   "mean": -0.1008,
+   "lo90": -0.1847,
+   "hi90": -0.017,
+   "p_band_flip": 0.25,
+   "wins": 14,
+   "ties": 0,
+   "losses": 4,
+   "n": 18,
+   "bands": 4,
+   "band_weighted_mean": -0.0793,
+   "bands_negative": 3,
+   "leave_one_band_out": [
+    -0.0844,
+    -0.1093,
+    -0.0742,
+    -0.1268
+   ],
+   "per_band": {
+    "Diesel13": -0.1337,
+    "Timo And The Timezone": -0.0586,
+    "Turbosauro": -0.154,
+    "Zeno": 0.029
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0793,
+    "lo90": -0.158,
+    "hi90": -0.0006,
+    "bands_negative": 3,
+    "bands": 4
+   }
+  },
+  "oracle_vs_base|clean": {
+   "mean": -0.1061,
+   "lo90": -0.178,
+   "hi90": -0.0341,
+   "p_band_flip": 0.125,
+   "wins": 15,
+   "ties": 0,
+   "losses": 3,
+   "n": 18,
+   "bands": 4,
+   "band_weighted_mean": -0.0872,
+   "bands_negative": 4,
+   "leave_one_band_out": [
+    -0.0922,
+    -0.1156,
+    -0.0821,
+    -0.1268
+   ],
+   "per_band": {
+    "Diesel13": -0.1337,
+    "Timo And The Timezone": -0.0586,
+    "Turbosauro": -0.154,
+    "Zeno": -0.0024
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0872,
+    "lo90": -0.1533,
+    "hi90": -0.021,
+    "bands_negative": 4,
+    "bands": 4
+   }
+  },
+  "Cp_vs_base|clean": {
+   "mean": -0.0586,
+   "lo90": -0.1441,
+   "hi90": 0.027,
+   "p_band_flip": 0.25,
+   "wins": 10,
+   "ties": 0,
+   "losses": 8,
+   "n": 18,
+   "bands": 4,
+   "band_weighted_mean": -0.0481,
+   "bands_negative": 3,
+   "leave_one_band_out": [
+    -0.0692,
+    -0.05,
+    -0.0269,
+    -0.0839
+   ],
+   "per_band": {
+    "Diesel13": -0.0373,
+    "Timo And The Timezone": -0.1012,
+    "Turbosauro": -0.1218,
+    "Zeno": 0.068
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0481,
+    "lo90": -0.1289,
+    "hi90": 0.0328,
+    "bands_negative": 3,
+    "bands": 4
+   }
+  },
+  "e0_vs_oracle|clean": {
+   "mean": 0.0052,
+   "lo90": -0.0086,
+   "hi90": 0.019,
+   "p_band_flip": 1.0,
+   "wins": 2,
+   "ties": 15,
+   "losses": 1,
+   "n": 18,
+   "bands": 4,
+   "band_weighted_mean": 0.0078,
+   "bands_negative": 1,
+   "leave_one_band_out": [
+    0.0078,
+    0.0063,
+    0.0078,
+    -0.0
+   ],
+   "per_band": {
+    "Diesel13": -0.0,
+    "Timo And The Timezone": 0.0,
+    "Turbosauro": 0.0,
+    "Zeno": 0.0314
+   },
+   "band_mean_interval": {
+    "band_mean": 0.0078,
+    "lo90": -0.007,
+    "hi90": 0.0227,
+    "bands_negative": 0,
+    "bands": 4
+   }
+  },
+  "e0_vs_Cp|clean": {
+   "mean": -0.0423,
+   "lo90": -0.1053,
+   "hi90": 0.0207,
+   "p_band_flip": 0.375,
+   "wins": 10,
+   "ties": 4,
+   "losses": 4,
+   "n": 18,
+   "bands": 4,
+   "band_weighted_mean": -0.0313,
+   "bands_negative": 3,
+   "leave_one_band_out": [
+    -0.0152,
+    -0.0593,
+    -0.0473,
+    -0.0429
+   ],
+   "per_band": {
+    "Diesel13": -0.0964,
+    "Timo And The Timezone": 0.0426,
+    "Turbosauro": -0.0322,
+    "Zeno": -0.0391
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0313,
+    "lo90": -0.0853,
+    "hi90": 0.0228,
+    "bands_negative": 3,
+    "bands": 4
+   }
+  },
+  "e0_vs_base|crunch": {
+   "mean": -0.1705,
+   "lo90": -0.2086,
+   "hi90": -0.1325,
+   "p_band_flip": 0.0625,
+   "wins": 35,
+   "ties": 1,
+   "losses": 0,
+   "n": 36,
+   "bands": 5,
+   "band_weighted_mean": -0.1909,
+   "bands_negative": 5,
+   "leave_one_band_out": [
+    -0.159,
+    -0.1888,
+    -0.1738,
+    -0.1653,
+    -0.1724
+   ],
+   "per_band": {
+    "Diesel13": -0.2978,
+    "Eat The Feeder": -0.1449,
+    "Magician's Nephew": -0.1542,
+    "Szymon Skiba": -0.1965,
+    "Wall Of Death": -0.1614
+   },
+   "band_mean_interval": {
+    "band_mean": -0.191,
+    "lo90": -0.2442,
+    "hi90": -0.1377,
+    "bands_negative": 5,
+    "bands": 5
+   }
+  },
+  "oracle_vs_base|crunch": {
+   "mean": -0.1683,
+   "lo90": -0.2018,
+   "hi90": -0.1347,
+   "p_band_flip": 0.0625,
+   "wins": 35,
+   "ties": 1,
+   "losses": 0,
+   "n": 36,
+   "bands": 5,
+   "band_weighted_mean": -0.1856,
+   "bands_negative": 5,
+   "leave_one_band_out": [
+    -0.1589,
+    -0.185,
+    -0.1711,
+    -0.1626,
+    -0.1698
+   ],
+   "per_band": {
+    "Diesel13": -0.2717,
+    "Eat The Feeder": -0.1449,
+    "Magician's Nephew": -0.1542,
+    "Szymon Skiba": -0.1965,
+    "Wall Of Death": -0.1609
+   },
+   "band_mean_interval": {
+    "band_mean": -0.1856,
+    "lo90": -0.2296,
+    "hi90": -0.1416,
+    "bands_negative": 5,
+    "bands": 5
+   }
+  },
+  "Cp_vs_base|crunch": {
+   "mean": -0.1424,
+   "lo90": -0.1934,
+   "hi90": -0.0913,
+   "p_band_flip": 0.0625,
+   "wins": 31,
+   "ties": 1,
+   "losses": 4,
+   "n": 36,
+   "bands": 5,
+   "band_weighted_mean": -0.1709,
+   "bands_negative": 5,
+   "leave_one_band_out": [
+    -0.1226,
+    -0.1586,
+    -0.1447,
+    -0.1498,
+    -0.1429
+   ],
+   "per_band": {
+    "Diesel13": -0.3592,
+    "Eat The Feeder": -0.1196,
+    "Magician's Nephew": -0.1306,
+    "Szymon Skiba": -0.1051,
+    "Wall Of Death": -0.1397
+   },
+   "band_mean_interval": {
+    "band_mean": -0.1708,
+    "lo90": -0.2607,
+    "hi90": -0.0809,
+    "bands_negative": 5,
+    "bands": 5
+   }
+  },
+  "e0_vs_oracle|crunch": {
+   "mean": -0.0022,
+   "lo90": -0.0077,
+   "hi90": 0.0032,
+   "p_band_flip": 0.5,
+   "wins": 2,
+   "ties": 33,
+   "losses": 1,
+   "n": 36,
+   "bands": 5,
+   "band_weighted_mean": -0.0053,
+   "bands_negative": 2,
+   "leave_one_band_out": [
+    -0.0001,
+    -0.0039,
+    -0.0027,
+    -0.0027,
+    -0.0026
+   ],
+   "per_band": {
+    "Diesel13": -0.0261,
+    "Eat The Feeder": 0.0,
+    "Magician's Nephew": 0.0,
+    "Szymon Skiba": 0.0,
+    "Wall Of Death": -0.0004
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0053,
+    "lo90": -0.0152,
+    "hi90": 0.0046,
+    "bands_negative": 2,
+    "bands": 5
+   }
+  },
+  "e0_vs_Cp|crunch": {
+   "mean": -0.0282,
+   "lo90": -0.0593,
+   "hi90": 0.0029,
+   "p_band_flip": 0.25,
+   "wins": 15,
+   "ties": 18,
+   "losses": 3,
+   "n": 36,
+   "bands": 5,
+   "band_weighted_mean": -0.0201,
+   "bands_negative": 4,
+   "leave_one_band_out": [
+    -0.0363,
+    -0.0302,
+    -0.0291,
+    -0.0155,
+    -0.0295
+   ],
+   "per_band": {
+    "Diesel13": 0.0615,
+    "Eat The Feeder": -0.0253,
+    "Magician's Nephew": -0.0235,
+    "Szymon Skiba": -0.0914,
+    "Wall Of Death": -0.0216
+   },
+   "band_mean_interval": {
+    "band_mean": -0.0201,
+    "lo90": -0.0661,
+    "hi90": 0.0259,
+    "bands_negative": 4,
+    "bands": 5
+   }
+  }
+ }
+}
