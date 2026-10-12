@@ -13,6 +13,9 @@
               apply_spec command on the leave-band-out start, render them through the
               part's own measfix DI and score them with the flat judge. --check runs
               only the declared reproduction check first.
+    recheck-prepare / recheck-route / recheck-analyze
+              the re-check (docs/generate-routing-recheck-plan.md): the old and new
+              skill on the same inputs, one prompt, interleaved, then the readings.
     proxy     the cheap router: one short fixed question per run (title, artist, part,
               the excerpt's fingerprint text), web search only, one word back.
 
@@ -702,9 +705,131 @@ def edits_analyze():
     print(json.dumps(out, indent=1))
 
 
+RECHECK_MAP = ROOT / "docs" / "generate-routing-recheck-runs.json"
+RECHECK_RESULTS = ROOT / "docs" / "generate-routing-recheck-results.json"
+NEW_COMMIT = "1d2ae4c"
+RECHECK_MODEL = "claude-opus-5-5"
+NON_ANSWER = "I can't say; decide yourself."
+ARM_PLUGIN = {"old": WORK / "plugin", "new": WORK / "plugin-new"}
+ARM_VERSION = {"old": "0.7.105", "new": None}         # new: read from its copy
+
+
+def _recheck_prompt(old_prompt: str) -> str:
+    a = """install the preset or save notes."""
+    b = """Write the preset to ./out/ instead of installing it."""
+    if a not in old_prompt or b not in old_prompt:
+        raise SystemExit("run 1's prompt changed; refusing")
+    text = old_prompt.replace(a, "install anything or save notes.")
+    text = text.replace(b, "Write whatever you would install to ./out/ instead of installing it.")
+    key = """  "reasons": two or three sentences on why this class and amp.\n"""
+    if key not in text:
+        raise SystemExit("run 1's result keys changed; refusing")
+    return text.replace(key, key + """  "outputs": each file you wrote to ./out/ and the starting preset it was built from.\n""")
+
+
+def recheck_prepare():
+    import random
+    import shutil
+    import subprocess
+
+    if RECHECK_MAP.exists():
+        raise SystemExit(f"{RECHECK_MAP} exists; the re-check is prepared once")
+    new = ARM_PLUGIN["new"]
+    if new.exists():
+        raise SystemExit(f"{new} exists")
+    new.mkdir(parents=True)
+    archive = subprocess.run(
+        ["git", "archive", NEW_COMMIT, "skills", "scripts", "packs", "reference", "analysis",
+         "format", "match", "samples", ".claude-plugin", "pyproject.toml", "LICENSE",
+         "NOTICE.md"], cwd=ROOT, capture_output=True, check=True)
+    subprocess.run(["tar", "-x", "-C", str(new)], input=archive.stdout, check=True)
+    runs = json.loads(MAP.read_text())["runs"]
+    labels = {r["slug"]: r["label"] for r in json.loads(PARTS.read_text())["parts"]}
+    jobs = []
+    for nn, slugs in sorted(runs.items()):
+        has_cc = any(labels[s] in ("clean", "crunch") for s in slugs)
+        for arm in ("old", "new"):
+            if arm == "old" and not has_cc:
+                continue
+            folder = WORK / f"runs-{arm}" / nn
+            (folder / "out").mkdir(parents=True)
+            (folder / "data").mkdir()
+            src = WORK / "runs" / nn
+            shutil.copy2(src / f"song-{nn}.wav", folder / f"song-{nn}.wav")
+            prompt = _recheck_prompt((src / "prompt.txt").read_text())
+            prompt = prompt.replace(str(src / "data"), str(folder / "data"))
+            (folder / "prompt.txt").write_text(prompt)
+            jobs.append([arm, nn])
+    random.Random(20261013).shuffle(jobs)
+    version = json.loads((new / ".claude-plugin" / "plugin.json").read_text())["version"]
+    RECHECK_MAP.write_text(json.dumps({"plan": "docs/generate-routing-recheck-plan.md",
+                                       "new_commit": NEW_COMMIT, "new_version": version,
+                                       "model": RECHECK_MODEL, "order": jobs}, indent=1) + "\n")
+    prompts = {(WORK / f"runs-{a}" / n / "prompt.txt").read_text() for a, n in jobs if n == "01"}
+    print(f"{len(jobs)} runs prepared; new plugin {version}; prompts identical across arms: "
+          f"{len(prompts) == 1}")
+
+
+def _claude(folder, plugin, prompt, log, resume=None):
+    import subprocess
+
+    argv = ["claude", "-p", prompt, "--model", RECHECK_MODEL,
+            "--settings", str(WORK / "settings.json"), "--setting-sources", "",
+            "--plugin-dir", str(plugin), "--add-dir", str(plugin),
+            "--add-dir", str(WORK / "venv"),
+            "--allowedTools", "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill",
+            "--disallowedTools", "SendMessage,ListAgents,Task,Agent,Workflow,"
+            "Artifact,ArtifactComments,ArtifactData,CronCreate,RemoteTrigger",
+            "--permission-mode", "acceptEdits", "--output-format", "stream-json", "--verbose"]
+    if resume:
+        argv += ["--resume", resume]
+    return subprocess.run(argv, cwd=folder, stdout=log, stderr=subprocess.STDOUT, timeout=3600)
+
+
+def _session_id(transcript: pathlib.Path):
+    for line in transcript.read_text().splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("type") == "system" and event.get("subtype") == "init":
+            return event.get("session_id"), event.get("plugins"), event.get("model")
+    return None, None, None
+
+
+def recheck_route(workers=3):
+    from concurrent.futures import ThreadPoolExecutor
+
+    doc = json.loads(RECHECK_MAP.read_text())
+
+    def one(job):
+        arm, nn = job
+        folder = WORK / f"runs-{arm}" / nn
+        transcript = folder / "transcript.jsonl"
+        if transcript.exists():
+            return arm, nn, "skipped"
+        with open(transcript, "w") as log:
+            _claude(folder, ARM_PLUGIN[arm], (folder / "prompt.txt").read_text(), log)
+        asked = False
+        if not (folder / "result.json").exists():
+            session, _, _ = _session_id(transcript)
+            if session:
+                asked = True
+                with open(transcript, "a") as log:
+                    _claude(folder, ARM_PLUGIN[arm], NON_ANSWER, log, resume=session)
+        (folder / "asked.txt").write_text("yes\n" if asked else "no\n")
+        return arm, nn, ("result" if (folder / "result.json").exists() else "NO RESULT") + (
+            ", resumed" if asked else "")
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for arm, nn, status in pool.map(one, [tuple(j) for j in doc["order"]]):
+            print(arm, nn, status, flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze"])
+    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze",
+                                       "recheck-prepare", "recheck-route"])
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--workers", type=int, default=3)
@@ -713,6 +838,10 @@ def main():
         return prepare()
     if args.step == "route":
         return route(args.only, args.workers)
+    if args.step == "recheck-prepare":
+        return recheck_prepare()
+    if args.step == "recheck-route":
+        return recheck_route(args.workers)
     if args.step == "edits-analyze":
         return edits_analyze()
     if args.step == "edits":
