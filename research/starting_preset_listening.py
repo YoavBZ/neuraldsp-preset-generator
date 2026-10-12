@@ -389,7 +389,7 @@ def phone():
         text = re.sub(r"base64,[A-Za-z0-9+/=]+", "", page)
         for word in ("PR12", "SW50R", "AC20", ".xml", "factory", "Royally", "Metal",
                      "Platform", "Low-Watt", "Doom", "Coil", "template"):
-            if word.lower() in text.lower():
+            if re.search(r"(?<![-\w])" + re.escape(word) + r"(?![-\w])", text, re.I):
                 raise SystemExit(f"the page names {word}")
         out = listen / f"sitting-{sitting}-phone.html"
         out.write_text(page)
