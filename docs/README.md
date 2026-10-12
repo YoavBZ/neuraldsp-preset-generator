@@ -71,6 +71,10 @@ was declared, what was measured, and the research behind it.
   `listening-check-inputs.json` → [results](listening-check-results.md): inconclusive
   (a void sitting); for some songs the listener could not find the guitar or compare
   tone across different notes.
+- [generate-routing-plan.md](generate-routing-plan.md), with its part list and run map
+  → [results](generate-routing-results.md): **routing costs** (clean parts sent to
+  crunch by genre or song-level write-ups; `generate` now installs the neighbouring
+  starting point too); research edits undecided.
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →

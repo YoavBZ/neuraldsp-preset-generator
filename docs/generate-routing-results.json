@@ -1,0 +1,244 @@
+{
+ "plan": "docs/generate-routing-plan.md",
+ "unscored_parts": [
+  "telefunken-Honey-GTR"
+ ],
+ "excluded_runs_for_leaks": {},
+ "readings": {
+  "primary": {
+   "agent": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1346,
+     "lo": 0.0816,
+     "hi": 0.1912,
+     "part_mean": 0.1051,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 25,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.1448,
+     "lo": 0.095,
+     "hi": 0.197,
+     "part_mean": 0.1179,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "ceiling (label)": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.0203,
+     "lo": 0.0016,
+     "hi": 0.0437,
+     "part_mean": 0.0132,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 4,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.0386,
+     "lo": 0.0137,
+     "hi": 0.0665,
+     "part_mean": 0.0305,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "always clean": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1049,
+     "lo": 0.0377,
+     "hi": 0.1772,
+     "part_mean": 0.1089,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 29,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.1049,
+     "lo": 0.0377,
+     "hi": 0.1772,
+     "part_mean": 0.1089,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "proxy": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1101,
+     "lo": 0.0548,
+     "hi": 0.1715,
+     "part_mean": 0.1047,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 26,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.13,
+     "lo": 0.0763,
+     "hi": 0.1864,
+     "part_mean": 0.126,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "agent_minus_ceiling": {
+    "band_mean": 0.1143,
+    "lo": 0.0601,
+    "hi": 0.1728,
+    "part_mean": 0.0919,
+    "n": 34,
+    "bands": 15
+   },
+   "best_of_two_bound": {
+    "band_mean": 0.0092,
+    "lo": 0.0,
+    "hi": 0.0275,
+    "part_mean": 0.0081,
+    "n": 34,
+    "bands": 15
+   },
+   "confusion_rows": {
+    "clean | routed clean | best clean": 36,
+    "clean | routed crunch | best clean": 23,
+    "clean | routed crunch | best crunch": 3,
+    "clean | routed crunch | best heavier": 1,
+    "clean | routed heavier | best clean": 3,
+    "crunch | routed crunch | best clean": 5,
+    "crunch | routed crunch | best crunch": 7,
+    "crunch | routed crunch | best heavier": 3,
+    "crunch | routed heavier | best crunch": 10,
+    "crunch | routed heavier | best heavier": 11,
+    "high-gain | routed crunch | best crunch": 3,
+    "high-gain | routed crunch | best heavier": 3,
+    "high-gain | routed heavier | best clean": 3,
+    "high-gain | routed heavier | best crunch": 13,
+    "high-gain | routed heavier | best heavier": 26
+   }
+  },
+  "shipped": {
+   "agent": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1327,
+     "lo": 0.0809,
+     "hi": 0.1887,
+     "part_mean": 0.1033,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 24,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.1458,
+     "lo": 0.0975,
+     "hi": 0.1962,
+     "part_mean": 0.1199,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "ceiling (label)": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.0142,
+     "lo": 0.0011,
+     "hi": 0.0366,
+     "part_mean": 0.0078,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 1,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.0219,
+     "lo": 0.0063,
+     "hi": 0.0429,
+     "part_mean": 0.0161,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "always clean": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1039,
+     "lo": 0.0343,
+     "hi": 0.1825,
+     "part_mean": 0.1092,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 27,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.1039,
+     "lo": 0.0343,
+     "hi": 0.1825,
+     "part_mean": 0.1092,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "proxy": {
+    "regret_clean_vs_not": {
+     "band_mean": 0.1032,
+     "lo": 0.0473,
+     "hi": 0.1658,
+     "part_mean": 0.0985,
+     "n": 34,
+     "bands": 15
+    },
+    "rows_costly_over_0.15": 24,
+    "rows": 102,
+    "regret_three_class_report": {
+     "band_mean": 0.1176,
+     "lo": 0.0644,
+     "hi": 0.176,
+     "part_mean": 0.1162,
+     "n": 102,
+     "bands": 15
+    }
+   },
+   "agent_minus_ceiling": {
+    "band_mean": 0.1186,
+    "lo": 0.0668,
+    "hi": 0.1761,
+    "part_mean": 0.0955,
+    "n": 34,
+    "bands": 15
+   },
+   "best_of_two_bound": {
+    "band_mean": 0.0076,
+    "lo": 0.0,
+    "hi": 0.0228,
+    "part_mean": 0.0067,
+    "n": 34,
+    "bands": 15
+   },
+   "confusion_rows": {
+    "clean | routed clean | best clean": 36,
+    "clean | routed crunch | best clean": 24,
+    "clean | routed crunch | best crunch": 2,
+    "clean | routed crunch | best heavier": 1,
+    "clean | routed heavier | best clean": 3,
+    "crunch | routed crunch | best clean": 5,
+    "crunch | routed crunch | best crunch": 7,
+    "crunch | routed crunch | best heavier": 3,
+    "crunch | routed heavier | best crunch": 13,
+    "crunch | routed heavier | best heavier": 8,
+    "high-gain | routed crunch | best crunch": 5,
+    "high-gain | routed crunch | best heavier": 1,
+    "high-gain | routed heavier | best clean": 3,
+    "high-gain | routed heavier | best crunch": 13,
+    "high-gain | routed heavier | best heavier": 26
+   }
+  }
+ },
+ "proxy_agreement": {
+  "parts": 50,
+  "same_class": 38
+ },
+ "decision": "routing costs"
+}

@@ -1,42 +1,54 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-09.
+lives in the linked documents. Last updated 2026-10-12.
 
 ## Where the product is
 
 - **Input is a song.** The user gives a song (and a time where the guitar plays), never
   a DI of the performance.
-- **`generate`** researches the song, measures the excerpt and writes one preset. On 25
-  mostly clean development recordings, that preset was not shown to land closer than
-  the shipped template, and a researched list of four was not shown to beat four random
-  factory presets ([song-only shortlist](song-only-shortlist-results.md)).
-- **Choosing among several helps, with a perfect ear.** The judge picking from four
-  lands about 18% closer than the template. Whether a real ear does, listening through
-  another performance's DI, was tested once and came out inconclusive
-  ([results](listening-check-results.md)). `generate` offers four presets on a
-  listening page (`scripts/audition.py`) with shipped CC-BY guitar riffs, and a refine
-  loop, as an option.
+- **`generate`** researches the song, sorts the part into clean, crunch or heavier
+  (Tone King: clean or crunch only), starts from that class's dry factory preset, and
+  applies research edits (mostly effects; amp, drive, EQ and cab kept unless research
+  contradicts them):
+  - **Morgan clean:** Royally Ambient (PR12), Pedal Platform Clean (SW50R), Low-Watt
+    Americana (AC20), about 12% closer than the template on held-out clean parts
+    ([results](clean-baseline-results.md)).
+  - **Morgan crunch:** Modern Metal (Pick Hard), Hair Metal, AC20 Mid-Gain Drive, about
+    7% closer than the driven presets, weak evidence
+    ([results](crunch-baseline-results.md)).
+  - **Morgan heavier (out of focus):** Wall Of Doom, Vintage Metal, Dirty Coil Rhythm
+    ([results](driven-baseline-results.md)).
+  - **Tone King:** Vintage Trem (clean, about 12% closer than the plugin's Default made
+    dry) and Squishy Lead (crunch, thin evidence), both on the Rhythm channel
+    ([results](toneking-baseline-results.md)).
+  - Before the starting presets, on 25 mostly clean recordings: a researched preset was
+    not shown to beat the template, and a researched four not shown to beat four random
+    factory presets; the judge picking from four landed about 18% closer than the
+    template ([results](song-only-shortlist-results.md)). Whether that holds over the
+    new starting presets, how often the class is right, and whether the research edits
+    help are not measured (step 6).
+- **The listening page** (`scripts/audition.py`) is offered, not built by default: four
+  presets through CC-BY riffs, with a one-file phone version. Whether a real ear
+  picks better with it was tested once and came out inconclusive
+  ([results](listening-check-results.md)).
 - **`match`** without a DI describes the recording and keeps the starting preset: no
   song-only search has been shown to get closer
-  ([re-check under the judge: void](no-di-rule-under-the-judge-results.md)). With the
-  same take's DI it searches, but its figures come from a retired score.
+  ([re-check: void](no-di-rule-under-the-judge-results.md)). With the same take's DI it
+  searches; its known defects are fixed or parked, and its search objective is untested
+  by ear (step 5).
 - **`edit`** changes a preset from a plain-English ask.
-- **Predicting a preset from the song** is active research, not yet in the product.
-  - **Best so far:** rebuild the guitar's DI from the recording with a trained network,
-    then let the judge pick a menu preset through it. Clean PR12 misses the declared
-    bar ([results](di-recovery-results.md)). On heavier development recordings SW50R
-    has a conditional pass against a fixed driven preset; PR12 and AC20 do not pass
-    ([set-3 results](di-recovery-set3-results.md)). The reserved confirmation has now
-    run: neither SW50R nor PR12 passes; independent numerical/audio checks agree
-    ([confirmation](set3-heldout-confirmation-results.md)). No learned path is ready
-    to ship.
-  - **Measure:** the average-guitar measure, which listening confirmed (23 of 24
-    trials, [results](avg-measure-listening-results.md)).
+- **Predicting a preset from the song** is active research, not yet in the product
+  (step 0): a network rebuilds the guitar's DI from the recording and the judge picks a
+  menu preset through it. Confirmed against the old starting points (the clean
+  template, and the driven preset on crunch), mostly on clean parts
+  ([results](set4-confirmation-results.md)). Against the current starting presets it is
+  undecided on clean and crunch, both under-powered ([audit](audit-2026-10-11.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
-  ([listening validation](listening-validation-results.md)).
+  ([listening validation](listening-validation-results.md)). None of the starting
+  presets has been heard against the template yet (step 6).
 
 ## Scope (user decision, 2026-10-10)
 
@@ -376,6 +388,26 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      loss questions (the ML session's); none has been shown by listening to change
      a preset.
 
+6. **Product checks, alongside the ML work** (added 2026-10-12, from an independent
+   review of the direction).
+   - **Measure `generate`'s own risky steps:** *done 2026-10-12
+     ([results](generate-routing-results.md), independently re-derived).* Routing
+     costs: from the song alone it sent 9 of 22 clean parts to crunch, mostly by genre
+     or song-level write-ups (+0.114 against knowing the class); `generate` now
+     installs the neighbouring starting point too, and routes by the part's own
+     documented sound. Research edits: undecided (+0.014, −0.008 to +0.036), no change.
+     As first planned, from the song and a time alone, on development parts: how often research
+     puts a part in the right class (a wrong class loses: on set 4's heavier parts the
+     crunch presets lost 11 of 12 to the driven ones), and whether the research edits
+     on top of the dry starting preset help or hurt (one case, Cut It Out, was mixed:
+     the darkened preset lost through the rebuilt DI but won through a real DI riff;
+     see [reading a reference](../reference/reading-a-reference.md)).
+   - **A short listening check of the starting presets** against the template, through
+     the part's own notes: development parts with a DI where the guitar is exposed (the
+     user, about 15 minutes).
+   - **Another end-to-end run** of `generate` on a clean or Tone King song (Cut It Out
+     is the one case recorded so far).
+
 ## Parked
 
 - **Predicting settings from a recording: reopened 2026-10-06, now step 0 above.** The
@@ -438,5 +470,6 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-09 | Codex continuation reviewed: held-out failure confirmed; ranking works with the true DI, the loss is in the rebuilt DI; native-pilot "failure" was a mis-specified test; research stays in the repo until the plugin is ready | [review](codex-continuation-review.md) |
 | 2026-10-12 | `generate` asks before building the listening page; the user can decline (user decision) | `skills/generate/SKILL.md` step 5b |
 | 2026-10-12 | A mix's top-end roll-off is a reason to check, not to darken (one song, mixed evidence) | `reference/reading-a-reference.md`, #167 |
+| 2026-10-12 | `generate` installs a second starting point when the part is not clean (measured), and routes by the part's documented sound, not the song's genre (a rule, not yet re-checked) | `generate-routing-results.md` |
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | step 5 above; #168–#171 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
