@@ -226,6 +226,9 @@ was declared, what was measured, and the research behind it.
   matches `generate`'s crunch start.
 - [validation-set5.md](validation-set5.md): set 5, a fresh held-out set (7 new bands; first
   use by the set-5 test).
+- [validation-set6.md](validation-set6.md): set 6, MedleyDB, held out and unused. Its DIs
+  are inferred, since MedleyDB names none. 5 parts from 5 bands are kept: 3 clean, no
+  crunch, and 2 high-gain (report-only).
 - [residual-di-plan.md](residual-di-plan.md) → [results](residual-di-results.md): the MPS
   gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
   corrected network picks better, marginally and on crunch only (a second seed is
@@ -276,6 +279,9 @@ was declared, what was measured, and the research behind it.
 - [validation-set5.md](validation-set5.md): fresh held-out set, unused. 7 new bands
   with kept parts (14 sessions tested), 31 parts, all held out. 26 clean or crunch parts
   are in scope; 5 high-gain parts are report-only.
+- [validation-set6.md](validation-set6.md): MedleyDB, held out and unused. 73 songs
+  tested; 5 parts kept from 5 bands, with DIs inferred by a declared rule. 3 clean parts are
+  in scope; 2 high-gain parts are report-only. Each crop includes the song's real mix.
 
 **Listening tests**
 - [declared-listening-runner.md](declared-listening-runner.md): how declared blind tests

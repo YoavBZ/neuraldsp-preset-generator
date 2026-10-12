@@ -12,9 +12,9 @@ is held out, including sessions with no kept part. The guards fail closed: a hel
 band, a name or path they do not know, or a fold clash raises rather than passing.
 
 `is_held_out` also knows sets 1 and 2 (`docs/validation-datasets.json`), so every DI that
-`training_dis` returns can be checked by it. It knows sets 4 and 5 too (`learn.set4`,
-`learn.set5`): every set-4 or set-5 band, session, crop and path is held out, so
-`fold_for_band` and `training_dis` refuse them.
+`training_dis` returns can be checked by it. It knows sets 4, 5 and 6 too (`learn.set4`,
+`learn.set5`, `learn.set6`): every set-4, set-5 or set-6 band, session, crop and path is
+held out, so `fold_for_band` and `training_dis` refuse them.
 """
 
 from __future__ import annotations
@@ -172,11 +172,11 @@ def is_held_out(x: str | os.PathLike, path=DECLARATION) -> bool:
     """Whether `x` is held out: a band, a set-3 session key or crop slug, or any file or
     directory under a declared session's directory or a set-3 crop's (absolute, `~`, or
     relative to the dataset root, e.g. "cambridge/VMGY_Omen_Full/..."). Covers sets 1-5
-    and Guitar-TECHS P1; everything in sets 4 and 5 is held out. Raises KeyError on
+    and Guitar-TECHS P1; everything in sets 4, 5 and 6 is held out. Raises KeyError on
     anything it does not know."""
-    from learn import set4, set5
+    from learn import set4, set5, set6
 
-    if set4.covers(x) or set5.covers(x):
+    if set4.covers(x) or set5.covers(x) or set6.covers(x):
         return True
     names, prefixes = _index(str(path))
     s = os.fspath(x)
@@ -222,10 +222,10 @@ def fold_for_band(band: str, path=DECLARATION) -> int:
     set 3's development folds. -1 (`EVERY_FOLD`) for Guitar-TECHS P1 and set 3's unfolded
     development bands (no kept part), which every fold may train on. Raises ValueError on
     a held-out band (any set) and KeyError on a band it does not know."""
-    from learn import set4, set5
+    from learn import set4, set5, set6
 
     names, _ = _index(str(path))
-    if names.get(band) or set4.covers(band) or set5.covers(band):
+    if names.get(band) or set4.covers(band) or set5.covers(band) or set6.covers(band):
         raise ValueError(f"{band} is held out: no fold may train on it or test it")
     folds = _fold_map(str(path))
     if band not in folds:
@@ -244,11 +244,11 @@ def training_dis(test_fold: int | None, path=DECLARATION) -> list[pathlib.Path]:
       whole-session count, `sessions[].dis[].di_clip_runs`). Set 2's catalogue has no
       clipping count, so set 2's DIs are as `learn.di_pool` uses them.
 
-    Every file is checked again with `is_held_out`, `learn.set4.refuse` and
-    `learn.set5.refuse`; one that is held out (sets 4 and 5 included), unknown, or of an
+    Every file is checked again with `is_held_out` and `learn.set4`, `learn.set5` and
+    `learn.set6`'s `refuse`; one that is held out (sets 4-6 included), unknown, or of an
     unknown band raises."""
     _check(None, test_fold)
-    from learn import di_pool, set4, set5
+    from learn import di_pool, set4, set5, set6
 
     rows = [(band, pathlib.Path(f)) for band, f in di_pool.tracks()]
     for s in load(path)["sessions"]:
@@ -261,6 +261,7 @@ def training_dis(test_fold: int | None, path=DECLARATION) -> list[pathlib.Path]:
     for band, f in rows:
         set4.refuse(f)                                 # set 4: never trained on
         set5.refuse(f)                                 # set 5: never trained on
+        set6.refuse(f)                                 # set 6: never trained on
         if fold_for_band(band, path) == test_fold:     # raises on held-out or unknown bands
             continue
         if is_held_out(f, path):

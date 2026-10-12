@@ -296,6 +296,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **A song-level class predictor from the rebuilt DI** failed its positive control
         twice and is closed ([results](class-predictor-results.md), on
         `ml/class-predictor`).
+   8i. **Set 6 (MedleyDB) declared** ([validation-set6.md](validation-set6.md)).
+      *Declared 2026-10-12, unused.*
+      - **Few DIs:** MedleyDB names no DI, and only 5 of 73 songs give a kept part. Most
+        same-take pairs are microphone pairs or duplicate files, not a DI and its amp.
+      - **In scope: 3 clean parts from 3 bands, and no crunch part.** 2 high-gain parts are
+        report-only.
+      - **So MedleyDB adds nothing to the crunch side of the combined stem test.** Its
+        plan has to say so before any power calculation.
    9. **If it doesn't pass:** close the rebuilt-DI chooser for the product. The candidates
       left are a cheap direct-ranker test, and recording a few guitarists (DI plus
       mic'd amp) for data.
