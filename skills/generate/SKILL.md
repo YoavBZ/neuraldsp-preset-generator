@@ -185,9 +185,9 @@ Tone King recipes use its verified sync-note selectors. See
   `generate` did before, sent 10 of 22 development clean parts to crunch or heavier,
   about 12% further from the record on average than choosing by the part's real
   class ([generate-routing-results.md](../../docs/generate-routing-results.md)); hence
-  the second starting point in step 6. Re-checked on the same parts, this rule routed
-better than the old text (in-sample;
-[re-check](../../docs/generate-routing-recheck-results.md)).
+  the second starting point in step 6. Re-checked on the same parts, the new text (this
+  rule with the second start) routed better than the old (in-sample;
+  [re-check](../../docs/generate-routing-recheck-results.md)).
 - **For a clean Morgan part, start from the amp's clean baseline.** These are factory
   presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 

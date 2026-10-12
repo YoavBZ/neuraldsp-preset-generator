@@ -104,5 +104,9 @@ presets generalise. Block C covers PR12 only. One listener.
 1 reversed-taste control, 1 practice), renders reproduced the stored scores (worst
 |Δ log| 0.00007). Key SHA-256:
 `6bacfd75e2a03f04e53c9837b10b37cc98c6569afa78c79b04bc2a47dd018cbc`. With 21 main
-trials the power is lower than planned: "heard" needs 16 of 21 decided (p 0.013) or
-15 of 20 (p 0.021), about 40% at 70% agreement.
+trials the power is lower than planned: "heard" needs 15 of 21 decided (p 0.039) or
+15 of 20 (p 0.021); about 55% and 42% power at 70% agreement. The scorer computes the
+threshold from the number decided, by the declared one-sided sign test, not from this
+note. Two X parts come from songs with a C part (It Was My Fault For Waiting,
+First Offering); if either pair is a double-track, two main trials are near-duplicates,
+so X is also reported without them.

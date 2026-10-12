@@ -713,7 +713,6 @@ NON_ANSWER = "I can't say; decide yourself."
 # Neutral names: an agent sees its plugin's path, which must not say which arm it is.
 # plugin-m is a byte copy of run 1's plugin (0.7.105); plugin-k is main at NEW_COMMIT.
 ARM_PLUGIN = {"old": WORK / "plugin-m", "new": WORK / "plugin-k"}
-ARM_VERSION = {"old": "0.7.105", "new": None}         # new: read from its copy
 
 
 def _recheck_prompt(old_prompt: str) -> str:
@@ -730,6 +729,12 @@ def _recheck_prompt(old_prompt: str) -> str:
 
 
 def recheck_prepare():
+    """As committed, this wrote `[arm, nn]` jobs into runs-old/ and runs-new/ and the new
+    plugin into plugin-new/. Before any run, by hand (the arm was visible in those
+    paths): every run folder was moved to runs2/<random tag> with its prompt's data path
+    rewritten, the map's jobs became `[arm, nn, tag]` and gained a "plugins" key,
+    plugin-new/ was renamed plugin-k/, and run 1's plugin/ was copied byte for byte to
+    plugin-m/. `recheck_route` and `recheck_analyze` read that map."""
     import random
     import shutil
     import subprocess

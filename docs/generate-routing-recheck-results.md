@@ -25,12 +25,14 @@ model, scored with [part 1](generate-routing-results.md)'s truth and regret:
   no band's mean difference is positive; against run 1 instead it is −0.076 (−0.134 to
   −0.021). The old rerun's mean landed within 0.005 of run 1's, but they differ on 4 of
   34 parts (2 each way), so run noise is real and the paired interval carries the claim.
-- **Which parts:** 12 changed route; 8 improved and 1 got worse; most of the gain is
-  three clean parts the new skill routed clean.
+- **Which parts:** 12 changed route; 7 improved, 1 got worse (Farthest Step, clean
+  sent to crunch, +0.141) and 4 swapped crunch and heavier at no cost; most of the
+  gain is three clean parts the new skill routed clean. One of them (Fragments, 0.638)
+  is partly rerun noise: run 1 had already routed it clean.
 - **Where it came from:** clean parts routed clean rose from 12 of 22 to 16 of 22
   (crunch from 10 to 6).
 - **A new error, small:** 2 of 12 crunch parts were routed clean (none before), costing
-  0 and 0.023. No high-gain part was routed clean (13 heavier, 3 crunch).
+  0 and 0.023, lower than the old skill's routes for them (0.186 and 0.073). No high-gain part was routed clean (13 heavier, 3 crunch).
 - **The second start:** every one of the 49 new runs wrote one (none of the old
   runs): a crunch start beside a clean route (19), a clean start beside a crunch route
   (11), a crunch start beside a heavier route (19), as the skill now asks for any route
