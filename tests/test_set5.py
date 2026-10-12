@@ -49,7 +49,7 @@ def test_schema():
 
 def test_every_part_is_held_out_and_unused():
     d = set5.load()
-    assert d["held_out_uses"] == []                          # declared, never used
+    assert [u["test_id"] for u in d["held_out_uses"]] == ["set5-cprime-test-2026-10-12"]   # one declared use
     assert d["held_out_bands"] == set5.bands()
     assert all(s["split"] == "held_out" and s["fold"] is None for s in d["sessions"])
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])

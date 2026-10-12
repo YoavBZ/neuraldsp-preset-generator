@@ -3493,5 +3493,27 @@
    ]
   }
  ],
- "held_out_uses": []
+ "held_out_uses": [
+  {
+   "declaration": "docs/set5-test-plan.md",
+   "test_id": "set5-cprime-test-2026-10-12",
+   "seeds": [
+    "Cp0",
+    "Cp1",
+    "Cp2"
+   ],
+   "sha256": {
+    "C": "16b2b734b49cc1cc2d7e547d96d3bb56208007c9cae0d0e33acb1c2a1cdd042b",
+    "Cp0": "b29f440958700de894347e1e79b14e25153ed9fc777e03399576d40da78706ff",
+    "Cp1": "29f26e666c139f79614ce0069c7520eb3b53d83f471946f988fedfc90966f307",
+    "Cp2": "b367b31cda521048eb0d91000c9e43a877a76783e7b7d619a9223ce8f80c161a",
+    "average": "9aa3c3bfefc2bc5ba21394be29876b5ef5e0120ad2f55f0b890e599ec3bee9a8"
+   },
+   "sessions": "all set-5 sessions with kept parts",
+   "heard": [],
+   "results": "docs/set5-test-results.md",
+   "ran": "2026-10-12",
+   "note": "First declared use of set 5. Recorded with network hashes before any set-5 render."
+  }
+ ]
 }
