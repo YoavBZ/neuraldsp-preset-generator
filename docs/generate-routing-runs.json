@@ -1,0 +1,154 @@
+{
+ "plan": "docs/generate-routing-plan.md",
+ "runs": {
+  "01": [
+   "telefunken-First_Offering-GTR_2"
+  ],
+  "02": [
+   "cambridge-magilla-elecgtr1"
+  ],
+  "03": [
+   "cambridge-get-out-of-bed-elecgtr7"
+  ],
+  "04": [
+   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2"
+  ],
+  "05": [
+   "cambridge-the-well-elecgtr02"
+  ],
+  "06": [
+   "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1"
+  ],
+  "07": [
+   "cambridge-ill-fate-elecgtr2"
+  ],
+  "08": [
+   "telefunken-Russian_Cream-GTR_2"
+  ],
+  "09": [
+   "cambridge-Today's_The_Day-ElecGtr10"
+  ],
+  "10": [
+   "cambridge-burial-of-silence-elecgtr3"
+  ],
+  "11": [
+   "cambridge-Drag_Me_Down-ElecGtr4"
+  ],
+  "12": [
+   "cambridge-Prodigal-ElecGtr5"
+  ],
+  "13": [
+   "cambridge-femme-elecgtr4"
+  ],
+  "14": [
+   "cambridge-ill-fate-elecgtr3"
+  ],
+  "15": [
+   "cambridge-femme-elecgtr3"
+  ],
+  "16": [
+   "cambridge-magilla-elecgtr2",
+   "cambridge-magilla-elecgtr2dt"
+  ],
+  "17": [
+   "cambridge-the-well-elecgtr03"
+  ],
+  "18": [
+   "cambridge-get-out-of-bed-elecgtr1"
+  ],
+  "19": [
+   "telefunken-split-brow-gtr-1"
+  ],
+  "20": [
+   "cambridge-the-well-elecgtr04"
+  ],
+  "21": [
+   "cambridge-wickerman-elecgtr2",
+   "cambridge-wickerman-elecgtr3"
+  ],
+  "22": [
+   "cambridge-wickerman-elecgtr7"
+  ],
+  "23": [
+   "cambridge-let-s-dance-elecgtr3"
+  ],
+  "24": [
+   "cambridge-let-s-dance-elecgtr4"
+  ],
+  "25": [
+   "cambridge-femme-elecgtr5"
+  ],
+  "26": [
+   "telefunken-Farthest_Step-GTR"
+  ],
+  "27": [
+   "telefunken-Long_Way_Home-GTR"
+  ],
+  "28": [
+   "telefunken-Honey-GTR"
+  ],
+  "29": [
+   "cambridge-just-don-t-talk-elecgtr3"
+  ],
+  "30": [
+   "cambridge-Passing_Ships-ElecGtr6"
+  ],
+  "31": [
+   "telefunken-First_Offering-GTR_1"
+  ],
+  "32": [
+   "cambridge-the-well-elecgtr01"
+  ],
+  "33": [
+   "cambridge-magilla-elecgtr1dt"
+  ],
+  "34": [
+   "telefunken-Gym_Hours-GTR_1"
+  ],
+  "35": [
+   "telefunken-Bloomlight-GTR"
+  ],
+  "36": [
+   "telefunken-less-than-nothing-gtr-1"
+  ],
+  "37": [
+   "telefunken-Fragments-GTR"
+  ],
+  "38": [
+   "cambridge-get-out-of-bed-elecgtr2"
+  ],
+  "39": [
+   "telefunken-Sculptor's_Request-GTR_1"
+  ],
+  "40": [
+   "cambridge-Quicksand-ElecGtr1"
+  ],
+  "41": [
+   "cambridge-ill-fate-elecgtr1"
+  ],
+  "42": [
+   "cambridge-colour-me-red-elecgtr02"
+  ],
+  "43": [
+   "cambridge-wickerman-elecgtr4"
+  ],
+  "44": [
+   "telefunken-Blind_Spots-GTR"
+  ],
+  "45": [
+   "cambridge-colour-me-red-elecgtr01"
+  ],
+  "46": [
+   "telefunken-Sculptor's_Request-GTR_2"
+  ],
+  "47": [
+   "cambridge-colour-me-red-elecgtr03"
+  ],
+  "48": [
+   "cambridge-burial-of-silence-elecgtr4"
+  ],
+  "49": [
+   "cambridge-Signs-ElecGtr2"
+  ]
+ }
+}

@@ -1,0 +1,1025 @@
+{
+ "plan": "docs/generate-routing-plan.md",
+ "rows": [
+  {
+   "slug": "telefunken-First_Offering-GTR_2",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 5.563847366116114,
+    "B": 5.531667678337989
+   }
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_2",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.170406641314034,
+    "B": 6.3949896913222615
+   }
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_2",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.150359192518955,
+    "B": 6.406501834922721
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Big Tail Clean",
+   "halves": {
+    "A": 4.7717995024367585,
+    "B": 4.844652475531569
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Big Tail Clean",
+   "halves": {
+    "A": 5.516414240307479,
+    "B": 5.488745343872452
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Big Tail Clean",
+   "halves": {
+    "A": 5.521338928436489,
+    "B": 5.754755036408855
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.7479964897306943,
+    "B": 3.634037266621785
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.691583602650248,
+    "B": 3.5681683552007057
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.691115898431768,
+    "B": 3.5679318555626893
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 2.934854049954817,
+    "B": 3.7343283070114843
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 2.9349045163839804,
+    "B": 3.7343283070114843
+   }
+  },
+  {
+   "slug": "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 2.9342557304430197,
+    "B": 3.732967512250046
+   }
+  },
+  {
+   "slug": "telefunken-Russian_Cream-GTR_2",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.274522039031108,
+    "B": 6.075747578795841
+   }
+  },
+  {
+   "slug": "telefunken-Russian_Cream-GTR_2",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.308674100359181,
+    "B": 6.166184446098517
+   }
+  },
+  {
+   "slug": "telefunken-Russian_Cream-GTR_2",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.3010170207367695,
+    "B": 6.149954679609021
+   }
+  },
+  {
+   "slug": "cambridge-Today's_The_Day-ElecGtr10",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 6.380267035537224,
+    "B": 6.361317072467354
+   }
+  },
+  {
+   "slug": "cambridge-Today's_The_Day-ElecGtr10",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 6.380267035538154,
+    "B": 6.3613170724660035
+   }
+  },
+  {
+   "slug": "cambridge-Today's_The_Day-ElecGtr10",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 6.384292072464088,
+    "B": 6.364516554438713
+   }
+  },
+  {
+   "slug": "cambridge-Drag_Me_Down-ElecGtr4",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 5.689494399174692,
+    "B": 5.8817389242656555
+   }
+  },
+  {
+   "slug": "cambridge-Drag_Me_Down-ElecGtr4",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 5.50823208980928,
+    "B": 5.688813377729818
+   }
+  },
+  {
+   "slug": "cambridge-Drag_Me_Down-ElecGtr4",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 5.508234249597526,
+    "B": 5.688814612315082
+   }
+  },
+  {
+   "slug": "cambridge-Prodigal-ElecGtr5",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 8.133077008627984,
+    "B": 8.209196423056953
+   }
+  },
+  {
+   "slug": "cambridge-Prodigal-ElecGtr5",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 8.270797394338011,
+    "B": 8.257663885041422
+   }
+  },
+  {
+   "slug": "cambridge-Prodigal-ElecGtr5",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 8.272958929469631,
+    "B": 8.259972076473629
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr3",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.4927746036167218,
+    "B": 3.6401126743168497
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr3",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.62228061569796,
+    "B": 3.69520470358171
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr3",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.6222832634204827,
+    "B": 3.6952047035818882
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr1",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 4.1855292137374995,
+    "B": 4.084190413338336
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr1",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 4.365581572350693,
+    "B": 4.3102242269613775
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr1",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+   "halves": {
+    "A": 4.3653779908175725,
+    "B": 4.31334961323191
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr2",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.173523499662515,
+    "B": 5.7182911969136425
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr2",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.175935824131666,
+    "B": 5.719850654709845
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr2",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.175933832264885,
+    "B": 5.719847010354031
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr3",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.623992679513685,
+    "B": 5.704654674625221
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr3",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.626360216735473,
+    "B": 5.70564359802501
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr3",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 5.626373740375769,
+    "B": 5.705635597451793
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr7",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.4641022990498236,
+    "B": 3.3527562840640637
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr7",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.1662008134157062,
+    "B": 3.0307716836101726
+   }
+  },
+  {
+   "slug": "cambridge-wickerman-elecgtr7",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.1662006702893613,
+    "B": 3.030771683610167
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr3",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Meet You In The Mids",
+   "halves": {
+    "A": 5.216199675741461,
+    "B": 4.995806482199842
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr3",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Meet You In The Mids",
+   "halves": {
+    "A": 5.26382167610793,
+    "B": 5.070838168289761
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr3",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Neural DSP/Meet You In The Mids",
+   "halves": {
+    "A": 5.263651307108372,
+    "B": 5.07223445982883
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr4",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 3.9508856086410433,
+    "B": 3.9794255018319618
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr4",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 4.320426500836093,
+    "B": 4.359670505189713
+   }
+  },
+  {
+   "slug": "cambridge-let-s-dance-elecgtr4",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 4.320422797154152,
+    "B": 4.359662314306328
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr5",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 4.931208968438577,
+    "B": 4.498471782747831
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr5",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 4.637734956283569,
+    "B": 4.22441928152815
+   }
+  },
+  {
+   "slug": "cambridge-femme-elecgtr5",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 4.637736164134722,
+    "B": 4.224421923640464
+   }
+  },
+  {
+   "slug": "telefunken-Farthest_Step-GTR",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+   "halves": {
+    "A": 4.314681696767853,
+    "B": 4.159576367048056
+   }
+  },
+  {
+   "slug": "telefunken-Farthest_Step-GTR",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+   "halves": {
+    "A": 4.416160591826021,
+    "B": 4.2270552993116235
+   }
+  },
+  {
+   "slug": "telefunken-Farthest_Step-GTR",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+   "halves": {
+    "A": 4.410400375490736,
+    "B": 4.216665074977542
+   }
+  },
+  {
+   "slug": "telefunken-Long_Way_Home-GTR",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 6.142844820121429,
+    "B": 6.2580381663285065
+   }
+  },
+  {
+   "slug": "telefunken-Long_Way_Home-GTR",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 6.161538325157281,
+    "B": 6.27444576142918
+   }
+  },
+  {
+   "slug": "telefunken-Long_Way_Home-GTR",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 6.154826496230949,
+    "B": 6.272251366662388
+   }
+  },
+  {
+   "slug": "cambridge-just-don-t-talk-elecgtr3",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.140436577956651,
+    "B": 3.9243917969960194
+   }
+  },
+  {
+   "slug": "cambridge-just-don-t-talk-elecgtr3",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.0058125926004315,
+    "B": 4.4445385484188105
+   }
+  },
+  {
+   "slug": "cambridge-just-don-t-talk-elecgtr3",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.017778882011698,
+    "B": 4.422561940225086
+   }
+  },
+  {
+   "slug": "cambridge-Passing_Ships-ElecGtr6",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.348725463644307,
+    "B": 4.675856641850644
+   }
+  },
+  {
+   "slug": "cambridge-Passing_Ships-ElecGtr6",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.419626783327726,
+    "B": 4.70097369805105
+   }
+  },
+  {
+   "slug": "cambridge-Passing_Ships-ElecGtr6",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.418082010807879,
+    "B": 4.69982221329217
+   }
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_1",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.507701351161512,
+    "B": 4.253414147855632
+   }
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_1",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.507701351161794,
+    "B": 4.253414147855543
+   }
+  },
+  {
+   "slug": "telefunken-First_Offering-GTR_1",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.5233089161527955,
+    "B": 4.281290660315689
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1dt",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 10.092171701218147,
+    "B": 10.7214458792145
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1dt",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 9.970504493065478,
+    "B": 10.510409376644548
+   }
+  },
+  {
+   "slug": "cambridge-magilla-elecgtr1dt",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Wall Of Doom",
+   "halves": {
+    "A": 9.970502542364228,
+    "B": 10.510409376644128
+   }
+  },
+  {
+   "slug": "telefunken-Gym_Hours-GTR_1",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 5.802930787674518,
+    "B": 6.251971970487264
+   }
+  },
+  {
+   "slug": "telefunken-Gym_Hours-GTR_1",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 5.737530695093628,
+    "B": 5.830517145785595
+   }
+  },
+  {
+   "slug": "telefunken-Gym_Hours-GTR_1",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 5.7634416014508725,
+    "B": 5.850378231924878
+   }
+  },
+  {
+   "slug": "telefunken-Bloomlight-GTR",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 6.360648266711107,
+    "B": 5.803351217360117
+   }
+  },
+  {
+   "slug": "telefunken-Bloomlight-GTR",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 5.956252579171493,
+    "B": 5.397488329119425
+   }
+  },
+  {
+   "slug": "telefunken-Bloomlight-GTR",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 5.957637182087704,
+    "B": 5.399841505466314
+   }
+  },
+  {
+   "slug": "telefunken-Fragments-GTR",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 3.9195329419221188,
+    "B": 3.8483572008024454
+   }
+  },
+  {
+   "slug": "telefunken-Fragments-GTR",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.2770249900016735,
+    "B": 5.781899016721277
+   }
+  },
+  {
+   "slug": "telefunken-Fragments-GTR",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 6.323027878949059,
+    "B": 5.7981958730737135
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr2",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.538071309804087,
+    "B": 3.4446614257615153
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr2",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.4298542813535735,
+    "B": 3.4518110618623807
+   }
+  },
+  {
+   "slug": "cambridge-get-out-of-bed-elecgtr2",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 3.4336359139108974,
+    "B": 3.452899556303812
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_1",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.748689028604178,
+    "B": 4.944302385346865
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_1",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.619936455703393,
+    "B": 4.543165562569976
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_1",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 4.671139592191469,
+    "B": 4.594883379335845
+   }
+  },
+  {
+   "slug": "cambridge-Quicksand-ElecGtr1",
+   "amp": "sw50r",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 5.855272836358736,
+    "B": 4.931856908686251
+   }
+  },
+  {
+   "slug": "cambridge-Quicksand-ElecGtr1",
+   "amp": "sw50r",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 4.652790959977689,
+    "B": 4.0161336087865855
+   }
+  },
+  {
+   "slug": "cambridge-Quicksand-ElecGtr1",
+   "amp": "sw50r",
+   "arm": "full",
+   "start": "factory:Neural DSP/Hair Metal",
+   "halves": {
+    "A": 4.711542235086836,
+    "B": 4.016919606987999
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr02",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 4.711761893927331,
+    "B": 5.523957913115545
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr02",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 4.693389417708844,
+    "B": 5.545835154475248
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr02",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 4.854610990708299,
+    "B": 5.791830865253463
+   }
+  },
+  {
+   "slug": "telefunken-Blind_Spots-GTR",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.323456027356934,
+    "B": 4.901108800685441
+   }
+  },
+  {
+   "slug": "telefunken-Blind_Spots-GTR",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.378528428527424,
+    "B": 4.887757170170014
+   }
+  },
+  {
+   "slug": "telefunken-Blind_Spots-GTR",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Mark Johnston/Royally Ambient",
+   "halves": {
+    "A": 5.136839372157156,
+    "B": 4.691212449198298
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr01",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 5.86386136612033,
+    "B": 4.693248101725119
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr01",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 5.631468838427686,
+    "B": 4.691220505565286
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr01",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 5.632129097567982,
+    "B": 4.694173164088004
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_2",
+   "amp": "pr12",
+   "arm": "dry",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 7.243807351559741,
+    "B": 7.004077627682707
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_2",
+   "amp": "pr12",
+   "arm": "tonal",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 7.644769305557362,
+    "B": 7.333738223939392
+   }
+  },
+  {
+   "slug": "telefunken-Sculptor's_Request-GTR_2",
+   "amp": "pr12",
+   "arm": "full",
+   "start": "factory:Artists/Royce Whittaker/Jangly Combo Clean",
+   "halves": {
+    "A": 7.598706852565407,
+    "B": 7.3209094009065945
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr03",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 5.945422089647381,
+    "B": 7.865098899440405
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr03",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 6.493349772495595,
+    "B": 8.425351908133804
+   }
+  },
+  {
+   "slug": "cambridge-colour-me-red-elecgtr03",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/Angry AC20 Rhythm",
+   "halves": {
+    "A": 6.733798739759764,
+    "B": 8.495450321881911
+   }
+  },
+  {
+   "slug": "cambridge-Signs-ElecGtr2",
+   "amp": "ac20",
+   "arm": "dry",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.198049482351172,
+    "B": 5.065237842808455
+   }
+  },
+  {
+   "slug": "cambridge-Signs-ElecGtr2",
+   "amp": "ac20",
+   "arm": "tonal",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.376054571682004,
+    "B": 5.28090441488968
+   }
+  },
+  {
+   "slug": "cambridge-Signs-ElecGtr2",
+   "amp": "ac20",
+   "arm": "full",
+   "start": "factory:Neural DSP/AC20 Mid-Gain Drive",
+   "halves": {
+    "A": 4.376723607761776,
+    "B": 5.276254320205101
+   }
+  }
+ ]
+}
