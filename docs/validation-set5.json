@@ -1,0 +1,3489 @@
+{
+ "schema": "validation-set5-1",
+ "declared": "2026-10-12",
+ "amendments": [],
+ "precedent": "docs/validation-set4.md (rules, crop rule 2, judge lag); the inventory (tmp/set5-inventory.md on the main checkout) came first, as set 4's plan did",
+ "inventory": {
+  "path": "~/ndsp-presets/references/datasets-set5/inventory.json",
+  "sha256": "142b4313022facd397fbbceea953b3cc04d7c61a2d9266476c7489c20876e0a9",
+  "schema": "set5-candidates-inventory-1"
+ },
+ "root": "~/ndsp-presets/references/datasets-set5",
+ "crops_root": "~/ndsp-presets/references/validation-crops-set5",
+ "gain_tools_sha256": {
+  "classify.py": "4ac14b3f3605c2a6dff2550736cf5ce1d17c7124ecd001400a723e742279d485",
+  "gainmeasure.py": "b4d097f0e2f1f94bda9c3d283515fd64bdcf42e96b85d0386f4cea4ff13286ad"
+ },
+ "rules": {
+  "same_take": "waveform test (>= 80% of 20-s windows in step, median peak-to-sidelobe >= 2.0), as sets 3 and 4; every DI tested against every electric-guitar track of its session",
+  "min_passing_waveform_windows": 3,
+  "clipped_di_runs": 10,
+  "two_lag_clusters": "inventory flag 'lag ambiguous'",
+  "other_exclusions": "a modeller (Pod/GR4) as the reference; an amp track that belongs to another DI",
+  "reference_choice": "set 4's AMP_PREFERENCE among the amp tracks the names declare; else the passing track",
+  "split": "every band held out: no draw, no folds",
+  "scope": {
+   "in_scope": [
+    "clean",
+    "crunch"
+   ],
+   "report_only": [
+    "high-gain"
+   ],
+   "rule": "a part's session-level gain_class: clean and crunch parts are in scope; high-gain parts are reported, never counted in a set-5 decision (docs/ROADMAP scope: no heavy metal)"
+  },
+  "crop": "crop rule 2 ('di-activity'), 10 s, 48 kHz mono, docs/validation-datasets.md",
+  "judge_lag": "lag_samples - 52 (48 kHz)",
+  "lag_sign": "positive when the amp track is later than the DI",
+  "band_weighting": "recommended as set 3's amendment (4): each band's parts weigh 1/n; a confirmation plan adopts or overrides it explicitly"
+ },
+ "held_out_bands": [
+  "BKS",
+  "Chris Durban",
+  "Fytakyte",
+  "Hannes Keseberg",
+  "Hazael",
+  "Jeff Hirata",
+  "MOPP",
+  "Nova-One Studio",
+  "Peter White",
+  "Ronnie Jones",
+  "Saturn Syndicate",
+  "The Ferryboat Men"
+ ],
+ "band_strata": {
+  "BKS": "crunch",
+  "Fytakyte": "crunch",
+  "Hazael": "clean",
+  "Nova-One Studio": "high-gain",
+  "Ronnie Jones": "clean",
+  "Saturn Syndicate": "crunch",
+  "The Ferryboat Men": "crunch"
+ },
+ "licences": {
+  "cambridge": "Cambridge-MT 'Mixing Secrets' multitrack library: provided for educational purposes only; not to be used for any commercial purpose without the express permission of the copyright holders (each session's Readme.txt). https://cambridge-mt.com/ms/mtk/",
+  "hf-rawstems": "Third-party re-host of the same library: Hugging Face dataset kwatcharasupat/mixing-secrets-rawstems, pinned at revision b482eb2e31aa15ff10489b3b23871a1e7a109198. Dataset card: 'strictly ... only for non-commercial research and educational purposes'. Not the publisher's bytes: 48 kHz stereo FLAC with identical channels, renamed, tracks trimmed to different lengths."
+ },
+ "unpaired": [
+  {
+   "session": "cambridge/Hazael_AMiLado_Full",
+   "track": "21_ElecGtr4.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Hazael_AMiLado_Full",
+   "track": "22_ElecGtr5.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/Hazael_AMiLado_Full",
+   "track": "23_ElecGtr6.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/MR0905_ChrisDurban_Full",
+   "track": "16_ElecGtr1a.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/MR0905_ChrisDurban_Full",
+   "track": "17_ElecGtr1bFX.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/MR0905_ChrisDurban_Full",
+   "track": "18_ElecGtr2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/BKS_TooMuch_Full",
+   "track": "38_ElecGtrRevFX.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/NovaOneStudio_FourGraham_Full",
+   "track": "16_ElecGtr07.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/NovaOneStudio_FourGraham_Full",
+   "track": "18_ElecGtr09.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "10_ElecGtr1.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "12_ElecGtr1DT1.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "14_ElecGtr1DT2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "16_ElecGtr1DT3.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "18_ElecGtr1DT4.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/PeterWhite_CrazyGirl_Full",
+   "track": "20_ElecGtr3.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "track": "17_ElecGtr1.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "track": "18_ElecGtr2.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "37_ElecGtr05.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "38_ElecGtr05DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "39_ElecGtr06.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "40_ElecGtr06DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "41_ElecGtr07.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "42_ElecGtr07DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "43_ElecGtr08.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "44_ElecGtr08DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "45_ElecGtr09.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "46_ElecGtr09DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "47_ElecGtr10.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "48_ElecGtr10DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "49_ElecGtr11.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "track": "50_ElecGtr11DT.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Fytakyte - Too_Much",
+   "track": "19_ElecGtr1.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Fytakyte - Too_Much",
+   "track": "24_ElecGtr4.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Fytakyte - Too_Much",
+   "track": "25_ElecGtr5.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Fytakyte - Too_Much",
+   "track": "27_ElecGtr7.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/Fytakyte - Too_Much",
+   "track": "28_ElecGtrSFX.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "17_ElecGtr1Mic1.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "18_ElecGtr1Mic2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "19_ElecGtr1Mic3.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "21_ElecGtr3Mic1.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "22_ElecGtr3Mic2.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "track": "23_ElecGtr3Mic3.wav",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/MOPP - Ukraina",
+   "track": "13_ElecGtr2.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/MOPP - Ukraina",
+   "track": "14_ElecGtr3.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/MOPP - Ukraina",
+   "track": "15_ElecGtr4.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/MOPP - Ukraina",
+   "track": "16_ElecGtr5.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  },
+  {
+   "session": "hf-rawstems/MOPP - Ukraina",
+   "track": "17_ElecGtr6.flac",
+   "reason": "guitar amp/microphone track with no DI"
+  }
+ ],
+ "counts": {
+  "declared_parts": 59,
+  "excluded": 28,
+  "kept": 31,
+  "kept_tones": 30,
+  "in_scope": 26,
+  "report_only": 5,
+  "by_band": {
+   "BKS": 9,
+   "Fytakyte": 1,
+   "Hazael": 4,
+   "Nova-One Studio": 4,
+   "Ronnie Jones": 9,
+   "Saturn Syndicate": 3,
+   "The Ferryboat Men": 1
+  },
+  "by_band_tones": {
+   "BKS": 9,
+   "Fytakyte": 1,
+   "Hazael": 4,
+   "Nova-One Studio": 4,
+   "Ronnie Jones": 9,
+   "Saturn Syndicate": 2,
+   "The Ferryboat Men": 1
+  },
+  "by_gain_class": {
+   "clean": 16,
+   "crunch": 10,
+   "high-gain": 5
+  },
+  "by_band_gain_class": {
+   "BKS/clean": 4,
+   "BKS/crunch": 5,
+   "Fytakyte/crunch": 1,
+   "Hazael/clean": 4,
+   "Nova-One Studio/high-gain": 4,
+   "Ronnie Jones/clean": 8,
+   "Ronnie Jones/crunch": 1,
+   "Saturn Syndicate/crunch": 2,
+   "Saturn Syndicate/high-gain": 1,
+   "The Ferryboat Men/crunch": 1
+  },
+  "by_gain_class_crop": {
+   "clean": 16,
+   "crunch": 8,
+   "high-gain": 7
+  },
+  "by_source": {
+   "cambridge": 29,
+   "hf-rawstems": 2
+  },
+  "mix_absent": 23,
+  "onset_check": {
+   "agrees": 28,
+   "unclear": 3
+  }
+ },
+ "sessions": [
+  {
+   "key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "source": "cambridge",
+   "path": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full",
+   "route": "direct",
+   "genre_by_library": "indie singer-songwriter",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK012/RonnieJones_WhyDontYouStay_Full.zip",
+   "archive_sha256": "d68244982cee6c59ec3c3594f951307bc856f9fcdd31ca40f8ad413e7c65c040",
+   "archive_bytes": 769524608,
+   "wayback_capture": null,
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 9,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/10_ElecGtr01DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/12_ElecGtr02DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/15_ElecGtr03DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/17_ElecGtr04DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/19_ElecGtr05DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr06",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/21_ElecGtr06DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr07",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/24_ElecGtr07DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr08",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/27_ElecGtr08DI.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr09",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/29_ElecGtr09DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr10",
+     "di": "Ronnie Jones - Why Don't You Stay/RonnieJones_WhyDontYouStay_Full/31_ElecGtr10DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/Hazael_AMiLado_Full",
+   "band": "Hazael",
+   "song": "A Mi Lado",
+   "source": "cambridge",
+   "path": "Hazael - A Mi Lado/Hazael_AMiLado_Full",
+   "route": "direct",
+   "genre_by_library": "various styles",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK023/Hazael_AMiLado_Full.zip",
+   "archive_sha256": "4666ddf4235bacacf8521e7503449b94d18a612ef9e37bcee59d892edbc3ec0a",
+   "archive_bytes": 380132225,
+   "wayback_capture": null,
+   "unpacked": "all",
+   "mix_on_disk": true,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Hazael - A Mi Lado/Hazael_AMiLado_Full/16_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Hazael - A Mi Lado/Hazael_AMiLado_Full/18_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "Hazael - A Mi Lado/Hazael_AMiLado_Full/20_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/Hazael_ResistenciaParaUnNuevoComenzar_Full",
+   "band": "Hazael",
+   "song": "Resistencia Para Un Nuevo Comenzar",
+   "source": "cambridge",
+   "path": "Hazael - Resistencia Para Un Nuevo Comenzar/Hazael_ResistenciaParaUnNuevoComenzar_Full",
+   "route": "direct",
+   "genre_by_library": "rock (170 bpm)",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK022/Hazael_ResistenciaParaUnNuevoComenzar_Full.zip",
+   "archive_sha256": "b1df9693135123e5a18d22af72bb2b4ed7ce2a9fff05ec60c9e47ea4400ab7ae",
+   "archive_bytes": 381582670,
+   "wayback_capture": null,
+   "unpacked": "all",
+   "mix_on_disk": true,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Hazael - Resistencia Para Un Nuevo Comenzar/Hazael_ResistenciaParaUnNuevoComenzar_Full/12_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Hazael - Resistencia Para Un Nuevo Comenzar/Hazael_ResistenciaParaUnNuevoComenzar_Full/15_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/MR0905_ChrisDurban_Full",
+   "band": "Chris Durban",
+   "song": "Celebrate",
+   "source": "cambridge",
+   "path": "Chris Durban - Celebrate/MR0905_ChrisDurban_Full",
+   "route": "direct",
+   "genre_by_library": "break-based dance",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK001/MR0905_ChrisDurban_Full.zip",
+   "archive_sha256": "4349596a949257a769e5ba4a0cd20d3e4acdc39a4b6c8011a65be25fd9bf5645",
+   "archive_bytes": 667818007,
+   "wayback_capture": null,
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0,
+   "dis": [
+    {
+     "part": "ElecGtr3a",
+     "di": "Chris Durban - Celebrate/MR0905_ChrisDurban_Full/19_ElecGtr3aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/BKS_TooMuch_Full",
+   "band": "BKS",
+   "song": "Too Much",
+   "source": "cambridge",
+   "path": "BKS - Too Much/BKS_TooMuch_Full",
+   "route": "direct",
+   "genre_by_library": "rock",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK003/BKS_TooMuch_Full.zip",
+   "archive_sha256": "ddc52a665cafd9d53dc2ad0e5b3fa4d1675a55f95ac7fe398ef49326c0c2c61b",
+   "archive_bytes": 730840954,
+   "wayback_capture": null,
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": "BKS is no longer on the Cambridge library page (present on the 2017 page); files still served",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 4,
+   "dis": [
+    {
+     "part": "ElecGtr1a",
+     "di": "BKS - Too Much/BKS_TooMuch_Full/16_ElecGtr1aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2a",
+     "di": "BKS - Too Much/BKS_TooMuch_Full/20_ElecGtr2aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3a",
+     "di": "BKS - Too Much/BKS_TooMuch_Full/24_ElecGtr3aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4a",
+     "di": "BKS - Too Much/BKS_TooMuch_Full/28_ElecGtr4aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5a",
+     "di": "BKS - Too Much/BKS_TooMuch_Full/32_ElecGtr5aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/BKS_Bulldozer_Full",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "source": "cambridge",
+   "path": "BKS - Bulldozer/BKS_Bulldozer_Full",
+   "route": "direct",
+   "genre_by_library": "rock",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK003/BKS_Bulldozer_Full.zip",
+   "archive_sha256": "2956471b9226a39bd87684e6967e6e80033703208e5737a4d48fc390777fa8b7",
+   "archive_bytes": 926048243,
+   "wayback_capture": null,
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": "BKS is no longer on the Cambridge library page (present on the 2017 page); files still served",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 5,
+   "dis": [
+    {
+     "part": "ElecGtr1a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/22_ElecGtr2aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/26_ElecGtr3aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/28_ElecGtr4aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr5a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/31_ElecGtr5aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr6a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/34_ElecGtr6aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr7a",
+     "di": "BKS - Bulldozer/BKS_Bulldozer_Full/36_ElecGtr7aDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "source": "cambridge",
+   "path": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "route": "wayback",
+   "genre_by_library": "retro pop",
+   "publisher_original": true,
+   "url": "https://web.archive.org/web/20241217203914id_/https://multitracks.cambridge-mt.com/SaturnSyndicate_NeverLeaveTheNightAlone_Full.zip",
+   "archive_sha256": "9ce619cdfcfe1435a5881975b1ebc5f82241aa09a9a788431021281851e0689e",
+   "archive_bytes": 520010206,
+   "wayback_capture": "20241217203914",
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": "publisher file via an Internet Archive capture (20241217203914); bytes as captured",
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 3,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/22_ElecGtr1DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr1DT",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/24_ElecGtr1DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/26_ElecGtr2DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/28_ElecGtr3DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3DT",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/30_ElecGtr3DTDI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "Saturn Syndicate - Never Leave The Night Alone/SaturnSyndicate_NeverLeaveTheNightAlone_Full/32_ElecGtr4DI.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "source": "cambridge",
+   "path": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full",
+   "route": "direct",
+   "genre_by_library": "pop-punk",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK011/NovaOneStudio_FourGraham_Full.zip",
+   "archive_sha256": "1a8ba3a8f83914813f82b5682f2be12f0505990af3b0fb4c6d203cd9f747e1fa",
+   "archive_bytes": 317393022,
+   "wayback_capture": null,
+   "unpacked": "all",
+   "mix_on_disk": true,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 4,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full/20_ElecGtrDI01.wav",
+     "di_clip_runs": 4,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full/21_ElecGtrDI02.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full/22_ElecGtrDI03.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full/23_ElecGtrDI04.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr05",
+     "di": "Nova-One Studio - Four Graham/NovaOneStudio_FourGraham_Full/24_ElecGtrDI05.wav",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "path": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full",
+   "route": "direct",
+   "genre_by_library": "blues",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK020/PeterWhite_CrazyGirl_Full.zip",
+   "archive_sha256": "e566c4b7bf556de609790dcb8c0dcc59291e99af9da44e81904bb179e9d103f3",
+   "archive_bytes": 512886805,
+   "wayback_capture": null,
+   "unpacked": "all",
+   "mix_on_disk": true,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0,
+   "dis": [
+    {
+     "part": "ElecGtr2",
+     "di": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full/11_ElecGtr2DI.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT1",
+     "di": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full/13_ElecGtr2DIDT1.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT2",
+     "di": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full/15_ElecGtr2DIDT2.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT3",
+     "di": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full/17_ElecGtr2DIDT3.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr2DT4",
+     "di": "Peter White - Crazy Girl/PeterWhite_CrazyGirl_Full/19_ElecGtr2DIDT4.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "band": "The Ferryboat Men",
+   "song": "The Winds Of Gypsy Moor",
+   "source": "hf-rawstems",
+   "path": "The Ferryboat Men - The Winds Of Gypsy Moor/Gtr_EG",
+   "route": "huggingface-rehost",
+   "genre_by_library": "indie folk-rock",
+   "publisher_original": false,
+   "hf_repo": "kwatcharasupat/mixing-secrets-rawstems",
+   "revision": "b482eb2e31aa15ff10489b3b23871a1e7a109198",
+   "song_dir": "dev/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "files_fetched": [
+    {
+     "file": "17_ElecGtr1.flac",
+     "sha256": "4be74e049b555f1b74e29b48f1a0a597ba5f1381cad12b4db6f85d5e3bd6eaa7"
+    },
+    {
+     "file": "18_ElecGtr2.flac",
+     "sha256": "3b64694beedb7cc92115fb484e64fba2f90342a08fcc4d3cca96be7ea78abef5"
+    },
+    {
+     "file": "19_ElecGtr3.flac",
+     "sha256": "244ca0b0343e4217140aaf82ea4fad99d4956208a9034cd4573bef3f7bb5f3cf"
+    },
+    {
+     "file": "20_ElecGtr3DI.flac",
+     "sha256": "b24eb2e5657b9665cce8912e6258f1b88c5663a015cef20e1b76770f8adb232d"
+    },
+    {
+     "file": "21_ElecGtr4.flac",
+     "sha256": "19441ba43b77f27fcfedcc2ae4b7ab01c0331c869c1dfc1fdd7ebfa5333be2ac"
+    },
+    {
+     "file": "22_ElecGtr4DI.flac",
+     "sha256": "b4b90406f27e48036492260638cff166f43b6d7b861c0dbebf6dc79f7ac7978d"
+    },
+    {
+     "file": "23_ElecGtr4DT.flac",
+     "sha256": "c35f0c19934b262b108360f003ba7224ffe7c82213bf2ebb57f54a8b9fed72de"
+    },
+    {
+     "file": "24_ElecGtr4DTDI.flac",
+     "sha256": "d99b2f0b9bed553bc33fdf0a6447747965d323dfd353f1dc985c7623ad4ecb09"
+    }
+   ],
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1,
+   "dis": [
+    {
+     "part": "ElecGtr3",
+     "di": "The Ferryboat Men - The Winds Of Gypsy Moor/Gtr_EG/20_ElecGtr3DI.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4",
+     "di": "The Ferryboat Men - The Winds Of Gypsy Moor/Gtr_EG/22_ElecGtr4DI.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr4DT",
+     "di": "The Ferryboat Men - The Winds Of Gypsy Moor/Gtr_EG/24_ElecGtr4DTDI.flac",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "path": "Jeff Hirata - Sunshine/Gtr_EG",
+   "route": "huggingface-rehost",
+   "genre_by_library": "pop/rock",
+   "publisher_original": false,
+   "hf_repo": "kwatcharasupat/mixing-secrets-rawstems",
+   "revision": "b482eb2e31aa15ff10489b3b23871a1e7a109198",
+   "song_dir": "dev/Jeff_Hirata - Sunshine",
+   "files_fetched": [
+    {
+     "file": "29_ElecGtr01.flac",
+     "sha256": "01b2623a9d651318b9d046d55f4a2ad601fd32b48920c6cf2445dc770d9f39b5"
+    },
+    {
+     "file": "30_ElecGtr01DT.flac",
+     "sha256": "c292005bf6e766caac5f1bfa9cd5b8f234ff65f20d183eb6da805033c0b5e66c"
+    },
+    {
+     "file": "31_ElecGtr02.flac",
+     "sha256": "d67dda9b58cc4daba932bf92fb2654e15828e6929e80ae94920ac6e21fcae21c"
+    },
+    {
+     "file": "32_ElecGtr02DT.flac",
+     "sha256": "c705501e33a0706cffc009b11d856ddc5c473f53a0184842567ea928bed423f5"
+    },
+    {
+     "file": "33_ElecGtr03.flac",
+     "sha256": "6f08b5dc8353a4e3bdbe8d9462828843385715f8388908f97f866d93041bb728"
+    },
+    {
+     "file": "34_ElecGtr03DT.flac",
+     "sha256": "3d220815e72facd96529ae749ff5efd5a5de688215dff21342ba2e2f061c95e3"
+    },
+    {
+     "file": "35_ElecGtr04.flac",
+     "sha256": "03c9a583fc9112d0f3036723d67848d06d2d5116375d1ef4a27d050da4fde737"
+    },
+    {
+     "file": "36_ElecGtr04DT.flac",
+     "sha256": "dbd2411b700ba505a950ea638f710f3572b7c23775ff7a017b7e20d452455fbb"
+    },
+    {
+     "file": "37_ElecGtr05.flac",
+     "sha256": "6cf04ff9d5ad0f44b359737b2d031604ef71ef35bad211a91407832abbdd9abf"
+    },
+    {
+     "file": "38_ElecGtr05DT.flac",
+     "sha256": "93f7004a7f990f149a0a5a906c47ac1c355373c92a8ee3578bf50d862a905d8d"
+    },
+    {
+     "file": "39_ElecGtr06.flac",
+     "sha256": "30c55597e863b3bdce9b72a181c5f1370ad7691fc8cf908d3a2205dc5734f555"
+    },
+    {
+     "file": "40_ElecGtr06DT.flac",
+     "sha256": "4dfa44f8674376a7cddc094b7e00e8eed9c4b582ca1b976ef58b0bf179117d69"
+    },
+    {
+     "file": "41_ElecGtr07.flac",
+     "sha256": "b8f4dded1a0ec44effd75877eb187a2e950758eaa2697ea6b3de337c8e18b630"
+    },
+    {
+     "file": "42_ElecGtr07DT.flac",
+     "sha256": "fdc5fde6ec6a5af8381f2fd114c0c0e55ad03594c9d6de254c807db064df6762"
+    },
+    {
+     "file": "43_ElecGtr08.flac",
+     "sha256": "c9280f38c275c34e4a5d19a748bc1e06edcc54e056fdaf6108a07c3bf36cf953"
+    },
+    {
+     "file": "44_ElecGtr08DT.flac",
+     "sha256": "e71d5d9ddfd3cd086fef6cc3223f9080843d7823590780b36ef3078815912517"
+    },
+    {
+     "file": "45_ElecGtr09.flac",
+     "sha256": "28a34606290b53500cc8bb86d9bfe1b2c346699dc47df7fcefefade2f8c1862e"
+    },
+    {
+     "file": "46_ElecGtr09DT.flac",
+     "sha256": "96c346e647f69979a7674c35a2935fbca8a86f32444a70744199f9703662b7a4"
+    },
+    {
+     "file": "47_ElecGtr10.flac",
+     "sha256": "4b1a5fda419cd59ff68fc818562843dd39b38ffec66e9697644c83cd2e04a842"
+    },
+    {
+     "file": "48_ElecGtr10DT.flac",
+     "sha256": "4f1788fd4fd1f38ca2484753acf3b387498cc05171ca689bb131552b287ee75a"
+    },
+    {
+     "file": "49_ElecGtr11.flac",
+     "sha256": "523594bf69c5a9ae334c2d652317cf549351d5d410b7345ea8172417645cdf8a"
+    },
+    {
+     "file": "50_ElecGtr11DT.flac",
+     "sha256": "803ef3d8e263c3cd5ef2bad880ced879902a3b08b94ca4b210179e2e4c2cfa48"
+    },
+    {
+     "file": "51_ElecGtrDI01.flac",
+     "sha256": "71ec51c6caa019ffdb1d3cb8bfcf693e640797a1904e1bf913bb5c60d75e2899"
+    },
+    {
+     "file": "52_ElecGtrDI01DT.flac",
+     "sha256": "9c256201c7d4e0f23fe461e3e3b8691d3b60ed139586eca15478c60221f1aa88"
+    },
+    {
+     "file": "53_ElecGtrDI02.flac",
+     "sha256": "636c433370d2d53deadc59092c1b3641de1144e7b7ca1821d620daf350d3ebd9"
+    },
+    {
+     "file": "54_ElecGtrDI02DT.flac",
+     "sha256": "534c9aeab7aa6181ee2bf1e60794fc1e025c7ea4a3eaab36c49394f96308df5a"
+    },
+    {
+     "file": "55_ElecGtrDI03.flac",
+     "sha256": "0ddd720280d2b52ca25126a430ac80cd5221b59c06cb5a923ba948d2dd3f2ccc"
+    },
+    {
+     "file": "56_ElecGtrDI03DT.flac",
+     "sha256": "e9eb425914e98c4c6cf6b62bd874711c1fcac8bc0c9fdc1944d52772aa019e56"
+    },
+    {
+     "file": "57_ElecGtrDI04.flac",
+     "sha256": "23c4df252ae1596896508083de1c8aa66553c706bc81c8149f0b6f68565e8e89"
+    },
+    {
+     "file": "58_ElecGtrDI04DT.flac",
+     "sha256": "49557c50bf009573626c4bb663abd13be4145d64c1c7b9512da68ccf73e669d6"
+    }
+   ],
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0,
+   "dis": [
+    {
+     "part": "ElecGtr01",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/51_ElecGtrDI01.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr01DT",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/52_ElecGtrDI01DT.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/53_ElecGtrDI02.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr02DT",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/54_ElecGtrDI02DT.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/55_ElecGtrDI03.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr03DT",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/56_ElecGtrDI03DT.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/57_ElecGtrDI04.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr04DT",
+     "di": "Jeff Hirata - Sunshine/Gtr_EG/58_ElecGtrDI04DT.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "hf-rawstems/Fytakyte - Too_Much",
+   "band": "Fytakyte",
+   "song": "Too Much",
+   "source": "hf-rawstems",
+   "path": "Fytakyte - Too Much/Gtr_EG",
+   "route": "huggingface-rehost",
+   "genre_by_library": "modern melodic rock",
+   "publisher_original": false,
+   "hf_repo": "kwatcharasupat/mixing-secrets-rawstems",
+   "revision": "b482eb2e31aa15ff10489b3b23871a1e7a109198",
+   "song_dir": "dev/Fytakyte - Too_Much",
+   "files_fetched": [
+    {
+     "file": "19_ElecGtr1.flac",
+     "sha256": "1312e8f484819a3996bfd2d2eb5bfd1da558305aaa2cc1ca77496fb4b431b261"
+    },
+    {
+     "file": "20_ElecGtr2.flac",
+     "sha256": "b507bbbcdec6e4f46c2b959400863ce4de315728d042be7d78c16778488b92d7"
+    },
+    {
+     "file": "21_ElecGtr2DI.flac",
+     "sha256": "3fe5cb38525354816ab9d2d55d4d00b0a1e1e1e13ed958b64cb22b37f3bb2f4f"
+    },
+    {
+     "file": "22_ElecGtr3.flac",
+     "sha256": "94ccc9e8c7462e6c0fccf8fe5fbbe573bd7ff97488de5e6fa7adf1eefede127b"
+    },
+    {
+     "file": "23_ElecGtr3DI.flac",
+     "sha256": "623ab98e44794a68b11302120737e80e1ae2322e2143c8aa38932acfce0e17f1"
+    },
+    {
+     "file": "24_ElecGtr4.flac",
+     "sha256": "5c9856212b4cfb948a5a21274174011bdfba607d4760d668a97e1d50127c29da"
+    },
+    {
+     "file": "25_ElecGtr5.flac",
+     "sha256": "1a5838913fbe4eef35be85b0310b964fed7ed3b7a8425d4ba5a4287a7eca0c79"
+    },
+    {
+     "file": "26_ElecGtr6.flac",
+     "sha256": "0d2ea1bd9d8d7d2d18bb758f9cd4d4b765d17d248a605fd971ad7c39e8674ab2"
+    },
+    {
+     "file": "27_ElecGtr7.flac",
+     "sha256": "f90956903bb5a19cdb6a4c731c7c3480d1c1c0d6bb4b6b593f22b48f85e83b4d"
+    },
+    {
+     "file": "28_ElecGtrSFX.flac",
+     "sha256": "e16013fe27af331a978daf91e13fb88443034f92b507eca2cf89ac23748ceb63"
+    }
+   ],
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 1,
+   "dis": [
+    {
+     "part": "ElecGtr2",
+     "di": "Fytakyte - Too Much/Gtr_EG/21_ElecGtr2DI.flac",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "ElecGtr3",
+     "di": "Fytakyte - Too Much/Gtr_EG/23_ElecGtr3DI.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "band": "Hannes Keseberg",
+   "song": "You Know Better",
+   "source": "cambridge",
+   "path": "Hannes Keseberg - You Know Better/HannesKeseberg_YouKnowBetter_Full",
+   "route": "direct",
+   "genre_by_library": "pop/reggae singer-songwriter",
+   "publisher_original": true,
+   "url": "https://mtkdata.cambridgemusictechnology.co.uk/MTK016/HannesKeseberg_YouKnowBetter_Full.zip",
+   "archive_sha256": "ab2d8bd61a942028a27453e63317635addd293d4270c1cb7193b55871c473141",
+   "archive_bytes": 501831152,
+   "wayback_capture": null,
+   "unpacked": "guitar_and_text_only",
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0,
+   "dis": [
+    {
+     "part": "ElecGtr2",
+     "di": "Hannes Keseberg - You Know Better/HannesKeseberg_YouKnowBetter_Full/20_ElecGtr2DI.wav",
+     "di_clip_runs": null,
+     "clipped": false
+    }
+   ]
+  },
+  {
+   "key": "hf-rawstems/MOPP - Ukraina",
+   "band": "MOPP",
+   "song": "Ukraina",
+   "source": "hf-rawstems",
+   "path": "MOPP - Ukraina/Gtr_EG",
+   "route": "huggingface-rehost",
+   "genre_by_library": "MOR rock",
+   "publisher_original": false,
+   "hf_repo": "kwatcharasupat/mixing-secrets-rawstems",
+   "revision": "b482eb2e31aa15ff10489b3b23871a1e7a109198",
+   "song_dir": "dev/MOPP - Ukraina",
+   "files_fetched": [
+    {
+     "file": "12_ElecGtr1DI.flac",
+     "sha256": "dba88e02685f29effa27f5e1acda720e33776a0297051fa8670be3ab4ef65907"
+    },
+    {
+     "file": "13_ElecGtr2.flac",
+     "sha256": "8a60035ef029b5cd4950deffe720079771cd4b862463d6d00382673d7f0f4fa5"
+    },
+    {
+     "file": "14_ElecGtr3.flac",
+     "sha256": "1a636cc30b5e2bee3c34d6ab05fbbd9d0ddaaedc013ba4b32a3aae5e44df0fa5"
+    },
+    {
+     "file": "15_ElecGtr4.flac",
+     "sha256": "12bf44e42de30e8d8fbae1cc12c5b5e8f400fb1a708f776491d475c2376f21c9"
+    },
+    {
+     "file": "16_ElecGtr5.flac",
+     "sha256": "ecc9f0d029bf22a2fce1c6621c15a2f64e8a24daf4b781b28c4cd879755a57b2"
+    },
+    {
+     "file": "17_ElecGtr6.flac",
+     "sha256": "86550de74c896db07fb11627bdc3cc123c7f40bc1c3b166b658869cc76940102"
+    }
+   ],
+   "mix_on_disk": false,
+   "licence_extra": null,
+   "split": "held_out",
+   "fold": null,
+   "kept_parts": 0,
+   "dis": [
+    {
+     "part": "ElecGtr1",
+     "di": "MOPP - Ukraina/Gtr_EG/12_ElecGtr1DI.flac",
+     "di_clip_runs": null,
+     "clipped": false
+    }
+   ]
+  }
+ ],
+ "parts": [
+  {
+   "slug": "cambridge-bulldozer-elecgtr1a",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "part": "ElecGtr1a",
+   "tone": "ElecGtr1a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.976,
+   "nonlinear_to_linear_db": -3.84,
+   "lag_samples": 34,
+   "judge_lag_samples": -18,
+   "lag_samples_native": 31,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "21_ElecGtr1cReamp.wav",
+   "alternates": [
+    "20_ElecGtr1bGR4.wav",
+    "35_ElecGtr6bGR4.wav"
+   ],
+   "di": "19_ElecGtr1aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 9.781,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Bulldozer.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Bulldozer'].parts[part='ElecGtr1a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.21
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 122.0,
+    "di_activity": 0.9872,
+    "mix_absent": true,
+    "di_sha256": "56993bf7495b8d00385c7687912074f95c1f9670b948fc41265f6f922c2590df",
+    "reference_sha256": "d039ead3ad3aa86aa00dfe27845f2944fb87278c07f5388984adaebf32ba5dd8",
+    "record_sha256": "b3b4982356ffe555a754a472e90f5a74846a3aa7b3c03fa9eccc643e86998bd7"
+   }
+  },
+  {
+   "slug": "cambridge-bulldozer-elecgtr2a",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "part": "ElecGtr2a",
+   "tone": "ElecGtr2a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.339,
+   "nonlinear_to_linear_db": 0.18,
+   "lag_samples": 35,
+   "judge_lag_samples": -17,
+   "lag_samples_native": 32,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "24_ElecGtr2cReamp1.wav",
+   "alternates": [
+    "23_ElecGtr2bGR4.wav",
+    "25_ElecGtr2dReamp2.wav"
+   ],
+   "di": "22_ElecGtr2aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 16,
+    "passing_windows": 16,
+    "median_peak_to_sidelobe": 9.9,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Bulldozer.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Bulldozer'].parts[part='ElecGtr2a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.281
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 320.0,
+    "di_activity": 0.9979,
+    "mix_absent": true,
+    "di_sha256": "7f880564ec6d0ea592a4524ade6dbe805d912bc745a137636ec8884757cd7707",
+    "reference_sha256": "f1153c1557846a70b97834f6e5a99775cb4307d75856041c3323300f530b7cdb",
+    "record_sha256": "70118cdfddba2444d012b3036d187bac6c9710d4b47b64815931b6e3abc5e7e6"
+   }
+  },
+  {
+   "slug": "cambridge-bulldozer-elecgtr4a",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "part": "ElecGtr4a",
+   "tone": "ElecGtr4a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.417,
+   "nonlinear_to_linear_db": 1.83,
+   "lag_samples": 36,
+   "judge_lag_samples": -16,
+   "lag_samples_native": 33,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "30_ElecGtr4cReamp.wav",
+   "alternates": [
+    "29_ElecGtr4bGR4.wav"
+   ],
+   "di": "28_ElecGtr4aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 6.862,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Bulldozer.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Bulldozer'].parts[part='ElecGtr4a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.668
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 72.0,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "bf3b6abb45937dd58239f7ee9f945652a1ea1cff16d44ddf58ce66da49600750",
+    "reference_sha256": "85176c94753479fa588c57b26da4f3ae8bf8f2179bf81cd82adb1af66ecdc1bf",
+    "record_sha256": "dd44912712bdfff2d6f1b1d0130feb3ebc6eccc788a1c2fdc9a459f33e3f4d9c"
+   }
+  },
+  {
+   "slug": "cambridge-bulldozer-elecgtr5a",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "part": "ElecGtr5a",
+   "tone": "ElecGtr5a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.348,
+   "nonlinear_to_linear_db": -0.26,
+   "lag_samples": 26,
+   "judge_lag_samples": -26,
+   "lag_samples_native": 24,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "33_ElecGtr5cReamp.wav",
+   "alternates": [
+    "32_ElecGtr5bGR4.wav"
+   ],
+   "di": "31_ElecGtr5aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 11.395,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Bulldozer.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Bulldozer'].parts[part='ElecGtr5a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 24,
+    "runner_up": 0.413
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 73.0,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "386837d923c5ba9caa26a5dca6b77753aead98f187358ac8734b4d228400ffec",
+    "reference_sha256": "d3c1dba23377591328b559ece163c464fb04209ffca3e816d1e55fb52d6be862",
+    "record_sha256": "65a6da9b187240c2d0d1489f50f257d726979009784a0db15fe422cdc04bba04"
+   }
+  },
+  {
+   "slug": "cambridge-bulldozer-elecgtr7a",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "part": "ElecGtr7a",
+   "tone": "ElecGtr7a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.305,
+   "nonlinear_to_linear_db": -0.29,
+   "lag_samples": 28,
+   "judge_lag_samples": -24,
+   "lag_samples_native": 26,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "39_ElecGtr7dReamp2.wav",
+   "alternates": [
+    "37_ElecGtr7bGR4.wav",
+    "38_ElecGtr7cReamp1.wav",
+    "40_ElecGtr7eReamp3.wav"
+   ],
+   "di": "36_ElecGtr7aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 5,
+    "passing_windows": 5,
+    "median_peak_to_sidelobe": 9.263,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Bulldozer.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Bulldozer'].parts[part='ElecGtr7a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 24,
+    "runner_up": 0.628
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 223.5,
+    "di_activity": 0.9979,
+    "mix_absent": true,
+    "di_sha256": "705abd322931d4cb57cfd373dc1d11a28ea6e7e57ac8a92f5f061145002e8a05",
+    "reference_sha256": "e8c7dd8213adcb7c22ee927b8a65ba23a768da76a99bb5ef0ea356aab80b09c1",
+    "record_sha256": "483cfc304d872bfc20731940c1be083ac0d49a601f9625512ac5af8cba435556"
+   }
+  },
+  {
+   "slug": "cambridge-too-much-elecgtr1a",
+   "band": "BKS",
+   "song": "Too Much",
+   "part": "ElecGtr1a",
+   "tone": "ElecGtr1a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_TooMuch_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.83,
+   "nonlinear_to_linear_db": -10.35,
+   "lag_samples": 150,
+   "judge_lag_samples": 98,
+   "lag_samples_native": 138,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "18_ElecGtr1cReamp1.wav",
+   "alternates": [
+    "17_ElecGtr1bPod.wav",
+    "19_ElecGtr1dReamp2.wav"
+   ],
+   "di": "16_ElecGtr1aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 20,
+    "passing_windows": 20,
+    "median_peak_to_sidelobe": 3.873,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Too Much.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Too Much'].parts[part='ElecGtr1a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 148,
+    "runner_up": 0.733
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 74.0,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "6d0956fe3d6ade2c925b8dd466c66d1aa7289d5748021c5f7fdedb809e1bcfe6",
+    "reference_sha256": "ed9356af3825d0cf55bbf355a017d427b054dce1f0e5ea5f5f7ff7342146ccb5",
+    "record_sha256": "f3b4f58d5a0b9337ff8b6c3050ddffb16b5a76d3a101aec60e1c54c7501476ab"
+   }
+  },
+  {
+   "slug": "cambridge-too-much-elecgtr2a",
+   "band": "BKS",
+   "song": "Too Much",
+   "part": "ElecGtr2a",
+   "tone": "ElecGtr2a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_TooMuch_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary",
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.504,
+   "nonlinear_to_linear_db": -7.02,
+   "lag_samples": 147,
+   "judge_lag_samples": 95,
+   "lag_samples_native": 135,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "22_ElecGtr2cReamp1.wav",
+   "alternates": [
+    "21_ElecGtr2bPod.wav",
+    "23_ElecGtr2dReamp2.wav"
+   ],
+   "di": "20_ElecGtr2aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 4.69,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Too Much.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Too Much'].parts[part='ElecGtr2a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 140,
+    "runner_up": 0.769
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 71.0,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "9361ef76d0eb473a65ce4f7072f0e08ec4cd10bcfcf6121cb5f76967e31c1cbc",
+    "reference_sha256": "c45a80dee12dac6a9f8b2c7fb9851f4be3d01374e7180b056741dd01d4d66cf4",
+    "record_sha256": "e97ee57dd3fd7bcd85827bf2caf1f04f55923d45fff782a1abadc32379948f99"
+   }
+  },
+  {
+   "slug": "cambridge-too-much-elecgtr3a",
+   "band": "BKS",
+   "song": "Too Much",
+   "part": "ElecGtr3a",
+   "tone": "ElecGtr3a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_TooMuch_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 1.145,
+   "nonlinear_to_linear_db": -12.26,
+   "lag_samples": 177,
+   "judge_lag_samples": 125,
+   "lag_samples_native": 163,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "26_ElecGtr3cReamp1.wav",
+   "alternates": [
+    "25_ElecGtr3bPod.wav",
+    "27_ElecGtr3dReamp2.wav"
+   ],
+   "di": "24_ElecGtr3aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 9,
+    "passing_windows": 9,
+    "median_peak_to_sidelobe": 6.943,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Too Much.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Too Much'].parts[part='ElecGtr3a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 180,
+    "runner_up": 0.679
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 159.0,
+    "di_activity": 0.9593,
+    "mix_absent": true,
+    "di_sha256": "38dfbeda41857b79b92e244b3f54cb75a6ff127a638f41f1706e8de57aea6e1d",
+    "reference_sha256": "46f465e3420e3425fa64908c469de7a02596e00d0099104215b2fcaa6e8feac9",
+    "record_sha256": "b25e3038c3b43dfba3fed34e9eb4077aaccc234fe9c45b461500c3167484f0e0"
+   }
+  },
+  {
+   "slug": "cambridge-too-much-elecgtr5a",
+   "band": "BKS",
+   "song": "Too Much",
+   "part": "ElecGtr5a",
+   "tone": "ElecGtr5a",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/BKS_TooMuch_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.388,
+   "nonlinear_to_linear_db": -1.91,
+   "lag_samples": 167,
+   "judge_lag_samples": 115,
+   "lag_samples_native": 153,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "34_ElecGtr5cReamp1.wav",
+   "alternates": [
+    "33_ElecGtr5bGR4.wav",
+    "35_ElecGtr5dReamp2.wav",
+    "36_ElecGtr5eReamp3.wav",
+    "37_ElecGtr5fReamp4.wav"
+   ],
+   "di": "32_ElecGtr5aDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 3.336,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BKS - Too Much.json",
+    "inventory": "inventory.json: sessions[folder='BKS - Too Much'].parts[part='ElecGtr5a']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 168,
+    "runner_up": 0.578
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 127.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "08a5c6f55e4abf6781c85cc8bc7f608cada3a13fd592cbbd2f1f206a3c0a8295",
+    "reference_sha256": "3f76e771b9bdbe321f8a8f9ba47e5196a59050e0063edc5afce19e1a12090593",
+    "record_sha256": "e5c73db48f7c8f6b77d2f97650da49c85806995fa396ae9505094577359cbd7a"
+   }
+  },
+  {
+   "slug": "hf-rawstems-too-much-elecgtr2",
+   "band": "Fytakyte",
+   "song": "Too Much",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "hf-rawstems/Fytakyte - Too_Much",
+   "source": "hf-rawstems",
+   "route": "huggingface-rehost",
+   "publisher_original": false,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "amp track gated in 48% of the DI's playing frames: may read less compressed than it is"
+   ],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.208,
+   "nonlinear_to_linear_db": 0.08,
+   "lag_samples": 148,
+   "judge_lag_samples": 96,
+   "lag_samples_native": 148,
+   "native_rate": 48000,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "26_ElecGtr6.flac",
+   "alternates": [],
+   "di": "21_ElecGtr2DI.flac",
+   "name_declared_reference": false,
+   "waveform": {
+    "windows": 14,
+    "passing_windows": 14,
+    "median_peak_to_sidelobe": 2.986,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Fytakyte - Too Much.json",
+    "inventory": "inventory.json: sessions[folder='Fytakyte - Too Much'].parts[part='ElecGtr2']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 148,
+    "runner_up": 0.085
+   },
+   "marks": [
+    "polarity_inverted",
+    "reference_not_name_declared"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "pairs with an amp track the names do not declare"
+   ],
+   "licence": "hf-rawstems",
+   "crop": {
+    "excerpt_start_s": 143.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "5fc2fcba8b811806a2050111470354813f4a0da1d7c87f23808e5739a4bc1eb2",
+    "reference_sha256": "f92a1d2b7fe29be171f548449424ad9d3bd7dc1f348a613f71a1802dde66858b",
+    "record_sha256": "48e623d25fcbbc7e932fde1e7d7eb24d3f0de543686b1daae480c0aaab5d95dc"
+   }
+  },
+  {
+   "slug": "cambridge-a-mi-lado-elecgtr1",
+   "band": "Hazael",
+   "song": "A Mi Lado",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/Hazael_AMiLado_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.805,
+   "nonlinear_to_linear_db": -9.93,
+   "lag_samples": 61,
+   "judge_lag_samples": 9,
+   "lag_samples_native": 56,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "15_ElecGtr1.wav",
+   "alternates": [],
+   "di": "16_ElecGtr1DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 20,
+    "passing_windows": 20,
+    "median_peak_to_sidelobe": 2.604,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Hazael - A Mi Lado.json",
+    "inventory": "inventory.json: sessions[folder='Hazael - A Mi Lado'].parts[part='ElecGtr1']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 64,
+    "runner_up": 0.488
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 71.0,
+    "di_activity": 0.9957,
+    "mix_absent": false,
+    "di_sha256": "56e8696df3252d6d170caed66dc7b0e1470bc5680d9041626449c7110946a984",
+    "reference_sha256": "1401461124a5d0685f85304303c40bac7800119ec8ad35091edc15f78bc8f51c",
+    "record_sha256": "83d3fbac34a5826aa0128d3570986cd8dc4e0332c7b38181b96b6b0445fc04eb"
+   }
+  },
+  {
+   "slug": "cambridge-a-mi-lado-elecgtr2",
+   "band": "Hazael",
+   "song": "A Mi Lado",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/Hazael_AMiLado_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.927,
+   "nonlinear_to_linear_db": -3.31,
+   "lag_samples": 69,
+   "judge_lag_samples": 17,
+   "lag_samples_native": 63,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "17_ElecGtr2.wav",
+   "alternates": [],
+   "di": "18_ElecGtr2DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 20,
+    "passing_windows": 20,
+    "median_peak_to_sidelobe": 5.867,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Hazael - A Mi Lado.json",
+    "inventory": "inventory.json: sessions[folder='Hazael - A Mi Lado'].parts[part='ElecGtr2']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 60,
+    "runner_up": 0.557
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 67.0,
+    "di_activity": 0.9893,
+    "mix_absent": false,
+    "di_sha256": "c8e8cc5c287d6db4f5f2746fd959cc03264d76e4dbe0a4023afef05ecb595786",
+    "reference_sha256": "386993e17cb6de1d6bdfe00e3d0f2d8cec82cd98716391942bea821cb00cf8a9",
+    "record_sha256": "fc5ca2e168febd2571843129e59a6449b0a694bb008953fbb03594797a4f31ca"
+   }
+  },
+  {
+   "slug": "cambridge-resistencia-para-un-nuevo-comenzar-elecgtr1",
+   "band": "Hazael",
+   "song": "Resistencia Para Un Nuevo Comenzar",
+   "part": "ElecGtr1",
+   "tone": "ElecGtr1",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/Hazael_ResistenciaParaUnNuevoComenzar_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.937,
+   "nonlinear_to_linear_db": -18.79,
+   "lag_samples": -19,
+   "judge_lag_samples": -71,
+   "lag_samples_native": -17,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "10_ElecGtr1Mic1.wav",
+   "alternates": [
+    "11_ElecGtr1Mic2.wav"
+   ],
+   "di": "12_ElecGtr1DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 9.624,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Hazael - Resistencia Para Un Nuevo Comenzar.json",
+    "inventory": "inventory.json: sessions[folder='Hazael - Resistencia Para Un Nuevo Comenzar'].parts[part='ElecGtr1']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -16,
+    "runner_up": 0.277
+   },
+   "marks": [
+    "amp_earlier_than_di"
+   ],
+   "inventory_flags": [
+    "amp track earlier than the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 84.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "6048183b1584893eb21af6ec1e2af512cb672c15ce9b95c194f4990d1b343863",
+    "reference_sha256": "b624850c976bf24b15fdf45d19b9881f19ca9bd874d7c1b62d880ce597d9f510",
+    "record_sha256": "8b16743d3eb3bc9ea1efb4b1b941e6a53bc6eb1c67d45405f72870df03750a9a"
+   }
+  },
+  {
+   "slug": "cambridge-resistencia-para-un-nuevo-comenzar-elecgtr2",
+   "band": "Hazael",
+   "song": "Resistencia Para Un Nuevo Comenzar",
+   "part": "ElecGtr2",
+   "tone": "ElecGtr2",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/Hazael_ResistenciaParaUnNuevoComenzar_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.996,
+   "nonlinear_to_linear_db": -22.17,
+   "lag_samples": -2,
+   "judge_lag_samples": -54,
+   "lag_samples_native": -2,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "13_ElecGtr2Mic1.wav",
+   "alternates": [
+    "14_ElecGtr2Mic2.wav"
+   ],
+   "di": "15_ElecGtr2DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 19,
+    "passing_windows": 19,
+    "median_peak_to_sidelobe": 13.455,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Hazael - Resistencia Para Un Nuevo Comenzar.json",
+    "inventory": "inventory.json: sessions[folder='Hazael - Resistencia Para Un Nuevo Comenzar'].parts[part='ElecGtr2']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 0,
+    "runner_up": 0.208
+   },
+   "marks": [
+    "amp_earlier_than_di"
+   ],
+   "inventory_flags": [
+    "amp track earlier than the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 153.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "98a0493330290d2142face817165cfbee586a59c0191be6ebdaf03b02d30f960",
+    "reference_sha256": "91a2698411a5f01fdcb1ddf1ff81a07f4bc44fbf066b0305e632f86c8709406e",
+    "record_sha256": "46d5dafd6dee5513e7f72928d0fbdda4cd625537032aaf29024fe02022e39eb7"
+   }
+  },
+  {
+   "slug": "cambridge-four-graham-elecgtr01",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.126,
+   "nonlinear_to_linear_db": 1.84,
+   "lag_samples": 16,
+   "judge_lag_samples": -36,
+   "lag_samples_native": 15,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "11_ElecGtr02.wav",
+   "alternates": [],
+   "di": "20_ElecGtrDI01.wav",
+   "name_declared_reference": false,
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 15,
+    "median_peak_to_sidelobe": 5.915,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Nova-One Studio - Four Graham.json",
+    "inventory": "inventory.json: sessions[folder='Nova-One Studio - Four Graham'].parts[part='ElecGtr01']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.034
+   },
+   "marks": [
+    "di_touches_full_scale",
+    "polarity_inverted",
+    "reference_not_name_declared"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "DI touches full scale (4 runs)",
+    "pairs with an amp track the names do not declare"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 13.0,
+    "di_activity": 0.9915,
+    "mix_absent": false,
+    "di_sha256": "6f0663f86d8a2e69f9dbf159f80ee4a7bbb78a45cd4fcde43b02f69c84e3b1f1",
+    "reference_sha256": "664e237899318611014a57ad3acb23c444bae07647a22c68480f97ed6a6aa574",
+    "record_sha256": "1dfe238ce3c623f972ce6c0bf742237bf10b4dc071297e77138cf06674e84929"
+   }
+  },
+  {
+   "slug": "cambridge-four-graham-elecgtr02",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.038,
+   "nonlinear_to_linear_db": -0.29,
+   "lag_samples": 21,
+   "judge_lag_samples": -31,
+   "lag_samples_native": 19,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "12_ElecGtr03.wav",
+   "alternates": [],
+   "di": "21_ElecGtrDI02.wav",
+   "name_declared_reference": false,
+   "waveform": {
+    "windows": 15,
+    "passing_windows": 15,
+    "median_peak_to_sidelobe": 10.468,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Nova-One Studio - Four Graham.json",
+    "inventory": "inventory.json: sessions[folder='Nova-One Studio - Four Graham'].parts[part='ElecGtr02']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.409
+   },
+   "marks": [
+    "polarity_inverted",
+    "reference_not_name_declared"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "pairs with an amp track the names do not declare"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 86.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "e23b56c8c133698bdc39b34d5fd4ccdb69f3d05fb36c1e71b0794fb44e105bad",
+    "reference_sha256": "314782e2284ca02eb0d0a108ca90738944838311519e77e5c4e6b3efb70cab47",
+    "record_sha256": "d4f6fb06b51649369a781328bf914fe89faa97271f2fe0fea3bae92ac58ecadb"
+   }
+  },
+  {
+   "slug": "cambridge-four-graham-elecgtr04",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "part": "ElecGtr04",
+   "tone": "ElecGtr04",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.006,
+   "nonlinear_to_linear_db": 1.99,
+   "lag_samples": 22,
+   "judge_lag_samples": -30,
+   "lag_samples_native": 20,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "17_ElecGtr08.wav",
+   "alternates": [],
+   "di": "23_ElecGtrDI04.wav",
+   "name_declared_reference": false,
+   "waveform": {
+    "windows": 7,
+    "passing_windows": 7,
+    "median_peak_to_sidelobe": 3.597,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Nova-One Studio - Four Graham.json",
+    "inventory": "inventory.json: sessions[folder='Nova-One Studio - Four Graham'].parts[part='ElecGtr04']"
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": -108,
+    "runner_up": 0.996
+   },
+   "marks": [
+    "polarity_inverted",
+    "reference_not_name_declared"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "pairs with an amp track the names do not declare"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 37.5,
+    "di_activity": 0.6774,
+    "mix_absent": false,
+    "di_sha256": "48230e559a0d70879a2bf06f063e86f4401168486f51075bf0235e0874e84928",
+    "reference_sha256": "7e270c58b036fb112f5f71c162bd2d9f862a0cf4a2d21a4fba3d9f85409c4892",
+    "record_sha256": "c772b00dbf7d03922e4e64f909731a3457e1f87716c29452d2f75289b8e510b7"
+   }
+  },
+  {
+   "slug": "cambridge-four-graham-elecgtr05",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "part": "ElecGtr05",
+   "tone": "ElecGtr05",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.01,
+   "nonlinear_to_linear_db": 3.13,
+   "lag_samples": 20,
+   "judge_lag_samples": -32,
+   "lag_samples_native": 18,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "19_ElecGtr10.wav",
+   "alternates": [],
+   "di": "24_ElecGtrDI05.wav",
+   "name_declared_reference": false,
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 4.397,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Nova-One Studio - Four Graham.json",
+    "inventory": "inventory.json: sessions[folder='Nova-One Studio - Four Graham'].parts[part='ElecGtr05']"
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 28,
+    "runner_up": 0.995
+   },
+   "marks": [
+    "polarity_inverted",
+    "reference_not_name_declared"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "pairs with an amp track the names do not declare"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 37.5,
+    "di_activity": 0.6432,
+    "mix_absent": false,
+    "di_sha256": "f58a0c2edbb00a27ddab3cdc1937457e2b88561425f96f678783be8f64d3b956",
+    "reference_sha256": "618e2d5aaed1231855b201489d00ce7244ba800eacb1fa448eb97a0936d4465e",
+    "record_sha256": "2dcfe1a91d6f1432f3801e492a9769379fcf85400f280d142ee0aff1646c0b26"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr01",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr01",
+   "tone": "ElecGtr01",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.615,
+   "nonlinear_to_linear_db": -18.18,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "09_ElecGtr01.wav",
+   "alternates": [],
+   "di": "10_ElecGtr01DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 10.492,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr01']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.445
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 89.0,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "8c78321379609e29f63ce893b83595638c144079241353e07821853793ee90cf",
+    "reference_sha256": "dcbde282c9649b6a9ba4130fe815cebd99fb084dcc340340947b10850bdedbed",
+    "record_sha256": "a02550086620480ac48d03aa8b16aed6614098f411d963661278012ebaa445ec"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr02",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr02",
+   "tone": "ElecGtr02",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary"
+   ],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.521,
+   "nonlinear_to_linear_db": -16.44,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "11_ElecGtr02.wav",
+   "alternates": [],
+   "di": "12_ElecGtr02DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 11.028,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr02']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.342
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 257.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "b0ec43ec9a7ac47b4b026258f1d4f30251213abe4179ce7adeb720afa457e4ab",
+    "reference_sha256": "af7f7dab156e778dbd93a18c5ce11008956f19bc91d6f945eb16cb34649ea5f1",
+    "record_sha256": "3fd87bd7b7defe8aba0c9965664aa5aa4a4df6535a006e7cf6769243896989d7"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr03",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr03",
+   "tone": "ElecGtr03",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.882,
+   "nonlinear_to_linear_db": -7.82,
+   "lag_samples": 48,
+   "judge_lag_samples": -4,
+   "lag_samples_native": 44,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "14_ElecGtr03Dry.wav",
+   "alternates": [
+    "13_ElecGtr03.wav"
+   ],
+   "di": "15_ElecGtr03DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 20,
+    "passing_windows": 20,
+    "median_peak_to_sidelobe": 6.427,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr03']"
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 56,
+    "runner_up": 0.948
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 169.0,
+    "di_activity": 0.656,
+    "mix_absent": true,
+    "di_sha256": "36bdbb8a568e7dcbc5e19607d5d56c6159976466ebae972256c8c0a1f6d9a466",
+    "reference_sha256": "53885997321fefd3dc23f831b0db335d268fdb78c030c0b7999edb730a791aa4",
+    "record_sha256": "e9d08899dc4ced49b0b5ec8a76c6ada07c89dc4c794134cea28ed27ac9e69ff7"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr04",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr04",
+   "tone": "ElecGtr04",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.697,
+   "nonlinear_to_linear_db": -8.04,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "16_ElecGtr04.wav",
+   "alternates": [],
+   "di": "17_ElecGtr04DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 25,
+    "passing_windows": 25,
+    "median_peak_to_sidelobe": 11.868,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr04']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.287
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 283.0,
+    "di_activity": 0.8782,
+    "mix_absent": true,
+    "di_sha256": "a5655a92c2f8741060ee4f9c9a6ca0ced308c04f4938079b30b852002b70e5c4",
+    "reference_sha256": "794e6e6fa481b9423fbe39e06a52dcb7dd2bbf4d8486fdd966dfab9accd73ba7",
+    "record_sha256": "9991151e1856accab79f60e7124f10a1d5885ed1963d52f5066ce9cf7f621b77"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr05",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr05",
+   "tone": "ElecGtr05",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.812,
+   "nonlinear_to_linear_db": -9.7,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "18_ElecGtr05.wav",
+   "alternates": [],
+   "di": "19_ElecGtr05DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 11.291,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr05']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.482
+   },
+   "marks": [
+    "crop_di_plays_under_half"
+   ],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 208.0,
+    "di_activity": 0.2163,
+    "mix_absent": true,
+    "di_sha256": "6e61ae4fedc75bc51cd6a23fecf6307b90778fe03b1414f6f6457768b52c27f8",
+    "reference_sha256": "5f81658d79f0977327ed4b019e289e450b84504b933bcd8302c5bbb866134b9d",
+    "record_sha256": "65b06929b8060158b0151874c5d0138b420246c33bba43b90bed35c1d42c18c3"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr06",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr06",
+   "tone": "ElecGtr06",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.78,
+   "nonlinear_to_linear_db": -4.46,
+   "lag_samples": 47,
+   "judge_lag_samples": -5,
+   "lag_samples_native": 43,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "20_ElecGtr06.wav",
+   "alternates": [],
+   "di": "21_ElecGtr06DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 7.017,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr06']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 44,
+    "runner_up": 0.416
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 198.5,
+    "di_activity": 0.7115,
+    "mix_absent": true,
+    "di_sha256": "7aae0772868f99800cd6e87c931b2d0894ff344ea6366c5cf5c4dc62b29b43c2",
+    "reference_sha256": "1027aabfb02e8d6c2952eaf2d23e88be730d4a8a08ba3e106d97c25a33a47024",
+    "record_sha256": "179e121c2135d945ed3bdb0505f29296671936e16d1476a5c268d5af2406e321"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr07",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr07",
+   "tone": "ElecGtr07",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "outside the firm clean / driven margins"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.171,
+   "nonlinear_to_linear_db": -1.26,
+   "lag_samples": 45,
+   "judge_lag_samples": -7,
+   "lag_samples_native": 41,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "22_ElecGtr07.wav",
+   "alternates": [
+    "23_ElecGtr07Dry.wav"
+   ],
+   "di": "24_ElecGtr07DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 3,
+    "passing_windows": 3,
+    "median_peak_to_sidelobe": 5.51,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr07']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 28,
+    "runner_up": 0.663
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 218.0,
+    "di_activity": 0.8162,
+    "mix_absent": true,
+    "di_sha256": "605477e68e952b2a8515aef27901963a8347d5ff1c6175491d1f0fe14a199a3d",
+    "reference_sha256": "51e7bf9a2d47a7d766fb7b6116798b8b2555e2188204d316313c30bcdf7c6667",
+    "record_sha256": "734251f2f1bdd8da7201facd2c1494164d176821ad81e610d86c5a9f52fda768"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr09",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr09",
+   "tone": "ElecGtr09",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 1.038,
+   "nonlinear_to_linear_db": -15.71,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "28_ElecGtr09.wav",
+   "alternates": [],
+   "di": "29_ElecGtr09DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 10.927,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr09']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.334
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 265.0,
+    "di_activity": 0.9509,
+    "mix_absent": true,
+    "di_sha256": "ad7c9939298ba253bd766865487c5831aaf7399bb69d60bde223a8ed10e86c98",
+    "reference_sha256": "83cd7986e2c224dafd72604ce70d132edef41f82c5b51fca4682fc8ae005da6a",
+    "record_sha256": "38ab4289a0ce89b1657024c7f4d6e239f2a2ceb52979acfbb74e8df5bac6d859"
+   }
+  },
+  {
+   "slug": "cambridge-why-don-t-you-stay-elecgtr10",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "part": "ElecGtr10",
+   "tone": "ElecGtr10",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "source": "cambridge",
+   "route": "direct",
+   "publisher_original": true,
+   "gain_class": "clean",
+   "gain_class_crop": "clean",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "clean",
+   "level_slope": 0.996,
+   "nonlinear_to_linear_db": -12.33,
+   "lag_samples": 41,
+   "judge_lag_samples": -11,
+   "lag_samples_native": 38,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "30_ElecGtr10.wav",
+   "alternates": [],
+   "di": "31_ElecGtr10DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 7.984,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Ronnie Jones - Why Don't You Stay.json",
+    "inventory": "inventory.json: sessions[folder=\"Ronnie Jones - Why Don't You Stay\"].parts[part='ElecGtr10']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 40,
+    "runner_up": 0.352
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 270.5,
+    "di_activity": 0.9252,
+    "mix_absent": true,
+    "di_sha256": "e71d9cb5ad1ad56d5728519ecdc05842410ef935b2e17901005daafb4d86d4d6",
+    "reference_sha256": "95677bcbc6157a257c84fcfbd69e0b98860390b08233112a3c50198f0c38f8a4",
+    "record_sha256": "029c95c583f6fb168c7b65609aedf62d6bf3e746ef1a0bf1f5f76deea4a1da2a"
+   }
+  },
+  {
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr3",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "part": "ElecGtr3",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "source": "cambridge",
+   "route": "wayback",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.266,
+   "nonlinear_to_linear_db": 5.42,
+   "lag_samples": 23,
+   "judge_lag_samples": -29,
+   "lag_samples_native": 21,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "27_ElecGtr3.wav",
+   "alternates": [],
+   "di": "28_ElecGtr3DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 8,
+    "passing_windows": 8,
+    "median_peak_to_sidelobe": 4.731,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Saturn Syndicate - Never Leave The Night Alone.json",
+    "inventory": "inventory.json: sessions[folder='Saturn Syndicate - Never Leave The Night Alone'].parts[part='ElecGtr3']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.306
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 241.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "3eefad1c34d469d433dc8cb7cbd4823cf3878885d0badc065f770b0b96574639",
+    "reference_sha256": "c235c80f54b2b00c1a1976e05f9531de678c4e23932bb4046ec97de0a33bea85",
+    "record_sha256": "39b6c484d50746c0bf73e918364dd4096bfa743e78f4512dc26a145965708a0c"
+   }
+  },
+  {
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr3dt",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "part": "ElecGtr3DT",
+   "tone": "ElecGtr3",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "source": "cambridge",
+   "route": "wayback",
+   "publisher_original": true,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.265,
+   "nonlinear_to_linear_db": 0.13,
+   "lag_samples": 27,
+   "judge_lag_samples": -25,
+   "lag_samples_native": 25,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "envelope+waveform",
+   "reference": "29_ElecGtr3DT.wav",
+   "alternates": [],
+   "di": "30_ElecGtr3DTDI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 8,
+    "passing_windows": 8,
+    "median_peak_to_sidelobe": 5.924,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Saturn Syndicate - Never Leave The Night Alone.json",
+    "inventory": "inventory.json: sessions[folder='Saturn Syndicate - Never Leave The Night Alone'].parts[part='ElecGtr3DT']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 32,
+    "runner_up": 0.581
+   },
+   "marks": [],
+   "inventory_flags": [
+    "double: counts with its original as one tone"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 253.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "b7cdf8c368e96b0f4e58ac89cbc54b1c4b34a0a1be1dd4e0f823a031edd42382",
+    "reference_sha256": "59f69bc9401b5fe46b6a9d14c9eef872bf47041c28c3a318fe6156070b0a5d6b",
+    "record_sha256": "22e50e9a026b5f2e6b4ca313273b27175eb77b205568d513e8c991a981f29e54"
+   }
+  },
+  {
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr4",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "part": "ElecGtr4",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "source": "cambridge",
+   "route": "wayback",
+   "publisher_original": true,
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.014,
+   "nonlinear_to_linear_db": 2.49,
+   "lag_samples": 22,
+   "judge_lag_samples": -30,
+   "lag_samples_native": 20,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "31_ElecGtr4.wav",
+   "alternates": [],
+   "di": "32_ElecGtr4DI.wav",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 5,
+    "passing_windows": 5,
+    "median_peak_to_sidelobe": 5.157,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/Saturn Syndicate - Never Leave The Night Alone.json",
+    "inventory": "inventory.json: sessions[folder='Saturn Syndicate - Never Leave The Night Alone'].parts[part='ElecGtr4']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 24,
+    "runner_up": 0.707
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "cambridge",
+   "crop": {
+    "excerpt_start_s": 251.5,
+    "di_activity": 1.0,
+    "mix_absent": true,
+    "di_sha256": "d0d03f2c6810201799c2530d499177b8fae411dbd91931a06299c493da5962f1",
+    "reference_sha256": "0b8ed7229fb3ba51955c75a20975a7fc731e6c30e850e2e6104250366d81548c",
+    "record_sha256": "1b6a765638245fdb6d27038590e81f9c69978e637dc2e9b5f74bdd2fbcf69058"
+   }
+  },
+  {
+   "slug": "hf-rawstems-the-winds-of-gypsy-moor-elecgtr4dt",
+   "band": "The Ferryboat Men",
+   "song": "The Winds Of Gypsy Moor",
+   "part": "ElecGtr4DT",
+   "tone": "ElecGtr4",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "source": "hf-rawstems",
+   "route": "huggingface-rehost",
+   "publisher_original": false,
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.202,
+   "nonlinear_to_linear_db": 1.17,
+   "lag_samples": 9,
+   "judge_lag_samples": -43,
+   "lag_samples_native": 9,
+   "native_rate": 48000,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "23_ElecGtr4DT.flac",
+   "alternates": [],
+   "di": "24_ElecGtr4DTDI.flac",
+   "name_declared_reference": true,
+   "waveform": {
+    "windows": 13,
+    "passing_windows": 13,
+    "median_peak_to_sidelobe": 10.218,
+    "precise_fraction": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/The Ferryboat Men - The Winds Of Gypsy Moor.json",
+    "inventory": "inventory.json: sessions[folder='The Ferryboat Men - The Winds Of Gypsy Moor'].parts[part='ElecGtr4DT']"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 4,
+    "runner_up": 0.859
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "double: counts with its original as one tone"
+   ],
+   "licence": "hf-rawstems",
+   "crop": {
+    "excerpt_start_s": 193.0,
+    "di_activity": 0.9594,
+    "mix_absent": true,
+    "di_sha256": "5f853f2b8607abf6288ca9011c4fb74e37df3176c99c4c81ba2b3583ff92b19c",
+    "reference_sha256": "2582cfcccc9b87b053e0263c607865dd06006f2a61f3ac20325d04abafc77e0c",
+    "record_sha256": "f066f1554c5f23bda8d960dc7e40324fbc2b7a787e748806866b6bb2690a63e1"
+   }
+  }
+ ],
+ "excluded": [
+  {
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "source": "cambridge",
+   "part": "ElecGtr3a",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "reference is a modeller track"
+   ]
+  },
+  {
+   "session_key": "cambridge/BKS_Bulldozer_Full",
+   "band": "BKS",
+   "song": "Bulldozer",
+   "source": "cambridge",
+   "part": "ElecGtr6a",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "waveform test passes on 1 window(s), fewer than 3",
+    "reference is a modeller track",
+    "its only passing amp tracks are not its own: 35_ElecGtr6bGR4 also passes with 19_ElecGtr1aDI"
+   ]
+  },
+  {
+   "session_key": "cambridge/BKS_TooMuch_Full",
+   "band": "BKS",
+   "song": "Too Much",
+   "source": "cambridge",
+   "part": "ElecGtr4a",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "its only passing amp tracks are not its own: 22_ElecGtr2cReamp1 also passes with 20_ElecGtr2aDI"
+   ]
+  },
+  {
+   "session_key": "cambridge/MR0905_ChrisDurban_Full",
+   "band": "Chris Durban",
+   "song": "Celebrate",
+   "source": "cambridge",
+   "part": "ElecGtr3a",
+   "slug": "cambridge-celebrate-elecgtr3a",
+   "crop_record_sha256": "07141bf4780ca66e9d5bc50ec882885059f279c8e4ee41a8d8f1543268fbf484",
+   "reasons": [
+    "fails the waveform same-take test"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Fytakyte - Too_Much",
+   "band": "Fytakyte",
+   "song": "Too Much",
+   "source": "hf-rawstems",
+   "part": "ElecGtr3",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 22_ElecGtr3)"
+   ]
+  },
+  {
+   "session_key": "cambridge/HannesKeseberg_YouKnowBetter_Full",
+   "band": "Hannes Keseberg",
+   "song": "You Know Better",
+   "source": "cambridge",
+   "part": "ElecGtr2",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/Hazael_AMiLado_Full",
+   "band": "Hazael",
+   "song": "A Mi Lado",
+   "source": "cambridge",
+   "part": "ElecGtr3",
+   "slug": "cambridge-a-mi-lado-elecgtr3",
+   "crop_record_sha256": null,
+   "reasons": [
+    "no crop: crop rule 2 failed (reference has no measurable 10-second excerpt)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr01",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 29_ElecGtr01)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr01DT",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 30_ElecGtr01DT)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr02",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 31_ElecGtr02)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr02DT",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 32_ElecGtr02DT)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr03",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 33_ElecGtr03)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr03DT",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 34_ElecGtr03DT)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr04",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 35_ElecGtr04)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/Jeff_Hirata - Sunshine",
+   "band": "Jeff Hirata",
+   "song": "Sunshine",
+   "source": "hf-rawstems",
+   "part": "ElecGtr04DT",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 36_ElecGtr04DT)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/MOPP - Ukraina",
+   "band": "MOPP",
+   "song": "Ukraina",
+   "source": "hf-rawstems",
+   "part": "ElecGtr1",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/NovaOneStudio_FourGraham_Full",
+   "band": "Nova-One Studio",
+   "song": "Four Graham",
+   "source": "cambridge",
+   "part": "ElecGtr03",
+   "slug": "cambridge-four-graham-elecgtr03",
+   "crop_record_sha256": "4f39aa030b9898fba8019a9d1a9eb3af6584d31fc1c35a4778caf0c75967bdf6",
+   "reasons": [
+    "fails the waveform same-take test"
+   ]
+  },
+  {
+   "session_key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "part": "ElecGtr2",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "part": "ElecGtr2DT1",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "part": "ElecGtr2DT2",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "part": "ElecGtr2DT3",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/PeterWhite_CrazyGirl_Full",
+   "band": "Peter White",
+   "song": "Crazy Girl",
+   "source": "cambridge",
+   "part": "ElecGtr2DT4",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests"
+   ]
+  },
+  {
+   "session_key": "cambridge/RonnieJones_WhyDontYouStay_Full",
+   "band": "Ronnie Jones",
+   "song": "Why Don't You Stay",
+   "source": "cambridge",
+   "part": "ElecGtr08",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 25_ElecGtr08, 26_ElecGtr08Dry)"
+   ]
+  },
+  {
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "source": "cambridge",
+   "part": "ElecGtr1",
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr1",
+   "crop_record_sha256": "79e285450f64224a038fc8b6cce0d7143bed57eb015014fc5119a305d4e82651",
+   "reasons": [
+    "waveform test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "source": "cambridge",
+   "part": "ElecGtr1DT",
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr1dt",
+   "crop_record_sha256": "cede8742769bf86065addd9d9203d1c99904779aebbd601fee3f13e3b181daa7",
+   "reasons": [
+    "waveform test passes on 2 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+   "band": "Saturn Syndicate",
+   "song": "Never Leave The Night Alone",
+   "source": "cambridge",
+   "part": "ElecGtr2",
+   "slug": "cambridge-never-leave-the-night-alone-elecgtr2",
+   "crop_record_sha256": "cd2ac9d6c7e1f72a8b7c76fbbcb52210e95e42b8d97f1d3aad42cd6bc87118e2",
+   "reasons": [
+    "waveform test passes on 1 window(s), fewer than 3"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "band": "The Ferryboat Men",
+   "song": "The Winds Of Gypsy Moor",
+   "source": "hf-rawstems",
+   "part": "ElecGtr3",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 19_ElecGtr3)"
+   ]
+  },
+  {
+   "session_key": "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+   "band": "The Ferryboat Men",
+   "song": "The Winds Of Gypsy Moor",
+   "source": "hf-rawstems",
+   "part": "ElecGtr4",
+   "slug": null,
+   "crop_record_sha256": null,
+   "reasons": [
+    "no amp track passes the same-take tests (declared: 21_ElecGtr4)"
+   ]
+  }
+ ],
+ "held_out_uses": []
+}

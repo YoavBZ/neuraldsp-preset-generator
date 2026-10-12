@@ -287,6 +287,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      rebuilt DI's reach, so a search through it would hit the same wall.
    - **The four Internet Archive sessions:** fresh material, kept unused for the next
      declared test.
+   - **Set 5** ([declaration](validation-set5.md), 2026-10-12): fresh held-out material,
+     unused. 31 parts from 7 new bands. 26 are in scope: 16 clean (Ronnie Jones, Hazael,
+     BKS) and 10 crunch (BKS, Saturn Syndicate, The Ferryboat Men, Fytakyte). Nova-One's
+     high-gain parts are report-only. Kept for the next declared test.
 
 1. **Listening check of the page: run, inconclusive**
    ([plan](listening-check-plan.md), [results](listening-check-results.md)). Sitting 1
