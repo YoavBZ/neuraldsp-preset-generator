@@ -43,3 +43,27 @@ The user asked to label it.
 - No preset renders, no tone comparison, no judge or measure on set-6 audio.
 - Labelling a track's role is data curation, not a test of any method. Set 6 stays fresh.
 - An independent reviewer checks the page and the key before it is sent.
+
+## Amendment: the page as built (2026-10-13, before it is sent)
+
+The page was reviewed (`tmp/di-labelling-review.md`, local). The page and key are unchanged;
+key `78e1fabc…` and page `f0317cae…` are committed in `set6-di-labelling-key.sha256`. The page
+differs from the text above as follows:
+
+1. **One question per same-take group, not per song.**
+   - That gives 68 groups from 36 songs, plus 6 hidden checks: 74 questions.
+   - Rule 2 now holds automatically: every track shown has a same-take partner in its group.
+2. **Same take means the stored waveform test only,** as set 6 declares. The 89 envelope-only
+   pairs are left out, so some groups may have no DI; "none" is then the right answer.
+3. **Copies with identical audio are shown once,** and a label applies to every copy.
+4. **Two groups were split,** because their tracks never all play at once: Dead Milkmen (two
+   questions) and Trevor and the Soundwaves (two questions).
+   - A DI label in one half is judged against the whole original group.
+   - If both halves get a DI label, the group is flagged and left out.
+5. **The window:** every track plays in at least 75% of the 6-s frames. Song windows reach at
+   least 0.80, and the checks reach 1.0.
+6. **Shuffling:** question order and letters are shuffled from a seed stored in the key.
+7. **The hidden checks are development parts,** one per band: 3 clean, 2 crunch and 1
+   high-gain, with a fixed seed.
+8. **The clips** are 48 kHz mono AAC at 128 kbps, all at −27.1 LUFS. The level dropped from
+   −20 to keep every clip under a −1 dBTP peak.
