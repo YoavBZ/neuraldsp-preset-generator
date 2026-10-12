@@ -378,13 +378,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - **Measure `generate`'s own risky steps** on development parts: how often research
      puts a part in the right class (a wrong class loses: on set 4's heavier parts the
      crunch presets lost 11 of 12 to the driven ones), and whether the research edits
-     on top of the dry starting preset help or hurt (one end-to-end run, Cut It Out,
-     suggested they hurt; see [reading a reference](../reference/reading-a-reference.md)).
+     on top of the dry starting preset help or hurt (one case, Cut It Out, was mixed:
+     the darkened preset lost through the rebuilt DI but won through a real DI riff;
+     see [reading a reference](../reference/reading-a-reference.md)).
    - **A short listening check of the starting presets** against the template, through
      the part's own notes: development parts with a DI where the guitar is exposed (the
      user, about 15 minutes).
    - **Another end-to-end run** of `generate` on a clean or Tone King song (Cut It Out
-     was the only one so far).
+     is the one case recorded so far).
 
 ## Parked
 
