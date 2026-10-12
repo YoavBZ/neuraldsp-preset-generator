@@ -173,6 +173,16 @@ Tone King recipes use its verified sync-note selectors. See
 
 - For Morgan, the fallback template is `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
   — IR-free, portable, and shipped with the repo.
+- **Choose the class from the part's own documented sound,** not the song's genre, the
+  band, or a write-up about the whole song. A song called rock, a metal band or a mix
+  review praising "crunchy guitars" says nothing about which guitar is clean. And the
+  measured excerpt of a full mix is not evidence of guitar drive: its harmonic-to-noise
+  ratio, fizz, odd/even, flatness, loudness and loudness range measure every
+  instrument at once. When nothing documents the part, say the class is a guess. On
+  34 development parts, routing this way sent 9 of 22 clean parts to crunch, about
+  12% further from the record on average than choosing by the part's real class
+  ([generate-routing-results.md](../../docs/generate-routing-results.md)); hence the
+  second starting point in step 6.
 - **For a clean Morgan part, start from the amp's clean baseline.** These are factory
   presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 
@@ -193,8 +203,8 @@ Tone King recipes use its verified sync-note selectors. See
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
     Low-Watt Americana has its tremolo level at 100%.
   - **If the file is missing,** say so and use the template.
-- **For a crunch Morgan part (rock, blues, indie: clearly driven but not heavy), start
-  from the amp's crunch baseline.** These are factory presets, under
+- **For a crunch Morgan part (documented as clearly driven, but not heavy), start from
+  the amp's crunch baseline.** These are factory presets, under
   `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`. Present them to the user as
   "the crunch starting point"; two of the factory names say "Metal", which these parts
   aren't.
@@ -353,10 +363,11 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
    the presets it finished are kept and `--add` renders the rest. The riffs are not the song's part, so ask the user to
    listen for gain, brightness, body and space, not the notes.
 
-   **To compare starting points** (when the user is unsure how much gain the part
-   has, or asks), add the amp's other starting point from step 4 beside the one already
-   among the four: crunch if the four hold the clean one, clean if they hold crunch,
-   and for a heavier part, crunch beside the driven one. Write it dry, into the
+   **To compare starting points** (always when the part is not clean, and whenever
+   the user is unsure how much gain it has), add the amp's other starting point from
+   step 4 beside the one already among the four: crunch if the four hold the clean
+   one, clean if they hold crunch, and for a heavier part, crunch beside the driven
+   one. Write it dry, into the
    audition folder under its own name; writing directly is fine for a listening copy,
    but preview with `--dry-run` (step 4) if the user keeps it. Use the baseline's own
    amp's recipe (`dry/pr12`, `dry/sw50r`, `dry/ac20` or `dry/toneking`):
@@ -382,8 +393,17 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
 Write the preset into the user's preset folder and tell them how to load it —
 see [installing.md](../../reference/installing.md).
 
+**When the part is not clean, install a second starting point beside it,** with or
+without the listening page: the amp's clean starting point (step 4) for a crunch
+part, or its crunch starting point for a heavier one, made dry, named "… (clean
+start)" or "… (crunch start)". Tell the user to try both: the gain class is the
+step most often wrong from a song, and a wrong class costs far more than any edit
+([generate-routing-results.md](../../docs/generate-routing-results.md)).
+
 Then report:
 - which **template** you cloned and which **amp or channel** you selected
+- the **class** you chose (clean, crunch or heavier), what documents it for this part,
+  or that it is a guess, and the second starting point you installed
 - what **research** the tone is based on, with links, and that the result is a
   starting point: on 25 mostly clean recordings, a researched preset was not shown to
   land closer than the shipped template, and a researched list of four was not shown
