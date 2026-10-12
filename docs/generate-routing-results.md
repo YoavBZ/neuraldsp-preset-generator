@@ -1,9 +1,10 @@
-# Does `generate` choose the right starting point? Results, part 1 (routing)
+# Does `generate` choose the right starting point? Results
 
 Run 2026-10-12 as declared in [generate-routing-plan.md](generate-routing-plan.md)
 (committed before any agent ran); part list in `generate-routing-parts.json`, run map
 in `generate-routing-runs.json`, numbers in `generate-routing-results.json`, code in
-`research/generate_routing.py`. Part 2 (research edits) follows separately.
+`research/generate_routing.py`; part 2 in `generate-edits-results.json` and
+`generate-edits-summary.json`.
 
 ## Verdict: routing costs
 
@@ -14,7 +15,29 @@ The declared action follows: when `generate` routes a part away from clean, the
 listening page also offers the neighbouring class's starting preset. Offering two
 would have cut the regret to 0.009 (0 to 0.028).
 
-## The numbers
+## Part 2, research edits: undecided
+
+The research's tonal edits (gain, drive, EQ, bright, cab) against the same start left
+alone, on every scored clean and crunch part whatever its route, through the part's
+own DI. Each agent's recorded `apply_spec.py` command was replayed with only the start
+swapped to the leave-band-out preset. The renders reproduced the stored scores first
+(worst |Δ log| 0.00012 against the declared 0.005).
+
+| reading | mean log ratio | 90% interval | parts better / worse |
+|---|---|---|---|
+| **tonal edits against dry** (decides) | +0.014 | −0.008 to +0.036 | 12 / 22 |
+| effects on top (report only) | +0.001 | −0.003 to +0.005 | |
+| tonal, rows whose start is the shipped one (sensitivity) | −0.002 | −0.023 to +0.018 | |
+| tonal, correctly routed rows only (secondary) | +0.040 | +0.007 to +0.078 | |
+
+- **Undecided by the declared rule:** no change to `generate` step 4. The edits lean
+  slightly worse than leaving the start alone, and help on about a third of parts.
+- **The secondary reading excludes 0,** but it selects rows on the same halves, which
+  the plan declared would favour the dry arm; it does not decide.
+- **Effects** (reverb, delay) barely move the judge against a dry amp track, as the
+  plan expected; whether they suit the song is a question for the ear.
+
+## Part 1 numbers
 
 Regret is the log ratio of the routed class's dry starting preset to the best class's,
 on clean against not-clean (a crunch-or-heavier mix-up costs nothing here), per part

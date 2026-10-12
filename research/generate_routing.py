@@ -9,6 +9,10 @@
               scrubbed plugin (plan, part 1, blinding); --only NN for a pilot.
     analyze   part 1's readings (leave-band-out truth, regrets, confusion, bootstrap),
               written to docs/generate-routing-results.json.
+    edits     part 2: build the dry, tonal and full arms from each agent's recorded
+              apply_spec command on the leave-band-out start, render them through the
+              part's own measfix DI and score them with the flat judge. --check runs
+              only the declared reproduction check first.
     proxy     the cheap router: one short fixed question per run (title, artist, part,
               the excerpt's fingerprint text), web search only, one word back.
 
@@ -470,9 +474,236 @@ def analyze():
                       "unscored": unscored}, indent=1))
 
 
+EDITS = ROOT / "docs" / "generate-edits-results.json"
+ARMS = WORK / "arms"
+VENV_PY = ROOT / ".venv" / "bin" / "python"
+if not VENV_PY.exists():                          # a worktree: the main checkout's venv
+    VENV_PY = pathlib.Path.home() / "projects/neuraldsp-preset-generator/.venv/bin/python"
+FACTORY = pathlib.Path("/Library/Audio/Presets/Neural DSP/Morgan Amps Suite")
+
+
+def _factory_file(preset: str) -> pathlib.Path:
+    return FACTORY / (preset.split("factory:", 1)[1] + ".xml")
+
+
+def _apply(args, cwd):
+    import subprocess
+
+    done = subprocess.run([str(VENV_PY), str(ROOT / "scripts" / "apply_spec.py"), *args],
+                          cwd=cwd, capture_output=True, text=True)
+    if done.returncode:
+        raise RuntimeError(f"apply_spec failed in {cwd}: {done.stderr.strip()[-400:]}")
+
+
+def _replay(command: str, template: pathlib.Path, out: pathlib.Path, cwd: pathlib.Path):
+    """The agent's own apply_spec command, with only --template and --out swapped."""
+    import shlex
+
+    argv = shlex.split(command)
+    i = next(k for k, a in enumerate(argv) if a.endswith("apply_spec.py"))
+    args = argv[i + 1:]
+    for flag, value in (("--template", str(template)), ("--out", str(out))):
+        if flag not in args:
+            raise RuntimeError(f"{cwd}: the recorded command has no {flag}")
+        args[args.index(flag) + 1] = value
+    _apply(args, cwd)
+
+
+def _context(slug, set_id):
+    """(reference, measfix DI, judge lag) exactly as the stored scores used them."""
+    import numpy as np
+
+    from learn import phase2_set3 as P
+    from learn import set3
+    from learn import songs_check as SC
+
+    if set_id == 3:
+        part = {p["slug"]: p for p in set3.parts("development")}[slug]
+        ref = P.recording(slug, "ref", P.RunConfig())
+        di = np.load(SC.EXISTING_S3["measfix"] / slug / "di.npy")
+        return ref, di, part["judge_lag_samples"]
+    part = SC.parts()[slug]
+    ref = SC.CR.mono(part["crop"] / "reference.wav")
+    di = np.load(SC.kind_dir("measfix", slug, part) / "di.npy")
+    return ref, di, part["judge_lag"]
+
+
+def _jobs(check: bool):
+    """(slug, set, amp, arm, xml) to render; building the arms' XML on the way."""
+    from functools import lru_cache
+
+    entries = _distances()
+    doc = json.loads(PARTS.read_text())
+    scored = [p for p in doc["parts"]
+              if all(_raw(entries, p["slug"], a, BASELINES[c][a], h)
+                     for a in AMPS for c in BASELINES for h in "AB")]
+    by_slug = {p["slug"]: p for p in scored}
+    choose = lru_cache(None)(lambda amp, label, band: _choose(entries, scored, amp, label, band))
+    jobs = []
+    if check:
+        picks = ([p for p in scored if p["set"] == 3][:2] + [p for p in scored if p["set"] == 12][:1])
+        for p in picks:
+            for amp in AMPS:
+                folder = ARMS / "check" / p["slug"] / amp
+                folder.mkdir(parents=True, exist_ok=True)
+                xml = folder / "dry.xml"
+                _apply(["--template", str(_factory_file(BASELINES["clean"][amp])),
+                        "--recipe", f"dry/{amp}", "--strip-irs", "--out", str(xml)], folder)
+                jobs.append((p["slug"], p["set"], amp, "check", xml, BASELINES["clean"][amp]))
+        return jobs
+    runs = json.loads(MAP.read_text())["runs"]
+    for nn, slugs in sorted(runs.items()):
+        result = json.loads((WORK / "runs" / nn / "result.json").read_text())
+        cls = {"high-gain": "heavier"}.get(result["gain_class"], result["gain_class"])
+        amp = result["amp"]
+        for slug in slugs:
+            p = by_slug.get(slug)
+            if p is None or p["label"] not in ("clean", "crunch") or not p["routable"]:
+                continue
+            start = (BASELINES["heavier"][amp] if cls == "heavier"
+                     else choose(amp, cls, p["band"]))
+            folder = ARMS / slug
+            folder.mkdir(parents=True, exist_ok=True)
+            template = _factory_file(start)
+            _apply(["--template", str(template), "--recipe", f"dry/{amp}", "--strip-irs",
+                    "--out", str(folder / "dry.xml")], folder)
+            _replay(result["apply_command"], template, folder / "full.xml", WORK / "runs" / nn)
+            _apply(["--template", str(folder / "full.xml"), "--recipe", f"dry/{amp}",
+                    "--strip-irs", "--out", str(folder / "tonal.xml")], folder)
+            for arm in ("dry", "tonal", "full"):
+                jobs.append((slug, p["set"], amp, arm, folder / f"{arm}.xml", start))
+    return jobs
+
+
+def edits(check: bool):
+    import math
+
+    import numpy as np
+
+    sys.path.insert(0, str(ROOT / "research"))
+    import render_preset_panel as RP
+    from analysis.aligned import aligned_distance
+    from learn import phase2_set3 as P
+    from learn import rescore as R
+    from match.renderer_au import AudioUnitRenderer
+    from packs.loader import load_pack
+
+    pack = load_pack("morgan")
+
+    class ArmRenderer(AudioUnitRenderer):
+        commands: dict = {}
+
+        def _state_command(self, settings):
+            select, edit_list = self.commands[settings["arm"]]
+            command = {"edits": edit_list}
+            if select is not None:
+                command["selectAmp"] = select
+            return command
+
+    jobs = _jobs(check)
+    entries = _distances()
+    r = ArmRenderer("morgan", process_policy="reuse")
+    out, last_amp = [], None
+    try:
+        for slug, set_id, amp, arm, xml, start in jobs:
+            ref, di, lag = _context(slug, set_id)
+            key = f"{slug}|{amp}|{arm}"
+            ArmRenderer.commands[key] = RP.preset_edits(xml, pack, r, amp, False)
+            d32 = di.astype(np.float32)
+            if amp != last_amp:                   # as the stored panels did per amp
+                r.render(d32, {"arm": key})
+                last_amp = amp
+            y = np.asarray(r.render(d32, {"arm": key}).audio, np.float64)
+            if y.ndim > 1:
+                y = y.mean(axis=1)
+            if not np.any(y):
+                raise RuntimeError(f"{key}: silent render")
+            halves = {}
+            for h, (a, b) in R.HALVES.items():
+                x = aligned_distance(ref, y, di, lag=lag, render_latency=P.LATENCY,
+                                     start_s=a, end_s=b)
+                halves[h] = x.distance
+            row = dict(slug=slug, amp=amp, arm=arm, start=start, halves=halves)
+            if check:
+                stored = {h: _raw(entries, slug, amp, start, h) for h in "AB"}
+                row["stored"] = stored
+                row["dlog"] = max(abs(math.log(halves[h]) - math.log(stored[h])) for h in "AB")
+                print(slug, amp, "Δlog", round(row["dlog"], 5), flush=True)
+            else:
+                print(key, {h: round(v, 4) for h, v in halves.items()}, flush=True)
+            out.append(row)
+    finally:
+        r.close()
+    if check:
+        worst = max(row["dlog"] for row in out)
+        verdict = "passes" if worst < 0.005 else "fails"
+        (ARMS / "check.json").write_text(json.dumps({"worst_dlog": worst, "verdict": verdict,
+                                                     "rows": out}, indent=1))
+        print("reproduction check", verdict, "worst Δlog", round(worst, 5))
+        return
+    EDITS.write_text(json.dumps({"plan": "docs/generate-routing-plan.md", "rows": out},
+                                indent=1) + "\n")
+
+
+def edits_analyze():
+    import math
+    from functools import lru_cache
+
+    data = json.loads(EDITS.read_text())
+    entries = _distances()
+    doc = json.loads(PARTS.read_text())
+    scored = [p for p in doc["parts"]
+              if all(_raw(entries, p["slug"], a, BASELINES[c][a], h)
+                     for a in AMPS for c in BASELINES for h in "AB")]
+    by_slug = {p["slug"]: p for p in scored}
+    choose = lru_cache(None)(lambda amp, label, band: _choose(entries, scored, amp, label, band))
+    runs = json.loads(MAP.read_text())["runs"]
+    route = {}
+    for nn, slugs in runs.items():
+        result = json.loads((WORK / "runs" / nn / "result.json").read_text())
+        for slug in slugs:
+            route[slug] = {"high-gain": "heavier"}.get(result["gain_class"], result["gain_class"])
+
+    def logm(row):
+        return sum(math.log(v) for v in row["halves"].values()) / 2
+
+    arms = {}
+    for row in data["rows"]:
+        arms.setdefault(row["slug"], {})[row["arm"]] = row
+    tonal, full, same_start, right = [], [], [], []
+    for slug, a in sorted(arms.items()):
+        p = by_slug[slug]
+        t = logm(a["tonal"]) - logm(a["dry"])
+        f = logm(a["full"]) - logm(a["tonal"])
+        tonal.append((p["band"], t))
+        full.append((p["band"], f))
+        amp, start = a["dry"]["amp"], a["dry"]["start"]
+        if start == BASELINES.get(route[slug], {}).get(amp):
+            same_start.append((p["band"], t))
+        m = {c: sum(math.log(_raw(entries, slug, amp,
+                                  BASELINES["heavier"][amp] if c == "heavier"
+                                  else choose(amp, c, p["band"]), h)) for h in "AB") / 2
+             for c in CLASSES}
+        if GROUP[min(CLASSES, key=m.get)] == GROUP[route[slug]]:
+            right.append((p["band"], t))
+    tonal_r = _band_boot(tonal)
+    verdict = ("edits hurt" if tonal_r["lo"] > 0 else
+               "edits help" if tonal_r["hi"] < 0 else "undecided")
+    out = {"plan": "docs/generate-routing-plan.md", "decision": verdict,
+           "tonal_vs_dry": tonal_r,
+           "tonal_wins_losses": [sum(v < 0 for _, v in tonal), sum(v > 0 for _, v in tonal)],
+           "full_vs_tonal_report": _band_boot(full),
+           "sensitivity_same_start": _band_boot(same_start) if same_start else None,
+           "secondary_correctly_routed": _band_boot(right) if right else None}
+    summary = EDITS.with_name("generate-edits-summary.json")
+    summary.write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps(out, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze"])
+    ap.add_argument("step", choices=["parts", "prepare", "route", "proxy", "analyze", "edits", "edits-analyze"])
+    ap.add_argument("--check", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--workers", type=int, default=3)
     args = ap.parse_args()
@@ -480,6 +711,10 @@ def main():
         return prepare()
     if args.step == "route":
         return route(args.only, args.workers)
+    if args.step == "edits-analyze":
+        return edits_analyze()
+    if args.step == "edits":
+        return edits(args.check)
     if args.step == "analyze":
         return analyze()
     if args.step == "proxy":

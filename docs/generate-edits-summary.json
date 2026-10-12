@@ -1,0 +1,40 @@
+{
+ "plan": "docs/generate-routing-plan.md",
+ "decision": "undecided",
+ "tonal_vs_dry": {
+  "band_mean": 0.014,
+  "lo": -0.0076,
+  "hi": 0.0355,
+  "part_mean": 0.015,
+  "n": 34,
+  "bands": 15
+ },
+ "tonal_wins_losses": [
+  12,
+  22
+ ],
+ "full_vs_tonal_report": {
+  "band_mean": 0.0011,
+  "lo": -0.0026,
+  "hi": 0.0046,
+  "part_mean": 0.0019,
+  "n": 34,
+  "bands": 15
+ },
+ "sensitivity_same_start": {
+  "band_mean": -0.002,
+  "lo": -0.0226,
+  "hi": 0.0177,
+  "part_mean": -0.0105,
+  "n": 22,
+  "bands": 13
+ },
+ "secondary_correctly_routed": {
+  "band_mean": 0.0401,
+  "lo": 0.0065,
+  "hi": 0.0783,
+  "part_mean": 0.0314,
+  "n": 23,
+  "bands": 11
+ }
+}
