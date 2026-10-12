@@ -45,6 +45,7 @@ def test_schema():
             assert s["revision"] == "b482eb2e31aa15ff10489b3b23871a1e7a109198"
             assert all(len(f["sha256"]) == 64 for f in s["files_fetched"])
             assert s["mix_on_disk"] is False
+            assert s["mix_in_crops"] is False          # re-host stems are trimmed: no common timeline
 
 
 def test_every_part_is_held_out_and_unused():
@@ -83,7 +84,8 @@ def test_kept_parts_meet_the_set4_rules():
 def test_the_guard_knows_every_declared_session():
     d = set5.load()
     assert {s["key"]: (s["band"], s["path"]) for s in d["sessions"]} == set5.SESSIONS
-    assert [a.get("band_merge") for a in d["amendments"]] == [{"Fytakyte": "BKS"}]   # the 2026-10-12 amendment
+    assert [a.get("band_merge") for a in d["amendments"]] == [{"Fytakyte": "BKS"}, None]   # 2026-10-12
+    assert d["amendments"][1]["id"] == "mix_files"            # amendment 2: crops gained mix files only
 
 
 def test_no_band_from_an_earlier_set():
@@ -177,6 +179,13 @@ def test_crops_exist_and_match_the_declaration():
             f = d / f"{role}.wav"
             assert hashlib.sha256(f.read_bytes()).hexdigest() == p["crop"][f"{role}_sha256"], (p["slug"], role)
             assert r["outputs"][role]["frames"] == 480000
+        for role in ("mix", "backing"):                 # amendment 2: cut for the same window
+            if role in r["outputs"]:
+                assert r["outputs"][role]["frames"] == 480000
+                assert hashlib.sha256((d / f"{role}.wav").read_bytes()).hexdigest() == r["outputs"][role]["sha256"]
+        if "mix_amendment" in r:
+            assert r["mix_amendment"]["archive"]["sha256"] == next(
+                s["archive_sha256"] for s in set5.load()["sessions"] if s["key"] == r["session_key"])
 
 
 @pytest.mark.skipif(not (INVENTORY.exists() and CROPS.exists()), reason="set-5 inventory not on this machine")

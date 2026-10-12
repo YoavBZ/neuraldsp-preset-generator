@@ -43,6 +43,8 @@ No audio is in git.
     4's tools; hashes in the JSON);
   - the 10-s crops (crop rule 2, `di-activity`, 48 kHz mono);
   - on each crop, the onset cross-check and the crop-level gain class.
+  - amendment 2: four archives re-downloaded and hash-checked, and the mix files
+    summed and cut for the existing crop windows.
 - **Not done:** no plugin ran, no render was made, nothing was scored (no judge, no
   `measure`, no `aligned_distance`), no network was run on it, nothing was listened
   to, and no tone or preset was compared.
@@ -51,23 +53,25 @@ No audio is in git.
 
 There are 14 sessions by 12 bands. Seven bands have at least one kept part.
 
-| band – song | source | kept | tones | clean | crunch | high-gain | excluded | mix on disk |
+| band – song | source | kept | tones | clean | crunch | high-gain | excluded | mix in crops |
 |---|---|---|---|---|---|---|---|---|
-| Ronnie Jones – Why Don't You Stay | Cambridge direct | 9 | 9 | 8 | 1 | 0 | 1 | no |
+| Ronnie Jones – Why Don't You Stay | Cambridge direct | 9 | 9 | 8 | 1 | 0 | 1 | yes (amendment 2) |
 | Hazael – A Mi Lado | Cambridge direct | 2 | 2 | 2 | 0 | 0 | 1 | yes |
 | Hazael – Resistencia Para Un Nuevo Comenzar | Cambridge direct | 2 | 2 | 2 | 0 | 0 | 0 | yes |
-| BKS – Too Much | Cambridge direct | 4 | 4 | 3 | 1 | 0 | 1 | no |
-| BKS – Bulldozer | Cambridge direct | 5 | 5 | 1 | 4 | 0 | 2 | no |
-| Saturn Syndicate – Never Leave The Night Alone | Cambridge via Wayback | 3 | 2 | 0 | 2 | 1 | 3 | no |
+| BKS – Too Much | Cambridge direct | 4 | 4 | 3 | 1 | 0 | 1 | yes (amendment 2) |
+| BKS – Bulldozer | Cambridge direct | 5 | 5 | 1 | 4 | 0 | 2 | yes (amendment 2) |
+| Saturn Syndicate – Never Leave The Night Alone | Cambridge via Wayback | 3 | 2 | 0 | 2 | 1 | 3 | yes (amendment 2) |
 | Nova-One Studio – Four Graham | Cambridge direct | 4 | 4 | 0 | 0 | 4 | 1 | yes |
 | The Ferryboat Men – The Winds Of Gypsy Moor | HF re-host | 1 | 1 | 0 | 1 | 0 | 2 | no |
 | Fytakyte – Too Much | HF re-host | 1 | 1 | 0 | 1 | 0 | 1 | no |
-| Chris Durban – Celebrate | Cambridge direct | 0 | 0 | | | | 1 | no |
-| Peter White – Crazy Girl | Cambridge direct | 0 | 0 | | | | 5 | yes |
-| Hannes Keseberg – You Know Better | Cambridge direct | 0 | 0 | | | | 1 | no |
-| Jeff Hirata – Sunshine | HF re-host | 0 | 0 | | | | 8 | no |
-| MOPP – Ukraina | HF re-host | 0 | 0 | | | | 1 | no |
+| Chris Durban – Celebrate | Cambridge direct | 0 | 0 | | | | 1 | – |
+| Peter White – Crazy Girl | Cambridge direct | 0 | 0 | | | | 5 | – |
+| Hannes Keseberg – You Know Better | Cambridge direct | 0 | 0 | | | | 1 | – |
+| Jeff Hirata – Sunshine | HF re-host | 0 | 0 | | | | 8 | – |
+| MOPP – Ukraina | HF re-host | 0 | 0 | | | | 1 | – |
 | **total** | | **31** | **30** | **16** | **10** | **5** | **28** | |
+
+"Mix in crops" is about the kept parts' crops: "–" means the session has no kept part.
 
 - **Counts:** 59 parts were declared (one per DI), 31 kept and 28 excluded. The
   kept parts are 30 tones (Saturn Syndicate ElecGtr3DT counts with its original).
@@ -99,18 +103,16 @@ There are 14 sessions by 12 bands. Seven bands have at least one kept part.
   - Their lags were measured on the files as stored, and the crops are cut in the same
     coordinates.
   - The two kept re-host parts rest on one part per band.
-- **Mix absent on 23 of 31 kept parts.** Six Cambridge archives were unpacked
-  guitar-only for disk space: Ronnie Jones, both BKS songs, Saturn Syndicate, Chris
-  Durban and Hannes Keseberg. The re-hosts were fetched guitar-only too.
-  - Their crops are `di.wav` and `reference.wav` only, with `"mix_absent": true` in
-    each record.
-  - Hazael (both songs) and Nova-One were unpacked in full. Their crops also have
-    `mix`, `backing`, `mix_instrumental` and `backing_instrumental`, built by set 4's
-    mix rule. That rule takes every session WAV except the guitar DIs, the kept parts'
-    alternate amp tracks, rendered mixes, click tracks and other DI-named guitar
-    tracks.
-  - A mix for the other sessions needs a re-download checked against the recorded
-    archive SHA-256. None was made: the disk had 24 GiB free, under the 33 GB floor.
+- **Mix absent on 2 of 31 kept parts** (it was 23 at declaration; amendment 2).
+  - Six Cambridge archives were first unpacked guitar-only for disk space: Ronnie
+    Jones, both BKS songs, Saturn Syndicate, Chris Durban and Hannes Keseberg.
+    Amendment 2 re-downloaded the four with kept parts and gave their crops a mix.
+  - Every Cambridge crop with a kept part now has `mix`, `backing`, `mix_instrumental`
+    and `backing_instrumental`, built by set 4's mix rule. That rule takes every
+    session WAV except the guitar DIs, the kept parts' alternate amp tracks, rendered
+    mixes, click tracks and other DI-named guitar tracks.
+  - The two re-host parts (The Ferryboat Men ElecGtr4DT, Fytakyte ElecGtr2) have no
+    mix: `"mix_absent": true`. See amendment 2.
 
 ## Licences
 
@@ -308,3 +310,40 @@ from the same library. BKS has left the library page, and Fytakyte is still list
   recording re-released under a new band name.
 - Band-clustered statistics merge them under "BKS". The parts are unchanged.
 - Found by the set-5 test plan's review (`tmp/set5-review.md`, local).
+
+## Amendment 2 (2026-10-12): mix files for the guitar-only crops
+
+**The crops gained mix files. Nothing else changed:** the parts, crop windows, lags,
+gain classes, scope, splits and the DI and reference files are the same. Only the
+record hashes (`crop.record_sha256`, and `crop_record_sha256` of three excluded parts
+whose crops also gained a mix), `crop.mix_absent` and the sessions'
+`mix_in_crops` field changed in the JSON. The purpose is to let a later declared test
+compare the guitar with the real mix.
+
+- **Re-downloaded:** the publisher archives of Ronnie Jones, BKS Too Much, BKS
+  Bulldozer (Cambridge mtkdata host) and Saturn Syndicate (the recorded Internet
+  Archive capture). Each archive's SHA-256 matched `_tools/archives.json` before use.
+  Chris Durban and Hannes Keseberg have no kept part and were not re-downloaded.
+- **Built by `research/validation_set5.py mixes`,** with the same mix code as
+  `crops` (`_mix_plan`, `_mix_outputs`), over each record's unchanged window.
+  - The DI and reference were re-cut from the archive and equal `di.wav` and
+    `reference.wav` sample for sample. Each record gained `mix_amendment` (archive
+    URL and hash), `included_mix_tracks`, `vocal_tracks` and the new outputs' hashes.
+  - As in set 4, every amp track that is not the part's own or a kept part's
+    alternate stays in. Some guitars are therefore stacked: Ronnie Jones ElecGtr08
+    and ElecGtr08Dry, and on BKS Too Much all three of ElecGtr4's tracks (Pod,
+    Reamp1, Reamp2). The sum is set 4's rule, not the publisher's mix.
+  - Nothing was measured on the new files: no loudness, gain class or other feature.
+    The records' `lufs` still covers the DI and reference only.
+  - The archives and the unpacked non-guitar tracks were deleted afterwards. The
+    hashes in each record, with the archive hash, are the provenance.
+- **The re-host parts stay without a mix** (The Ferryboat Men ElecGtr4DT, Fytakyte
+  ElecGtr2). The re-host lists every numbered track of both sessions, but each file
+  is trimmed to its own length: 13–417 s within Ferryboat and 91–405 s within
+  Fytakyte, against one session length in a publisher archive (the FLAC headers'
+  sample counts, `_tools/hf_stem_lengths.json`). A first-sample sum would put the
+  tracks out of time, so no mix was built. A mix would need the publisher's archive
+  and an alignment of the re-host DI to it, which this amendment does not do.
+- **Not done:** no plugin ran, nothing was scored or listened to, no source
+  separation, no tone analysis.
+
