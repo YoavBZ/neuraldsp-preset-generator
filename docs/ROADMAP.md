@@ -265,7 +265,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       [results](residual-di-results.md)). *Done 2026-10-11, independently re-derived.*
       - **The gradient fix helps, marginally:** −0.036 band mean, all on crunch, where the
         corrected network gets −0.171 against the fixed preset (the oracle −0.186). It
-        isn't robust to leaving out one band, so a second seed is training.
+        isn't robust to leaving out one band.
+        - **The second seed didn't confirm it** (−0.020, inconclusive). By the declared
+          rule the gain is unconfirmed: under-powered, not absent (both seeds together
+          −0.028). Both seeds beat the fixed crunch preset on development (−0.12 to −0.17).
+          The next test is held-out, with two or three seeds declared up front.
       - **Passing the recording through (residual) is futile:** +0.059, worse on crunch.
         The rebuilt DI keeps the recording's brightness.
       - **Earlier crunch conclusions about the network are open again.**
