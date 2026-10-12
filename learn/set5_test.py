@@ -48,7 +48,19 @@ def parts():
         out[p["slug"]] = dict(crop=crop, judge_lag=p["judge_lag_samples"], band=p["band"],
                               gain_class=p["gain_class"], scope=p["scope"],
                               publisher_original=p["publisher_original"])
+    assert len(out) == d["counts"]["kept"], (len(out), d["counts"]["kept"])
     return out
+
+
+def _sha(path):
+    import hashlib
+
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def _entry():
+    """This test's ledger entry, or None."""
+    return next((u for u in json.loads(DECL.read_text()).get("held_out_uses", []) if u.get("test_id") == TEST_ID), None)
 
 
 def _ledger_committed():
@@ -85,6 +97,19 @@ def render(shard):
 
     if not _ledger_committed():
         raise SystemExit("commit the ledger entry before any set-5 render")
+    entry = _entry()
+    pinned = entry["sha256"]
+    for k, path in {**{k: NETS[k] for k in ("C", *entry["seeds"])}, "average": CR.AVERAGE}.items():
+        if _sha(path) != pinned[k]:
+            raise SystemExit(f"{k} differs from its pinned hash")
+    kinds = ("measfix", "C", *entry["seeds"])
+    OUT.mkdir(parents=True, exist_ok=True)
+    if shard[0] == 0:
+        import torch
+        head = subprocess.run(["git", "-C", str(PLUGIN_ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        (OUT / "manifest.json").write_text(json.dumps({"test_id": TEST_ID, "code_commit": head, "sha256": pinned,
+                                                       "torch": torch.__version__, "kinds": kinds,
+                                                       "parts": sorted(parts())}, indent=1))
     pack = load_pack("morgan")
 
     class PanelRenderer(AudioUnitRenderer):
@@ -97,14 +122,14 @@ def render(shard):
                 command["selectAmp"] = select
             return command
 
-    nets = {k: D.load_model(v).eval() for k, v in NETS.items()}
+    nets = {k: D.load_model(NETS[k]).eval() for k in kinds if k != "measfix"}
     r = PanelRenderer("morgan", process_policy="reuse")
     M = P.menus(pack, r)
     PanelRenderer.commands = {f"{amp}|{n}": v for amp, m in M.items() for n, v in m.items()}
     ps = parts()
     try:
         for slug in sorted(ps)[shard[0]::shard[1]]:
-            for kind in KINDS:
+            for kind in kinds:
                 base = OUT / kind / slug
                 if (base / "done").exists():
                     continue
@@ -132,10 +157,10 @@ def _score_part(job):
     from analysis.aligned import aligned_distance
     from learn.rebuilt_judge import rebuilt_distance
 
-    slug, part, names = job
+    slug, part, names, kinds = job
     ref = CR.mono(pathlib.Path(part["crop"]) / "reference.wav")
     res = {}
-    for kind in KINDS:
+    for kind in kinds:
         d = OUT / kind / slug
         di = np.load(d / "di.npy")
         for amp, ns in names.items():
@@ -156,11 +181,12 @@ def score(workers=7):
     from concurrent.futures import ProcessPoolExecutor
 
     ps, names = parts(), G.menu_names()
+    kinds = ("measfix", "C", *_entry()["seeds"])
     for s in ps:
-        for k in KINDS:
+        for k in kinds:
             if not (OUT / k / s / "done").exists():
                 raise SystemExit(f"missing renders: {k}/{s}")
-    jobs = [(s, {**ps[s], "crop": str(ps[s]["crop"])}, names) for s in sorted(ps)]
+    jobs = [(s, {**ps[s], "crop": str(ps[s]["crop"])}, names, kinds) for s in sorted(ps)]
     with ProcessPoolExecutor(workers) as ex:
         R = dict(ex.map(_score_part, jobs))
     (OUT / "distances.json").write_text(json.dumps(R))
@@ -188,6 +214,11 @@ def _band_gate(rows):
                bands_negative=sum(x < 0 for x in bm), smallest_detectable=round(-t * se, 4))
     out["outcome"] = ("helps" if out["hi90"] < 0 and out["bands_negative"] > len(bm) / 2 else
                       "futile" if out["lo90"] > -0.02 else "inconclusive")
+    import itertools
+    obs = abs(mu)
+    flips = list(itertools.product((1, -1), repeat=len(bm)))
+    out["sign_flip_p"] = round(sum(abs(statistics.fmean([f * x for f, x in zip(fl, bm)])) >= obs - 1e-12
+                                   for fl in flips) / len(flips), 4)
     out["leave_one_band_out"] = {b: round(statistics.fmean([x for bb, x in zip(by, bm) if bb != b]), 4) for b in by}
     return out
 
@@ -215,7 +246,7 @@ def evaluate(R, ps, seeds, out_path=None):
                 picks["start"] = starts[cls][amp] if cls in starts else None
                 for k, n in picks.items():
                     v = M[n][0] if n and M.get(n) and M[n][0] else None
-                    if v is None and k != "start":
+                    if v is None and (k != "start" or ps[s]["scope"] == "in_scope"):
                         ok = False
                     per.setdefault(k, []).append(v)
             if ok:                                   # one common set of cells (plan, after review)
@@ -275,7 +306,7 @@ def evaluate(R, ps, seeds, out_path=None):
 def report():
     ps = parts()
     R = json.loads((OUT / "distances.json").read_text())
-    seeds = tuple(k for k in SEEDS if all(f"{k}|pr12|A" in R[s] for s in R))
+    seeds = tuple(_entry()["seeds"])
     return evaluate(R, ps, seeds, OUT / "result.json")
 
 

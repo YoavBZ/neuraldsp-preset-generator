@@ -22,17 +22,17 @@ Declared 2026-10-12, before any set-5 audio is rendered, judged or heard.
 - **Counted as declared:** 26 parts in 6 bands, stratified by each part's own gain class.
   BKS has both clean and crunch parts.
   - **Clean:** 16 parts in 3 bands (Ronnie Jones 8, Hazael 4, BKS 4).
-  - **Crunch:** 10 parts in 5 bands (BKS 5, Saturn Syndicate 2, Ronnie Jones 1, The
+  - **Crunch:** 10 parts in 5 declared bands, 4 after the merge below (BKS 5, Saturn Syndicate 2, Ronnie Jones 1, The
     Ferryboat Men 1, Fytakyte 1).
   - **Fytakyte is merged with BKS** (the declaration's amendment), so crunch has 4 bands
     (3 degrees of freedom) and the pooled set has 5 (4 degrees of freedom).
   - **Saturn Syndicate's two crunch parts** are one tone, double-tracked.
 - **Report only:** 5 high-gain parts (Nova-One Studio 4, Saturn Syndicate ElecGtr4).
-- **The powers are small.** Gate 2's crunch stratum has 5 bands, two of them a single
+- **The powers are small.** Gate 2's crunch stratum has 4 bands after the merge, one of them a single
   re-hosted part. The smallest detectable effect is reported, and an inconclusive result
   leads to the combined test below, not to more set-5 analyses.
-- **Sensitivity:** publisher originals only. This drops the two bands that rest on one
-  Hugging Face re-hosted part each.
+- **Sensitivity:** publisher originals only. This drops The Ferryboat Men; Fytakyte's
+  re-hosted part is also dropped, but its band (merged into BKS) stays.
 
 ## Networks (fold 2; no set-5 band is in any training data)
 
@@ -132,7 +132,11 @@ of its cells. The 90% interval is over the band means.
 - **Expected power:**
   - **Gate 1:** the interval half-width is about 0.04 against an expected effect of about
     −0.028, so roughly 30% power. "Inconclusive" is the likely outcome.
-  - **Gate 2 (crunch):** the half-width is about 0.12.
+  - **Gate 2 (crunch):** with 4 bands, t(3) = 2.353, the half-width is about 0.15. Development's
+    C′ against `generate`'s crunch start was −0.0985 and inconclusive, so "inconclusive" is likely
+    here too.
+- **The development check** ran on stored distances, so it exercises `evaluate`, not
+  `_score_part`. `_score_part` is the proven code verbatim.
 - **Renders:** about 5 kinds × 111 presets × the part count, Morgan in reused instances,
   about an hour.
 - **Independent reviews:** one checks this plan before any render, and an adversarial audit
