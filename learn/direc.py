@@ -353,6 +353,93 @@ def mrstft(a, b, ffts=(256, 512, 1024, 2048, 4096)):
     return loss / len(ffts)
 
 
+# --- C′'s training pairs (factored out of `fit` for EG-VAE-lite's E1; identical behaviour,
+# checked by tests/test_direc_make.py) ---------------------------------------------------
+
+def load_bleed(fold):
+    """The bleed pool: instrumental backings of the development crops whose band is in a
+    training fold (not `fold`), in `k3_folds` part order."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import train as TR
+
+    fold_of, band_of = TR.k3_folds()
+    bleed = []
+    for part, b in band_of.items():
+        if fold_of[b] != fold and (CROPS / part / "backing_instrumental.wav").exists():
+            y, _ = sf.read(str(CROPS / part / "backing_instrumental.wav"), dtype="float32", always_2d=True)
+            bleed.append(y.mean(1))
+    return bleed
+
+
+_FREQS: dict = {}
+
+
+def _freqs():
+    import numpy as np
+
+    if not _FREQS:
+        _FREQS["spec"] = np.fft.rfftfreq(SPEC_N, 1 / SR)
+        _FREQS["clip"] = np.fft.rfftfreq(CLIP, 1 / SR)
+    return _FREQS["spec"], _FREQS["clip"]
+
+
+def make_clip(x16, y16, s, avg, rng, train, bleed):
+    """One C′ training pair before cropping: (recording, target, crop start), float32, 6 s.
+
+    The target is the DI at the fold's average balance (`avg` minus the DI's own long-term
+    spectrum `s`, clipped to ±15 dB). With `train`, the recording gets C′'s augmentation
+    (EQ tilt and bell, bleed with probability 0.5, noise with probability 0.5) and the crop
+    start is random; otherwise it is untouched and the crop is centred. The rng draws are
+    in exactly C′'s order."""
+    import numpy as np
+
+    freqs, cfreq = _freqs()
+    x = x16.astype(np.float32) / 32767
+    y = y16.astype(np.float32) / 32767
+    own = s - s.mean()
+    g = np.clip(avg - own, -15, 15)
+    Yf = np.fft.rfft(y) * 10 ** (np.interp(cfreq, freqs, g) / 20)
+    y = np.fft.irfft(Yf, CLIP).astype(np.float32)
+    if train:
+        lf = np.log2(np.maximum(cfreq, 20) / 1000)
+        tilt = rng.uniform(-3, 3) * np.clip(lf / 3.3, -1, 1)
+        fc, gb = rng.uniform(np.log2(200), np.log2(6000)), rng.uniform(-4, 4)
+        bell = gb * np.exp(-0.5 * ((np.log2(np.maximum(cfreq, 20)) - fc) / 0.5) ** 2)
+        x = np.fft.irfft(np.fft.rfft(x) * 10 ** ((tilt + bell) / 20), CLIP).astype(np.float32)
+        if rng.random() < 0.5 and bleed:
+            b = bleed[rng.integers(len(bleed))]
+            s_ = rng.integers(0, max(1, len(b) - CLIP))
+            seg = np.zeros(CLIP, np.float32)
+            seg[:len(b[s_:s_ + CLIP])] = b[s_:s_ + CLIP]
+            x = x + seg / (seg.std() + 1e-9) * x.std() * 10 ** (-rng.uniform(12, 30) / 20)
+        if rng.random() < 0.5:
+            x = x + rng.standard_normal(CLIP).astype(np.float32) * x.std() * 10 ** (-rng.uniform(45, 75) / 20)
+        a = rng.integers(0, CLIP - CROP)
+    else:
+        a = (CLIP - CROP) // 2
+    return x, y, a
+
+
+def batch_maker(X, Y, S, avg, bleed, rng, dev):
+    """C′'s `make(idx, train)`: a batch of 3-s crops, each set to RMS 0.1, as tensors."""
+    import numpy as np
+    import torch
+
+    def make(idx, train):
+        xs, ys = [], []
+        for i in idx:
+            x, y, a = make_clip(X[i], Y[i], S[i], avg, rng, train, bleed)
+            x, y = x[a:a + CROP], y[a:a + CROP]
+            xs.append(x / (x.std() + 1e-9) * 0.1)
+            ys.append(y / (y.std() + 1e-9) * 0.1)
+        return (torch.tensor(np.stack(xs), device=dev).unsqueeze(1),
+                torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
+
+    return make
+
+
 # --- training -----------------------------------------------------------------------
 
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
@@ -389,51 +476,9 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     f = np.array([fold_of.get(m["band"], -1) for m in meta])
     tr, va = np.where(f != fold)[0], np.where(f == fold)[0]
     avg = fold_average(cache, fold)
-    freqs = np.fft.rfftfreq(SPEC_N, 1 / SR)
-    cfreq = np.fft.rfftfreq(CLIP, 1 / SR)
-    # bleed: instrumental backings of training-fold development crops
-    import soundfile as sf
-    bleed = []
-    for part, b in band_of.items():
-        if fold_of[b] != fold and (CROPS / part / "backing_instrumental.wav").exists():
-            y, _ = sf.read(str(CROPS / part / "backing_instrumental.wav"), dtype="float32", always_2d=True)
-            bleed.append(y.mean(1))
+    bleed = load_bleed(fold)
     print(f"fold {fold}: train {len(tr)} val {len(va)} bleed {len(bleed)}", flush=True)
-
-    def eq_curve(gain_bins):
-        return np.interp(cfreq, freqs, gain_bins)
-
-    def make(idx, train):
-        xs, ys = [], []
-        for i in idx:
-            x = X[i].astype(np.float32) / 32767
-            y = Y[i].astype(np.float32) / 32767
-            own = S[i] - S[i].mean()
-            g = np.clip(avg - own, -15, 15)
-            Yf = np.fft.rfft(y) * 10 ** (eq_curve(g) / 20)
-            y = np.fft.irfft(Yf, CLIP).astype(np.float32)
-            if train:
-                lf = np.log2(np.maximum(cfreq, 20) / 1000)
-                tilt = rng.uniform(-3, 3) * np.clip(lf / 3.3, -1, 1)
-                fc, gb = rng.uniform(np.log2(200), np.log2(6000)), rng.uniform(-4, 4)
-                bell = gb * np.exp(-0.5 * ((np.log2(np.maximum(cfreq, 20)) - fc) / 0.5) ** 2)
-                x = np.fft.irfft(np.fft.rfft(x) * 10 ** ((tilt + bell) / 20), CLIP).astype(np.float32)
-                if rng.random() < 0.5 and bleed:
-                    b = bleed[rng.integers(len(bleed))]
-                    s = rng.integers(0, max(1, len(b) - CLIP))
-                    seg = np.zeros(CLIP, np.float32)
-                    seg[:len(b[s:s + CLIP])] = b[s:s + CLIP]
-                    x = x + seg / (seg.std() + 1e-9) * x.std() * 10 ** (-rng.uniform(12, 30) / 20)
-                if rng.random() < 0.5:
-                    x = x + rng.standard_normal(CLIP).astype(np.float32) * x.std() * 10 ** (-rng.uniform(45, 75) / 20)
-                a = rng.integers(0, CLIP - CROP)
-            else:
-                a = (CLIP - CROP) // 2
-            x, y = x[a:a + CROP], y[a:a + CROP]
-            xs.append(x / (x.std() + 1e-9) * 0.1)
-            ys.append(y / (y.std() + 1e-9) * 0.1)
-        return (torch.tensor(np.stack(xs), device=dev).unsqueeze(1),
-                torch.tensor(np.stack(ys), device=dev).unsqueeze(1))
+    make = batch_maker(X, Y, S, avg, bleed, rng, dev)
 
     net = build_model(norm=norm, open_bottom=open_bottom, residual=residual, linear_only=linear_only).to(dev)
     if resume:

@@ -2,6 +2,7 @@
 access to the learn modules (Python 3.9, descript-audio-codec 1.0.0, MIT weights, 44 kHz).
 
     $DAC_PY learn/egvae_e0_dac.py roundtrip DIR    # DIR/*/true44.wav -> DIR/*/dac44.wav
+    $DAC_PY learn/egvae_e0_dac.py roundtrip DIR 4  # E0b: only the first 4 codebooks
     $DAC_PY learn/egvae_e0_dac.py mel DIR          # DIR/*/{true,di}.npy -> DIR/mel.json
 
 The round trip is the codec's own path: `compress` unchunked (one window over the whole crop),
@@ -23,7 +24,7 @@ import torch
 SR44, SR48 = 44100, 48000
 
 
-def roundtrip(root):
+def roundtrip(root, n_quantizers=None):
     import dac
     from audiotools import AudioSignal
 
@@ -36,7 +37,7 @@ def roundtrip(root):
         x, sr = sf.read(str(d / "true44.wav"), dtype="float32")
         assert sr == SR44
         sig = AudioSignal(torch.from_numpy(x)[None, None], SR44)
-        c = model.compress(sig, win_duration=None, normalize_db=-16, n_quantizers=None)
+        c = model.compress(sig, win_duration=None, normalize_db=-16, n_quantizers=n_quantizers)
         y = model.decompress(c).audio_data[0, 0].numpy()[: len(x)]
         sf.write(str(out), y, SR44, subtype="FLOAT")
         print(d.name, c.codes.shape, flush=True)
@@ -63,4 +64,5 @@ def mel(root):
 
 
 if __name__ == "__main__":
-    {"roundtrip": roundtrip, "mel": mel}[sys.argv[1]](pathlib.Path(sys.argv[2]).expanduser())
+    extra = [int(a) for a in sys.argv[3:]]
+    {"roundtrip": roundtrip, "mel": mel}[sys.argv[1]](pathlib.Path(sys.argv[2]).expanduser(), *extra)

@@ -12,12 +12,17 @@ preset of `learn/residual_eval.py`.
     $TORCH_PY -m learn.egvae_e0 render-true SLUG    # check: the true DI through the same pipeline
     $TORCH_PY -m learn.egvae_e0 score
     $TORCH_PY -m learn.egvae_e0 report              # -> docs/egvae-e0-result.json
+
+E0b (the plan's "E0b"): the same steps with EGVAE_E0_VARIANT=e0b in the environment of every
+command (it goes to ~/ndsp-presets/learn/direc/egvae-e0b and docs/egvae-e0b-result.json), and
+the DAC round trip run as `roundtrip DIR 4` (decode the first 4 of 9 codebooks only).
 """
 
 from __future__ import annotations
 
 import json
 import math
+import os
 import pathlib
 import statistics
 import sys
@@ -32,8 +37,11 @@ from learn import residual_eval as RE  # noqa: E402
 from learn import set3_gap_split as G  # noqa: E402
 from learn import sound_desc_eval as E  # noqa: E402
 
-OUT = CR.HOME / "learn/direc/egvae-e0"
-RESULT = PLUGIN_ROOT / "docs/egvae-e0-result.json"
+VARIANT = os.environ.get("EGVAE_E0_VARIANT", "e0")    # "e0b": first 4 codebooks only
+assert VARIANT in ("e0", "e0b"), VARIANT
+OUT = CR.HOME / f"learn/direc/egvae-{VARIANT}"
+RESULT = PLUGIN_ROOT / f"docs/egvae-{VARIANT}-result.json"
+E0_OUT = CR.HOME / "learn/direc/egvae-e0"
 BAR = -0.115
 
 
@@ -309,6 +317,19 @@ def report():
         "truecheck": json.loads((OUT / "truecheck.json").read_text()) if (OUT / "truecheck.json").exists() else None,
         "results": res,
     }
+    if VARIANT == "e0b":                  # E0b: against E0 (all 9 codebooks)
+        e0_full = json.loads((PLUGIN_ROOT / "docs/egvae-e0-result.json").read_text())
+        R0 = json.loads((E0_OUT / "distances.json").read_text())
+        same = [pick(R[s][k]) == pick(R0[s][k]) for s in ps for k in R[s]]
+        cp = res["Cp_vs_base|all"]["band_weighted_mean"]
+        out["experiment"] = ("EG-VAE-lite E0b: DAC 44 kHz round trip of the true measure DI, decoding "
+                             "only the first 4 of 9 codebooks (docs/egvae-lite-plan.md, E0b)")
+        out["n_codebooks"] = 4
+        out["e0_vs_base_band_weighted_9_codebooks"] = e0_full["e0_vs_base_band_weighted"]
+        out["share_of_e0_edge_over_Cp_kept"] = round((cp - e0) / (cp - e0_full["e0_vs_base_band_weighted"]), 3)
+        out["picks_same_as_e0"] = round(sum(same) / len(same), 3)
+        out["decision"] = "report only (E0b)"
+        del out["bar"]
     RESULT.write_text(json.dumps(out, indent=1, default=float) + "\n")
     for k, s_ in res.items():
         print(f"  {k:24s} band-wtd {s_['band_weighted_mean']:+.4f} part {s_['mean']:+.4f} "
