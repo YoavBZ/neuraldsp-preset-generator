@@ -300,3 +300,10 @@ after the change.
   seed, shard, slot) and `codes/shard-NNNNN.npz` (128 clips each). About 1 GB in all.
 - **Time:** about 114 s per shard on MPS, 382 shards, about 12 h. The CPU is no help (15 s a
   clip), and a larger batch is no faster.
+
+### E1: codebooks predicted (declared 2026-10-13, after E0b and before any mapper code)
+
+- **E1 predicts the first 4 DAC codebooks** of the DI and decodes from those 4. E0b showed that
+  4 codebooks keep 91% of E0's edge (band mean −0.126 against −0.129 for 9 codebooks).
+- **The input** is all 9 of the recording's codebooks.
+- **Pre-check 2's bar stays C′'s 0.472** at 80 Hz–1 kHz. The 4-codebook ceiling there is 0.72.
