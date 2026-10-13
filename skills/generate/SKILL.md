@@ -199,8 +199,11 @@ Tone King recipes use its verified sync-note selectors. See
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13
     reserved clean parts. Dry, they landed closer to the record than the shipped
-    template on every amp, about 12% on average, measured but not yet listened to
-    ([clean-baseline-results.md](../../docs/clean-baseline-results.md)).
+    template on every amp, about 12% on average
+    ([clean-baseline-results.md](../../docs/clean-baseline-results.md)). By ear,
+    through each part's own notes, the listener preferred the clean start to the
+    template on 6 of 8 development clean parts (PR12), and to the crunch start on 4 of
+    5 (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
     its compressor, amp, pedals, EQ and cab.
   - **When the research turns an effect back on, set its parameters explicitly.** The
@@ -224,7 +227,8 @@ Tone King recipes use its verified sync-note selectors. See
     On 7 reserved crunch parts from 3 bands, they landed about 7% closer than the
     driven baselines below, and lighter in gain, but only just past the bar
     ([crunch-baseline-results.md](../../docs/crunch-baseline-results.md)). Say so when
-    you report.
+    you report. By ear, the listener preferred them to the driven presets on 7 of 8
+    development crunch parts (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
     pedals, EQ and cab.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
@@ -384,8 +388,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/apply_spec.py" \
 
    Then add it with a plain note, `audition.py --add AUDITION_DIR --preset
    AUDITION_DIR/crunch-start.xml --note "crunch starting point (weaker evidence)"`.
-   Say how strong each starting point's evidence is, in step 4's words; none has been
-   confirmed by ear.
+   Say how strong each starting point's evidence is, in step 4's words: one listener
+   agreed with the judge by ear on development parts, in-sample, which is not a
+   confirmation on fresh songs.
 
 3. **Refine.** The user picks one, or says what is off ("B, but darker"). Make the
    change on a copy with the edit skill's steps 1–4 (read, interpret, change only
