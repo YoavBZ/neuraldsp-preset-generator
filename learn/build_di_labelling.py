@@ -6,6 +6,8 @@ Declared in `docs/set6-di-labelling-plan.md`, before this page was built.
     .venv/bin/python -m learn.build_di_labelling build --dry-run   # counts only, nothing written
     .venv/bin/python -m learn.build_di_labelling build             # page, private key, key hash
     .venv/bin/python -m learn.build_di_labelling score --answers SHEET   # after the hash is committed
+    .venv/bin/python -m learn.build_di_labelling build-validation [--dry-run]   # validation round
+    .venv/bin/python -m learn.build_di_labelling score-validation --answers SHEET
 
 **Questions.** One per group of a MedleyDB song's electric-guitar raw tracks proven to be one
 performance by set 4's same-take test (the stored waveform test of
@@ -676,6 +678,348 @@ def score(args):
           f"{out['groups_none']} answered none. Written to {dest}")
 
 
+# --- the validation round -----------------------------------------------------------------------
+#
+# Plan, last section ("Result of the first round, and a validation round"), declared before
+# this page was built. Development parts only (the sessions `control_candidates` reads: sets
+# 1-2 development and set 3 development), none of the first round's six checks, and none of
+# their bands where enough other bands exist.
+#
+#   * VAL_QUOTA crunch / high-gain questions: a known DI and its same-take amp tracks of one
+#     part (as the first round's checks), the class from set 3's classifier (DI -> amp).
+#   * N_DECOYS decoys: two or three amp/microphone tracks of one part, same-take with each
+#     other by the stored waveform test, NO DI shown; the right answer is "none". A decoy part
+#     must read crunch or high-gain for at least one of its DI -> amp pairs, so that decoys
+#     sound like the questions.
+#   * Selection by VAL_SEED: decoys first, then questions by class; each pass takes a new band
+#     first, then a second part of a band already in its own pool, then (only if still short)
+#     a first-round band. Decoy bands and question bands never overlap.
+#   * Clips exactly as in the first round (CLIP_S window with every track playing in at least
+#     MIN_ACTIVE of its frames, one loudness, 48 kHz mono AAC KBPS, order and letters shuffled
+#     from a seed stored in the key, no names on the page).
+#
+# Score (declared): at least VAL_MIN_CONFIDENT confident answers (a letter), at least
+# VAL_MIN_SHARE of them right; a letter on a decoy is wrong. If it passes, the first round's
+# confident MedleyDB labels count, but only for groups whose gain class (set 3's classifier on
+# the reference amp track against the labelled DI, whole tracks, as sets 4 and 5) is crunch or
+# high-gain. The reference among the DI's same-take partners: smallest |lag|, then the higher
+# peak-to-sidelobe ratio (set 6's rule 4, its reading of set 4/5's "Close" preference; MedleyDB
+# names no amp or microphone).
+
+VAL_DIR = OUT / "validation"
+VAL_PAGE = VAL_DIR / "index.html"
+VAL_KEY = PRIVATE / "validation-key.json"
+VAL_KEY_SHA = PLUGIN_ROOT / "docs" / "set6-di-labelling-validation-key.sha256"
+VAL_RESULT = OUT / "validation-result.json"
+FIRST_ANSWERS = OUT / "answers-2026-10-13.txt"
+GAIN_TOOLS = HOME / "references" / "datasets-set4" / "_tools"   # set 3's classify/gainmeasure
+VAL_QUOTA = {"crunch": 6, "high-gain": 4}       # majority crunch
+N_DECOYS = 4
+VAL_SEED = 20261014
+VAL_MIN_CONFIDENT, VAL_MIN_SHARE = 8, 0.90
+DRIVEN = ("crunch", "high-gain")
+VAL_INTRO = "Answer only when you're sure; otherwise choose none."
+VAL_PAGE_HTML = (PAGE_HTML
+                 .replace("\n{questions}\n", f"\n<p><b>{VAL_INTRO}</b></p>\n{{questions}}\n")
+                 .replace('"DI labelling: "', '"DI validation: "')
+                 .replace('"dilabel-{build}"', '"dilabel-validation-{build}"'))
+
+
+def first_round_key() -> dict:
+    text = KEY.read_text()
+    if hashlib.sha256(text.encode()).hexdigest() != declared_key_sha256():
+        die("the first-round key is not the one whose hash was committed")
+    return json.loads(text)
+
+
+def decoy_candidates() -> list:
+    """Development parts' same-take groups of amp tracks only (no DI), driven by their DI."""
+    from set6_di_role_calibration import development_sessions
+
+    dev = {s["key"]: s for s in development_sessions()}
+    out = []
+    for s in json.loads(DEV_PAIRS.read_text())["sessions"]:
+        if s["key"] not in dev:
+            die(f"{s['key']} is not a development session; the decoys use development data only")
+        root = pathlib.Path(dev[s["key"]]["root"])
+        same = [p for p in s["pairs"] if p["same_take"]]
+        amp_amp = [p for p in same if p["label"] == "amp_amp_same_part"]
+        for comp in _components({t for p in amp_amp for t in (p["a"], p["b"])},
+                                [(p["a"], p["b"]) for p in amp_amp]):
+            parts = {p["role_a"][1] for p in amp_amp if p["a"] in comp}
+            if len(parts) != 1 or len(comp) > 3:
+                continue
+            part = parts.pop()
+            if "keys" in part.lower():
+                continue
+            classes = sorted({(p["a_as_di"] if p["role_a"][0] == "di" else p["b_as_di"])["gain_class"]
+                              for p in same if p["label"] == "di_amp" and (p["a"] in comp or p["b"] in comp)}
+                             - {None})
+            if not set(classes) & set(DRIVEN):
+                continue
+            tracks = {t: {"copies": [t], "path": str(root / t), "file_sha256": {t: None}, "role": "amp"}
+                      for t in sorted(comp)}
+            out.append({"kind": "decoy", "song": s["key"], "band": s["band"], "part": part,
+                        "source": s["key"], "gain_classes": classes, "tracks": tracks})
+    return out
+
+
+def _window_ok(g, cache):
+    k = (g["song"], g["part"])
+    if k not in cache:
+        names = list(g["tracks"])
+        if len({pcm_sha256(g["tracks"][t]["path"]) for t in names}) != len(names):
+            cache[k] = None                     # identical audio: nothing to tell apart
+        else:
+            active, sr = activity(g)
+            w = best_window(active, names, sr)
+            cache[k] = w if w["all_active_fraction"] >= MIN_ACTIVE else None
+    return cache[k]
+
+
+def _pick(pool, n, rng, round1_bands, round1_parts, forbidden, taken, cache, log):
+    """n groups from pool: a new band first, then a second part of a band this pick already
+    took, then a first-round band; never a forbidden band or a first-round part."""
+    pool = [g for g in pool if (g["song"], g["part"]) not in round1_parts and g["band"] not in forbidden]
+    rng.shuffle(pool)
+    pool.sort(key=lambda g: -len(g["tracks"]))           # stable: shuffled within size
+    chosen, own = [], set()
+    passes = (lambda g: g["band"] not in round1_bands and g["band"] not in taken,
+              lambda g: g["band"] not in round1_bands and g["band"] in own,
+              lambda g: g["band"] in round1_bands and g["band"] not in taken | own)
+    for i, ok in enumerate(passes):
+        for g in pool:
+            if len(chosen) == n:
+                break
+            if (g["song"], g["part"]) in {(c["song"], c["part"]) for c in chosen} or not ok(g) \
+                    or (i == 0 and g["band"] in own):
+                continue
+            w = _window_ok(g, cache)
+            if w is None:
+                log.append(f"skipped {g['song']} {g['part']}: no window with every track playing")
+                continue
+            chosen.append({**g, "window": w, "pick_pass": i + 1})
+            own.add(g["band"])
+    if len(chosen) < n:
+        die(f"only {len(chosen)} of {n} groups could be drawn")
+    taken |= own
+    return chosen
+
+
+def validation_groups(round1) -> tuple[list, list]:
+    checks = [r for r in round1["questions"] if r["kind"] == "control"]
+    round1_bands = {r["band"] for r in checks}
+    round1_parts = {(r["song"], r["part"]) for r in checks}
+    rng = random.Random(VAL_SEED)
+    taken, cache, log = set(), {}, []
+    decoys = _pick(decoy_candidates(), N_DECOYS, rng, round1_bands, round1_parts, set(), taken,
+                   cache, log)
+    decoy_bands = {g["band"] for g in decoys}
+    cands = control_candidates()
+    questions = []
+    for cls, n in VAL_QUOTA.items():
+        pool = [c for c in cands if c["gain_class"] == cls]
+        questions += _pick(pool, n, rng, round1_bands, round1_parts, decoy_bands, taken, cache, log)
+    for line in log:
+        print(line)
+    return questions, decoys
+
+
+def build_validation(args):
+    from analysis import require
+
+    require("the DI-labelling validation page")
+    if not args.dry_run:
+        if VAL_DIR.exists() and any(VAL_DIR.iterdir()):
+            die(f"{VAL_DIR} is not empty; the page is built once")
+        if VAL_KEY.exists():
+            die(f"{VAL_KEY} exists; the page is built once")
+    round1 = first_round_key()
+    questions, decoys = validation_groups(round1)
+    groups = questions + decoys
+    print(f"{len(questions)} questions ("
+          + ", ".join(f"{c} {sum(q['gain_class'] == c for q in questions)}" for c in VAL_QUOTA)
+          + f"), {len(decoys)} decoys; {sum(len(g['tracks']) for g in groups)} clips; "
+          f"about {minutes(groups)} min")
+    for g in groups:
+        print(f"  {g['kind']:8} {g.get('gain_class') or '/'.join(g['gain_classes']):18} {g['band']:24} "
+              f"{g['part']:10} {len(g['tracks'])} tracks, window {g['window']['all_active_fraction']:.2f}, "
+              f"pass {g['pick_pass']}")
+    if args.dry_run:
+        return
+    seed = secrets.randbits(64)
+    rng = random.Random(seed)
+    rng.shuffle(groups)
+    rows, clips = [], []
+    for n, g in enumerate(groups, 1):
+        names = list(g["tracks"])
+        rng.shuffle(names)
+        letters = LETTERS[: len(names)]
+        sr, start = g["window"]["sample_rate"], g["window"]["start_s"]
+        for name in names:
+            clips.append(clip(g["tracks"][name]["path"], sr, start))
+            t = g["tracks"][name]
+            t["file_sha256"] = {name: sha256(t["path"])}
+        row = {"question": n, "kind": g["kind"], "song": g["song"], "source": g["source"],
+               "band": g["band"], "part": g["part"], "letters": dict(zip(letters, names)),
+               "tracks": g["tracks"], "window": g["window"], "clip_s": CLIP_S,
+               "pick_pass": g["pick_pass"]}
+        if g["kind"] == "control":
+            row.update({"gain_class": g["gain_class"], "answer": letters[names.index(g["di"])]})
+        else:
+            row.update({"gain_classes": g["gain_classes"], "answer": "none"})
+        rows.append(row)
+    target, levelled, after = L.level(clips)
+    VAL_DIR.mkdir(parents=True, exist_ok=True)
+    PRIVATE.mkdir(parents=True, exist_ok=True)
+    sections, k = [], 0
+    with tempfile.TemporaryDirectory() as tmp:
+        for r in rows:
+            payloads = []
+            for x in r["letters"]:
+                wav = pathlib.Path(tmp) / f"clip-{k:03d}.wav"
+                L.write(wav, levelled[k])
+                payloads.append(aac(wav))
+                r.setdefault("lufs_after", {})[x] = round(after[k], 3)
+                k += 1
+            sections.append(section(r["question"], list(r["letters"]), payloads))
+    build_id = secrets.token_hex(6)
+    page = VAL_PAGE_HTML.format(count=len(rows), minutes=minutes(groups), build=build_id,
+                                questions="\n".join(sections))
+    leaks = phone_leaks(page, leak_words(groups))
+    if leaks:
+        die(f"the page names what it must not: {leaks[:20]}")
+    VAL_PAGE.write_text(page)
+    stray = [p.name for p in VAL_DIR.iterdir() if p.name != VAL_PAGE.name]
+    if stray:
+        die(f"the page folder holds more than the page: {stray}")
+    key = {"schema": "set6-di-labelling-validation-key-v1", "plan": PLAN.name,
+           "plan_section": "Result of the first round, and a validation round",
+           "seed": seed, "selection_seed": VAL_SEED, "quota": VAL_QUOTA, "decoys": N_DECOYS,
+           "rule": {"min_confident": VAL_MIN_CONFIDENT, "min_share_right": VAL_MIN_SHARE,
+                    "decoy_letter": "wrong", "first_round_classes_counted": list(DRIVEN)},
+           "first_round_key_sha256": declared_key_sha256(),
+           "clip_s": CLIP_S, "active_floor_db": ACTIVE_FLOOR_DB, "min_active": MIN_ACTIVE,
+           "frame": FRAME, "hop": HOP, "sample_rate": SR, "aac_kbps": KBPS,
+           "level": {"target_lufs": round(target, 3), "peak_ceiling_dbtp": L.PEAK_CEILING_DBTP,
+                     "fade_s": L.FADE_S},
+           "intro": VAL_INTRO, "question_text": QUESTION,
+           "page_sha256": hashlib.sha256(page.encode()).hexdigest(), "build_id": build_id,
+           "provenance": provenance(), "questions": rows}
+    text = json.dumps(key, indent=1) + "\n"
+    VAL_KEY.write_text(text)
+    key_sha = hashlib.sha256(text.encode()).hexdigest()
+    VAL_KEY_SHA.write_text(f"{key_sha}  validation-key.json\n{key['page_sha256']}  index.html\n")
+    print(f"page {VAL_PAGE} ({VAL_PAGE.stat().st_size / 1e6:.1f} MB, {len(rows)} questions); "
+          f"target {target:.2f} LUFS")
+    print(f"key {VAL_KEY}\nkey sha256 {key_sha} (written to {VAL_KEY_SHA.relative_to(PLUGIN_ROOT)}; "
+          "commit it before the page is sent)")
+
+
+def score_validation_rows(rows, answers) -> dict:
+    per, confident, right = [], 0, 0
+    for r in rows:
+        a = answers[r["question"]]
+        conf = a != "none"
+        ok = conf and a == r["answer"]          # a letter on a decoy (answer "none") is wrong
+        confident += conf
+        right += ok
+        per.append({"question": r["question"], "kind": r["kind"], "answer": a, "key": r["answer"],
+                    "confident": conf, "right": ok if conf else None,
+                    "gain_class": r.get("gain_class") or r.get("gain_classes")})
+    share = right / confident if confident else 0.0
+    passes = confident >= VAL_MIN_CONFIDENT and share >= VAL_MIN_SHARE
+    return {"confident": confident, "right": right, "share_right": round(share, 4),
+            "min_confident": VAL_MIN_CONFIDENT, "min_share_right": VAL_MIN_SHARE,
+            "decoy_letters": sum(p["kind"] == "decoy" and p["confident"] for p in per),
+            "passes": passes, "per_question": per}
+
+
+def _gain_class_of(song: str, di_copies: list, partners: list) -> dict:
+    """Set 3's classifier on the reference amp track against the labelled DI, whole tracks."""
+    sys.path[:0] = [str(GAIN_TOOLS)]
+    import gainmeasure
+    from classify import classify
+
+    d = json.loads((PAIRS / f"{song}.json").read_text())
+    cands = []
+    for p in d["pairs"]:
+        if not p["waveform_pass"] or (p["x"] in di_copies) == (p["y"] in di_copies):
+            continue
+        di, amp = (p["x"], p["y"]) if p["x"] in di_copies else (p["y"], p["x"])
+        if amp not in partners:
+            continue
+        lag = p["waveform"]["median_lag_samples"]           # positive: y later than x
+        lag = lag if p["x"] == di else -lag                 # positive: amp later than the DI
+        cands.append((abs(lag), -p["waveform"]["median_peak_to_sidelobe"], amp, di, lag))
+    if not cands:
+        die(f"{song}: no stored same-take pair for {di_copies}")
+    _, _, amp, di, lag = min(cands)
+    x_amp, sr = _mono(MDB / d["tracks"][amp]["file"])
+    x_di, sr_di = _mono(MDB / d["tracks"][di]["file"])
+    if sr != sr_di:
+        die(f"{song}: {amp} and {di} differ in sample rate")
+    m = gainmeasure.measures(x_amp, x_di, sr, lag)
+    cls, conf, why, cvd = classify(m) if m else (None, None, [], None)
+    return {"reference": amp, "di_file": di, "lag_samples": lag, "gain_class": cls, "gain_confidence": conf,
+            "clean_vs_driven": cvd, "gain_measures": m}
+
+
+def score_validation(args):
+    raw = pathlib.Path(args.answers).expanduser().read_bytes() if args.answers else args.line.encode()
+    answers = read_answers(raw.decode())
+    text = VAL_KEY.read_text()
+    found = re.findall(r"^([0-9a-f]{64})\s+validation-key\.json$", VAL_KEY_SHA.read_text(), re.M)
+    if len(found) != 1 or hashlib.sha256(text.encode()).hexdigest() != found[0]:
+        die("the validation key is not the one whose hash was committed")
+    key = json.loads(text)
+    built = {r["question"] for r in key["questions"]}
+    missing, extra = sorted(built - set(answers)), sorted(set(answers) - built)
+    if missing or extra:
+        die(f"the answers do not cover exactly the built questions: missing {missing}, extra {extra}")
+    val = score_validation_rows(key["questions"], answers)
+    out = {"schema": "set6-di-labelling-validation-result-v1", "plan": PLAN.name,
+           "validation_key_sha256": found[0], "answers_sha256": hashlib.sha256(raw).hexdigest(),
+           "validation": val, "first_round": None}
+    if val["passes"]:
+        round1 = first_round_key()
+        raw1 = FIRST_ANSWERS.read_bytes()
+        a1 = read_answers(raw1.decode())
+        rows1 = round1["questions"]
+        if set(a1) != {r["question"] for r in rows1}:
+            die("the first-round answers do not cover exactly the first-round questions")
+        labels = score_rows(rows1, a1)["labels"]
+        for e in labels:
+            split = e["reason"] == "split group: a DI was named in both halves"
+            e["counts"] = False
+            if e["di"] is None or split:
+                continue
+            if not e["same_take_partners"]:
+                e["reason"] = "no same-take partner in the group"
+                continue
+            g = _gain_class_of(e["song"], e["di_copies"], e["same_take_partners"])
+            e.update(gain=g, counts=g["gain_class"] in DRIVEN,
+                     reason="" if g["gain_class"] in DRIVEN else
+                     f"gain class {g['gain_class']}: only crunch and high-gain labels count")
+        out["first_round"] = {
+            "key_sha256": declared_key_sha256(), "answers": str(FIRST_ANSWERS),
+            "answers_sha256": hashlib.sha256(raw1).hexdigest(),
+            "confident_labels": sum(e["di"] is not None for e in labels),
+            "groups_counted": sum(e["counts"] for e in labels),
+            "songs_counted": sorted({e["song"] for e in labels if e["counts"]}),
+            "labels": [e for e in labels if e["answer"] != "none"]}
+    dest = pathlib.Path(args.json).expanduser()
+    dest.write_text(json.dumps(out, indent=1) + "\n")
+    print(f"validation: {val['right']}/{val['confident']} confident answers right "
+          f"({val['decoy_letters']} letters on decoys); need >= {VAL_MIN_CONFIDENT} confident and "
+          f">= {VAL_MIN_SHARE:.0%} right: {'PASSES' if val['passes'] else 'FAILS; set 6 stays unusable'}")
+    if out["first_round"]:
+        f = out["first_round"]
+        print(f"first round: {f['confident_labels']} confident labels, {f['groups_counted']} groups from "
+              f"{len(f['songs_counted'])} songs count (crunch or high-gain)")
+    print(f"written to {dest}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -687,8 +1031,16 @@ def main():
     g.add_argument("--answers", help="a file holding the answer line")
     g.add_argument("--line", help="the answer line itself, e.g. '1B 2none 3C ...'")
     s.add_argument("--json", default=str(OUT / "labels.json"))
+    bv = sub.add_parser("build-validation", help="the validation round's page (plan, last section)")
+    bv.add_argument("--dry-run", action="store_true", help="the draw and counts only")
+    sv = sub.add_parser("score-validation")
+    g = sv.add_mutually_exclusive_group(required=True)
+    g.add_argument("--answers", help="a file holding the validation answer line")
+    g.add_argument("--line", help="the answer line itself")
+    sv.add_argument("--json", default=str(VAL_RESULT))
     args = ap.parse_args()
-    {"build": build, "score": score}[args.cmd](args)
+    {"build": build, "score": score, "build-validation": build_validation,
+     "score-validation": score_validation}[args.cmd](args)
 
 
 if __name__ == "__main__":

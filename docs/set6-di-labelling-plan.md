@@ -98,3 +98,25 @@ fact; instead, the user's confident calls get their own check.
   whose gain class (the set-3 classifier on amp track against labelled DI) is crunch or
   high-gain, the conditions the validation covered. Clean labels stay unused.
 - **If it fails,** set 6 stays unusable.
+
+## Amendment: the validation page as built (2026-10-13, before it is sent)
+
+Built by `learn/build_di_labelling.py build-validation`. Key `34c30b32…` and page `98f498b9…`
+are committed in `set6-di-labelling-validation-key.sha256`.
+
+- **14 questions:** 10 with a known DI (6 crunch, 4 high-gain) and 4 decoys.
+  - Every question has two clips: the DI and one amp track. No crunch part outside the
+    first round's bands has two same-take amp tracks.
+  - The decoys are two amp or microphone tracks of one part (Amp1/Amp2, Mic1/Mic2,
+    M80/TF51, two M81s). Each part reads crunch or high-gain on at least one of its
+    DI → amp pairs, so the decoys sound like the questions.
+- **The draw** uses a fixed seed. Decoys are drawn first, then questions by class.
+  - Each draw takes a new band first, then a second part of a band it already took.
+  - None of the first round's checks or bands is used. Question and decoy bands do not
+    overlap. Only one band appears twice (two crunch parts).
+- **Clips** are built as in round 1, at −22.1 LUFS.
+- **Scoring the first round, if the validation passes:** the amp reference is the DI's
+  same-take partner with the smallest lag, then the higher peak-to-sidelobe ratio (set 6's
+  rule 4). MedleyDB names no amp or microphone, so set 5's name order cannot apply. The
+  class is set 3's classifier on whole tracks, as sets 4 and 5. The result goes to
+  `listening/di-labelling/validation-result.json`.
