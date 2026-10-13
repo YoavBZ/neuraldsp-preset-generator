@@ -87,7 +87,11 @@ Any common audio file works — mp3 included, no conversion step needed.
 broadband activity, so on a dense master it ranks nothing and measures the middle
 of the file, which misses a given guitar part a third of the time or more. For a
 full song, ask the user for a time where the guitar is clearly heard and pass it
-as `--excerpt-start SECONDS`. A fingerprint of the wrong twenty seconds is not
+as `--excerpt-start SECONDS`. If they don't know, or ask you to find it, don't measure
+a window you chose: you cannot listen, and a mix's measurement cannot tell the guitar
+from the band. Say so; after researching, you may suggest a section the sources name
+("the intro", "the solo") for them to confirm. If no time comes, skip the measurement
+and build from research: in `generate` it only describes and sanity-checks. A fingerprint of the wrong twenty seconds is not
 noisy; it is a clean description of the wrong instrument. Two things to look at
 every time:
 
@@ -119,9 +123,23 @@ topology. Good sources:
 Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
 well-cited forum threads, video lesson notes.
 
+**Research the part, not the song.** A source about the band, the genre, the album or
+the whole mix (a mix review praising "crunchy guitars") does not describe the guitar
+the user means; when a song has several guitars, find which player and which part.
+State a rig fact only when a source states it, with the link, and mark everything else
+as your inference. When the sources are thin, say so in the report rather than filling
+the gap with genre.
+
 Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or
 driven?), the **effects** (delay, reverb, modulation, drive pedals), and the
 part's **place in the mix**. Keep the source links — you'll cite them.
+
+**Effects stay off unless documented.** The starting presets are made dry. Turn a
+reverb, delay or modulation back on only when research documents it on this part (a
+named effect, or one a lesson or rundown describes); "a little space" is not a default.
+No effect has been shown to bring a preset closer, by ear or by measurement. Say which
+effects you added and the source for each; when you added none, say the preset is dry
+and that a light room can be added with the edit skill.
 
 If research turns up nothing solid, say so and design from the description
 instead. Don't invent a rig rundown.
@@ -211,7 +229,8 @@ Tone King recipes use its verified sync-note selectors. See
     factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
     Low-Watt Americana has its tremolo level at 100%.
-  - **If the file is missing,** say so and use the template.
+  - **If the file is missing,** say so and use the template, made dry the same way
+    (`--recipe dry/pr12`: it ships with reverb and delay on).
 - **For a crunch Morgan part (documented as clearly driven, but not heavy), start from
   the amp's crunch baseline.** These are factory presets, under
   `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`. Present them to the user as
@@ -232,6 +251,10 @@ Tone King recipes use its verified sync-note selectors. See
     development crunch parts (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
     pedals, EQ and cab.
+  - **When research documents an amp-only drive** (a cranked amp, no pedals) and the
+    crunch start uses drive pedals (PR12's does; AC20's is amp-only), say that its
+    pedals stand in for the cranked amp; the clean start beside it (step 6) is the other
+    way to get there, pushed by its amp volume.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
   from the amp's driven baseline instead. On heavy material it beats the lighter crunch
   presets. These are factory presets the plugin installs, under
@@ -260,7 +283,7 @@ Tone King recipes use its verified sync-note selectors. See
     re-select the amp. A dry baseline chosen this way is the measured starting point,
     not the "renamed factory preset" failure step 3 warns about.
   - **If the file is missing** (an older or trimmed install), say so and use the
-    clean template.
+    clean template, made dry with `--recipe dry/pr12`.
 - **The dry recipe,** for every baseline in this step: `dry/pr12`, `dry/sw50r` or
   `dry/ac20` on Morgan, matching the baseline's amp, and `dry/toneking` on Tone King.
   On Morgan it sets transpose 0, the amp's spring reverb 0 (PR12 and SW50R; AC20 has

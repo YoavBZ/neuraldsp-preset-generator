@@ -68,6 +68,10 @@ tube reverb. 50W.
 
 A preset is layers. Pick one recipe per layer, then adapt.
 
+**Effect columns are what to use if research documents that effect on the part;
+otherwise leave the layer off** (the dry recipe turns it off; generate step 2). No effect
+has been shown to bring a preset closer.
+
 | Intent | amp | compressor | drive | eq | delay | reverb | output |
 |---|---|---|---|---|---|---|---|
 | Clean rhythm | `pr12-clean` | `subtle-clean-sustain` | `off` | `warm-clean-rhythm` | `off` | `spring-ambience` | `clean-rhythm` |
