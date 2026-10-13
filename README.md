@@ -84,19 +84,34 @@ You don't have to use the slash commands — just describing what you want
     part has: clean, crunch, or driven for a heavier part. It is made dry first (the
     pack's `dry/<amp>` recipe turns off reverb, delay, tremolo, doubler, the noise gate
     and the amp's spring reverb, and resets transpose), then the research adds back
-    what the song needs. These starting presets were chosen and checked by
-    measurement, not by ear: the clean ones held up on reserved recordings, the crunch
+    only what it documents for that part. These starting presets were chosen and
+    checked by measurement: the clean ones held up on reserved recordings, the crunch
     ones only weakly, and the driven ones on two of the three amps (AC20's only on
     development recordings) ([clean](docs/clean-baseline-results.md),
     [crunch](docs/crunch-baseline-results.md), [driven](docs/driven-baseline-results.md)).
+    By ear, one listener chose the starting preset `generate` now prefers on 17 of 21
+    development parts (in-sample: the presets were chosen partly on these parts)
+    ([listening](docs/starting-preset-listening-results.md)).
+  - **Two starting points when the gain is unsure.** How much gain a part has is the
+    step most often wrong from a song: before this was fixed, 10 of 22 clean development
+    parts went to crunch or heavier, mostly by following the song's genre or band. It now decides from what documents the
+    part, and when the part isn't clean, or the class is a guess, it installs the
+    amp's neighbouring starting point beside the preset (for example "… (clean
+    start)"), so you can try both. On the parts it was tuned on (in-sample), that routes
+    better, and the better of the two had no clean-against-crunch cost on any part, if
+    you pick it by ear
+    ([routing](docs/generate-routing-results.md),
+    [re-check](docs/generate-routing-recheck-results.md)).
   - **Tone King** clean and crunch parts start the same way, from a factory preset on
     the Rhythm channel made dry (`dry/toneking`); the crunch one rests on thin
     evidence ([Tone King](docs/toneking-baseline-results.md)). A heavier Tone King
     part needs one of your own presets.
+  - **Give it a time** where the guitar plays clearly. Without one it can't find the
+    part in a full mix (it can't listen), so it asks rather than guessing.
   - **Given a song,** it offers to put four candidates on a local listening page
-    beside the song, including the plain dry starting preset (and, if you're unsure
-    how much gain the part has, the amp's other starting point beside it), and
-    refines the one you pick. It asks first; you can skip it.
+    beside the song, including the plain dry starting preset (and the neighbouring one
+    when the part isn't clean, its class is a guess, or you're unsure), and refines the one you pick. It asks first; you can skip it. The page plays
+    shipped guitar riffs, not the song's part, so listen for tone, not notes.
   - Heavy metal and high-gain tones are out of scope: a heavier part still starts from
     the driven preset, but it isn't what the project is tuned for.
 - **`match`** — supply reference audio, a DI of that performance and a starting
