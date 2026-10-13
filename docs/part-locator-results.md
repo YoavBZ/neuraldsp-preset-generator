@@ -51,3 +51,14 @@ that changed counts, and reproduced the fixed numbers.
   - MedleyDB has these, but it is held out as set 6.
 - **The Eden diagnosis stands:** the chosen window had buried guitar, and better windows
   existed.
+
+## Caveat for any "three candidate windows" helper (from the user, by ear)
+
+- **The stem map got Eden's best clean-electric window wrong.** It ranked 8:10–8:30 as the
+  best bet, being tonal, guitar-led and vocal-free. The user heard that window as an acoustic
+  guitar.
+- **The electric solo is about 5:25–6:10.** The map had tagged that window as the driven
+  lead, which was right.
+- **`htdemucs_6s`'s guitar stem doesn't separate acoustic from electric guitar.** So "tonal,
+  guitar-led, no vocals" can pick an acoustic part. Any such helper has to say so, and leave the
+  choice to the user's ears.

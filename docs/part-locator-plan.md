@@ -15,6 +15,8 @@ A `htdemucs_6s` map of the song afterwards (10-s windows, numbers only) showed:
   vocals 30–40%, and it was dark.
 - **Better windows existed.** Guitar-led, vocal-free, tonal windows sit at about 3:00, 4:40
   and 8:10. The bright and noisy ones (5:20–6:10, 7:30–7:50) look like the driven lead.
+  - **Later, by ear:** 8:10 is an acoustic guitar, and the electric solo is about 5:25–6:10.
+    See the [results](part-locator-results.md).
 
 So the failure was choosing the wrong part, not a lack of guitar. Users describe the part they
 want by **character** (clean or driven) and **role** (lead or solo, against rhythm or riff).
