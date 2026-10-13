@@ -43,8 +43,9 @@ parts whose song also had a C part: 3 of 3.
 
 ## What it changes
 
-`generate` step 4 records, beside each starting preset's evidence, that the ear agreed
-with the judge on these development parts (in-sample, one listener).
+`generate` step 4 records, beside each starting preset's evidence, that the listener
+preferred it by ear on these development parts, per block and pooled (in-sample, one
+listener).
 
 ## Limits
 
