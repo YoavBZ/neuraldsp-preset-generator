@@ -67,3 +67,34 @@ differs from the text above as follows:
    high-gain, with a fixed seed.
 8. **The clips** are 48 kHz mono AAC at 128 kbps, all at −27.1 LUFS. The level dropped from
    −20 to keep every clip under a −1 dBTP peak.
+
+## Result of the first round, and a validation round (2026-10-13)
+
+**The first round:**
+- **What the user did:** labelled only the groups they trusted — 8 answers, the rest "not sure":
+  29B 49A 51A 53A 55B 61C 64B 68B, with every other question "none". Stored in
+  `listening/di-labelling/answers-2026-10-13.txt`.
+- **Hidden checks:** 1 of 6 right (the single check answered, Q55). The other 5 were left as
+  "not sure".
+- **By the declared rule (at least 5 of 6), the labels are not usable.**
+- **The user's report:** most groups seem to have no DI, and clean DIs are hard to tell.
+  Crunch DIs are easy.
+
+**The validation round,** declared before the page is built. The rule is not relaxed after the
+fact; instead, the user's confident calls get their own check.
+
+- **The page:** about 14 hidden questions from development songs only, none of them the six
+  checks already used, answered the same way ("only when sure", otherwise "none").
+  - **10 crunch or driven:** a known DI among 1–3 amp tracks of the same part.
+  - **4 decoys:** groups of amp or microphone tracks only, with no DI. The correct answer is
+    "none".
+  - Clips are built exactly as in the first round: 6 s, one loudness, shuffled, with the key
+    hashed and committed before the page is sent.
+- **The rule:**
+  - at least 8 confident answers (a letter, not "none");
+  - at least 90% of confident answers correct;
+  - a confident letter on a decoy counts as wrong.
+- **If it passes,** the user's confident first-round MedleyDB labels count, but only for groups
+  whose gain class (the set-3 classifier on amp track against labelled DI) is crunch or
+  high-gain, the conditions the validation covered. Clean labels stay unused.
+- **If it fails,** set 6 stays unusable.
