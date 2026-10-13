@@ -242,3 +242,34 @@ not what the decoder uses; averaging latents ruins the sound; and recordings and
 E0 repeated with DAC decoding only the first 4 of 9 codebooks. If those picks keep most of E0's
 edge, E1 may predict 4 codebooks (an easier task). That would be declared before E1 training,
 or else all 9 are kept.
+
+## E0b result (2026-10-13; report only)
+
+Code: `learn/egvae_e0.py` with `EGVAE_E0_VARIANT=e0b`, and `learn/egvae_e0_dac.py roundtrip DIR 4`.
+Numbers: `docs/egvae-e0b-result.json` (its `e0_*` keys are E0b's picks). E0's steps exactly,
+except that `compress` keeps only the first 4 of DAC's 9 codebooks, and `decompress` decodes
+those 4 (DAC's own `n_quantizers=4`).
+
+**Picks, against the leave-band-out fixed preset, band-weighted:**
+
+| chooser | band-weighted | bands negative |
+|---|---|---|
+| E0b, 4 codebooks | **−0.126** | 7 of 8 |
+| E0, all 9 codebooks | −0.129 | 7 of 8 |
+| oracle, the true DI | −0.131 | 8 of 8 |
+| C′ seed 0 | −0.099 | 7 of 8 |
+
+- E0b keeps **91% of E0's edge over C′** (83% of the oracle's).
+- E0b against C′: −0.027 band mean, 90% interval [−0.052, −0.001]. E0's was −0.029.
+- E0b against the oracle: +0.006; Zeno +0.021, Wall Of Death +0.010, the rest ≤ +0.007.
+- **Pick agreement:** with the oracle, 92% of part-amp-half cells (E0: 94%); with E0, 90%.
+- By class, against the fixed preset: clean −0.081 (oracle −0.087), crunch −0.181 (oracle −0.186).
+- **Against the true DI:** mel distance median 1.19 (E0: 0.91). Coherence, 80 Hz–1 kHz /
+  1–3 kHz / 3–8 kHz: 0.72 / 0.20 / 0.05 (E0: 0.92 / 0.49 / 0.06). Lag 0 on all 18 parts.
+
+**Reading.** The picks barely need DAC's last 5 codebooks: dropping them costs 0.003 of band
+mean. The waveform does need them: 80 Hz–1 kHz coherence falls from 0.92 to 0.72, still well
+above C′'s 0.472. So a 4-codebook E1 is viable for the picks. Pre-check 2 (80 Hz–1 kHz coherence ≥ 0.472) then has a ceiling of about 0.72 rather
+than 0.92. The choice between 4 and 9 predicted codebooks is to be declared before E1
+training; the codes are encoded with all 9 either way. The E0b renders were deleted after
+scoring.
