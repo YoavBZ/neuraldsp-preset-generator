@@ -1311,8 +1311,8 @@
     },
     "reverb": {
       "small-room": {
-        "title": "Small room, always-on",
-        "use_when": "the default - a little space without obvious effect",
+        "title": "Small room",
+        "use_when": "research documents a room or a light reverb on this part; not a default",
         "parameters": [
           {
             "module": "reverb",

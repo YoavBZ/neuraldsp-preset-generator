@@ -1534,7 +1534,7 @@
     "reverb": {
       "compact-room": {
         "title": "Compact filtered room",
-        "use_when": "a dry rhythm needs space without an obvious tail",
+        "use_when": "research documents a light room or reverb on a rhythm part; not a default",
         "parameters": [
           {
             "module": "",

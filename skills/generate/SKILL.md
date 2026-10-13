@@ -87,7 +87,10 @@ Any common audio file works — mp3 included, no conversion step needed.
 broadband activity, so on a dense master it ranks nothing and measures the middle
 of the file, which misses a given guitar part a third of the time or more. For a
 full song, ask the user for a time where the guitar is clearly heard and pass it
-as `--excerpt-start SECONDS`. A fingerprint of the wrong twenty seconds is not
+as `--excerpt-start SECONDS`. If they don't know, don't pick a window from the
+measurement yourself: you cannot listen, and a mix's measurement cannot tell the
+guitar from the band. Say so, suggest where to look (a section research names, such
+as "the intro" or "the solo"), and ask them to confirm a time before you measure. A fingerprint of the wrong twenty seconds is not
 noisy; it is a clean description of the wrong instrument. Two things to look at
 every time:
 
@@ -119,9 +122,22 @@ topology. Good sources:
 Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
 well-cited forum threads, video lesson notes.
 
+**Research the part, not the song.** A source about the band, the genre, the album or
+the whole mix (a mix review praising "crunchy guitars") does not describe the guitar
+the user means; when a song has several guitars, find which player and which part.
+State a rig fact only when a source states it, with the link, and mark everything else
+as your inference. When the sources are thin, say so in the report rather than filling
+the gap with genre.
+
 Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or
 driven?), the **effects** (delay, reverb, modulation, drive pedals), and the
 part's **place in the mix**. Keep the source links — you'll cite them.
+
+**Effects stay off unless documented.** The starting presets are made dry. Turn a
+reverb, delay or modulation back on only when research documents it on this part (a
+named effect, or one a lesson or rundown describes); "a little space" is not a default.
+No effect has been shown to bring a preset closer, by ear or by measurement. Say which
+effects you added and the source for each.
 
 If research turns up nothing solid, say so and design from the description
 instead. Don't invent a rig rundown.
@@ -232,6 +248,9 @@ Tone King recipes use its verified sync-note selectors. See
     development crunch parts (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
     pedals, EQ and cab.
+  - **When research documents an amp-only drive** (a cranked amp, no pedals), say
+    that the crunch start's drive pedals stand in for the cranked amp; the clean start
+    beside it (step 6) is the other way to get there, pushed by its amp volume.
 - **For a heavier, high-gain part** (out of the project's focus, but it happens), start
   from the amp's driven baseline instead. On heavy material it beats the lighter crunch
   presets. These are factory presets the plugin installs, under
