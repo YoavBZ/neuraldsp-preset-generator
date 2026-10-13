@@ -1,14 +1,16 @@
 """Set 6's declaration (`docs/validation-set6.md`) and its leakage guard.
 
 Set 6 is MedleyDB (V1 and V2 audio, Zenodo 1649325 and 1715175; CC BY-NC-SA 4.0,
-non-commercial research). Every set-6 band is held out: nothing may train, tune or choose
+non-commercial research). Its parts come from DIs labelled by ear (amendment 2); no
+automatic DI-role rule held up (amendment 1). Every set-6 band is held out: nothing may train, tune or choose
 on it before a declared confirmation. The guard fails closed, as sets 4 and 5's do:
 
     from learn import set6
     set6.is_held_out("Meaxic")                 # True: a band, session key or crop slug
     set6.is_held_out("~/ndsp-presets/references/datasets-medleydb/...")  # True: any path under it
     set6.refuse(path)                          # raises if `path` is set-6 material
-    set6.parts(scope="in_scope")               # clean and crunch parts (none: amendment 1)
+    set6.parts(scope="in_scope")               # clean and crunch parts (3 crunch: amendment 2)
+    set6.parts(stem_test=True)                 # only songs the separator was not trained on
 
 Anything under the MedleyDB root or the set-6 crop root is held out, listed or not (songs
 with no passing pair, single-track songs, metadata, the mixes). `covers` says whether a
@@ -122,12 +124,15 @@ def load(path: pathlib.Path | str = DECLARATION) -> dict:
     return _load(str(path))
 
 
-def parts(path=DECLARATION, scope: str | None = None) -> list[dict]:
+def parts(path=DECLARATION, scope: str | None = None, stem_test: bool = False) -> list[dict]:
     """Kept parts, all held out; `scope` "in_scope" (clean, crunch) or "report_only"
-    (high-gain). Reading their audio needs a declared confirmation."""
+    (high-gain). `stem_test=True` drops parts of songs in MUSDB18's train subset, which
+    the separator was trained on (a stem-based test reports those separately). Reading
+    their audio needs a declared confirmation."""
     if scope is not None and scope not in SCOPES:
         raise ValueError(f"unknown scope {scope!r}")
-    return [p for p in load(path)["parts"] if scope is None or p["scope"] == scope]
+    return [p for p in load(path)["parts"] if (scope is None or p["scope"] == scope)
+            and not (stem_test and p["separator_trained_on"])]
 
 
 def bands(path=DECLARATION) -> list[str]:

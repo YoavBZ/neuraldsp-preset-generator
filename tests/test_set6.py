@@ -17,6 +17,17 @@ spec.loader.exec_module(vs6)
 
 INVENTORY = pathlib.Path("~/ndsp-presets/references/datasets-medleydb/inventory.json").expanduser()
 CROPS = pathlib.Path("~/ndsp-presets/references/validation-crops-set6").expanduser()
+RESULT = pathlib.Path("~/ndsp-presets/listening/di-labelling/validation-result.json").expanduser()
+
+# Amendment 2: one part per counted labelled group (song, DI, reference, gain class, kept).
+LABELLED = {
+    "PurlingHiss_Lolita": [("RAW_03_06", "RAW_03_05", "high-gain", True)],
+    "BigTroubles_Phantom": [("RAW_05_01", "RAW_05_02", "high-gain", True),
+                            ("RAW_03_08", "RAW_03_09", "high-gain", False)],   # two lag clusters
+    "PortStWillow_StayEven": [("RAW_06_01", "RAW_06_02", "crunch", True),
+                              ("RAW_05_01", "RAW_05_02", "crunch", True)],
+    "LittleTybee_TheAlchemist": [("RAW_08_02", "RAW_08_03", "crunch", True)],
+}
 
 
 def _a_di():
@@ -28,7 +39,7 @@ def _a_di():
 
 def test_schema():
     d = set6.load()
-    assert d["schema"] == "validation-set6-2"
+    assert d["schema"] == "validation-set6-3"
     for k in ("declared", "inventory", "root", "crops_root", "rules", "held_out_bands", "band_strata",
               "licences", "provenance", "unpaired", "role_failures", "counts", "sessions", "parts",
               "excluded", "held_out_uses"):
@@ -63,20 +74,85 @@ def test_scope_clean_and_crunch_in_high_gain_report_only():
         set6.parts(scope="high-gain")
 
 
-def test_amendment_1_no_di_part():
-    """Amendment 1: no DI-role rule met its development bar, so set 6 has no DI part."""
+def test_amendment_1_first_rule_parts_all_excluded():
+    """Amendment 1: no DI-role rule met its development bar, so no part of the first
+    declaration is kept; their crops stay on disk, superseded."""
     d = set6.load()
     a = {x["number"]: x for x in d["amendments"]}[1]
     assert a["committed_before_application"] is True
     assert (ROOT / a["calibration"]).exists() and (ROOT / a["script"]).exists()
-    assert "unusable for DI-based tests" in d["use"]
-    assert d["parts"] == [] and set6.parts() == [] and d["counts"]["kept"] == 0
-    assert d["in_scope_bands_by_class"] == {}
     assert "orientation" in d["rules"]["di_role"]["first_declared"]      # the rule that failed, kept
-    for p in d["excluded"]:
+    first = [p for p in d["excluded"] if not p["slug"] or not p["slug"].endswith("-labelled")]
+    assert len(first) == 7
+    for p in first:
         assert vs6.NO_DI_ROLE in p["reasons"], p["part"]
-    clark = next(p for p in d["excluded"] if p["song"] == "StevenClark_Bounty")
+        assert p["crop_status"] == vs6.SUPERSEDED
+    assert not {p["slug"] for p in first} & {p["slug"] for p in d["parts"]}
+    clark = next(p for p in first if p["song"] == "StevenClark_Bounty")
     assert vs6.NOT_GUITAR in clark["reasons"] and clark["di_label"] == "electric bass"
+    assert {p["slug"]: p.get("superseded_by") for p in first if p.get("superseded_by")} == {
+        "medleydb-bigtroubles-phantom-raw-05-01": "medleydb-bigtroubles-phantom-raw-05-01-labelled",
+        "medleydb-bigtroubles-phantom-raw-03-08": "medleydb-bigtroubles-phantom-raw-03-08-labelled",
+        "medleydb-purlinghiss-lolita-raw-03-06": "medleydb-purlinghiss-lolita-raw-03-06-labelled"}
+
+
+def test_amendment_2_labelled_parts():
+    """Amendment 2: each counted labelled group is one part, DI = the labelled track."""
+    d = set6.load()
+    a = {x["number"]: x for x in d["amendments"]}[2]
+    lab = a["labelling"]
+    assert (ROOT / lab["plan"]).exists() and (ROOT / lab["builder"]).exists()
+    for rnd in ("first_round", "validation_round"):
+        committed = (ROOT / lab[rnd]["hashes_committed_in"]).read_text()
+        assert lab[rnd]["key_sha256"] in committed and lab[rnd]["page_sha256"] in committed
+    assert len(lab["counted_groups"]) == 6 and len({g["song"] for g in lab["counted_groups"]}) == 4
+    want = {(song, di, ref, cls, ok) for song, rows in LABELLED.items() for di, ref, cls, ok in rows}
+    got = set()
+    for p in d["parts"]:
+        assert p["di_inferred"] is False and p["di_role"]["source"].startswith("labelled")
+        assert p["slug"] == vs6.slugify("medleydb", p["song"], p["part"], "labelled")
+        got.add((p["song"], p["part"], "RAW_" + p["reference"].split("_RAW_")[-1][:-4], p["gain_class"], True))
+    for p in d["excluded"]:
+        if p["slug"] and p["slug"].endswith("-labelled"):
+            got.add((p["song"], p["part"], "RAW_" + p["reference"].split("_RAW_")[-1][:-4], p["gain_class"], False))
+    assert got == want
+    assert d["counts"]["kept"] == 5 and d["counts"]["labelled_parts"] == 6
+    bt = next(p for p in d["excluded"] if p["slug"] == "medleydb-bigtroubles-phantom-raw-03-08-labelled")
+    assert bt["reasons"] == ["two lag clusters"] and bt["crop_record_sha256"]
+    assert d["in_scope_bands_by_class"] == {"crunch": ["Little Tybee", "Port St Willow"]}
+    assert "AlexanderRoss" in lab["not_counted"]
+    assert d["held_out_uses"] == []
+
+
+def test_amendment_2_musdb_marks_per_part():
+    by_song = {p["song"]: p for p in set6.parts()}
+    assert by_song["PortStWillow_StayEven"]["separator_trained_on"] is True
+    assert by_song["BigTroubles_Phantom"]["separator_trained_on"] is True
+    assert by_song["LittleTybee_TheAlchemist"]["separator_trained_on"] is False
+    assert by_song["PurlingHiss_Lolita"]["separator_trained_on"] is False
+    for p in set6.parts():
+        assert (p["stem_test"] == "usable") == (not p["separator_trained_on"])
+    assert {p["song"] for p in set6.parts(stem_test=True)} == {"LittleTybee_TheAlchemist", "PurlingHiss_Lolita"}
+    assert [p["song"] for p in set6.parts(scope="in_scope", stem_test=True)] == ["LittleTybee_TheAlchemist"]
+
+
+@pytest.mark.skipif(not RESULT.exists(), reason="DI-labelling result not on this machine")
+def test_amendment_2_matches_the_labelling_result():
+    import hashlib
+
+    res = json.loads(RESULT.read_text())
+    a = {x["number"]: x for x in set6.load()["amendments"]}[2]["labelling"]
+    assert a["validation_result"]["sha256"] == hashlib.sha256(RESULT.read_bytes()).hexdigest()
+    v = res["validation"]
+    assert v["passes"] and v["right"] == v["confident"] == 10 and v["decoy_letters"] == 0
+    assert res["validation_key_sha256"] == a["validation_round"]["key_sha256"]
+    assert res["first_round"]["key_sha256"] == a["first_round"]["key_sha256"]
+    counted = {(e["song"], e["gain"]["di_file"], e["gain"]["reference"], e["gain"]["gain_class"])
+               for e in res["first_round"]["labels"] if e["counts"]}
+    assert counted == {(g["song"], g["di"], g["reference"], g["gain_class"]) for g in a["counted_groups"]}
+    for p in set6.parts():
+        e = next(e for e in res["first_round"]["labels"] if e["counts"] and e["gain"]["di_file"] == p["di"])
+        assert p["lag_samples_native"] == e["gain"]["lag_samples"]
 
 
 def test_the_calibration_fails_its_bar():
@@ -204,6 +280,7 @@ def test_crops_exist_and_match_the_declaration():
         assert hashlib.sha256(rec.read_bytes()).hexdigest() == p["crop"]["record_sha256"], p["slug"]
         r = json.loads(rec.read_text())
         assert r["split"] == "held_out" and r["set"] == 6 and r["excerpt_rule"] == "di-activity"
+        assert r["di_role_source"] == "labelled" and r["pairing"]["di_inferred"] is False
         assert r["sample_rate"] == 48000 and r["channels"] == 1
         assert r["lag"]["judge_lag_samples"] == r["lag"]["lag_samples"] - 52
         for role in ("di", "reference", "mix"):
@@ -212,7 +289,8 @@ def test_crops_exist_and_match_the_declaration():
             assert r["outputs"][role]["frames"] == 480000
 
 
-@pytest.mark.skipif(not (INVENTORY.exists() and CROPS.exists()), reason="set-6 inventory not on this machine")
+@pytest.mark.skipif(not (INVENTORY.exists() and CROPS.exists() and RESULT.exists()),
+                    reason="set-6 inventory, crops or labelling result not on this machine")
 def test_json_rebuilds_from_the_inventory():
     rebuilt = json.loads(json.dumps(vs6.build(INVENTORY, CROPS), ensure_ascii=False))
     committed = json.loads((ROOT / "docs" / "validation-set6.json").read_text())

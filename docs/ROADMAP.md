@@ -296,19 +296,23 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **A song-level class predictor from the rebuilt DI** failed its positive control
         twice and is closed ([results](class-predictor-results.md), on
         `ml/class-predictor`).
-   8i. **Set 6 (MedleyDB): no DI part, unusable for DI-based tests**
-      ([validation-set6.md](validation-set6.md)). *Declared 2026-10-12, amended 2026-10-13,
-      unused.*
-      - **MedleyDB names no DI.** The first DI-role rule was rejected in review, so a rule was
-        calibrated on development pairs (177 DI → amp pairs, 66 two-mic, two-amp or DI–DI
-        pairs; leave-one-band-out).
-      - **No rule passed the bar** (≤ 10% false accepts while keeping most real DIs).
-        - Clean DIs cannot be told from two microphones.
-        - The best driven rule keeps 87% of crunch DIs, but false-accepts 12% (a two-amp
-          rig passes it).
-      - **So MedleyDB adds nothing to the combined stem test.** At most a song-only use can
-        be declared, and it must exclude or report the 35 songs in MUSDB18's train subset.
-   8j. **The deciding song-level test: no power** ([note](stem-test-power.md)). MedleyDB gives no
+   8i. **Set 6 (MedleyDB): 5 parts from DIs labelled by ear**
+      ([validation-set6.md](validation-set6.md)). *Declared 2026-10-12, amended twice on
+      2026-10-13, unused.*
+      - **MedleyDB names no DI,** and no automatic DI-role rule passed its development bar
+        (amendment 1). Clean DIs cannot be told from two microphones.
+      - **The user labelled DIs by ear** ([plan](set6-di-labelling-plan.md)). A validation
+        round passed: 10 of 10 confident answers right, and no decoy named (amendment 2).
+      - **That gives 6 groups from 4 songs, and 5 kept parts:**
+        - 3 crunch parts in scope, from 2 bands: Little Tybee, and Port St Willow ×2. Port
+          St Willow's parts are low-confidence, and their crops read clean.
+        - 2 high-gain parts, report-only.
+        - No clean part.
+      - **For a stem test, only Little Tybee is in scope.** Port St Willow and Big Troubles
+        are in MUSDB18's train subset.
+      - **Next:** recompute the deciding test's power with set 5 plus set 6 (8j).
+   8j. **The deciding song-level test: no power** ([note](stem-test-power.md)). Written before set
+      6's amendment 2, so it is to be recomputed. MedleyDB then gave no
       usable DI parts, and set 5 has 3 crunch bands with a mix: about 9–18% power. Proposed: close
       the chooser for the product (step 9), keep C′ for research, and reopen with 8–12 new crunch
       bands recorded with a DI. The user decides.
