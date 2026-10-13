@@ -6,6 +6,8 @@
             check), cut half B, level, write the trial files and the private key;
             prints the key's SHA-256, committed before the first sitting
     phone   one self-contained phone page per sitting
+    score   check the key's and the answer sheet's committed hashes, then compute the
+            declared readings into docs/starting-preset-listening-results.json
 
 Development parts only; nothing held out, nothing from sets 5 or 6.
 """
@@ -398,11 +400,127 @@ def phone():
         print(f"{out} ({out.stat().st_size / 1e6:.1f} MB, {len(numbers)} trials)")
 
 
+KEY_SHA = "6bacfd75e2a03f04e53c9837b10b37cc98c6569afa78c79b04bc2a47dd018cbc"
+ANSWERS = ROOT / "docs" / "starting-preset-listening-answers.txt"
+ANSWERS_SHA = "2bd1a5e0e58a53c27944ecb6934526ed441b1c653212b9734d7c673b037c0671"
+RESULTS = ROOT / "docs" / "starting-preset-listening-results.json"
+LIGHTER = {"C": None, "X": "preferred", "K": "preferred", "reversed": "other"}
+
+
+def _sign_p(k, n):
+    """One-sided: P(X >= k) for X ~ Binomial(n, 1/2)."""
+    return sum(math.comb(n, i) for i in range(k, n + 1)) / 2 ** n
+
+
+def score():
+    import re
+
+    key_bytes = (OUT / "private" / "key.json").read_bytes()
+    if hashlib.sha256(key_bytes).hexdigest() != KEY_SHA:
+        raise SystemExit("the key does not match its committed hash")
+    if hashlib.sha256(ANSWERS.read_bytes()).hexdigest() != ANSWERS_SHA:
+        raise SystemExit("the answer sheet does not match its committed hash")
+    key = json.loads(key_bytes)
+    answers = {}
+    for n, a in re.findall(r"(\d+)([AB?])", ANSWERS.read_text()):
+        if int(n) in answers:
+            raise SystemExit(f"trial {n} answered twice")
+        answers[int(n)] = a
+    trials = {t["trial"]: t for t in key["trials"]}
+    if set(answers) != set(trials):
+        raise SystemExit(f"answers {sorted(set(answers) ^ set(trials))} do not match the trials")
+
+    def chose_preferred(t):
+        a = answers[t["trial"]]
+        return None if a == "?" else a == t["preferred_is"]
+
+    out = {"plan": PLAN.name, "key_sha256": KEY_SHA, "answers_sha256": ANSWERS_SHA}
+    hidden = [t for t in trials.values() if t["block"] == "hidden"]
+    out["hidden_reference"] = {f"sitting {t['sitting']}": answers[t["trial"]] == t["reference_is"]
+                               for t in hidden}
+    void = {t["sitting"] for t in hidden if answers[t["trial"]] != t["reference_is"]}
+    out["void_sittings"] = sorted(void)
+    main = [t for t in trials.values() if t["block"] in ("C", "X", "K")
+            and t["sitting"] not in void]
+
+    def block_reading(ts):
+        decided = [chose_preferred(t) for t in ts if chose_preferred(t) is not None]
+        k, n = sum(decided), len(decided)
+        return {"preferred": k, "decided": n, "cant_tell": len(ts) - n,
+                "share": round(k / n, 3) if n else None,
+                "p_one_sided": round(_sign_p(k, n), 4) if n else None}
+
+    pooled = block_reading(main)
+    ck = block_reading([t for t in main if t["block"] in ("C", "K")])
+    blocks = {b: block_reading([t for t in main if t["block"] == b]) for b in ("C", "X", "K")}
+    xs = [t for t in main if t["block"] == "X"]
+    same_song = {"cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2", "telefunken-First_Offering-GTR_2"}
+    blocks["X_without_same_song"] = block_reading([t for t in xs if t["slug"] not in same_song])
+    other_p = round(_sign_p(pooled["decided"] - pooled["preferred"], pooled["decided"]), 4)
+    if void == {1, 2}:
+        verdict = "void"
+    elif pooled["p_one_sided"] is not None and pooled["p_one_sided"] < 0.05 and (
+            ck["share"] or 0) >= 0.5:
+        verdict = "heard"
+    elif other_p < 0.05:
+        verdict = "not heard"
+    else:
+        verdict = "undecided"
+    out.update(decision=verdict, pooled=pooled, pooled_C_and_K=ck, blocks=blocks,
+               other_option_p_one_sided=other_p)
+    # Ear and judge: the judge's pick is the option with the lower half-B distance.
+    agree, agree_clear, agree_small = [], [], []
+    for t in main:
+        c = chose_preferred(t)
+        if c is None:
+            continue
+        judge_pref = t["judge_log_ratio_preferred_over_other_halfB"] < 0
+        hit = c == judge_pref
+        agree.append(hit)
+        (agree_clear if abs(t["judge_log_ratio_preferred_over_other_halfB"]) > MARGIN
+         else agree_small).append(hit)
+    out["ear_judge_agreement"] = {"all": [sum(agree), len(agree)],
+                                  "margin_over_0.15": [sum(agree_clear), len(agree_clear)],
+                                  "margin_at_most_0.15": [sum(agree_small), len(agree_small)]}
+    lighter = [chose_preferred(t) == (LIGHTER[t["block"]] == "preferred")
+               for t in trials.values() if LIGHTER.get(t["block"]) and chose_preferred(t) is not None
+               and t["sitting"] not in void]
+    out["lighter_gain_chosen"] = [sum(lighter), len(lighter)]
+    rev = [t for t in trials.values() if t["block"] == "reversed"]
+    out["reversed_taste_control"] = [{"chose_heavier_as_judge_prefers": chose_preferred(t)}
+                                     for t in rev]
+    reps = []
+    for t in trials.values():
+        if t["block"] == "repeat":
+            orig = trials[t["repeat_of"]]
+            reps.append({"trial": t["trial"], "of": orig["trial"],
+                         "consistent": chose_preferred(t) == chose_preferred(orig)})
+    out["repeats"] = reps
+    by_band = {}
+    for t in main:
+        c = chose_preferred(t)
+        if c is not None:
+            by_band.setdefault(t["band"], [0, 0])
+            by_band[t["band"]][0] += c
+            by_band[t["band"]][1] += 1
+    out["by_band"] = by_band
+    out["per_trial"] = [{"trial": t["trial"], "block": t["block"], "amp": t["amp"],
+                         "answer": answers[t["trial"]], "preferred_is": t["preferred_is"],
+                         "judge_log_ratio": t["judge_log_ratio_preferred_over_other_halfB"]}
+                        for t in sorted(trials.values(), key=lambda x: x["trial"])]
+    RESULTS.write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps({k: out[k] for k in ("decision", "void_sittings", "hidden_reference",
+                                          "pooled", "pooled_C_and_K", "blocks",
+                                          "other_option_p_one_sided", "ear_judge_agreement",
+                                          "lighter_gain_chosen", "reversed_taste_control",
+                                          "repeats")}, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["parts", "build", "phone"])
+    ap.add_argument("step", choices=["parts", "build", "phone", "score"])
     args = ap.parse_args()
-    {"parts": choose_parts, "build": build, "phone": phone}[args.step]()
+    {"parts": choose_parts, "build": build, "phone": phone, "score": score}[args.step]()
 
 
 if __name__ == "__main__":
