@@ -273,3 +273,30 @@ above C′'s 0.472. So a 4-codebook E1 is viable for the picks. Pre-check 2 (80 
 than 0.92. The choice between 4 and 9 predicted codebooks is to be declared before E1
 training; the codes are encoded with all 9 either way. The E0b renders were deleted after
 scoring.
+
+## E1 data (encoding started 2026-10-13; no mapper trained yet)
+
+Code: `learn/egvae_e1_data.py` (clip list and audio, learn venv) and `learn/egvae_e1_dac.py`
+(DAC encoder, DAC venv). C′'s pair making is factored out of `direc.fit` as `direc.make_clip`
+(with `load_bleed` and `batch_maker`); `tests/test_direc_make.py` shows it gives bit-identical
+pairs to the inline code, and 3 CPU training steps of `fit` give identical weights before and
+after the change.
+
+- **Clips:** all 48,806 of C′'s: PR12 18,843 (from `cache`), SW50R 14,965 and AC20 14,998 (from
+  the pairs FLACs; their rows equal `cache-{sw50r,ac20}/meta.json` row for row, and the DI
+  spectra recomputed from the FLACs match the stored ones to 4e-6 dB). Fold 2 is validation:
+  38,709 training clips and 10,097 validation clips.
+- **Declared choices:**
+  - one `make_clip` per clip, rng `default_rng(seed)` with seed = the clip's global row index;
+  - training clips get C′'s augmentation, validation clips none (as in `fit`'s validation);
+  - the full 6 s of both recording and target is encoded, not C′'s 3-s crop, so random 3-s
+    crops (258 of 517 frames) can be taken in code space; the crop start C′ would have drawn is
+    stored;
+  - 48 → 44.1 kHz with `resample_poly` 147/160, then −16 LUFS exactly as DAC's `compress`;
+  - all 9 codebooks stored for both sides (int16), with the loudness before normalising.
+- **MPS against CPU:** on 3 clips, the batched MPS codes equal the CPU codes and the CPU
+  `compress` codes (E0's path) on 100% of frames in all 9 codebooks, for recording and target.
+- **Store:** `~/ndsp-presets/learn/direc/e1-codes/`: `index.json` (clip id, source, band, fold,
+  seed, shard, slot) and `codes/shard-NNNNN.npz` (128 clips each). About 1 GB in all.
+- **Time:** about 114 s per shard on MPS, 382 shards, about 12 h. The CPU is no help (15 s a
+  clip), and a larger batch is no faster.
