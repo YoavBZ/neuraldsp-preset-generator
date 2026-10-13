@@ -1,0 +1,3231 @@
+{
+ "schema": "part-locator-truth-1",
+ "plan": "docs/part-locator-plan.md",
+ "rules": {
+  "hop_s": 0.1,
+  "act_db": 30.0,
+  "nodi_act_db": 20.0,
+  "window_s": 10.0,
+  "step_s": 1.0,
+  "active_share": 0.6,
+  "dominance": 0.5,
+  "band_hz": [
+   1000.0,
+   4000.0
+  ],
+  "lead": "cover<=0.5 and voiced>=0.6",
+  "rhythm": "cover>=0.5 and voiced<=0.4",
+  "pyin": "librosa 0.11 pyin, fmin 70, fmax 1400, frame 2048, hop 512 at 44.1 kHz, center=False"
+ },
+ "folds": {
+  "Adam Buckley": 3,
+  "Ale Lak": 1,
+  "Atlantis Bound": 2,
+  "Bernard Purdie Tribute All-Stars": 1,
+  "Chris Coltraine": 3,
+  "Cnoc An Tursa": 1,
+  "Death Of A Romantic": 2,
+  "Diesel13": 3,
+  "Dom McLennon": 2,
+  "Doom Flamingo": 2,
+  "Eat The Feeder": 1,
+  "Eggy": 3,
+  "Hollow Ground": 1,
+  "John Morgan Kimock": 1,
+  "Magician's Nephew": 2,
+  "Rebecca Haviland": 3,
+  "Rebuild The Evil": 3,
+  "Renesans": 1,
+  "Starnes And Shah": 2,
+  "Storm Of Particles": 2,
+  "Swatkins": 2,
+  "Szymon Skiba": 3,
+  "The Long Wait": 1,
+  "The Travelling Band": 3,
+  "Timo And The Timezone": 2,
+  "Turbosauro": 3,
+  "Wall Of Death": 1,
+  "Zeno": 1
+ },
+ "counts": {
+  "parts": 136,
+  "role": {
+   "lead": 60,
+   "rhythm": 2,
+   "null": 74
+  },
+  "character": {
+   "clean": 48,
+   "driven": 34,
+   "null": 54
+  },
+  "targets": 20,
+  "in_scope_reachable": 9,
+  "in_scope_reachable_bands": 8,
+  "primary": 7,
+  "primary_bands": 6,
+  "primary_by_fold": {
+   "1": 3,
+   "2": 0,
+   "3": 4
+  },
+  "dropped_base_rate_0": 8
+ },
+ "targets": [
+  {
+   "set": "2",
+   "band": "Adam Buckley",
+   "song": "Drag Me Down",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr3",
+    "ElecGtr4"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.4421,
+   "base_rate_hit3": 0.8551,
+   "hit_windows": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189
+   ],
+   "fold": 3
+  },
+  {
+   "set": "2",
+   "band": "Ale Lak",
+   "song": "Nosso Mundo Deixou De Existir",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr03"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.125,
+   "base_rate_hit3": 0.339,
+   "hit_windows": [
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133
+   ],
+   "fold": 1
+  },
+  {
+   "set": "2",
+   "band": "Eat The Feeder",
+   "song": "Today's The Day",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr07",
+    "ElecGtr10"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 1
+  },
+  {
+   "set": "2",
+   "band": "Starnes And Shah",
+   "song": "Prodigal",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr2"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 2
+  },
+  {
+   "set": "2",
+   "band": "Starnes And Shah",
+   "song": "Prodigal",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr5"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 2
+  },
+  {
+   "set": "2",
+   "band": "The Travelling Band",
+   "song": "Passing Ships",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr4",
+    "ElecGtr6"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.2025,
+   "base_rate_hit3": 0.525,
+   "hit_windows": [
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241
+   ],
+   "fold": 3
+  },
+  {
+   "set": "2",
+   "band": "The Travelling Band",
+   "song": "Quicksand",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr2"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.2333,
+   "base_rate_hit3": 0.585,
+   "hit_windows": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83
+   ],
+   "fold": 3
+  },
+  {
+   "set": "2",
+   "band": "Zeno",
+   "song": "Signs",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr6"
+   ],
+   "musdb": "test",
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 1
+  },
+  {
+   "set": "2",
+   "band": "John Morgan Kimock",
+   "song": "Hikikomori - Love Does",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "GTR"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0201,
+   "base_rate_hit3": 0.0598,
+   "hit_windows": [
+    238,
+    239,
+    241,
+    244,
+    245,
+    251,
+    252
+   ],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "character": "driven",
+   "role": "lead",
+   "scope": "high-gain",
+   "parts": [
+    "ElecGtr03",
+    "ElecGtr04"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 2
+  },
+  {
+   "set": "3",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr02",
+    "ElecGtr03"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 3
+  },
+  {
+   "set": "3",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "character": "driven",
+   "role": "lead",
+   "scope": "high-gain",
+   "parts": [
+    "ElecGtr9"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr1",
+    "ElecGtr2",
+    "ElecGtr3",
+    "ElecGtr7"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.6845,
+   "base_rate_hit3": 0.9807,
+   "hit_windows": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    108,
+    109,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    159,
+    160,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    167,
+    168,
+    169,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186
+   ],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "character": "driven",
+   "role": "lead",
+   "scope": "high-gain",
+   "parts": [
+    "ElecGtr1",
+    "ElecGtr2",
+    "ElecGtr3"
+   ],
+   "musdb": "test",
+   "base_rate_hit1": 0.5379,
+   "base_rate_hit3": 0.9346,
+   "hit_windows": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94
+   ],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Szymon Skiba",
+   "song": "Let's Dance",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr3",
+    "ElecGtr4"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.073,
+   "base_rate_hit3": 0.2166,
+   "hit_windows": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "fold": 3
+  },
+  {
+   "set": "3",
+   "band": "Timo And The Timezone",
+   "song": "Just Don't Talk",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr3"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.0,
+   "base_rate_hit3": 0.0,
+   "hit_windows": [],
+   "fold": 2
+  },
+  {
+   "set": "3",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "character": "clean",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr1",
+    "ElecGtr1DT"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.3281,
+   "base_rate_hit3": 0.7244,
+   "hit_windows": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209
+   ],
+   "fold": 3
+  },
+  {
+   "set": "3",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "character": "driven",
+   "role": "lead",
+   "scope": "high-gain",
+   "parts": [
+    "ElecGtr4"
+   ],
+   "musdb": "train",
+   "base_rate_hit1": 0.1239,
+   "base_rate_hit3": 0.3486,
+   "hit_windows": [
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    159,
+    160,
+    161,
+    162,
+    163
+   ],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "character": "driven",
+   "role": "lead",
+   "scope": "in-scope",
+   "parts": [
+    "ElecGtr3",
+    "ElecGtr5"
+   ],
+   "musdb": "train",
+   "base_rate_hit1": 0.0963,
+   "base_rate_hit3": 0.2785,
+   "hit_windows": [
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74
+   ],
+   "fold": 1
+  },
+  {
+   "set": "3",
+   "band": "Renesans",
+   "song": "Split Brow",
+   "character": "driven",
+   "role": "rhythm",
+   "scope": "high-gain",
+   "parts": [
+    "GTR 1"
+   ],
+   "musdb": null,
+   "base_rate_hit1": 0.7295,
+   "base_rate_hit3": 0.989,
+   "hit_windows": [
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143,
+    144,
+    145,
+    146,
+    147,
+    148,
+    149,
+    150,
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    159,
+    160,
+    161,
+    162,
+    163,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222
+   ],
+   "fold": 1
+  }
+ ],
+ "dropped": [
+  {
+   "song": "Today's The Day",
+   "parts": [
+    "ElecGtr07",
+    "ElecGtr10"
+   ],
+   "character": "driven",
+   "role": "lead"
+  },
+  {
+   "song": "Prodigal",
+   "parts": [
+    "ElecGtr2"
+   ],
+   "character": "clean",
+   "role": "lead"
+  },
+  {
+   "song": "Prodigal",
+   "parts": [
+    "ElecGtr5"
+   ],
+   "character": "driven",
+   "role": "lead"
+  },
+  {
+   "song": "Signs",
+   "parts": [
+    "ElecGtr6"
+   ],
+   "character": "clean",
+   "role": "lead"
+  },
+  {
+   "song": "The Well",
+   "parts": [
+    "ElecGtr03",
+    "ElecGtr04"
+   ],
+   "character": "driven",
+   "role": "lead"
+  },
+  {
+   "song": "Colour Me Red",
+   "parts": [
+    "ElecGtr02",
+    "ElecGtr03"
+   ],
+   "character": "clean",
+   "role": "lead"
+  },
+  {
+   "song": "Wickerman",
+   "parts": [
+    "ElecGtr9"
+   ],
+   "character": "driven",
+   "role": "lead"
+  },
+  {
+   "song": "Just Don't Talk",
+   "parts": [
+    "ElecGtr3"
+   ],
+   "character": "clean",
+   "role": "lead"
+  }
+ ],
+ "songs": [
+  {
+   "set": "1",
+   "source": "telefunken",
+   "band": "Rebecca Haviland",
+   "song": "Bourbon",
+   "windows": 270,
+   "length_s": 279.7,
+   "any_guitar_share": 0.956,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.944,
+     "voiced": 0.644,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.915,
+     "voiced": 0.678,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "1",
+   "source": "telefunken",
+   "band": "Rebecca Haviland",
+   "song": "Collide With Me",
+   "windows": 253,
+   "length_s": 262.7,
+   "any_guitar_share": 0.933,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.933,
+     "voiced": 0.809,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.569,
+     "voiced": 0.95,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "1",
+   "source": "cambridge",
+   "band": "Chris Coltraine",
+   "song": "Heather Jane",
+   "windows": 241,
+   "length_s": 250.7,
+   "any_guitar_share": 1.0,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 1.0,
+     "voiced": 0.798,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr1DT",
+     "cover": 1.0,
+     "voiced": 0.805,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.95,
+     "voiced": 0.654,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "cover": 0.95,
+     "voiced": 0.641,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.34,
+     "voiced": 0.968,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Adam Buckley",
+   "song": "Drag Me Down",
+   "windows": 190,
+   "length_s": 199.7,
+   "any_guitar_share": 0.758,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:elecgtr1": [
+     "25_ElecGtr1.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr2",
+     "cover": 0.532,
+     "voiced": 0.87,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "cover": 0.547,
+     "voiced": 0.88,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.416,
+     "voiced": 0.933,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.442,
+     "voiced": 0.779,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.395,
+     "voiced": 0.922,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Ale Lak",
+   "song": "Nosso Mundo Deixou De Existir",
+   "windows": 176,
+   "length_s": 185.0,
+   "any_guitar_share": 1.0,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "cover": 0.608,
+     "voiced": 0.865,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr01DT",
+     "cover": 0.608,
+     "voiced": 0.873,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr02",
+     "cover": 0.5,
+     "voiced": 0.942,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr02DT",
+     "cover": 0.506,
+     "voiced": 0.938,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr03",
+     "cover": 0.364,
+     "voiced": 0.847,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr04",
+     "cover": 0.472,
+     "voiced": 0.885,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr04DT",
+     "cover": 0.489,
+     "voiced": 0.871,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr05",
+     "cover": 0.409,
+     "voiced": 0.957,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Atlantis Bound",
+   "song": "It Was My Fault For Waiting",
+   "windows": 259,
+   "length_s": 268.2,
+   "any_guitar_share": 0.822,
+   "musdb": "train",
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.699,
+     "voiced": 0.689,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.703,
+     "voiced": 0.643,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.564,
+     "voiced": 0.913,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.56,
+     "voiced": 0.911,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.251,
+     "voiced": 0.946,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.297,
+     "voiced": 0.951,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Eat The Feeder",
+   "song": "Today's The Day",
+   "windows": 267,
+   "length_s": 276.8,
+   "any_guitar_share": 0.993,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "cover": 0.899,
+     "voiced": 0.726,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr02",
+     "cover": 0.91,
+     "voiced": 0.735,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr04",
+     "cover": 0.854,
+     "voiced": 0.908,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr05",
+     "cover": 0.273,
+     "voiced": 0.929,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr06",
+     "cover": 0.281,
+     "voiced": 0.934,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr07",
+     "cover": 0.112,
+     "voiced": 0.873,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr09",
+     "cover": 0.281,
+     "voiced": 0.943,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr10",
+     "cover": 0.202,
+     "voiced": 0.98,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Starnes And Shah",
+   "song": "Prodigal",
+   "windows": 184,
+   "length_s": 193.9,
+   "any_guitar_share": 0.957,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.957,
+     "voiced": 0.629,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.261,
+     "voiced": 0.943,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.098,
+     "voiced": 0.575,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.527,
+     "voiced": 0.689,
+     "role": null,
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.114,
+     "voiced": 0.922,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "The Travelling Band",
+   "song": "Passing Ships",
+   "windows": 242,
+   "length_s": 251.1,
+   "any_guitar_share": 0.868,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:elecgtr1": [
+     "15_ElecGtr1Mic1.wav",
+     "16_ElecGtr1Mic2.wav"
+    ],
+    "nodi:elecgtr5": [
+     "26_ElecGtr5.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr2",
+     "cover": 0.822,
+     "voiced": 0.982,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.529,
+     "voiced": 0.909,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.393,
+     "voiced": 0.792,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.202,
+     "voiced": 0.851,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "The Travelling Band",
+   "song": "Quicksand",
+   "windows": 150,
+   "length_s": 159.3,
+   "any_guitar_share": 0.82,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.787,
+     "voiced": 0.65,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.44,
+     "voiced": 0.882,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.333,
+     "voiced": 0.904,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "cambridge",
+   "band": "Zeno",
+   "song": "Signs",
+   "windows": 225,
+   "length_s": 234.3,
+   "any_guitar_share": 1.0,
+   "musdb": "test",
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.996,
+     "voiced": 0.968,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.684,
+     "voiced": 0.997,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.476,
+     "voiced": 0.393,
+     "role": null,
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.476,
+     "voiced": 0.478,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.418,
+     "voiced": 0.423,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.404,
+     "voiced": 0.828,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr7",
+     "cover": 0.418,
+     "voiced": 0.998,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr8",
+     "cover": 0.293,
+     "voiced": 0.711,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr9",
+     "cover": 0.293,
+     "voiced": 0.711,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Dom McLennon",
+   "song": "First Offering",
+   "windows": 222,
+   "length_s": 231.9,
+   "any_guitar_share": 0.968,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.968,
+     "voiced": 0.694,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.896,
+     "voiced": 0.975,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Dom McLennon",
+   "song": "Gym Hours",
+   "windows": 181,
+   "length_s": 190.6,
+   "any_guitar_share": 0.967,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.95,
+     "voiced": 0.973,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.923,
+     "voiced": 0.871,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Dom McLennon",
+   "song": "Russian Cream",
+   "windows": 244,
+   "length_s": 253.5,
+   "any_guitar_share": 0.963,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.959,
+     "voiced": 0.772,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.619,
+     "voiced": 0.903,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Dom McLennon",
+   "song": "Sculptor's Request",
+   "windows": 222,
+   "length_s": 231.9,
+   "any_guitar_share": 0.995,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.995,
+     "voiced": 0.789,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "GTR 2",
+     "cover": 0.599,
+     "voiced": 0.834,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Doom Flamingo",
+   "song": "Blind Spots",
+   "windows": 277,
+   "length_s": 286.3,
+   "any_guitar_share": 0.892,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.892,
+     "voiced": 0.775,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Doom Flamingo",
+   "song": "Long Way Home",
+   "windows": 219,
+   "length_s": 228.3,
+   "any_guitar_share": 0.804,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.804,
+     "voiced": 0.746,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Doom Flamingo",
+   "song": "Measurements",
+   "windows": 301,
+   "length_s": 310.6,
+   "any_guitar_share": 0.85,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.85,
+     "voiced": 0.825,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Doom Flamingo",
+   "song": "Strangest Places",
+   "windows": 287,
+   "length_s": 296.9,
+   "any_guitar_share": 0.882,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.882,
+     "voiced": 0.806,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Eggy",
+   "song": "Bloomlight",
+   "windows": 302,
+   "length_s": 311.6,
+   "any_guitar_share": 0.987,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.987,
+     "voiced": 0.817,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Eggy",
+   "song": "Farthest Step",
+   "windows": 385,
+   "length_s": 394.3,
+   "any_guitar_share": 0.927,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.927,
+     "voiced": 0.826,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Eggy",
+   "song": "Fragments",
+   "windows": 394,
+   "length_s": 403.3,
+   "any_guitar_share": 0.987,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.987,
+     "voiced": 0.78,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "John Morgan Kimock",
+   "song": "Hikikomori - Love Does",
+   "windows": 349,
+   "length_s": 358.3,
+   "any_guitar_share": 0.341,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.02,
+     "voiced": 0.972,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    },
+    {
+     "part": "Keys GTR",
+     "cover": 0.166,
+     "voiced": 0.963,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "excluded",
+     "keys_gtr": true
+    },
+    {
+     "part": "Keys GTR DI 2",
+     "cover": 0.146,
+     "voiced": 0.826,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "excluded",
+     "keys_gtr": true
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "John Morgan Kimock",
+   "song": "New One",
+   "windows": 153,
+   "length_s": 162.8,
+   "any_guitar_share": 0.569,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.144,
+     "voiced": 0.754,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no passing pair",
+     "keys_gtr": false
+    },
+    {
+     "part": "Keys GTR",
+     "cover": 0.451,
+     "voiced": 0.898,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "excluded",
+     "keys_gtr": true
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "John Morgan Kimock",
+   "song": "Procession",
+   "windows": 232,
+   "length_s": 241.6,
+   "any_guitar_share": 0.746,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "Keys GTR DI 1",
+     "cover": 0.483,
+     "voiced": 0.825,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "excluded",
+     "keys_gtr": true
+    },
+    {
+     "part": "Keys GTR DI 2",
+     "cover": 0.371,
+     "voiced": 0.911,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "excluded",
+     "keys_gtr": true
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Swatkins",
+   "song": "Honey",
+   "windows": 203,
+   "length_s": 212.2,
+   "any_guitar_share": 0.621,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.621,
+     "voiced": 0.784,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Swatkins",
+   "song": "Lost Alive",
+   "windows": 206,
+   "length_s": 215.1,
+   "any_guitar_share": 0.845,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.845,
+     "voiced": 0.677,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Bernard Purdie Tribute All-Stars",
+   "song": "She's Gone",
+   "windows": 344,
+   "length_s": 353.9,
+   "any_guitar_share": 0.916,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.916,
+     "voiced": 0.794,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "2",
+   "source": "telefunken",
+   "band": "Swatkins",
+   "song": "Until I Get Back",
+   "windows": 300,
+   "length_s": 309.5,
+   "any_guitar_share": 0.917,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "GTR",
+     "cover": 0.917,
+     "voiced": 0.537,
+     "role": null,
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "classifier",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Cnoc An Tursa",
+   "song": "Bannockburn",
+   "windows": 285,
+   "length_s": 294.1,
+   "any_guitar_share": 0.958,
+   "musdb": "train",
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.905,
+     "voiced": 0.531,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.909,
+     "voiced": 0.483,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.958,
+     "voiced": 0.521,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.958,
+     "voiced": 0.522,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.112,
+     "voiced": 0.939,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.112,
+     "voiced": 0.928,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Death Of A Romantic",
+   "song": "The Well",
+   "windows": 273,
+   "length_s": 282.3,
+   "any_guitar_share": 0.897,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "cover": 0.799,
+     "voiced": 0.423,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr02",
+     "cover": 0.791,
+     "voiced": 0.439,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr03",
+     "cover": 0.447,
+     "voiced": 0.991,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr04",
+     "cover": 0.436,
+     "voiced": 0.997,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Diesel13",
+   "song": "Colour Me Red",
+   "windows": 196,
+   "length_s": 205.7,
+   "any_guitar_share": 0.811,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr01",
+     "cover": 0.73,
+     "voiced": 0.827,
+     "role": null,
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr02",
+     "cover": 0.173,
+     "voiced": 0.859,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr03",
+     "cover": 0.173,
+     "voiced": 0.926,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr04",
+     "cover": 0.107,
+     "voiced": 0.997,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Eat The Feeder",
+   "song": "Wickerman",
+   "windows": 187,
+   "length_s": 196.4,
+   "any_guitar_share": 0.925,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.337,
+     "voiced": 0.889,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.401,
+     "voiced": 0.881,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.374,
+     "voiced": 0.884,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.759,
+     "voiced": 0.806,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.85,
+     "voiced": 0.811,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.882,
+     "voiced": 0.811,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr7",
+     "cover": 0.481,
+     "voiced": 0.789,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr9",
+     "cover": 0.176,
+     "voiced": 0.734,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Hollow Ground",
+   "song": "Ill Fate",
+   "windows": 132,
+   "length_s": 141.6,
+   "any_guitar_share": 0.538,
+   "musdb": "test",
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.485,
+     "voiced": 0.701,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.364,
+     "voiced": 0.698,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.265,
+     "voiced": 0.691,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Magician's Nephew",
+   "song": "Get Out Of Bed",
+   "windows": 173,
+   "length_s": 182.8,
+   "any_guitar_share": 0.329,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:elecgtr3": [
+     "MagiciansNephew_GetOutOfBed_Full/16_ElecGtr3Mic1.wav",
+     "MagiciansNephew_GetOutOfBed_Full/17_ElecGtr3Mic2.wav"
+    ],
+    "nodi:elecgtr4": [
+     "MagiciansNephew_GetOutOfBed_Full/18_ElecGtr4.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.035,
+     "voiced": 0.353,
+     "role": null,
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.035,
+     "voiced": 0.539,
+     "role": null,
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.225,
+     "voiced": 0.0,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr6",
+     "cover": 0.231,
+     "voiced": 0.0,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr7",
+     "cover": 0.052,
+     "voiced": 0.0,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Rebuild The Evil",
+   "song": "Burial Of Silence",
+   "windows": 147,
+   "length_s": 156.9,
+   "any_guitar_share": 1.0,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:elecgtr1": [
+     "RebuildTheEvil_BurialOfSilence_Full/18_ElecGtr1.wav"
+    ],
+    "nodi:elecgtr2": [
+     "RebuildTheEvil_BurialOfSilence_Full/19_ElecGtr2.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr3",
+     "cover": 0.884,
+     "voiced": 0.617,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.993,
+     "voiced": 0.653,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Storm Of Particles",
+   "song": "Of Ice And Hopeless Fate",
+   "windows": 231,
+   "length_s": 240.0,
+   "any_guitar_share": 0.762,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr04",
+     "cover": 0.749,
+     "voiced": 0.775,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr05",
+     "cover": 0.749,
+     "voiced": 0.719,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr06",
+     "cover": 0.29,
+     "voiced": 0.935,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr07",
+     "cover": 0.121,
+     "voiced": 0.893,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Szymon Skiba",
+   "song": "Let's Dance",
+   "windows": 137,
+   "length_s": 146.5,
+   "any_guitar_share": 0.073,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr3",
+     "cover": 0.0,
+     "voiced": 0.909,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.073,
+     "voiced": 0.904,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "The Long Wait",
+   "song": "Drag",
+   "windows": 381,
+   "length_s": 390.4,
+   "any_guitar_share": 0.325,
+   "musdb": "artist",
+   "no_di_guitars": {
+    "nodi:elecgtr2": [
+     "TheLongWait_Drag_Full/11_ElecGtr2Mic1.wav",
+     "TheLongWait_Drag_Full/12_ElecGtr2Mic2.wav"
+    ],
+    "nodi:elecgtr3": [
+     "TheLongWait_Drag_Full/13_ElecGtr3.wav"
+    ],
+    "nodi:elecgtr4": [
+     "TheLongWait_Drag_Full/14_ElecGtr4Mic1.wav",
+     "TheLongWait_Drag_Full/15_ElecGtr4Mic2.wav"
+    ],
+    "nodi:elecgtr5": [
+     "TheLongWait_Drag_Full/16_ElecGtr5Mic1.wav",
+     "TheLongWait_Drag_Full/17_ElecGtr5Mic2.wav"
+    ],
+    "nodi:elecgtr6": [
+     "TheLongWait_Drag_Full/18_ElecGtr6Mic1.wav",
+     "TheLongWait_Drag_Full/19_ElecGtr6Mic2.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.089,
+     "voiced": 0.603,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Timo And The Timezone",
+   "song": "Just Don't Talk",
+   "windows": 203,
+   "length_s": 212.1,
+   "any_guitar_share": 0.281,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:elecgtr1": [
+     "TimoAndTheTimezone_JustDontTalk_Full/11_ElecGtr1.wav"
+    ],
+    "nodi:elecgtr2": [
+     "TimoAndTheTimezone_JustDontTalk_Full/12_ElecGtr2.wav"
+    ],
+    "nodi:15_ElecPiano": [
+     "TimoAndTheTimezone_JustDontTalk_Full/15_ElecPiano.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "ElecGtr3",
+     "cover": 0.281,
+     "voiced": 0.938,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Turbosauro",
+   "song": "Magilla",
+   "windows": 256,
+   "length_s": 265.7,
+   "any_guitar_share": 0.672,
+   "musdb": null,
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 0.488,
+     "voiced": 0.712,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr1DT",
+     "cover": 0.418,
+     "voiced": 0.755,
+     "role": "lead",
+     "gain_class": "clean",
+     "character": "clean",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 0.016,
+     "voiced": 0.522,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2DT",
+     "cover": 0.012,
+     "voiced": 0.49,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.352,
+     "voiced": 0.867,
+     "role": "lead",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "cambridge",
+   "band": "Wall Of Death",
+   "song": "Femme",
+   "windows": 218,
+   "length_s": 227.1,
+   "any_guitar_share": 1.0,
+   "musdb": "train",
+   "no_di_guitars": {},
+   "parts": [
+    {
+     "part": "ElecGtr1",
+     "cover": 1.0,
+     "voiced": 0.591,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr2",
+     "cover": 1.0,
+     "voiced": 0.596,
+     "role": null,
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr3",
+     "cover": 0.115,
+     "voiced": 0.984,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr4",
+     "cover": 0.124,
+     "voiced": 0.936,
+     "role": "lead",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    },
+    {
+     "part": "ElecGtr5",
+     "cover": 0.041,
+     "voiced": 0.944,
+     "role": "lead",
+     "gain_class": "crunch",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "telefunken",
+   "band": "Renesans",
+   "song": "Labor Of Hate",
+   "windows": 237,
+   "length_s": 246.7,
+   "any_guitar_share": 0.882,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:GTR Pre Rec.L": [
+     "Renesans - Labor Of Hate Take 2/GTR Pre Rec.L.wav"
+    ],
+    "nodi:GTR Pre Rec.R": [
+     "Renesans - Labor Of Hate Take 2/GTR Pre Rec.R.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.882,
+     "voiced": 0.383,
+     "role": "rhythm",
+     "gain_class": null,
+     "character": null,
+     "character_source": "no catalog class",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "telefunken",
+   "band": "Renesans",
+   "song": "Less Than Nothing",
+   "windows": 235,
+   "length_s": 244.1,
+   "any_guitar_share": 0.809,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:GTR Pre Rec.L": [
+     "Renesans - Less Than Nothing Take 2/GTR Pre Rec.L.wav"
+    ],
+    "nodi:GTR Pre Rec.R": [
+     "Renesans - Less Than Nothing Take 2/GTR Pre Rec.R.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.804,
+     "voiced": 0.401,
+     "role": null,
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  },
+  {
+   "set": "3",
+   "source": "telefunken",
+   "band": "Renesans",
+   "song": "Split Brow",
+   "windows": 244,
+   "length_s": 253.1,
+   "any_guitar_share": 0.877,
+   "musdb": null,
+   "no_di_guitars": {
+    "nodi:GTR Pre Rec.L": [
+     "Renesans - Split Brow Take 2/GTR Pre Rec.L.wav"
+    ],
+    "nodi:GTR Pre Rec.R": [
+     "Renesans - Split Brow Take 2/GTR Pre Rec.R.wav"
+    ]
+   },
+   "parts": [
+    {
+     "part": "GTR 1",
+     "cover": 0.791,
+     "voiced": 0.344,
+     "role": "rhythm",
+     "gain_class": "high-gain",
+     "character": "driven",
+     "character_source": "set-3 catalog",
+     "keys_gtr": false
+    }
+   ]
+  }
+ ]
+}
