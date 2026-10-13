@@ -42,3 +42,9 @@ def test_electric_names():
     assert not T._is_electric("GTR 1 DI_TDP-1.wav")
     assert not T._is_electric("12_AcousticGtr.wav")
     assert not T._is_electric("18_BassDI.wav")
+
+
+def test_pad_db_with_silence():
+    d = T._pad(np.array([-50.0, -40.0]), 4, T.SILENT_DB)
+    assert d.max() == -40.0 and d[-1] == T.SILENT_DB
+    assert not T._is_electric("15_ElecPiano.wav")

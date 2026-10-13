@@ -38,6 +38,7 @@ BAND = (1000.0, 4000.0)
 LEAD_MAX_COVER, LEAD_MIN_VOICED = 0.5, 0.6
 RHYTHM_MIN_COVER, RHYTHM_MAX_VOICED = 0.5, 0.4
 PYIN_HOP_S = 512 / 44100
+SILENT_DB = -240.0
 
 # MUSDB18 overlap (reported with and without): exact names, and The Long Wait by artist
 MUSDB_TRAIN = {"It Was My Fault For Waiting", "Femme", "Bannockburn"}
@@ -54,7 +55,7 @@ def _is_electric(name: str) -> bool:
     b = pathlib.Path(name).name
     if not re.search(r"(elec|gtr|guit)", b, re.I):
         return False
-    if re.search(r"(acous|acgtr|ac gtr|bass|vox|vocal)", b, re.I):
+    if re.search(r"(acous|acgtr|ac gtr|bass|vox|vocal|piano)", b, re.I):
         return False
     return not re.search(r"(^|[ _\-\d])DI([ _.\-\d]|$)|DI_T", b)
 
@@ -176,8 +177,9 @@ def pyin_jobs():
 
 # --- step: truth --------------------------------------------------------------
 
-def _pad(x, n):
-    return np.pad(x[:n], (0, max(0, n - len(x[:n]))))
+def _pad(x, n, value=0.0):
+    """Pad to the song's length with silence: 0 for energy, `SILENT_DB` for dB envelopes."""
+    return np.pad(x[:n], (0, max(0, n - len(x[:n]))), constant_values=value)
 
 
 def _windows(n_frames):
@@ -266,7 +268,7 @@ def build():
         nodi_act = {}
         for g, ts in guitars.items():
             if g.startswith("nodi:"):
-                d = np.max([_pad(db[t], n) for t in ts], axis=0)
+                d = np.max([_pad(db[t], n, SILENT_DB) for t in ts], axis=0)
                 nodi_act[g] = d > d.max() - NODI_ACT_DB
         any_act = np.zeros(n, bool)
         for a in nodi_act.values():
@@ -280,7 +282,7 @@ def build():
         for p in s["parts"]:
             if p["di"] not in db:
                 continue
-            d = _pad(db[p["di"]], n)
+            d = _pad(db[p["di"]], n, SILENT_DB)
             act = d > d.max() - ACT_DB
             any_act |= act
             cover = float((_win_mean(act, starts) >= ACTIVE_SHARE).mean())
@@ -312,6 +314,13 @@ def build():
                     no_di_guitars={g: ts for g, ts in guitars.items() if g.startswith("nodi:")},
                     parts=[{k: v for k, v in q.items() if k != "act"} for q in parts])
         songs.append(song)
+
+        # a double (DT) is always one target with its part: it takes the part's labels
+        by_name = {q["part"]: q for q in parts}
+        for q in parts:
+            base = by_name.get(re.sub(r"\s*DT$", "", q["part"]))
+            if base is not None and base is not q:
+                q.update(role=base["role"], character=base["character"], gain_class=base["gain_class"])
 
         # targets: parts with both labels, same-description parts merged into one target
         desc = {}
