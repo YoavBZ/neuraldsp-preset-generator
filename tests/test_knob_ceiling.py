@@ -178,3 +178,45 @@ def test_control_passes_needs_every_cell_close_and_three_recovered():
     assert not K.control_passes({**{str(i): dict(good) for i in range(3)}, "3": {**good, "ratio_held": 0.4}})
     assert not K.control_passes({**{str(i): dict(good) for i in range(2)},
                                  "2": {**good, "mic_exact": False}, "3": {**good, "settings_within_0.1": 2}})
+
+
+def test_levels_policy_finds_a_mic_the_knobs_would_hide():
+    # the wrong mic can be offset by x, so a mic chosen before x moves is a trap
+    dims = [K.Dim("a", "x", "cont"), K.Dim("a", "mic", "cat", values=tuple("0123456789"))]
+    x0 = {("a", "x"): "0.1", ("a", "mic"): "0"}
+
+    def f(x):
+        m = int(x[("a", "mic")])
+        shift = {0: 0.0, 4: 0.0, 7: 0.3}.get(m, 0.6)
+        return abs(float(x[("a", "x")]) + shift - 0.8) + (0.0 if m == 4 else 0.2)
+    x, best, _ = K.coord_search(dims, x0, f, budget=120, seed=0, cats="levels")
+    assert x[("a", "mic")] == "4" and best < 0.03
+    _, again, _ = K.coord_search(dims, x0, f, budget=120, seed=0, cats="levels")
+    assert again == best
+
+
+def test_knob_search_keeps_the_budget_and_never_repeats():
+    dims, x0, f = _problem()
+    calls = []
+
+    def g(x):
+        calls.append(K.key(x))
+        return f(x)
+    x, best, hist = K.knob_search(dims, x0, g, budget=120, seed=0)
+    assert len(calls) <= 120 and len(set(calls)) == len(calls)
+    assert best == pytest.approx(f(x)) and hist[-1][1] == pytest.approx(best)
+    assert x[("a", "mic")] == "6" and x[("a", "sw")] == "true"
+
+
+def test_knob_search_escapes_a_mic_trap_the_plain_search_falls_into():
+    dims = [K.Dim("a", "x", "cont"), K.Dim("a", "y", "cont"), K.Dim("a", "mic", "cat", values=tuple("0123456789"))]
+    x0 = {("a", "x"): "0.1", ("a", "y"): "0.5", ("a", "mic"): "0"}
+
+    def f(x):
+        m = int(x[("a", "mic")])
+        shift = 0 if m == 4 else 0.1 * (1 + 0.2 * abs(m - 4))
+        return abs(float(x[("a", "x")]) + shift - 0.8) + abs(float(x[("a", "y")]) - 0.3) + (0 if m == 4 else 0.05)
+    plain = K.coord_search(dims, x0, f, 200, 0, cats="levels")
+    new = K.knob_search(dims, x0, f, 200, 0)
+    assert plain[0][("a", "mic")] != "4"
+    assert new[0][("a", "mic")] == "4" and new[1] < plain[1]

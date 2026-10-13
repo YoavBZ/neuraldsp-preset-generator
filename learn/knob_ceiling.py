@@ -131,16 +131,21 @@ def key(settings):
     return hashlib.sha1(json.dumps(sorted(settings.items())).encode()).hexdigest()[:16]
 
 
-def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64):
+def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="once", gains=None,
+                 pattern=True):
     """Coordinate search with shrinking steps, deterministic for a seed.
 
     `x0`: {(module, key): stored string}, the whole preset; only `dims` move. `f(x)` returns
     the distance to minimise; it is called once per distinct setting and at most `budget`
     times (the start included). A sweep visits the dims in a seeded order and, per dim,
     tries: a continuous dim ± step (in unit space), a switch flipped, a categorical dim
-    every other value (in the first sweep, and once more when the step first falls below
-    1/8). The best improving candidate is kept. A sweep with no improvement halves the step.
+    every other value. `cats`: "once" tries the categorical dims in the first sweep and once
+    more when the step first falls below 1/8; "levels" skips them in the first sweep (so the
+    knobs move first) and tries them in the first sweep at every step size after that. The
+    best improving candidate is kept. A sweep with no improvement halves the step.
     Returns (best x, best value, trace), trace = [(evaluations so far, best value)].
+    `gains`, if given, collects each dim's total improvement. With `pattern`, a sweep that
+    improved is followed by Hooke–Jeeves pattern moves (below).
     """
     rng = random.Random(seed)
     cache = {}
@@ -150,23 +155,37 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64):
         if k not in cache:
             if len(cache) >= budget:
                 return None
-            cache[k] = f(x)
+            v = f(x)
+            if v is None:                       # the caller's own budget is spent
+                return None
+            cache[k] = v
         return cache[k]
 
     x = dict(x0)
     best = ev(x)
+    if best is None:
+        return x, None, []
     trace = [(1, best)]
     step, cats_again = step0, True
     first = True
+    sweep, cats_tried = 0, set()
     while len(cache) < budget and step >= min_step:
+        sweep += 1
+        new_level = sweep > 1 and step not in cats_tried
+        if new_level:
+            cats_tried.add(step)
         order = list(dims)
         rng.shuffle(order)
         improved = False
+        sweep_start = dict(x)
         for d in order:
             k = (d.module, d.key)
             cur = x.get(k)
             if d.kind == "cat":
-                if not first and not (cats_again and step < 1 / 8):
+                if cats == "levels":
+                    if not new_level:
+                        continue
+                elif not first and not (cats_again and step < 1 / 8):
                     continue
                 cands = [v for v in d.values if v != cur]
             elif d.kind == "switch":
@@ -185,10 +204,32 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64):
             if got:
                 val, v = min(got)
                 if val < best - 1e-12:
+                    if gains is not None:
+                        gains[d.name] = gains.get(d.name, 0.0) + best - val
                     best, x[k], improved = val, v, True
             trace.append((len(cache), best))
             if len(cache) >= budget:
                 break
+        if improved and pattern and len(cache) < budget:
+            # Hooke–Jeeves pattern move: keep going the way the whole sweep went (a valley
+            # across the knobs, which single-knob moves can only zig-zag along), doubling
+            # while it improves.
+            for mult in (1, 2, 4):
+                y = dict(x)
+                moved = False
+                for d in dims:
+                    k = (d.module, d.key)
+                    if d.kind in ("cont", "log") and k in x and k in sweep_start and x[k] != sweep_start[k]:
+                        u = d.to_unit(x[k]) + mult * (d.to_unit(x[k]) - d.to_unit(sweep_start[k]))
+                        y[k] = fmt(d.from_unit(u))
+                        moved = moved or y[k] != x[k]
+                if not moved:
+                    break
+                val = ev(y)
+                if val is None or val >= best - 1e-12:
+                    break
+                best, x = val, y
+                trace.append((len(cache), best))
         if first:
             first = False
         elif step < 1 / 8 and cats_again:
@@ -196,6 +237,82 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64):
         if not improved:
             step /= 2
     return x, best, trace
+
+
+def knob_search(dims, x0, f, budget, seed, main_share=0.3, quick=16, n_alt=2, alt_share=0.6, n_key=3,
+                fresh=False):
+    """The declared optimiser: `coord_search` ("levels") with mic restarts.
+
+    1. The main search, `main_share` of the budget. It records which continuous dims gave
+       the most improvement (the `n_key` key dims).
+    2. Every other value of every categorical dim (the mics), each with a quick re-tune of
+       the key dims (at most `quick` renders, steps 0.25 and 0.125). A wrong mic with the knobs
+       compensating is a trap for a coordinate search: the right mic looks worse until the
+       knobs follow it.
+    3. The `n_alt` best alternatives after their quick re-tune, each as a restart: every
+       non-categorical dim searched again, sharing `alt_share` of what is left. With `fresh`,
+       the alternative mic is set on the start's own settings (`x0`) and searched from step
+       0.25, since the incumbent's knobs have bent to fit its old mic; the quick re-tune in
+       step 2 starts from there too.
+    4. The rest of the budget: the full search again from the best so far.
+    Returns (best x, best value, trace) like `coord_search`; every distinct setting is
+    rendered once in all."""
+    cache, hist = {}, []
+    state = {"limit": 0, "best": math.inf}
+
+    def g(x):
+        k = key(x)
+        if k in cache:
+            return cache[k]
+        if len(cache) >= min(state["limit"], budget):
+            return None
+        cache[k] = v = f(x)
+        state["best"] = min(state["best"], v)
+        hist.append((len(cache), state["best"]))
+        return v
+
+    big = 10 ** 9
+    gains = {}
+    state["limit"] = max(1, int(budget * main_share))
+    x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains)
+    if best is None:
+        return x, None, hist
+    others = [d for d in dims if d.kind != "cat"]
+    key_dims = sorted((d for d in others if d.kind in ("cont", "log")),
+                      key=lambda d: (-gains.get(d.name, 0.0), d.name))[:n_key]
+    alts = []
+    for d in dims:
+        if d.kind != "cat":
+            continue
+        k = (d.module, d.key)
+        for v in d.values:
+            if v == x.get(k):
+                continue
+            y = dict(x0) if fresh else dict(x)
+            for c in dims:                      # the incumbent's mics, then this one
+                if c.kind == "cat":
+                    y[(c.module, c.key)] = x[(c.module, c.key)]
+            y[k] = v
+            state["limit"] = len(cache) + quick
+            qx, qv, _ = coord_search(key_dims, y, g, big, seed + 5, step0=0.25, min_step=0.125)
+            if qv is None:
+                break
+            alts.append((qv, d.name, v, qx))
+    for val, _, _, y in alts:
+        if val < best:
+            best, x = val, y
+    left = budget - len(cache)
+    for i, (_, _, _, y) in enumerate(sorted(alts, key=lambda a: (a[0], a[1], a[2]))[:n_alt]):
+        state["limit"] = len(cache) + max(1, int(left * alt_share / n_alt))
+        bx, bv, _ = coord_search(others, y, g, big, seed + 10 + i, step0=0.25 if fresh else 0.125)
+        if bv is not None and bv < best:
+            best, x = bv, bx
+    state["limit"] = budget
+    if len(cache) < budget:
+        bx, bv, _ = coord_search(dims, x, g, big, seed + 99, step0=0.125, cats="levels")
+        if bv is not None and bv < best:
+            best, x = bv, bx
+    return x, best, hist
 
 
 def at_limit(dims, x, x0):
@@ -329,7 +446,7 @@ def run_cell(rr, menu, amp, ref, di, lag, start_name, out_dir, budgets=BUDGET, s
                     keep.update(d=d[search], y=y)
                 return d[search]
 
-            x, _, _ = coord_search(dims, start, f, budgets[tag], seed + (tag == "EQ"))
+            x, _, _ = knob_search(dims, start, f, budgets[tag], seed + (tag == "EQ"))
             if tag != "EQ":                     # the first render repeats a stored menu render
                 stored = menu_d[starts[tag][0]]
                 dev = max(abs(math.log(evals[0][h] / stored[h])) for h in R.HALVES)
@@ -440,7 +557,7 @@ def perturbed(dims, x0, moves):
     return out
 
 
-def control():
+def control(cats="restart", budget=None, out_name="control", mismatch=False):
     """The positive control (plan, "Controls"): a known preset with 5 settings and one mic
     moved is the "recording"; the search starts from the unmoved preset. Plus the repeat floor."""
     import numpy as np
@@ -464,7 +581,18 @@ def control():
                 mic = ("cabParameters", "leftMicType")
                 target[mic] = str((int(x0[mic]) + 4) % 10)
                 rr.render(di32, sel, x0)                                   # warm-up
-                fake = rr.render(di32, sel, target)
+                if mismatch:
+                    # A recording no preset matches exactly: the target played with the
+                    # part's own DI (not re-equalised), searched with the measure DI.
+                    from learn.direc_check import to_lufs
+
+                    raw = to_lufs(CR.mono(part["crop"] / "di.wav")).astype(np.float32)
+                    rr.render(raw, sel, x0)
+                    fake = rr.render(raw, sel, target)
+                    reach = judge(fake, rr.render(di32, sel, target), di, 0)
+                else:
+                    fake = rr.render(di32, sel, target)
+                    reach = {"A": 0.0, "B": 0.0}
                 again = rr.render(di32, sel, target)
                 rr.render(di32, sel, x0)
                 again2 = rr.render(di32, sel, target)
@@ -476,7 +604,8 @@ def control():
                     evals.append(d)
                     return d["A"]
 
-                x, best, trace = coord_search(dims, x0, f, BUDGET["K_M"], SEED)
+                x, best, trace = (knob_search(dims, x0, f, budget or BUDGET["K_M"], SEED) if cats == "restart"
+                                  else coord_search(dims, x0, f, budget or BUDGET["K_M"], SEED, cats=cats))
                 inc, bA = evals[0], evals[0]["A"]
                 for d in evals:
                     if d["A"] < bA:
@@ -494,15 +623,21 @@ def control():
                     "best_held_B": inc["B"], "ratio_held": inc["B"] / evals[0]["B"],
                     "recovered": rec, "mic": {"start": x0[mic], "target": target[mic], "found": x[mic]},
                     "settings_within_0.1": cont_ok, "mic_exact": mic_ok,
-                    "renders": len(evals), "curve": curve, "at_limit": at_limit(dims, x, x0)}
-                print(slug, amp, round(inc["B"] / evals[0]["B"], 4), f"{cont_ok}/5", mic_ok, flush=True)
+                    "renders": len(evals), "curve": curve, "at_limit": at_limit(dims, x, x0),
+                    "target_settings": reach,
+                    "vs_target_settings_held": (inc["B"] / reach["B"]) if reach["B"] else None,
+                    "gap_closed_held": (evals[0]["B"] - inc["B"]) / (evals[0]["B"] - reach["B"])}
+                print(slug, amp, round(inc["B"] / evals[0]["B"], 4), f"{cont_ok}/5", mic_ok,
+                      "start", round(evals[0]["B"], 3), "found", round(inc["B"], 3), "target", round(reach["B"], 3),
+                      flush=True)
     finally:
         rr.close()
     ok = control_passes(out)
     out["_pass"] = ok
     print("CONTROL PASSES" if ok else "CONTROL FAILS", flush=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    _atomic(OUT / "control.json", out)
+    out["_variant"] = {"cats": cats, "budget": budget or BUDGET["K_M"]}
+    _atomic(OUT / f"{out_name}.json", out)
 
 
 def control_passes(out):
@@ -636,9 +771,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("step", choices=("control", "run", "report"))
     ap.add_argument("--shard", default="0/1")
+    ap.add_argument("--cats", default="restart", choices=("once", "levels", "restart"))
+    ap.add_argument("--budget", type=int)
+    ap.add_argument("--name", default="control")
+    ap.add_argument("--mismatch", action="store_true")
     a = ap.parse_args(argv)
     if a.step == "control":
-        control()
+        control(a.cats, a.budget, a.name, a.mismatch)
     elif a.step == "run":
         i, n = map(int, a.shard.split("/"))
         run((i, n))
