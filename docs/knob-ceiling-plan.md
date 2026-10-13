@@ -97,9 +97,12 @@ Its stages, on fixed shares of the budget:
    sweep's direction. A sweep without improvement halves the step (from 0.25, stopping below
    1/64).
 2. **Mic alternatives (35%):** every other value of both mics, left and right interleaved,
-   each set on the incumbent and followed by a quick re-tune of the three knobs that helped
-   most in stage 1 (an equal share each).
-3. **Restarts (20%):** the two best alternatives, with every non-mic setting searched again.
+   each set on the incumbent and followed by a quick re-tune of the knobs that helped most in
+   stage 1 (an equal share each: in practice the mic render plus one or two knob renders, 2
+   at K_S and 3 at K_M).
+3. **Restarts (20%):** the two best alternatives, each with a short search of the non-mic
+   settings from step 0.125 (15–20 renders each, less than one full sweep). In v6 the
+   largest gains came in this stage.
 4. **Final (the rest):** the full search again from the best so far.
 
 Without mics (the EQ stage), stages 2–3 are skipped and their share goes to the final stage.
@@ -245,7 +248,7 @@ distance against the target settings' own:
 | **mean** | **+0.104** | |
 
 **What changes:**
-- **The search:** `knob_search` as in v5 (coordinate search; mics after the knobs move, at
+- **The search:** `knob_search` as in v5 (superseded by amendment 2's v6) (coordinate search; mics after the knobs move, at
   every step size; Hooke–Jeeves pattern moves; mic restarts with a quick re-tune of the three
   most useful knobs). The budgets stay 200 / 150 / 100.
 - **Every searched number is a lower bound on what the settings can reach.** See amendment 2
@@ -295,8 +298,12 @@ left mic. Changes:
 target is a sharp-bottomed valley, as amendment 1 found. **The realistic control** is the one
 that resembles the main run. On it the search lands on average 0.075 short of a known
 reachable setting on the held half, and 0.028 on the half it searched. It is closer than the
-known setting on 2 of 6 cells and short by up to 0.26 on one. Within the search half, the
-gain still grows from 100 to 150 renders and little after, so the budgets stay. The readings
+known setting on 2 of 6 cells and short by up to 0.26 on one (it found the moved mic on 3 of
+6). On it, the search-half gain grows from 100 to 150 renders and little after (150→200:
+−0.001 to −0.031); on the exact control it is still improving at 200 on three cells. K_S's
+budget of 150 wasn't calibrated separately. The budgets stay. **The calibration's limits:**
+6 cells from 2 parts; the starts are six settings from the target; the only mismatch is the
+DI's equalisation, much smaller than a real recording's. The readings
 are as in amendment 1: every searched number is a lower bound.
 
 ## Optional, report-only

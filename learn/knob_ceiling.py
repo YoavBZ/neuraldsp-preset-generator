@@ -519,7 +519,7 @@ def cells():
     return [(slug, amp) for slug in sorted(parts()) for amp in AMPS]
 
 
-def run(shard):
+def run(shard, only=None):
     ps = parts()
     check_parts(ps)
     rr = Renderer()
@@ -529,7 +529,8 @@ def run(shard):
             for amp in AMPS:
                 assert START[cls][amp] in menu[amp], START[cls][amp]
         cache = {}
-        for slug, amp in cells()[shard[0]::shard[1]]:
+        todo = [c for c in cells() if only is None or f"{c[0]}:{c[1]}" in only]
+        for slug, amp in todo[shard[0]::shard[1]]:
             d = OUT / "cells" / slug / amp
             if (d / "result.json").exists():
                 continue
@@ -791,12 +792,13 @@ def main(argv=None):
     ap.add_argument("--budget", type=int)
     ap.add_argument("--name", default="control")
     ap.add_argument("--mismatch", action="store_true")
+    ap.add_argument("--only", nargs="+", help="cells as part:amp (the smoke run)")
     a = ap.parse_args(argv)
     if a.step == "control":
         control(a.cats, a.budget, a.name, a.mismatch)
     elif a.step == "run":
         i, n = map(int, a.shard.split("/"))
-        run((i, n))
+        run((i, n), a.only)
     else:
         report()
 
