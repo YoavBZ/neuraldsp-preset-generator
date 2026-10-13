@@ -203,7 +203,8 @@ Tone King recipes use its verified sync-note selectors. See
     ([clean-baseline-results.md](../../docs/clean-baseline-results.md)). By ear,
     through each part's own notes, the listener preferred the clean start to the
     template on 6 of 8 development clean parts (PR12), and to the crunch start on 4 of
-    5 (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
+    5 (pooled with the crunch block 17 of 21, p 0.004; no block decided alone;
+    in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
     its compressor, amp, pedals, EQ and cab.
   - **When the research turns an effect back on, set its parameters explicitly.** The

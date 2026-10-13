@@ -24,13 +24,22 @@ parts whose song also had a C part: 3 of 3.
 ## Checks
 
 - **Hidden references:** found in both sittings; neither sitting is void.
-- **Reversed taste:** on a crunch part, the listener chose the heavier option the judge
-  prefers, so the result is not just a preference for less distortion. Over all the
-  trials where one option was lighter in gain, the lighter one was chosen 11 of 14
-  times, as the preferred options mostly are.
-- **Repeats:** 3 of 3 answered the same way with A and B swapped.
-- **Ear and judge:** 17 of 21 agreed; 3 of 3 where the judge's margin was over 0.15, and
-  14 of 18 where it was smaller, below the range listening had validated before.
+- **Reversed taste:** on the one crunch part where the judge prefers the heavier option,
+  the listener chose it. One trial is consistent with, but cannot rule out, a general
+  preference for lighter gain: in X and K the preferred option is always the lighter
+  one, and it was chosen on 11 of those 13 trials. Only block C (6 of 8) and this trial
+  separate "closer in tone" from "lighter". For clean and crunch references, lighter is
+  plausibly right.
+- **Repeats:** 3 of 3 answered the same way with A and B swapped (about 13 trials
+  apart in the same session, so memory may help).
+- **No position bias:** 10 A and 11 B answers on main trials; always answering B would
+  have scored 11 of 21. Both hidden references happened to sit at A (to randomise next
+  time).
+- **Ear and judge:** on the exact clips played, the judge favoured the product's option
+  on 15 of 21 main trials; the ear chose it on 14 of those 15 and on 3 of the 6 where
+  the judge did not. Ear and judge agreed on 17 of 21 (a coincidence with the pooled
+  17): 3 of 3 where the judge's margin was over 0.15, and 14 of 18 where it was smaller,
+  below the range listening had validated before.
 
 ## What it changes
 

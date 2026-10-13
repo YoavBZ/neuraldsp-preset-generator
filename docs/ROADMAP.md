@@ -425,7 +425,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      through the part's own notes ([plan](starting-preset-listening-plan.md)): *done
      2026-10-13 ([results](starting-preset-listening-results.md)): heard.* The listener
      chose the preferred option on 17 of 21 trials (p 0.004); every block leaned that
-     way; controls and repeats passed. In-sample, one listener.
+     way; hidden references and repeats passed; one reversed-taste trial cannot rule out
+     a preference for lighter gain. In-sample, one listener.
    - **Another end-to-end run** of `generate` on a clean or Tone King song (Cut It Out
      is the one case recorded so far).
 
@@ -494,5 +495,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | `generate` installs a second starting point when the part is not clean (measured), and routes by the part's documented sound, not the song's genre (a rule, not yet re-checked) | `generate-routing-results.md` |
 | 2026-10-12 | The new routing rule is kept: it routes better than the old skill on the same parts (in-sample) | `generate-routing-recheck-results.md` |
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | step 5 above; #168–#171 |
-| 2026-10-13 | The starting presets are heard as closer than what they replaced (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
+| 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
