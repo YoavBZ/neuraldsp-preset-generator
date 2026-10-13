@@ -1,0 +1,372 @@
+{
+ "plan": "starting-preset-listening-plan.md",
+ "key_sha256": "6bacfd75e2a03f04e53c9837b10b37cc98c6569afa78c79b04bc2a47dd018cbc",
+ "answers_sha256": "2bd1a5e0e58a53c27944ecb6934526ed441b1c653212b9734d7c673b037c0671",
+ "hidden_reference": {
+  "sitting 1": true,
+  "sitting 2": true
+ },
+ "void_sittings": [],
+ "decision": "heard",
+ "pooled": {
+  "preferred": 17,
+  "decided": 21,
+  "cant_tell": 0,
+  "share": 0.81,
+  "p_one_sided": 0.0036
+ },
+ "pooled_C_and_K": {
+  "preferred": 13,
+  "decided": 16,
+  "cant_tell": 0,
+  "share": 0.812,
+  "p_one_sided": 0.0106
+ },
+ "blocks": {
+  "C": {
+   "preferred": 6,
+   "decided": 8,
+   "cant_tell": 0,
+   "share": 0.75,
+   "p_one_sided": 0.1445
+  },
+  "X": {
+   "preferred": 4,
+   "decided": 5,
+   "cant_tell": 0,
+   "share": 0.8,
+   "p_one_sided": 0.1875
+  },
+  "K": {
+   "preferred": 7,
+   "decided": 8,
+   "cant_tell": 0,
+   "share": 0.875,
+   "p_one_sided": 0.0352
+  },
+  "X_without_same_song": {
+   "preferred": 3,
+   "decided": 3,
+   "cant_tell": 0,
+   "share": 1.0,
+   "p_one_sided": 0.125
+  }
+ },
+ "other_option_p_one_sided": 0.9993,
+ "ear_judge_agreement": {
+  "all": [
+   17,
+   21
+  ],
+  "margin_over_0.15": [
+   3,
+   3
+  ],
+  "margin_at_most_0.15": [
+   14,
+   18
+  ]
+ },
+ "lighter_gain_chosen": [
+  11,
+  14
+ ],
+ "reversed_taste_control": [
+  {
+   "chose_heavier_as_judge_prefers": true
+  }
+ ],
+ "repeats": [
+  {
+   "trial": 17,
+   "of": 4,
+   "consistent": true
+  },
+  {
+   "trial": 20,
+   "of": 2,
+   "consistent": true
+  },
+  {
+   "trial": 23,
+   "of": 8,
+   "consistent": true
+  }
+ ],
+ "by_band": {
+  "Adam Buckley": [
+   0,
+   1
+  ],
+  "Eggy": [
+   2,
+   2
+  ],
+  "The Travelling Band": [
+   2,
+   2
+  ],
+  "Magician's Nephew": [
+   2,
+   2
+  ],
+  "Dom McLennon": [
+   2,
+   2
+  ],
+  "Turbosauro": [
+   1,
+   1
+  ],
+  "Atlantis Bound": [
+   1,
+   2
+  ],
+  "Diesel13": [
+   1,
+   2
+  ],
+  "Eat The Feeder": [
+   2,
+   2
+  ],
+  "Doom Flamingo": [
+   2,
+   2
+  ],
+  "Wall Of Death": [
+   1,
+   2
+  ],
+  "Starnes And Shah": [
+   1,
+   1
+  ]
+ },
+ "per_trial": [
+  {
+   "trial": 1,
+   "block": "practice",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.6809
+  },
+  {
+   "trial": 2,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.0377
+  },
+  {
+   "trial": 3,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.0019
+  },
+  {
+   "trial": 4,
+   "block": "X",
+   "amp": "sw50r",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.1657
+  },
+  {
+   "trial": 5,
+   "block": "reversed",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.207
+  },
+  {
+   "trial": 6,
+   "block": "X",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.0806
+  },
+  {
+   "trial": 7,
+   "block": "K",
+   "amp": "sw50r",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": 0.0033
+  },
+  {
+   "trial": 8,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": 0.0907
+  },
+  {
+   "trial": 9,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.0777
+  },
+  {
+   "trial": 10,
+   "block": "hidden",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.1284
+  },
+  {
+   "trial": 11,
+   "block": "X",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "A",
+   "judge_log_ratio": 0.0984
+  },
+  {
+   "trial": 12,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "B",
+   "judge_log_ratio": 0.059
+  },
+  {
+   "trial": 13,
+   "block": "K",
+   "amp": "sw50r",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.1073
+  },
+  {
+   "trial": 14,
+   "block": "X",
+   "amp": "sw50r",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.5429
+  },
+  {
+   "trial": 15,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.0654
+  },
+  {
+   "trial": 16,
+   "block": "K",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.0739
+  },
+  {
+   "trial": 17,
+   "block": "repeat",
+   "amp": "sw50r",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.1657
+  },
+  {
+   "trial": 18,
+   "block": "K",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.1277
+  },
+  {
+   "trial": 19,
+   "block": "K",
+   "amp": "sw50r",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.0145
+  },
+  {
+   "trial": 20,
+   "block": "repeat",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.0377
+  },
+  {
+   "trial": 21,
+   "block": "K",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.0667
+  },
+  {
+   "trial": 22,
+   "block": "hidden",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.6117
+  },
+  {
+   "trial": 23,
+   "block": "repeat",
+   "amp": "pr12",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": 0.0907
+  },
+  {
+   "trial": 24,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": 0.0315
+  },
+  {
+   "trial": 25,
+   "block": "X",
+   "amp": "ac20",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.3245
+  },
+  {
+   "trial": 26,
+   "block": "K",
+   "amp": "ac20",
+   "answer": "B",
+   "preferred_is": "A",
+   "judge_log_ratio": 0.1371
+  },
+  {
+   "trial": 27,
+   "block": "C",
+   "amp": "pr12",
+   "answer": "A",
+   "preferred_is": "A",
+   "judge_log_ratio": -0.1251
+  },
+  {
+   "trial": 28,
+   "block": "K",
+   "amp": "ac20",
+   "answer": "B",
+   "preferred_is": "B",
+   "judge_log_ratio": -0.1156
+  }
+ ]
+}

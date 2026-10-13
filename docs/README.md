@@ -79,7 +79,8 @@ was declared, what was measured, and the research behind it.
   [results](generate-routing-recheck-results.md): **the new routing rule helps**
   (−0.081 against the old skill, in-sample).
 - [starting-preset-listening-plan.md](starting-preset-listening-plan.md), with its
-  part list: built, awaiting the listener.
+  part list → [results](starting-preset-listening-results.md): **heard** (17 of 21,
+  in-sample, one listener).
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
