@@ -307,3 +307,37 @@ after the change.
   4 codebooks keep 91% of E0's edge (band mean −0.126 against −0.129 for 9 codebooks).
 - **The input** is all 9 of the recording's codebooks.
 - **Pre-check 2's bar stays C′'s 0.472** at 80 Hz–1 kHz. The 4-codebook ceiling there is 0.72.
+
+### E1 mapper: declared before training (2026-10-13; code written, nothing trained)
+
+Code: `learn/egvae_e1.py` (learn venv) with `learn/egvae_e1_codec.py` (DAC venv, for encoding and
+decoding at test time); tests in `tests/test_egvae_e1.py`. The module docstring holds the full
+declaration; in short:
+
+- **Crops:** one 3-s crop per clip, at the crop start C′'s `make_clip` drew for it, converted to
+  code frames (`round(start × 44,100 / 48,000 / 512)`): 258 of 517 frames. Validation crops are
+  C′'s centred ones (frame 129).
+- **Mapper (18.7 M parameters):** a summed embedding per input codebook (9 × 1024 × 384), a
+  convolutional front end, 6 bidirectional Transformer blocks (d 384, 6 heads) with rotary
+  positions only, and 4 softmax heads of 1024 classes.
+- **Loss:** cross-entropy summed over the 4 codebooks, equal weights.
+- **Training:** batch 32, AdamW (lr 3e-4, 1,000-step warm-up, cosine to 3e-5 at 40,000 steps,
+  weight decay 0.01), seed 0, gradients clipped by hand at 1.0. Validation cross-entropy on all
+  10,097 fold-2 crops every 1,000 steps; early stop after 5 evaluations without a 0.002 gain;
+  the best checkpoint is evaluated. An MPS-against-CPU check (logits, loss, every parameter's
+  gradient, at crop length) runs before the first step and after 200 steps, and aborts training
+  if it fails.
+- **Rebuild:** DAC encode at −16 LUFS (the data's own path), 258-frame windows with hop 129,
+  log-probabilities crossfaded, argmax, 4-codebook decode, 48 kHz, −22.9 LUFS. No alignment to
+  the true DI.
+- **Pre-check 1:** mean decoded mel distance on C′'s own 96 validation clips (`fit`'s sample for
+  seed 0, centred crops, all at −22.9 LUFS, E0's mel), E1 against C′ seed 0. Pre-check 2: median
+  80 Hz–1 kHz coherence on the 18 parts ≥ 0.472. Then the pick test against C′ seeds 0 and 1
+  and the set-5 rule, as declared above.
+
+**Pipeline checks (no mapper):**
+- The test-time encoder reproduces the stored training codes exactly (one clip, all 9 codebooks).
+- Decoding the targets' own first 4 codebooks on 4 validation clips gives a mel distance of 1.30.
+  That is the ceiling for pre-check 1.
+- With C′'s and the oracle's stored picks fed through `report`, it reproduces C′ seed 0 at
+  −0.099 and the oracle at −0.131 against the fixed preset.
