@@ -109,7 +109,7 @@ def test_cell_rows_cross_half_uses_the_held_half():
 
 def test_reading_follows_the_declared_thresholds():
     s = lambda bw, m, neg, n: {"band_weighted_mean": bw, "mean": m, "bands_negative": neg, "bands": n}
-    assert K.reading(s(-0.02, -0.03, 8, 15)).startswith("knobs add little")
+    assert K.reading(s(-0.02, -0.03, 8, 15)).startswith("the search found little") and "undecided" in K.reading(s(-0.02, -0.03, 8, 15))
     assert K.reading(s(-0.12, -0.11, 9, 15)).startswith("knobs add a lot")
     assert K.reading(s(-0.12, -0.11, 6, 15)) == "in between"
     assert K.reading(s(-0.07, -0.07, 12, 15)) == "in between"
@@ -202,7 +202,7 @@ def test_knob_search_keeps_the_budget_and_never_repeats():
     def g(x):
         calls.append(K.key(x))
         return f(x)
-    x, best, hist = K.knob_search(dims, x0, g, budget=120, seed=0)
+    x, best, hist, stages = K.knob_search(dims, x0, g, budget=120, seed=0)
     assert len(calls) <= 120 and len(set(calls)) == len(calls)
     assert best == pytest.approx(f(x)) and hist[-1][1] == pytest.approx(best)
     assert x[("a", "mic")] == "6" and x[("a", "sw")] == "true"
@@ -217,6 +217,34 @@ def test_knob_search_escapes_a_mic_trap_the_plain_search_falls_into():
         shift = 0 if m == 4 else 0.1 * (1 + 0.2 * abs(m - 4))
         return abs(float(x[("a", "x")]) + shift - 0.8) + abs(float(x[("a", "y")]) - 0.3) + (0 if m == 4 else 0.05)
     plain = K.coord_search(dims, x0, f, 200, 0, cats="levels")
-    new = K.knob_search(dims, x0, f, 200, 0)
+    new = K.knob_search(dims, x0, f, 200, 0)[:2]
     assert plain[0][("a", "mic")] != "4"
     assert new[0][("a", "mic")] == "4" and new[1] < plain[1]
+
+
+def test_knob_search_reaches_both_mics_and_every_stage_on_a_real_space():
+    dims = K.space("sw50r")
+    x0 = {(d.module, d.key): (d.values[0] if d.values else "0.5") for d in dims}
+    x0[("parameters", "inputGain")] = "0"
+    tried = {"left": set(), "right": set()}
+
+    def f(x):
+        tried["left"].add(x[("cabParameters", "leftMicType")])
+        tried["right"].add(x[("cabParameters", "rightMicType")])
+        return sum(abs(float(x[(d.module, d.key)]) - 0.3) for d in dims if d.kind == "cont") \
+            + (0 if x[("cabParameters", "rightMicType")] == "7" else 0.5)
+    for budget in (150, 200):
+        tried = {"left": set(), "right": set()}
+        x, best, hist, stages = K.knob_search(dims, x0, f, budget, 0)
+        assert len(tried["left"]) == 10 and len(tried["right"]) == 10
+        assert set(stages) == {"main", "alts", "restarts", "final"}
+        assert all(st["renders"] > 0 for st in stages.values()), stages
+        assert sum(st["renders"] for st in stages.values()) <= budget
+        assert x[("cabParameters", "rightMicType")] == "7"
+
+
+def test_knob_search_without_mics_gives_the_rest_to_the_final_stage():
+    dims = K.eq_space("pr12")
+    x0 = K.eq_start({}, "pr12")
+    _, _, _, stages = K.knob_search(dims, x0, lambda x: abs(float(x[("pr12EQ", "pr12EQBand3")]) - 4), 100, 0)
+    assert set(stages) == {"main", "final"}

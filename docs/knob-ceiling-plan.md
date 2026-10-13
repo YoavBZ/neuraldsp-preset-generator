@@ -57,7 +57,7 @@ Stored units; continuous settings are searched on a 0–1 scale over the range b
 
 | setting | range | kind |
 |---|---|---|
-| `parameters/inputGain` | −24 to +24 dB | continuous |
+| `parameters/inputGain` | −20 to +12 dB (amendment 2; the manifest allows ±24) | continuous |
 | PR12: `pr12Volume`, `pr12Treble`, `pr12Bass` | 0–1 | continuous |
 | SW50R: `sw50rVolume`, `sw50rLevel`, `sw50rTreble`, `sw50rMid`, `sw50rBass` | 0–1 | continuous |
 | SW50R: `sw50rBright`, `sw50rTrebleBoost`, `sw50rInputMode` | on/off | switch |
@@ -86,15 +86,24 @@ search can't turn off; this is noted beside the crunch numbers.
 
 ## The optimiser
 
-A **coordinate search with shrinking steps** (`coord_search`), deterministic for its seed
-(20261013; the EQ stage uses 20261014):
-- A sweep visits the settings in a seeded random order.
-- Per setting it tries: a continuous setting ± the step (on the 0–1 scale, clipped), a switch
-  flipped, a mic type every other mic (in the first sweep, and once more in the first sweep
-  with a step below 1/8).
-- The best improving candidate is kept. A sweep without improvement halves the step. The step
-  starts at 0.25 and stops below 1/64, or at the budget.
-- A setting already tried is never re-rendered (cached by its settings).
+As amended (amendments 1 and 2 below): `knob_search`, deterministic for its seed (20261013;
+the EQ stage uses 20261014). Every distinct setting is rendered once (cached by its settings).
+Its stages, on fixed shares of the budget:
+1. **Main (35%):** a coordinate search with shrinking steps (`coord_search`). A sweep visits
+   the settings in a seeded random order; per setting it tries a continuous setting ± the
+   step (0–1 scale, clipped) or a switch flipped, and keeps the best improving candidate. The
+   mics are tried (every other mic) from the second sweep, once per step size, so the knobs
+   move first. After a sweep that improved, Hooke–Jeeves pattern moves continue in the
+   sweep's direction. A sweep without improvement halves the step (from 0.25, stopping below
+   1/64).
+2. **Mic alternatives (35%):** every other value of both mics, left and right interleaved,
+   each set on the incumbent and followed by a quick re-tune of the three knobs that helped
+   most in stage 1 (an equal share each).
+3. **Restarts (20%):** the two best alternatives, with every non-mic setting searched again.
+4. **Final (the rest):** the full search again from the best so far.
+
+Without mics (the EQ stage), stages 2–3 are skipped and their share goes to the final stage.
+The renders and best value of every stage are stored.
 
 Each evaluation is one render and both halves scored; the search uses only its half. The
 renders run on **6 reused plugin processes** (`process_policy="reuse"`), sharded by cell
@@ -112,8 +121,9 @@ each search's incumbent curve, the best settings and the best render (FLAC) per 
 ## Controls (before the main run)
 
 1. **Repeat floor (measured 2026-10-13 on one part):** a repeat render of the same settings is
-   identical after the first 0.5 s (the knob-change ramp), so the judge's distance is
-   identical. The render noise floor is 0. The control re-checks this on every control cell,
+   nearly identical after the first 0.5 s (the knob-change ramp), so the judge's distance is
+   the same to about 1e-4 (renders are not bit-identical, but the judge's distance moves by
+   at most 1.7e-4). The render noise floor is negligible. The control re-checks this on every control cell,
    including after another preset in between.
    - **Checked on every cell of the main run, free:** K_M's first render repeats M, and K_S's
      repeats S, both already rendered in the menu. The deviation is stored. **If any exceeds
@@ -238,18 +248,56 @@ distance against the target settings' own:
 - **The search:** `knob_search` as in v5 (coordinate search; mics after the knobs move, at
   every step size; Hooke–Jeeves pattern moves; mic restarts with a quick re-tune of the three
   most useful knobs). The budgets stay 200 / 150 / 100.
-- **Every searched number is a lower bound on what the settings can reach.** The calibration
-  says the search falls short of a known reachable setting by about 0.1 in log ratio on
-  average (0 to 0.24).
+- **Every searched number is a lower bound on what the settings can reach.** See amendment 2
+  for the calibration of the search actually run.
 - **The readings of (b) and (d):**
   - **"A lot by the judge"** (band-weighted ≤ −0.10, most bands negative) stands: the true
     gain is at least that. It still needs the listening check to count as real.
   - **"Little"** (both means ≥ −0.04) **no longer says the menu is near the ceiling.** It is
-    read as "the search found little; with its shortfall, the settings may still reach up to
-    about 0.1 more: undecided". The old reading can't be restored by this test.
+    read as "the search found little: undecided", since the search can fall short of a
+    reachable setting (amendment 2: 0.075 on average on the held half, up to 0.26 on one of
+    six cells; this is not a cap). The old reading can't be restored by this test.
   - **In between:** as before, reported as a lower bound.
 - **The repeat check** stays: v5's exact control re-measured the repeat floor at about 1e-4,
   far below the 0.005 stop rule.
+
+## Amendment 2 (2026-10-14): the search's stages, after a second review
+
+Made after the second review (`tmp/knob-ceiling-control-review.md`, local), still **before
+the main run**. The review approved the lower-bound reading and found that v5's stages didn't
+run as described: the left mic's alternatives used the whole remaining budget, so the right
+mic, the restarts and the final stage got almost no renders, and the control moved only the
+left mic. Changes:
+- **The stages now have fixed shares** (35% main, 35% mic alternatives with both mics
+  interleaved, 20% restarts, the rest final), as described under "The optimiser". A test
+  checks that both mics and every stage get renders at budgets 150 and 200.
+- **Input gain is searched over −20 to +12 dB** (the factory presets use −20 to +3), so its
+  first step is 8 dB rather than 12. In v5 it never moved in 7 of 8 cells.
+- **The control covers AC20 too** (volume +0.17, cut −0.21, power +0.13), and moves the
+  **right** mic on SW50R and AC20 (the left on PR12): 6 cells. Pass needs 3 in 4 cells
+  recovered.
+- **Pattern moves** step 1×, 2× and 3× the sweep's move (the review found 1×, 4×, 16×).
+- `reading()` prints the amended "little" reading.
+
+**v6, the version that runs** (`control-v6-*`, 200 renders):
+
+| cell | exact: held / start | exact: mic | realistic: search vs target settings, held (search half) | realistic: gap closed |
+|---|---|---|---|---|
+| Drag Me Down, PR12 | 0.14 | yes | −0.083 (−0.058) | 109% |
+| Drag Me Down, SW50R | 0.18 | no | +0.161 (+0.126) | 93% |
+| Drag Me Down, AC20 | 0.31 | no | +0.255 (+0.228) | 90% |
+| Prodigal, PR12 | 0.46 | no | −0.007 (−0.065) | 103% |
+| Prodigal, SW50R | 0.34 | no | +0.052 (−0.044) | 83% |
+| Prodigal, AC20 | 0.10 | no | +0.070 (−0.018) | 91% |
+| **mean** | | 1 of 6 | **+0.075 (+0.028)** | |
+
+**The exact control still fails** (mic 1 of 6; three cells above 0.3): with an exact copy the
+target is a sharp-bottomed valley, as amendment 1 found. **The realistic control** is the one
+that resembles the main run. On it the search lands on average 0.075 short of a known
+reachable setting on the held half, and 0.028 on the half it searched. It is closer than the
+known setting on 2 of 6 cells and short by up to 0.26 on one. Within the search half, the
+gain still grows from 100 to 150 renders and little after, so the budgets stay. The readings
+are as in amendment 1: every searched number is a lower bound.
 
 ## Optional, report-only
 

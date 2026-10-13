@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import math
 import pathlib
@@ -96,7 +97,7 @@ def space(amp, start=None):
     cab = CAB
     if start is not None and start.get(("cabParameters", "leftCabActive")) == "false":
         cab = [d for d in CAB if not d.key.startswith("left")]
-    return [Dim("parameters", "inputGain", "cont", -24.0, 24.0)] + AMP_DIMS[amp] + cab
+    return [Dim("parameters", "inputGain", "cont", -20.0, 12.0)] + AMP_DIMS[amp] + cab
 
 
 def eq_space(amp):
@@ -212,18 +213,18 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="o
                 break
         if improved and pattern and len(cache) < budget:
             # Hooke–Jeeves pattern move: keep going the way the whole sweep went (a valley
-            # across the knobs, which single-knob moves can only zig-zag along), doubling
+            # across the knobs, which single-knob moves can only zig-zag along), further
             # while it improves.
-            for mult in (1, 2, 4):
-                y = dict(x)
-                moved = False
-                for d in dims:
-                    k = (d.module, d.key)
-                    if d.kind in ("cont", "log") and k in x and k in sweep_start and x[k] != sweep_start[k]:
-                        u = d.to_unit(x[k]) + mult * (d.to_unit(x[k]) - d.to_unit(sweep_start[k]))
-                        y[k] = fmt(d.from_unit(u))
-                        moved = moved or y[k] != x[k]
-                if not moved:
+            end = dict(x)
+            moved = {(d.module, d.key): d for d in dims if d.kind in ("cont", "log")
+                     and (d.module, d.key) in x and (d.module, d.key) in sweep_start
+                     and x[(d.module, d.key)] != sweep_start[(d.module, d.key)]}
+            for mult in (1, 2, 3):              # the sweep's move, once, twice, three times more
+                y = dict(end)
+                for k, d in moved.items():
+                    u = d.to_unit(end[k])
+                    y[k] = fmt(d.from_unit(u + mult * (u - d.to_unit(sweep_start[k]))))
+                if y == x:
                     break
                 val = ev(y)
                 if val is None or val >= best - 1e-12:
@@ -239,25 +240,27 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="o
     return x, best, trace
 
 
-def knob_search(dims, x0, f, budget, seed, main_share=0.3, quick=16, n_alt=2, alt_share=0.6, n_key=3,
-                fresh=False):
-    """The declared optimiser: `coord_search` ("levels") with mic restarts.
+SHARES = {"main": 0.35, "alts": 0.35, "restarts": 0.2}    # the rest is the final stage
 
-    1. The main search, `main_share` of the budget. It records which continuous dims gave
-       the most improvement (the `n_key` key dims).
-    2. Every other value of every categorical dim (the mics), each with a quick re-tune of
-       the key dims (at most `quick` renders, steps 0.25 and 0.125). A wrong mic with the knobs
-       compensating is a trap for a coordinate search: the right mic looks worse until the
-       knobs follow it.
-    3. The `n_alt` best alternatives after their quick re-tune, each as a restart: every
-       non-categorical dim searched again, sharing `alt_share` of what is left. With `fresh`,
-       the alternative mic is set on the start's own settings (`x0`) and searched from step
-       0.25, since the incumbent's knobs have bent to fit its old mic; the quick re-tune in
-       step 2 starts from there too.
-    4. The rest of the budget: the full search again from the best so far.
-    Returns (best x, best value, trace) like `coord_search`; every distinct setting is
-    rendered once in all."""
-    cache, hist = {}, []
+
+def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
+    """The declared optimiser (plan, amendment 2): `coord_search` with mic restarts, each
+    stage on a fixed share of the budget.
+
+    1. **main** (35%): `coord_search`, mics after the knobs move, at every step size, with
+       Hooke–Jeeves pattern moves. It records which continuous dims gave the most improvement
+       (the `n_key` key dims).
+    2. **alts** (35%): every other value of every mic, left and right interleaved, each set on
+       the incumbent and followed by a quick re-tune of the key dims (an equal share each,
+       steps 0.25 and 0.125). A wrong mic with the knobs compensating is a trap for a
+       coordinate search: the right mic looks worse until the knobs follow it.
+    3. **restarts** (20%): the `n_alt` best alternatives, each with every non-mic dim
+       searched again from step 0.125.
+    4. **final** (the rest): the full search again from the best so far.
+    A stage with nothing to do (no mics: the EQ) passes its share on. Returns (best x, best
+    value, trace, stages); every distinct setting is rendered once in all; `stages` records
+    each stage's renders and best value."""
+    cache, hist, stages = {}, [], {}
     state = {"limit": 0, "best": math.inf}
 
     def g(x):
@@ -271,48 +274,56 @@ def knob_search(dims, x0, f, budget, seed, main_share=0.3, quick=16, n_alt=2, al
         hist.append((len(cache), state["best"]))
         return v
 
+    def mark(name, n0):
+        stages[name] = {"renders": len(cache) - n0, "best": state["best"]}
+
     big = 10 ** 9
-    gains = {}
-    state["limit"] = max(1, int(budget * main_share))
-    x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains)
-    if best is None:
-        return x, None, hist
+    cats = [d for d in dims if d.kind == "cat"]
     others = [d for d in dims if d.kind != "cat"]
-    key_dims = sorted((d for d in others if d.kind in ("cont", "log")),
-                      key=lambda d: (-gains.get(d.name, 0.0), d.name))[:n_key]
-    alts = []
-    for d in dims:
-        if d.kind != "cat":
-            continue
-        k = (d.module, d.key)
-        for v in d.values:
-            if v == x.get(k):
-                continue
-            y = dict(x0) if fresh else dict(x)
-            for c in dims:                      # the incumbent's mics, then this one
-                if c.kind == "cat":
-                    y[(c.module, c.key)] = x[(c.module, c.key)]
-            y[k] = v
-            state["limit"] = len(cache) + quick
+    gains = {}
+    n0 = len(cache)
+    state["limit"] = max(1, round(budget * shares["main"]))
+    x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains)
+    mark("main", n0)
+    if best is None:
+        return x, None, hist, stages
+    if cats:
+        key_dims = sorted((d for d in others if d.kind in ("cont", "log")),
+                          key=lambda d: (-gains.get(d.name, 0.0), d.name))[:n_key]
+        options = [[(d, v) for v in d.values if v != x.get((d.module, d.key))] for d in cats]
+        order = [o for group in itertools.zip_longest(*options) for o in group if o is not None]
+        stage_end = len(cache) + round(budget * shares["alts"])
+        each = max(1, (stage_end - len(cache)) // max(1, len(order)))
+        n0, alts = len(cache), []
+        for d, v in order:
+            y = dict(x)
+            y[(d.module, d.key)] = v
+            state["limit"] = min(stage_end, len(cache) + each)
             qx, qv, _ = coord_search(key_dims, y, g, big, seed + 5, step0=0.25, min_step=0.125)
             if qv is None:
-                break
+                continue
             alts.append((qv, d.name, v, qx))
-    for val, _, _, y in alts:
-        if val < best:
-            best, x = val, y
-    left = budget - len(cache)
-    for i, (_, _, _, y) in enumerate(sorted(alts, key=lambda a: (a[0], a[1], a[2]))[:n_alt]):
-        state["limit"] = len(cache) + max(1, int(left * alt_share / n_alt))
-        bx, bv, _ = coord_search(others, y, g, big, seed + 10 + i, step0=0.25 if fresh else 0.125)
-        if bv is not None and bv < best:
-            best, x = bv, bx
+        mark("alts", n0)
+        for val, _, _, y in alts:
+            if val < best:
+                best, x = val, y
+        n0 = len(cache)
+        stage_end = len(cache) + round(budget * shares["restarts"])
+        per = max(1, (stage_end - len(cache)) // n_alt)
+        for i, (_, _, _, y) in enumerate(sorted(alts, key=lambda a: (a[0], a[1], a[2]))[:n_alt]):
+            state["limit"] = min(stage_end, len(cache) + per)
+            bx, bv, _ = coord_search(others, y, g, big, seed + 10 + i, step0=0.125)
+            if bv is not None and bv < best:
+                best, x = bv, bx
+        mark("restarts", n0)
+    n0 = len(cache)
     state["limit"] = budget
     if len(cache) < budget:
         bx, bv, _ = coord_search(dims, x, g, big, seed + 99, step0=0.125, cats="levels")
         if bv is not None and bv < best:
             best, x = bv, bx
-    return x, best, hist
+    mark("final", n0)
+    return x, best, hist, stages
 
 
 def at_limit(dims, x, x0):
@@ -446,7 +457,7 @@ def run_cell(rr, menu, amp, ref, di, lag, start_name, out_dir, budgets=BUDGET, s
                     keep.update(d=d[search], y=y)
                 return d[search]
 
-            x, _, _ = knob_search(dims, start, f, budgets[tag], seed + (tag == "EQ"))
+            x, _, _, stages = knob_search(dims, start, f, budgets[tag], seed + (tag == "EQ"))
             if tag != "EQ":                     # the first render repeats a stored menu render
                 stored = menu_d[starts[tag][0]]
                 dev = max(abs(math.log(evals[0][h] / stored[h])) for h in R.HALVES)
@@ -454,6 +465,7 @@ def run_cell(rr, menu, amp, ref, di, lag, start_name, out_dir, budgets=BUDGET, s
                 if dev > REPEAT_TOL:
                     raise RuntimeError(f"repeat render moved by {dev:.4f} (log) on {tag}-{search}")
             run[tag] = summary(evals, search, held, dims, x, start)
+            run[tag]["stages"] = stages
             if tag == "K_M":
                 run["_kx"] = x
             if out_dir is not None:
@@ -540,7 +552,10 @@ CONTROL_PARTS = 2
 PERTURB = {"pr12": {("pr12Amp", "pr12Volume"): 0.17, ("pr12Amp", "pr12Treble"): -0.21,
                     ("pr12Amp", "pr12Bass"): 0.13},
            "sw50r": {("sw50rAmp", "sw50rVolume"): 0.17, ("sw50rAmp", "sw50rTreble"): -0.21,
-                     ("sw50rAmp", "sw50rMid"): 0.13}}
+                     ("sw50rAmp", "sw50rMid"): 0.13},
+           "ac20": {("ac20Amp", "ac20Volume"): 0.17, ("ac20Amp", "ac20Cut"): -0.21,
+                    ("ac20Amp", "ac20Power"): 0.13}}
+CONTROL_MIC = {"pr12": "leftMicType", "sw50r": "rightMicType", "ac20": "rightMicType"}
 PERTURB_ALL = {("parameters", "inputGain"): 5.3, ("cabParameters", "leftCabPosition"): 0.31}
 
 
@@ -572,13 +587,13 @@ def control(cats="restart", budget=None, out_name="control", mismatch=False):
             part = ps[slug]
             di = measure_di(part)
             di32 = di.astype(np.float32)
-            for amp in ("pr12", "sw50r"):
+            for amp in AMPS:
                 name = START[part["gain_class"]][amp]
                 sel, x0 = menu[amp][name]
                 dims = space(amp, x0)
                 moves = {**PERTURB[amp], **PERTURB_ALL}
                 target = perturbed(dims, x0, moves)
-                mic = ("cabParameters", "leftMicType")
+                mic = ("cabParameters", CONTROL_MIC[amp])
                 target[mic] = str((int(x0[mic]) + 4) % 10)
                 rr.render(di32, sel, x0)                                   # warm-up
                 if mismatch:
@@ -604,7 +619,7 @@ def control(cats="restart", budget=None, out_name="control", mismatch=False):
                     evals.append(d)
                     return d["A"]
 
-                x, best, trace = (knob_search(dims, x0, f, budget or BUDGET["K_M"], SEED) if cats == "restart"
+                x, best, trace = (knob_search(dims, x0, f, budget or BUDGET["K_M"], SEED)[:3] if cats == "restart"
                                   else coord_search(dims, x0, f, budget or BUDGET["K_M"], SEED, cats=cats))
                 inc, bA = evals[0], evals[0]["A"]
                 for d in evals:
@@ -641,11 +656,11 @@ def control(cats="restart", budget=None, out_name="control", mismatch=False):
 
 
 def control_passes(out):
-    """Declared: every cell's held distance falls to ≤ 0.3 × the start's, and on at least 3 of
+    """Declared: every cell's held distance falls to ≤ 0.3 × the start's, and on at least 3 in
     4 cells at least 3 of the 5 moved settings land within 0.1 (0–1 scale) with the mic exact."""
     cs = [v for k, v in out.items() if not k.startswith("_")]
     return (all(c["ratio_held"] <= 0.3 for c in cs)
-            and sum(c["settings_within_0.1"] >= 3 and c["mic_exact"] for c in cs) >= 3)
+            and sum(c["settings_within_0.1"] >= 3 and c["mic_exact"] for c in cs) >= math.ceil(0.75 * len(cs)))
 
 
 # ---------------------------------------------------------------- report
@@ -718,7 +733,8 @@ def reading(s, what="knobs"):
     """The declared reading (descriptive, not a gate). "A lot" is by the judge; it counts as
     real only after the listening check."""
     if s["band_weighted_mean"] >= -0.04 and s["mean"] >= -0.04:
-        return f"{what} add little: the menu is near the ceiling"
+        return (f"the search found little from {what}: undecided (the search is a lower bound and "
+                "can fall short of a reachable setting)")
     if s["band_weighted_mean"] <= -0.10 and s["bands_negative"] > s["bands"] / 2:
         return f"{what} add a lot by the judge (real only if the listening check agrees)"
     return "in between"
